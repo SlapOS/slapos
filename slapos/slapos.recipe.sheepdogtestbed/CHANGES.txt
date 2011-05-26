@@ -1,8 +1,0 @@
-Changelog
-=========
-
-0.0.1dev (2011/05/16)
----------------------
-
- - Initial version
-   [Guillaume Bottex]

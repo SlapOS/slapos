@@ -56,5 +56,6 @@ setup(name=name,
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'nosqltestbed = slapos.recipe.nosqltestbed:NoSQLTestBed',
           'proactive = slapos.recipe.proactive:Recipe',
+          'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
       ]},
     )
