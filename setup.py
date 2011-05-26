@@ -43,6 +43,7 @@ setup(name=name,
         'zc.buildout': [
           'build = slapos.recipe.build:Script',
           'buildcmmi = slapos.recipe.build:Cmmi',
+          'download = slapos.recipe.download:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
       ]},
     )
