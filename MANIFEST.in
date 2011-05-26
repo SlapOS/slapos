@@ -1,2 +1,3 @@
 include CHANGES.txt
+recursive-include slapos/recipe *.in
 recursive-include slapos/recipe README.*.txt
