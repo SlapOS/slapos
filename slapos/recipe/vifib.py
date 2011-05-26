@@ -246,7 +246,7 @@ SSLCARevocationPath %(ca_crl)s"""
     self.site_check_path = '/%s/getId' % self.site_id
     self.key_auth_path = '/%s/portal_slap' % self.site_id
     self.path_list = []
-    self.requirements, self.ws = self.egg.working_set([__name__])
+    self.requirements, self.ws = self.egg.working_set()
     # self.cron_d is a directory, where cron jobs can be registered
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()

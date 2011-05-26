@@ -33,11 +33,6 @@ import zc.recipe.egg
 
 
 class Recipe(BaseSlapRecipe):
-  def __init__(self, buildout, name, options):
-    BaseSlapRecipe.__init__(self, buildout, name, options)
-    options['eggs'] = 'slapos.recipe.slaprunner'
-    self.egg = zc.recipe.egg.Scripts(buildout, name, options)
-
   def _install(self):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()

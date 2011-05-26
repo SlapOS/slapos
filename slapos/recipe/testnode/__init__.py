@@ -187,7 +187,7 @@ class Recipe(BaseSlapRecipe):
     return self.path_list
 
   def _install(self):
-    self.requirements, self.ws = self.egg.working_set([__name__])
+    self.requirements, self.ws = self.egg.working_set()
     self.path_list = []
     self.installSlapOs()
     self.installLocalZip()

@@ -39,6 +39,7 @@ class BaseSlapRecipe:
   def __init__(self, buildout, name, options):
     """Default initialisation"""
     self.name = name
+    options['eggs'] = 'slapos.recipebox'
     self.options = options
     self.logger = logging.getLogger(self.name)
     self.slap = slap.slap()
