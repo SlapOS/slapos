@@ -51,5 +51,6 @@ setup(name=name,
           'helloworld = slapos.recipe.helloworld:Recipe',
           'java = slapos.recipe.java:Recipe',
           'kvm = slapos.recipe.kvm:Recipe',
+          'libcloud = slapos.recipe.libcloud:Recipe',
       ]},
     )
