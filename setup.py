@@ -63,5 +63,6 @@ setup(name=name,
           'template = slapos.recipe.template:Recipe',
           'testnode = slapos.recipe.testnode:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
+          'xwiki = slapos.recipe.xwiki:Recipe',
       ]},
     )
