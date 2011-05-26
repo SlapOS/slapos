@@ -28,13 +28,15 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-        'setuptools', # for namespace and internal usage
-        'zc.buildout', # needed to play internally
         'PyXML', # for full blown python interpreter
         'lxml', # for full blown python interpreter
-        'xml_marshaller', # need to communication with slapgrid
+        'netaddr', # to manipulate on IP addresses
+        'setuptools', # namespaces
         'slapos.lib.recipe', # makes instantiation recipes simpler
-        'zc.recipe.egg', # allows to generate scripts
+        'slapos.slap', # uses internally
+        'xml_marshaller', # need to communication with slapgrid
+        'zc.buildout', # plays with buildout
+        'zc.recipe.egg', # for scripts generation
         ],
       zip_safe=True,
       entry_points={
