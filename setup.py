@@ -35,6 +35,7 @@ setup(name=name,
         'setuptools', # namespaces
         'slapos.lib.recipe', # makes instantiation recipes simpler
         'slapos.slap', # uses internally
+#        'slapos.tool.cloudmgr', # needed for libclouds # disabled, as not available
         'xml_marshaller', # need to communication with slapgrid
         'zc.buildout', # plays with buildout
         'zc.recipe.egg', # for scripts generation
