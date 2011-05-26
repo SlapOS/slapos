@@ -1,0 +1,20 @@
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[include]
+files = %(supervisord_configuration_directory)s/*.conf
+
+[supervisorctl]
+serverurl = unix://%(supervisord_socket)s
+
+[supervisord]
+loglevel = %(supervisord_loglevel)s
+logfile = %(supervisord_logfile)s
+logfile_maxbytes = %(supervisord_logfile_maxbytes)s
+nodaemon = %(supervisord_nodaemon)s
+pidfile = %(supervisord_pidfile)s
+logfile-backups = %(supervisord_logfile_backups)s
+
+[unix_http_server]
+file=%(supervisord_socket)s
+chmod=0700

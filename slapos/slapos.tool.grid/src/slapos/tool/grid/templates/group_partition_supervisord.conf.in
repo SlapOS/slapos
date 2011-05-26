@@ -1,0 +1,2 @@
+[group:%(instance_id)s]
+programs=%(program_list)s

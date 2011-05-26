@@ -1,0 +1,957 @@
+# -*- coding: utf-8 -*-
+##############################################################################
+#
+# Copyright (c) 2010, 2011 Vifib SARL and Contributors. All Rights Reserved.
+#
+# WARNING: This program as such is intended to be used by professional
+# programmers who take the whole responsibility of assessing all potential
+# consequences resulting from its eventual inadequacies and bugs
+# End users who are looking for a ready-to-use solution with commercial
+# guarantees and support are strongly advised to contract a Free Software
+# Service Company
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 3
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+##############################################################################
+from optparse import OptionParser, Option
+from xml_marshaller import xml_marshaller
+import ConfigParser
+import grp
+import logging
+import netaddr
+import netifaces
+import os
+import pwd
+import random
+import slapos.slap as slap
+import socket
+import subprocess
+import sys
+import time
+
+
+class SlapError(Exception):
+  """
+  Slap error
+  """
+  def __init__(self, message):
+    self.msg = message
+
+class UsageError(SlapError):
+  pass
+
+class ExecError(SlapError):
+  pass
+
+def callAndRead(argument_list, raise_on_error=True):
+  popen = subprocess.Popen(argument_list, stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT)
+  result = popen.communicate()[0]
+  if raise_on_error and popen.returncode != 0:
+    raise ValueError('Issue during invoking %r, result was:\n%s' % (argument_list, result))
+  return popen.returncode, result
+
+def isGlobalScopeAddress(a):
+  """Returns True if a is global scope IP v4/6 address"""
+  ip = netaddr.IPAddress(a)
+  return not ip.is_link_local() and not ip.is_loopback() and \
+      not ip.is_reserved() and ip.is_unicast()
+
+def netmaskToPrefixIPv4(netmask):
+  """Convert string represented netmask to its integer prefix"""
+  return netaddr.strategy.ipv4.netmask_to_prefix[
+          netaddr.strategy.ipv4.str_to_int(netmask)]
+
+def netmaskToPrefixIPv6(netmask):
+  """Convert string represented netmask to its integer prefix"""
+  return netaddr.strategy.ipv6.netmask_to_prefix[
+          netaddr.strategy.ipv6.str_to_int(netmask)]
+
+def _getDict(instance):
+  """
+  Serialize an object instance into dictionaries. List and dict will remains
+  the same, basic type too. But encapsulated object will be returned as dict.
+  Set, collections and other aren't handle for now.
+
+  Args:
+    instance: an object of any type.
+
+  Returns:
+    A dictionary if the given object wasn't a list, a list otherwise.
+  """
+  if isinstance(instance, list):
+    return [_getDict(item) for item in instance]
+
+  elif isinstance(instance, dict):
+    result = {}
+    for key in instance.keys():
+      result[key] = _getDict(instance[key])
+    return result
+
+  else:
+    try:
+
+      result = {}
+      for key in instance.__dict__.keys():
+        result[key] = _getDict(instance.__dict__[key])
+      return result
+
+    except AttributeError:
+      return instance
+
+class Error(Exception):
+  "Base class for exceptions in this module."
+  def __str__(self):
+    return self.message
+
+class NoAddressOnBridge(Error):
+  """
+  Exception raised if there's not address on the bridge to construct IPv6
+  address with.
+
+  Attributes:
+    brige: String, the name of the bridge.
+  """
+
+  def __init__(self, bridge):
+    self.message = 'No IPv6 found on bridge %s to construct IPv6 with.' % bridge
+
+class AddressGenerationError(Error):
+  """
+  Exception raised if the generation of an IPv6 based on the prefix obtained
+  from the bridge failed.
+
+  Attributes:
+    addr: String, the invalid address the exception is raised for.
+  """
+  def __init__(self, addr):
+    self.message = 'Generated IPv6 %s seems not to be a valid IP.' % addr
+
+class Computer:
+  "Object representing the computer"
+
+  def __init__(self, reference, bridge=None, addr = None, netmask = None):
+    """
+    Attributes:
+      reference: String, the reference of the computer.
+      bridge: String, if it has one, the name of the computer's bridge.
+    """
+    self.reference = str(reference)
+    self.bridge = bridge
+    self.partition_list = []
+    self.address = addr
+    self.netmask = netmask
+
+  def __getinitargs__(self):
+    return (self.reference, self.bridge)
+
+  def getAddress(self):
+    """
+    Return a list of the bridge address not attributed to any partition, (which
+    are therefore free for the computer itself).
+
+    Returns:
+      False if the bridge isn't available, else the list of the free addresses.
+    """
+    if self.bridge is None:
+      return dict(addr=self.address, netmask=self.netmask)
+
+    computer_partition_address_list = []
+    for partition in self.partition_list:
+      for address in partition.address_list:
+        if netaddr.valid_ipv6(address['addr']):
+          computer_partition_address_list.append(address['addr'])
+    # Going through addresses of the computer's bridge interface
+    for address_dict in self.bridge.getGlobalScopeAddressList():
+      # Comparing with computer's partition addresses
+      if address_dict['addr'] not in computer_partition_address_list:
+        return address_dict
+
+    return None
+
+  def send(self, config):
+    """
+    Send a marshalled dictionary of the computer object serialized via_getDict.
+    """
+
+    slap_instance = slap.slap()
+    connection_dict = {}
+    if config.key_file and config.cert_file:
+      connection_dict.update(
+        key_file=config.key_file,
+        cert_file=config.cert_file)
+    slap_instance.initializeConnection(config.master_url,
+      **connection_dict)
+    slap_computer = slap_instance.registerComputer(self.reference)
+    return slap_computer.updateConfiguration(
+        xml_marshaller.dumps(_getDict(self)))
+
+  def dump(self, path_to_xml):
+    """
+    Dump the computer object to an xml file via xml_marshaller.
+
+    Args:
+      path_to_xml: String, path to the file to load.
+      users: List of User, list of user needed to be add to the dump
+          (even if they are not related to any tap interface).
+    """
+
+    computer_dict = _getDict(self)
+    output_file = open(path_to_xml,'w')
+    output_file.write(xml_marshaller.dumps(computer_dict))
+    output_file.close()
+
+  @classmethod
+  def load(cls, path_to_xml, reference):
+    """
+    Create a computer object from a valid xml file.
+
+    Arg:
+      path_to_xml: String, a path to a valid file containing
+          a valid configuration.
+
+    Return:
+      A Computer object if the path where pointing on a valid
+          file, False otherwise.
+    """
+
+    dumped_dict = xml_marshaller.loads(open(path_to_xml).read())
+
+    # Reconstructing the computer object from the xml
+    computer = Computer(
+        reference = reference,
+        addr = dumped_dict['address'],
+        netmask = dumped_dict['netmask'],
+    )
+
+    for partition_dict in dumped_dict['partition_list']:
+
+      if partition_dict['user']:
+        user = User(partition_dict['user']['name'])
+      else:
+        user = User('root')
+
+      if partition_dict['tap']:
+        tap = Tap(partition_dict['tap']['name'])
+      else:
+        tap = Tap(partition_dict['reference'])
+
+      address_list = partition_dict['address_list']
+
+      partition = Partition(
+          reference = partition_dict['reference'],
+          path = partition_dict['path'],
+          user = user,
+          address_list = address_list,
+          tap = tap,
+      )
+
+      computer.partition_list.append(partition)
+
+    return computer
+
+  def construct(self, alter_user=True, alter_network=True):
+    """
+    Construct the computer object as it is.
+    """
+    if alter_network and self.address is not None:
+      self.bridge.addAddr(self.address, self.netmask)
+
+    for path in self.instance_root, self.software_root: 
+      if not os.path.exists(path):
+        os.makedirs(path, 0755)
+      else:
+        os.chmod(path, 0755)
+
+    # own self.software_root by slapsoft
+    slapsoft = User('slapsoft')
+    slapsoft.path = self.software_root
+    if alter_user:
+      slapsoft.create()
+      slapsoft_pw = pwd.getpwnam(slapsoft.name)
+      os.chown(self.software_root, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
+    os.chmod(self.software_root, 0755)
+
+    for partition in self.partition_list:
+      # Reconstructing User's
+      partition.path = os.path.join(self.instance_root, partition.reference)
+      partition.user.setPath(partition.path)
+      partition.user.additional_group_list = [slapsoft.name]
+      if alter_user:
+        partition.user.create()
+
+      # Reconstructing Tap
+      if partition.user and partition.user.isAvailable():
+        owner = partition.user
+      else:
+        owner = User('root')
+
+      if alter_network:
+        partition.tap.createWithOwner(owner)
+        self.bridge.addTap(partition.tap)
+
+      # Reconstructing partition's directory
+      partition.createPath(alter_user)
+
+      # Reconstructing partition's address
+      # There should be two addresses on each Computer Partition:
+      #  * global IPv6
+      #  * local IPv4, took from slapformat:ipv4_local_network
+      if len(partition.address_list) == 0:
+        # regenerate
+        partition.address_list.append(self.bridge.addIPv4LocalAddress())
+        partition.address_list.append(self.bridge.addAddr())
+      elif alter_network:
+        # regenerate list of addresses
+        old_partition_address_list = partition.address_list
+        partition.address_list = []
+        if len(old_partition_address_list) != 2:
+          raise ValueError('There should be exactly 2 stored addresses')
+        if not any([netaddr.valid_ipv6(q['addr']) for q in old_partition_address_list]):
+          raise ValueError('Not valid ipv6 addresses loaded')
+        if not any([netaddr.valid_ipv4(q['addr']) for q in old_partition_address_list]):
+          raise ValueError('Not valid ipv6 addresses loaded')
+        for address in old_partition_address_list:
+          if netaddr.valid_ipv6(address['addr']):
+            partition.address_list.append(self.bridge.addAddr(address['addr'],
+              address['netmask']))
+          elif netaddr.valid_ipv4(address['addr']):
+            partition.address_list.append(self.bridge.addIPv4LocalAddress(address['addr']))
+          else:
+            raise ValueError('Address %r is incorrect' % address['addr'])
+
+class Partition:
+  "Represent a computer partition"
+
+  def __init__(self, reference, path, user, address_list, tap):
+    """
+    Attributes:
+      reference: String, the name of the partition.
+      path: String, the path to the partition folder.
+      user: User, the user linked to this partition.
+      address_list: List of associated IP addresses.
+      tap: Tap, the tap interface linked to this partition.
+    """
+
+    self.reference = str(reference)
+    self.path = str(path)
+    self.user = user
+    self.address_list = address_list or []
+    self.tap = tap
+
+  def __getinitargs__(self):
+    return (self.reference, self.path, self.user, self.address_list, self.tap)
+
+  def createPath(self, alter_user=True):
+    """
+    Create the directory of the partition, assign to the partition user and give
+    it the 750 permission. In case if path exists just modifies it.
+    """
+
+    self.path = os.path.abspath(self.path)
+    owner = self.user if self.user else User('root')
+    if not os.path.exists(self.path):
+      os.mkdir(self.path, 0750)
+    if alter_user:
+      owner_pw = pwd.getpwnam(owner.name)
+      os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
+    os.chmod(self.path, 0750)
+
+class User:
+  "User: represent and manipulate a user on the system."
+
+  def __init__(self, user_name, additional_group_list=None):
+    """
+    Attributes:
+        user_name: string, the name of the user, who will have is home in
+    """
+    self.name = str(user_name)
+    self.additional_group_list = additional_group_list
+
+  def __getinitargs__(self):
+    return (self.name,)
+
+  def setPath(self, path):
+    self.path = path
+
+  def create(self):
+    """
+    Create a user on the system who will be named after the self.name with its
+    own group and directory.
+
+    Returns:
+        True: if the user creation went right
+    """
+    # XXX: This method shall be no-op in case if all is correctly setup
+    #      This method shall check if all is correctly done
+    #      This method shall not reset groups, just add them
+    try:
+      grp.getgrnam(self.name)
+    except KeyError:
+      callAndRead(['groupadd', self.name])
+
+    user_parameter_list = ['-d', self.path, '-g', self.name]
+    if self.additional_group_list is not None:
+      user_parameter_list.extend(['-G', ','.join(self.additional_group_list)])
+    user_parameter_list.append(self.name)
+    try:
+      pwd.getpwnam(self.name)
+    except KeyError:
+      callAndRead(['useradd'] + user_parameter_list)
+    else:
+      callAndRead(['usermod'] + user_parameter_list)
+
+    return True
+
+  def isAvailable(self):
+    """
+    Determine the availability of a user on the system
+
+    Return:
+        True: if available
+        False: otherwise
+    """
+
+    try:
+      pwd.getpwnam(self.name)
+      return True
+
+    except KeyError:
+      return False
+
+class Tap:
+  "Tap represent a tap interface on the system"
+
+  def __init__(self, tap_name):
+    """
+    Attributes:
+        tap_name: String, the name of the tap interface.
+        user: User, the owner of the tap interface.
+    """
+
+    self.name = str(tap_name)
+
+  def __getinitargs__(self):
+    return (self.name,)
+
+  def createWithOwner(self,owner):
+    """
+    Create a tap interface on the system.
+
+    Return:
+        True: Everything went right.
+    """
+
+    # some systems does not have -p switch for tunctl
+    #callAndRead(['tunctl', '-p', '-t', self.name, '-u', owner.name])
+    check_file = '/sys/devices/virtual/net/%s/owner' % self.name
+    owner_id = None
+    if os.path.exists(check_file):
+      try:
+        owner_id = int(open(check_file).read().strip())
+      except Exception:
+        pass
+    if (owner_id is None) or (owner_id != pwd.getpwnam(owner.name).pw_uid):
+      callAndRead(['tunctl', '-t', self.name, '-u', owner.name])
+    callAndRead(['ip', 'link', 'set', self.name, 'up'])
+
+    return True
+
+class Bridge:
+  "Bridge represent a bridge on the system"
+
+  def __init__(self, name, ipv4_local_network):
+    """
+    Attributes:
+        name: String, the name of the bridge
+    """
+
+    self.name = str(name)
+    self.ipv4_local_network = ipv4_local_network
+
+  def __getinitargs__(self):
+    return (self.name,)
+
+  def getIPv4LocalAddressList(self):
+    """Returns currently configured local IPv4 addresses which are in ipv4_local_network"""
+    if not socket.AF_INET in netifaces.ifaddresses(self.name):
+      return []
+    return [dict(addr=q['addr'], netmask=q['netmask']) for q in
+      netifaces.ifaddresses(self.name)[socket.AF_INET] if netaddr.IPAddress(
+        q['addr'], 4) in netaddr.glob_to_iprange(
+          netaddr.cidr_to_glob(self.ipv4_local_network))]
+
+  def getGlobalScopeAddressList(self):
+    """Returns currently configured global scope IPv6 addresses"""
+    address_list = [q for q in netifaces.ifaddresses(self.name)[socket.AF_INET6]
+        if isGlobalScopeAddress(q['addr'].split('%')[0])]
+    # XXX: Missing implementation of Unique Local IPv6 Unicast Addresses as
+    # defined in http://www.rfc-editor.org/rfc/rfc4193.txt
+    # XXX: XXX: XXX: IT IS DISALLOWED TO IMPLEMENT link-local addresses as
+    # Linux and BSD are possibly wrongly implementing it -- it is "too local"
+    # it is impossible to listen or access it on same node
+    # XXX: IT IS DISALLOWED to implement ad hoc solution like inventing node
+    # local addresses or anything which does not exists in RFC!
+    return address_list
+
+  def getInterfaceList(self):
+    """Returns list of interfaces already present on bridge"""
+    interface_list = []
+    returncode, result = callAndRead(['brctl', 'show'])
+    in_bridge = False
+    for line in result.split('\n'):
+      if len(line.split()) > 1:
+        if self.name in line:
+          interface_list.append(line.split()[-1])
+          in_bridge = True
+          continue
+        if in_bridge:
+          break
+      elif in_bridge:
+        if line.strip():
+          interface_list.append(line.strip())
+
+    return interface_list
+
+  def addTap(self, tap):
+    """
+    Add the tap interface tap to the bridge.
+
+    Args:
+      tap: Tap, the tap interface.
+    """
+    if tap.name not in self.getInterfaceList():
+      callAndRead(['brctl', 'addif', self.name, tap.name])
+
+  def _addSystemAddress(self, address, netmask, ipv6=True):
+    """Adds system address to bridge
+    
+    Returns True if address was added successfully.
+
+    Returns False if there was issue.
+    """
+    if ipv6:
+      address_string = '%s/%s' % (address, netmaskToPrefixIPv6(netmask))
+      af = socket.AF_INET6
+    else:
+      af = socket.AF_INET
+      address_string = '%s/%s' % (address, netmaskToPrefixIPv4(netmask))
+
+    # check if address is already took by any other interface
+    for interface in netifaces.interfaces():
+      if interface != self.name:
+        address_dict = netifaces.ifaddresses(interface)
+        if af in address_dict:
+         if address in [q['addr'].split('%')[0] for q in address_dict[af]]:
+            return False
+
+    if not af in netifaces.ifaddresses(self.name) or not address in [q['addr'].split('%')[0] for q in netifaces.ifaddresses(self.name)[af]]:
+      # add an address
+      callAndRead(['ip', 'addr', 'add', address_string, 'dev', self.name])
+      # wait few moments
+      time.sleep(2)
+    # check existence on interface
+    returncode, result = callAndRead(['ip', 'addr', 'list', self.name])
+    for l in result.split('\n'):
+      if address in l:
+        if 'tentative' in l:
+          # duplicate, remove
+          callAndRead(['ip', 'addr', 'del', address_string, 'dev', self.name])
+          return False
+        # found and clean
+        return True
+    # even when added not found, this is bad...
+    return False
+
+  def _generateRandomIPv4Address(self, netmask):
+    # no addresses found, generate new one
+    # Try 10 times to add address, raise in case if not possible
+    try_num = 10
+    while try_num > 0:
+      addr = random.choice([q for q in netaddr.glob_to_iprange(
+        netaddr.cidr_to_glob(self.ipv4_local_network))]).format()
+      if dict(addr=addr, netmask=netmask) not in self.getIPv4LocalAddressList():
+        # Checking the validity of the IPv6 address
+        if self._addSystemAddress(addr, netmask, False):
+          return dict(addr=addr, netmask=netmask)
+        try_num -= 1
+
+    raise AddressGenerationError(addr)
+
+  def addIPv4LocalAddress(self, addr=None):
+    """Adds local IPv4 address in ipv4_local_network"""
+    netmask = '255.255.255.255'
+    local_address_list = self.getIPv4LocalAddressList()
+    if addr is None:
+      return self._generateRandomIPv4Address(netmask)
+    elif dict(addr=addr, netmask=netmask) not in local_address_list:
+        if self._addSystemAddress(addr, netmask, False):
+          return dict(addr=addr, netmask=netmask)
+        else:
+          return self._generateRandomIPv4Address(netmask)
+    else:
+      # confirmed to be configured
+      return dict(addr=addr, netmask=netmask)
+
+  def addAddr(self, addr = None, netmask = None):
+    """
+    Adds IP address to bridge.
+
+    If addr is specified and exists already on bridge does nothing.
+
+    If addr is specified and does not exists on bridge, tries to add given address.
+    In case if it is not possible (ex. because network changed) calculates new address.
+
+    Args:
+      addr: Wished address to be added to bridge.
+      netmask: Wished netmask to be used.
+
+    Returns:
+      Tuple of (address, netmask).
+
+    Raises:
+      AddressGenerationError: Couldn't construct valid address with existing
+          one's on the bridge.
+      NoAddressOnBridge: There's no address on the bridge to construct
+          an address with.
+    """
+    # Getting one address of the bridge as base of the next addresses
+    bridge_addr_list = self.getGlobalScopeAddressList()
+
+    # No address found
+    if len(bridge_addr_list) == 0:
+      raise NoAddressOnBridge(self.name)
+    address_dict = bridge_addr_list[0]
+
+    if addr is not None:
+      if dict(addr=addr, netmask=netmask) in bridge_addr_list:
+        # confirmed to be configured
+        return dict(addr=addr, netmask=netmask)
+      if netmask == address_dict['netmask']:
+        # same netmask, so there is a chance to add good one
+        bridge_network = netaddr.ip.IPNetwork('%s/%s' % (address_dict['addr'],
+          netmaskToPrefixIPv6(address_dict['netmask'])))
+        requested_network = netaddr.ip.IPNetwork('%s/%s' % (addr, netmaskToPrefixIPv6(netmask)))
+        if bridge_network.network == requested_network.network:
+          # same network, try to add
+          if self._addSystemAddress(addr, netmask):
+            # succeed, return it
+            return dict(addr=addr, netmask=netmask)
+
+    # Try 10 times to add address, raise in case if not possible
+    try_num = 10
+    netmask = address_dict['netmask']
+    while try_num > 0:
+      addr = ':'.join(address_dict['addr'].split(':')[:-1] + ['%x' % random.randint(1, 65000)])
+      socket.inet_pton(socket.AF_INET6, addr)
+      if dict(addr=addr, netmask=netmask) not in self.getGlobalScopeAddressList():
+        # Checking the validity of the IPv6 address
+        if self._addSystemAddress(addr, netmask):
+          return dict(addr=addr, netmask=netmask)
+        try_num -= 1
+
+    raise AddressGenerationError(addr)
+
+class Parser(OptionParser):
+  """
+  Parse all arguments.
+  """
+  def __init__(self, usage=None, version=None):
+    """
+    Initialize all options possibles.
+    """
+    OptionParser.__init__(self, usage=usage, version=version,
+                          option_list=[
+      Option("-x", "--computer_xml",
+             help="Path to file with computer's XML. If does not exists, "
+                  "will be created",
+             default=None,
+             type=str),
+      Option("-l", "--log_file",
+             help="The path to the log file used by the script.",
+             type=str),
+      Option("-i", "--input_definition_file",
+             help="Path to file to read definition of computer instead of "
+             "declaration. Using definition file allows to disable "
+             "'discovery' of machine services and allows to define computer "
+             "configuration in fully controlled manner.",
+             type=str),
+      Option("-o", "--output_definition_file",
+             help="Path to file to write definition of computer from "
+             "declaration.",
+             type=str),
+      Option("-n", "--dry_run",
+             help="Apply no changes, only print what would happen.",
+             type=str),
+      Option("-v", "--verbose",
+             default=False,
+             action="store_true",
+             help="Verbose output."),
+      Option("-c", "--console",
+             default=False,
+             action="store_true",
+             help="Console output."),
+      Option('--alter_user', choices=['True', 'False'],
+        help="Shall slapformat alter user database [default: True]"),
+      Option('--alter_network', choices=['True', 'False'],
+        help="Shall slapformat alter network configuration [default: True]"),
+      ])
+
+  def check_args(self):
+    """
+    Check arguments
+    """
+    (options, args) = self.parse_args()
+    if len(args) != 1:
+      self.error("Incorrect number of arguments")
+    return options, args[0]
+
+def run(config):
+  try:
+    # Define the computer
+    if config.input_definition_file:
+      filepath = os.path.abspath(config.input_definition_file)
+      config.logger.info('Using definition file %r' % filepath)
+      computer_definition = ConfigParser.RawConfigParser()
+      computer_definition.read(filepath)
+      bridge = None
+      address = None
+      netmask = None
+      if computer_definition.has_option('computer', 'address'):
+        address, netmask = computer_definition.get('computer', 'address').split('/')
+      if config.alter_network and config.bridge_name is not None \
+          and config.ipv4_local_network is not None:
+        bridge = Bridge(config.bridge_name, config.ipv4_local_network)
+      computer = Computer(
+          reference=config.computer_id,
+          bridge=bridge,
+          addr=address,
+          netmask=netmask,
+        )
+      partition_list = []
+      for partition_number in range(int(config.partition_amount)):
+        section = 'partition_%s' % partition_number
+        user = User(computer_definition.get(section, 'user'))
+        address_list = []
+        for a in computer_definition.get(section, 'address').split():
+          address, netmask = a.split('/')
+          address_list.append(dict(addr=address, netmask=netmask))
+        tap = Tap(computer_definition.get(section, 'network_interface'))
+        partition_list.append(Partition(reference=computer_definition.get(section, 'pathname'),
+            path=os.path.join(config.instance_root, computer_definition.get(section, 'pathname')),
+            user=user,
+            address_list=address_list,
+            tap=tap,
+            ))
+      computer.partition_list = partition_list
+    else:
+      # no definition file, figure out computer
+      if os.path.exists(config.computer_xml):
+        config.logger.info('Loading previous computer data from %r' % config.computer_xml)
+        computer = Computer.load(config.computer_xml, reference=config.computer_id)
+        # Connect to the bridge interface defined by the configuration
+        computer.bridge = Bridge(config.bridge_name, config.ipv4_local_network)
+      else:
+        # If no pre-existent configuration found, creating a new computer object
+        config.logger.warning('Creating new data computer with id %r' % config.computer_id)
+        computer = Computer(
+          reference=config.computer_id,
+          bridge=Bridge(config.bridge_name, config.ipv4_local_network),
+          addr=None,
+          netmask=None,
+        )
+
+      partition_amount = int(config.partition_amount)
+      existing_partition_amount = len(computer.partition_list)
+      if existing_partition_amount > partition_amount:
+        raise ValueError('Requested amount of computer partitions (%s) is lower '
+            'then already configured (%s), cannot continue' % (partition_amount,
+              len(computer.partition_list)))
+
+      config.logger.info('Adding %s new partitions' %
+          (partition_amount-existing_partition_amount))
+      for nb_iter in range(existing_partition_amount, partition_amount):
+        # add new ones
+        user = User("%s%s" % (config.user_base_name, nb_iter))
+
+        tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
+
+        path = os.path.join(config.instance_root, "%s%s" % (
+                             config.partition_base_name, nb_iter))
+        computer.partition_list.append(
+          Partition(
+            reference="%s%s" % (config.partition_base_name, nb_iter),
+            path=path,
+            user=user,
+            address_list=None,
+            tap=tap,
+            ))
+
+    computer.instance_root = config.instance_root
+    computer.software_root = config.software_root
+    config.logger.info('Updating computer')
+    address = computer.getAddress()
+    computer.address = address['addr']
+    computer.netmask = address['netmask']
+
+    if config.output_definition_file:
+      computer_definition = ConfigParser.RawConfigParser()
+      computer_definition.add_section('computer')
+      if computer.address is not None and computer.netmask is not None:
+        computer_definition.set('computer', 'address', '/'.join([computer.address, computer.netmask]))
+      partition_number = 0
+      for partition in computer.partition_list:
+        section = 'partition_%s' % partition_number
+        computer_definition.add_section(section)
+        address_list = []
+        for address in partition.address_list:
+          address_list.append('/'.join([address['addr'], address['netmask']]))
+        computer_definition.set(section, 'address', ' '.join(address_list))
+        computer_definition.set(section, 'user', partition.user.name)
+        computer_definition.set(section, 'user', partition.user.name)
+        computer_definition.set(section, 'network_interface', partition.tap.name)
+        computer_definition.set(section, 'pathname', partition.reference)
+        partition_number += 1
+      filepath = os.path.abspath(config.output_definition_file)
+      computer_definition.write(open(filepath, 'w'))
+      config.logger.info('Stored computer definition in %r' % filepath)
+    computer.construct(alter_user=config.alter_user,
+        alter_network=config.alter_network)
+
+    # Dumping and sending to the erp5 the current configuration
+    computer.dump(config.computer_xml)
+    config.logger.info('Posting information to %r' % config.master_url)
+    computer.send(config)
+  except:
+    config.logger.exception('Uncaught exception:')
+    raise
+
+class Config:
+  def checkRequiredBinary(self, binary_list):
+    missing_binary_list = []
+    for b in binary_list:
+      try:
+        callAndRead([b])
+      except ValueError:
+        pass
+      except OSError:
+        missing_binary_list.append(b)
+    if missing_binary_list:
+      raise UsageError('Some required binaries are missing or not functional: %s'%
+           ','.join(missing_binary_list))
+
+  def setConfig(self, option_dict, configuration_file_path):
+    """
+    Set options given by parameters.
+    """
+    self.key_file = None
+    self.cert_file = None
+    # Set options parameters
+    for option, value in option_dict.__dict__.items():
+      setattr(self, option, value)
+
+    # Load configuration file
+    configuration_parser = ConfigParser.SafeConfigParser()
+    configuration_parser.read(configuration_file_path)
+    # Merges the arguments and configuration
+    for section in ("slapformat", "slapos"):
+      configuration_dict = dict(configuration_parser.items(section))
+      for key in configuration_dict:
+        if not getattr(self, key, None):
+          setattr(self, key, configuration_dict[key])
+
+    # setup some nones
+    for parameter in ['bridge_name', 'partition_base_name', 'user_base_name',
+        'tap_base_name', 'ipv4_local_network']:
+      if getattr(self, parameter, None) is None:
+        setattr(self, parameter, None)
+
+    # Set defaults lately
+    if self.alter_network is None:
+      self.alter_network = 'True'
+    if self.alter_user is None:
+      self.alter_user = 'True'
+
+    # set up logging
+    self.logger = logging.getLogger("slapformat")
+    self.logger.setLevel(logging.INFO)
+    if self.console:
+      self.logger.addHandler(logging.StreamHandler())
+
+    # Convert strings to booleans
+    root_needed = False
+    for o in ['alter_network', 'alter_user']:
+      if getattr(self, o).lower() == 'true':
+        root_needed = True
+        setattr(self, o, True)
+      elif getattr(self, o).lower() == 'false':
+        setattr(self, o, False)
+      else:
+        message = 'Option %r needs to be "True" or "False", wrong value: %r' % (
+            o, getattr(self, o))
+        self.logger.error(message)
+        raise UsageError(message)
+
+    if self.alter_user:
+      self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
+    if self.alter_network:
+      self.checkRequiredBinary(['brctl', 'ip', 'tunctl'])
+
+    
+    # check root
+    if root_needed and os.getuid() != 0:
+      message = "Root rights are needed"
+      self.logger.error(message)
+      raise UsageError(message)
+
+    if self.log_file:
+      if not os.path.isdir(os.path.dirname(self.log_file)):
+        # fallback to console only if directory for logs does not exists and
+        # continue to run
+        raise ValueError('Please create directory %r to store %r log file' % (
+          os.path.dirname(self.log_file), self.log_file))
+      else:
+        file_handler = logging.FileHandler(self.log_file)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        self.logger.addHandler(file_handler)
+        self.logger.info('Configured logging to file %r' % self.log_file)
+    # Check mandatory options
+    for parameter in ('computer_id', 'instance_root', 'master_url',
+                      'software_root', 'computer_xml'):
+      if not getattr(self, parameter, None):
+        raise UsageError("Parameter '%s' is not defined." % parameter)
+
+    self.logger.info("Started.")
+    if self.verbose:
+      self.logger.setLevel(logging.DEBUG)
+      self.logger.debug("Verbose mode enabled.")
+
+    # Calculate path once
+    self.computer_xml = os.path.abspath(self.computer_xml)
+
+
+def main():
+  "Run default configuration."
+  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
+
+  try:
+    # Parse arguments
+    options, configuration_file_path = Parser(usage=usage).check_args()
+    config = Config()
+    config.setConfig(options, configuration_file_path)
+    run(config)
+  except UsageError, err:
+    print >>sys.stderr, err.msg
+    print >>sys.stderr, "For help use --help"

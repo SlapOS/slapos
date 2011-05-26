@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- Define the XML Schema of a transaction -->
+  <xs:element name="instance">
+    <xs:complexType>
+      <xs:sequence>
+
+        <xs:element name="parameter" minOccurs="0" maxOccurs="unbounded">
+          <xs:complexType mixed="true">
+            <xs:attribute name="id" use="required" type="xs:string"/>
+          </xs:complexType>
+        </xs:element>
+
+      </xs:sequence>
+    </xs:complexType>
+
+    <xs:unique name="unique_instance_parameter_id">
+      <xs:selector xpath="./parameter"/>
+      <xs:field xpath="@id"/>
+    </xs:unique>
+
+  </xs:element>
+</xs:schema>

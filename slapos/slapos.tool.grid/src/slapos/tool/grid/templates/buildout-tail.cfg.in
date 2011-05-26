@@ -1,0 +1,16 @@
+# This is beginning of zc.builodout profile's tail added by slapgrid
+[buildout]
+# put buildout generated binaries in specific directory
+bin-directory = ${buildout:directory}/sbin
+
+# protect software and run parts offline
+offline = true
+
+[slap_connection]
+computer_id = %(computer_id)s
+partition_id = %(partition_id)s
+server_url = %(server_url)s
+software_release_url = %(software_release_url)s
+key_file = %(key_file)s
+cert_file = %(cert_file)s
+# This is end of zc.builodout profile's tail added by slapgrid

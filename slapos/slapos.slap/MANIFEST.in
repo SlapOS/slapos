@@ -1,0 +1,2 @@
+include CHANGES.txt
+include src/slapos/slap/doc/software_instance.xsd
