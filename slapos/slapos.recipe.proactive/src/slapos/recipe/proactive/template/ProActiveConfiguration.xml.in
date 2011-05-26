@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ProActiveUserProperties>
+    <properties>
+    <prop key="proactive.net.nolocal" value="true"/>
+    <prop key="proactive.communication.protocol" value="pamr"/>
+    <prop key="proactive.net.router.address" value="%(router_address)s"/>
+    <prop key="proactive.net.router.port" value="%(port)s"/>
+    </properties>
+    <javaProperties>
+    </javaProperties>
+</ProActiveUserProperties>
