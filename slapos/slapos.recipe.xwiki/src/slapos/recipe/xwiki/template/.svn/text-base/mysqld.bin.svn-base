@@ -1,0 +1,2 @@
+#!/bin/sh
+exec %(real_binary)s --defaults-file=%(configuration_file)s
