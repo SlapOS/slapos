@@ -12,6 +12,11 @@ for f in glob.glob(os.path.join('slapos', 'recipe', 'README.*.txt')):
   long_description += subname + '\n' + '=' * len(subname) + '\n\n' \
     + open(f).read() + '\n'
 
+extras_require = {
+  'build': [],
+  'buildcmmi': [],
+}
+
 setup(name=name,
       version=version,
       description="Box full of slapos recipes.",
@@ -35,4 +40,5 @@ setup(name=name,
           'build = slapos.recipe.build:Script',
           'buildcmmi = slapos.recipe.build:Cmmi',
       ]},
+      extras_require=extras_require,
     )
