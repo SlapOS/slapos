@@ -1,4 +1,0 @@
-recursive-include src/erp5/recipe/siptesterinstance *.in
-include README.txt
-include CHANGES.txt
-

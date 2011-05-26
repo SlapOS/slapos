@@ -57,5 +57,6 @@ setup(name=name,
           'nosqltestbed = slapos.recipe.nosqltestbed:NoSQLTestBed',
           'proactive = slapos.recipe.proactive:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
+          'siptester = slapos.recipe.siptester:SipTesterRecipe',
       ]},
     )
