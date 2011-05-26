@@ -1,4 +1,4 @@
-from slapos.lib.recipe.BaseSlapRecipe import BaseSlapRecipe
+from slapos.recipe.librecipe import BaseSlapRecipe
 import zc.buildout
 class Recipe(BaseSlapRecipe):
   def _install(self):

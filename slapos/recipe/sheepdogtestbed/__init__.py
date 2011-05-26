@@ -29,7 +29,7 @@ import os
 import urllib
 import urllib2
 import pkg_resources
-from slapos.lib.recipe.BaseSlapRecipe import BaseSlapRecipe
+from slapos.recipe.librecipe import BaseSlapRecipe
 
 class SheepDogTestBed(BaseSlapRecipe):
 

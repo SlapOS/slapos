@@ -26,7 +26,7 @@
 ##############################################################################
 import os
 import binascii
-from slapos.lib.recipe.BaseSlapRecipe import BaseSlapRecipe
+from slapos.recipe.librecipe import BaseSlapRecipe
 
 import pkg_resources
 

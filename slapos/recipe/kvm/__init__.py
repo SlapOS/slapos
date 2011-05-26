@@ -26,7 +26,7 @@
 ##############################################################################
 import os
 import sys
-from slapos.lib.recipe.BaseSlapRecipe import BaseSlapRecipe
+from slapos.recipe.librecipe import BaseSlapRecipe
 import subprocess
 import binascii
 import random

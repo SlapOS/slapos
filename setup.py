@@ -34,7 +34,6 @@ setup(name=name,
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
-        'slapos.lib.recipe', # makes instantiation recipes simpler
         'slapos.slap', # uses internally
 #        'slapos.tool.cloudmgr', # needed for libclouds # disabled, as not available
         'xml_marshaller', # need to communication with slapgrid
