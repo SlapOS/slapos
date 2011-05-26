@@ -1,0 +1,2 @@
+slapos.recipe.nosqltestbed
+==========================

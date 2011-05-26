@@ -1,0 +1,4 @@
+#!/bin/sh
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+exec %(nosqltester_binary)s -h %(host_address)s -a %(tester_address)s -r %(report_path)s -b "%(binary)s"
