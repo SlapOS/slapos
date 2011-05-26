@@ -1,0 +1,33 @@
+#
+# Logging options:
+#
+--log-level 0
+--app-log-level 0
+
+#
+# Account 0:
+#
+--id %(caller_id)s
+--registrar  %(caller_registrar)s
+--realm %(caller_realm)s
+--username %(caller_username)s
+--password %(caller_password)s
+
+--reg-timeout 300
+#
+# Network settings:
+#
+--local-port 5060
+
+#
+# Media settings:
+#
+--null-audio
+--playback-lat 100
+--rtp-port 4000
+
+#
+# User agent:
+#
+--max-calls 4
+--duration 300

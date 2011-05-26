@@ -1,0 +1,18 @@
+Changelog
+=========
+
+0.0.3 (2010-10-13)
+----------------
+
+- Use slapos.librecipe to simplify the recipe
+
+0.0.2 (2010-10-13)
+----------------
+
+- Change erp5.recipe.siptesterinstance namespace to slapos.recipe.siptester
+
+0.0.1 (2010-09-02)
+----------------
+
+- Initial version
+  [Romain Courteaud]

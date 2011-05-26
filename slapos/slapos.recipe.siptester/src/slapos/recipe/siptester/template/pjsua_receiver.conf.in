@@ -1,0 +1,35 @@
+#
+# Logging options:
+#
+--log-level 0
+--app-log-level 0
+
+#
+# Account 0:
+#
+--id %(receiver_id)s
+--registrar %(receiver_registrar)s
+--realm %(receiver_realm)s
+--username %(receiver_username)s
+--password %(receiver_password)s
+--reg-timeout 300
+
+#
+# Network settings:
+#
+--local-port 5060
+
+#
+# Media settings:
+#
+--null-audio
+--auto-play
+--play-file %(wav_path)s
+--playback-lat 100
+--rtp-port 4000
+
+#
+# User agent:
+#
+--auto-answer 200
+--max-calls 4
