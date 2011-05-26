@@ -47,5 +47,6 @@ setup(name=name,
           'download = slapos.recipe.download:Recipe',
           'erp5 = slapos.recipe.erp5:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
+          'helloworld = slapos.recipe.helloworld:Recipe',
       ]},
     )
