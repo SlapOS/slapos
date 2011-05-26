@@ -58,5 +58,6 @@ setup(name=name,
           'proactive = slapos.recipe.proactive:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
           'siptester = slapos.recipe.siptester:SipTesterRecipe',
+          'slaprunner = slapos.recipe.slaprunner:Recipe',
       ]},
     )
