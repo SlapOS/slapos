@@ -54,5 +54,6 @@ setup(name=name,
           'libcloud = slapos.recipe.libcloud:Recipe',
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
+          'nosqltestbed = slapos.recipe.nosqltestbed:NoSQLTestBed',
       ]},
     )
