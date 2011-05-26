@@ -1,0 +1,88 @@
+Changelog
+=========
+1.2 (unreleased)
+----------------
+
+1.0.14 (2011-02-01)
+-------------------
+
+- Remove cpu parameter which is not supported
+
+1.0.13 (2011-02-01)
+-------------------
+
+- KVM size parameters are provided by the instance profile
+
+1.0.12 (2011-02-01)
+-------------------
+
+- Generate random mac address
+
+1.0.11 (2011-01-18)
+-------------------
+
+- Updated recipe to the new BaseSlapRecipe.py
+  [Davide Tammaro]
+
+1.0.10 (2011-01-10)
+-------------------
+
+- Remove KVM dhcp server
+
+1.0.9 (2010-12-28)
+------------------
+
+- Wait the QMP command before starting
+
+1.0.8 (2010-12-28)
+------------------
+
+- Wait for KVM to be started
+
+1.0.7 (2010-11-30)
+------------------
+
+  - Add controller template
+
+1.0.6 (2010-11-29)
+------------------
+
+  - Protect vnc session with a password
+
+1.0.5 (2010-11-24)
+------------------
+
+  - Write on disk image
+  - Add bios menu
+  - Create a disk image detected as virtual disk
+  - Use latest slapos.librecipe API
+  - Use nbd to access the cdrom image
+
+1.0.3 (2010-10-26)
+------------------
+  - Add MANIFEST.in
+  - Remove ssh feature, with is not compatible with the slapos design
+  - Simplify runner generation
+  - Adding python gzip version instead of linux gzip one
+
+1.0.2 (2010-10-25)
+------------------
+- Slapify kvm installation [Charles Villette]
+  - Adding tests to configuration options
+  - Adding memory limit support
+  - Adding configuration wrapper
+  - Adding new configuration options for kvm __init__
+  - Adding non-hardcoded qemu path for kvm launch
+  - Changing names to slapos.recipe instead of kvm.recipe
+
+1.0.1 (2010-05-10)
+-------------------
+
+- Reimplemented ssh.py to use SSHClient.
+  [Rafael Monnerat]
+
+1.0 (2010-05-04)
+----------------
+
+- Initial Release
+  [Rafael Monnerat]

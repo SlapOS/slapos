@@ -1,0 +1,4 @@
+#!/bin/sh
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+exec %(python_path)s %(slapreport_path)s $1 %(database_path)s
