@@ -62,5 +62,6 @@ setup(name=name,
           'slaprunner = slapos.recipe.slaprunner:Recipe',
           'template = slapos.recipe.template:Recipe',
           'testnode = slapos.recipe.testnode:Recipe',
+          'vifib = slapos.recipe.vifib:Recipe',
       ]},
     )
