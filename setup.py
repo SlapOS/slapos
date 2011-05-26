@@ -29,6 +29,7 @@ setup(name=name,
       include_package_data=True,
       install_requires=[
         'PyXML', # for full blown python interpreter
+        'Zope2', # some recipes like to play with zope
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
@@ -44,6 +45,7 @@ setup(name=name,
           'build = slapos.recipe.build:Script',
           'buildcmmi = slapos.recipe.build:Cmmi',
           'download = slapos.recipe.download:Recipe',
+          'erp5 = slapos.recipe.erp5:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
       ]},
     )
