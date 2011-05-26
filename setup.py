@@ -53,5 +53,6 @@ setup(name=name,
           'kvm = slapos.recipe.kvm:Recipe',
           'libcloud = slapos.recipe.libcloud:Recipe',
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
+          'nbdserver = slapos.recipe.nbdserver:Recipe',
       ]},
     )
