@@ -61,5 +61,6 @@ setup(name=name,
           'siptester = slapos.recipe.siptester:SipTesterRecipe',
           'slaprunner = slapos.recipe.slaprunner:Recipe',
           'template = slapos.recipe.template:Recipe',
+          'testnode = slapos.recipe.testnode:Recipe',
       ]},
     )
