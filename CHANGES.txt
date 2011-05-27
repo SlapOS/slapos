@@ -1,4 +1,4 @@
-0.1 (unreleased)
+0.1 (2011-05-27)
 ================
 
  * Merged slapos.slap, slapos.tool.console, slapos.tool.format,
