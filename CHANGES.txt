@@ -1,0 +1,6 @@
+0.1 (unreleased)
+================
+
+ * Merged slapos.slap, slapos.tool.console, slapos.tool.format,
+   slapos.tool.grid, slapos.tool.libnetworkcache and slapos.tool.proxy into one
+   package: slapos.core
