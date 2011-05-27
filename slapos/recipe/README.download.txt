@@ -6,6 +6,8 @@ Extremely simple recipe to download using zc.buildout download utility.
 Usage
 -----
 
+::
+
   [buildout]
   parts =
     download

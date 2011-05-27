@@ -7,6 +7,8 @@ ability to download template over the network
 Usage
 -----
 
+::
+
   [buildout]
   parts = template
 

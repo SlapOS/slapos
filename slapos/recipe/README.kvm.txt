@@ -19,6 +19,8 @@ The follow examples lists different kind of configurations.
 KVM with Remote and gzipped Image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+::
+
     [kvm-testing-with-remote-gzip-image]
     image = http://URL/public.mdv2010.0_x86_64.qcow2.img.gz
 
@@ -56,6 +58,8 @@ KVM with Remote and gzipped Image
 KVM with Remote and raw Image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+::
+
     [kvm-testing-with-remote-raw-image]
     image = http://URL/public.mdv2010.0_x86_64.qcow2.img
     md5_download = 1a4e371a4e371a4e371a4e371a4e37
@@ -68,7 +72,7 @@ KVM with Remote and raw Image
 KVM with direct local Image file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This does not copy and/or download the image.
+This does not copy and/or download the image::
 
     [kvm-testing-with-local-image]
 
@@ -80,7 +84,7 @@ This does not copy and/or download the image.
 KVM with a linux partition
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This does not copy and/or download the image.
+This does not copy and/or download the image::
 
     [kvm-testing-a-linux-partition]
 
