@@ -8,9 +8,7 @@ long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
 
 for f in glob.glob(os.path.join('slapos', 'recipe', 'README.*.txt')):
-  subname = os.path.basename(f)
-  long_description += subname + '\n' + '=' * len(subname) + '\n\n' \
-    + open(f).read() + '\n'
+  long_description += '\n' + open(f).read() + '\n'
 
 # extras_requires are not used because of
 #   https://bugs.launchpad.net/zc.buildout/+bug/85604
