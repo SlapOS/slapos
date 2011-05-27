@@ -1,4 +1,4 @@
-0.1 (unreleased)
+0.1 (2011-05-27)
 ================
 
   * All slapos.recipe.* became slapos.cookbook:* [Łukasz Nowak]
