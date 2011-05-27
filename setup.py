@@ -36,7 +36,6 @@ setup(name=name,
       'netaddr', # to play safely with IPv6 prefixes
       'netifaces', # to fetch information about network devices
       'setuptools', # namespaces
-      'slapos.slap', # used to communicate with master
       'supervisor', # slapgrid uses supervisor to manage processes
       'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
                                # XML
