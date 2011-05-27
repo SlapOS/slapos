@@ -1,10 +1,10 @@
-Introduction
-==============
+libnetworkcache
+===============
 The goal of libnetworkcache python library is to abstract the REST calls.
 It works as wrapper of python httplib to use the Networkcache HTTP Server.
 
 API
-======
+---
 So, it must provide 2 methods:
 
  put(file)

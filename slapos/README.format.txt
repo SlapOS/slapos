@@ -1,5 +1,5 @@
-SlapOS Formatter
-================
+format
+======
 
 slapformat is an application to prepare SlapOS ready node (machine).
 
@@ -16,7 +16,7 @@ configured SlapOS server.
 This program shall be only run by root.
 
 Requirements
-============
+------------
 
 Linux with IPv6, bridging and tap interface support.
 

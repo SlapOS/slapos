@@ -1,5 +1,5 @@
-slapgrid
-========
+grid
+====
 
 slapgrid is a client of SLAPos. SLAPos provides support for deploying a SaaS
 system in a minute.
@@ -9,7 +9,7 @@ For more informations about SLAP and SLAPos, please see the SLAP documentation.
 
 
 Requirements
-============
+------------
 
 A working SLAP server with informations about your computer, in order to
 retrieve them.
@@ -25,7 +25,7 @@ releases.
 
 
 Concepts
-========
+--------
 
 Here are the fundamental concepts of slapgrid : 
 A Software Release (SR) is just a software.
@@ -36,7 +36,7 @@ i.e configuring it for your needs, as a Computer Partition.
 
 
 How it works
-============
+------------
 
 When run, slapgrid will authenticate to the SLAP library with a computer_id and
 fetch the list of Software Releases to install or remove and Computer
@@ -47,14 +47,11 @@ Partition.
 
 
 Installation
-============
+------------
 
-With easy_install :
-$ easy_install slapgrid
+With easy_install::
 
-With buildout (for developers): 
-Checkout svn.erp5.org/repos/vifib/software_release/slapgrid.development,
-then read the README.txt.
+  $ easy_install slapgrid
 
 slapgrid needs several directories to be created and configured before being
 able to run : a software releases directory, and an instances directory with
@@ -65,7 +62,7 @@ directory should belongs to this specific user, with permissions of 0750.
 
 
 Usage
-=====
+-----
 
 slapgrid needs several informations in order to run. You can specify them by
 adding arguments to the slapgrid command line, or by putting then in a
@@ -74,22 +71,25 @@ Beware : you need a valid computer resource on server side.
 
 
 Examples
-========
+--------
 
 simple example : 
-Just run slapgrid : 
-$ slapgrid --instance-root /path/to/instance/root --software-root
-/path/to/software_root --master-url https://some.server/some.resource
---computer-id my.computer.id
+Just run slapgrid:
+
+  $ slapgrid --instance-root /path/to/instance/root --software-root
+  /path/to/software_root --master-url https://some.server/some.resource
+  --computer-id my.computer.id
 
 
-configuration file example : 
-[slapgrid]
-instance_root = /path/to/instance/root
-software_root = /path/to/software/root
-master_url = https://slapos.server/slap_service
-computer_id = my.computer.id
+configuration file example::
 
-then run slapgrid : 
-$ slapgrid --configuration-file = path/to/configuration/file
+  [slapgrid]
+  instance_root = /path/to/instance/root
+  software_root = /path/to/software/root
+  master_url = https://slapos.server/slap_service
+  computer_id = my.computer.id
+
+then run slapgrid::
+
+  $ slapgrid --configuration-file = path/to/configuration/file
 

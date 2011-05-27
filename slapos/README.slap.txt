@@ -4,7 +4,7 @@ slap
 Simple Language for Accounting and Provisioning python library.
 
 Developer note - python version
-===============================
+-------------------------------
 
 This library is used on client (slapgrid) and server side.
 Server is using python2.4 and client is using python2.6
@@ -12,7 +12,7 @@ Having this in mind, code of this library *have* to work
 on python2.4
 
 How it works
-============
+------------
 
 The SLAP main server which is in charge of service coordination receives from participating servers the number of computer paritions which are available, the type of resource which a party is ready provide, and request from parties for resources which are needed.
 
