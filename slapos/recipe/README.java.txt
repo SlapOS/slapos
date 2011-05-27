@@ -1,5 +1,5 @@
-slapos.recipe.java
-=====================
+java
+====
 
     This recipe downloads and installs java in your buildout.
 
@@ -15,18 +15,18 @@ Buildout configuration:
         ...
 
         [java]
-        recipe = slapos.recipe.java
+        recipe = slapos.cookbook:java
 
     By default it will fetch Java 6u25, but you might want to install from another location or another version like this::
 
         [java]
-        recipe = slapos.recipe.java
+        recipe = slapos.cookbook:java
         download-url = ftp://location/to/self-extracting/java.bin
 
     Or you can install openjdk instead.
 
         [java]
-        recipe = slapos.recipe.java
+        recipe = slapos.cookbook:java
 	flavour = openjdk
 
 

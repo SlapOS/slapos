@@ -1,7 +1,7 @@
-Library for creating SlapOS recipes for software instantiation
-==============================================================
+librecipe
+=========
 
-Thanks to using slapos.lib.recipe it is easier to create zc.buildout recipes in SlapOS environment.
+Thanks to using slapos.cookbook:librecipe it is easier to create zc.buildout recipes in SlapOS environment.
 
 How to use?
 -----------

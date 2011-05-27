@@ -1,5 +1,5 @@
-slapos.recipe.build
-===================
+build
+=====
 
 Recipe to build the software.
 
@@ -9,11 +9,9 @@ Example buildout::
 parts =
   file
 
-develop = slapos.recipe.build
-
 [zlib]
 # Use standard configure, make, make install way
-recipe = slapos.recipe.build:cmmi
+recipe = slapos.cookbook:build
 url = http://prdownloads.sourceforge.net/libpng/zlib-1.2.5.tar.gz?download
 md5sum = c735eab2d659a96e5a594c9e8541ad63
 slapos_promisee =
@@ -33,7 +31,7 @@ slapos_promisee =
   file:share/man/man3/zlib.3
 
 [file]
-recipe = slapos.recipe.build:cmmi
+recipe = slapos.cookbook:buildcmmi
 url = ftp://ftp.astron.com/pub/file/file-5.04.tar.gz
 md5sum = accade81ff1cc774904b47c72c8aeea0
 environment =
@@ -64,7 +62,7 @@ slapos_promisee =
 
 [somethingelse]
 # default way with using script
-recipe = slapos.recipe.build
+recipe = slapos.cookbook:build
 url_0 = http://host/path/file.tar.gz
 md5sum = 9631070eac74f92a812d4785a84d1b4e
 script =
@@ -75,14 +73,6 @@ script =
   execute('make install DEST=%(location)s')
 slapos_promisee =
   ...
-
-[anythingelse]
-# reusing different recipe?
-recipe = slapos.recipe.build:backend
-backend = hexagonit.recipe.cmmi
-slapos_promisee =
-  ...
-# parameters to build
 
 TODO:
 

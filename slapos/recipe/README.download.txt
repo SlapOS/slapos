@@ -1,5 +1,5 @@
-slapos.recipe.download
-======================
+download
+========
 
 Extremely simple recipe to download using zc.buildout download utility.
 
@@ -11,7 +11,7 @@ Usage
     download
 
   [download]
-  recipe = slapos.recipe.download
+  recipe = slapos.cookbook:download
   url = https://some.url/file
 
 Such profile will download https://some.url/file and put it in

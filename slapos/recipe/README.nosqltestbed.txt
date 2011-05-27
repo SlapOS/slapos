@@ -1,2 +1,2 @@
-slapos.recipe.nosqltestbed
-==========================
+nosqltestbed
+============

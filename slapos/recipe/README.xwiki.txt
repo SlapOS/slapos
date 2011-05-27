@@ -1,1 +1,4 @@
-The slapos.recipe.xwiki aims to instantiate an xwiki environment.
+xwiki
+=====
+
+Instantiates an xwiki environment.

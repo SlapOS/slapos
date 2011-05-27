@@ -1,5 +1,8 @@
+kvm
+===
+
 Introduction
-============
+------------
 
 The erp5.recipe.kvm aims to integrate KVM setups and buildout. This recipe is 
 able to download one remote image and setup a KVM environment to use it. 
@@ -8,13 +11,13 @@ This recipe is also capable to reuse images or partitions already present on
 disk to create the setup. 
 
 Examples
-========
+--------
 
 The follow examples lists different kind of configurations.
 
 
 KVM with Remote and gzipped Image
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     [kvm-testing-with-remote-gzip-image]
     image = http://URL/public.mdv2010.0_x86_64.qcow2.img.gz
@@ -51,7 +54,7 @@ KVM with Remote and gzipped Image
     ssh_key_path = /path/to/mykey.key
 
 KVM with Remote and raw Image
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     [kvm-testing-with-remote-raw-image]
     image = http://URL/public.mdv2010.0_x86_64.qcow2.img
@@ -63,7 +66,7 @@ KVM with Remote and raw Image
     ### The Rest Same configuration as previous ###
 
 KVM with direct local Image file
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This does not copy and/or download the image.
 
@@ -75,7 +78,7 @@ This does not copy and/or download the image.
     ### The Rest Same configuration as previous ###
 
 KVM with a linux partition
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This does not copy and/or download the image.
 
@@ -87,7 +90,7 @@ This does not copy and/or download the image.
 
 
 Options
-=======
+-------
 
 
 location
@@ -188,7 +191,7 @@ kvm_run_directory
 
 
 Generated Commands
-====================
+------------------
 
 Few scripts are generated to you manage your KVM instance. The scripts names are
 created with the followed standard:
@@ -196,7 +199,7 @@ created with the followed standard:
    KVM-PARTS-NAME-ctl
 
 Commands usage
----------------
+~~~~~~~~~~~~~~
    
 KVM-PARTS-NAME-ctl (start|stop|status|restart)
   

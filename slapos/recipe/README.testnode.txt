@@ -1,1 +1,4 @@
-The slapos.recipe.tesnode aims to install generic testnode.
+testnode
+========
+
+Generic testnode.

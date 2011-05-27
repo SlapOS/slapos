@@ -1,5 +1,5 @@
-slapos.recipe.template
-======================
+template
+========
 
 Fully networked template recipe, reusing collective.recipe.template with
 ability to download template over the network
@@ -11,7 +11,7 @@ Usage
   parts = template
 
   [template]
-  recipe = slapos.recipe.template
+  recipe = slapos.cookbook:template
   url = http://server/with/template
   # optional md5sum
   md5sum = 1234567890

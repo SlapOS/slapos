@@ -1,2 +1,2 @@
-slapos.recipe.sheepdogtestbed
-=============================
+sheepdogtestbed
+===============
