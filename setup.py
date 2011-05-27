@@ -33,7 +33,7 @@ setup(name=name,
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
         'slapos.slap', # uses internally
-#        'slapos.tool.cloudmgr', # needed for libclouds # disabled, as not available
+#        'slapos.toolbox', # needed for libcloud, cloudmgr, disabled for now
         'xml_marshaller', # need to communication with slapgrid
         'zc.buildout', # plays with buildout
         'zc.recipe.egg', # for scripts generation
