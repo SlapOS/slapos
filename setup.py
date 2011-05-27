@@ -3,7 +3,7 @@ import glob
 import os
 
 version = '0.1'
-name = 'slapos.cookbook'
+name = 'slapos.UNKOWN_NAME_TODO'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
 

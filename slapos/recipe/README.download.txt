@@ -13,7 +13,7 @@ Usage
     download
 
   [download]
-  recipe = slapos.cookbook:download
+  recipe = slapos.UNKOWN_NAME_TODO:download
   url = https://some.url/file
 
 Such profile will download https://some.url/file and put it in

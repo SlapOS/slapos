@@ -1,4 +1,4 @@
 0.1 (unreleased)
 ================
 
-  * All slapos.recipe.* became slapos.cookbook:* [Łukasz Nowak]
+  * All slapos.recipe.* became slapos.UNKOWN_NAME_TODO:* [Łukasz Nowak]

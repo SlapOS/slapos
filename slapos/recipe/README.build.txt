@@ -11,7 +11,7 @@ Example buildout::
 
   [zlib]
   # Use standard configure, make, make install way
-  recipe = slapos.cookbook:build
+  recipe = slapos.UNKOWN_NAME_TODO:build
   url = http://prdownloads.sourceforge.net/libpng/zlib-1.2.5.tar.gz?download
   md5sum = c735eab2d659a96e5a594c9e8541ad63
   slapos_promisee =
@@ -31,7 +31,7 @@ Example buildout::
     file:share/man/man3/zlib.3
 
   [file]
-  recipe = slapos.cookbook:buildcmmi
+  recipe = slapos.UNKOWN_NAME_TODO:buildcmmi
   url = ftp://ftp.astron.com/pub/file/file-5.04.tar.gz
   md5sum = accade81ff1cc774904b47c72c8aeea0
   environment =
@@ -62,7 +62,7 @@ Example buildout::
 
   [somethingelse]
   # default way with using script
-  recipe = slapos.cookbook:build
+  recipe = slapos.UNKOWN_NAME_TODO:build
   url_0 = http://host/path/file.tar.gz
   md5sum = 9631070eac74f92a812d4785a84d1b4e
   script =
