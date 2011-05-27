@@ -13,7 +13,7 @@ Usage
   parts = template
 
   [template]
-  recipe = slapos.UNKOWN_NAME_TODO:template
+  recipe = slapos.cookbook:template
   url = http://server/with/template
   # optional md5sum
   md5sum = 1234567890

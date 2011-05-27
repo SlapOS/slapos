@@ -1,2 +1,2 @@
-slapos.UNKOWN_NAME_TODO
-=======================
+slapos.cookbook
+===============
