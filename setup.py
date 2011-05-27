@@ -14,7 +14,7 @@ for f in sorted(glob.glob(os.path.join('slapos', 'recipe', 'README.*.txt'))):
 #   https://bugs.launchpad.net/zc.buildout/+bug/85604
 setup(name=name,
       version=version,
-      description="Cook book of SlapOS recipes.",
+      description="SlapOS recipes.",
       long_description=long_description,
       classifiers=[
           "Framework :: Buildout :: Recipe",
