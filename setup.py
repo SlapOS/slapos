@@ -25,7 +25,7 @@ setup(name=name,
       classifiers=[
           "Programming Language :: Python",
         ],
-      keywords='slapos recipe',
+      keywords='slapos core',
       license='GPLv3',
       namespace_packages=['slapos'],
       packages=find_packages(),
