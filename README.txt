@@ -1,4 +1,4 @@
-slapos.recipebox
-================
+slapos.cookbook
+===============
 
-Box full of SlapOS ready recipes.
+Cook book of SlapOS recipes.

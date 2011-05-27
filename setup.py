@@ -16,13 +16,13 @@ for f in glob.glob(os.path.join('slapos', 'recipe', 'README.*.txt')):
 #   https://bugs.launchpad.net/zc.buildout/+bug/85604
 setup(name=name,
       version=version,
-      description="Box full of slapos recipes.",
+      description="Cook book of SlapOS recipes.",
       long_description=long_description,
       classifiers=[
           "Framework :: Buildout :: Recipe",
           "Programming Language :: Python",
         ],
-      keywords='slapos recipe box',
+      keywords='slapos recipe',
       license='GPLv3',
       namespace_packages=['slapos', 'slapos.recipe'],
       packages=find_packages(),
