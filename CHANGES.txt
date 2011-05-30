@@ -1,4 +1,4 @@
-0.2 (unreleased)
+0.2 (2011-05-30)
 ================
 
   * Allow to pass zope_environment in erp5 entry point [Łukasz Nowak]
