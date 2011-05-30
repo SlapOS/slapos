@@ -227,8 +227,9 @@ def bootstrapBuildout(path, buildout, additional_buildout_parametr_list=None,
   gid = stat_info.st_gid
 
   invocation_list = [sys.executable, '-S']
-  invocation_list.extend([buildout, 'bootstrap'])
+  invocation_list.append(buildout)
   invocation_list.extend(additional_buildout_parametr_list)
+  invocation_list.append('bootstrap')
   try:
     umask = os.umask(SAFE_UMASK)
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))
