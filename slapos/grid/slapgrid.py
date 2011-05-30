@@ -87,6 +87,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--usage-report-periodicity",
                     type=int, default="24",
                     help="The periodicity of usage report sends, in hours.")
+  parser.add_argument("--buildout", help="Location of buildout binary.",
+    default="buildout")
   parser.add_argument("--pidfile",
                     help="The location where pidfile will be created.")
   parser.add_argument("--logfile",
@@ -195,7 +197,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             cert_file=cert_file,
             master_ca_file=master_ca_file,
             certificate_repository_path=certificate_repository_path,
-            console=option_dict['console']),
+            console=option_dict['console'],
+            buildout=option_dict['buildout']),
           option_dict])
 
 
@@ -259,6 +262,7 @@ class Slapgrid(object):
                supervisord_socket,
                supervisord_configuration_path,
                usage_report_periodicity,
+               buildout,
                key_file=None,
                cert_file=None,
                master_ca_file=None,
@@ -289,6 +293,7 @@ class Slapgrid(object):
     self.supervisord_configuration_directory = \
         os.path.join(self.instance_etc_directory, 'supervisord.conf.d')
     self.console = console
+    self.buildout = buildout
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -347,8 +352,7 @@ class Slapgrid(object):
         software_release.building()
         software_release_uri = software_release.getURI()
         Software(url=software_release_uri, software_root=self.software_root,
-            console=self.console
-            ).install()
+            console=self.console, buildout=self.buildout).install()
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         software_release.error(exception)
@@ -399,8 +403,7 @@ class Slapgrid(object):
         server_url=self.master_url,
         software_release_url=software_url,
         certificate_repository_path=self.certificate_repository_path,
-        console=self.console
-        )
+        console=self.console, buildout=self.buildout)
       # There are no conditions to try to instanciate partition
       try:
         computer_partition_state = computer_partition.getState()

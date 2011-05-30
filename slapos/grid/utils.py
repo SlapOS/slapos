@@ -27,7 +27,6 @@
 import logging
 import hashlib
 import os
-import pkg_resources
 import stat
 import subprocess
 import sys
@@ -217,7 +216,7 @@ def dropPrivileges(uid, gid):
   logger.info('Succesfully dropped privileges to uid=%r gid=%r' % (uid, gid))
 
 
-def bootstrapBuildout(path, additional_buildout_parametr_list=None,
+def bootstrapBuildout(path, buildout, additional_buildout_parametr_list=None,
     console=False):
   if additional_buildout_parametr_list is None:
     additional_buildout_parametr_list = []
@@ -228,8 +227,7 @@ def bootstrapBuildout(path, additional_buildout_parametr_list=None,
   gid = stat_info.st_gid
 
   invocation_list = [sys.executable, '-S']
-  invocation_list.append(pkg_resources.resource_filename(__name__,
-    'zc.buildout-bootstap.py'))
+  invocation_list.extend([buildout, 'bootstrap'])
   invocation_list.extend(additional_buildout_parametr_list)
   try:
     umask = os.umask(SAFE_UMASK)
