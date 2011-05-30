@@ -1,7 +1,8 @@
 0.2 (unreleased)
 ================
 
- * No changes yet.
+ * Do not use buildout internally, but rather call bootstrap command of any
+   provided buildout binary. [Łukasz Nowak]
 
 0.1 (2011-05-27)
 ================
