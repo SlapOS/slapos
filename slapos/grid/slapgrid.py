@@ -87,8 +87,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--usage-report-periodicity",
                     type=int, default="24",
                     help="The periodicity of usage report sends, in hours.")
-  parser.add_argument("--buildout", help="Location of buildout binary.",
-    default="buildout")
+  parser.add_argument("--buildout", help="Location of buildout binary.")
   parser.add_argument("--pidfile",
                     help="The location where pidfile will be created.")
   parser.add_argument("--logfile",
