@@ -1,0 +1,20 @@
+[slapos]
+software_root = /opt/slapgrid
+instance_root = /srv/slapgrid
+master_url = http://www.vifib.com/
+computer_id = your computer id
+
+[slapformat]
+computer_xml = /opt/slapos/slapos.xml
+log_file = /opt/slapos/slapformat.log
+partition_amount = 200
+bridge_name = br0
+partition_base_name = slappart
+user_base_name = slapuser
+tap_base_name = slaptap
+ipv4_local_network = 10.0.0.0/16
+
+[slapproxy]
+host = 127.0.0.1
+port = 5000
+database_uri = :memory: # or /path/to/file

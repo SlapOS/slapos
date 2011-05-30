@@ -1,0 +1,14 @@
+[computer]
+
+[partition_0]
+address = 200.11.11.11/255.255.255.0
+user = myuser
+network_interface = virtual
+pathname = inpart0
+
+[partition_1]
+address = 3.3.3.3/255.255.0.0
+user = anotheruser
+network_interface = tpslaptap1
+pathname = inpart1
+
