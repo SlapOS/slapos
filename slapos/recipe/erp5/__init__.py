@@ -617,7 +617,19 @@ class Recipe(BaseSlapRecipe):
 
   def installZope(self, ip, port, name, zodb_configuration_string,
       with_timerservice=False, tidstorage_config=None, thread_amount=1,
-      with_deadlockdebugger=True):
+      with_deadlockdebugger=True, zope_environment=None):
+    default_zope_environment = dict(
+      TMP=self.tmp_directory,
+      TMPDIR=self.tmp_directory,
+      HOME=self.tmp_directory,
+      PATH=self.bin_directory
+    )
+    if zope_environment is None:
+      zope_environment = default_zope_environment.copy()
+    else:
+      for envk, envv in default_zope_environment.iteritems():
+        if envk not in zope_environment:
+          zope_environment[envk] = envv
     # Create zope configuration file
     zope_config = dict(
         products=self.options['products'],
@@ -649,8 +661,10 @@ class Recipe(BaseSlapRecipe):
                              self.erp5_directory, 'Products'))
     zope_config['products'] = '\n'.join(prefixed_products)
     zope_config['address'] = '%s:%s' % (ip, port)
-    zope_config['tmp_directory'] = self.tmp_directory
-    zope_config['path'] = self.bin_directory
+    zope_environment_list = []
+    for envk, envv in zope_environment.iteritems():
+      zope_environment_list.append('%s %s' % (envk, envv))
+    zope_config['environment'] = "\n".join(zope_environment_list)
 
     zope_wrapper_template_location = self.getTemplateFilename('zope.conf.in')
     zope_conf_content = self.substituteTemplate(
