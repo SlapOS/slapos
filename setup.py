@@ -28,7 +28,6 @@ setup(name=name,
       install_requires=[
         'PyXML', # for full blown python interpreter
         'Zope2', # some recipes like to play with zope
-        'collective.recipe.template', # needed by template recipe
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
@@ -55,7 +54,6 @@ setup(name=name,
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
           'siptester = slapos.recipe.siptester:SipTesterRecipe',
           'slaprunner = slapos.recipe.slaprunner:Recipe',
-          'template = slapos.recipe.template:Recipe',
           'testnode = slapos.recipe.testnode:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
