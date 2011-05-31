@@ -146,11 +146,22 @@ software_release_document = context.portal_catalog.getResultValue(\n
 # protect computer partition from being selected again\n
 portal = context.getPortalObject()\n
 \n
+hosting_subscription = software_instance.portal_catalog.getResultValue(uid=hosting_subscription_uid)\n
+sale_packing_list_line = context.HostingSubscription_getInstancePackingListLine(state_change)\n
+base_sale_packing_list = sale_packing_list_line.getParentValue()\n
 # XXX: SoftwareInstance_createSalePackingList shall be used to create new Sale Packing List\n
 sale_packing_list_module = portal.getDefaultModule(portal_type=\'Sale Packing List\')\n
-sale_packing_list = sale_packing_list_module.newContent(portal_type=\'Sale Packing List\', \n
-                                                        start_date=DateTime())\n
-hosting_subscription = software_instance.portal_catalog.getResultValue(uid=hosting_subscription_uid)\n
+\n
+sale_packing_list = sale_packing_list_module.newContent(\n
+  portal_type=\'Sale Packing List\', \n
+  start_date=DateTime(),\n
+  specialise=base_sale_packing_list.getSpecialise() or base_sale_packing_list.getCausalityValue().getSpecialise(),\n
+  destination=base_sale_packing_list.getDestination(),\n
+  destination_section=base_sale_packing_list.getDestinationSection(),\n
+  destination_decision=base_sale_packing_list.getDestinationDecision(),\n
+  source=base_sale_packing_list.getSource(),\n
+  source_section=base_sale_packing_list.getSourceSection(),\n
+  price_currency=base_sale_packing_list.getPriceCurrency())\n
 sale_packing_list_line = sale_packing_list.newContent(\n
   portal_type=\'Sale Packing List Line\',\n
   resource=context.portal_preferences.getPreferredInstanceSetupResource(),\n
