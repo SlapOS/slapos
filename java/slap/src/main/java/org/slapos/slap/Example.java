@@ -1,14 +1,18 @@
+package org.slapos.slap;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import org.slapos.slap.*;
+
+import com.sun.jersey.api.client.Client;
 
 /**
  * This class is a simple example or test for libslap-java, showing how to request instances or fetch parameters.
  * @author cedricdesaintmartin
  *
  */
-public class test {
+public class Example {
 	public static void main(String[] args) {
 		// Should not be a singleton
 		Slap slap = new Slap();
