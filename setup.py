@@ -41,6 +41,7 @@ setup(name=name,
       zip_safe=True,
       entry_points={
         'zc.buildout': [
+          'bef_erp5 = slapos.recipe.bef_erp5:Recipe',
           'build = slapos.recipe.build:Script',
           'buildcmmi = slapos.recipe.build:Cmmi',
           'download = slapos.recipe.download:Recipe',
