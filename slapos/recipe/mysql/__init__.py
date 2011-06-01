@@ -42,11 +42,6 @@ class Recipe(BaseSlapRecipe):
     # self.cron_d is a directory, where cron jobs can be registered
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
-    # Use killpidfromfile from ERP5.
-    self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', __name__ + 'slapos.recipe.erp5.killpidfromfile',
-          'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-    self.path_list.append(self.killpidfromfile)
     
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
 
