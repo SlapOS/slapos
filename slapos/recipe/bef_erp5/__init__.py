@@ -96,8 +96,10 @@ class Recipe(slapos.recipe.erp5.Recipe):
           'person_module'), None),
         site_path + 'organisation_module': (self._requestZeoFileStorage('Zeo Server 4',
           'organisation_module'), None),
-        site_path + 'portal_synchronizations': (self._requestZeoFileStorage(
-          'Zeo Server 4', 'portal_synchronizations'), None),
+        # SyncML functionnality is not used anymore in this project.
+        # No need to keep compatibility with previous data
+#         site_path + 'portal_synchronizations': (self._requestZeoFileStorage(
+#           'Zeo Server 4', 'portal_synchronizations'), None),
 
         site_path + 'scanned_document_module': (self._requestZeoFileStorage(
           'Zeo Server 5', 'scanned_document_module'), None),
