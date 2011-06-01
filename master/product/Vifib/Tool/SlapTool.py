@@ -243,8 +243,8 @@ class SlapTool(BaseTool):
 
   security.declareProtected(Permissions.AccessContentsInformation, 'requestComputerPartition')
   def requestComputerPartition(self, computer_id, computer_partition_id,
-      software_release, software_type, partition_reference, 
-      shared_xml, partition_parameter_xml, filter_xml):
+      software_release, software_type, partition_reference,
+      shared_xml, partition_parameter_xml, filter_xml, sla_parameter_xml):
     """
     Asynchronously requests creation of computer partition for assigned
     parameters
@@ -258,7 +258,7 @@ class SlapTool(BaseTool):
     """
     return self._requestComputerPartition(computer_id, computer_partition_id,
         software_release, software_type, partition_reference, 
-        shared_xml, partition_parameter_xml, filter_xml)
+        shared_xml, partition_parameter_xml, filter_xml, sla_parameter_xml)
 
   security.declareProtected(Permissions.AccessContentsInformation, 'useComputer')
   def useComputer(self, computer_id, use_string):
@@ -544,7 +544,7 @@ class SlapTool(BaseTool):
   @convertToREST
   def _requestComputerPartition(self, computer_id, computer_partition_id,
         software_release, software_type, partition_reference, 
-        shared_xml, partition_parameter_xml, filter_xml):
+        shared_xml, partition_parameter_xml, filter_xml, sla_parameter_xml):
     """
     Asynchronously requests creation of computer partition for assigned
     parameters
@@ -565,6 +565,11 @@ class SlapTool(BaseTool):
                                               partition_parameter_xml)
     else:
       partition_parameter_kw = dict()
+    if sla_parameter_xml:
+      sla_parameter_kw = xml_marshaller.xml_marshaller.loads(
+                                              sla_parameter_xml)
+    else:
+      sla_parameter_kw = dict()
     if filter_xml:
       filter_kw = xml_marshaller.xml_marshaller.loads(filter_xml)
     else:
@@ -588,7 +593,8 @@ class SlapTool(BaseTool):
             partition_reference=partition_reference,
             shared=shared,
             instance_xml=instance_xml,
-            filter_kw=filter_kw)
+            filter_kw=filter_kw,
+            sla_parameter_kw=sla_parameter_kw)
 
     # Get requested software instance
     requested_software_instance = software_instance_document.portal_catalog.\

@@ -152,16 +152,16 @@ class OpenOrder(SlapDocument):
       partition_parameter_kw=None, software_type=None, sla_parameter_kw=None):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
+    if sla_parameter_kw is None:
+      sla_parameter_kw = {}
     request_dict = {
         'software_release': software_release,
         'partition_reference': partition_reference,
         'partition_parameter_xml': xml_marshaller.dumps(partition_parameter_kw),
+        'sla_parameter_xml': xml_marshaller.dumps(sla_parameter_kw)
       }
     if software_type is not None:
       request_dict['software_type'] = software_type
-    if sla_parameter_kw is not None:
-      request_dict['sla_parameter_xml'] = xml_marshaller.dumps(
-        sla_parameter_kw)
     self._connection_helper.POST('/requestComputerPartition', request_dict)
     xml = self._connection_helper.response.read()
     software_instance = xml_marshaller.loads(xml)
@@ -286,6 +286,8 @@ class ComputerPartition(SlapDocument):
               sla_parameter_kw=None):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
+    if sla_parameter_kw is None:
+      sla_parameter_kw = {}
     elif not isinstance(partition_parameter_kw, dict):
       raise ValueError("Unexpected type of partition_parameter_kw '%s'" % \
                        partition_parameter_kw)
@@ -305,10 +307,8 @@ class ComputerPartition(SlapDocument):
         'partition_parameter_xml': xml_marshaller.dumps(
                                         partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
+        'sla_parameter_xml': xml_marshaller.dumps(sla_parameter_kw)
       }
-    if sla_parameter_kw is not None:
-      request_dict['sla_parameter_xml'] = xml_marshaller.dumps(
-        sla_parameter_kw)
     self._connection_helper.POST('/requestComputerPartition', request_dict)
     xml = self._connection_helper.response.read()
     software_instance = xml_marshaller.loads(xml)
