@@ -24,10 +24,9 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.lib.recipe.BaseSlapRecipe import BaseSlapRecipe
+from slapos.recipe.librecipe import BaseSlapRecipe
 import os
 import pkg_resources
-import sys
 import zc.buildout
 import zc.recipe.egg
 
