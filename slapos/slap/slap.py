@@ -149,16 +149,16 @@ class OpenOrder(SlapDocument):
   zope.interface.implements(interface.IOpenOrder)
 
   def request(self, software_release, partition_reference,
-      partition_parameter_kw=None, software_type=None, sla_parameter_kw=None):
+      partition_parameter_kw=None, software_type=None, filter_kw=None):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
-    if sla_parameter_kw is None:
-      sla_parameter_kw = {}
+    if filter_kw is None:
+      filter_kw = {}
     request_dict = {
         'software_release': software_release,
         'partition_reference': partition_reference,
         'partition_parameter_xml': xml_marshaller.dumps(partition_parameter_kw),
-        'sla_parameter_xml': xml_marshaller.dumps(sla_parameter_kw)
+        'filter_xml': xml_marshaller.dumps(filter_kw)
       }
     if software_type is not None:
       request_dict['software_type'] = software_type
@@ -282,12 +282,9 @@ class ComputerPartition(SlapDocument):
   #      Computer Partition data are fetch from server shall be delayed
   @_syncComputerPartitionInformation
   def request(self, software_release, software_type, partition_reference,
-              shared=False, partition_parameter_kw=None, filter_kw=None,
-              sla_parameter_kw=None):
+              shared=False, partition_parameter_kw=None, filter_kw=None):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
-    if sla_parameter_kw is None:
-      sla_parameter_kw = {}
     elif not isinstance(partition_parameter_kw, dict):
       raise ValueError("Unexpected type of partition_parameter_kw '%s'" % \
                        partition_parameter_kw)
@@ -307,7 +304,6 @@ class ComputerPartition(SlapDocument):
         'partition_parameter_xml': xml_marshaller.dumps(
                                         partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
-        'sla_parameter_xml': xml_marshaller.dumps(sla_parameter_kw)
       }
     self._connection_helper.POST('/requestComputerPartition', request_dict)
     xml = self._connection_helper.response.read()
