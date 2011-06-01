@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.2-dev'
+version = '0.3-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -28,11 +28,10 @@ setup(name=name,
       install_requires=[
         'PyXML', # for full blown python interpreter
         'Zope2', # some recipes like to play with zope
-        'collective.recipe.template', # needed by template recipe
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
-        'slapos.slap', # uses internally
+        'slapos.core', # uses internally
 #        'slapos.toolbox', # needed for libcloud, cloudmgr, disabled for now
         'xml_marshaller', # need to communication with slapgrid
         'zc.buildout', # plays with buildout
@@ -42,8 +41,6 @@ setup(name=name,
       entry_points={
         'zc.buildout': [
           'bef_erp5 = slapos.recipe.bef_erp5:Recipe',
-          'build = slapos.recipe.build:Script',
-          'buildcmmi = slapos.recipe.build:Cmmi',
           'download = slapos.recipe.download:Recipe',
           'erp5 = slapos.recipe.erp5:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
@@ -58,7 +55,6 @@ setup(name=name,
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
           'siptester = slapos.recipe.siptester:SipTesterRecipe',
           'slaprunner = slapos.recipe.slaprunner:Recipe',
-          'template = slapos.recipe.template:Recipe',
           'testnode = slapos.recipe.testnode:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
