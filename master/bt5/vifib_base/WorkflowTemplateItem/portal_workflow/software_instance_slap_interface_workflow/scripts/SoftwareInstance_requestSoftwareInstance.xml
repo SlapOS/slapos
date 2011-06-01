@@ -62,6 +62,9 @@ shared = kwargs["shared"]\n
 software_type = kwargs["software_type"]\n
 instance_xml = kwargs["instance_xml"]\n
 filter_kw = kwargs["filter_kw"]\n
+sla_parameter_kw = kwargs["sla_parameter_kw"]\n
+if sla_parameter_kw:\n
+  raise NotImplementedError("Do not know what to do with %r yet" % sla_parameter_kw)\n
 \n
 # Get root software instance\n
 predecessor_software_instance = software_instance\n
