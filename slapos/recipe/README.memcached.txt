@@ -1,0 +1,4 @@
+memcached
+=========
+
+Instantiates Memcached instance.
