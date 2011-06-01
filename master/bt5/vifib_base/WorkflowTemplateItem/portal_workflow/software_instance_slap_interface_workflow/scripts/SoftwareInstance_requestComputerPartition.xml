@@ -61,6 +61,9 @@ hosting_subscription_uid = state_change.kwargs[\'hosting_subscription_uid\']\n
 shared = state_change.kwargs[\'shared\']\n
 software_type = state_change.kwargs["software_type"]\n
 tag = state_change.kwargs[\'tag\']\n
+sla_parameter_kw = kwargs["sla_parameter_kw"]\n
+if sla_parameter_kw:\n
+  raise NotImplementedError("Do not know what to do with %r yet" % sla_parameter_kw)\n
 \n
 # Assertion: No packing list line should be related to this software instance\n
 packing_list_line = software_instance.getAggregateRelatedValue(portal_type=\'Sale Packing List Line\')\n
