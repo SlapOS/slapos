@@ -39,17 +39,8 @@ class Recipe(BaseSlapRecipe):
   def _install(self):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set([__name__])
-    # self.cron_d is a directory, where cron jobs can be registered
-    self.cron_d = self.installCrond()
-    self.logrotate_d, self.logrotate_backup = self.installLogrotate()
-    # Use killpidfromfile from ERP5.
-    self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', __name__ + 'slapos.recipe.erp5.killpidfromfile',
-          'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-    self.path_list.append(self.killpidfromfile)
-    
+    # XXX-Cedric : add logrotate?
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
-
     self.linkBinary()
     self.setConnectionDict(dict(
       address = kumo_conf['kumo_address'],
@@ -77,50 +68,6 @@ class Recipe(BaseSlapRecipe):
       os.symlink(target, link)
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
-
-  def installCrond(self):
-    timestamps = self.createDataDirectory('cronstamps')
-    cron_output = os.path.join(self.log_directory, 'cron-output')
-    self._createDirectory(cron_output)
-    catcher = zc.buildout.easy_install.scripts([('catchcron',
-      __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
-      self.bin_directory, arguments=[cron_output])[0]
-    self.path_list.append(catcher)
-    cron_d = os.path.join(self.etc_directory, 'cron.d')
-    crontabs = os.path.join(self.etc_directory, 'crontabs')
-    self._createDirectory(cron_d)
-    self._createDirectory(crontabs)
-    wrapper = zc.buildout.easy_install.scripts([('crond',
-      __name__ + '.execute', 'execute')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[
-        self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
-        '-t', timestamps, '-f', '-l', '5', '-M', catcher]
-      )[0]
-    self.path_list.append(wrapper)
-    return cron_d
-  
-  def installLogrotate(self):
-    """Installs logortate main configuration file and registers its to cron"""
-    logrotate_d = os.path.abspath(os.path.join(self.etc_directory,
-      'logrotate.d'))
-    self._createDirectory(logrotate_d)
-    logrotate_backup = self.createBackupDirectory('logrotate')
-    logrotate_conf = self.createConfigurationFile("logrotate.conf",
-        "include %s" % logrotate_d)
-    logrotate_cron = os.path.join(self.cron_d, 'logrotate')
-    state_file = os.path.join(self.data_root_directory, 'logrotate.status')
-    open(logrotate_cron, 'w').write('0 0 * * * %s -s %s %s' %
-        (self.options['logrotate_binary'], state_file, logrotate_conf))
-    self.path_list.extend([logrotate_d, logrotate_conf, logrotate_cron])
-    return logrotate_d, logrotate_backup
-
-  def registerLogRotation(self, name, log_file_list, postrotate_script):
-    """Register new log rotation requirement"""
-    open(os.path.join(self.logrotate_d, name), 'w').write(
-        self.substituteTemplate(self.getTemplateFilename(
-          'logrotate_entry.in'),
-          dict(file_list=' '.join(['"'+q+'"' for q in log_file_list]),
-            postrotate=postrotate_script, olddir=self.logrotate_backup)))
   
   def installKumo(self, ip, kumo_manager_port=13101, kumo_server_port=13201,
       kumo_server_listen_port=13202, kumo_gateway_port=13301):
