@@ -1,4 +1,4 @@
 include CHANGES.txt
-include slapos/format/slapos.xsd
-include slapos/slap/slap_recipe_mysqldatabase.py.txt
-recursive-include slapos/grid/templates *.in
+recursive-include slapos/ *.in
+recursive-include slapos/ *.txt
+recursive-include slapos/ *.xsd
