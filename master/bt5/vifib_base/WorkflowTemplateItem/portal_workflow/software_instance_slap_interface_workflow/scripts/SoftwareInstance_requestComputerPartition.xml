@@ -62,8 +62,6 @@ shared = state_change.kwargs[\'shared\']\n
 software_type = state_change.kwargs["software_type"]\n
 tag = state_change.kwargs[\'tag\']\n
 sla_parameter_kw = kwargs["sla_parameter_kw"]\n
-if sla_parameter_kw:\n
-  raise NotImplementedError("Do not know what to do with %r yet" % sla_parameter_kw)\n
 \n
 # Assertion: No packing list line should be related to this software instance\n
 packing_list_line = software_instance.getAggregateRelatedValue(portal_type=\'Sale Packing List Line\')\n
@@ -80,6 +78,10 @@ query_kw = {\n
   \'software_release_url\': software_release_url_string,\n
   \'portal_type\': \'Computer Partition\'\n
 }\n
+# support SLA\n
+if "computer_guid" in sla_parameter_kw:\n
+  query_kw["parent_reference"] = sla_parameter_kw["computer_guid"]\n
+\n
 # fetch at mot 50 random Computer Partitions, and check if they are ok\n
 isTransitionPossible = software_instance.getPortalObject().portal_workflow.isTransitionPossible\n
 if shared:\n
