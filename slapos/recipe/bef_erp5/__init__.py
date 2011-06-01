@@ -283,7 +283,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
 
   def _install(self):
     self.path_list = []
-    self.requirements, self.ws = self.egg.working_set([__name__])
+    self.requirements, self.ws = self.egg.working_set()
     # self.cron_d is a directory, where cron jobs can be registered
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
