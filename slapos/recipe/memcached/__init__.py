@@ -37,9 +37,8 @@ class Recipe(BaseSlapRecipe):
 
   def _install(self):
     self.path_list = []
-    self.requirements, self.ws = self.egg.working_set([__name__])
     # XXX-Cedric : add logrotate?
-    memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
+    memcached_conf = self.installMemcached(ip=self.getGlobalIPv6Address(),
         port=11000)
     self.linkBinary()
     self.setConnectionDict(dict(
