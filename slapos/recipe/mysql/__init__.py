@@ -94,8 +94,9 @@ class Recipe(BaseSlapRecipe):
     crontabs = os.path.join(self.etc_directory, 'crontabs')
     self._createDirectory(cron_d)
     self._createDirectory(crontabs)
+    # Use execute from erp5.
     wrapper = zc.buildout.easy_install.scripts([('crond',
-      __name__ + '.execute', 'execute')], self.ws, sys.executable,
+      'slapos.recipe.erp5.execute', 'execute')], self.ws, sys.executable,
       self.wrapper_directory, arguments=[
         self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
         '-t', timestamps, '-f', '-l', '5', '-M', catcher]
@@ -203,14 +204,16 @@ class Recipe(BaseSlapRecipe):
         '--defaults-file=%s' % mysql_conf_path,
         '--socket=%s' %mysql_conf['socket'].strip(), '--user=root']
     environment = dict(PATH='%s' % self.bin_directory)
+    # Use execute from erp5.
     innobackupex_incremental = zc.buildout.easy_install.scripts([(
-      'innobackupex_incremental', __name__ + '.execute', 'executee')],
+      'innobackupex_incremental', 'slapos.recipe.erp5.execute', 'executee')],
       self.ws, sys.executable, self.bin_directory, arguments=[
         innobackupex_argument_list + ['--incremental'],
         environment])[0]
     self.path_list.append(innobackupex_incremental)
+    # Use execute from erp5.
     innobackupex_full = zc.buildout.easy_install.scripts([('innobackupex_full',
-      __name__ + '.execute', 'executee')], self.ws,
+      'slapos.recipe.erp5.execute', 'executee')], self.ws,
       sys.executable, self.bin_directory, arguments=[
         innobackupex_argument_list,
         environment])[0]
