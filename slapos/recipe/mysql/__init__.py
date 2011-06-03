@@ -48,7 +48,7 @@ class Recipe(BaseSlapRecipe):
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     
-    mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
+    mysql_conf = self.installMysqlServer(self.getGlobalIPv6Address(), 45678)
 
     self.linkBinary()
     self.setConnectionDict(dict(
