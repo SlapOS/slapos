@@ -37,9 +37,8 @@ class Recipe(BaseSlapRecipe):
 
   def _install(self):
     self.path_list = []
-    self.requirements, self.ws = self.egg.working_set([__name__])
     # XXX-Cedric : add logrotate?
-    kumo_conf = self.installKumo(self.getLocalIPv4Address())
+    kumo_conf = self.installKumo(self.getGlobalIPv6Address())
     self.linkBinary()
     self.setConnectionDict(dict(
       address = kumo_conf['kumo_address'],
