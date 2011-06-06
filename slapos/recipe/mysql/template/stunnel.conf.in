@@ -2,12 +2,12 @@ foreground = yes
 output = %(log)s
 pid = %(pid_file)s
 syslog = no
-;accept = %(ip)s%(port)
+;accept = %(ip)s%(port)s
 CApath = %(ca_path)s
 CRLpath = %(ca_crl)s
-cert = %(cert)
+cert = %(cert)s
 ;key = /etc/ssl/certs/stunnel.pem
 
 [mysqls]
-accept = %(ip)s%(port)
-connect = %(external_port)
+accept = %(ip)s:%(port)s
+connect = %(external_port)s
