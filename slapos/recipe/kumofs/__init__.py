@@ -41,6 +41,7 @@ class Recipe(BaseSlapRecipe):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
     # XXX-Cedric : add logrotate?
+    self.cron_d = self.installCrond()
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     
     ca_conf = self.installCertificateAuthority()
