@@ -4,6 +4,7 @@ pid = %(pid_file)s
 syslog = no
 ;accept = %(ip)s%(port)s
 CApath = %(ca_path)s
+key = %(key)s
 CRLpath = %(ca_crl)s
 cert = %(cert)s
 ;key = /etc/ssl/certs/stunnel.pem

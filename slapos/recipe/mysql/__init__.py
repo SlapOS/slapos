@@ -52,7 +52,7 @@ class Recipe(BaseSlapRecipe):
     
     stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(), 12345,
         mysql_conf['tcp_port'],
-        certificate, ca_conf['ca_crl'],
+        certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
 
     self.linkBinary()
@@ -204,7 +204,7 @@ class Recipe(BaseSlapRecipe):
     return key, certificate
 
   def installStunnel(self, ip, port, external_port,
-      ca_certificate, ca_crl, ca_path):
+      ca_certificate, key, ca_crl, ca_path):
     """Installs stunnel"""
     template_filename = self.getTemplateFilename('stunnel.conf.in')
     log = os.path.join(self.log_directory, 'stunnel.log')
@@ -215,6 +215,7 @@ class Recipe(BaseSlapRecipe):
         pid_file=pid_file,
         log=log,
         cert = ca_certificate,
+        key = key,
         ca_crl = ca_crl,
         ca_path = ca_path,
         external_port = external_port,
