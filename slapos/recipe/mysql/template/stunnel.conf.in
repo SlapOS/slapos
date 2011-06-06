@@ -10,5 +10,5 @@ cert = %(cert)s
 ;key = /etc/ssl/certs/stunnel.pem
 
 [mysqls]
-accept = %(ip)s:%(port)s
-connect = %(external_port)s
+accept = %(ipv6)s:%(port)s
+connect = %(ipv4)s:%(external_port)s

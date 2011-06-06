@@ -210,7 +210,8 @@ class Recipe(BaseSlapRecipe):
     log = os.path.join(self.log_directory, 'stunnel.log')
     pid_file = os.path.join(self.run_directory, 'stunnel.pid')
     stunnel_conf = dict(
-        ip=ip,
+        ipv6=ip,
+        ipv4=self.getLocalIPv4Address,
         port=port,
         pid_file=pid_file,
         log=log,
