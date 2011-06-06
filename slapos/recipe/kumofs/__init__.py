@@ -55,7 +55,7 @@ class Recipe(BaseSlapRecipe):
     self.linkBinary()
     self.setConnectionDict(dict(
       kumofs_local_ip = kumo_conf['kumo_gateway_ip'],
-      stunnel_ip = stunnel_conf['ip'],
+      stunnel_ip = stunnel_conf['ipv6'],
       stunnel_port = stunnel_conf['port'],
     ))
     return self.path_list
