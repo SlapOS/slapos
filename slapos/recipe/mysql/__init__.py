@@ -43,15 +43,21 @@ class Recipe(BaseSlapRecipe):
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     
-    mysql_conf = self.installMysqlServer(self.getGlobalIPv6Address(), 45678)
+    mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
+      
+    ca_conf = self.installCertificateAuthority()
+    stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(), 12345,
+        mysql_conf['port'],
+        ca_conf['ca_certificate'], ca_conf['ca_crl'],
+        ca_conf['certificate_authority_path'])
 
     self.linkBinary()
     self.setConnectionDict(dict(
-      ip = mysql_conf['ip'],
-      port = mysql_conf['tcp_port'],
-      database = mysql_conf['mysql_database'],
-      user = mysql_conf['mysql_user'],
-      password = mysql_conf['mysql_password'],
+      stunnel_ip = stunnel_conf['ip'],
+      stunnel_port = stunnel_conf['tcp_port'],
+      mysql_database = mysql_conf['mysql_database'],
+      mysql_user = mysql_conf['mysql_user'],
+      mysql_password = mysql_conf['mysql_password'],
     ))
     return self.path_list
 
@@ -121,7 +127,95 @@ class Recipe(BaseSlapRecipe):
           'logrotate_entry.in'),
           dict(file_list=' '.join(['"'+q+'"' for q in log_file_list]),
             postrotate=postrotate_script, olddir=self.logrotate_backup)))
-  
+
+  def installCertificateAuthority(self, ca_country_code='XX',
+      ca_email='xx@example.com', ca_state='State', ca_city='City',
+      ca_company='Company'):
+    backup_path = self.createBackupDirectory('ca')
+    self.ca_dir = os.path.join(self.data_root_directory, 'ca')
+    self._createDirectory(self.ca_dir)
+    self.ca_request_dir = os.path.join(self.ca_dir, 'requests')
+    self._createDirectory(self.ca_request_dir)
+    config = dict(ca_dir=self.ca_dir, request_dir=self.ca_request_dir)
+    self.ca_private = os.path.join(self.ca_dir, 'private')
+    self.ca_certs = os.path.join(self.ca_dir, 'certs')
+    self.ca_crl = os.path.join(self.ca_dir, 'crl')
+    self.ca_newcerts = os.path.join(self.ca_dir, 'newcerts')
+    self.ca_key_ext = '.key'
+    self.ca_crt_ext = '.crt'
+    for d in [self.ca_private, self.ca_crl, self.ca_newcerts, self.ca_certs]:
+      self._createDirectory(d)
+    for f in ['crlnumber', 'serial']:
+      if not os.path.exists(os.path.join(self.ca_dir, f)):
+        open(os.path.join(self.ca_dir, f), 'w').write('01')
+    if not os.path.exists(os.path.join(self.ca_dir, 'index.txt')):
+      open(os.path.join(self.ca_dir, 'index.txt'), 'w').write('')
+    openssl_configuration = os.path.join(self.ca_dir, 'openssl.cnf')
+    config.update(
+        working_directory=self.ca_dir,
+        country_code=ca_country_code,
+        state=ca_state,
+        city=ca_city,
+        company=ca_company,
+        email_address=ca_email,
+    )
+    self._writeFile(openssl_configuration, pkg_resources.resource_string(
+      __name__, 'template/openssl.cnf.ca.in') % config)
+    self.path_list.extend(zc.buildout.easy_install.scripts([
+      ('certificate_authority',
+        __name__ + '.certificate_authority', 'runCertificateAuthority')],
+        self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
+          openssl_configuration=openssl_configuration,
+          openssl_binary=self.options['openssl_binary'],
+          certificate=os.path.join(self.ca_dir, 'cacert.pem'),
+          key=os.path.join(self.ca_private, 'cakey.pem'),
+          crl=os.path.join(self.ca_crl),
+          request_dir=self.ca_request_dir
+          )]))
+    # configure backup
+    backup_cron = os.path.join(self.cron_d, 'ca_rdiff_backup')
+    open(backup_cron, 'w').write(
+        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
+          rdiff_backup=self.options['rdiff_backup_binary'],
+          source=self.ca_dir,
+          destination=backup_path))
+    self.path_list.append(backup_cron)
+
+    return dict(
+      ca_certificate=os.path.join(config['ca_dir'], 'cacert.pem'),
+      ca_crl=os.path.join(config['ca_dir'], 'crl'),
+      certificate_authority_path=config['ca_dir']
+    )
+
+  def installStunnel(self, ip, port, external_port,
+      ca_certificate, ca_crl, ca_path):
+    """Installs stunnel"""
+    template_filename = self.getTemplateFilename('stunnel.conf.in')
+    log = os.path.join(self.log_directory, 'stunnel.log')
+    pid_file = os.path.join(self.run_directory, 'stunnel.pid')
+    stunnel_conf = dict(
+        ip=ip,
+        port=port,
+        pid_file=pid_file,
+        log=log,
+        cert = ca_certificate,
+        ca_crl = ca_crl,
+        ca_path = ca_path,
+        external_port = external_port,
+    )
+    stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
+        self.substituteTemplate(template_filename,
+          stunnel_conf))
+    wrapper = zc.buildout.easy_install.scripts([('stunnel',
+      'slapos.recipe.erp5.execute', 'execute')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=[
+        self.options['stunnel_binary'].strip(), stunnel_conf_path]
+      )[0]
+    self.path_list.append(wrapper)
+
+    return stunnel_conf
+
+    
   def installMysqlServer(self, ip, port, database='database', user='user',
       template_filename=None, mysql_conf=None):
     if mysql_conf is None:
