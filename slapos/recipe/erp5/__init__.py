@@ -899,7 +899,8 @@ class Recipe(BaseSlapRecipe):
     innobackupex_argument_list = [self.options['perl_binary'],
         self.options['innobackupex_binary'],
         '--defaults-file=%s' % mysql_conf_path,
-        '--socket=%s' %mysql_conf['socket'].strip(), '--user=root']
+        '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+        '--ibbackup=%s'% self.options['xtrabackup_binary']]
     environment = dict(PATH='%s' % self.bin_directory)
     innobackupex_incremental = zc.buildout.easy_install.scripts([(
       'innobackupex_incremental', __name__ + '.execute', 'executee')],
