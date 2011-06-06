@@ -47,7 +47,7 @@ class Recipe(BaseSlapRecipe):
       
     ca_conf = self.installCertificateAuthority()
     stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(), 12345,
-        mysql_conf['port'],
+        mysql_conf['tcp_port'],
         ca_conf['ca_certificate'], ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
 
