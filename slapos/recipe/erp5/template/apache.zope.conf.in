@@ -6,7 +6,6 @@ PidFile "%(pid_file)s"
 LockFile "%(lock_file)s"
 Listen %(ip)s:%(port)s
 ServerAdmin %(server_admin)s
-DefaultType text/plain
 TypesConfig conf/mime.types
 AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
@@ -19,7 +18,6 @@ RequestHeader unset REMOTE_USER
 
 # Log configuration
 ErrorLog "%(error_log)s"
-LogLevel warn
 LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
 LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b" common
 CustomLog "%(access_log)s" common
