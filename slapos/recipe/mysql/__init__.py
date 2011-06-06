@@ -48,18 +48,17 @@ class Recipe(BaseSlapRecipe):
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
       
     ca_conf = self.installCertificateAuthority()
-    key, certificate = self.requestCertificate('Login Based Access')
+    key, certificate = self.requestCertificate('MySQL')
     
-    stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(), 12345,
-        mysql_conf['tcp_port'],
+    stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(),
+        self.getLocalIPv4Address(), 12345, mysql_conf['tcp_port'],
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
-
+    
     self.linkBinary()
     self.setConnectionDict(dict(
-      mysql_local_ip = mysql_conf['tcp_port'],
-      stunnel_ip = stunnel_conf['ipv6'],
-      stunnel_port = stunnel_conf['port'],
+      stunnel_ip = stunnel_conf['public_ip'],
+      stunnel_port = stunnel_conf['public_port'],
       mysql_database = mysql_conf['mysql_database'],
       mysql_user = mysql_conf['mysql_user'],
       mysql_password = mysql_conf['mysql_password'],
@@ -204,23 +203,23 @@ class Recipe(BaseSlapRecipe):
     parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
     return key, certificate
 
-  def installStunnel(self, ip, port, external_port,
+  def installStunnel(self, public_ip, private_ip, public_port, private_port,
       ca_certificate, key, ca_crl, ca_path):
     """Installs stunnel"""
     template_filename = self.getTemplateFilename('stunnel.conf.in')
     log = os.path.join(self.log_directory, 'stunnel.log')
     pid_file = os.path.join(self.run_directory, 'stunnel.pid')
     stunnel_conf = dict(
-        ipv6=ip,
-        ipv4=self.getLocalIPv4Address,
-        port=port,
+        public_ip=public_ip,
+        private_ip=private_ip,
+        public_port=public_port,
         pid_file=pid_file,
         log=log,
         cert = ca_certificate,
         key = key,
         ca_crl = ca_crl,
         ca_path = ca_path,
-        external_port = external_port,
+        private_port = private_port,
     )
     stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
         self.substituteTemplate(template_filename,
@@ -231,7 +230,6 @@ class Recipe(BaseSlapRecipe):
         self.options['stunnel_binary'].strip(), stunnel_conf_path]
       )[0]
     self.path_list.append(wrapper)
-
     return stunnel_conf
 
     
