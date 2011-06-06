@@ -37,11 +37,23 @@ class Recipe(BaseSlapRecipe):
 
   def _install(self):
     self.path_list = []
+    self.requirements, self.ws = self.egg.working_set()
     # XXX-Cedric : add logrotate?
-    kumo_conf = self.installKumo(self.getGlobalIPv6Address())
+    kumo_conf = self.installKumo(self.getLocalIPv4Address())
+    
+    ca_conf = self.installCertificateAuthority()
+    key, certificate = self.requestCertificate('Login Based Access')
+    
+    stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(), 12345,
+        kumo_conf_conf['kumo_gateway_port'],
+        certificate, key, ca_conf['ca_crl'],
+        ca_conf['certificate_authority_path'])
+    
     self.linkBinary()
     self.setConnectionDict(dict(
-      address = kumo_conf['kumo_address'],
+      kumofs_local_ip = kumo_conf['kumo_gateway_ip'],
+      stunnel_ip = stunnel_conf['ip'],
+      stunnel_port = stunnel_conf['port'],
     ))
     return self.path_list
 
