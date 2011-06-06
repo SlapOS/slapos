@@ -178,7 +178,7 @@ branch = %(branch)s
             )
           if status_dict['status_code'] != 0:
             safeRpcCall(master.reportTaskFailure,
-              test_result_path, status_dict, test_suite_title)
+              test_result_path, status_dict, config['test_node_title'])
             retry_software = True
             continue
 
