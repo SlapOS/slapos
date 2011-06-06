@@ -25,10 +25,12 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import BaseSlapRecipe
+import hashlib
 import os
 import pkg_resources
 import sys
 import zc.buildout
+import ConfigParser
 
 class Recipe(BaseSlapRecipe):
   def getTemplateFilename(self, template_name):
@@ -46,15 +48,17 @@ class Recipe(BaseSlapRecipe):
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
       
     ca_conf = self.installCertificateAuthority()
+    key, certificate = self.requestCertificate('Login Based Access')
+    
     stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(), 12345,
         mysql_conf['tcp_port'],
-        ca_conf['ca_certificate'], ca_conf['ca_crl'],
+        certificate, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
 
     self.linkBinary()
     self.setConnectionDict(dict(
       stunnel_ip = stunnel_conf['ip'],
-      stunnel_port = stunnel_conf['tcp_port'],
+      stunnel_port = stunnel_conf['port'],
       mysql_database = mysql_conf['mysql_database'],
       mysql_user = mysql_conf['mysql_user'],
       mysql_password = mysql_conf['mysql_password'],
@@ -186,6 +190,18 @@ class Recipe(BaseSlapRecipe):
       ca_crl=os.path.join(config['ca_dir'], 'crl'),
       certificate_authority_path=config['ca_dir']
     )
+
+  def requestCertificate(self, name):
+    hash = hashlib.sha512(name).hexdigest()
+    key = os.path.join(self.ca_private, hash + self.ca_key_ext)
+    certificate = os.path.join(self.ca_certs, hash + self.ca_crt_ext)
+    parser = ConfigParser.RawConfigParser()
+    parser.add_section('certificate')
+    parser.set('certificate', 'name', name)
+    parser.set('certificate', 'key_file', key)
+    parser.set('certificate', 'certificate_file', certificate)
+    parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
+    return key, certificate
 
   def installStunnel(self, ip, port, external_port,
       ca_certificate, ca_crl, ca_path):
