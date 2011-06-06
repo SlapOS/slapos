@@ -58,7 +58,7 @@ class Recipe(BaseSlapRecipe):
     self.linkBinary()
     self.setConnectionDict(dict(
       mysql_local_ip = mysql_conf['tcp_port'],
-      stunnel_ip = stunnel_conf['ip'],
+      stunnel_ip = stunnel_conf['ipv6'],
       stunnel_port = stunnel_conf['port'],
       mysql_database = mysql_conf['mysql_database'],
       mysql_user = mysql_conf['mysql_user'],
