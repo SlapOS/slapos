@@ -54,7 +54,7 @@ class Recipe(BaseSlapRecipe):
         ca_conf['certificate_authority_path'])
 
     stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(),
-        self.getLocalIPv4Address(), 12345, kumo_conf['kumo_gateway_port'],
+        self.getLocalIPv4Address(), 12345, memcached_conf['memcached_port'],
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
     
