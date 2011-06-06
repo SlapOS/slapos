@@ -1,6 +1,22 @@
 # Apache configuration file for Zope
 # Automatically generated
 
+# List of modules
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule version_module modules/mod_version.so
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule negotiation_module modules/mod_negotiation.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule antiloris_module modules/mod_antiloris.so
+
 # Basic server configuration
 PidFile "%(pid_file)s"
 LockFile "%(lock_file)s"
@@ -37,19 +53,3 @@ CustomLog "%(access_log)s" common
 # Magic of Zope related rewrite
 RewriteEngine On
 %(rewrite_rule)s
-
-# List of modules
-LoadModule authz_host_module modules/mod_authz_host.so
-LoadModule log_config_module modules/mod_log_config.so
-LoadModule setenvif_module modules/mod_setenvif.so
-LoadModule version_module modules/mod_version.so
-LoadModule proxy_module modules/mod_proxy.so
-LoadModule proxy_http_module modules/mod_proxy_http.so
-LoadModule ssl_module modules/mod_ssl.so
-LoadModule mime_module modules/mod_mime.so
-LoadModule dav_module modules/mod_dav.so
-LoadModule dav_fs_module modules/mod_dav_fs.so
-LoadModule negotiation_module modules/mod_negotiation.so
-LoadModule rewrite_module modules/mod_rewrite.so
-LoadModule headers_module modules/mod_headers.so
-LoadModule antiloris_module modules/mod_antiloris.so
