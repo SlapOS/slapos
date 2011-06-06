@@ -37,13 +37,8 @@ class Recipe(BaseSlapRecipe):
 
   def _install(self):
     self.path_list = []
-    #self.requirements, self.ws = self.egg.working_set([__name__])
-    # XXX-CEDRIC ARRRRRR IT TOOK ME 3 HOURS TO FIND THAT
-    # self.egg.working_set([__name__])
-    # DOES NOT WORK : __name__ IS "slapos.recipe.mysql" BUT THIS EGG
-    # DOES NOT EXIST SO BUILDOUT FAILS MISERABLY WHILE FINDING A DISTRIBUTION
-    # "slapos.recipe.mysql". SLAPOS.COOKBOOK EXISTS. UGLY WORKAROUND.
-    self.requirements, self.ws = self.egg.working_set(['slapos.cookbook'])
+
+    self.requirements, self.ws = self.egg.working_set()
     # self.cron_d is a directory, where cron jobs can be registered
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
