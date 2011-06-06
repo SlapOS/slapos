@@ -3,10 +3,9 @@ output = %(log)s
 pid = %(pid_file)s
 syslog = no
 ;accept = %(ip)s%(port)
-CApath = %(ca_path)
-
-; Certificate/key is needed in server mode and optional in client mode
-cert = /etc/ssl/certs/stunnel.pem
+CApath = %(ca_path)s
+CRLpath = %(ca_crl)s
+cert = %(cert)
 ;key = /etc/ssl/certs/stunnel.pem
 
 ; Protocol version (all, SSLv2, SSLv3, TLSv1)
