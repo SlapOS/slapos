@@ -293,7 +293,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
     for repo in self.options.get('bt5_repo_list', '').splitlines():
       if not repo:
         continue
-      target, linkname = linkline.split()
+      target, linkname = repo.split()
       link = os.path.join(repo_path, linkname)
       if os.path.lexists(link):
         if not os.path.islink(link):
