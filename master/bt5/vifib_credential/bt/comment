@@ -1,0 +1,5 @@
+Configurations after install:
+- Configure the MailHost
+- publish web_page_module/vifib-Contract
+- Enable all Notification Messages
+- Enable vifib_default_system_preference on Preferences and enable "Automatic approval of credential request" on tab "Credential"
