@@ -97,10 +97,10 @@ bt5_installation_list = (      \n
       \'vifib_software_pdm\', \n
       \'vifib_web\', \n
       \'vifib_open_trade\', \n
-#     \'vifib_l10n_fr\'\n
-#     \'vifib_datas\'\n
-#     \'vifib_erp5\'\n
-                        )\n
+      \'vifib_l10n_fr\'\n
+      \'vifib_datas\'\n
+      \'vifib_erp5\'\n
+)\n
 \n
 bt5_update_catalog = (\'erp5_ingestion_mysql_innodb_catalog\', \n
                       \'vifib_mysql_innodb_catalog\')\n
