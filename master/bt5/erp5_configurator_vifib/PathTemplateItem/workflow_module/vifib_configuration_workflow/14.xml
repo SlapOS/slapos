@@ -60,7 +60,7 @@
         </item>
         <item>
             <key> <string>transition_form_id</string> </key>
-            <value> <string>BusinessConfiguration_displayVifbDownloadForm</string> </value>
+            <value> <string>BusinessConfiguration_displayVifibDownloadForm</string> </value>
         </item>
       </dictionary>
     </pickle>
