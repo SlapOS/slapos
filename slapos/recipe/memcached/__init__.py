@@ -49,7 +49,7 @@ class Recipe(BaseSlapRecipe):
     key, certificate = self.requestCertificate('Memcached')
     
     stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(), 12345,
-        memcached_conf['port'],
+        memcached_conf['memcached_port'],
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
 
