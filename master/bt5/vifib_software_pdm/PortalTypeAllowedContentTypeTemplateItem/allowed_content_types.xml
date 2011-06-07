@@ -1,5 +1,5 @@
 <allowed_content_type_list>
  <portal_type id="Software Product">
-  <item>Image</item>
+  <item>Embedded File</item>
  </portal_type>
 </allowed_content_type_list>
