@@ -50,56 +50,59 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>""" This script will be called to apply the customization. """\n
-from AccessControl import getSecurityManager\n
-from Products.ERP5Type.Log import log\n
+            <value> <string># This script contains some steps which are not yet supported\n
+# by configuration items. Each feature should be back ported to\n
+# ERP5Configurator as an specific Configuration Item.\n
 \n
-portal = context.getPortalObject()\n
-bt = portal.portal_templates.getInstalledBusinessTemplate("erp5_demo_maxma_sample")\n
-isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
+portal = context.getPortalObject() \n
 \n
-for obj in portal.portal_catalog(path=["%%/%s" % i.replace("**", "%") for i in bt.getTemplatePathList()]):\n
-  obj.activate().updateLocalRolesOnSecurityGroups()\n
+## Create new portal tool for Vifib\n
+if getattr(portal, "portal_certificate_authority", None ) is None:\n
+  portal.manage_addProduct[\'Vifib\'].manage_addTool(\'ERP5 Certificate Authority Tool\', None)\n
+  print "Created portal_certificate_authority"\n
+else:\n
+  print "portal_certificate_authority already exists."\n
 \n
-for document in portal.portal_catalog(portal_type=bt.getTemplatePortalTypeRoleList()):\n
-  document.updateLocalRolesOnSecurityGroups()\n
+## Set Authentification Plugin\n
+plugin_id = "vifib_auth"\n
+user_folder = context.acl_users\n
+if plugin_id not in user_folder.objectIds():\n
+  # check if it\'s not already created\n
+  user_folder.manage_addProduct[\'Vifib\'].addVifibMachineAuthenticationPlugin(\n
+                                              id = plugin_id, \n
+                                              title = "Vifib Machine Authentication Plugin")\n
+  print "%s Plugin added at acl_users." % plugin_id\n
+else:\n
+  print "%s Plugin already added added at acl_users." % plugin_id\n
 \n
-conversion_server_hostname = portal.portal_preferences.getPreferredOoodocServerAddress()\n
-conversion_server_port = portal.portal_preferences.getPreferredOoodocServerPortNumber()\n
-for preference_id in ["default_configurator_preference", "default_configurator_system_preference"]:\n
-  preference = getattr(portal.portal_preferences, preference_id)\n
-  if preference.getPortalType() == "System Preference":\n
-    preference.setPreferredOoodocServerPortNumber(conversion_server_port)\n
-    preference.setPreferredOoodocServerAddress(conversion_server_hostname)\n
+vifib_plugin = getattr(user_folder, plugin_id)\n
+vifib_plugin.manage_activateInterfaces(interfaces=[\'IAuthenticationPlugin\',\n
+                                                   \'IUserEnumerationPlugin\', \n
+                                                   \'IGroupsPlugin\', \n
+                                                   \'IExtractionPlugin\' ])\n
+print "Enabled "\n
+## This is a hack, the initial users should be created by traditional \n
+## user configurator state.\n
+##test_vifib_admin = self.person_module.searchFolder(portal_type="Person", \n
+##                                       reference="test_vifib_admin")\n
 \n
-  if isTransitionPossible(preference, "enable"):\n
-    preference.enable()\n
-  preference.updateLocalRolesOnSecurityGroups()\n
+##if len(user.searchFolder(portal_type="Assignment", validation_date="started")) == 0:\n
+##  assignment = test_vifib_admin.newContent(portal_type="Assignment")\n
+##  assigment.setGroup("group/vifib")\n
+##  assignment.start()\n
+  \n
 \n
-for gadget in portal.portal_gadgets.objectValues():\n
-  if gadget.getValidationState() == \'invisible\':\n
-    gadget.visible()\n
-    gadget.public()\n
 \n
-context.BusinessCondiguration_additionalConfiguration()\n
-\n
-print "Indexing translations"\n
-portal.ERP5Site_updateTranslationTable()\n
-\n
-# clear cache so user security is recalculated\n
-portal.portal_caches.clearAllCache()\n
-print "Clear cache."\n
-\n
-log("%s" % printed)\n
+return printed\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>**kw</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>BusinessConfiguration_afterVifibConfiguration</string> </value>
+            <value> <string>BusinessCondiguration_additionalConfiguration</string> </value>
         </item>
       </dictionary>
     </pickle>
