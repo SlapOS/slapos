@@ -72,19 +72,19 @@ color:#9C9C9C;\n
 color:#910000;\n
 }\n
 \n
-.my_services {\n
+.my_services h1 {\n
 background:url(<tal:block tal:replace="img_folder"/>my_services_active.png) no-repeat scroll left center transparent;\n
 padding-left:100px;\n
 }\n
-.my_servers {\n
+.my_servers h1 {\n
 background:url(<tal:block tal:replace="img_folder"/>my_servers_active.png) no-repeat scroll left center transparent;\n
 padding-left:100px;\n
 }\n
-.my_account {\n
+.my_account h1 {\n
 background:url(<tal:block tal:replace="img_folder"/>my_account_active.png) no-repeat scroll left center transparent;\n
 padding-left:100px;\n
 }\n
-.help {\n
+.help h1 {\n
 background:url(<tal:block tal:replace="img_folder"/>help_active.png) no-repeat scroll left center transparent;\n
 padding-left:100px;\n
 }\n
