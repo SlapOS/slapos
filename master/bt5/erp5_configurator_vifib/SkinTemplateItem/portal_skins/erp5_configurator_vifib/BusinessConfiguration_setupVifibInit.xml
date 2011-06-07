@@ -65,7 +65,7 @@ if context.getConfigurationAfterScriptId() is None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>BusinessConfiguration_setupVifibDemoInit</string> </value>
+            <value> <string>BusinessConfiguration_setupVifibInit</string> </value>
         </item>
       </dictionary>
     </pickle>
