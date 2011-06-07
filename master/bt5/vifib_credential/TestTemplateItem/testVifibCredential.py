@@ -88,9 +88,6 @@ class TestVifibCredential(testVifibMixin):
       self.portal.manage_delObjects(['MailHost'])		 
       self.portal._setObject('MailHost', DummyMailHost('MailHost'))
 
-    for notification in self.portal.notification_message_module.objectValues():
-      if notification.getValidationState() == "draft":
-        notification.validate()
     self.stepTic()
 
   def testMailMessagePosted(self):
