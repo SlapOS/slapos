@@ -1,0 +1,20 @@
+<type_roles>
+  <role id='Auditor'>
+   <property id='title'>Computer</property>
+   <property id='description'>Monovalued role</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromMovementItemByComputerPartition</property>
+   <multi_property id='base_category'>aggregate</multi_property>
+  </role>
+  <role id='Assignee'>
+   <property id='title'>Destination Decision</property>
+   <property id='description'>Monovalued role</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
+   <multi_property id='base_category'>destination_decision</multi_property>
+  </role>
+  <role id='Auditor'>
+   <property id='title'>Software Instance related by Hosting Subscription</property>
+   <property id='description'>Monovalued role</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromMovementItemByHostingSubscription</property>
+   <multi_property id='base_category'>aggregate</multi_property>
+  </role>
+</type_roles>

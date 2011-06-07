@@ -1,0 +1,4 @@
+business_configuration_module/default_vifib_configuration
+business_configuration_module/default_vifib_configuration/default_image
+workflow_module/vifib_configuration_workflow
+workflow_module/vifib_configuration_workflow/**

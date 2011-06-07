@@ -1,0 +1,24 @@
+<type_roles>
+  <role id='Auditor'>
+   <property id='title'>Computer and Software Instance</property>
+   <multi_property id='category'>function/production</multi_property>
+   <multi_property id='base_category'>function</multi_property>
+  </role>
+  <role id='Auditor'>
+   <property id='title'>Vifib Customer</property>
+   <multi_property id='category'>function/customer</multi_property>
+   <multi_property id='base_category'>function</multi_property>
+  </role>
+  <role id='Auditor; Author'>
+   <property id='title'>Vifib Developper</property>
+   <multi_property id='category'>function/is/developer</multi_property>
+   <multi_property id='category'>group/my_group</multi_property>
+   <multi_property id='base_category'>function</multi_property>
+   <multi_property id='base_category'>group</multi_property>
+  </role>
+  <role id='Auditor'>
+   <property id='title'>Vifib User Admin</property>
+   <multi_property id='category'>function/is/admin</multi_property>
+   <multi_property id='base_category'>function</multi_property>
+  </role>
+</type_roles>

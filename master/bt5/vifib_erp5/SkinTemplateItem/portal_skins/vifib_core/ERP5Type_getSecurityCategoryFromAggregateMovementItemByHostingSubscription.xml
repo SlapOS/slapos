@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string># XXX For now, this script requires proxy manager\n
+\n
+# base_category_list : list of category values we need to retrieve\n
+# user_name : string obtained from getSecurityManager().getUser().getUserName() [NuxUserGroup]\n
+#             or from getSecurityManager().getUser().getId() [PluggableAuthService with ERP5GroupManager]\n
+# object : object which we want to assign roles to.\n
+# portal_type : portal type of object\n
+\n
+# must always return a list of dicts\n
+\n
+category_list = []\n
+\n
+if obj is None:\n
+  return []\n
+\n
+item_portal_type = "Hosting Subscription"\n
+movement_portal_type = "Sale Packing List Line"\n
+\n
+portal = obj.getPortalObject()\n
+\n
+movement = portal.portal_catalog.getResultValue(\n
+  portal_type=movement_portal_type,\n
+  aggregate_uid=obj.getUid(),\n
+  simulation_state=portal.getPortalCurrentInventoryStateList() + portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList(),\n
+)\n
+\n
+if movement is not None:\n
+  item = movement.getAggregateValue(portal_type=item_portal_type)\n
+  if item is not None:\n
+    category_list.append({"aggregate": [item.getRelativeUrl()]})\n
+\n
+return category_list\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>base_category_list, user_name, obj, portal_type</string> </value>
+        </item>
+        <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>ERP5Type_getSecurityCategoryFromAggregateMovementItemByHostingSubscription</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

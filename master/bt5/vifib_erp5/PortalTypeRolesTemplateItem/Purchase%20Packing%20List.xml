@@ -1,0 +1,14 @@
+<type_roles>
+  <role id='Assignor'>
+   <property id='title'>Computer</property>
+   <property id='description'>Monovalued role</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromMovementItem</property>
+   <multi_property id='base_category'>aggregate</multi_property>
+  </role>
+  <role id='Assignee'>
+   <property id='title'>Destination Decision</property>
+   <property id='description'>Monovalued role</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
+   <multi_property id='base_category'>destination_decision</multi_property>
+  </role>
+</type_roles>

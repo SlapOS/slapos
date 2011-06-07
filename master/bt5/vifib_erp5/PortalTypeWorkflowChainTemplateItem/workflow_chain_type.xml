@@ -1,0 +1,54 @@
+<workflow_chain>
+ <chain>
+  <type>Computer</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Hosting Subscription</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Internal Packing List</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Open Sale Order</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Person</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Purchase Packing List</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Purchase Packing List Line</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Sale Order</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Sale Order Line</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Sale Packing List</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Sale Packing List Line</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Sale Trade Condition</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Software Instance</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+</workflow_chain>

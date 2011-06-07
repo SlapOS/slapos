@@ -1,0 +1,32 @@
+<property_sheet_list>
+ <portal_type id="Assignment">
+  <item>VifibAssignmentConstraint</item>
+ </portal_type>
+ <portal_type id="Computer">
+  <item>VifibComputerConstraint</item>
+ </portal_type>
+ <portal_type id="Email">
+  <item>VifibEmailConstraint</item>
+ </portal_type>
+ <portal_type id="Internal Packing List">
+  <item>VifibInternalPackingListConstraint</item>
+ </portal_type>
+ <portal_type id="Internal Packing List Line">
+  <item>VifibInternalPackingListLineConstraint</item>
+ </portal_type>
+ <portal_type id="Person">
+  <item>VifibPersonConstraint</item>
+ </portal_type>
+ <portal_type id="Purchase Packing List">
+  <item>VifibPurchasePackingListConstraint</item>
+ </portal_type>
+ <portal_type id="Purchase Packing List Line">
+  <item>VifibPurchasePackingListLineConstraint</item>
+ </portal_type>
+ <portal_type id="Software Product">
+  <item>VifibSoftwareProductConstraint</item>
+ </portal_type>
+ <portal_type id="Software Release">
+  <item>VifibSoftwareReleaseConstraint</item>
+ </portal_type>
+</property_sheet_list>

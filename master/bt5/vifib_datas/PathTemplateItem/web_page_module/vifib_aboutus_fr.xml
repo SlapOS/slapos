@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Web Page" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Change_local_roles_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>classification/collaborative/public</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>vifib.aboutus</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>vifib_aboutus_fr</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value> <string>fr</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Web Page</string> </value>
+        </item>
+        <item>
+            <key> <string>short_title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+<h1>La fibre gratuite ici et maintenant</h1>\r\n
+<p>ViFiB est un service qui vous rembourse (sous condition) votre connexion &agrave; tr&egrave;s haut d&eacute;bit par fibre optique &agrave; condition que vous acceptiez d\'h&eacute;berger 2 PC chez vous, de les alimenter en &eacute;lectricit&eacute; et de les connecter &agrave; Internet avec une adresse IPv6 fournie par votre fournisseurs d\'acc&egrave;s internet&nbsp; (ex.&nbsp;<a href="http://www.free.fr">Free</a>). <a href="http://fr.wikipedia.org/wiki/IPv6">Pour savoir ce qu\'est une&nbsp;IPv6, consultez Wikipedia</a>. Pour r&eacute;sumer, IP est la technologie Internet qui a &eacute;t&eacute; cr&eacute;&eacute;e en 1995 pour permettre &agrave; tous les hommes et &agrave; toutes les machines dans le monde de s\'identifier sur Internet.&nbsp;Les fournisseurs d\'acc&egrave;s internet modernes tels que <a href="http://www.free.fr">Free</a> fournissent ce service.&nbsp;D\'autres fournisseurs d\'acc&egrave;s Internet utilisent quant &agrave; eux la technologie IPv4, cr&eacute;&eacute;e dans les ann&eacute;es 1970 et appel&eacute;e &agrave; dispara&icirc;tre dans quelques ann&eacute;es.</p>\r\n
+<p style="text-align: center;"><img src="MKT-Vifib.Drawings/img0.png" alt="" /></p>\r\n
+<h1>Un Internet plus respectueux de l\'environnement</h1>\r\n
+<p>Mais &agrave; quoi peuvent bien servir ces PC install&eacute;s chez vous?</p>\r\n
+<p>Tout simplement &agrave; faire fonctionner Internet avec le dernier cri de la technologie : le <a href="http://fr.wikipedia.org/wiki/Informatique_dans_les_nuages"><em>Cloud Computing</em> appel&eacute; aussi informatique dans les nuages</a>. La plupart des sites Web que vous utilisez ont besoin pour fonctionner d\'un PC appel&eacute; un serveur.&nbsp;Ce PC&nbsp;permet d\'enregistrer des informations et de les redistribuer. Des sites tels que <a href="http://www.facebook.com">Facebook</a> ou <a href="http://www.google.fr/">Google</a> utilisent par exemple des milliers ou des dizaines de milliers de PC&nbsp;concentr&eacute;s au m&ecirc;me endroit pour vous fournir un service.&nbsp;C\'est ce que certains appellent une <a href="http://www.google.fr/images?um=1&amp;hl=fr&amp;client=firefox-a&amp;rls=com.mandriva:en-US:unofficial&amp;q=google+server+farm&amp;ie=UTF-8&amp;source=univ&amp;ei=fQgQTKW8C5aW4ga1ssysDA&amp;sa=X&amp;oi=image_result_group&amp;ct=title&amp;resnum=1&amp;ved=0CCQQsAQwAA">ferme de serveurs</a>. C\'est ce que nous appelons le <span style="color: rgb(153, 51, 0);">CLOUD&nbsp;A&nbsp;PAPA</span>. Il faut alors pr&eacute;voir une centrale &eacute;lectrique, une rivi&egrave;re, une usine g&eacute;ante.&nbsp;Bref, beaucoup d\'&eacute;missions de gaz carbonique pour que vous puissiez consulter vos mels en ligne ou retrouver vos copains sur un r&eacute;seau social.</p>\r\n
+<p>Avec ViFiB, fini le <span style="color: rgb(153, 51, 0);">CLOUD&nbsp;A&nbsp;PAPA</span>. Chaque serveur est h&eacute;berg&eacute; &agrave; la maison.&nbsp;En hiver, il contribue au chauffage et n\'a donc pas besoin d\'&ecirc;tre refroidi.&nbsp;En &eacute;t&eacute;, il fonctionne aussi tr&egrave;s bien dans les pays temp&eacute;r&eacute;s avec la simple circulation naturelle de l\'air dans la maison. Et il peut fonctionner avec une source d\'&eacute;lectricit&eacute; locale, comme une &eacute;olienne ou des panneaux solaires. Bref, avec ViFiB, le Cloud consomme 2&nbsp;&agrave; 4 fois moins d\'&eacute;nergie et tout ce qui peut &ecirc;tre r&eacute;utilis&eacute; l\'est.</p>\r\n
+<p style="text-align: center;"><img src="MKT-Vifib.Drawings/img2.png" alt="" /></p>\r\n
+<p><br />\r\n
+&nbsp;</p>\r\n
+<h1>Un Internet plus &eacute;quitable</h1>\r\n
+<p>Concentrer des milliers ou des dizaines de milliers de serveurs, c\'est aussi concentrer les investissements (avec le probl&egrave;me des rendements d&eacute;croissants...), concentrer les flux financiers, concentrer l\'information (et la contr&ocirc;ler?).&nbsp;Le <span style="color: rgb(153, 51, 0);">CLOUD&nbsp;A&nbsp;PAPA</span> est donc profond&eacute;ment in&eacute;galitaire et favorise toutes les formes de totalitarismes. Avec ViFiB, fini le <span style="color: rgb(153, 51, 0);">CLOUD&nbsp;A&nbsp;PAPA</span>. Chaque citoyen peut assumer sa part du&nbsp;Cloud, comme on assume sa part du  fardeau de l\'humanit&eacute;, pour le meilleur et pour le pire. ViFiB  assure la redistribution &eacute;quitable des richesses n&eacute;es du Cloud et  garantit l\'existence d\'un march&eacute; parfaitement transparent et  concurrentiel. Gr&acirc;ce &agrave; ViFiB, Internet cesse d\'&ecirc;tre un syst&egrave;me &agrave; concentrer les flux financiers et les savoirs; Internet redevient gr&acirc;ce &agrave; ViFiB un outil de partage de la connaissance et de redistribution des richesses.</p>\r\n
+<p style="text-align: center;"><img src="MKT-Vifib.Drawings/img1.png" alt="" /></p>\r\n
+<p>&nbsp;</p>\r\n
+<h1>Un Internet plus s&ucirc;r</h1>\r\n
+<p>Mais apr&egrave;s tout, qui se soucie encore du partage des savoirs et de la redistribution des richesses dans une &eacute;conomie num&eacute;rique o&ugrave; ceux qui furent les plus grands chantres du partage des connaissances - <a href="http://fr.wikipedia.org/wiki/Culture_libre">les pionniers du logiciel libre</a> - ont si souvent reni&eacute; leurs valeurs au profit d\'une soit-disant efficacit&eacute; &eacute;conomique ou simplement pour s\'assurer une retraite confortable.</p>\r\n
+<p>Pour les nombreux agnostiques qui aspirent (avec sagesse?) &agrave; la s&eacute;curit&eacute; et &agrave; la stabilit&eacute; au juste prix, concentrer des milliers ou des dizaines de milliers de serveurs pr&eacute;sente tout de m&ecirc;me un risque : celui de voir dispara&icirc;tre du jour au lendemain toute ses donn&eacute;es, tous ces services &agrave; cause d\'un incendie, d\'un coup de pelleteuse qui coupe une fibre, d\'une panne &eacute;lectrique, d\'une erreur humaine, d\'un d&eacute;p&ocirc;t de bilan, d\'une fusion-acquisition, etc.&nbsp;Le <span style="color: rgb(153, 51, 0);">CLOUD&nbsp;A&nbsp;PAPA</span> est fiable, tant qu\'il ne tombe pas en panne. Et quand il tombe en panne, ce qui arrive m&ecirc;me aux meilleurs, <a href="http://www.20minutes.fr/article/304480/High-Tech-Gmail-en-panne-Google-s-explique.php">ce sont des continents entiers qui perdent l\'acc&egrave;s &agrave; des services de base du Web</a>.</p>\r\n
+<p>Avec ViFiB, fini les risques insens&eacute;s du <span style="color: rgb(153, 51, 0);">CLOUD&nbsp;A&nbsp;PAPA</span>. Les serveurs &eacute;tant r&eacute;partis sur tout le territoire, dans les maisons des uns ou des autres, chez plusieurs op&eacute;rateurs, le tout avec une finesse extraordinaire, l\'impact d\'une panne d\'un PC ou m&ecirc;me de plusieurs PC&nbsp;est infiniment moindre que la panne d\'une ferme de serveurs.&nbsp;</p>\r\n
+<p style="text-align: center;"><img src="MKT-Vifib.Drawings/img3.png" alt="" /></p>\r\n
+<h1>Questions fr&eacute;quemment pos&eacute;es</h1>\r\n
+<h2>Qui utilise ViFiB <em>Hosting</em>?</h2>\r\n
+<p>Plusieurs soci&eacute;t&eacute;s sont en train de migrer leur infrastructure de Cloud Computing sur ViFiB: <a href="http://corefarm.com/">Corefarm</a>, <a href="http://tiolive.com">TioLive</a>.&nbsp;Vous souhaitez vous aussi tester ViFiB et migrer.&nbsp;<a href="contact">Contactez-nous</a>. Nous serons heureux de vous aider &agrave; passer du <span style="color: rgb(153, 51, 0);">CLOUD&nbsp;A&nbsp;PAPA </span>au Cloud r&eacute;parti de&nbsp;ViFiB.</p>\r\n
+<p>L\'h&eacute;bergement d\'une solution informatique sur un serveur ViFiB n&eacute;cessite de d&eacute;ployer des technologies de tol&eacute;rance aux pannes.&nbsp;Certaines de ces technologies sont gratuite et sont d&eacute;crites sur le site de la <a href="http://www.freecloudalliance.org/">Free Cloud Alliance</a>. ViFiB recommande l\'utilisation de technologies de tol&eacute;rance aux pannes au niveau applicatif associ&eacute;es &agrave; du DNS dynamique (load balancing, monitoring, high availability) et un r&eacute;seau de caches.&nbsp;Lorsque ce n\'est pas possible, ViFiB, recommande l\'usage de solutions virtualisation telles que <a href="http://www.niftyname.org/">NiftyName</a> qui reposent notamment sur <a href="http://www.drbd.org/">DRBD</a>, </p>\r\n
+<h2>O&ugrave; puis-je lire les conditions de l\'offre?</h2>\r\n
+<p>Les conditions de l\'offre sont d&eacute;crites dans un <a href="http://www.vifib.org/VIFIB-Hosting.Contract">Contrat de D&eacute;p&ocirc;t</a>.</p>\r\n
+<h2>H&eacute;berger un serveur ViFiB est-il compatible avec mon contrat d\'acc&egrave;s &agrave; la fibre?</h2>\r\n
+<p>ViFiB <em>Hosting</em> ne fournit pas de l\'acc&egrave;s Internet, mais de la puissance de cacul mutualis&eacute;e gr&acirc;ce &agrave; une <a href="http://fr.wikipedia.org/wiki/Grille_informatique">technologie de grille</a>.&nbsp;Les serveurs ViFiB sont d\'ailleurs con&ccedil;u pour les performances avant tout, avec des disques tr&egrave;s rapides et une capacit&eacute; de stockage limit&eacute;e.&nbsp;Ils peuvent servir &agrave; faire de la comptabilit&eacute;, du calcul d\'images, de l\'indexation de contenus, etc. En h&eacute;bergeant un serveur chez vous, vous rendez accessible cette puissance de calcul &agrave; des tiers, au travers de votre acc&egrave;s Internet.&nbsp;Il n\'y a donc pas de diff&eacute;rence de principe avec <a href="http://setiathome.free.fr/">Seti@Home</a>, un logiciel de calcul scientifique cr&eacute;e par des astrophysiciens et que des millions de gens ont install&eacute; sur leur PC dans le monde pour aider la recherche.&nbsp;Nous ne connaissons pas &agrave; ce jour de fournisseur d\'acc&egrave;s qui consid&egrave;re que le calcul en grille est contraire &agrave; leurs conditions g&eacute;n&eacute;rales de vente.</p>\r\n
+<h2>Combien consomme un serveur ViFiB?</h2>\r\n
+<p>Un serveur ViFiB utilise un processeur <a href="http://fr.wikipedia.org/wiki/Intel_Core_i7">Intel i7&nbsp;860</a>&nbsp;qui consomme 95W. Le serveur consomme globalement environ 150W.&nbsp;Au <a href="http://bleuciel.edf.com/abonnement-et-contrat/les-prix/les-prix-de-l-electricite/tarif-bleu-47798.html#acc52409">tarif de bleu de l\'&eacute;lectricit&eacute;</a>, un serveur consomme donc environ 10 EUR&nbsp;par mois d\'&eacute;lectricit&eacute;. Cependant, la moiti&eacute; de l\'ann&eacute;e environ, ce serveur permet de r&eacute;duire la consommation de chauffage &eacute;lectrique et sa consommation est donc transparente. On peut donc consid&eacute;rer que sur une ann&eacute;e, la consommation annuelle mensuelle d\'un serveur est de 5&nbsp;EUR. Avec deux serveurs, elle est de 10&nbsp;EUR, &agrave; comparer aux 30&nbsp;EUR&nbsp;rembours&eacute;s par ViFiB.</p>\r\n
+<h2>H&eacute;berger un serveur ViFiB est-il compatible avec les tarifs sociaux de l\'&eacute;lectricit&eacute; ou la mutualisation des charges?</h2>\r\n
+<p>Certaines personnes ne payent par leur &eacute;lectricit&eacute;.&nbsp;Est-il l&eacute;gal ou moral dans ce cas d\'h&eacute;berger un serveur ViFiB&nbsp;?</p>\r\n
+<p>Il s\'agit d\'une question complexe d\'un point de vue juridique, comptable et de politique publique. Si l\'on consid&egrave;re qu\'en hiver, dans un logement chauff&eacute; &agrave; l\'&eacute;lectricit&eacute;, ViFiB&nbsp;n\'engendre pas une surconsommation de courant, alors on peut d&eacute;fendre que l\'h&eacute;bergement de serveurs ViFiB n\'engendre pas de charges suppl&eacute;mentaires pour une collectivit&eacute;. Si l\'on consid&egrave;re qu\'en &eacute;t&eacute;, dans un logement non chauff&eacute;, l\'h&eacute;bergement de serveurs ViFiB engendre une surconsommation de courant dont le co&ucirc;t est r&eacute;parti sur une collectivit&eacute;, il est important de v&eacute;rifier les dispositions du bail ou du r&egrave;glement de copropri&eacute;t&eacute; et &eacute;ventuellement de prendre contact avec le propri&eacute;taire ou les copropri&eacute;taires.</p>\r\n
+<p>Il serait cependant regrettable que ces questions juridiques ou comptables tr&egrave;s th&eacute;oriques freinent le d&eacute;veloppement de ViFiB alors que ViFiB&nbsp;est clairement plus efficace pour la protection de l\'environnement, plus juste en termes de libre concurrence et plus s&ucirc;r pour la s&eacute;curit&eacute; nationale que les approches de  <span style="color: rgb(153, 51, 0);">CLOUD&nbsp;A&nbsp;PAPA</span>. Souvenons-nous des moteurs de recherche au d&eacute;but de l\'Internet.&nbsp;Copier et indexer une page Web &eacute;tait alors d\'un point de vue juridique une contrefa&ccedil;on de droit d\'auteur au sens du code de la propri&eacute;t&eacute; intellectuelle.&nbsp;Cela n\'a pas emp&ecirc;ch&eacute; la loi d\'&eacute;voluer pour s\'adapter &agrave; des pratiques utiles socialement.</p>\r\n
+<p>ViFiB&nbsp;sugg&egrave;re, afin de favoriser la protection de l\'environnement et d\'&eacute;viter en m&ecirc;me temps de sombrer dans la <a href="http://fr.wikipedia.org/wiki/Trag%C3%A9die_des_biens_communs">trag&eacute;die des biens communs</a>, d\'autoriser l\'h&eacute;bergement de serveurs ViFiB en fixant par exemple une consommation maximum autoris&eacute;e par foyer au-d&eacute;l&agrave; de laquelle l\'usager doit payer.&nbsp;C\'est exactement ce que pr&eacute;voit d&eacute;j&agrave; le <a href="http://fr.wikipedia.org/wiki/Tarif_de_premi%C3%A8re_n%C3%A9cessit%C3%A9">tarif de premi&egrave;re n&eacute;cessite en France</a>.</p>\r\n
+<h2>Que se passe-t-il si je d&eacute;branche le serveur?</h2>\r\n
+<p>ViFiB&nbsp;ne vous remboursera pas 30&nbsp;EUR ou le montant de votre acc&egrave;s &agrave; la fibre .&nbsp;Si vous le d&eacute;branchez bri&egrave;vement une fois dans le mois, ViFiB ne remboursera que 75% du montant. Si vous le d&eacute;branchez bri&egrave;vement une deuxi&egrave;me fois dans le mois, ViFiB ne remboursera que 50% du montant. Si vous le d&eacute;branchez bri&egrave;vement une troisi&egrave;me fois dans le mois, ViFiB  ne remboursera rien.</p>\r\n
+<h2>Puis-je arr&ecirc;ter &agrave; tout moment?</h2>\r\n
+<p>Oui. A condition de permettre &agrave; ViFiB de r&eacute;cup&eacute;rer les serveurs h&eacute;berg&eacute;s chez vous.</p>\r\n
+<h2>Que se passe-t-il si quelqu\'un utilise un serveur ViFiB h&eacute;berg&eacute; chez moi pour y stocker des contenus illicites tels que des contrefa&ccedil;ons, des images p&eacute;do-pornographiques ou des propos racistes?</h2>\r\n
+<p>Dans le cadre du <a href="http://www.vifib.org/VIFIB-Hosting.Contract">Contrat de  D&eacute;p&ocirc;t</a>, vous &ecirc;tes consid&eacute;r&eacute; comme h&eacute;bergeur au sens de la <a href="http://www.legifrance.gouv.fr/html/actualite/actualite_legislative/decrets_application/2004-575.htm">loi de 2004-575</a> et vous &ecirc;tes donc  d\'un point de vue juridique irresponsable quant au contenu des informations contenue dans le serveur et donc vous n\'avez pas connaissance. En revanche, si de telles informations sont stock&eacute;es sur un serveur h&eacute;berg&eacute; chez vous par ViFiB, ViFiB&nbsp;prendra les mesures pr&eacute;vues par la loi pour faire cesser le stockage de contenus illicites en vous demandant, le cas &eacute;ch&eacute;ant, de d&eacute;brancher le serveur du r&eacute;seau &eacute;lectrique.</p>\r\n
+<h2>Puis-je regarder le contenu du serveur?</h2>\r\n
+<p>Non. Les donn&eacute;es contenues dans le serveur ne vous appartiennent pas. Etant consid&eacute;r&eacute; comme h&eacute;bergeur au sens de la <a href="http://www.legifrance.gouv.fr/html/actualite/actualite_legislative/decrets_application/2004-575.htm">loi  de 2004-575</a> vous n\'&ecirc;tes pas autoris&eacute; &agrave; espionner ce que vous les utilisateurs de VIFiB&nbsp;Hosting avec le serveur plac&eacute; en d&eacute;p&ocirc;t chez vous.</p>
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>text_format</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Qui sommes nous ?</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>001</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

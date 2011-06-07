@@ -1,0 +1,12 @@
+<type_roles>
+  <role id='Auditor'>
+   <property id='title'>Computer</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromAggregateMovementItemByComputerPartition</property>
+   <multi_property id='base_category'>aggregate</multi_property>
+  </role>
+  <role id='Auditor'>
+   <property id='title'>Related Software Instance Group</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromSelf</property>
+   <multi_property id='base_category'>aggregate</multi_property>
+  </role>
+</type_roles>

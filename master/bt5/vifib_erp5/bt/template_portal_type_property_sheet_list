@@ -1,0 +1,10 @@
+Assignment | VifibAssignmentConstraint
+Computer | VifibComputerConstraint
+Email | VifibEmailConstraint
+Internal Packing List Line | VifibInternalPackingListLineConstraint
+Internal Packing List | VifibInternalPackingListConstraint
+Person | VifibPersonConstraint
+Purchase Packing List Line | VifibPurchasePackingListLineConstraint
+Purchase Packing List | VifibPurchasePackingListConstraint
+Software Product | VifibSoftwareProductConstraint
+Software Release | VifibSoftwareReleaseConstraint
