@@ -38,11 +38,7 @@ class Recipe(BaseSlapRecipe):
   def _install(self):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
-    # Use killpidfromfile from ERP5.
-    self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
-          'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-    self.path_list.append(self.killpidfromfile)
+
     ip = self.getGlobalIPv6Address()
     conversion_server_conf = self.installConversionServer(
         ip, 23000, self.getLocalIPv4Address(), 23060)
