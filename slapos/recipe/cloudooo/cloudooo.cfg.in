@@ -62,6 +62,6 @@ mimetype_registry =
   * application/vnd.oasis.opendocument* ooo
 
 [server:main]
-use = egg:PasteScript#wsgiutils
+use = egg:PasteScript#cherrypy
 host = %(ip)s
 port = %(port)s
