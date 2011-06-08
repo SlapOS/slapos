@@ -37,6 +37,7 @@ class Recipe(BaseSlapRecipe):
 
   def _install(self):
     self.path_list = []
+    self.requirements, self.ws = self.egg.working_set()
     self.requirements, self.ws = self.egg.working_set([__name__])
     # Use killpidfromfile from ERP5.
     self.killpidfromfile = zc.buildout.easy_install.scripts(
