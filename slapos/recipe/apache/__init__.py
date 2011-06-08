@@ -53,14 +53,13 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(self.killpidfromfile)
 
     ca_conf = self.installCertificateAuthority()
-    key, certificate = self.requestCertificate('Login Based Access')
-    apache_conf = dict(
-        apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
-          port=13000, backend=zope_access, key=key, certificate=certificate))
+    key, certificate = self.requestCertificate('Apache Front end')
+
+    site_url = self.installFrontendApache(ip=self.getGlobalIPv6Address(),
+          port=8080, key=key, certificate=certificate)
+
     self.linkBinary()
-    self.setConnectionDict(dict(
-      site_url=apache_conf['apache_login'],
-    ))
+    self.setConnectionDict(dict(site_url=site_url, ))
     return self.path_list
 
   def installLogrotate(self):
@@ -177,7 +176,7 @@ class Recipe(BaseSlapRecipe):
       __name__, 'template/openssl.cnf.ca.in') % config)
     self.path_list.extend(zc.buildout.easy_install.scripts([
       ('certificate_authority',
-        __name__ + '.certificate_authority', 'runCertificateAuthority')],
+        'slapos.recipe.erp5.certificate_authority', 'runCertificateAuthority')],
         self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
           openssl_configuration=openssl_configuration,
           openssl_binary=self.options['openssl_binary'],
@@ -186,6 +185,7 @@ class Recipe(BaseSlapRecipe):
           crl=os.path.join(self.ca_crl),
           request_dir=self.ca_request_dir
           )]))
+
     # configure backup
     backup_cron = os.path.join(self.cron_d, 'ca_rdiff_backup')
     open(backup_cron, 'w').write(
@@ -219,8 +219,47 @@ class Recipe(BaseSlapRecipe):
       apache_conf['pid_file'] + ' SIGUSR1')
     return apache_conf
 
-  def installFrontendApache(self, ip, port, name, frontend_path, backend_url,
-      backend_path, key, certificate, access_control_string=None):
-    """
-    """
-    pass
+  def installFrontendApache(self, ip, port, key, certificate,
+                               name="slapos", access_control_string=None):
+    ident = 'frontend_' + name
+    frontend_path = self.createDataDirectory('apacheshared')
+
+    apache_conf = self._getApacheConfigurationDict(ident, ip, port)
+    apache_conf['server_name'] = name
+    apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
+        'template/apache.ssl-snippet.conf.in') % dict(
+        login_certificate=certificate, login_key=key)
+
+    path = pkg_resources.resource_string(__name__, 'template/apache.zope.conf.path-protected.in') % dict(path='/', access_control_string='none')
+    if access_control_string is None:
+      path_template = pkg_resources.resource_string(__name__,
+        'template/apache.zope.conf.path.in')
+      path += path_template % dict(path=frontend_path)
+    else:
+      path_template = pkg_resources.resource_string(__name__,
+        'template/apache.zope.conf.path-protected.in')
+
+      path += path_template % dict(path=frontend_path,
+          access_control_string=access_control_string)
+
+    rewrite_rule = "### Write rule not defined yet."
+    apache_conf.update(**dict(
+      path_enable=path,
+      rewrite_rule=rewrite_rule
+    ))
+
+    apache_conf_string = pkg_resources.resource_string(__name__,
+          'template/apache.zope.conf.in') % apache_conf
+    apache_config_file = self.createConfigurationFile(ident + '.conf',
+        apache_conf_string)
+    self.path_list.append(apache_config_file)
+    self.path_list.extend(zc.buildout.easy_install.scripts([(
+      ident, 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
+          sys.executable, self.wrapper_directory, arguments=[
+            dict(
+              required_path_list=[key, certificate],
+              binary=self.options['httpd_binary'],
+              config=apache_config_file
+            )
+          ]))
+    return "https://[%s]:%s/" % (ip, port)
