@@ -47,9 +47,11 @@ class Recipe(BaseSlapRecipe):
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', __name__ + '.killpidfromfile',
+        [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
+
     self.path_list.append(self.killpidfromfile)
+
     ca_conf = self.installCertificateAuthority()
     key, certificate = self.requestCertificate('Login Based Access')
     apache_conf = dict(
