@@ -1,0 +1,3 @@
+Configurations after install:
+- Configure the MailHost
+- Enable vifib_default_system_preference on Preferences and enable "Automatic approval of credential request" on tab "Credential"

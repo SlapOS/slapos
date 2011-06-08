@@ -1,8 +1,13 @@
-0.2 (unreleased)
+0.3 (unreleased)
 ================
 
  * Do not use buildout internally, but rather call bootstrap command of any
    provided buildout binary. [Łukasz Nowak]
+
+0.2 (2011-06-01)
+================
+
+ * Include required files in distribution [Łukasz Nowak]
 
 0.1 (2011-05-27)
 ================

@@ -1,0 +1,15 @@
+<type_roles>
+  <role id='Associate'>
+   <property id='title'>The User Himself</property>
+   <property id='description'>Monovalued role</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromSelf</property>
+   <multi_property id='base_category'>group</multi_property>
+  </role>
+  <role id='Assignor; Auditor'>
+   <property id='title'>Vifib HR Admin</property>
+   <multi_property id='category'>function/hr/agent</multi_property>
+   <multi_property id='category'>group/my_group</multi_property>
+   <multi_property id='base_category'>function</multi_property>
+   <multi_property id='base_category'>group</multi_property>
+  </role>
+</type_roles>

@@ -149,13 +149,16 @@ class OpenOrder(SlapDocument):
   zope.interface.implements(interface.IOpenOrder)
 
   def request(self, software_release, partition_reference,
-      partition_parameter_kw=None, software_type=None):
+      partition_parameter_kw=None, software_type=None, filter_kw=None):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
+    if filter_kw is None:
+      filter_kw = {}
     request_dict = {
         'software_release': software_release,
         'partition_reference': partition_reference,
         'partition_parameter_xml': xml_marshaller.dumps(partition_parameter_kw),
+        'filter_xml': xml_marshaller.dumps(filter_kw)
       }
     if software_type is not None:
       request_dict['software_type'] = software_type
@@ -292,8 +295,7 @@ class ComputerPartition(SlapDocument):
       raise ValueError("Unexpected type of filter_kw '%s'" % \
                        filter_kw)
 
-    self._connection_helper.POST('/requestComputerPartition',
-      { 'computer_id': self._computer_id,
+    request_dict = { 'computer_id': self._computer_id,
         'computer_partition_id': self._partition_id,
         'software_release': software_release,
         'software_type': software_type,
@@ -302,7 +304,8 @@ class ComputerPartition(SlapDocument):
         'partition_parameter_xml': xml_marshaller.dumps(
                                         partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
-      })
+      }
+    self._connection_helper.POST('/requestComputerPartition', request_dict)
     xml = self._connection_helper.response.read()
     software_instance = xml_marshaller.loads(xml)
     computer_partition = ComputerPartition(
@@ -410,13 +413,14 @@ class ConnectionHelper:
 check given master-url argument, and make sure that IPv6 is enabled on \
 your machine and that the server is available. The original error was:"
   def __init__(self, connection_wrapper, host, path, key_file=None,
-      cert_file=None, master_ca_file=None):
+      cert_file=None, master_ca_file=None, timeout=None):
     self.connection_wrapper = connection_wrapper
     self.host = host
     self.path = path
     self.key_file = key_file
     self.cert_file = cert_file
     self.master_ca_file = master_ca_file
+    self.timeout = timeout
 
   def getComputerInformation(self, computer_id):
     self.GET('/getComputerInformation?computer_id=%s' % computer_id)
@@ -435,58 +439,68 @@ your machine and that the server is available. The original error was:"
 
   def GET(self, path):
     try:
-      self.connect()
-      self.connection.request('GET', self.path + path)
-      self.response = self.connection.getresponse()
-    except socket.error, e:
-      raise socket.error(self.error_message_connect_fail + str(e))
-    # check self.response.status and raise exception early
-    if self.response.status == httplib.REQUEST_TIMEOUT:
-      # resource is not ready
-      raise ResourceNotReady(path)
-    elif self.response.status == httplib.NOT_FOUND:
-      raise NotFoundError(path)
-    elif self.response.status == httplib.FORBIDDEN:
-      raise Unauthorized(path)
-    elif self.response.status != httplib.OK:
-      message = 'Server responded with wrong code %s with %s' % \
-                                         (self.response.status, path)
-      raise ServerError(message)
+      default_timeout = socket.getdefaulttimeout()
+      socket.setdefaulttimeout(self.timeout)
+      try:
+        self.connect()
+        self.connection.request('GET', self.path + path)
+        self.response = self.connection.getresponse()
+      except socket.error, e:
+        raise socket.error(self.error_message_connect_fail + str(e))
+      # check self.response.status and raise exception early
+      if self.response.status == httplib.REQUEST_TIMEOUT:
+        # resource is not ready
+        raise ResourceNotReady(path)
+      elif self.response.status == httplib.NOT_FOUND:
+        raise NotFoundError(path)
+      elif self.response.status == httplib.FORBIDDEN:
+        raise Unauthorized(path)
+      elif self.response.status != httplib.OK:
+        message = 'Server responded with wrong code %s with %s' % \
+                                           (self.response.status, path)
+        raise ServerError(message)
+    finally:
+      socket.setdefaulttimeout(default_timeout)
 
   def POST(self, path, parameter_dict,
       content_type="application/x-www-form-urlencoded"):
     try:
-      self.connect()
-      header_dict = {'Content-type': content_type}
-      self.connection.request("POST", self.path + path,
-          urllib.urlencode(parameter_dict), header_dict)
-    except socket.error, e:
-      raise socket.error(self.error_message_connect_fail + str(e))
-    self.response = self.connection.getresponse()
-    # check self.response.status and raise exception early
-    if self.response.status == httplib.REQUEST_TIMEOUT:
-      # resource is not ready
-      raise ResourceNotReady("%s - %s" % (path, parameter_dict))
-    elif self.response.status == httplib.NOT_FOUND:
-      raise NotFoundError("%s - %s" % (path, parameter_dict))
-    elif self.response.status == httplib.FORBIDDEN:
-      raise Unauthorized("%s - %s" % (path, parameter_dict))
-    elif self.response.status != httplib.OK:
-      message = 'Server responded with wrong code %s with %s' % \
-                                         (self.response.status, path)
-      raise ServerError(message)
+      default_timeout = socket.getdefaulttimeout()
+      socket.setdefaulttimeout(self.timeout)
+      try:
+        self.connect()
+        header_dict = {'Content-type': content_type}
+        self.connection.request("POST", self.path + path,
+            urllib.urlencode(parameter_dict), header_dict)
+      except socket.error, e:
+        raise socket.error(self.error_message_connect_fail + str(e))
+      self.response = self.connection.getresponse()
+      # check self.response.status and raise exception early
+      if self.response.status == httplib.REQUEST_TIMEOUT:
+        # resource is not ready
+        raise ResourceNotReady("%s - %s" % (path, parameter_dict))
+      elif self.response.status == httplib.NOT_FOUND:
+        raise NotFoundError("%s - %s" % (path, parameter_dict))
+      elif self.response.status == httplib.FORBIDDEN:
+        raise Unauthorized("%s - %s" % (path, parameter_dict))
+      elif self.response.status != httplib.OK:
+        message = 'Server responded with wrong code %s with %s' % \
+                                           (self.response.status, path)
+        raise ServerError(message)
+    finally:
+      socket.setdefaulttimeout(default_timeout)
 
 class slap:
 
   zope.interface.implements(interface.slap)
 
   def initializeConnection(self, slapgrid_uri, key_file=None, cert_file=None,
-      master_ca_file=None):
+      master_ca_file=None, timeout=60):
     self._initialiseConnectionHelper(slapgrid_uri, key_file, cert_file,
-        master_ca_file)
+        master_ca_file, timeout)
 
   def _initialiseConnectionHelper(self, slapgrid_uri, key_file, cert_file,
-      master_ca_file):
+      master_ca_file, timeout):
     SlapDocument._slapgrid_uri = slapgrid_uri
     scheme, netloc, path, query, fragment = urlparse.urlsplit(
         SlapDocument._slapgrid_uri)
@@ -506,7 +520,7 @@ class slap:
         connection_wrapper = httplib.HTTPSConnection
     slap._connection_helper = \
       SlapDocument._connection_helper = ConnectionHelper(connection_wrapper,
-          netloc, path, key_file, cert_file, master_ca_file)
+          netloc, path, key_file, cert_file, master_ca_file, timeout)
 
   def _register(self, klass, *registration_argument_list):
     if len(registration_argument_list) == 1 and type(

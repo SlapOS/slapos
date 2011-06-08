@@ -108,7 +108,8 @@ if (request_software_instance is None):\n
       hosting_subscription_uid=hosting_subscription_uid,\n
       shared=shared,\n
       software_type=software_type,\n
-      tag=tag)\n
+      tag=tag,\n
+      filter_kw=filter_kw)\n
 else:\n
   # Update existing software instance\n
   # Sale Packing List interaction has to be requested automatically with an interaction workflow\n

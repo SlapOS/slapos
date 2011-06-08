@@ -26,6 +26,7 @@
 ##############################################################################
 
 from supervisor import xmlrpc
+import time
 from utils import SlapPopen
 import logging
 import os
@@ -33,6 +34,8 @@ import sys
 import xmlrpclib
 from optparse import OptionParser
 import ConfigParser
+import socket as socketlib
+import subprocess
 
 
 def getSupervisorRPC(socket):
@@ -47,19 +50,31 @@ def launchSupervisord(socket, configuration_file):
   logger = logging.getLogger('SVCBackend')
   supervisor = getSupervisorRPC(socket)
   if os.path.exists(socket):
-    try:
-      status = supervisor.getState()
-    except Exception:
-      # In case if there is problem with connection, assume that supervisord
-      # is not running and try to run it
-      pass
-    else:
-      if status['statename'] == 'RUNNING' and status['statecode'] == 1:
-        logger.info('Supervisord already running.')
-        return
+    trynum = 1
+    while trynum < 6:
+      try:
+        status = supervisor.getState()
+      except xmlrpclib.Fault, e:
+        if e.faultCode == 6 and e.faultString == 'SHUTDOWN_STATE':
+          logger.info('Supervisor in shutdown procedure, will check again later.')
+          trynum += 1
+          time.sleep(2 * trynum)
+      except Exception:
+        # In case if there is problem with connection, assume that supervisord
+        # is not running and try to run it
+        break
       else:
-        log_message = 'Unknown supervisord state %r. Will try to start.' % status
-        logger.warning(log_message)
+        if status['statename'] == 'RUNNING' and status['statecode'] == 1:
+          logger.info('Supervisord already running.')
+          return
+        elif status['statename'] == 'SHUTDOWN_STATE' and status['statecode'] == 6:
+          logger.info('Supervisor in shutdown procedure, will check again later.')
+          trynum += 1
+          time.sleep(2 * trynum)
+        else:
+          log_message = 'Unknown supervisord state %r. Will try to start.' % status
+          logger.warning(log_message)
+          break
 
   logger.info("Launching supervisord with clean environment.")
   # Extract python binary to prevent shebang size limit
@@ -70,17 +85,38 @@ def launchSupervisord(socket, configuration_file):
       "'] ; supervisor.supervisord.main()")
   supervisord_popen = SlapPopen(invocation_list,
       env={},
-      executable=sys.executable)
+      executable=sys.executable, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   result = supervisord_popen.communicate()[0]
   if supervisord_popen.returncode == 0:
     log_message = 'Supervisord command invoked with: %s' % result
     logger.info(log_message)
-    status = supervisor.getState()
-    if status['statename'] == 'RUNNING' and status['statecode'] == 1:
-      logger.info('Supervisord started correctly.')
+    try:
+      default_timeout = socketlib.getdefaulttimeout()
+      current_timeout = 1
+      trynum = 1
+      while trynum < 6:
+        try:
+          socketlib.setdefaulttimeout(current_timeout)
+          status = supervisor.getState()
+          if status['statename'] == 'RUNNING' and status['statecode'] == 1:
+            return
+          logger.warning('Wrong status name %(statename)r and code '
+            '%(statecode)r, trying again' % status)
+          trynum += 1
+        except Exception:
+          current_timeout = 5 * trynum
+          trynum += 1
+          pass
+        else:
+          logger.info('Supervisord started correctly in try %s.' % trynum)
+          return
+      logger.warning('Issue while checking supervisord.')
+    finally:
+      socketlib.setdefaulttimeout(default_timeout)
+
   else:
     log_message = 'Supervisord unknown problem: %s' % result
-    logger.info(log_message)
+    logger.warning(log_message)
 
 
 def getOptionDict(*argument_tuple):

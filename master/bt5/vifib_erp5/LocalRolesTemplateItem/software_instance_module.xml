@@ -1,0 +1,18 @@
+<local_roles_item>
+ <local_roles>
+  <role id='PROD-AGNT'>
+   <item>Auditor</item>
+   <item>Author</item>
+  </role>
+  <role id='PROD-MAN'>
+   <item>Auditor</item>
+  </role>
+  <role id='customer'>
+   <item>Auditor</item>
+   <item>Author</item>
+  </role>
+  <role id='devel'>
+   <item>Owner</item>
+  </role>
+ </local_roles>
+</local_roles_item>

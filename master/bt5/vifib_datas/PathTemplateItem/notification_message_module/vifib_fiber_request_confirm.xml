@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Notification Message" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Delete_objects_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>vifib.fiber-request.confirm</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value> <string>Message envoyé après avoir confirmé la demande de fibre afin de demander d\'envoyer le dossier d\'inscription</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>vifib_fiber_request_confirm</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value> <string>fr</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Notification Message</string> </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string>Bonjour ${customer_name},\r\n
+\r\n
+D\'après les informations que vous nous avez fournit, il semble que vous soyez admissible \r\n
+au service de VIFIB.\r\n
+\r\n
+Un responsable de VIFIB va prendre contact avec vous très prochainement par téléphone.\r\n
+\r\n
+Afin de compléter votre demande d\'inscription, nous avons besoin que vous complétiez et \r\n
+envoyiez le dossier d\'inscription présenté ci-dessous, à l\'adresse mail suivante : support@vifib.com\r\n
+\r\n
+Le dossier d\'inscription est constitué des éléments suivants:\r\n
+- Deux copies du contrat signées et parafées sur chacune des pages. Le contrat vous a été \r\n
+  envoyé par mail en même temps que celui-ci.\r\n
+- Une photocopie de votre carte d’identité recto verso\r\n
+- Une copie de votre contrat d\'assurance habitation\r\n
+- un Relevé d\'identité bancaire (RIB)\r\n
+\r\n
+Une fois votre dossier reçu puis accepté, nous vous renverrons une copie du contrat signée \r\n
+par nos soins. Nous prendrons alors rendez vous avec vous afin de venir installer les serveurs\r\n
+chez vous.\r\n
+\r\n
+Cordialement\r\n
+L\'équipe de Vifib</string> </value>
+        </item>
+        <item>
+            <key> <string>text_content_substitution_mapping_method_id</string> </key>
+            <value> <string>NotificationMessage_getSubstitutionMappingDictFromArgument</string> </value>
+        </item>
+        <item>
+            <key> <string>text_format</string> </key>
+            <value> <string>text/plain</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>VIFIB : Votre demande est confirmé</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>0.1</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

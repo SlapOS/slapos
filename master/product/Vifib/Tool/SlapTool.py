@@ -243,7 +243,7 @@ class SlapTool(BaseTool):
 
   security.declareProtected(Permissions.AccessContentsInformation, 'requestComputerPartition')
   def requestComputerPartition(self, computer_id, computer_partition_id,
-      software_release, software_type, partition_reference, 
+      software_release, software_type, partition_reference,
       shared_xml, partition_parameter_xml, filter_xml):
     """
     Asynchronously requests creation of computer partition for assigned
