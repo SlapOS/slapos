@@ -25,7 +25,6 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import BaseSlapRecipe
-import binascii
 import os
 import pkg_resources
 import hashlib
