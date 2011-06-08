@@ -37,7 +37,7 @@ import ConfigParser
 class Recipe(BaseSlapRecipe):
   def getTemplateFilename(self, template_name):
     return pkg_resources.resource_filename(__name__,
-        '../erp5/template/%s' % template_name)
+        'template/%s' % template_name)
 
   def _install(self):
     self.path_list = []
@@ -55,8 +55,13 @@ class Recipe(BaseSlapRecipe):
     ca_conf = self.installCertificateAuthority()
     key, certificate = self.requestCertificate('Apache Front end')
 
-    site_url = self.installFrontendApache(ip=self.getGlobalIPv6Address(),
-          port=8080, key=key, certificate=certificate)
+    # This should come from parameter.
+    frontend_domain_name = "host.vifib.net"
+
+    site_url = self.installFrontendApache(
+          ip=self.getGlobalIPv6Address(),
+          port=8080, name=frontend_domain_name,
+          key=key, certificate=certificate)
 
     self.setConnectionDict(dict(site_url=site_url, ))
     return self.path_list
@@ -152,8 +157,8 @@ class Recipe(BaseSlapRecipe):
     self._writeFile(openssl_configuration, pkg_resources.resource_string(
       __name__, 'template/openssl.cnf.ca.in') % config)
     self.path_list.extend(zc.buildout.easy_install.scripts([
-      ('certificate_authority',
-        'slapos.recipe.erp5.certificate_authority', 'runCertificateAuthority')],
+      ('certificate_authority', 'slapos.recipe.erp5.certificate_authority',
+         'runCertificateAuthority')],
         self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
           openssl_configuration=openssl_configuration,
           openssl_binary=self.options['openssl_binary'],
@@ -178,65 +183,57 @@ class Recipe(BaseSlapRecipe):
       certificate_authority_path=config['ca_dir']
     )
 
-  def _getApacheConfigurationDict(self, prefix, ip, port):
+  def _getApacheConfigurationDict(self, name, ip, port):
     apache_conf = dict()
+    apache_conf['server_name'] = name
     apache_conf['pid_file'] = os.path.join(self.run_directory,
-        prefix + '.pid')
+        name + '.pid')
     apache_conf['lock_file'] = os.path.join(self.run_directory,
-        prefix + '.lock')
+        name + '.lock')
     apache_conf['ip'] = ip
     apache_conf['port'] = port
     apache_conf['server_admin'] = 'admin@'
     apache_conf['error_log'] = os.path.join(self.log_directory,
-        prefix + '-error.log')
+        name + '-error.log')
     apache_conf['access_log'] = os.path.join(self.log_directory,
-        prefix + '-access.log')
-    self.registerLogRotation(prefix, [apache_conf['error_log'],
+        name + '-access.log')
+    self.registerLogRotation(name, [apache_conf['error_log'],
       apache_conf['access_log']], self.killpidfromfile + ' ' +
       apache_conf['pid_file'] + ' SIGUSR1')
     return apache_conf
 
   def installFrontendApache(self, ip, port, key, certificate,
-                               name="slapos", access_control_string=None):
-    ident = 'frontend_' + name
-    frontend_path = self.createDataDirectory('apacheshared')
+                            name, access_control_string=None):
 
-    apache_conf = self._getApacheConfigurationDict(ident, ip, port)
-    apache_conf['server_name'] = name
-    apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
-        'template/apache.ssl-snippet.conf.in') % dict(
-        login_certificate=certificate, login_key=key)
+    rewrite_rule_include_path = self.createDataDirectory('apachevhost')
 
-    path = pkg_resources.resource_string(__name__, 'template/apache.zope.conf.path-protected.in') % dict(path='/', access_control_string='none')
-    if access_control_string is None:
-      path_template = pkg_resources.resource_string(__name__,
-        'template/apache.zope.conf.path.in')
-      path += path_template % dict(path=frontend_path)
-    else:
-      path_template = pkg_resources.resource_string(__name__,
-        'template/apache.zope.conf.path-protected.in')
+    apache_conf = self._getApacheConfigurationDict(name, ip, port)
+    apache_conf['ssl_snippet'] = self.substituteTemplate(
+        self.getTemplateFilename('apache.ssl-snippet.conf.in'),
+        dict(login_certificate=certificate, login_key=key))
 
-      path += path_template % dict(path=frontend_path,
-          access_control_string=access_control_string)
+    path = self.substituteTemplate(
+        self.getTemplateFilename('apache.conf.path-protected.in'),
+        dict(path='/', access_control_string='none'))
 
-    rewrite_rule = "### Write rule not defined yet."
     apache_conf.update(**dict(
       path_enable=path,
-      rewrite_rule=rewrite_rule
+      rewrite_rule_include_path=rewrite_rule_include_path
     ))
 
-    apache_conf_string = pkg_resources.resource_string(__name__,
-          'template/apache.zope.conf.in') % apache_conf
-    apache_config_file = self.createConfigurationFile(ident + '.conf',
+    apache_conf_string = self.substituteTemplate(
+          self.getTemplateFilename('apache.conf.in'), apache_conf)
+
+    apache_config_file = self.createConfigurationFile(name + '.conf',
         apache_conf_string)
+
     self.path_list.append(apache_config_file)
     self.path_list.extend(zc.buildout.easy_install.scripts([(
-      ident, 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
+      name, 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
           sys.executable, self.wrapper_directory, arguments=[
             dict(
               required_path_list=[key, certificate],
               binary=self.options['httpd_binary'],
-              config=apache_config_file
-            )
+              config=apache_config_file)
           ]))
     return "https://[%s]:%s/" % (ip, port)

@@ -4,7 +4,8 @@
 # Basic server configuration
 PidFile "%(pid_file)s"
 LockFile "%(lock_file)s"
-Listen %(ip)s:%(port)s
+ServerName %(server_name)s
+Listen [%(ip)s]:%(port)s
 ServerAdmin %(server_admin)s
 DefaultType text/plain
 TypesConfig conf/mime.types
@@ -36,7 +37,7 @@ CustomLog "%(access_log)s" common
 
 # Magic of Zope related rewrite
 RewriteEngine On
-%(rewrite_rule)s
+Include %(rewrite_rule_include_path)s/*.conf
 
 # List of modules
 LoadModule authz_host_module modules/mod_authz_host.so
