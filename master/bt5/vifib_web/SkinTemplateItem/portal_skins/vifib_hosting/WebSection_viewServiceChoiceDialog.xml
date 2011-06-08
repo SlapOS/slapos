@@ -100,6 +100,7 @@
                       <list>
                         <string>my_description</string>
                         <string>your_service_title</string>
+                        <string>your_instance_xml</string>
                       </list>
                     </value>
                 </item>

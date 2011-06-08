@@ -78,6 +78,7 @@ session = context.WebSection_getVifibSession()\n
 params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
 params["instance_software_product_uid"] = uids[0]\n
 params["service_title"] = service_title\n
+params["instance_xml"] = instance_xml\n
 portal.portal_selections.setSelectionParamsFor(\'vifib_session_id\', params)\n
 \n
 if kw.has_key(\'came_from\'):\n
@@ -91,7 +92,7 @@ context.WebSection_viewNextStep()\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>dialog_id, service_title, uids=[], quantity = 1, reset_shopping_cart=True, **kw</string> </value>
+            <value> <string>dialog_id, service_title, instance_xml, uids=[], quantity = 1, reset_shopping_cart=True, **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

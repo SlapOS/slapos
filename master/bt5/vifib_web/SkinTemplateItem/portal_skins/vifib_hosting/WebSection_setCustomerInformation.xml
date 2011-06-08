@@ -50,9 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-"""Update customer informations"""\n
+            <value> <string>"""Update customer informations"""\n
 portal = context.getPortalObject()\n
 \n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
@@ -72,24 +70,18 @@ session = context.WebSection_getVifibSession()\n
 params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
 instance_software_release_uid = params[\'instance_software_release_uid\']\n
 service_title = params[\'service_title\']\n
+instance_xml = params[\'instance_xml\']\n
 software_release = portal.portal_catalog.getResultValue(uid=instance_software_release_uid)\n
 \n
 person.requestSoftwareInstance(\n
   software_release=software_release.getUrlString(),\n
   software_title=service_title,\n
-  instance_xml="""<?xml version="1.0" encoding="utf-8"?>\n
-<instance>\n
-  <parameter id="nbd_ip">2a01:e35:2e27:460:e2cb:4eff:fed9:48dc</parameter>\n
-  <parameter id="nbd_port">1024</parameter>\n
-</instance>\n
-""",\n
+  instance_xml=instance_xml,\n
 )\n
 \n
 message = context.Base_translateString("Your instance is under creation. Thank you for using ViFiB!")\n
 return context.getWebSiteValue().Base_redirect(keep_items={\'portal_status_message\': message})\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
