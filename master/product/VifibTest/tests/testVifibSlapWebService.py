@@ -367,9 +367,17 @@ class TestVifibSlapWebService(testVifibMixin):
     self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid']).requestDestroyComputerPartition()
 
+  def stepRequestSoftwareInstanceDestroyRaisesValueError(self, sequence, **kw):
+    self.assertRaises(ValueError, self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid']).requestDestroyComputerPartition)
+
   def stepRequestSoftwareInstanceStart(self, sequence, **kw):
     self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid']).requestStartComputerPartition()
+
+  def stepRequestSoftwareInstanceStartRaisesValueError(self, sequence, **kw):
+    self.assertRaises(ValueError, self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid']).requestStartComputerPartition)
 
   def stepRequestSoftwareInstanceStop(self, sequence, **kw):
     self.portal.portal_catalog.getResultValue(
@@ -1469,6 +1477,56 @@ class TestVifibSlapWebService(testVifibMixin):
         software_type=requested_reference,
         partition_reference=requested_reference,
         partition_parameter_kw=requested_parameter_dict)
+
+  def stepRequestSoftwareInstanceStartCheckSerializeIsCalled(self, sequence):
+    # check that on being_requested serialise is being called
+    # code stolen from testERP5Security:test_MultiplePersonReferenceConcurrentTransaction
+    class DummyTestException(Exception):
+      pass
+
+    def verify_serialize_call(self):
+      # it is checking that anything below computer_module raises exception
+      # thanks to this this test do not have to be destructive
+      if self.getPortalType() == "Software Instance":
+        raise DummyTestException
+      else:
+        return self.serialize_call()
+
+    from Products.ERP5Type.Base import Base
+    Base.serialize_call = Base.serialize
+    Base.serialize = verify_serialize_call
+
+    try:
+      self.assertRaises(DummyTestException,
+        self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid']).requestStartComputerPartition)
+    finally:
+      Base.serialize = Base.serialize_call
+
+  def stepRequestSoftwareInstanceDestroyCheckSerializeIsCalled(self, sequence):
+    # check that on being_requested serialise is being called
+    # code stolen from testERP5Security:test_MultiplePersonReferenceConcurrentTransaction
+    class DummyTestException(Exception):
+      pass
+
+    def verify_serialize_call(self):
+      # it is checking that anything below computer_module raises exception
+      # thanks to this this test do not have to be destructive
+      if self.getPortalType() == "Software Instance":
+        raise DummyTestException
+      else:
+        return self.serialize_call()
+
+    from Products.ERP5Type.Base import Base
+    Base.serialize_call = Base.serialize
+    Base.serialize = verify_serialize_call
+
+    try:
+      self.assertRaises(DummyTestException,
+        self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid']).requestDestroyComputerPartition)
+    finally:
+      Base.serialize = Base.serialize_call
 
   def stepRequestComputerComputerPartitionCheckSerializeCalledOnSelected(
       self, sequence, **kw):
@@ -6913,6 +6971,59 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_bug_doubleClickOnStart(self):
+    sequence_list = SequenceList()
+    sequence_string = self\
+        .prepare_stopped_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceStart
+      RequestSoftwareInstanceStartRaisesValueError
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_doubleClickOnStart_serializeIsCalled(self):
+    sequence_list = SequenceList()
+    sequence_string = self\
+        .prepare_stopped_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceStartCheckSerializeIsCalled
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_doubleClickOnDestroy(self):
+    sequence_list = SequenceList()
+    sequence_string = self\
+        .prepare_installed_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      RequestSoftwareInstanceDestroyRaisesValueError
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_doubleClickOnDestroy_serializeIsCalled(self):
+    sequence_list = SequenceList()
+    sequence_string = self\
+        .prepare_installed_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroyCheckSerializeIsCalled
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
 # class IComputerPartition
 #   def started():
