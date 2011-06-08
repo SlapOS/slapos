@@ -43,12 +43,13 @@ class Recipe(BaseSlapRecipe):
         [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
     self.path_list.append(self.killpidfromfile)
+    ip = self.getGlobalIPv6Address()
     conversion_server_conf = self.installConversionServer(
-        self.getLocalIPv4Address(), 23000, 23060)
+        ip, 23000, self.getLocalIPv4Address(), 23060)
 
     self.linkBinary()
     self.setConnectionDict(dict(
-      site_url="http://%s:%s/" % (self.getLocalIPv4Address(), 23000),
+      site_url="http://[%s]:%s/" % (ip, 23000),
     ))
     return self.path_list
 
@@ -74,7 +75,7 @@ class Recipe(BaseSlapRecipe):
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
 
-  def installConversionServer(self, ip, port, openoffice_port):
+  def installConversionServer(self, ip, port, openoffice_host, openoffice_port):
     name = 'conversion_server'
     working_directory = self.createDataDirectory(name)
     conversion_server_dict = dict(
@@ -84,6 +85,7 @@ class Recipe(BaseSlapRecipe):
       ip=ip,
       port=port,
       openoffice_port=openoffice_port,
+      openoffice_host=openoffice_host
     )
     for env_line in self.options['environment'].splitlines():
       env_line = env_line.strip()
