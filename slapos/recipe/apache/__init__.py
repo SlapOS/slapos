@@ -42,7 +42,9 @@ class Recipe(BaseSlapRecipe):
   def _install(self):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
+
     # self.cron_d is a directory, where cron jobs can be registered
+    self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     self.killpidfromfile = zc.buildout.easy_install.scripts(
         [('killpidfromfile', __name__ + '.killpidfromfile',
@@ -115,6 +117,28 @@ class Recipe(BaseSlapRecipe):
     parser.set('certificate', 'certificate_file', certificate)
     parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
     return key, certificate
+
+  def installCrond(self):
+   timestamps = self.createDataDirectory('cronstamps')
+   cron_output = os.path.join(self.log_directory, 'cron-output')
+   self._createDirectory(cron_output)
+   catcher = zc.buildout.easy_install.scripts([('catchcron',
+     __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
+     self.bin_directory, arguments=[cron_output])[0]
+   self.path_list.append(catcher)
+   cron_d = os.path.join(self.etc_directory, 'cron.d')
+   crontabs = os.path.join(self.etc_directory, 'crontabs')
+   self._createDirectory(cron_d)
+   self._createDirectory(crontabs)
+   # Use execute from erp5.
+   wrapper = zc.buildout.easy_install.scripts([('crond',
+     'slapos.recipe.erp5.execute', 'execute')], self.ws, sys.executable,
+     self.wrapper_directory, arguments=[
+       self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
+       '-t', timestamps, '-f', '-l', '5', '-M', catcher]
+     )[0]
+   self.path_list.append(wrapper)
+   return cron_d
 
   def installCertificateAuthority(self, ca_country_code='XX',
       ca_email='xx@example.com', ca_state='State', ca_city='City',
