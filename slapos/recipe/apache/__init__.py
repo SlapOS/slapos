@@ -58,7 +58,6 @@ class Recipe(BaseSlapRecipe):
     site_url = self.installFrontendApache(ip=self.getGlobalIPv6Address(),
           port=8080, key=key, certificate=certificate)
 
-    self.linkBinary()
     self.setConnectionDict(dict(site_url=site_url, ))
     return self.path_list
 
@@ -84,28 +83,6 @@ class Recipe(BaseSlapRecipe):
           'logrotate_entry.in'),
           dict(file_list=' '.join(['"'+q+'"' for q in log_file_list]),
             postrotate=postrotate_script, olddir=self.logrotate_backup)))
-
-  def linkBinary(self):
-    """Links binaries to instance's bin directory for easier exposal"""
-    for linkline in self.options.get('link_binary_list', '').splitlines():
-      if not linkline:
-        continue
-      target = linkline.split()
-      if len(target) == 1:
-        target = target[0]
-        path, linkname = os.path.split(target)
-      else:
-        linkname = target[1]
-        target = target[0]
-      link = os.path.join(self.bin_directory, linkname)
-      if os.path.lexists(link):
-        if not os.path.islink(link):
-          raise zc.buildout.UserError(
-              'Target link already %r exists but it is not link' % link)
-        os.unlink(link)
-      os.symlink(target, link)
-      self.logger.debug('Created link %r -> %r' % (link, target))
-      self.path_list.append(link)
 
   def requestCertificate(self, name):
     hash = hashlib.sha512(name).hexdigest()
