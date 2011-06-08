@@ -38,10 +38,9 @@ class Recipe(BaseSlapRecipe):
   def _install(self):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
-    self.requirements, self.ws = self.egg.working_set([__name__])
     # Use killpidfromfile from ERP5.
     self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', __name__ + 'slapos.recipe.erp5.killpidfromfile',
+        [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
     self.path_list.append(self.killpidfromfile)
     conversion_server_conf = self.installConversionServer(
@@ -102,7 +101,7 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(config_file)
     # Use execute from erp5.
     self.path_list.extend(zc.buildout.easy_install.scripts([(name,
-      __name__ + 'slapos.recipe.erp5.execute',
+      'slapos.recipe.erp5.execute',
       'execute_with_signal_translation')], self.ws,
       sys.executable, self.wrapper_directory,
       arguments=[self.options['ooo_paster'].strip(), 'serve', config_file]))
