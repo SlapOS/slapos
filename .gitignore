@@ -1,4 +1,9 @@
 *pyc
+.installed.cfg
+bin
 build
+develop-eggs
 dist
+eggs
+parts
 slapos.core.egg-info
