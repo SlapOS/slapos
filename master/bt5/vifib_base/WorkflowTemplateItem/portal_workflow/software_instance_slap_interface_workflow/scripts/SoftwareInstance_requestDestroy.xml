@@ -50,12 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
+            <value> <string encoding="cdata"><![CDATA[
+
+software_instance = state_change[\'object\']\n
+tag = "%s_destroyInProgress" % software_instance.getUid()\n
+portal = context.getPortalObject()\n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  raise ValueError("Software Instance is currently being started.")\n
+# lock software instance in transaction\n
+software_instance.serialize()\n
 service_relative_url = software_instance.portal_preferences.\\\n
                             getPreferredInstanceCleanupResource()\n
-sale_packing_list = context.SoftwareInstance_createSalePackingList(state_change, service_relative_url)\n
-sale_packing_list.confirm()\n
-</string> </value>
+sale_packing_list = context.SoftwareInstance_createSalePackingList(state_change, service_relative_url, tag=tag)\n
+sale_packing_list.confirm(activate_kw={\'tag\':tag})\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>

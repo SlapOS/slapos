@@ -68,20 +68,22 @@ sale_packing_list = sale_packing_list_module.newContent(\n
   source=instance_setup_sale_packing_list.getSource(),\n
   source_section=instance_setup_sale_packing_list.getSourceSection(),\n
   price_currency=instance_setup_sale_packing_list.getPriceCurrency(),\n
-  start_date=DateTime())\n
+  start_date=DateTime(),\n
+  activate_kw={\'tag\': tag})\n
 \n
 instance_hosting_sale_packing_list_line = sale_packing_list.newContent(\n
   portal_type=\'Sale Packing List Line\',\n
   resource=service_relative_url,\n
   quantity=instance_setup_sale_packing_list_line.getQuantity(),\n
   aggregate_list=instance_setup_sale_packing_list_line.getAggregateList(),\n
+  activate_kw={\'tag\': tag}\n
 )\n
 return sale_packing_list\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change, service_relative_url</string> </value>
+            <value> <string>state_change, service_relative_url, tag=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
