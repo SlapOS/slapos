@@ -31,6 +31,7 @@ import sys
 import zc.buildout
 import zc.recipe.egg
 import hashlib
+import ConfigParser
 
 
 class Recipe(BaseSlapRecipe):
@@ -41,12 +42,12 @@ class Recipe(BaseSlapRecipe):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
 
+    self.cron_d = self.installCrond()
     ca_conf = self.installCertificateAuthority()
 
     conversion_server_conf = self.installConversionServer(
         self.getLocalIPv4Address(), 23001, 23060)
 
-    ca_conf = self.installCertificateAuthority()
     key, certificate = self.requestCertificate('Cloudooo')
 
     stunnel_conf = self.installStunnel(
@@ -114,6 +115,27 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(wrapper)
     return stunnel_conf
 
+  def installCrond(self):
+    timestamps = self.createDataDirectory('cronstamps')
+    cron_output = os.path.join(self.log_directory, 'cron-output')
+    self._createDirectory(cron_output)
+    catcher = zc.buildout.easy_install.scripts([('catchcron',
+      __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
+      self.bin_directory, arguments=[cron_output])[0]
+    self.path_list.append(catcher)
+    cron_d = os.path.join(self.etc_directory, 'cron.d')
+    crontabs = os.path.join(self.etc_directory, 'crontabs')
+    self._createDirectory(cron_d)
+    self._createDirectory(crontabs)
+    wrapper = zc.buildout.easy_install.scripts([('crond',
+      __name__ + '.execute', 'execute')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=[
+        self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
+        '-t', timestamps, '-f', '-l', '5', '-M', catcher]
+      )[0]
+    self.path_list.append(wrapper)
+    return cron_d
+
   def installCertificateAuthority(self, ca_country_code='XX',
       ca_email='xx@example.com', ca_state='State', ca_city='City',
       ca_company='Company'):
@@ -167,6 +189,12 @@ class Recipe(BaseSlapRecipe):
           source=self.ca_dir,
           destination=backup_path))
     self.path_list.append(backup_cron)
+
+    return dict(
+      ca_certificate=os.path.join(config['ca_dir'], 'cacert.pem'),
+      ca_crl=os.path.join(config['ca_dir'], 'crl'),
+      certificate_authority_path=config['ca_dir']
+    )
 
   def requestCertificate(self, name):
     hash = hashlib.sha512(name).hexdigest()
