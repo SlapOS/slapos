@@ -34,8 +34,13 @@ import sys
 import zc.buildout
 import zc.recipe.egg
 import ConfigParser
-from Zope2.utilities.mkzopeinstance import write_inituser
 
+# based on Zope2.utilities.mkzopeinstance.write_inituser
+def Zope2InitUser(path, username, password):
+  open(path, 'w').write('')
+  os.chmod(path, 0600)
+  open(path, "w").write('%s:{SHA}%s\n' % (
+    username,binascii.b2a_base64(hashlib.sha1(password).digest())[:-1]))
 
 class Recipe(BaseSlapRecipe):
   def getTemplateFilename(self, template_name):
@@ -455,7 +460,7 @@ class Recipe(BaseSlapRecipe):
     password = self.generatePassword()
     # XXX Unhardcoded me please
     user = 'zope'
-    write_inituser(
+    Zope2InitUser(
         os.path.join(self.erp5_directory, "inituser"), user, password)
 
     self._createDirectory(self.erp5_directory)
@@ -637,7 +642,7 @@ class Recipe(BaseSlapRecipe):
     )
     # configure default Zope2 zcml
     open(os.path.join(self.erp5_directory, 'etc', 'site.zcml'), 'w').write(
-        pkg_resources.resource_string('Zope2', 'utilities/skel/etc/site.zcml'))
+        pkg_resources.resource_string(__name__, 'template/site.zcml'))
     zope_config['zodb_configuration_string'] = zodb_configuration_string
     zope_config['instance'] = self.erp5_directory
     zope_config['event_log'] = os.path.join(self.log_directory,
