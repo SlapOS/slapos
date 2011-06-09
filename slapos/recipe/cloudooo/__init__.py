@@ -30,6 +30,8 @@ import pkg_resources
 import sys
 import zc.buildout
 import zc.recipe.egg
+import hashlib
+
 
 class Recipe(BaseSlapRecipe):
   def getTemplateFilename(self, template_name):
@@ -39,13 +41,25 @@ class Recipe(BaseSlapRecipe):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
 
-    ip = self.getGlobalIPv6Address()
+    ca_conf = self.installCertificateAuthority()
+
     conversion_server_conf = self.installConversionServer(
-        ip, 23000, self.getLocalIPv4Address(), 23060)
+        self.getLocalIPv4Address(), 23001, 23060)
+
+    ca_conf = self.installCertificateAuthority()
+    key, certificate = self.requestCertificate('Cloudooo')
+
+    stunnel_conf = self.installStunnel(
+        self.getGlobalIPv6Address(),
+        conversion_server_conf['conversion_server_ip'],
+        23000, conversion_server_conf['conversion_server_port'],
+        certificate, key, ca_conf['ca_crl'],
+        ca_conf['certificate_authority_path'])
 
     self.linkBinary()
     self.setConnectionDict(dict(
-      site_url="http://[%s]:%s/" % (ip, 23000),
+      site_url="https://[%s]:%s/" % (stunnel_conf['public_ip'],
+                                    stunnel_conf['public_port']),
     ))
     return self.path_list
 
@@ -71,7 +85,102 @@ class Recipe(BaseSlapRecipe):
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
 
-  def installConversionServer(self, ip, port, openoffice_host, openoffice_port):
+  def installStunnel(self, public_ip, private_ip, public_port, private_port,
+                           ca_certificate, key, ca_crl, ca_path):
+    """Installs stunnel"""
+    template_filename = self.getTemplateFilename('stunnel.conf.in')
+    log = os.path.join(self.log_directory, 'stunnel.log')
+    pid_file = os.path.join(self.run_directory, 'stunnel.pid')
+    stunnel_conf = dict(
+        public_ip=public_ip,
+        private_ip=private_ip,
+        public_port=public_port,
+        pid_file=pid_file,
+        log=log,
+        cert=ca_certificate,
+        key=key,
+        ca_crl=ca_crl,
+        ca_path=ca_path,
+        private_port=private_port,
+    )
+    stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
+        self.substituteTemplate(template_filename,
+          stunnel_conf))
+    wrapper = zc.buildout.easy_install.scripts([('stunnel',
+      'slapos.recipe.erp5.execute', 'execute')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=[
+        self.options['stunnel_binary'].strip(), stunnel_conf_path]
+      )[0]
+    self.path_list.append(wrapper)
+    return stunnel_conf
+
+  def installCertificateAuthority(self, ca_country_code='XX',
+      ca_email='xx@example.com', ca_state='State', ca_city='City',
+      ca_company='Company'):
+    backup_path = self.createBackupDirectory('ca')
+    self.ca_dir = os.path.join(self.data_root_directory, 'ca')
+    self._createDirectory(self.ca_dir)
+    self.ca_request_dir = os.path.join(self.ca_dir, 'requests')
+    self._createDirectory(self.ca_request_dir)
+    config = dict(ca_dir=self.ca_dir, request_dir=self.ca_request_dir)
+    self.ca_private = os.path.join(self.ca_dir, 'private')
+    self.ca_certs = os.path.join(self.ca_dir, 'certs')
+    self.ca_crl = os.path.join(self.ca_dir, 'crl')
+    self.ca_newcerts = os.path.join(self.ca_dir, 'newcerts')
+    self.ca_key_ext = '.key'
+    self.ca_crt_ext = '.crt'
+    for d in [self.ca_private, self.ca_crl, self.ca_newcerts, self.ca_certs]:
+      self._createDirectory(d)
+    for f in ['crlnumber', 'serial']:
+      if not os.path.exists(os.path.join(self.ca_dir, f)):
+        open(os.path.join(self.ca_dir, f), 'w').write('01')
+    if not os.path.exists(os.path.join(self.ca_dir, 'index.txt')):
+      open(os.path.join(self.ca_dir, 'index.txt'), 'w').write('')
+    openssl_configuration = os.path.join(self.ca_dir, 'openssl.cnf')
+    config.update(
+        working_directory=self.ca_dir,
+        country_code=ca_country_code,
+        state=ca_state,
+        city=ca_city,
+        company=ca_company,
+        email_address=ca_email,
+    )
+    self._writeFile(openssl_configuration, pkg_resources.resource_string(
+      __name__, 'openssl.cnf.ca.in') % config)
+    self.path_list.extend(zc.buildout.easy_install.scripts([
+      ('certificate_authority',
+        'slapos.recipe.erp5.certificate_authority',
+        'runCertificateAuthority')],
+        self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
+          openssl_configuration=openssl_configuration,
+          openssl_binary=self.options['openssl_binary'],
+          certificate=os.path.join(self.ca_dir, 'cacert.pem'),
+          key=os.path.join(self.ca_private, 'cakey.pem'),
+          crl=os.path.join(self.ca_crl),
+          request_dir=self.ca_request_dir
+          )]))
+    # configure backup
+    backup_cron = os.path.join(self.cron_d, 'ca_rdiff_backup')
+    open(backup_cron, 'w').write(
+        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
+          rdiff_backup=self.options['rdiff_backup_binary'],
+          source=self.ca_dir,
+          destination=backup_path))
+    self.path_list.append(backup_cron)
+
+  def requestCertificate(self, name):
+    hash = hashlib.sha512(name).hexdigest()
+    key = os.path.join(self.ca_private, hash + self.ca_key_ext)
+    certificate = os.path.join(self.ca_certs, hash + self.ca_crt_ext)
+    parser = ConfigParser.RawConfigParser()
+    parser.add_section('certificate')
+    parser.set('certificate', 'name', name)
+    parser.set('certificate', 'key_file', key)
+    parser.set('certificate', 'certificate_file', certificate)
+    parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
+    return key, certificate
+
+  def installConversionServer(self, ip, port, openoffice_port):
     name = 'conversion_server'
     working_directory = self.createDataDirectory(name)
     conversion_server_dict = dict(
@@ -81,7 +190,7 @@ class Recipe(BaseSlapRecipe):
       ip=ip,
       port=port,
       openoffice_port=openoffice_port,
-      openoffice_host=openoffice_host
+      openoffice_host=ip
     )
     for env_line in self.options['environment'].splitlines():
       env_line = env_line.strip()
