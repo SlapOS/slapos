@@ -148,7 +148,7 @@ SSLCARevocationPath %(ca_crl)s"""
     apache_login = self.installBackendApache(self.getGlobalIPv6Address(), 15000,
         login_haproxy, backend_key, backend_certificate)
     apache_frontend_login = self.installFrontendZopeApache(
-        self.getGlobalIPv6Address(), 8080, 'vifib', '/',
+        self.getGlobalIPv6Address(), 4443, 'vifib', '/',
         apache_login, '/', backend_key, backend_certificate)
     # Four Web Service Nodes (Machine access)
     service_url_list = []
