@@ -59,6 +59,6 @@ setup(name=name,
           'testnode = slapos.recipe.testnode:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
-          'zabbix = slapos.recipe.zabbix:Recipe',
+          'zabbixagent = slapos.recipe.zabbixagent:Recipe',
       ]},
     )
