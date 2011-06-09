@@ -94,7 +94,7 @@ repository = %(repository_path)s
 branch = %(branch)s
 """ %  {'buildout_section_id': buildout_section_id,
         'repository_path' : repository_path,
-        'branch' : vcs_repository.get('branch','')}
+        'branch' : vcs_repository.get('branch','master')}
 
   custom_profile = open(custom_profile_path, 'w')
   custom_profile.write(profile_content)
@@ -224,6 +224,7 @@ branch = %(branch)s
           invocation_list.extend([run_test_suite_path,
                                   '--test_suite', config['test_suite'],
                                   '--revision', revision,
+                                  '--test_suite_title', test_suite_title,
                                   '--node_quantity', config['node_quantity'],
                                   '--master_url', config['test_suite_master_url']])
           run_test_suite = subprocess.Popen(invocation_list)
