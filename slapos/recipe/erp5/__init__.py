@@ -789,6 +789,8 @@ class Recipe(BaseSlapRecipe):
               config=apache_config_file
             )
           ]))
+    # Note: IPv6 is assumed always
+    return 'https://[%(ip)s]:%(port)s' % apache_conf
 
   def installBackendApache(self, ip, port, backend, key, certificate,
       suffix='', access_control_string=None):
