@@ -87,5 +87,25 @@ class Recipe(BaseSlapRecipe):
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     zabbix_log_file = os.path.join(self.log_directory, 'zabbix_agentd.log')
     self.registerLogRotation('zabbix_agentd', [zabbix_log_file])
-    raise NotImplementedError
+    zabbix_agentd = dict(
+      pid_file=os.path.join(self.run_directory, "zabbix_agentd.pid"),
+      log_file=zabbix_log_file,
+      ip=self.getGlobalIPv6Address(),
+      server=self.parameter_dict['server'],
+      hostname=self.parameter_dict['hostname'],
+      port='4567'
+    )
+    zabbix_agentd_conf = self.createConfigurationFile("zabbix_agentd.conf",
+         pkg_resources.resource_string(__name__,
+         'template/zabbix_agentd.conf.in') % zabbix_agentd)
+    self.path_list.append(zabbix_agentd_conf)
+    wrapper = zc.buildout.easy_install.scripts([('zabbixagentd',
+      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
+      self.bin_directory, arguments=[
+        self.options['zabbix_agentd_binary'].strip(), '-c',
+        zabbix_agentd_conf])[0]
+    self.path_list.extend(zc.buildout.easy_install.scripts([
+      ('zabbixagentd', __name__ + '.svcdaemon', 'svcdaemon')],
+      self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
+        real_binary=wrapper, pid_file=zabbix_agentd['pid_file'])]))
     return self.path_list
