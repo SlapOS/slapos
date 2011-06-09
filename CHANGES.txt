@@ -1,7 +1,9 @@
-0.4 (unreleased)
+0.4 (2011-06-09)
 ================
 
- * No changes yet.
+ * Remove reference to slapos.tool.networkcache as it was removed from pypi. [Łukasz Nowak]
+ * Add Kumofs standalone software release and recipe [Cedric de Saint Martin]
+ * Add Memcached standalone software release and recipe [Cedric de Saint Martin]
 
 0.3 (2011-06-09)
 ================
