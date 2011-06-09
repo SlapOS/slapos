@@ -233,7 +233,7 @@ class Recipe(BaseSlapRecipe):
     return stunnel_conf
 
     
-  def installMysqlServer(self, ip, port, database='database', user='user',
+  def installMysqlServer(self, ip, port, database='db', user='user',
       template_filename=None, mysql_conf=None):
     if mysql_conf is None:
       mysql_conf = {}
