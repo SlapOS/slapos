@@ -8,6 +8,7 @@
 #
 # Mandatory: no
 # Default:
+# PidFile=/tmp/zabbix_agentd.pid
 PidFile=%(pid_file)s
 
 ### Option: LogFile
@@ -27,6 +28,7 @@ LogFile=%(log_file)s
 # Mandatory: no
 # Range: 0-1024
 # Default:
+# LogFileSize=1
 LogFileSize=0
 
 ### Option: DebugLevel
@@ -47,6 +49,7 @@ LogFileSize=0
 #
 # Mandatory: no
 # Default:
+# SourceIP=
 SourceIP=%(ip)s
 
 ### Option: EnableRemoteCommands
@@ -77,7 +80,6 @@ SourceIP=%(ip)s
 # Mandatory: yes
 # Default:
 # Server=
-
 Server=%(server)s
 
 ### Option: Hostname
@@ -87,7 +89,6 @@ Server=%(server)s
 #
 # Default:
 # Hostname=system.hostname
-
 Hostname=%(hostname)s
 
 ### Option: ListenPort
@@ -96,6 +97,7 @@ Hostname=%(hostname)s
 # Mandatory: no
 # Range: 1024-32767
 # Default:
+# ListenPort=10050
 ListenPort=%(port)s
 
 ### Option: ListenIP
@@ -103,6 +105,7 @@ ListenPort=%(port)s
 #
 # Mandatory: no
 # Default:
+# ListenIP=0.0.0.0
 ListenIP=%(ip)s
 
 ### Option: DisablePassive
