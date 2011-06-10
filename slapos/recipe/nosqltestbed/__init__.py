@@ -55,10 +55,10 @@ class NoSQLTestBed(BaseSlapRecipe):
     kumo_cloud_config['report_path'] = self.log_directory
     
     if 'nb_server_max' not in kumo_cloud_config:
-      kumo_cloud_config['nb_server_max'] = 3
+      kumo_cloud_config['nb_server_max'] = 2 # 3
     
     if 'nb_tester_max' not in kumo_cloud_config:
-      kumo_cloud_config['nb_tester_max'] = 3 # 1
+      kumo_cloud_config['nb_tester_max'] = 1 # 3
     
     if 'nb_thread' not in kumo_cloud_config:
       kumo_cloud_config['nb_thread'] = 1 # 32
@@ -67,7 +67,7 @@ class NoSQLTestBed(BaseSlapRecipe):
       kumo_cloud_config['nb_request'] = 1000 # 1024000
     
     if 'computer_guid_list' not in kumo_cloud_config:
-      kumo_cloud_config['computer_guid_list'] = "COMP-9:COMP-10:COMP-11"
+      kumo_cloud_config['computer_guid_list'] = "COMP-9:COMP-10:COMP-11:COMP-9"
     
     kumo_cloud_config['software_release_url'] = self.software_release_url
     kumo_cloud_config['server_url'] = self.server_url
