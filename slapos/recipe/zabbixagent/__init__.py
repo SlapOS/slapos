@@ -93,7 +93,7 @@ class Recipe(BaseSlapRecipe):
       ip=self.getGlobalIPv6Address(),
       server=self.parameter_dict['server'],
       hostname=self.parameter_dict['hostname'],
-      port='4567'
+      port='10050'
     )
     zabbix_agentd_conf = self.createConfigurationFile("zabbix_agentd.conf",
          pkg_resources.resource_string(__name__,
@@ -108,4 +108,6 @@ class Recipe(BaseSlapRecipe):
       ('zabbixagentd', __name__ + '.svcdaemon', 'svcdaemon')],
       self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
         real_binary=wrapper, pid_file=zabbix_agentd['pid_file'])]))
+    self.setConnectionDict(dict(ip=zabbix_agentd['ip'],
+      name=zabbix_agentd['hostname'], port=zabbix_agentd['port']))
     return self.path_list
