@@ -4,22 +4,39 @@ import time
 import signal
 import sys
 
+def get_pid(filename):
+  pid = None
+  if os.path.exists(filename):
+    data = open(pid_file).read()
+    try:
+      pid = int(data)
+    except ValueError:
+      pass
+  return pid
+
 pid_file = None
 def sig_handler(s, frame):
   print "Killing on signal %s:" % s,
   global pid_file
   if pid_file is not None:
-    if os.path.exists(pid_file):
-      pid = int(open(pid_file).read())
-      print 'pid %s with SIGTERM...' % pid,
+    pid = get_pid(pid_file)
+    if pid is not None:
       os.kill(pid, signal.SIGTERM)
-      if os.kill(pid, 0):
+      try:
+        os.kill(pid, 0)
+      except Exception:
+        pass
+      else:
         time.sleep(5)
-        if os.kill(pid, 0):
+        try:
+          os.kill(pid, 0)
+        except Exception:
+          pass
+        else:
           print 'with SIGKILL...',
           os.kill(pid, signal.SIGKILL)
     else:
-      print 'no pid file %r, nothing to do...' % pid_file,
+      raise ValueError('Pid is none.')
   print 'done.'
   sys.exit(0)
 
@@ -36,4 +53,8 @@ def svcdaemon(args):
   subprocess.check_call(real_binary)
   print 'Started %r' % real_binary
   while True:
-    time.sleep(2)
+    time.sleep(5)
+    pid = get_pid(pid_file)
+    if pid is None:
+      raise ValueError('Pid is none')
+    os.kill(pid, 0)
