@@ -50,6 +50,8 @@ class Recipe(BaseSlapRecipe):
 
     key, certificate = self.requestCertificate('Cloudooo')
 
+    self.installTestRunner(conversion_server_conf)
+
     stunnel_conf = self.installStunnel(
         self.getGlobalIPv6Address(),
         conversion_server_conf['conversion_server_ip'],
@@ -208,6 +210,20 @@ class Recipe(BaseSlapRecipe):
     parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
     return key, certificate
 
+  def installTestRunner(self, conversion_server_conf):
+    """Installs bin/runUnitTest executable to run all tests using
+       bin/runUnitTest"""
+    runUnitTest = zc.buildout.easy_install.scripts([
+      ('runUnitTest', __name__ + '.testrunner', 'runUnitTest')],
+      self.ws, sys.executable, self.bin_directory, arguments=[dict(
+        prepend_path=self.bin_directory,
+        call_list=[self.options['runUnitTest_binary'],
+          conversion_server_conf['conversion_server_conf'],
+          '--paster_path', self.options['ooo_paster'],
+      ]
+        )])[0]
+    self.path_list.append(runUnitTest)
+
   def installConversionServer(self, ip, port, openoffice_port):
     name = 'conversion_server'
     working_directory = self.createDataDirectory(name)
@@ -241,6 +257,7 @@ class Recipe(BaseSlapRecipe):
       sys.executable, self.wrapper_directory,
       arguments=[self.options['ooo_paster'].strip(), 'serve', config_file]))
     return {
+      name + '_conf': config_file,
       name + '_port': conversion_server_dict['port'],
       name + '_ip': conversion_server_dict['ip']
       }
