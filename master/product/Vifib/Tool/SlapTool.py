@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2010 Nexedi SA and Contributors. All Rights Reserved.
+# Copyright (c) 2010-2011 Nexedi SA and Contributors. All Rights Reserved.
 #                    Łukasz Nowak <luke@nexedi.com>
 #                    Romain Courteaud <romain@nexedi.com>
 #
