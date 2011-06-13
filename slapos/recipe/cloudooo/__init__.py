@@ -253,7 +253,7 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(config_file)
     # Use execute from erp5.
     self.path_list.extend(zc.buildout.easy_install.scripts([(name,
-      'slapos.recipe.erp5.execute',
+      'slapos.recipe.librecipe.execute',
       'execute_with_signal_translation')], self.ws,
       sys.executable, self.wrapper_directory,
       arguments=[self.options['ooo_paster'].strip(), 'serve', config_file]))

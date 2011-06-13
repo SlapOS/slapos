@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.4'
+version = '0.6-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -27,7 +27,6 @@ setup(name=name,
       include_package_data=True,
       install_requires=[
         'PyXML', # for full blown python interpreter
-        'Zope2', # some recipes like to play with zope
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
@@ -59,6 +58,7 @@ setup(name=name,
           'testnode = slapos.recipe.testnode:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
-          'cloudooo = slapos.recipe.cloudooo:Recipe'
+          'cloudooo = slapos.recipe.cloudooo:Recipe',
+          'zabbixagent = slapos.recipe.zabbixagent:Recipe',
       ]},
     )
