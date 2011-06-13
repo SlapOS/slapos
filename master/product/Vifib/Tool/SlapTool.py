@@ -73,7 +73,7 @@ def convertToREST(function):
     """
     try:
       retval = function(self, *args, **kwd)
-    except ValueError, log:
+    except (ValueError, AttributeError), log:
       LOG('SlapTool', INFO, 'Converting ValueError to NotFound, real error:',
           error=True)
       raise NotFound(log)
