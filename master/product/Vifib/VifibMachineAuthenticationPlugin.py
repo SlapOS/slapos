@@ -72,7 +72,7 @@ def getUserByLogin(portal, login):
     login = login,
   result = portal.portal_catalog.unrestrictedSearchResults(
       select_expression='reference',
-      portal_type=["Computer", "Software Instance"],
+      portal_type=["Computer", "Software Instance", "Person"],
       validation_state="validated",
       reference=dict(query=login, key='ExactMatch'))
   # XXX: Here, we filter catalog result list ALTHOUGH we did pass
