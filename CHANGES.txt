@@ -1,3 +1,10 @@
+0.5 (2011-06-13)
+================
+
+ * Implement zabbix agent instantiation. [Łukasz Nowak]
+ * Drop dependency on Zope2. [Łukasz Nowak]
+ * Share more in slapos.recipe.librecipe module. [Łukasz Nowak]
+
 0.4 (2011-06-09)
 ================
 
