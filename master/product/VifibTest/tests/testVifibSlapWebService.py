@@ -6942,6 +6942,28 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.play(self)
 
   ########################################
+  # Person using PKI/Slap interface
+  ########################################
+
+  def test_person_request_new_certificate(self):
+    """Chekcs that Person is capable to ask for new certificate"""
+    raise NotImplementedError
+
+  def test_person_request_revoke_certificate(self):
+    """Chekcs that Person is capable to ask for revocation of certificate"""
+    raise NotImplementedError
+
+  def test_person_request_new_certificate_twice(self):
+    """Checks that if Person asks twice for a certificate the next call
+       fails"""
+    raise NotImplementedError
+
+  def test_person_request_ComputerPartition(self):
+    """Checks that Person using Slap interface is able to request Computer
+       Partition"""
+    raise NotImplementedError
+
+  ########################################
   # Bug related tests
   ########################################
 
