@@ -122,7 +122,7 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEqual(got, {})
 
   ########################################
-  # Ĥelpers
+  # Helpers
   ########################################
   def _softwareInstance_getComputerPartition(self, software_instance):
     sale_packing_list_line = software_instance\
