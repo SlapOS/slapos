@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.3-dev'
+version = '0.6-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -27,7 +27,6 @@ setup(name=name,
       include_package_data=True,
       install_requires=[
         'PyXML', # for full blown python interpreter
-        'Zope2', # some recipes like to play with zope
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
@@ -45,9 +44,11 @@ setup(name=name,
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
           'helloworld = slapos.recipe.helloworld:Recipe',
           'java = slapos.recipe.java:Recipe',
+          'kumofs = slapos.recipe.kumofs:Recipe',
           'kvm = slapos.recipe.kvm:Recipe',
           'libcloud = slapos.recipe.libcloud:Recipe',
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
+          'memcached = slapos.recipe.memcached:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'nosqltestbed = slapos.recipe.nosqltestbed:NoSQLTestBed',
           'proactive = slapos.recipe.proactive:Recipe',
@@ -57,5 +58,6 @@ setup(name=name,
           'testnode = slapos.recipe.testnode:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
+          'zabbixagent = slapos.recipe.zabbixagent:Recipe',
       ]},
     )

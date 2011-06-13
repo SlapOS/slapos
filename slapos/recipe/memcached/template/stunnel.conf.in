@@ -1,0 +1,12 @@
+foreground = yes
+output = %(log)s
+pid = %(pid_file)s
+syslog = no
+CApath = %(ca_path)s
+key = %(key)s
+CRLpath = %(ca_crl)s
+cert = %(cert)s
+
+[service]
+accept = %(public_ip)s:%(public_port)s
+connect = %(private_ip)s:%(private_port)s
