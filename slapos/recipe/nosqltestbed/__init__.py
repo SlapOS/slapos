@@ -214,10 +214,12 @@ class NoSQLTestBed(BaseSlapRecipe):
                               tester_config['gateway_address'].strip("[]") + " -p " + \
                               tester_config['gateway_port'] + " -t " + \
                               tester_config['nb_thread'] + " " + \
-                              tester_config['nb_request'] #" 1000" " -t 32 1024000"
+                              tester_config['nb_request'] + " -x"
+    tester_config['log_directory'] = self.log_directory
+    tester_config['compress_method'] = "bz2"
 
     tester_connection = {}
-    tester_connection['start_url'] = "http://%s:5000/start" % tester_config['tester_address']
+    tester_connection['url'] = "http://%s:5000/" % tester_config['tester_address']
     self.computer_partition.setConnectionDict(tester_connection)
 
     tester_wrapper_template_location = pkg_resources.resource_filename(
