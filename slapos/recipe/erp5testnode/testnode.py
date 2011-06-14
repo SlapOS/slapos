@@ -243,4 +243,3 @@ branch = %(branch)s
         os.kill(int(open(supervisord_pid_file).read().strip()), signal.SIGTERM)
     except:
       pass
-
