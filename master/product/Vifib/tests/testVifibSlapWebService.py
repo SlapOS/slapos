@@ -7016,6 +7016,17 @@ class TestVifibSlapWebService(testVifibMixin):
       PersonRequestSlapSoftwareInstanceNotReadyResponse
       Tic
       SlapLogout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
       SlapLoginTestVifibCustomer
       PersonRequestSlapSoftwareInstance
       Tic
