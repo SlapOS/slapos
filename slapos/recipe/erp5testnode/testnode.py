@@ -55,7 +55,7 @@ def safeRpcCall(function, *args):
       time.sleep(retry)
       retry += retry >> 1
 
-def getInputOutputFileList(config, command_name)
+def getInputOutputFileList(config, command_name):
   stdout = open(os.path.join(
                 config['instance_root'],'.%s_out' % command_name),
                 'w+')
