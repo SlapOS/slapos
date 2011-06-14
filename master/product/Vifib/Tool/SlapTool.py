@@ -602,6 +602,15 @@ class SlapTool(BaseTool):
     instance_xml = etree.tostring(instance, pretty_print=True,
                                   xml_declaration=True, encoding='utf-8')
 
+    instance = etree.Element('instance')
+    for parameter_id, parameter_value in filter_kw.iteritems():
+      # cast everything to string
+      parameter_value = str(parameter_value)
+      etree.SubElement(instance, "parameter",
+                       attrib={'id':parameter_id}).text = parameter_value
+    sla_xml = etree.tostring(instance, pretty_print=True,
+                                  xml_declaration=True, encoding='utf-8')
+
     if computer_id and computer_partition_id:
       # requested by Software Instance, there is already top part of tree
       software_instance_document = self.\
@@ -613,7 +622,7 @@ class SlapTool(BaseTool):
               partition_reference=partition_reference,
               shared=shared,
               instance_xml=instance_xml,
-              filter_kw=filter_kw)
+              sla_xml=sla_xml)
 
       # Get requested software instance
       requested_software_instance = software_instance_document.portal_catalog.\
@@ -635,7 +644,7 @@ class SlapTool(BaseTool):
               software_title=partition_reference,
               shared=shared,
               instance_xml=instance_xml,
-              filter_kw=filter_kw)
+              sla_xml=sla_xml)
       requested_software_instance = person.portal_catalog.\
           getResultValue(
                 portal_type="Software Instance",
