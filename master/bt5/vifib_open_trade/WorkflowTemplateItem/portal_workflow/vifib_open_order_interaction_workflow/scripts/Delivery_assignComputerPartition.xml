@@ -66,13 +66,16 @@ for order_line in order.getMovementList():\n
       computer_partition = None\n
      \n
       # XXX Duplicated from request method...\n
-\n
       query_kw = {\n
         \'software_release_url\': software_release.getUrlString(),\n
         \'portal_type\': \'Computer Partition\',\n
 #         \'relative_url\': \'computer_module/20110126-E2AE/%\',\n
         \'free_for_request\': 1,\n
       }\n
+      # support SLA\n
+      filter_kw = software_instance.getSlaXmlAsDict()\n
+      if "computer_guid" in filter_kw:\n
+        query_kw["parent_reference"] = filter_kw["computer_guid"]\n
 \n
       result_count = software_instance.portal_catalog.countResults(**query_kw)[0][0]\n
       offset = max(0, result_count-1)\n
