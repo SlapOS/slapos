@@ -1,7 +1,9 @@
-0.7 (unreleased)
+0.7 (2011-06-14)
 ================
 
  * Fix slapos.recipe.erp5 package by providing site.zcml in it. [Łukasz Nowak]
+ * Improve slapos.recipe.erp5testnode partition instantiation error reporting
+   [Sebastien Robin]
 
 0.6 (2011-06-13)
 ================
