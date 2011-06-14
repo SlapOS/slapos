@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="SubscriptionItemRootSimulationRule" module="Products.ERP5Type.Document.SubscriptionItemRootSimulationRule"/>
+      <global name="Subscription Item Root Simulation Rule" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>

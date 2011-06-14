@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="PackingList" module="Products.ERP5Type.Document.PackingList"/>
+      <global name="Purchase Packing List" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
