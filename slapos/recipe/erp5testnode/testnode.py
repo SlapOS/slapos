@@ -55,6 +55,16 @@ def safeRpcCall(function, *args):
       time.sleep(retry)
       retry += retry >> 1
 
+def getInputOutputFileList(config, command_name):
+  stdout = open(os.path.join(
+                config['instance_root'],'.%s_out' % command_name),
+                'w+')
+  stdout.write("%s\n" % command_name)
+  stderr = open(os.path.join(
+                config['instance_root'],'.%s_err' % command_name),
+                'w+')
+  return (stdout, stderr)
+
 slapos_controler = None
 
 def run(args):
@@ -168,41 +178,24 @@ branch = %(branch)s
                                 revision=repository_revision.split('-')[1])
               updater.checkout()
 
-          # Now prepare the installation of SlapOS
+          # Now prepare the installation of SlapOS and create instance
           slapos_controler = SlapOSControler(config,
             process_group_pid_set=process_group_pid_set)
-          # this should be always true later, but it is too slow for now
-          status_dict = slapos_controler.runSoftwareRelease(config,
-            environment=config['environment'],
-            process_group_pid_set=process_group_pid_set,
-            )
+          for method_name in ("runSoftwareRelease", "runComputerPartition"):
+            stdout, stderr = getInputOutputFileList(config, method_name)
+            slapos_method = getattr(slapos_controler, method_name)
+            status_dict = slapos_method(config,
+              environment=config['environment'],
+              process_group_pid_set=process_group_pid_set,
+              stdout=stdout, stderr=stderr
+              )
+            if status_dict['status_code'] != 0:
+              break
           if status_dict['status_code'] != 0:
             safeRpcCall(master.reportTaskFailure,
               test_result_path, status_dict, config['test_node_title'])
             retry_software = True
             continue
-
-          # create instances, it should take some seconds only
-          slapos_controler.runComputerPartition(config,
-                  process_group_pid_set=process_group_pid_set)
-
-          # update repositories downloaded by buildout. Later we should get
-          # from master a list of repositories
-
-          # The section below seems useless since we override buildout
-          # configuration to use local checkouts
-          #repository_path_list = glob(os.path.join(config['software_root'],
-                                  #'*', 'parts', 'git_repository', '*'))
-          #assert len(repository_path_list) >= 0
-          #for repository_path in repository_path_list:
-            #updater = Updater(repository_path, git_binary=config['git_binary'])
-            #updater.checkout()
-            #if os.path.split(repository_path)[-1] == repository_name:
-              ## redo checkout with good revision, the previous one is used
-              ## to pull last code
-              #updater = Updater(repository_path, git_binary=config['git_binary'],
-                                #revision=revision)
-              #updater.checkout()
 
           partition_path = os.path.join(config['instance_root'],
                                         config['partition_reference'])
@@ -250,4 +243,3 @@ branch = %(branch)s
         os.kill(int(open(supervisord_pid_file).read().strip()), signal.SIGTERM)
     except:
       pass
-
