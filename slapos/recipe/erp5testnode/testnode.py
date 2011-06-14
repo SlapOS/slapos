@@ -59,7 +59,7 @@ def getInputOutputFileList(config, command_name):
   stdout = open(os.path.join(
                 config['instance_root'],'.%s_out' % command_name),
                 'w+')
-  stdout.write("%s\n" command_name)
+  stdout.write("%s\n" % command_name)
   stderr = open(os.path.join(
                 config['instance_root'],'.%s_err' % command_name),
                 'w+')
