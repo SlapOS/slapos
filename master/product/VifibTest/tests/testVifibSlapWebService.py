@@ -569,6 +569,10 @@ class TestVifibSlapWebService(testVifibMixin):
     global REMOTE_USER
     REMOTE_USER = sequence['software_instance_reference']
 
+  def stepSlapLoginTestVifibCustomer(self, sequence, **kw):
+    global REMOTE_USER
+    REMOTE_USER = 'test_vifib_customer'
+
   ########################################
   # Typical sequences for scenarios
   ########################################
@@ -6958,9 +6962,67 @@ class TestVifibSlapWebService(testVifibMixin):
        fails"""
     raise NotImplementedError
 
+  def stepPersonRequestSlapSoftwareInstanceNotReadyResponse(self, sequence,
+      **kw):
+    software_release = sequence['software_release_uri']
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    open_order = self.slap.registerOpenOrder()
+    self.assertRaises(slap.ResourceNotReady, open_order.request,
+       software_release=software_release,
+       software_type=sequence.get('software_type', 'software_type'),
+       partition_reference=sequence.get('requested_reference',
+          'requested_reference'),
+       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+       filter_kw=sequence.get('requested_filter_dict', {})
+       )
+
+  def stepPersonRequestSlapSoftwareInstance(self, sequence, **kw):
+    software_release = sequence['software_release_uri']
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    open_order = self.slap.registerOpenOrder()
+    requested_slap_computer_partition = open_order.request(
+       software_release=software_release,
+       software_type=sequence.get('software_type', 'software_type'),
+       partition_reference=sequence.get('requested_reference',
+          'requested_reference'),
+       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+       filter_kw=sequence.get('requested_filter_dict', {}))
+    sequence.edit(
+        requested_slap_computer_partition=requested_slap_computer_partition,
+        requested_computer_partition_reference=\
+            requested_slap_computer_partition.getId())
+
+
   def test_person_request_ComputerPartition(self):
     """Checks that Person using Slap interface is able to request Computer
        Partition"""
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      Tic
+      SlapLogout
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
     raise NotImplementedError
 
   def test_person_request_ComputerPartition_filter_computer_guid(self):
