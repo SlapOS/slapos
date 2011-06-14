@@ -45,6 +45,7 @@ class OS(object):
   _os = os
 
   def __init__(self, config):
+    self._dry_run = config.dry_run
     self._verbose = config.verbose
     self._logger = config.logger
     add = self._addWrapper
@@ -62,7 +63,8 @@ class OS(object):
           name,
           ', '.join(arg_list)
         ))
-      getattr(self._os, name)(*args, **kw)
+      if not self._dry_run:
+        getattr(self._os, name)(*args, **kw)
     setattr(self, name, wrapper)
 
   def __getattr__(self, name):
@@ -221,6 +223,8 @@ class Computer:
     slap_instance.initializeConnection(config.master_url,
       **connection_dict)
     slap_computer = slap_instance.registerComputer(self.reference)
+    if config.dry_run:
+      return
     return slap_computer.updateConfiguration(
         xml_marshaller.dumps(_getDict(self)))
 
@@ -733,6 +737,10 @@ class Parser(OptionParser):
         help="Shall slapformat alter user database [default: True]"),
       Option('--alter_network', choices=['True', 'False'],
         help="Shall slapformat alter network configuration [default: True]"),
+      Option("-d", "--dry-run",
+             default=False,
+             action="store_true",
+             help="Don't actually do anything."),
       ])
 
   def check_args(self):
@@ -857,7 +865,8 @@ def run(config):
         alter_network=config.alter_network)
 
     # Dumping and sending to the erp5 the current configuration
-    computer.dump(config.computer_xml)
+    if not config.dry_run:
+      computer.dump(config.computer_xml)
     config.logger.info('Posting information to %r' % config.master_url)
     computer.send(config)
   except:
@@ -930,11 +939,17 @@ class Config:
         self.logger.error(message)
         raise UsageError(message)
 
-    if self.alter_user:
-      self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
+    if not self.dry_run:
+      if self.alter_user:
+        self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
+      if self.alter_network:
+        self.checkRequiredBinary(['ip', 'tunctl'])
+    # Required, even for dry run
     if self.alter_network:
-      self.checkRequiredBinary(['brctl', 'ip', 'tunctl'])
+      self.checkRequiredBinary(['brctl'])
 
+    if self.dry_run:
+      root_needed = False
     
     # check root
     if root_needed and os.getuid() != 0:
@@ -963,6 +978,8 @@ class Config:
     if self.verbose:
       self.logger.setLevel(logging.DEBUG)
       self.logger.debug("Verbose mode enabled.")
+    if self.dry_run:
+      self.logger.info("Dry-run mode enabled.")
 
     # Calculate path once
     self.computer_xml = os.path.abspath(self.computer_xml)
@@ -972,6 +989,7 @@ def main():
   "Run default configuration."
   global os
   global callAndRead
+  global getpwnam
   real_callAndRead = callAndRead
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
 
@@ -981,10 +999,31 @@ def main():
     config = Config()
     config.setConfig(options, configuration_file_path)
     os = OS(config)
+    if config.dry_run:
+      def dry_callAndRead(argument_list, raise_on_error=True):
+        if argument_list == ['brctl', 'show']:
+          return real_callAndRead(argument_list, raise_on_error)
+        else:
+          return 0, ''
+      callAndRead = dry_callAndRead
+      real_addSystemAddress = Bridge._addSystemAddress
+      def fake_addSystemAddress(*args, **kw):
+        real_addSystemAddress(*args, **kw)
+        # Fake success
+        return True
+      Bridge._addSystemAddress = fake_addSystemAddress
+      def fake_getpwnam(user):
+        class result:
+          pw_uid = 12345
+          pw_gid = 54321
+        return result
+      getpwnam = fake_getpwnam
+    else:
+      dry_callAndRead = real_callAndRead
     if config.verbose:
       def logging_callAndRead(argument_list, raise_on_error=True):
         config.logger.debug(' '.join(argument_list))
-        return real_callAndRead(argument_list, raise_on_error)
+        return dry_callAndRead(argument_list, raise_on_error)
       callAndRead = logging_callAndRead
     run(config)
   except UsageError, err:
