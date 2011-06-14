@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml vers_n="1.0"?>
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
@@ -61,7 +61,7 @@ hosting_subscription_uid = state_change.kwargs[\'hosting_subscription_uid\']\n
 shared = state_change.kwargs[\'shared\']\n
 software_type = state_change.kwargs["software_type"]\n
 tag = state_change.kwargs[\'tag\']\n
-filter_kw = state_change.kwargs["filter_kw"]\n
+filter_kw = software_instance.getSlaXmlAsDict()\n
 \n
 # Assertion: No packing list line should be related to this software instance\n
 packing_list_line = software_instance.getAggregateRelatedValue(portal_type=\'Sale Packing List Line\')\n
