@@ -648,7 +648,10 @@ class SlapTool(BaseTool):
       requested_software_instance = person.portal_catalog.\
           getResultValue(
                 portal_type="Software Instance",
-                source_reference=software_type,
+                # In order be in sync with defaults of person.
+                #   requestSoftwareInstance it is required to default here
+                # too
+                source_reference=software_type or 'RootSoftwareInstance',
                 title=partition_reference,
           )
 
