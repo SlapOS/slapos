@@ -27,13 +27,13 @@
 ##############################################################################
 from optparse import OptionParser, Option
 from xml_marshaller import xml_marshaller
+from pwd import getpwnam
 import ConfigParser
 import grp
 import logging
 import netaddr
 import netifaces
 import os
-import pwd
 import random
 import slapos.slap as slap
 import socket
@@ -306,7 +306,7 @@ class Computer:
     slapsoft.path = self.software_root
     if alter_user:
       slapsoft.create()
-      slapsoft_pw = pwd.getpwnam(slapsoft.name)
+      slapsoft_pw = getpwnam(slapsoft.name)
       os.chown(self.software_root, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0755)
 
@@ -391,7 +391,7 @@ class Partition:
     if not os.path.exists(self.path):
       os.mkdir(self.path, 0750)
     if alter_user:
-      owner_pw = pwd.getpwnam(owner.name)
+      owner_pw = getpwnam(owner.name)
       os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
     os.chmod(self.path, 0750)
 
@@ -433,7 +433,7 @@ class User:
       user_parameter_list.extend(['-G', ','.join(self.additional_group_list)])
     user_parameter_list.append(self.name)
     try:
-      pwd.getpwnam(self.name)
+      getpwnam(self.name)
     except KeyError:
       callAndRead(['useradd'] + user_parameter_list)
     else:
@@ -451,7 +451,7 @@ class User:
     """
 
     try:
-      pwd.getpwnam(self.name)
+      getpwnam(self.name)
       return True
 
     except KeyError:
@@ -489,7 +489,7 @@ class Tap:
         owner_id = int(open(check_file).read().strip())
       except Exception:
         pass
-    if (owner_id is None) or (owner_id != pwd.getpwnam(owner.name).pw_uid):
+    if (owner_id is None) or (owner_id != getpwnam(owner.name).pw_uid):
       callAndRead(['tunctl', '-t', self.name, '-u', owner.name])
     callAndRead(['ip', 'link', 'set', self.name, 'up'])
 
