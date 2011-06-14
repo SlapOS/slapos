@@ -37,10 +37,10 @@
  * Fix apache module configuration [Kazuhiko Shiozaki]
  * Allow to control full environment in erp5 module [Łukasz Nowak]
 
-0.2 (unreleased)
+0.2 (2011-05-30)
 ================
 
-  * No changes yet.
+  * Allow to pass zope_environment in erp5 entry point [Łukasz Nowak]
 
 0.1 (2011-05-27)
 ================
