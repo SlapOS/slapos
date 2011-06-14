@@ -46,6 +46,7 @@ class SoftwareInstance(Item):
   security.declareProtected(Permissions.AccessContentsInformation,
     'getSlaXmlAsDict')
   def getSlaXmlAsDict(self):
+    """Returns SLA XML as python dictionary"""
     result_dict = {}
     xml = self.getSlaXml()
     if xml is not None and xml != '':
