@@ -41,6 +41,32 @@ import subprocess
 import sys
 import time
 
+class OS(object):
+  _os = os
+
+  def __init__(self, config):
+    self._verbose = config.verbose
+    self._logger = config.logger
+    add = self._addWrapper
+    add('chown')
+    add('chmod')
+    add('makedirs')
+    add('mkdir')
+
+  def _addWrapper(self, name):
+    def wrapper(*args, **kw):
+      if self._verbose:
+        arg_list = [repr(x) for x in args] + [
+          '%s=%r' % (x, y) for x, y in kw.iteritems()]
+        self._logger.debug('%s(%s)' % (
+          name,
+          ', '.join(arg_list)
+        ))
+      getattr(self._os, name)(*args, **kw)
+    setattr(self, name, wrapper)
+
+  def __getattr__(self, name):
+    return getattr(self._os, name)
 
 class SlapError(Exception):
   """
@@ -944,6 +970,9 @@ class Config:
 
 def main():
   "Run default configuration."
+  global os
+  global callAndRead
+  real_callAndRead = callAndRead
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
 
   try:
@@ -951,6 +980,12 @@ def main():
     options, configuration_file_path = Parser(usage=usage).check_args()
     config = Config()
     config.setConfig(options, configuration_file_path)
+    os = OS(config)
+    if config.verbose:
+      def logging_callAndRead(argument_list, raise_on_error=True):
+        config.logger.debug(' '.join(argument_list))
+        return real_callAndRead(argument_list, raise_on_error)
+      callAndRead = logging_callAndRead
     run(config)
   except UsageError, err:
     print >>sys.stderr, err.msg
