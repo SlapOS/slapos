@@ -6963,6 +6963,11 @@ class TestVifibSlapWebService(testVifibMixin):
        Partition"""
     raise NotImplementedError
 
+  def test_person_request_ComputerPartition_filter_computer_guid(self):
+    """Check that requesting with computer_guid in filter_kw works as
+       expected in case of person request"""
+    raise NotImplementedError
+
   ########################################
   # Bug related tests
   ########################################
