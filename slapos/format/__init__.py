@@ -402,7 +402,7 @@ class User:
     except KeyError:
       callAndRead(['groupadd', self.name])
 
-    user_parameter_list = ['-d', self.path, '-g', self.name]
+    user_parameter_list = ['-d', self.path, '-g', self.name, '-s', '/bin/false']
     if self.additional_group_list is not None:
       user_parameter_list.extend(['-G', ','.join(self.additional_group_list)])
     user_parameter_list.append(self.name)
