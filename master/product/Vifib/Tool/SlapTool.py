@@ -660,6 +660,8 @@ class SlapTool(BaseTool):
     else:
       movement = self._getSalePackingListLineForComputerPartition(
                                              requested_software_instance)
+      if movement is None:
+        raise SoftwareInstanceNotReady
       software_instance = SoftwareInstance(
         **self._getSalePackingListLineAsSoftwareInstance(
                                       movement))
