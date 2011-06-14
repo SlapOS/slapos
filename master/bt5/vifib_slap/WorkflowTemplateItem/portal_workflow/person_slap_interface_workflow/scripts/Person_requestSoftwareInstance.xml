@@ -59,7 +59,7 @@ portal = person.getPortalObject()\n
 kwargs = state_change.kwargs\n
 software_release_url_string = state_change.kwargs[\'software_release\']\n
 software_title = kwargs["software_title"]\n
-software_type = "RootSoftwareInstance"\n
+software_type = kwargs.get("software_type", "RootSoftwareInstance")\n
 instance_xml = kwargs["instance_xml"]\n
 sla_xml = kwargs.get("sla_xml", "")\n
 \n
