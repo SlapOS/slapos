@@ -34,8 +34,13 @@ import sys
 import zc.buildout
 import zc.recipe.egg
 import ConfigParser
-from Zope2.utilities.mkzopeinstance import write_inituser
 
+# based on Zope2.utilities.mkzopeinstance.write_inituser
+def Zope2InitUser(path, username, password):
+  open(path, 'w').write('')
+  os.chmod(path, 0600)
+  open(path, "w").write('%s:{SHA}%s\n' % (
+    username,binascii.b2a_base64(hashlib.sha1(password).digest())[:-1]))
 
 class Recipe(BaseSlapRecipe):
   def getTemplateFilename(self, template_name):
@@ -307,7 +312,7 @@ class Recipe(BaseSlapRecipe):
     self._createDirectory(cron_d)
     self._createDirectory(crontabs)
     wrapper = zc.buildout.easy_install.scripts([('crond',
-      __name__ + '.execute', 'execute')], self.ws, sys.executable,
+     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
       self.wrapper_directory, arguments=[
         self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
         '-t', timestamps, '-f', '-l', '5', '-M', catcher]
@@ -412,7 +417,7 @@ class Recipe(BaseSlapRecipe):
           conversion_server_dict))
     self.path_list.append(config_file)
     self.path_list.extend(zc.buildout.easy_install.scripts([(name,
-      __name__ + '.execute', 'execute_with_signal_translation')], self.ws,
+     'slapos.recipe.librecipe.execute', 'execute_with_signal_translation')], self.ws,
       sys.executable, self.wrapper_directory,
       arguments=[self.options['ooo_paster'].strip(), 'serve', config_file]))
     return {
@@ -436,7 +441,7 @@ class Recipe(BaseSlapRecipe):
         config))
     self.path_list.append(haproxy_conf_path)
     wrapper = zc.buildout.easy_install.scripts([('haproxy_%s' % name,
-      __name__ + '.execute', 'execute')], self.ws, sys.executable,
+     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
       self.wrapper_directory, arguments=[
         self.options['haproxy_binary'].strip(), '-f', haproxy_conf_path]
       )[0]
@@ -455,7 +460,7 @@ class Recipe(BaseSlapRecipe):
     password = self.generatePassword()
     # XXX Unhardcoded me please
     user = 'zope'
-    write_inituser(
+    Zope2InitUser(
         os.path.join(self.erp5_directory, "inituser"), user, password)
 
     self._createDirectory(self.erp5_directory)
@@ -542,7 +547,7 @@ class Recipe(BaseSlapRecipe):
         self.substituteTemplate(self.getTemplateFilename('zeo.conf.in'), config))
       self.path_list.append(zeo_conf_path)
       wrapper = zc.buildout.easy_install.scripts([('zeo_%s' % zeo_number,
-        __name__ + '.execute', 'execute')], self.ws, sys.executable,
+       'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
         self.wrapper_directory, arguments=[
           self.options['runzeo_binary'].strip(), '-C', zeo_conf_path]
         )[0]
@@ -588,7 +593,7 @@ class Recipe(BaseSlapRecipe):
       )))
     # TID server
     tidstorage_server = zc.buildout.easy_install.scripts([('tidstoraged',
-      __name__ + '.execute', 'execute')], self.ws, sys.executable,
+     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
       self.wrapper_directory, arguments=[
         self.options['tidstoraged_binary'], '--nofork', '--config',
         tidstorage_config])[0]
@@ -599,7 +604,7 @@ class Recipe(BaseSlapRecipe):
 
     # repozo wrapper
     tidstorage_repozo = zc.buildout.easy_install.scripts([('tidstorage_repozo',
-      __name__ + '.execute', 'execute')], self.ws, sys.executable,
+     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
       self.bin_directory, arguments=[
         self.options['tidstorage_repozo_binary'], '--config', tidstorage_config,
       '--repozo', self.options['repozo_binary'], '-z'])[0]
@@ -617,7 +622,19 @@ class Recipe(BaseSlapRecipe):
 
   def installZope(self, ip, port, name, zodb_configuration_string,
       with_timerservice=False, tidstorage_config=None, thread_amount=1,
-      with_deadlockdebugger=True):
+      with_deadlockdebugger=True, zope_environment=None):
+    default_zope_environment = dict(
+      TMP=self.tmp_directory,
+      TMPDIR=self.tmp_directory,
+      HOME=self.tmp_directory,
+      PATH=self.bin_directory
+    )
+    if zope_environment is None:
+      zope_environment = default_zope_environment.copy()
+    else:
+      for envk, envv in default_zope_environment.iteritems():
+        if envk not in zope_environment:
+          zope_environment[envk] = envv
     # Create zope configuration file
     zope_config = dict(
         products=self.options['products'],
@@ -625,7 +642,7 @@ class Recipe(BaseSlapRecipe):
     )
     # configure default Zope2 zcml
     open(os.path.join(self.erp5_directory, 'etc', 'site.zcml'), 'w').write(
-        pkg_resources.resource_string('Zope2', 'utilities/skel/etc/site.zcml'))
+        pkg_resources.resource_string(__name__, 'template/site.zcml'))
     zope_config['zodb_configuration_string'] = zodb_configuration_string
     zope_config['instance'] = self.erp5_directory
     zope_config['event_log'] = os.path.join(self.log_directory,
@@ -649,8 +666,10 @@ class Recipe(BaseSlapRecipe):
                              self.erp5_directory, 'Products'))
     zope_config['products'] = '\n'.join(prefixed_products)
     zope_config['address'] = '%s:%s' % (ip, port)
-    zope_config['tmp_directory'] = self.tmp_directory
-    zope_config['path'] = self.bin_directory
+    zope_environment_list = []
+    for envk, envv in zope_environment.iteritems():
+      zope_environment_list.append('%s %s' % (envk, envv))
+    zope_config['environment'] = "\n".join(zope_environment_list)
 
     zope_wrapper_template_location = self.getTemplateFilename('zope.conf.in')
     zope_conf_content = self.substituteTemplate(
@@ -673,7 +692,7 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(zope_conf_path)
     # Create init script
     wrapper = zc.buildout.easy_install.scripts([(name,
-      __name__ + '.execute', 'execute')], self.ws, sys.executable,
+     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
       self.wrapper_directory, arguments=[
         self.options['runzope_binary'].strip(), '-C', zope_conf_path]
       )[0]
@@ -888,13 +907,13 @@ class Recipe(BaseSlapRecipe):
         '--socket=%s' %mysql_conf['socket'].strip(), '--user=root']
     environment = dict(PATH='%s' % self.bin_directory)
     innobackupex_incremental = zc.buildout.easy_install.scripts([(
-      'innobackupex_incremental', __name__ + '.execute', 'executee')],
+      'innobackupex_incremental','slapos.recipe.librecipe.execute', 'executee')],
       self.ws, sys.executable, self.bin_directory, arguments=[
         innobackupex_argument_list + ['--incremental'],
         environment])[0]
     self.path_list.append(innobackupex_incremental)
     innobackupex_full = zc.buildout.easy_install.scripts([('innobackupex_full',
-      __name__ + '.execute', 'executee')], self.ws,
+     'slapos.recipe.librecipe.execute', 'executee')], self.ws,
       sys.executable, self.bin_directory, arguments=[
         innobackupex_argument_list,
         environment])[0]
