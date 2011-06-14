@@ -1,7 +1,10 @@
-0.3 (unreleased)
+0.3 (2011-06-14)
 ================
 
- * No changes yet.
+ * slap: Implement SLA by filter_kw in OpenOrder.request. [Łukasz Nowak]
+ * slap: Timeout network operations. [Łukasz Nowak]
+ * slapformat: Make slapsoft and slapuser* system users. [Kazuhiko Shiozaki]
+ * slapgrid: Add more tolerance with supervisord. [Łukasz Nowak]
 
 0.2 (2011-06-01)
 ================
