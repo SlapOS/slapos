@@ -1,7 +1,7 @@
 0.7 (unreleased)
 ================
 
- * No changes yet.
+ * Fix slapos.recipe.erp5 package by providing site.zcml in it. [Łukasz Nowak]
 
 0.6 (2011-06-13)
 ================
