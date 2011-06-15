@@ -4128,7 +4128,7 @@ class TestVifibSlapWebService(testVifibMixin):
       CreateComputer
       Tic
       Logout
-      
+
       SlapLoginCurrentComputer
       FormatComputer
       Tic
