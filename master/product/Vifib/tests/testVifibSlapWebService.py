@@ -7058,7 +7058,7 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_person_request_ComputerPartition(self):
     """Checks that Person using Slap interface is able to request Computer
        Partition"""
-    self.computer_partition_amount = 2
+    self.computer_partition_amount = 1
     sequence_list = SequenceList()
     sequence_string = self.prepare_published_software_release + \
       self.prepare_formated_computer + """
