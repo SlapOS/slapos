@@ -7039,7 +7039,7 @@ class TestVifibSlapWebService(testVifibMixin):
         hosting_subscription_uid=software_instance.getAggregateRelatedValue(
           portal_type='Sale Order Line').getAggregateValue(
             portal_type='Hosting Subscription').getUid())
-    
+
   def stepPersonRequestSlapSoftwareInstance(self, sequence, **kw):
     software_release = sequence['software_release_uri']
     self.slap = slap.slap()
