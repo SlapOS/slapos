@@ -1,7 +1,8 @@
-0.8 (unreleased)
+0.8 (2011-06-15)
 ================
 
- * No changes yet.
+ * Add MySQL and MariaDB standalone software release and recipe [Cedric de Saint Martin]
+ * Fixed slapos.recipe.erp5testnode instantiation [Sebastien Robin]
 
 0.7 (2011-06-14)
 ================
