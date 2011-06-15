@@ -86,6 +86,7 @@ class TestVifibSlapWebService(testVifibMixin):
   purchase_packing_list_line_portal_type = "Purchase Packing List Line"
   purchase_packing_list_portal_type = "Purchase Packing List"
   sale_packing_list_line_portal_type = "Sale Packing List Line"
+  sale_order_line_portal_type = "Sale Order Line"
   sale_packing_list_portal_type = "Sale Packing List"
   service_portal_type = "Service"
   slave_partition_portal_type = "Slave Partition"
