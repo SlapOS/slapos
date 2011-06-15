@@ -180,7 +180,8 @@ class CertificateAuthorityTool(BaseTool):
 
   security.declareProtected(Permissions.AccessContentsInformation, 'getNewCertificate')
   def getNewCertificate(self, common_name):
-    """Returns certificate for passed common name, as dictionary of {key, certificate, id, common_name}"""
+    # No docstring in order to make this method non publishable
+    # Returns certificate for passed common name, as dictionary of {key, certificate, id, common_name}
     self._checkCertificateAuthority()
     self._lockCertificateAuthority()
     try:
@@ -215,7 +216,8 @@ class CertificateAuthorityTool(BaseTool):
 
   security.declareProtected(Permissions.AccessContentsInformation, 'revokeCertificate')
   def revokeCertificate(self, serial):
-    """Revokes certificate with serial, returns dictionary {crl}"""
+    # No docstring in order to make this method non publishable
+    # Revokes certificate with serial, returns dictionary {crl}
     self._checkCertificateAuthority()
     self._lockCertificateAuthority()
     try:
