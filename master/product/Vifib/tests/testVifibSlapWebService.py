@@ -3019,7 +3019,8 @@ class TestVifibSlapWebService(testVifibMixin):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid=sequence['software_instance_uid'])
     # in this test it is required to assume that requested_reference
-    computer_partition = self._softwareInstance_getComputerPartition()
+    computer_partition = self._softwareInstance_getComputerPartition(
+      software_instance)
     # There should be only one Sale Packing List Line
     sale_packing_list_line_list = software_instance\
         .getAggregateRelatedValueList(
