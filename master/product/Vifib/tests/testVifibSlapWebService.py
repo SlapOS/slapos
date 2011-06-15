@@ -7016,7 +7016,7 @@ class TestVifibSlapWebService(testVifibMixin):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
     open_order = self.slap.registerOpenOrder()
-    self.assertRaises(slap.ResourceNotFound, open_order.request,
+    self.assertRaises(slap.NotFoundError, open_order.request,
        software_release=software_release,
        software_type=sequence.get('software_type', 'software_type'),
        partition_reference=sequence.get('requested_reference',
