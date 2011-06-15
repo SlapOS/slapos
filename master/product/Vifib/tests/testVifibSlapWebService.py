@@ -3014,6 +3014,36 @@ class TestVifibSlapWebService(testVifibMixin):
             portal_type=self.sale_packing_list_line_portal_type)
     self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
 
+  def stepCheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition(self,
+    sequence, **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+      parent_uid=sequence['computer_uid'],
+      reference=sequence['requested_computer_partition_reference'],
+      portal_type='Computer Partition')
+    software_instance = self._computerPartition_getSoftwareInstance(
+      computer_partition)
+    # There should be only one Sale Packing List Line
+    sale_packing_list_line_list = software_instance\
+        .getAggregateRelatedValueList(
+            portal_type=self.sale_packing_list_line_portal_type)
+    self.assertEqual(1, len(sale_packing_list_line_list))
+    sale_packing_list_line = sale_packing_list_line_list[0]
+    # This Sale Packing List Line shall have only one Computer Partition
+    computer_partition_list = sale_packing_list_line.getAggregateValueList(
+        portal_type='Computer Partition')
+    self.assertEqual(1, len(computer_partition_list))
+
+    computer_partition = computer_partition_list[0]
+
+    # This Computer Partition shall have only Sale Packing List Line related
+    computer_partition_sale_packing_list_line_list = computer_partition\
+        .getAggregateRelatedValueList(
+            portal_type=self.sale_packing_list_line_portal_type)
+    self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
+
+    sequence['software_instance_reference'] = software_instance.getReference()
+    sequence['software_instance_uid'] = software_instance.getUid()
+
   def stepCheckSoftwareInstanceAndRelatedComputerPartition(self,
       sequence, **kw):
     software_instance_uid = sequence['software_instance_uid']
@@ -7032,10 +7062,23 @@ class TestVifibSlapWebService(testVifibMixin):
       PersonRequestSlapSoftwareInstance
       Tic
       SlapLogout
+
+      LoginDefaultUser
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      SlapLogout
+
+      LoginTestVifibCustomer
+      CheckViewCurrentSoftwareInstance
+      CheckWriteCurrentSoftwareInstance
+      Tic
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-    raise NotImplementedError
 
   def test_person_request_ComputerPartition_filter_computer_guid(self):
     """Check that requesting with computer_guid in filter_kw works as
