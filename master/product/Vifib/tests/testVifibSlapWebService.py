@@ -7129,6 +7129,27 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSoftwareInstanceSaleOrderConfirmRaisesValueError(self, sequence,
+    **kw):
+    """Checks that current software instance is realted only with sale order
+    
+    and that this sale order cannot be confirmed
+    
+    In Vifib implementation sale order which cannot find free computer partition
+    raises ValueError"""
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+
+    aggregate_value_list = software_instance.getAggregateRelatedValueList(portal_type=[self.sale_packing_list_line_portal_type, self.sale_order_line_portal_type])
+
+    self.assertEqual(1, len(aggregate_value_list))
+    self.assertTrue(self.sale_order_line_portal_type in [q.getPortalType() for\
+        q in aggregate_value_list])
+    sale_order_line = aggregate_value_list[0]
+    sale_order = sale_order_line.getParentValue()
+
+    self.assertRaises(ValueError, sale_order.confirm)
+
   def test_person_request_ComputerPartition_filter_computer_guid(self):
     """Check that requesting with computer_guid in filter_kw works as
        expected in case of person request"""
@@ -7183,9 +7204,14 @@ class TestVifibSlapWebService(testVifibMixin):
 
       SelectYetAnotherRequestedReference
       SlapLoginTestVifibCustomer
-      PersonRequestSlapSoftwareInstanceNotFoundResponse
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
       Tic
       SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      SoftwareInstanceSaleOrderConfirmRaisesValueError
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
