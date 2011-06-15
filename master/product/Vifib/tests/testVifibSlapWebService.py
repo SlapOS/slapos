@@ -6999,6 +6999,20 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_person_request_new_certificate(self):
     """Chekcs that Person is capable to ask for new certificate"""
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    try:
+      person.revokeCertificate()
+    except ValueError, err:
+      if 'No certificate for' in err.message:
+        pass
+      else:
+        raise
+    self.login('test_vifib_user_admin')
+    transaction.commit()
+    certificate = person.getCertificate()
     raise NotImplementedError
 
   def test_person_request_revoke_certificate(self):
@@ -7009,6 +7023,17 @@ class TestVifibSlapWebService(testVifibMixin):
     """Checks that if Person asks twice for a certificate the next call
        fails"""
     raise NotImplementedError
+
+  def test_person_request_certificate_for_another_person(self):
+    """Checks that if Person tries to request ceritifcate for someone else it
+    will fail"""
+    raise NotImplementedError
+
+  def test_person_request_revoke_certificate_for_another_person(self):
+    """Checks that if Person tries to request ceritifcate for someone else it
+    will fail"""
+    raise NotImplementedError
+
 
   def stepPersonRequestSlapSoftwareInstanceNotFoundResponse(self, sequence,
       **kw):
