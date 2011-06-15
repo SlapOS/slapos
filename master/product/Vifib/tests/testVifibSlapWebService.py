@@ -3016,12 +3016,10 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepCheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition(self,
     sequence, **kw):
-    computer_partition = self.portal.portal_catalog.getResultValue(
-      parent_uid=sequence['computer_uid'],
-      reference=sequence['requested_computer_partition_reference'],
-      portal_type='Computer Partition')
-    software_instance = self._computerPartition_getSoftwareInstance(
-      computer_partition)
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+    # in this test it is required to assume that requested_reference
+    computer_partition = self._softwareInstance_getComputerPartition()
     # There should be only one Sale Packing List Line
     sale_packing_list_line_list = software_instance\
         .getAggregateRelatedValueList(
@@ -3041,8 +3039,24 @@ class TestVifibSlapWebService(testVifibMixin):
             portal_type=self.sale_packing_list_line_portal_type)
     self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
 
-    sequence['software_instance_reference'] = software_instance.getReference()
-    sequence['software_instance_uid'] = software_instance.getUid()
+    # There should be only one Sale Order Line
+    sale_order_line_list = software_instance\
+        .getAggregateRelatedValueList(
+            portal_type=self.sale_order_line_portal_type)
+    self.assertEqual(1, len(sale_order_line_list))
+    sale_order_line = sale_order_line_list[0]
+    # This Sale Order Line shall have only one Computer Partition
+    computer_partition_list = sale_order_line.getAggregateValueList(
+        portal_type='Computer Partition')
+    self.assertEqual(1, len(computer_partition_list))
+
+    computer_partition = computer_partition_list[0]
+
+    # This Computer Partition shall have only Sale Order Line related
+    computer_partition_sale_order_line_list = computer_partition\
+        .getAggregateRelatedValueList(
+            portal_type=self.sale_order_line_portal_type)
+    self.assertEqual(1, len(computer_partition_sale_order_line_list))
 
   def stepCheckSoftwareInstanceAndRelatedComputerPartition(self,
       sequence, **kw):
@@ -7008,6 +7022,22 @@ class TestVifibSlapWebService(testVifibMixin):
        filter_kw=sequence.get('requested_filter_dict', {})
        )
 
+  def stepSetRandomRequestedReference(self, sequence, **kw):
+    sequence['requested_reference'] = self.id() + str(random())
+
+  def stepSetCurrentPersonSlapRequestedSoftwareInstance(self, sequence, **kw):
+    software_instance_list = self.portal.portal_catalog(
+        portal_type=self.software_instance_portal_type,
+        title=sequence['requested_reference'])
+    self.assertEqual(1, len(software_instance_list))
+    software_instance = software_instance_list[0]
+    sequence.edit(
+        software_instance_uid=software_instance.getUid(),
+        software_instance_reference=software_instance.getReference(),
+        hosting_subscription_uid=software_instance.getAggregateRelatedValue(
+          portal_type='Sale Order Line').getAggregateValue(
+            portal_type='Hosting Subscription').getUid())
+    
   def stepPersonRequestSlapSoftwareInstance(self, sequence, **kw):
     software_release = sequence['software_release_uri']
     self.slap = slap.slap()
@@ -7016,8 +7046,7 @@ class TestVifibSlapWebService(testVifibMixin):
     requested_slap_computer_partition = open_order.request(
        software_release=software_release,
        software_type=sequence.get('software_type', 'software_type'),
-       partition_reference=sequence.get('requested_reference',
-          'requested_reference'),
+       partition_reference=sequence['requested_reference'],
        partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
        filter_kw=sequence.get('requested_filter_dict', {}))
     sequence.edit(
@@ -7043,6 +7072,7 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       SlapLogout
 
+      SetRandomRequestedReference
       SlapLoginTestVifibCustomer
       PersonRequestSlapSoftwareInstanceNotReadyResponse
       Tic
@@ -7064,6 +7094,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SlapLogout
 
       LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
       CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
       Logout
 
