@@ -4116,43 +4116,44 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence['requested_filter_dict'] = dict(
       computer_guid=sequence['computer_reference'])
 
+  prepare_another_computer_sequence_string = """
+    StoreComputerReference
+    LoginTestVifibAdmin
+    CreateComputer
+    Tic
+    Logout
+
+    SlapLoginCurrentComputer
+    FormatComputer
+    Tic
+    SlapLogout""" + prepare_software_release_confirmed_packing_list + """
+
+    LoginTestVifibAdmin
+    RequestSoftwareInstallation
+    Tic
+    Logout
+
+    SlapLoginCurrentComputer
+    ComputerSoftwareReleaseAvailable
+    Tic
+    SlapLogout
+
+    SetRequestedFilterParameterDict
+    RestoreComputerReference
+  """
+
   def test_ComputerPartition_request_filter_computer_guid(self):
     """
     Check that requesting with filter computer_guid key works as expected
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
-    prepare_another_computer_sequence_string = """
-      StoreComputerReference
-      LoginTestVifibAdmin
-      CreateComputer
-      Tic
-      Logout
-
-      SlapLoginCurrentComputer
-      FormatComputer
-      Tic
-      SlapLogout""" + self.prepare_software_release_confirmed_packing_list + """
-
-      LoginTestVifibAdmin
-      RequestSoftwareInstallation
-      Tic
-      Logout
-
-      SlapLoginCurrentComputer
-      ComputerSoftwareReleaseAvailable
-      Tic
-      SlapLogout
-
-      SetRequestedFilterParameterDict
-      RestoreComputerReference
-    """
     # There are two partitions on another computer
     # so request shall be processed twice correctly, 3rd time it shall
     # fail
     sequence_string = \
     self.prepare_install_requested_computer_partition_sequence_string + \
-      prepare_another_computer_sequence_string + '\
+      self.prepare_another_computer_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartitionNotReadyResponse \
       Tic \
@@ -7009,6 +7010,21 @@ class TestVifibSlapWebService(testVifibMixin):
        fails"""
     raise NotImplementedError
 
+  def stepPersonRequestSlapSoftwareInstanceNotFoundResponse(self, sequence,
+      **kw):
+    software_release = sequence['software_release_uri']
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    open_order = self.slap.registerOpenOrder()
+    self.assertRaises(slap.ResourceNotFound, open_order.request,
+       software_release=software_release,
+       software_type=sequence.get('software_type', 'software_type'),
+       partition_reference=sequence.get('requested_reference',
+          'requested_reference'),
+       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+       filter_kw=sequence.get('requested_filter_dict', {})
+       )
+
   def stepPersonRequestSlapSoftwareInstanceNotReadyResponse(self, sequence,
       **kw):
     software_release = sequence['software_release_uri']
@@ -7116,7 +7132,63 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_person_request_ComputerPartition_filter_computer_guid(self):
     """Check that requesting with computer_guid in filter_kw works as
        expected in case of person request"""
-    raise NotImplementedError
+    self.computer_partition_amount = 1
+    sequence_list = SequenceList()
+    # There is only one partition on each computer, which has installed
+    # software release. But as request has sla parameter, the partition
+    # on another computer is not selected, as not following SLA.
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+      """ + \
+      self.prepare_another_computer_sequence_string + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SetRandomRequestedReference
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      SelectYetAnotherRequestedReference
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotFoundResponse
+      Tic
+      SlapLogout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   ########################################
   # Bug related tests
