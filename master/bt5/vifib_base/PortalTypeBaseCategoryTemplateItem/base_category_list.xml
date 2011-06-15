@@ -1,4 +1,7 @@
 <base_category_list>
+ <portal_type id="Slave Instance">
+  <item>predecessor</item>
+ </portal_type>
  <portal_type id="Software Instance">
   <item>predecessor</item>
  </portal_type>
