@@ -4193,7 +4193,7 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.play(self)
 
   #########################################
-  # SlavePartition.request
+  # SlaveInstance.request
   #########################################
 
   @skip("Not Implemented yet")
