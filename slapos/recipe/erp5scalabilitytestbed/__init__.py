@@ -26,7 +26,7 @@
 
 from slapos.recipe.librecipe import BaseSlapRecipe
 
-class NoSQLTestBed(BaseSlapRecipe):
+class Recipe(BaseSlapRecipe):
   def _install(self):
     self.parameter_dict = self.computer_partition.getInstanceParameterDict()
     software_type = self.parameter_dict.get('slap_software_type', 'default')
