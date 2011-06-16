@@ -90,6 +90,7 @@ class TestVifibSlapWebService(testVifibMixin):
   sale_packing_list_portal_type = "Sale Packing List"
   service_portal_type = "Service"
   slave_partition_portal_type = "Slave Partition"
+  slave_instance_portal_type = "Slave Instance"
   software_instance_portal_type = "Software Instance"
   software_release_portal_type = "Software Release"
   software_product_portal_type = "Software Product"
@@ -321,6 +322,12 @@ class TestVifibSlapWebService(testVifibMixin):
         self.portal.portal_catalog.getResultValue(
           uid=sequence['service_uid']).getRelativeUrl(),
         sequence)
+
+  def stepPersonRequestSlaveInstance(self, sequence, **kw):
+    """
+      Request one slave instance with one person as context
+    """
+    raise NotImplementedError('Not Implemented yet')
 
   def stepPersonRequestSoftwareInstance(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
@@ -4184,6 +4191,38 @@ class TestVifibSlapWebService(testVifibMixin):
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
+  #########################################
+  # SlavePartition.request
+  #########################################
+
+  @skip("Not Implemented yet")
+  def test_ComputerPartition_request_SlaveInstance(self):
+    """
+      Check that one Slave Instance is created correctly
+    """
+
+  @skip("Not Implemented yet")
+  def test_ComputerPartition_request_SlaveInstance_noSoftwareInstance(self):
+    """
+      Check that one Slave Instance is create correctly when no exists Software
+      Instance created
+    """
+
+  @skip("Not Implemented yet")
+  def test_ComputerPartition_request_SlaveInstance_twoSoftwareInstance(self):
+    """
+    """
+
+  @skip("Not Implemented yet")
+  def test_ComputerPartition_request_SlaveInstance_twice(self):
+    """
+    """
+
+  @skip("Not Implemented yet")
+  def test_ComputerPartition_getInstanceParameterDict_withSlaveInstance(self):
+    """
+    """
 
   ########################################
   # ComputerPartition.request - shared
