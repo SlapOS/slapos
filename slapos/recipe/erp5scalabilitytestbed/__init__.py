@@ -24,6 +24,8 @@
 #
 ##############################################################################
 
+import os
+import pkg_resources
 from slapos.recipe.librecipe import BaseSlapRecipe
 
 class Recipe(BaseSlapRecipe):
@@ -56,7 +58,7 @@ class Recipe(BaseSlapRecipe):
     config['plugin_name'] = 'erp5'
 
     connection = {}
-    connection['url'] = 'http://["+config['address']+"]:5000/'
+    connection['url'] = 'http://['+config['address']+']:5000/'
     connection['erp5_url'] = config['erp5_url']
     connection['repeat'] = config['repeat']
     connection['nb_users'] = config['nb_users']
