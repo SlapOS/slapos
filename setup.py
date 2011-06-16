@@ -33,7 +33,7 @@ setup(name=name,
       install_requires=[
       'Flask', # used by proxy
       'lxml', # needed to play with XML trees
-      'netaddr', # to play safely with IPv6 prefixes
+      'netaddr>=0.7.5', # to play safely with IPv6 prefixes
       'netifaces', # to fetch information about network devices
       'setuptools', # namespaces
       'supervisor', # slapgrid uses supervisor to manage processes
