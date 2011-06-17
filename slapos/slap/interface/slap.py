@@ -164,16 +164,6 @@ class IComputerPartition(IBuildoutController):
     profile.
     """
 
-  def setInstanceParameterDict(partition_parameter_kw):
-    """
-    Set instance parameter informations on the slagrid server.
-
-    partition_parameter_kw -- dictionary of parameters.
-
-    This method can be used to propagate connection informations (like
-    service's port).
-    """
-
   def setUsage(usage_log):
     """
     Associate a usage log to the computer partition.

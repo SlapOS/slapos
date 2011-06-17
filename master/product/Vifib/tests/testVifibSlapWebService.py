@@ -7036,43 +7036,82 @@ class TestVifibSlapWebService(testVifibMixin):
   # Person using PKI/Slap interface
   ########################################
 
-  def test_person_request_new_certificate(self):
-    """Chekcs that Person is capable to ask for new certificate"""
-    self.login()
-    self.portal.portal_certificate_authority._checkCertificateAuthority()
-    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
-      'test_vifib_user_admin')
+  def _safe_revoke_certificate(self, person):
+    from AccessControl import getSecurityManager
+    user = getSecurityManager().getUser().getId()
     try:
+      self.login('ERP5TypeTestCase')
       person.revokeCertificate()
     except ValueError, err:
       if 'No certificate for' in err.message:
         pass
       else:
         raise
+    finally:
+      self.login(user)
+
+  def test_person_request_new_certificate(self):
+    """Checks that Person is capable to ask for new certificate"""
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
     self.login('test_vifib_user_admin')
-    transaction.commit()
     certificate = person.getCertificate()
-    raise NotImplementedError
+    self.assertTrue('CN=test_vifib_user_admin' in certificate['certificate'])
 
   def test_person_request_revoke_certificate(self):
     """Chekcs that Person is capable to ask for revocation of certificate"""
-    raise NotImplementedError
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
+    self.login('test_vifib_user_admin')
+    certificate = person.getCertificate()
+    self.assertTrue('CN=test_vifib_user_admin' in certificate['certificate'])
+    person.revokeCertificate()
 
   def test_person_request_new_certificate_twice(self):
     """Checks that if Person asks twice for a certificate the next call
        fails"""
-    raise NotImplementedError
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
+    self.login('test_vifib_user_admin')
+    certificate = person.getCertificate()
+    self.assertTrue('CN=test_vifib_user_admin' in certificate['certificate'])
+    self.assertRaises(ValueError, person.getCertificate)
 
   def test_person_request_certificate_for_another_person(self):
     """Checks that if Person tries to request ceritifcate for someone else it
     will fail"""
-    raise NotImplementedError
+    from AccessControl import Unauthorized
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
+    self.login('test_hr_admin')
+    self.assertRaises(Unauthorized, person.getCertificate)
 
   def test_person_request_revoke_certificate_for_another_person(self):
     """Checks that if Person tries to request ceritifcate for someone else it
     will fail"""
-    raise NotImplementedError
-
+    from AccessControl import Unauthorized
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
+    self.login('test_vifib_user_admin')
+    certificate = person.getCertificate()
+    self.assertTrue('CN=test_vifib_user_admin' in certificate['certificate'])
+    self.login('test_hr_admin')
+    self.assertRaises(Unauthorized, person.revokeCertificate)
 
   def stepPersonRequestSlapSoftwareInstanceNotFoundResponse(self, sequence,
       **kw):
