@@ -41,109 +41,46 @@ class TestVifibCredential(testVifibMixin):
     result_list.append("vifib_credential")
     return result_list
 
-  def createCredentialRequest(self,
-                              first_name="Gabriel",
-                              last_name="Monnerat",
-                              reference="gabriel",
-                              password="123",
-                              default_email_text="gabriel@test.com"):
+  def stepSetCredentialRequestAutomaticApprovalPreferences(self):
+    self.setSystemPreference()
+    default_system_preference = self.portal.portal_preferences.restrictedTraverse(self.getDefaultSitePreferenceId())
+    self.login("ERP5TypeTestCase")
+    default_system_preference.edit(preferred_credential_request_automatic_approval=True)
     self.logout()
-    self.portal.ERP5Site_registerCredentialRequest(first_name=first_name,
-                                                   last_name=last_name,
-                                                   reference=reference,
-                                                   password=password,
+
+  def stepValidateNotificationMessage(self):
+    module = self.portal.notification_message_module
+    reference = "crendential_request-confirmation-without-password"
+    search_result = module.searchFolder(reference=reference)
+    [notification.getObject().validate() for notification in search_result]
+
+  def testBase_getDefaultAssignmentArgumentDict(self):
+    self.stepValidateNotificationMessage()
+    self.stepSetCredentialRequestAutomaticApprovalPreferences()
+    self.logout()
+    portal_catalog = self.portal.portal_catalog
+    self.portal.ERP5Site_registerCredentialRequest(first_name="Vifib",
+                                                   last_name="Test",
+                                                   reference="vifib_test",
+                                                   password="vifib",
                                                    career_subordination_title="",
-                                                   default_email_text=default_email_text,
+                                                   default_email_text="vifib@vifib.com",
                                                    default_telephone_text="223344",
                                                    default_address_street_address="Test Street",
-                                                   default_address_city="Campos",
+                                                   default_address_city="My Street",
                                                    default_address_zip_code="28024030")
     self.login("ERP5TypeTestCase")
     self.stepTic()
-
-  def createSystemPreference(self):
-    """ """
-    portal_preferences = self.getPreferenceTool()
-    preference = portal_preferences.newContent(portal_type='System Preference',
-                                               title='Default Site Preference',
-                                               id='test_site_preference')
-    self.stepTic()
-    return preference
-    
-  def afterSetUp(self):
-    """ """
-    portal_preferences = self.getPreferenceTool()
-    preference = getattr(portal_preferences, 'test_site_preference', None)
-    if preference is None:
-      preference = self.createSystemPreference()
-    if preference.getPreferenceState() == 'disabled':
-       preference.enable()
-    preference.edit(preferred_credential_request_automatic_approval=True,
-                    preferred_credential_recovery_automatic_approval=True,
-                    preferred_organisation_credential_update_automatic_approval=True,
-                    preferred_person_credential_update_automatic_approval=True)
-    self.portal.email_from_address = 'site@example.invalid'
-    oldMailHost = getattr(self.portal, 'MailHost', None)		 
-    if oldMailHost is not None:		 
-      self.portal.manage_delObjects(['MailHost'])		 
-      self.portal._setObject('MailHost', DummyMailHost('MailHost'))
-
-    self.stepTic()
-
-  def testMailMessagePosted(self):
-    """ Test if the Mail Message was posted correctly """
-    self.createCredentialRequest(reference="vifibtest")
-    portal_catalog = self.portal.portal_catalog
-    credential_request = portal_catalog.getResultValue(portal_type="Credential Request", 
-                                                       reference="vifibtest")    
-    mail_message = portal_catalog.getResultValue(portal_type="Mail Message",
-                                                 follow_up=credential_request)
-    self.assertEquals(mail_message.getSimulationState(), "started")
-    self.assertTrue("key=%s" % mail_message.getReference() in mail_message.getTextContent())   
-
-  def test_MailFromMailMessageEvent(self):
-    """ """
-    self.createCredentialRequest(first_name="Vifib", 
-                                 last_name="Test",
-                                 reference="vifibtest")
-    portal_catalog = self.portal.portal_catalog
-    credential_request = portal_catalog.getResultValue(portal_type="Credential Request", 
-                                                       reference="vifibtest",
-                                                       first_name="Vifib",
-                                                       last_name="Test")
-    mail_message = portal_catalog.getResultValue(portal_type="Mail Message",
-                                                 follow_up=credential_request)
-    last_message = self.portal.MailHost._last_message
-    self.assertNotEquals((), last_message)
-    mfrom, mto, message_text = last_message
-    self.assertEquals(mfrom, 'Portal Administrator <site@example.invalid>')
-    self.assertEquals(['Vifib Test <gabriel@test.com>'], mto)
-    self.assertNotEquals(re.search("Subject\:.*Welcome_to_Vifib", message_text), None)
-    self.assertNotEquals(re.search("Hello\ Vifib\ Test\,", message_text), None)
-    self.assertNotEquals(re.search("key\=..%s" % mail_message.getReference(), message_text), None)
-
-  def testERP5Site_activeLogin(self):
-    """ Test if the script WebSection_activeLogin will create one user
-    correctly """
-    self.createCredentialRequest()
-    portal_catalog = self.portal.portal_catalog
-    credential_request = portal_catalog.getResultValue(portal_type="Credential Request", 
-                                                       reference="gabriel")
+    credential_request = portal_catalog.getResultValue(portal_type="Credential Request",
+                                                       reference="vifib_test")
     mail_message = portal_catalog.getResultValue(portal_type="Mail Message",
                                                  follow_up=credential_request)
     self.logout()
     self.portal.ERP5Site_activeLogin(mail_message.getReference())
     self.login("ERP5TypeTestCase")
     self.stepTic()
-    person = portal_catalog.getResultValue(reference="gabriel", portal_type="Person")
-    self.assertEquals(person.getValidationState(), "validated")
-
-  def testERP5Site_registerCredentialRequest(self):
-    """ Test if the script ERP5Site_registerCredentialRequest will create one
-    Credential Request correctly """
-    self.createCredentialRequest()
-    portal_catalog = self.portal.portal_catalog
-    credential_request = portal_catalog.getResultValue(portal_type="Credential Request", 
-                                                       reference="gabriel")
-    self.assertEquals(credential_request.getFirstName(), "Gabriel")
-    self.assertEquals(credential_request.getDefaultEmailText(), "gabriel@test.com")
+    person = portal_catalog.getResultValue(reference="vifib_test", portal_type="Person")
+    assignment_list = person.objectValues(portal_type="Assignment")
+    assignment = assignment_list[0]
+    self.assertEquals(assignment.getFunction(), "customer")
+    self.assertEquals(assignment.getRole(), "client")

@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="SupplyLine" module="Products.ERP5Type.Document.SupplyLine"/>
+      <global name="Open Sale Order Line" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>

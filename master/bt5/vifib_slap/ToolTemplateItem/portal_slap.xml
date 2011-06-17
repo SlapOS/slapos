@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="SlapTool" module="Products.Vifib.Tool.SlapTool"/>
+      <global name="Slap Tool" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>

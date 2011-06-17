@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Url" module="Products.ERP5Type.Document.Url"/>
+      <global name="Email" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>

@@ -27,13 +27,13 @@
 ##############################################################################
 from optparse import OptionParser, Option
 from xml_marshaller import xml_marshaller
+from pwd import getpwnam
 import ConfigParser
 import grp
 import logging
 import netaddr
 import netifaces
 import os
-import pwd
 import random
 import slapos.slap as slap
 import socket
@@ -41,6 +41,34 @@ import subprocess
 import sys
 import time
 
+class OS(object):
+  _os = os
+
+  def __init__(self, config):
+    self._dry_run = config.dry_run
+    self._verbose = config.verbose
+    self._logger = config.logger
+    add = self._addWrapper
+    add('chown')
+    add('chmod')
+    add('makedirs')
+    add('mkdir')
+
+  def _addWrapper(self, name):
+    def wrapper(*args, **kw):
+      if self._verbose:
+        arg_list = [repr(x) for x in args] + [
+          '%s=%r' % (x, y) for x, y in kw.iteritems()]
+        self._logger.debug('%s(%s)' % (
+          name,
+          ', '.join(arg_list)
+        ))
+      if not self._dry_run:
+        getattr(self._os, name)(*args, **kw)
+    setattr(self, name, wrapper)
+
+  def __getattr__(self, name):
+    return getattr(self._os, name)
 
 class SlapError(Exception):
   """
@@ -195,6 +223,8 @@ class Computer:
     slap_instance.initializeConnection(config.master_url,
       **connection_dict)
     slap_computer = slap_instance.registerComputer(self.reference)
+    if config.dry_run:
+      return
     return slap_computer.updateConfiguration(
         xml_marshaller.dumps(_getDict(self)))
 
@@ -280,7 +310,7 @@ class Computer:
     slapsoft.path = self.software_root
     if alter_user:
       slapsoft.create()
-      slapsoft_pw = pwd.getpwnam(slapsoft.name)
+      slapsoft_pw = getpwnam(slapsoft.name)
       os.chown(self.software_root, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0755)
 
@@ -365,7 +395,7 @@ class Partition:
     if not os.path.exists(self.path):
       os.mkdir(self.path, 0750)
     if alter_user:
-      owner_pw = pwd.getpwnam(owner.name)
+      owner_pw = getpwnam(owner.name)
       os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
     os.chmod(self.path, 0750)
 
@@ -402,12 +432,12 @@ class User:
     except KeyError:
       callAndRead(['groupadd', self.name])
 
-    user_parameter_list = ['-d', self.path, '-g', self.name]
+    user_parameter_list = ['-d', self.path, '-g', self.name, '-s', '/bin/false']
     if self.additional_group_list is not None:
       user_parameter_list.extend(['-G', ','.join(self.additional_group_list)])
     user_parameter_list.append(self.name)
     try:
-      pwd.getpwnam(self.name)
+      getpwnam(self.name)
     except KeyError:
       callAndRead(['useradd'] + user_parameter_list)
     else:
@@ -425,7 +455,7 @@ class User:
     """
 
     try:
-      pwd.getpwnam(self.name)
+      getpwnam(self.name)
       return True
 
     except KeyError:
@@ -463,7 +493,7 @@ class Tap:
         owner_id = int(open(check_file).read().strip())
       except Exception:
         pass
-    if (owner_id is None) or (owner_id != pwd.getpwnam(owner.name).pw_uid):
+    if (owner_id is None) or (owner_id != getpwnam(owner.name).pw_uid):
       callAndRead(['tunctl', '-t', self.name, '-u', owner.name])
     callAndRead(['ip', 'link', 'set', self.name, 'up'])
 
@@ -707,6 +737,10 @@ class Parser(OptionParser):
         help="Shall slapformat alter user database [default: True]"),
       Option('--alter_network', choices=['True', 'False'],
         help="Shall slapformat alter network configuration [default: True]"),
+      Option("-d", "--dry-run",
+             default=False,
+             action="store_true",
+             help="Don't actually do anything."),
       ])
 
   def check_args(self):
@@ -831,7 +865,8 @@ def run(config):
         alter_network=config.alter_network)
 
     # Dumping and sending to the erp5 the current configuration
-    computer.dump(config.computer_xml)
+    if not config.dry_run:
+      computer.dump(config.computer_xml)
     config.logger.info('Posting information to %r' % config.master_url)
     computer.send(config)
   except:
@@ -904,11 +939,17 @@ class Config:
         self.logger.error(message)
         raise UsageError(message)
 
-    if self.alter_user:
-      self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
+    if not self.dry_run:
+      if self.alter_user:
+        self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
+      if self.alter_network:
+        self.checkRequiredBinary(['ip', 'tunctl'])
+    # Required, even for dry run
     if self.alter_network:
-      self.checkRequiredBinary(['brctl', 'ip', 'tunctl'])
+      self.checkRequiredBinary(['brctl'])
 
+    if self.dry_run:
+      root_needed = False
     
     # check root
     if root_needed and os.getuid() != 0:
@@ -937,6 +978,8 @@ class Config:
     if self.verbose:
       self.logger.setLevel(logging.DEBUG)
       self.logger.debug("Verbose mode enabled.")
+    if self.dry_run:
+      self.logger.info("Dry-run mode enabled.")
 
     # Calculate path once
     self.computer_xml = os.path.abspath(self.computer_xml)
@@ -944,6 +987,10 @@ class Config:
 
 def main():
   "Run default configuration."
+  global os
+  global callAndRead
+  global getpwnam
+  real_callAndRead = callAndRead
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
 
   try:
@@ -951,6 +998,33 @@ def main():
     options, configuration_file_path = Parser(usage=usage).check_args()
     config = Config()
     config.setConfig(options, configuration_file_path)
+    os = OS(config)
+    if config.dry_run:
+      def dry_callAndRead(argument_list, raise_on_error=True):
+        if argument_list == ['brctl', 'show']:
+          return real_callAndRead(argument_list, raise_on_error)
+        else:
+          return 0, ''
+      callAndRead = dry_callAndRead
+      real_addSystemAddress = Bridge._addSystemAddress
+      def fake_addSystemAddress(*args, **kw):
+        real_addSystemAddress(*args, **kw)
+        # Fake success
+        return True
+      Bridge._addSystemAddress = fake_addSystemAddress
+      def fake_getpwnam(user):
+        class result:
+          pw_uid = 12345
+          pw_gid = 54321
+        return result
+      getpwnam = fake_getpwnam
+    else:
+      dry_callAndRead = real_callAndRead
+    if config.verbose:
+      def logging_callAndRead(argument_list, raise_on_error=True):
+        config.logger.debug(' '.join(argument_list))
+        return dry_callAndRead(argument_list, raise_on_error)
+      callAndRead = logging_callAndRead
     run(config)
   except UsageError, err:
     print >>sys.stderr, err.msg

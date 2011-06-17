@@ -47,6 +47,7 @@ from Products.ERP5Security.ERP5GroupManager import ConsistencyError, NO_CACHE_MO
 from Products.ERP5Type.ERP5Type \
   import ERP5TYPE_SECURITY_GROUP_ID_GENERATION_SCRIPT
 from Products.ERP5Type.Cache import CachingMethod
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 
 #Form for new plugin in ZMI
 manage_addVifibMachineAuthenticationPluginForm = PageTemplateFile(
@@ -70,11 +71,14 @@ def addVifibMachineAuthenticationPlugin(dispatcher, id, title=None, REQUEST=None
 def getUserByLogin(portal, login):
   if isinstance(login, basestring):
     login = login,
-  result = portal.portal_catalog.unrestrictedSearchResults(
-      select_expression='reference',
-      portal_type=["Computer", "Software Instance"],
+  machine_query = Query(portal_type=["Computer", "Software Instance"],
       validation_state="validated",
       reference=dict(query=login, key='ExactMatch'))
+  person_query = Query(portal_type=["Person"],
+      reference=dict(query=login, key='ExactMatch'))
+  result = portal.portal_catalog.unrestrictedSearchResults(
+    query=ComplexQuery(machine_query, person_query, operator="OR"),
+    select_expression='reference')
   # XXX: Here, we filter catalog result list ALTHOUGH we did pass
   # parameters to unrestrictedSearchResults to restrict result set.
   # This is done because the following values can match person with
@@ -91,7 +95,6 @@ def getUserByLogin(portal, login):
   # "bar OR foo" because of ZSQLCatalog tokenizing searched strings
   #  by default (feature).
   return [x.getObject() for x in result if x['reference'] in login]
-
 
 class VifibMachineAuthenticationPlugin(BasePlugin):
   """

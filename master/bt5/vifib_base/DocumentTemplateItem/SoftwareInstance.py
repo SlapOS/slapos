@@ -28,6 +28,7 @@
 from AccessControl import ClassSecurityInfo
 from Products.ERP5Type import Permissions
 from Products.ERP5.Document.Item import Item
+from lxml import etree
 
 class SoftwareInstance(Item):
   """
@@ -42,3 +43,20 @@ class SoftwareInstance(Item):
   security.declareObjectProtected(Permissions.AccessContentsInformation)
 
 
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getSlaXmlAsDict')
+  def getSlaXmlAsDict(self):
+    """Returns SLA XML as python dictionary"""
+    result_dict = {}
+    xml = self.getSlaXml()
+    if xml is not None and xml != '':
+      tree = etree.fromstring(xml.encode('utf-8'))
+      for element in tree.findall('parameter'):
+        key = element.get('id')
+        value = result_dict.get(key, None)
+        if value is not None:
+          value = value + ' ' + element.text
+        else:
+          value = element.text
+        result_dict[key] = value
+    return result_dict

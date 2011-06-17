@@ -18,4 +18,5 @@ ipv4_local_network = 10.0.0.0/16
 [slapproxy]
 host = 127.0.0.1
 port = 5000
-database_uri = :memory: # or /path/to/file
+# You could also specify: /path/to/file
+database_uri = :memory:

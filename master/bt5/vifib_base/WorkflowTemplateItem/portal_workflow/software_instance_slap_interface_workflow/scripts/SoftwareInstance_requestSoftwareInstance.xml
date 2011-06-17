@@ -61,7 +61,7 @@ requested_partition_reference = kwargs["partition_reference"]\n
 shared = kwargs["shared"]\n
 software_type = kwargs["software_type"]\n
 instance_xml = kwargs["instance_xml"]\n
-filter_kw = kwargs["filter_kw"]\n
+sla_xml = kwargs["sla_xml"]\n
 \n
 # Get root software instance\n
 predecessor_software_instance = software_instance\n
@@ -97,6 +97,7 @@ if (request_software_instance is None):\n
       title=requested_partition_reference,\n
       source_reference=software_type,\n
       text_content=instance_xml,\n
+      sla_xml=sla_xml,\n
       activate_kw={\'tag\': tag},\n
       **portal.Base_getNewSoftwareInstanceCoordinate()\n
     )\n
@@ -108,13 +109,13 @@ if (request_software_instance is None):\n
       hosting_subscription_uid=hosting_subscription_uid,\n
       shared=shared,\n
       software_type=software_type,\n
-      tag=tag,\n
-      filter_kw=filter_kw)\n
+      tag=tag)\n
 else:\n
   # Update existing software instance\n
   # Sale Packing List interaction has to be requested automatically with an interaction workflow\n
   request_software_instance.edit(\n
     text_content=instance_xml,\n
+    sla_xml=sla_xml,\n
     activate_kw={\'tag\': tag},\n
   )\n
   # Update the predecessor category of the original caller\n

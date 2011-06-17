@@ -55,27 +55,6 @@ from AccessControl import getSecurityManager\n
 from Products.ERP5Type.Log import log\n
 \n
 portal = context.getPortalObject()\n
-bt = portal.portal_templates.getInstalledBusinessTemplate("erp5_demo_maxma_sample")\n
-isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
-\n
-for obj in portal.portal_catalog(path=["%%/%s" % i.replace("**", "%") for i in bt.getTemplatePathList()]):\n
-  obj.activate().updateLocalRolesOnSecurityGroups()\n
-\n
-for document in portal.portal_catalog(portal_type=bt.getTemplatePortalTypeRoleList()):\n
-  document.updateLocalRolesOnSecurityGroups()\n
-\n
-conversion_server_hostname = portal.portal_preferences.getPreferredOoodocServerAddress()\n
-conversion_server_port = portal.portal_preferences.getPreferredOoodocServerPortNumber()\n
-for preference_id in ["default_configurator_preference", "default_configurator_system_preference"]:\n
-  preference = getattr(portal.portal_preferences, preference_id)\n
-  if preference.getPortalType() == "System Preference":\n
-    preference.setPreferredOoodocServerPortNumber(conversion_server_port)\n
-    preference.setPreferredOoodocServerAddress(conversion_server_hostname)\n
-\n
-  if isTransitionPossible(preference, "enable"):\n
-    preference.enable()\n
-  preference.updateLocalRolesOnSecurityGroups()\n
-\n
 for gadget in portal.portal_gadgets.objectValues():\n
   if gadget.getValidationState() == \'invisible\':\n
     gadget.visible()\n

@@ -86,6 +86,7 @@ class TestVifibSlapWebService(testVifibMixin):
   purchase_packing_list_line_portal_type = "Purchase Packing List Line"
   purchase_packing_list_portal_type = "Purchase Packing List"
   sale_packing_list_line_portal_type = "Sale Packing List Line"
+  sale_order_line_portal_type = "Sale Order Line"
   sale_packing_list_portal_type = "Sale Packing List"
   service_portal_type = "Service"
   slave_partition_portal_type = "Slave Partition"
@@ -122,7 +123,7 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEqual(got, {})
 
   ########################################
-  # Ĥelpers
+  # Helpers
   ########################################
   def _softwareInstance_getComputerPartition(self, software_instance):
     sale_packing_list_line = software_instance\
@@ -367,9 +368,17 @@ class TestVifibSlapWebService(testVifibMixin):
     self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid']).requestDestroyComputerPartition()
 
+  def stepRequestSoftwareInstanceDestroyRaisesValueError(self, sequence, **kw):
+    self.assertRaises(ValueError, self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid']).requestDestroyComputerPartition)
+
   def stepRequestSoftwareInstanceStart(self, sequence, **kw):
     self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid']).requestStartComputerPartition()
+
+  def stepRequestSoftwareInstanceStartRaisesValueError(self, sequence, **kw):
+    self.assertRaises(ValueError, self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid']).requestStartComputerPartition)
 
   def stepRequestSoftwareInstanceStop(self, sequence, **kw):
     self.portal.portal_catalog.getResultValue(
@@ -560,6 +569,10 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepSlapLoginCurrentSoftwareInstance(self, sequence, **kw):
     global REMOTE_USER
     REMOTE_USER = sequence['software_instance_reference']
+
+  def stepSlapLoginTestVifibCustomer(self, sequence, **kw):
+    global REMOTE_USER
+    REMOTE_USER = 'test_vifib_customer'
 
   ########################################
   # Typical sequences for scenarios
@@ -1470,6 +1483,56 @@ class TestVifibSlapWebService(testVifibMixin):
         partition_reference=requested_reference,
         partition_parameter_kw=requested_parameter_dict)
 
+  def stepRequestSoftwareInstanceStartCheckSerializeIsCalled(self, sequence):
+    # check that on being_requested serialise is being called
+    # code stolen from testERP5Security:test_MultiplePersonReferenceConcurrentTransaction
+    class DummyTestException(Exception):
+      pass
+
+    def verify_serialize_call(self):
+      # it is checking that anything below computer_module raises exception
+      # thanks to this this test do not have to be destructive
+      if self.getPortalType() == "Software Instance":
+        raise DummyTestException
+      else:
+        return self.serialize_call()
+
+    from Products.ERP5Type.Base import Base
+    Base.serialize_call = Base.serialize
+    Base.serialize = verify_serialize_call
+
+    try:
+      self.assertRaises(DummyTestException,
+        self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid']).requestStartComputerPartition)
+    finally:
+      Base.serialize = Base.serialize_call
+
+  def stepRequestSoftwareInstanceDestroyCheckSerializeIsCalled(self, sequence):
+    # check that on being_requested serialise is being called
+    # code stolen from testERP5Security:test_MultiplePersonReferenceConcurrentTransaction
+    class DummyTestException(Exception):
+      pass
+
+    def verify_serialize_call(self):
+      # it is checking that anything below computer_module raises exception
+      # thanks to this this test do not have to be destructive
+      if self.getPortalType() == "Software Instance":
+        raise DummyTestException
+      else:
+        return self.serialize_call()
+
+    from Products.ERP5Type.Base import Base
+    Base.serialize_call = Base.serialize
+    Base.serialize = verify_serialize_call
+
+    try:
+      self.assertRaises(DummyTestException,
+        self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid']).requestDestroyComputerPartition)
+    finally:
+      Base.serialize = Base.serialize_call
+
   def stepRequestComputerComputerPartitionCheckSerializeCalledOnSelected(
       self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
@@ -1504,7 +1567,8 @@ class TestVifibSlapWebService(testVifibMixin):
                         software_type=requested_reference,
                         shared=False,
                         filter_kw={},
-                        instance_xml=self.minimal_correct_xml)
+                        instance_xml=self.minimal_correct_xml,
+                        sla_xml=self.minimal_correct_xml)
     finally:
       Base.serialize = Base.serialize_call
 
@@ -2951,6 +3015,51 @@ class TestVifibSlapWebService(testVifibMixin):
             portal_type=self.sale_packing_list_line_portal_type)
     self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
 
+  def stepCheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition(self,
+    sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+    # in this test it is required to assume that requested_reference
+    computer_partition = self._softwareInstance_getComputerPartition(
+      software_instance)
+    # There should be only one Sale Packing List Line
+    sale_packing_list_line_list = software_instance\
+        .getAggregateRelatedValueList(
+            portal_type=self.sale_packing_list_line_portal_type)
+    self.assertEqual(1, len(sale_packing_list_line_list))
+    sale_packing_list_line = sale_packing_list_line_list[0]
+    # This Sale Packing List Line shall have only one Computer Partition
+    computer_partition_list = sale_packing_list_line.getAggregateValueList(
+        portal_type='Computer Partition')
+    self.assertEqual(1, len(computer_partition_list))
+
+    computer_partition = computer_partition_list[0]
+
+    # This Computer Partition shall have only Sale Packing List Line related
+    computer_partition_sale_packing_list_line_list = computer_partition\
+        .getAggregateRelatedValueList(
+            portal_type=self.sale_packing_list_line_portal_type)
+    self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
+
+    # There should be only one Sale Order Line
+    sale_order_line_list = software_instance\
+        .getAggregateRelatedValueList(
+            portal_type=self.sale_order_line_portal_type)
+    self.assertEqual(1, len(sale_order_line_list))
+    sale_order_line = sale_order_line_list[0]
+    # This Sale Order Line shall have only one Computer Partition
+    computer_partition_list = sale_order_line.getAggregateValueList(
+        portal_type='Computer Partition')
+    self.assertEqual(1, len(computer_partition_list))
+
+    computer_partition = computer_partition_list[0]
+
+    # This Computer Partition shall have only Sale Order Line related
+    computer_partition_sale_order_line_list = computer_partition\
+        .getAggregateRelatedValueList(
+            portal_type=self.sale_order_line_portal_type)
+    self.assertEqual(1, len(computer_partition_sale_order_line_list))
+
   def stepCheckSoftwareInstanceAndRelatedComputerPartition(self,
       sequence, **kw):
     software_instance_uid = sequence['software_instance_uid']
@@ -4007,43 +4116,44 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence['requested_filter_dict'] = dict(
       computer_guid=sequence['computer_reference'])
 
+  prepare_another_computer_sequence_string = """
+    StoreComputerReference
+    LoginTestVifibAdmin
+    CreateComputer
+    Tic
+    Logout
+
+    SlapLoginCurrentComputer
+    FormatComputer
+    Tic
+    SlapLogout""" + prepare_software_release_confirmed_packing_list + """
+
+    LoginTestVifibAdmin
+    RequestSoftwareInstallation
+    Tic
+    Logout
+
+    SlapLoginCurrentComputer
+    ComputerSoftwareReleaseAvailable
+    Tic
+    SlapLogout
+
+    SetRequestedFilterParameterDict
+    RestoreComputerReference
+  """
+
   def test_ComputerPartition_request_filter_computer_guid(self):
     """
     Check that requesting with filter computer_guid key works as expected
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
-    prepare_another_computer_sequence_string = """
-      StoreComputerReference
-      LoginTestVifibAdmin
-      CreateComputer
-      Tic
-      Logout
-      
-      SlapLoginCurrentComputer
-      FormatComputer
-      Tic
-      SlapLogout""" + self.prepare_software_release_confirmed_packing_list + """
-
-      LoginTestVifibAdmin
-      RequestSoftwareInstallation
-      Tic
-      Logout
-
-      SlapLoginCurrentComputer
-      ComputerSoftwareReleaseAvailable
-      Tic
-      SlapLogout
-
-      SetRequestedFilterParameterDict
-      RestoreComputerReference
-    """
     # There are two partitions on another computer
     # so request shall be processed twice correctly, 3rd time it shall
     # fail
     sequence_string = \
     self.prepare_install_requested_computer_partition_sequence_string + \
-      prepare_another_computer_sequence_string + '\
+      self.prepare_another_computer_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartitionNotReadyResponse \
       Tic \
@@ -6884,6 +6994,293 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.play(self)
 
   ########################################
+  # Person using PKI/Slap interface
+  ########################################
+
+  def _safe_revoke_certificate(self, person):
+    from AccessControl import getSecurityManager
+    user = getSecurityManager().getUser().getId()
+    try:
+      self.login('ERP5TypeTestCase')
+      person.revokeCertificate()
+    except ValueError, err:
+      if 'No certificate for' in err.message:
+        pass
+      else:
+        raise
+    finally:
+      self.login(user)
+
+  def test_person_request_new_certificate(self):
+    """Checks that Person is capable to ask for new certificate"""
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
+    self.login('test_vifib_user_admin')
+    certificate = person.getCertificate()
+    self.assertTrue('CN=test_vifib_user_admin' in certificate['certificate'])
+
+  def test_person_request_revoke_certificate(self):
+    """Chekcs that Person is capable to ask for revocation of certificate"""
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
+    self.login('test_vifib_user_admin')
+    certificate = person.getCertificate()
+    self.assertTrue('CN=test_vifib_user_admin' in certificate['certificate'])
+    person.revokeCertificate()
+
+  def test_person_request_new_certificate_twice(self):
+    """Checks that if Person asks twice for a certificate the next call
+       fails"""
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
+    self.login('test_vifib_user_admin')
+    certificate = person.getCertificate()
+    self.assertTrue('CN=test_vifib_user_admin' in certificate['certificate'])
+    self.assertRaises(ValueError, person.getCertificate)
+
+  def test_person_request_certificate_for_another_person(self):
+    """Checks that if Person tries to request ceritifcate for someone else it
+    will fail"""
+    from AccessControl import Unauthorized
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
+    self.login('test_hr_admin')
+    self.assertRaises(Unauthorized, person.getCertificate)
+
+  def test_person_request_revoke_certificate_for_another_person(self):
+    """Checks that if Person tries to request ceritifcate for someone else it
+    will fail"""
+    from AccessControl import Unauthorized
+    self.login()
+    self.portal.portal_certificate_authority._checkCertificateAuthority()
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
+      'test_vifib_user_admin')
+    self._safe_revoke_certificate(person)
+    self.login('test_vifib_user_admin')
+    certificate = person.getCertificate()
+    self.assertTrue('CN=test_vifib_user_admin' in certificate['certificate'])
+    self.login('test_hr_admin')
+    self.assertRaises(Unauthorized, person.revokeCertificate)
+
+  def stepPersonRequestSlapSoftwareInstanceNotFoundResponse(self, sequence,
+      **kw):
+    software_release = sequence['software_release_uri']
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    open_order = self.slap.registerOpenOrder()
+    self.assertRaises(slap.NotFoundError, open_order.request,
+       software_release=software_release,
+       software_type=sequence.get('software_type', 'software_type'),
+       partition_reference=sequence.get('requested_reference',
+          'requested_reference'),
+       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+       filter_kw=sequence.get('requested_filter_dict', {})
+       )
+
+  def stepPersonRequestSlapSoftwareInstanceNotReadyResponse(self, sequence,
+      **kw):
+    software_release = sequence['software_release_uri']
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    open_order = self.slap.registerOpenOrder()
+    self.assertRaises(slap.ResourceNotReady, open_order.request,
+       software_release=software_release,
+       software_type=sequence.get('software_type', 'software_type'),
+       partition_reference=sequence.get('requested_reference',
+          'requested_reference'),
+       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+       filter_kw=sequence.get('requested_filter_dict', {})
+       )
+
+  def stepSetRandomRequestedReference(self, sequence, **kw):
+    sequence['requested_reference'] = self.id() + str(random())
+
+  def stepSetCurrentPersonSlapRequestedSoftwareInstance(self, sequence, **kw):
+    software_instance_list = self.portal.portal_catalog(
+        portal_type=self.software_instance_portal_type,
+        title=sequence['requested_reference'])
+    self.assertEqual(1, len(software_instance_list))
+    software_instance = software_instance_list[0]
+    sequence.edit(
+        software_instance_uid=software_instance.getUid(),
+        software_instance_reference=software_instance.getReference(),
+        hosting_subscription_uid=software_instance.getAggregateRelatedValue(
+          portal_type='Sale Order Line').getAggregateValue(
+            portal_type='Hosting Subscription').getUid())
+
+  def stepPersonRequestSlapSoftwareInstance(self, sequence, **kw):
+    software_release = sequence['software_release_uri']
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    open_order = self.slap.registerOpenOrder()
+    requested_slap_computer_partition = open_order.request(
+       software_release=software_release,
+       software_type=sequence.get('software_type', 'software_type'),
+       partition_reference=sequence['requested_reference'],
+       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+       filter_kw=sequence.get('requested_filter_dict', {}))
+    sequence.edit(
+        requested_slap_computer_partition=requested_slap_computer_partition,
+        requested_computer_partition_reference=\
+            requested_slap_computer_partition.getId())
+
+
+  def test_person_request_ComputerPartition(self):
+    """Checks that Person using Slap interface is able to request Computer
+       Partition"""
+    self.computer_partition_amount = 1
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SetRandomRequestedReference
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      SlapLogout
+
+      LoginTestVifibCustomer
+      CheckViewCurrentSoftwareInstance
+      CheckWriteCurrentSoftwareInstance
+      Tic
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepSoftwareInstanceSaleOrderConfirmRaisesValueError(self, sequence,
+    **kw):
+    """Checks that current software instance is realted only with sale order
+    
+    and that this sale order cannot be confirmed
+    
+    In Vifib implementation sale order which cannot find free computer partition
+    raises ValueError"""
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+
+    aggregate_value_list = software_instance.getAggregateRelatedValueList(portal_type=[self.sale_packing_list_line_portal_type, self.sale_order_line_portal_type])
+
+    self.assertEqual(1, len(aggregate_value_list))
+    self.assertTrue(self.sale_order_line_portal_type in [q.getPortalType() for\
+        q in aggregate_value_list])
+    sale_order_line = aggregate_value_list[0]
+    sale_order = sale_order_line.getParentValue()
+
+    self.assertRaises(ValueError, sale_order.confirm)
+
+  def test_person_request_ComputerPartition_filter_computer_guid(self):
+    """Check that requesting with computer_guid in filter_kw works as
+       expected in case of person request"""
+    self.computer_partition_amount = 1
+    sequence_list = SequenceList()
+    # There is only one partition on each computer, which has installed
+    # software release. But as request has sla parameter, the partition
+    # on another computer is not selected, as not following SLA.
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+      """ + \
+      self.prepare_another_computer_sequence_string + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SetRandomRequestedReference
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      SelectYetAnotherRequestedReference
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      SoftwareInstanceSaleOrderConfirmRaisesValueError
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  ########################################
   # Bug related tests
   ########################################
 
@@ -6913,6 +7310,59 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_bug_doubleClickOnStart(self):
+    sequence_list = SequenceList()
+    sequence_string = self\
+        .prepare_stopped_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceStart
+      RequestSoftwareInstanceStartRaisesValueError
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_doubleClickOnStart_serializeIsCalled(self):
+    sequence_list = SequenceList()
+    sequence_string = self\
+        .prepare_stopped_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceStartCheckSerializeIsCalled
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_doubleClickOnDestroy(self):
+    sequence_list = SequenceList()
+    sequence_string = self\
+        .prepare_installed_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      RequestSoftwareInstanceDestroyRaisesValueError
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_doubleClickOnDestroy_serializeIsCalled(self):
+    sequence_list = SequenceList()
+    sequence_string = self\
+        .prepare_installed_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroyCheckSerializeIsCalled
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
 # class IComputerPartition
 #   def started():

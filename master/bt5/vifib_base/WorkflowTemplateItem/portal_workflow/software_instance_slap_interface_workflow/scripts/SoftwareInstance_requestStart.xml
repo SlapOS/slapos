@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
+            <value> <string encoding="cdata"><![CDATA[
+
+software_instance = state_change[\'object\']\n
 service_relative_url = software_instance.portal_preferences.\\\n
                             getPreferredInstanceHostingResource()\n
 need_to_create_packing_list = False\n
@@ -63,10 +65,18 @@ else:\n
   if sale_packing_list_line.getSimulationState() == \'delivered\':\n
     need_to_create_packing_list = True\n
 \n
+portal = context.getPortalObject()\n
 if need_to_create_packing_list:\n
-  sale_packing_list = context.SoftwareInstance_createSalePackingList(state_change, service_relative_url)\n
-  sale_packing_list.confirm()\n
-</string> </value>
+  tag = "%s_startInProgress" % software_instance.getUid()\n
+  if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+    raise ValueError("Software Instance is currently being started.")\n
+  # lock software instance in transaction\n
+  software_instance.serialize()\n
+  sale_packing_list = context.SoftwareInstance_createSalePackingList(state_change, service_relative_url, tag)\n
+  sale_packing_list.confirm(activate_kw={\'tag\':tag})\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>

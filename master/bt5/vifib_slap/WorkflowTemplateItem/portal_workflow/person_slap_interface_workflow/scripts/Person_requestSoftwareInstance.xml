@@ -59,8 +59,9 @@ portal = person.getPortalObject()\n
 kwargs = state_change.kwargs\n
 software_release_url_string = state_change.kwargs[\'software_release\']\n
 software_title = kwargs["software_title"]\n
-software_type = "RootSoftwareInstance"\n
+software_type = kwargs.get("software_type") or "RootSoftwareInstance"\n
 instance_xml = kwargs["instance_xml"]\n
+sla_xml = kwargs.get("sla_xml") or ""\n
 \n
 sale_order_portal_type = "Sale Order"\n
 sale_order_line_portal_type = "Sale Order Line"\n
@@ -96,6 +97,7 @@ if (request_software_instance is None):\n
             source_reference=software_type,\n
             title=software_title,\n
             text_content=instance_xml,\n
+            sla_xml=sla_xml,\n
             activate_kw={\'tag\': tag},\n
             **portal.Base_getNewSoftwareInstanceCoordinate()\n
     )\n
@@ -168,6 +170,7 @@ else:\n
   # Update existing software instance\n
   request_software_instance.edit(\n
     text_content=instance_xml,\n
+    sla_xml=sla_xml,\n
     activate_kw={\'tag\': tag},\n
   )\n
 

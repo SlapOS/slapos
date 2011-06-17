@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2010 Nexedi SA and Contributors. All Rights Reserved.
+# Copyright (c) 2010-2011 Nexedi SA and Contributors. All Rights Reserved.
 #                    Łukasz Nowak <luke@nexedi.com>
 #                    Romain Courteaud <romain@nexedi.com>
 #
@@ -73,7 +73,7 @@ def convertToREST(function):
     """
     try:
       retval = function(self, *args, **kwd)
-    except ValueError, log:
+    except (ValueError, AttributeError), log:
       LOG('SlapTool', INFO, 'Converting ValueError to NotFound, real error:',
           error=True)
       raise NotFound(log)
@@ -81,7 +81,8 @@ def convertToREST(function):
       self.REQUEST.response.setStatus(408)
       return self.REQUEST.response
     except ValidationFailed:
-      LOG('SlapTool', INFO, 'Converting ValidationFailed to ValidationFailed, real error:',
+      LOG('SlapTool', INFO, 'Converting ValidationFailed to ValidationFailed,'\
+        ' real error:',
           error=True)
       raise ValidationFailed
 
@@ -123,7 +124,8 @@ class SlapTool(BaseTool):
   # Public GET methods
   ####################################################
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'getComputerInformation')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getComputerInformation')
   def getComputerInformation(self, computer_id):
     """Returns marshalled XML of all needed information for computer
 
@@ -149,7 +151,8 @@ class SlapTool(BaseTool):
           self._convertToSlapPartition(slave_partition_document, computer_id))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'getComputerPartitionCertificate')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getComputerPartitionCertificate')
   def getComputerPartitionCertificate(self, computer_id, computer_partition_id):
     """Method to fetch certificate"""
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
@@ -160,12 +163,13 @@ class SlapTool(BaseTool):
       certificate=software_instance.getSslCertificate()
     )
     return xml_marshaller.xml_marshaller.dumps(certificate_dict)
-    
+
   ####################################################
   # Public POST methods
   ####################################################
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'setComputerPartitionConnectionXml')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'setComputerPartitionConnectionXml')
   def setComputerPartitionConnectionXml(self, computer_id,
                                         computer_partition_id,
                                         connection_xml):
@@ -176,42 +180,48 @@ class SlapTool(BaseTool):
                                                    computer_partition_id,
                                                    connection_xml)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'buildingSoftwareRelease')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'buildingSoftwareRelease')
   def buildingSoftwareRelease(self, url, computer_id):
     """
     Reports that Software Release is being build
     """
     return self._buildingSoftwareRelease(url, computer_id)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'availableSoftwareRelease')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'availableSoftwareRelease')
   def availableSoftwareRelease(self, url, computer_id):
     """
     Reports that Software Release is available
     """
     return self._availableSoftwareRelease(url, computer_id)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'softwareReleaseError')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'softwareReleaseError')
   def softwareReleaseError(self, url, computer_id, error_log):
     """
     Add an error for a software Release workflow
     """
     return self._softwareReleaseError(url, computer_id, error_log)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'buildingComputerPartition')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'buildingComputerPartition')
   def buildingComputerPartition(self, computer_id, computer_partition_id):
     """
     Reports that Computer Partition is being build
     """
     return self._buildingComputerPartition(computer_id, computer_partition_id)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'availableComputerPartition')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'availableComputerPartition')
   def availableComputerPartition(self, computer_id, computer_partition_id):
     """
     Reports that Computer Partition is available
     """
     return self._availableComputerPartition(computer_id, computer_partition_id)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'softwareInstanceError')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'softwareInstanceError')
   def softwareInstanceError(self, computer_id,
                             computer_partition_id, error_log):
     """
@@ -220,31 +230,36 @@ class SlapTool(BaseTool):
     return self._softwareInstanceError(computer_id, computer_partition_id,
                                        error_log)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'startedComputerPartition')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'startedComputerPartition')
   def startedComputerPartition(self, computer_id, computer_partition_id):
     """
     Reports that Computer Partition is started
     """
     return self._startedComputerPartition(computer_id, computer_partition_id)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'stoppedComputerPartition')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'stoppedComputerPartition')
   def stoppedComputerPartition(self, computer_id, computer_partition_id):
     """
     Reports that Computer Partition is stopped
     """
     return self._stoppedComputerPartition(computer_id, computer_partition_id)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'destroyedComputerPartition')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'destroyedComputerPartition')
   def destroyedComputerPartition(self, computer_id, computer_partition_id):
     """
     Reports that Computer Partition is destroyed
     """
     return self._destroyedComputerPartition(computer_id, computer_partition_id)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'requestComputerPartition')
-  def requestComputerPartition(self, computer_id, computer_partition_id,
-      software_release, software_type, partition_reference,
-      shared_xml, partition_parameter_xml, filter_xml):
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'requestComputerPartition')
+  def requestComputerPartition(self, computer_id=None,
+      computer_partition_id=None, software_release=None, software_type=None,
+      partition_reference=None, shared_xml=None, partition_parameter_xml=None,
+      filter_xml=None):
     """
     Asynchronously requests creation of computer partition for assigned
     parameters
@@ -257,33 +272,35 @@ class SlapTool(BaseTool):
     In any other case returns not important data and HTTP code is 403 Forbidden
     """
     return self._requestComputerPartition(computer_id, computer_partition_id,
-        software_release, software_type, partition_reference, 
+        software_release, software_type, partition_reference,
         shared_xml, partition_parameter_xml, filter_xml)
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'useComputer')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'useComputer')
   def useComputer(self, computer_id, use_string):
     """Entry point to reporting usage of a computer."""
     #computer_document = self._getComputerDocument(computer_id)
     # easy way to start to store usage messages sent by client in related Web
     # Page text_content...
-    
+
     #self._reportComputerUsage(computer_document, use_string)
     #LOG("check-1", 0, "%s" % use_string)
     unmarshalled_usage = xml_marshaller.xml_marshaller.loads(use_string)
     #res = unmarshalled_usage.computer_partition_usage_list
-    
+
     #LOG("check-2", 0, "%s" % res[0].usage)
     vifib_conduit_instance = VifibConduit.VifibConduit()
-    #sub_object = vifib_conduit_instance.addNode(object=self, 
-    vifib_conduit_instance.addNode(object=self, 
+    #sub_object = vifib_conduit_instance.addNode(object=self,
+    vifib_conduit_instance.addNode(object=self,
                 xml=unmarshalled_usage.computer_partition_usage_list[0].usage)
-    
+
     #sub_object = vifib_conduit_instance.addNode(object=self, xml=res[0].usage)
     #self._reportComputerUsage(computer_document, use_string)
 
     return 'Content properly posted.'
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'loadComputerConfigurationFromXML')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'loadComputerConfigurationFromXML')
   def loadComputerConfigurationFromXML(self, xml):
     "Load the given xml as configuration for the computer object"
     computer_dict = xml_marshaller.xml_marshaller.loads(xml)
@@ -291,8 +308,10 @@ class SlapTool(BaseTool):
     computer.Computer_updateFromDict(computer_dict)
     return 'Content properly posted.'
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'useComputerPartition')
-  def useComputerPartition(self, computer_id, computer_partition_id, use_string):
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'useComputerPartition')
+  def useComputerPartition(self, computer_id, computer_partition_id,
+    use_string):
     """Warning : deprecated method."""
     computer_document = self._getComputerDocument(computer_id)
     computer_partition_document = self._getComputerPartitionDocument(
@@ -303,7 +322,8 @@ class SlapTool(BaseTool):
     return """Content properly posted.
               WARNING : this method is deprecated. Please use useComputer."""
 
-  security.declareProtected(Permissions.AccessContentsInformation, 'registerComputerPartition')
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'registerComputerPartition')
   def registerComputerPartition(self, computer_reference,
                                 computer_partition_reference):
     """
@@ -326,15 +346,14 @@ class SlapTool(BaseTool):
     result_dict = {}
     if xml is not None and xml != '':
       tree = etree.fromstring(xml.encode('utf-8'))
-      for element in tree.iter(tag=etree.Element):
-        if element.tag == 'parameter':
-          key = element.get('id')
-          value = result_dict.get(key, None)
-          if value is not None:
-            value = value + ' ' + element.text
-          else:
-            value = element.text
-          result_dict[key] = value
+      for element in tree.findall('parameter'):
+        key = element.get('id')
+        value = result_dict.get(key, None)
+        if value is not None:
+          value = value + ' ' + element.text
+        else:
+          value = element.text
+        result_dict[key] = value
     return result_dict
 
   def _getModificationStatusForSlave(self, computer_partition_document):
@@ -414,7 +433,8 @@ class SlapTool(BaseTool):
       elif movement.getResource() == \
               portal_preferences.getPreferredInstanceCleanupResource():
 
-        if movement.getSimulationState() in ('confirmed', 'started', 'stopped'):
+        if movement.getSimulationState() in ('confirmed', 'started',
+            'stopped'):
           slap_partition._need_modification = 1
 
       else:
@@ -440,7 +460,8 @@ class SlapTool(BaseTool):
     Reports that Software Release is being build
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.startSoftwareReleaseInstallation(software_release_url=url)
+    computer_document.startSoftwareReleaseInstallation(
+      software_release_url=url)
 
   @convertToREST
   def _availableSoftwareRelease(self, url, computer_id):
@@ -543,7 +564,7 @@ class SlapTool(BaseTool):
 
   @convertToREST
   def _requestComputerPartition(self, computer_id, computer_partition_id,
-        software_release, software_type, partition_reference, 
+        software_release, software_type, partition_reference,
         shared_xml, partition_parameter_xml, filter_xml):
     """
     Asynchronously requests creation of computer partition for assigned
@@ -552,7 +573,8 @@ class SlapTool(BaseTool):
     Returns XML representation of partition with HTTP code 200 OK
 
     In case if this request is still being processed data contain
-    "Computer Partition is being processed" and HTTP code is 408 Request Timeout
+    "Computer Partition is being processed" and HTTP code is 408 Request
+    Timeout
 
     In any other case returns not important data and HTTP code is 403 Forbidden
     """
@@ -569,44 +591,76 @@ class SlapTool(BaseTool):
       filter_kw = xml_marshaller.xml_marshaller.loads(filter_xml)
     else:
       filter_kw = dict()
-      
+
     instance = etree.Element('instance')
     for parameter_id, parameter_value in partition_parameter_kw.iteritems():
       # cast everything to string
       parameter_value = str(parameter_value)
       etree.SubElement(instance, "parameter",
                        attrib={'id':parameter_id}).text = parameter_value
-    instance_xml = etree.tostring(instance, pretty_print=True, 
+    instance_xml = etree.tostring(instance, pretty_print=True,
                                   xml_declaration=True, encoding='utf-8')
 
-    software_instance_document = self._getSoftwareInstanceForComputerPartition(
-        computer_id,
-        computer_partition_id)
-    software_instance_document.requestSoftwareInstance(
-            software_release=software_release,
-            software_type=software_type,
-            partition_reference=partition_reference,
-            shared=shared,
-            instance_xml=instance_xml,
-            filter_kw=filter_kw)
+    instance = etree.Element('instance')
+    for parameter_id, parameter_value in filter_kw.iteritems():
+      # cast everything to string
+      parameter_value = str(parameter_value)
+      etree.SubElement(instance, "parameter",
+                       attrib={'id':parameter_id}).text = parameter_value
+    sla_xml = etree.tostring(instance, pretty_print=True,
+                                  xml_declaration=True, encoding='utf-8')
 
-    # Get requested software instance
-    requested_software_instance = software_instance_document.portal_catalog.\
-        getResultValue(
-              portal_type="Software Instance",
-              source_reference=software_type,
-              # predecessor_related_uid is inconsistent with
-              # SoftwareInstancae.requestSoftwareInstance but in this case it
-              # is assumed, that data are correct
-              predecessor_related_uid=software_instance_document.getUid(),
-              title=partition_reference,
-        )
+    if computer_id and computer_partition_id:
+      # requested by Software Instance, there is already top part of tree
+      software_instance_document = self.\
+        _getSoftwareInstanceForComputerPartition(computer_id,
+        computer_partition_id)
+      software_instance_document.requestSoftwareInstance(
+              software_release=software_release,
+              software_type=software_type,
+              partition_reference=partition_reference,
+              shared=shared,
+              instance_xml=instance_xml,
+              sla_xml=sla_xml)
+
+      # Get requested software instance
+      requested_software_instance = software_instance_document.portal_catalog.\
+          getResultValue(
+                portal_type="Software Instance",
+                source_reference=software_type,
+                # predecessor_related_uid is inconsistent with
+                # SoftwareInstancae.requestSoftwareInstance but in this case it
+                # is assumed, that data are correct
+                predecessor_related_uid=software_instance_document.getUid(),
+                title=partition_reference,
+          )
+    else:
+      # requested as root, so done by human
+      person = self.getPortalObject()\
+          .ERP5Site_getAuthenticatedMemberPersonValue()
+      person.requestSoftwareInstance(software_release=software_release,
+              software_type=software_type,
+              software_title=partition_reference,
+              shared=shared,
+              instance_xml=instance_xml,
+              sla_xml=sla_xml)
+      requested_software_instance = person.portal_catalog.\
+          getResultValue(
+                portal_type="Software Instance",
+                # In order be in sync with defaults of person.
+                #   requestSoftwareInstance it is required to default here
+                # too
+                source_reference=software_type or 'RootSoftwareInstance',
+                title=partition_reference,
+          )
 
     if requested_software_instance is None:
       raise SoftwareInstanceNotReady
     else:
       movement = self._getSalePackingListLineForComputerPartition(
                                              requested_software_instance)
+      if movement is None:
+        raise SoftwareInstanceNotReady
       software_instance = SoftwareInstance(
         **self._getSalePackingListLineAsSoftwareInstance(
                                       movement))
@@ -676,8 +730,8 @@ class SlapTool(BaseTool):
       software_instance = packing_list_line.getAggregateValue(
                                               portal_type="Software Instance")
       if software_instance is None:
-        raise NotFound, "No software instance found for: %s - %s" % (computer_id,
-            computer_partition_id)
+        raise NotFound, "No software instance found for: %s - %s" % (
+          computer_id, computer_partition_id)
       else:
         return software_instance
 
@@ -773,7 +827,8 @@ class SlapTool(BaseTool):
     usage_report_sale_packing_list_document.start()
 
     # Adds a new SPL line for each Computer Partition
-    for computer_partition_usage in unmarshalled_usage.computer_partition_usage_list:
+    for computer_partition_usage in unmarshalled_usage\
+        .computer_partition_usage_list:
       #Get good packing list line for a computer_partition
       computer_partition_document = self.\
                 _getComputerPartitionDocument(

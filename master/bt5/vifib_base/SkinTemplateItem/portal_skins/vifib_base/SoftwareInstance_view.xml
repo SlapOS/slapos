@@ -86,6 +86,7 @@
                         <string>my_ssl_key</string>
                         <string>my_ssl_certificate</string>
                         <string>my_description</string>
+                        <string>my_sla_xml</string>
                       </list>
                     </value>
                 </item>
