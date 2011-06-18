@@ -82,7 +82,7 @@ class Recipe(BaseSlapRecipe):
     tester_config['tester_address'] = self.getGlobalIPv6Address()
     tester_config['report_path'] = self.log_directory
 
-    tester_connection = {'start_url': 'http://%s:5000/start' % \
+    tester_connection = {'url': 'http://%s:5000/' % \
                            tester_config['tester_address']}
 
     self.computer_partition.setConnectionDict(tester_connection)
