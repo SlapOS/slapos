@@ -81,6 +81,8 @@ class Recipe(BaseSlapRecipe):
 
     tester_config['tester_address'] = self.getGlobalIPv6Address()
     tester_config['report_path'] = self.log_directory
+    tester_config['filename_prefix'] = '%s-%s' % (self.computer_id,
+                                                  self.computer_partition_id)
 
     tester_connection = {'url': 'http://%s:5000/' % \
                            tester_config['tester_address']}
