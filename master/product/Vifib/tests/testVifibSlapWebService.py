@@ -324,10 +324,11 @@ class TestVifibSlapWebService(testVifibMixin):
         sequence)
 
   def stepPersonRequestSlaveInstance(self, sequence, **kw):
-    """
-      Request one slave instance with one person as context
-    """
-    raise NotImplementedError('Not Implemented yet')
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
+    kw = dict(instance_portal_type=self.slave_instance_portal_type,
+              slave=True,
+              software_type="SlaveInstance")
+    self.stepPersonRequestSoftwareInstance(sequence, **kw)
 
   def stepPersonRequestSoftwareInstance(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
@@ -337,15 +338,18 @@ class TestVifibSlapWebService(testVifibMixin):
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
       software_title=software_title,
-      instance_xml=self.minimal_correct_xml)
+      instance_xml=self.minimal_correct_xml,
+      **kw)
     transaction.commit()
     self.tic()
     # Note: This is tricky part. Workflow methods does not return nothing
     # so the only way is to find again the computer partition.
     # But only title can be passed, that is why random is used to avoid
     # duplication
+    software_instance_portal_type = kw.get("instance_portal_type",
+                                  self.software_instance_portal_type)
     software_instance_list = self.portal.portal_catalog(
-        portal_type=self.software_instance_portal_type,
+        portal_type=software_instance_portal_type,
         title=software_title)
     self.assertEqual(1, len(software_instance_list))
     software_instance = software_instance_list[0]
@@ -429,6 +433,33 @@ class TestVifibSlapWebService(testVifibMixin):
     )
 
     self.portal.portal_workflow.doActionFor(packing_list, "confirm_action")
+
+  def stepCheckComputerPartitionSaleOrderAggregatedList(self, sequence):
+    sale_packing_list = self.portal.portal_catalog.getResultValue(
+        uid=sequence['sale_packing_list_uid'])
+    sale_packing_list_line = sale_packing_list.objectValues()[0]
+    computer_partition = sale_packing_list_line.getAggregateValue(
+        portal_type=self.computer_partition_portal_type)
+    sale_order_line_list = computer_partition.getAggregateRelatedValueList(
+        portal_type="Sale Order Line")
+    sale_order_line_1, sale_order_line_2 = sale_order_line_list
+    self.assertEquals(sale_order_line_1.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type),
+                      sale_order_line_2.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type))
+    self.assertEquals(2, len(sale_order_line_list))
+    sale_packing_line_list = computer_partition.getAggregateRelatedValueList(
+        portal_type="Sale Packing List Line")
+    self.assertEquals(2, len(sale_packing_line_list))
+    sale_packing_list_line_1, sale_packing_list_line_2 = sale_packing_line_list
+    self.assertEquals(sale_packing_list_line_1.getAggregateValue(
+                        portal_type=self.software_release_portal_type),
+                      sale_packing_list_line_2.getAggregateValue(
+                        portal_type=self.software_release_portal_type))
+    self.assertEquals(sale_packing_list_line_1.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type),
+                      sale_packing_list_line_2.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type))
 
   def _createComputer(self):
     # Mimics WebSection_registerNewComputer
@@ -3096,6 +3127,9 @@ class TestVifibSlapWebService(testVifibMixin):
 
     self._checkSoftwareInstanceAndRelatedPartition(predecessor)
 
+  def stepCheckSaleOrderWithSlaveInstance(self, sequence):
+    import ipdb;ipdb.set_trace()
+
   ########################################
   # slap.initializeConnection
   ########################################
@@ -4197,10 +4231,47 @@ class TestVifibSlapWebService(testVifibMixin):
   #########################################
 
   @skip("Not Implemented yet")
-  def test_ComputerPartition_request_SlaveInstance(self):
+  def test_Person_request_SlaveInstance_with_Different_User(self):
+    """
+      Check that user A can declare a slot of slave partition on a machine
+      owned by an user B
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+    Tic
+    CreateAnotherUserAsCustomer
+    LoginAsCustomer
+    PersonRequestSlaveInstance
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Person_request_SlaveInstance(self):
     """
       Check that one Slave Instance is created correctly
     """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+    Tic
+    LoginTestVifibCustomer
+    PersonRequestSlaveInstance
+    Tic
+    Logout
+
+    LoginDefaultUser
+
+    ConfirmOrderedSaleOrderActiveSense
+    Tic
+    SetSelectedComputerPartition
+    SelectCurrentlyUsedSalePackingListUid
+    Logout
+
+    LoginDefaultUser
+    CheckComputerPartitionSaleOrderAggregatedList
+    Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   @skip("Not Implemented yet")
   def test_ComputerPartition_request_SlaveInstance_noSoftwareInstance(self):
