@@ -56,22 +56,24 @@ portal = order.getPortalObject()\n
 setup_service_relative_url = order.portal_preferences.getPreferredInstanceSetupResource()\n
 isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
 \n
+instance_portal_type_list = ["Software Instance","Slave Instance"]\n
 for order_line in order.getMovementList():\n
   if order_line.getResource() == setup_service_relative_url:\n
     computer_partition = order_line.getAggregateValue(portal_type="Computer Partition")\n
     if computer_partition is None:\n
       software_release = order_line.getAggregateValue(portal_type="Software Release")\n
-      software_instance = order_line.getAggregateValue(portal_type="Software Instance")\n
+      software_instance = order_line.getAggregateValue(portal_type=instance_portal_type_list)\n
 \n
       computer_partition = None\n
-     \n
       # XXX Duplicated from request method...\n
       query_kw = {\n
         \'software_release_url\': software_release.getUrlString(),\n
         \'portal_type\': \'Computer Partition\',\n
-#         \'relative_url\': \'computer_module/20110126-E2AE/%\',\n
         \'free_for_request\': 1,\n
       }\n
+      if software_instance.getPortalType() == "Slave Instance":\n
+        query_kw[\'free_for_request\'] = 0\n
+       \n
       # support SLA\n
       filter_kw = software_instance.getSlaXmlAsDict()\n
       if "computer_guid" in filter_kw:\n
@@ -82,18 +84,19 @@ for order_line in order.getMovementList():\n
 \n
       for computer_partition_candidate in portal.portal_catalog(\n
                                                limit=(random.randint(0, offset), 50), **query_kw):\n
-        computer_partition_candidate = computer_partition_candidate.getObject()\n
+        computer_partition_candidate = computer_partition_candidate.getObject()    \n
         # Check if the computer partition can be marked as busy (done by an interaction workflow on sale packing list level)\n
-        if isTransitionPossible(computer_partition_candidate, \'mark_busy\'):\n
+        if isTransitionPossible(computer_partition_candidate, \'mark_busy\') or software_instance.getPortalType() == "Slave Instance":\n
           computer_partition = computer_partition_candidate\n
-          break\n
+          break    \n
 \n
       if computer_partition is None:\n
         raise ValueError(\'It was not possible to find free Computer Partition\')\n
 \n
       # lock computer partition\n
       computer_partition.serialize()\n
-      computer_partition.markBusy()\n
+      if isTransitionPossible(computer_partition_candidate, \'mark_busy\'):\n
+        computer_partition.markBusy()\n
 \n
       order_line.edit(\n
         aggregate_list=order_line.getAggregateList()+[computer_partition.getRelativeUrl()])\n
