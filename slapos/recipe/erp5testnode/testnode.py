@@ -67,6 +67,18 @@ def getInputOutputFileList(config, command_name):
 
 slapos_controler = None
 
+def killPreviousRun(process_group_pid_set, supervisord_pid_file):
+  for pgpid in process_group_pid_set:
+    try:
+      os.killpg(pgpid, signal.SIGTERM)
+    except:
+      pass
+  try:
+    if os.path.exists(supervisord_pid_file):
+      os.kill(int(open(supervisord_pid_file).read().strip()), signal.SIGTERM)
+  except:
+    pass
+
 def run(args):
   config = args[0]
   slapgrid = None
@@ -118,11 +130,7 @@ branch = %(branch)s
     while True:
       # kill processes from previous loop if any
       try:
-        for pgpid in process_group_pid_set:
-          try:
-            os.killpg(pgpid, signal.SIGTERM)
-          except:
-            pass
+        killPreviousRun(process_group_pid_set, supervisord_pid_file)
         process_group_pid_set.clear()
         full_revision_list = []
         # Make sure we have local repository
@@ -233,13 +241,4 @@ branch = %(branch)s
     # groups working only in POSIX compilant systems
     # Exceptions are swallowed during cleanup phase
     print "going to kill %r" % (process_group_pid_set,)
-    for pgpid in process_group_pid_set:
-      try:
-        os.killpg(pgpid, signal.SIGTERM)
-      except:
-        pass
-    try:
-      if os.path.exists(supervisord_pid_file):
-        os.kill(int(open(supervisord_pid_file).read().strip()), signal.SIGTERM)
-    except:
-      pass
+    killPreviousRun(process_group_pid_set, supervisord_pid_file)
