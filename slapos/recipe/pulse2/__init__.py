@@ -38,26 +38,27 @@ class Recipe(BaseSlapRecipe):
         'template/%s' % template_name)
 
   def _install(self):
-    self.path_list = []
-    self.requirements, self.ws = self.egg.working_set()
-    # XXX-Cedric : add logrotate?
-    self.cron_d = self.installCrond()
-    memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
-        port=11000)
-        
-    ca_conf = self.installCertificateAuthority()
-    key, certificate = self.requestCertificate('Memcached')
-
-    stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(),
-        self.getLocalIPv4Address(), 12345, memcached_conf['memcached_port'],
-        certificate, key, ca_conf['ca_crl'],
-        ca_conf['certificate_authority_path'])
+    # LDAP
+    # MYSQL
+    # Apache
+    # mmc (+pulse)
     
-    self.linkBinary()
-    self.setConnectionDict(dict(
-      stunnel_ip = stunnel_conf['public_ip'],
-      stunnel_port = stunnel_conf['public_port'],
-    ))
+    #pulse2_conf = self.installPulse2(ip=self.getLocalIPv4Address(),
+    #    port=11000)
+    #    
+    #ca_conf = self.installCertificateAuthority()
+    #key, certificate = self.requestCertificate('Memcached')
+    #
+    #stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(),
+    #    self.getLocalIPv4Address(), 12345, memcached_conf['memcached_port'],
+    #    certificate, key, ca_conf['ca_crl'],
+    #    ca_conf['certificate_authority_path'])
+    #
+    #self.linkBinary()
+    #self.setConnectionDict(dict(
+    #  stunnel_ip = stunnel_conf['public_ip'],
+    #  stunnel_port = stunnel_conf['public_port'],
+    #))
     return self.path_list
 
   def linkBinary(self):
