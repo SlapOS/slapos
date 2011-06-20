@@ -1,0 +1,11 @@
+[PHP]
+engine = On
+safe_mode = Off
+expose_php = On
+error_reporting = E_ALL | E_STRICT
+display_errors = On
+display_startup_errors = On
+log_errors = On
+log_errors_max_len = 1024
+ignore_repeated_errors = Off
+ignore_repeated_source = Off
