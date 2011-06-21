@@ -579,7 +579,7 @@ class SlapTool(BaseTool):
     In any other case returns not important data and HTTP code is 403 Forbidden
     """
     if state is None:
-      state == 'started'
+      state = 'started'
     if shared_xml:
       shared = xml_marshaller.xml_marshaller.loads(shared_xml)
     else:
