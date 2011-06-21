@@ -4232,10 +4232,6 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepLoginAsCustomerA(self, sequence):
     self.login("test_vifib_customer_a")
-    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
-    # XXX - Should be not necessary update local roles after login with this
-    # user
-    person.updateLocalRolesOnSecurityGroups()
 
   def test_Person_request_SlaveInstance_with_Different_User(self):
     """
