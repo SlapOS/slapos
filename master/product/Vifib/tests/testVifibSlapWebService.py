@@ -4235,8 +4235,8 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_Person_request_SlaveInstance_with_Different_User(self):
     """
-      Check that user A can declare a slot of slave partition on a machine
-      owned by an user B
+      Check that user B can declare a slot of slave instance in computer
+      partition used by user A
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
