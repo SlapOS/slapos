@@ -1,7 +1,13 @@
 0.4 (unreleased)
 ================
 
- * No changes yet.
+ * general: Polish requirement versions. [Arnaud Fontaine]
+ * general: Remove libnetworkcache. [Lucas Carvalho]
+ * slap: Remove not needed method from interface. [Romain Courteaud]
+ * slapformat: Implement dry run. [Vincent Pelletier]
+ * slapgrid: Allow to select any buildout binary used to bootstrap environment.
+   [Łukasz Nowak]
+
 
 0.3 (2011-06-14)
 ================
