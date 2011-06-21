@@ -4285,14 +4285,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepCheckSlaveInstanceNotReady(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    self.assertEquals("Slave Instance", slave_instance.getPortalType())
-    sale_order_line = slave_instance.getAggregateRelatedValue(
-        portal_type="Sale Order Line")
-    self.assertEquals("ordered", sale_order_line.getSimulationState())
-    self.assertRaises(ValueError, sale_order_line.confirm)
 
   def test_ComputerPartition_request_SlaveInstance_noSoftwareInstance(self):
     """
@@ -5296,6 +5288,15 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEqual('stopped',
         self.portal.portal_catalog.getResultValue(uid=sequence[
           'purchase_packing_list_b_uid']).getSimulationState())
+
+  def stepCheckSlaveInstanceNotReady(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals("Slave Instance", slave_instance.getPortalType())
+    sale_order_line = slave_instance.getAggregateRelatedValue(
+        portal_type="Sale Order Line")
+    self.assertEquals("ordered", sale_order_line.getSimulationState())
+    self.assertRaises(ValueError, sale_order_line.confirm)
 
   prepare_two_purchase_packing_list = \
       prepare_software_release_purchase_packing_list + '\
