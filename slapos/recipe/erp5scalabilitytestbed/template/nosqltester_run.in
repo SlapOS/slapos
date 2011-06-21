@@ -4,4 +4,4 @@
 cd %(benchmark_suite_path)s \
 exec %(scalability_tester_binary)s -m %(host_address)s -a %(tester_address)s \
     -r %(report_path)s -l %(report_path)s --filename-prefix %(filename_prefix)s \
-    --repeat %(repeat)s %(erp5_url)s %(nb_users)s %(benchmark_suites)s
+    --repeat %(repeat)s %(erp5_url)s 1 %(benchmark_suites)s
