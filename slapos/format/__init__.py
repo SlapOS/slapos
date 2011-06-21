@@ -723,8 +723,9 @@ class Parser(OptionParser):
              "declaration.",
              type=str),
       Option("-n", "--dry_run",
-             help="Apply no changes, only print what would happen.",
-             type=str),
+             help="Don't actually do anything.",
+             default=False,
+             action="store_true"),
       Option("-v", "--verbose",
              default=False,
              action="store_true",
@@ -737,10 +738,6 @@ class Parser(OptionParser):
         help="Shall slapformat alter user database [default: True]"),
       Option('--alter_network', choices=['True', 'False'],
         help="Shall slapformat alter network configuration [default: True]"),
-      Option("-d", "--dry-run",
-             default=False,
-             action="store_true",
-             help="Don't actually do anything."),
       ])
 
   def check_args(self):
