@@ -4296,7 +4296,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_ComputerPartition_request_SlaveInstance_noSoftwareInstance(self):
     """
-      Check that one Slave Instance will wait allocationg correctly when no
+      Check that one Slave Instance will wait allocation correctly when no
       exists Software Instance installed
     """
     sequence_list = SequenceList()
