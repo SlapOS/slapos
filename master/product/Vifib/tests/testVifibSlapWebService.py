@@ -3587,7 +3587,13 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepSetCurrentSoftwareInstanceRequested(self, sequence):
     sequence.edit(
+      requester_software_instance_uid=sequence['software_instance_uid'],
       software_instance_uid=sequence['requested_software_instance_uid'],
+    )
+
+  def stepSetCurrentSoftwareInstanceRequester(self, sequence):
+    sequence.edit(
+      software_instance_uid=sequence['requester_software_instance_uid']
     )
 
   def test_ComputerPartition_request_instantiate(self):
@@ -3660,7 +3666,7 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_ComputerPartition_request_instantiate_state_stopped(self):
     """
     Check that after computer partition is requested it is possible to
-    instantiate it and it is started correctly.
+    instantiate it and it is stopped correctly, as requested initally.
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
@@ -3717,6 +3723,94 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser \
       stepCheckComputerPartitionNoInstanceHostingSalePackingList \
       Logout \
+      '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_instantiate_stop_later(self):
+    """
+    Check that after computer partition is requested it is possible to
+    instantiate it and it is started correctly, and later it is stopped
+    correctly as requested.
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
+      SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartitionNotReadyResponse \
+      Tic \
+      SlapLogout \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartition \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      CheckSoftwareInstanceAndRelatedComputerPartition \
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
+      Logout \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      CheckRequestedComputerPartitionCleanParameterList \
+      Logout \
+      \
+      LoginDefaultUser \
+      SetCurrentSoftwareInstanceRequested \
+      SetSelectedComputerPartition \
+      SelectCurrentlyUsedSalePackingListUid \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      CheckComputerPartitionInstanceSetupSalePackingListStarted \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      Logout \
+      \
+      SetInstanceStateStopped \
+      \
+      SetCurrentSoftwareInstanceRequester \
+      SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartition \
+      Tic \
+      SlapLogout \
+      \
+      SetCurrentSoftwareInstanceRequested \
+      LoginDefaultUser \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStopped \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered \
+      Logout \
+      \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
