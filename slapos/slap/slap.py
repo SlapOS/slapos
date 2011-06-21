@@ -307,7 +307,7 @@ class ComputerPartition(SlapDocument):
         'partition_parameter_xml': xml_marshaller.dumps(
                                         partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
-        'state': state,
+        'state': xml_marshaller.dumps(state),
       }
     self._connection_helper.POST('/requestComputerPartition', request_dict)
     xml = self._connection_helper.response.read()
