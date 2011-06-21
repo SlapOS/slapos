@@ -494,7 +494,6 @@ class Recipe(BaseSlapRecipe):
       kumo_conf = {}
     # XXX Conversion server and memcache server coordinates are not relevant
     # for pure site creation.
-    https_connection_url = "http://%s:%s@%s/" % (user, password, zope_access)
     mysql_connection_string = "%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s" % mysql_conf
 
     # XXX URL list vs. repository + list of bt5 names?
@@ -506,7 +505,7 @@ class Recipe(BaseSlapRecipe):
                   sys.executable, self.wrapper_directory,
                   arguments=[erp5_site_id,
                              mysql_connection_string,
-                             https_connection_url,
+                             [user, password, zope_access],
                              memcached_conf.get('memcached_url'),
                              conversion_server,
                              kumo_conf.get("kumo_address"),
