@@ -90,7 +90,7 @@ class Recipe(BaseSlapRecipe):
     tester_config['filename_prefix'] = '%s-%s' % (self.computer_id,
                                                   self.computer_partition_id)
 
-    tester_connection = {'url': 'http://%s:5000/' % \
+    tester_connection = {'url': 'http://[%s]:5000/' % \
                            tester_config['tester_address']}
 
     self.computer_partition.setConnectionDict(tester_connection)
