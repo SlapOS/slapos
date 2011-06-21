@@ -934,7 +934,7 @@ class Recipe(BaseSlapRecipe):
     # maatkit installation
     for mk_script_name in (
         'mk-variable-advisor',
-        'mk-table-usage-binary',
+        'mk-table-usage',
         'mk-visual-explain',
         'mk-config-diff',
         'mk-deadlock-logger',
