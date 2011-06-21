@@ -4231,7 +4231,7 @@ class TestVifibSlapWebService(testVifibMixin):
   #########################################
 
   def stepLoginAsCustomerA(self, sequence):
-    self.login("vifib_customer_user_a")
+    self.login("test_vifib_customer_a")
 
   def test_Person_request_SlaveInstance_with_Different_User(self):
     """
