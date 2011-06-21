@@ -1093,5 +1093,29 @@ class Recipe(BaseSlapRecipe):
     mysql_backup_cron = os.path.join(self.cron_d, 'mysql_backup')
     open(mysql_backup_cron, 'w').write('0 0 * * * ' + backup_controller)
     self.path_list.append(mysql_backup_cron)
+
+    # maatkit installation
+    for mk_script_name in (
+        'mk-variable-advisor',
+        'mk-table-usage-binary',
+        'mk-visual-explain',
+        'mk-config-diff',
+        'mk-deadlock-logger',
+        'mk-error-log',
+        'mk-index-usage',
+        'mk-query-advisor',
+        ):
+      mk_argument_list = [self.options['perl_binary'],
+          self.options['%s_binary' % mk_script_name],
+          '--defaults-file=%s' % mysql_conf_path,
+          '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+          ]
+      environment = dict(PATH='%s' % self.bin_directory)
+      mk_exe = zc.buildout.easy_install.scripts([(
+        mk_script_name,'slapos.recipe.librecipe.execute', 'executee')],
+        self.ws, sys.executable, self.bin_directory, arguments=[
+          mk_argument_list, environment])[0]
+      self.path_list.append(mk_exe)
+
     # The return could be more explicit database, user ...
     return mysql_conf
