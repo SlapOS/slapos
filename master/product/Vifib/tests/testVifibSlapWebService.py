@@ -203,6 +203,15 @@ class TestVifibSlapWebService(testVifibMixin):
         and q.getSimulationState() == state]
     self.assertEqual(1, len(delivery_line_list))
 
+  def _checkComputerPartitionNoSalePackingList(self, resource, sequence):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence['computer_partition_uid'])
+    delivery_line_list = [q for q in computer_partition
+        .getAggregateRelatedValueList(
+          portal_type=self.sale_packing_list_line_portal_type)
+        if q.getResource() == resource]
+    self.assertEqual(0, len(delivery_line_list))
+
   def stepCheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListDoesNotExists(
@@ -284,6 +293,12 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepCheckComputerPartitionInstanceHostingSalePackingListDelivered(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('delivered',
+        self.portal.portal_preferences.getPreferredInstanceHostingResource(),
+        sequence)
+
+  def stepCheckComputerPartitionNoInstanceHostingSalePackingList(self,
+      sequence, **kw):
+    self._checkComputerPartitionNoSalePackingList(
         self.portal.portal_preferences.getPreferredInstanceHostingResource(),
         sequence)
 
@@ -1329,7 +1344,8 @@ class TestVifibSlapWebService(testVifibMixin):
       partition_reference=sequence.get('requested_reference',
         'requested_reference'),
       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
-      filter_kw=sequence.get('requested_filter_dict', {}))
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
 
     sequence.edit(
         requested_slap_computer_partition=requested_slap_computer_partition,
@@ -1348,7 +1364,8 @@ class TestVifibSlapWebService(testVifibMixin):
       partition_reference=sequence.get('requested_reference',
         'requested_reference'),
       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
-      filter_kw=sequence.get('requested_filter_dict', {}))
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
 
   def stepRequestComputerPartitionNotFoundResponse(self, sequence, **kw):
     self.slap = slap.slap()
@@ -1362,7 +1379,8 @@ class TestVifibSlapWebService(testVifibMixin):
       partition_reference=sequence.get('requested_reference',
         'requested_reference'),
       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
-      filter_kw=sequence.get('requested_filter_dict', {}))
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
 
   def stepSetSoftwareInstanceChildrenA(self, sequence, **kw):
     software_instance_uid = sequence['root_software_instance_uid']
@@ -3631,6 +3649,73 @@ class TestVifibSlapWebService(testVifibMixin):
       \
       LoginDefaultUser \
       CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      Logout \
+      '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepSetInstanceStateStopped(self, sequence=None, **kw):
+    sequence['instance_state'] = 'stopped'
+
+  def test_ComputerPartition_request_instantiate_state_stopped(self):
+    """
+    Check that after computer partition is requested it is possible to
+    instantiate it and it is started correctly.
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
+      SetInstanceStateStopped \
+      SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartitionNotReadyResponse \
+      Tic \
+      SlapLogout \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartition \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      CheckSoftwareInstanceAndRelatedComputerPartition \
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
+      Logout \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      CheckRequestedComputerPartitionCleanParameterList \
+      Logout \
+      \
+      LoginDefaultUser \
+      SetCurrentSoftwareInstanceRequested \
+      SetSelectedComputerPartition \
+      SelectCurrentlyUsedSalePackingListUid \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      CheckComputerPartitionInstanceSetupSalePackingListStarted \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStopped \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      stepCheckComputerPartitionNoInstanceHostingSalePackingList \
       Logout \
       '
     sequence_list.addSequenceString(sequence_string)
