@@ -28,7 +28,7 @@
             <key> <string>after_script_name</string> </key>
             <value>
               <list>
-                <string>SalePackingList_requestStartSoftwareInstance</string>
+                <string>SalePackingList_requestStoredSoftwareInstanceState</string>
               </list>
             </value>
         </item>

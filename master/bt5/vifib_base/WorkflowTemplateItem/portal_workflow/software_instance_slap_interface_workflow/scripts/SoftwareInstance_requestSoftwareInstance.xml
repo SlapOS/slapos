@@ -62,6 +62,7 @@ shared = kwargs["shared"]\n
 software_type = kwargs["software_type"]\n
 instance_xml = kwargs["instance_xml"]\n
 sla_xml = kwargs["sla_xml"]\n
+state = kwargs["state"]\n
 \n
 # Get root software instance\n
 predecessor_software_instance = software_instance\n
@@ -129,6 +130,12 @@ else:\n
     predecessor_software_instance.edit(\n
       predecessor_uid_list=predecessor_uid_list,\n
       activate_kw={\'tag\': tag},)\n
+  if state == \'started\':\n
+    request_software_instance.startRequested()\n
+  elif state == \'stopped\':\n
+    request_software_instance.stopRequested()\n
+  else:\n
+    raise ValueError(\'State %r is not supported\' % state)\n
 \n
 predecessor_list = software_instance.getPredecessorList() + [request_software_instance.getRelativeUrl()]\n
 software_instance.edit(\n
