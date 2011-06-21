@@ -45,13 +45,14 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 
 class Software(object):
   """This class is responsible of installing a software release"""
-  def __init__(self, url, software_root, console):
+  def __init__(self, url, software_root, console, buildout):
     """Initialisation of class parameters
     """
     self.url = url
     self.software_root = software_root
     self.software_path = os.path.join(self.software_root,
                                       getSoftwareUrlHash(self.url))
+    self.buildout = buildout
     self.logger = logging.getLogger('BuildoutManager')
     self.console = console
 
@@ -74,7 +75,7 @@ class Software(object):
     buildout_parameter_list = [
       'buildout:directory=%s' % self.software_path,
       '-c', self.url]
-    bootstrapBuildout(self.software_path,
+    bootstrapBuildout(self.software_path, self.buildout,
         additional_buildout_parametr_list=buildout_parameter_list,
         console=self.console)
     launchBuildout(self.software_path,
@@ -106,10 +107,12 @@ class Partition(object):
                partition_id,
                server_url,
                software_release_url,
+               buildout,
                certificate_repository_path=None,
                console=False
                ):
     """Initialisation of class parameters"""
+    self.buildout = buildout
     self.software_path = software_path
     self.instance_path = instance_path
     self.run_path = os.path.join(self.instance_path, 'etc', 'run')
@@ -241,8 +244,9 @@ class Partition(object):
 
     if not os.path.exists(buildout_binary):
       # use own buildout generation
-      bootstrapBuildout(self.instance_path, ['buildout:bin-directory=%s' %
-        os.path.join(self.instance_path, 'sbin')], console=self.console)
+      bootstrapBuildout(self.instance_path, self.buildout,
+        ['buildout:bin-directory=%s'% os.path.join(self.instance_path,
+        'sbin')], console=self.console)
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
     # Launches buildout
     launchBuildout(self.instance_path,
