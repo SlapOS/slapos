@@ -149,7 +149,8 @@ class OpenOrder(SlapDocument):
   zope.interface.implements(interface.IOpenOrder)
 
   def request(self, software_release, partition_reference,
-      partition_parameter_kw=None, software_type=None, filter_kw=None):
+      partition_parameter_kw=None, software_type=None, filter_kw=None,
+      state=None):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
     if filter_kw is None:
@@ -158,7 +159,8 @@ class OpenOrder(SlapDocument):
         'software_release': software_release,
         'partition_reference': partition_reference,
         'partition_parameter_xml': xml_marshaller.dumps(partition_parameter_kw),
-        'filter_xml': xml_marshaller.dumps(filter_kw)
+        'filter_xml': xml_marshaller.dumps(filter_kw),
+        'state': state,
       }
     if software_type is not None:
       request_dict['software_type'] = software_type
@@ -282,7 +284,8 @@ class ComputerPartition(SlapDocument):
   #      Computer Partition data are fetch from server shall be delayed
   @_syncComputerPartitionInformation
   def request(self, software_release, software_type, partition_reference,
-              shared=False, partition_parameter_kw=None, filter_kw=None):
+              shared=False, partition_parameter_kw=None, filter_kw=None,
+              state=None):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
     elif not isinstance(partition_parameter_kw, dict):
@@ -304,6 +307,7 @@ class ComputerPartition(SlapDocument):
         'partition_parameter_xml': xml_marshaller.dumps(
                                         partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
+        'state': state,
       }
     self._connection_helper.POST('/requestComputerPartition', request_dict)
     xml = self._connection_helper.response.read()
