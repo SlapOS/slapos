@@ -435,7 +435,8 @@ class TestVifibSlapWebService(testVifibMixin):
     self.portal.portal_workflow.doActionFor(packing_list, "confirm_action")
 
   def stepCheckComputerPartitionSaleOrderAggregatedList(self, sequence):
-    sale_packing_list = self.portal.portal_catalog.getResultValue(
+    portal_catalog = self.portal.portal_catalog
+    sale_packing_list = portal_catalog.getResultValue(
         uid=sequence['sale_packing_list_uid'])
     sale_packing_list_line = sale_packing_list.objectValues()[0]
     computer_partition = sale_packing_list_line.getAggregateValue(
@@ -460,6 +461,9 @@ class TestVifibSlapWebService(testVifibMixin):
                         portal_type=self.computer_partition_portal_type),
                       sale_packing_list_line_2.getAggregateValue(
                         portal_type=self.computer_partition_portal_type))
+    hosting_subscription = portal_catalog.getResultValue(
+        uid=sequence['hosting_subscription_uid'])
+    self.assertEquals('HOSTSUBS-1', hosting_subscription.getReference())
 
   def _createComputer(self):
     # Mimics WebSection_registerNewComputer
@@ -3127,9 +3131,6 @@ class TestVifibSlapWebService(testVifibMixin):
 
     self._checkSoftwareInstanceAndRelatedPartition(predecessor)
 
-  def stepCheckSaleOrderWithSlaveInstance(self, sequence):
-    import ipdb;ipdb.set_trace()
-
   ########################################
   # slap.initializeConnection
   ########################################
@@ -4284,12 +4285,34 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  @skip("Not Implemented yet")
+  def stepCheckSlaveInstanceNotReady(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals("Slave Instance", slave_instance.getPortalType())
+    sale_order_line = slave_instance.getAggregateRelatedValue(
+        portal_type="Sale Order Line")
+    self.assertEquals("ordered", sale_order_line.getSimulationState())
+    self.assertRaises(ValueError, sale_order_line.confirm)
+
   def test_ComputerPartition_request_SlaveInstance_noSoftwareInstance(self):
     """
-      Check that one Slave Instance is create correctly when no exists Software
-      Instance created
+      Check that one Slave Instance will wait allocationg correctly when no
+      exists Software Instance installed
     """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_formated_computer + \
+      self.prepare_published_software_release + """
+      Tic
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      Tic
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      CheckSlaveInstanceNotReady
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   @skip("Not Implemented yet")
   def test_ComputerPartition_request_SlaveInstance_twoSoftwareInstance(self):
