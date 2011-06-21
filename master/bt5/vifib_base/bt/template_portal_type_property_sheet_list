@@ -1,6 +1,7 @@
 Sale Packing List Line | VifibSalePackingListLineConstraint
 Slave Instance | Reference
 Slave Instance | SlaveInstanceContraint
+Slave Instance | SoftwareInstance
 Slave Instance | TextDocument
 Software Instance | Reference
 Software Instance | SoftwareInstance
