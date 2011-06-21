@@ -47,8 +47,7 @@ class Recipe(BaseSlapRecipe):
 
     config['address'] = self.getGlobalIPv6Address()
     config['report_path'] = self.log_directory
-    config.setdefault('nb_server_max', 3)
-    config.setdefault('nb_tester_max', 3)
+    config.setdefault('user_range_increment', 1)
     config['software_release_url'] = self.software_release_url
     config['server_url'] = self.server_url
     config['key_file'] = self.key_file
@@ -56,6 +55,13 @@ class Recipe(BaseSlapRecipe):
     config['computer_id'] = self.computer_id
     config['computer_partition_id'] = self.computer_partition_id
     config['plugin_name'] = 'erp5'
+
+    if ',' in config['nb_users']:
+      config['nb_tester_init'] = config['nb_users'].split(',')[0]
+      config['nb_tester_max'] = config['nb_users'].split(',')[1]
+    else:
+      config['nb_tester_init'] = config['nb_users']
+      config['nb_tester_max'] = config['nb_users']
 
     connection = {}
     connection['url'] = 'http://['+config['address']+']:5000/'
