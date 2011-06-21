@@ -85,6 +85,14 @@
             </value>
         </item>
         <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>role/client</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>default_reference</string> </key>
             <value> <string>test_vifib_customer_a</string> </value>
         </item>
@@ -96,7 +104,7 @@
         </item>
         <item>
             <key> <string>first_name</string> </key>
-            <value> <string>Test Vifib</string> </value>
+            <value> <string>Test</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
@@ -108,13 +116,7 @@
         </item>
         <item>
             <key> <string>last_name</string> </key>
-            <value> <string>Customer A</string> </value>
-        </item>
-        <item>
-            <key> <string>password</string> </key>
-            <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
-            </value>
+            <value> <string>Vifib Customer A</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -143,26 +145,6 @@
     </pickle>
     <pickle>
       <none/>
-    </pickle>
-  </record>
-  <record id="5" aka="AAAAAAAAAAU=">
-    <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
-    </pickle>
-    <pickle>
-      <dictionary>
-        <item>
-            <key> <string>data</string> </key>
-            <value>
-              <dictionary>
-                <item>
-                    <key> <string>default</string> </key>
-                    <value> <string>{SSHA}N9ih1W68kvrWtNsxPPtBSB9SUODG6fBU6x9i</string> </value>
-                </item>
-              </dictionary>
-            </value>
-        </item>
-      </dictionary>
     </pickle>
   </record>
 </ZopeData>
