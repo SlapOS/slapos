@@ -4230,7 +4230,9 @@ class TestVifibSlapWebService(testVifibMixin):
   # SlaveInstance.request
   #########################################
 
-  @skip("Not Implemented yet")
+  def stepLoginAsCustomerA(self, sequence):
+    self.login("vifib_customer_user_a")
+
   def test_Person_request_SlaveInstance_with_Different_User(self):
     """
       Check that user A can declare a slot of slave partition on a machine
@@ -4239,9 +4241,19 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
     Tic
-    CreateAnotherUserAsCustomer
-    LoginAsCustomer
+    LoginAsCustomerA
     PersonRequestSlaveInstance
+    Logout
+    LoginDefaultUser
+    ConfirmOrderedSaleOrderActiveSense
+    Tic
+    SetSelectedComputerPartition
+    SelectCurrentlyUsedSalePackingListUid
+    Logout
+
+    LoginAsCustomerA
+    CheckComputerPartitionSaleOrderAggregatedList
+    Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -4259,7 +4271,6 @@ class TestVifibSlapWebService(testVifibMixin):
     Logout
 
     LoginDefaultUser
-
     ConfirmOrderedSaleOrderActiveSense
     Tic
     SetSelectedComputerPartition
