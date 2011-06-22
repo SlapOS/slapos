@@ -3791,7 +3791,12 @@ class TestVifibSlapWebService(testVifibMixin):
       \
       SetInstanceStateStopped \
       \
+      LoginDefaultUser \
       SetCurrentSoftwareInstanceRequester \
+      SetSelectedComputerPartition \
+      SelectCurrentlyUsedSalePackingListUid \
+      Logout \
+      \
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
