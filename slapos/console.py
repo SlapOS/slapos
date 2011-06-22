@@ -31,7 +31,6 @@ import sys
 from optparse import OptionParser, Option
 import ConfigParser
 
-
 class Parser(OptionParser):
   """
   Parse all arguments.
@@ -52,9 +51,7 @@ class Parser(OptionParser):
         Option("-c", "--cert_file",
             action="store",
             help="SSL Authorisation certificate file.")
-
     ])
-    #TODO option list
 
   def check_args(self):
     """
@@ -88,11 +85,8 @@ class Config:
     if not self.master_url:
       raise ValueError('master-url is required.')
 
-
-
 def run():
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
-  
   # Parse arguments
   config = Config()
   config.setConfig(*Parser(usage=usage).check_args())
