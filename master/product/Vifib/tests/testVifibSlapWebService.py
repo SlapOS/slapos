@@ -5321,27 +5321,30 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepCheckSlaveInstanceReady(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    self.assertEquals("Slave Instance", slave_instance.getPortalType())
+    self.assertEquals(self.slave_instance_portal_type,
+        slave_instance.getPortalType())
     sale_order_line = slave_instance.getAggregateRelatedValue(
-        portal_type="Sale Order Line")
+        portal_type=self.sale_order_line_portal_type)
     self.assertEquals("confirmed", sale_order_line.getSimulationState())
     sale_packing_list_line = slave_instance.getAggregateRelatedValue(
-        portal_type="Sale Packing List Line")
+        portal_type=self.sale_packing_list_line_portal_type)
     self.assertNotEquals(sale_packing_list_line.getAggregateValue(
-      portal_type="Computer Partition"), None)
+      portal_type=self.computer_partition_portal_type), None)
 
   def stepCheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    self.assertEquals("Slave Instance", slave_instance.getPortalType())
+    self.assertEquals(self.slave_instance_portal_type,
+        slave_instance.getPortalType())
     sale_packing_list_line = slave_instance.getAggregateRelatedValue(
-        portal_type="Sale Packing List Line")
+        portal_type=self.sale_packing_list_line_portal_type)
     software_release = sale_packing_list_line.getAggregateValue(
-        portal_type="Software Release")
+        portal_type=self.software_release_portal_type)
     sale_packing_list_line_list = software_release.aggregateRelatedValues(
-        portal_type="Sale Packing List Line")
-    computer_partition_list = [obj.getAggregateValue(portal_type="Computer Partition") \
-        for obj in sale_packing_list_line_list]
+        portal_type=self.sale_packing_list_line_portal_type)
+    computer_partition_list = [obj.getAggregateValue(
+      portal_type=self.computer_partition_portal_type)\
+          for obj in sale_packing_list_line_list]
     self.assertEquals(computer_partition_list[0],
         computer_partition_list[1])
     self.assertEquals(computer_partition_list[0].getReference(),
@@ -5351,13 +5354,14 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepCheckSlaveInstanceNotReady(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    self.assertEquals("Slave Instance", slave_instance.getPortalType())
+    self.assertEquals(self.slave_instance_portal_type,
+        slave_instance.getPortalType())
     sale_order_line = slave_instance.getAggregateRelatedValue(
-        portal_type="Sale Order Line")
+        portal_type=self.sale_order_line_portal_type)
     self.assertEquals("ordered", sale_order_line.getSimulationState())
     self.assertRaises(ValueError, sale_order_line.confirm)
     sale_packing_list_line = slave_instance.getAggregateRelatedValue(
-        portal_type="Sale Packing List Line")
+        portal_type=self.sale_packing_list_line_portal_type)
     self.assertEquals(sale_packing_list_line, None)
 
   prepare_two_purchase_packing_list = \
