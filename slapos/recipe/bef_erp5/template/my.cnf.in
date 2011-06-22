@@ -26,6 +26,7 @@ key_buffer = 128M
 max_allowed_packet = 100M
 table_cache = 1024
 sort_buffer_size = 100M
+key_buffer_size = 1G
 net_buffer_length = 8K
 read_buffer_size = 256K
 read_rnd_buffer_size = 512K
@@ -44,7 +45,7 @@ max_connections = 512
 # Default to using old password format for compatibility with old and
 # shorter password hash.
 # Reference: http://dev.mysql.com/doc/mysql/en/Password_hashing.html
-old_passwords
+# old_passwords
 
 # Don't listen on a TCP/IP port at all. This can be a security enhancement,
 # if all processes that need to connect to mysqld run on the same host.
@@ -134,14 +135,15 @@ server-id	= 1
 # You can set .._buffer_pool_size up to 50 - 80 %%
 # of RAM but beware of setting memory usage too high
 innodb_buffer_pool_size = %(innodb_buffer_pool_size)s
-innodb_additional_mem_pool_size = 40M
+innodb_additional_mem_pool_size = 20M
 # Set .._log_file_size to 25 %% of buffer pool size
-#innodb_log_file_size = 5M
+innodb_log_file_size = 1G
 #innodb_log_buffer_size = 8M
 #innodb_flush_log_at_trx_commit = 1
 #innodb_lock_wait_timeout = 50
 
 innodb_locks_unsafe_for_binlog=1
+innodb_flush_method=O_DIRECT
 
 #bind-address=192.168.100.1
 
