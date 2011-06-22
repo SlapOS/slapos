@@ -1,7 +1,7 @@
 [slapos]
 software_root = /opt/slapgrid
 instance_root = /srv/slapgrid
-master_url = http://www.vifib.com/
+master_url = http://slap.vifib.com/
 computer_id = your computer id
 buildout = /path/to/buildout/binary
 
