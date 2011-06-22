@@ -1586,7 +1586,8 @@ class TestVifibSlapWebService(testVifibMixin):
                         shared=False,
                         filter_kw={},
                         instance_xml=self.minimal_correct_xml,
-                        sla_xml=self.minimal_correct_xml)
+                        sla_xml=self.minimal_correct_xml,
+                        state=None)
     finally:
       Base.serialize = Base.serialize_call
 
