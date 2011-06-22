@@ -460,9 +460,10 @@ class TestVifibSlapWebService(testVifibMixin):
                         portal_type=self.computer_partition_portal_type),
                       sale_packing_list_line_2.getAggregateValue(
                         portal_type=self.computer_partition_portal_type))
-    hosting_subscription = portal_catalog.getResultValue(
-        uid=sequence['hosting_subscription_uid'])
-    self.assertEquals('HOSTSUBS-1', hosting_subscription.getReference())
+    hosting_1, hosting_2 = [hosting.getAggregateValue(
+      portal_type=self.hosting_subscription_portal_type) \
+          for hosting in sale_packing_line_list]
+    self.assertNotEquals(hosting_1, hosting_2)
 
   def _createComputer(self):
     # Mimics WebSection_registerNewComputer
@@ -4261,7 +4262,7 @@ class TestVifibSlapWebService(testVifibMixin):
     SelectCurrentlyUsedSalePackingListUid
     Logout
 
-    LoginAsCustomerA
+    LoginDefaultUser
     CheckComputerPartitionSaleOrderAggregatedList
     Logout
     """
@@ -4339,7 +4340,7 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_request_SlaveInstance_twice(self):
+  def test_Person_request_SlaveInstance_twice(self):
     """
       Check that request a Slave Instance twice, the instances are created
       correctly
@@ -4365,6 +4366,13 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
+  @skip("Not Implemented yet")
+  def test_request_SlaveInstance_without_enough_slots(self):
+    """
+     Check the behaviour when one Slave Instance is requested and not exist one
+     available slot
+    """
 
   @skip("Not Implemented yet")
   def test_ComputerPartition_getInstanceParameterDict_withSlaveInstance(self):
