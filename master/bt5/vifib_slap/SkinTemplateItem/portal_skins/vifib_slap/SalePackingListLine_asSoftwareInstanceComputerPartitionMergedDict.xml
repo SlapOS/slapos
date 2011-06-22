@@ -83,7 +83,7 @@ return None\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SalePackinListLine_asSoftwareInstnaceComputerPartitionMergedDict</string> </value>
+            <value> <string>SalePackingListLine_asSoftwareInstanceComputerPartitionMergedDict</string> </value>
         </item>
       </dictionary>
     </pickle>
