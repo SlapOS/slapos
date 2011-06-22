@@ -236,7 +236,8 @@ def bootstrapBuildout(path, buildout=None,
     invocation_list.append(pkg_resources.resource_filename(__name__,
       'zc.buildout-bootstap.py'))
   invocation_list.extend(additional_buildout_parametr_list)
-  invocation_list.append('bootstrap')
+  if buildout is not None:
+    invocation_list.append('bootstrap')
   try:
     umask = os.umask(SAFE_UMASK)
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))
