@@ -4,6 +4,8 @@
  * general: Polish requirement versions. [Arnaud Fontaine]
  * general: Remove libnetworkcache. [Lucas Carvalho]
  * slap: Remove not needed method from interface. [Romain Courteaud]
+ * slap: state parameter is accepted and transmitted to SlapOS master [Łukasz
+   Nowak]
  * slapformat: Implement dry run. [Vincent Pelletier]
  * slapgrid: Allow to select any buildout binary used to bootstrap environment.
    [Łukasz Nowak]
