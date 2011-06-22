@@ -34,9 +34,6 @@ myisam_sort_buffer_size = 8M
 collation_server = utf8_unicode_ci
 character_set_server = utf8
 
-log-slow-queries=%(slow_query_log)s
-long_query_time=1
-
 bind-address = %(ip)s # new in SlapOS
 log-error = %(error_log)s # new in SlapOS
 
@@ -138,9 +135,17 @@ innodb_buffer_pool_size = %(innodb_buffer_pool_size)s
 innodb_additional_mem_pool_size = 20M
 # Set .._log_file_size to 25 %% of buffer pool size
 innodb_log_file_size = 1G
-#innodb_log_buffer_size = 8M
-#innodb_flush_log_at_trx_commit = 1
+innodb_log_buffer_size = 8M
 #innodb_lock_wait_timeout = 50
+
+# Some dangerous settings you may want to uncomment if you only want
+# performance or less disk access. Useful for unit tests.
+# innodb_flush_log_at_trx_commit = 0
+# innodb_flush_method = nosync
+# innodb_doublewrite = 0
+# sync_frm = 0
+log-slow-queries=%(slow_query_log)s
+long_query_time=1
 
 innodb_locks_unsafe_for_binlog=1
 innodb_flush_method=O_DIRECT
