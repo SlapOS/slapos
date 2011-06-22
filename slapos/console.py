@@ -84,7 +84,7 @@ class Config:
           
     if not self.master_url:
       raise ValueError('master-url is required.')
-
+  
 def run():
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
   # Parse arguments
@@ -96,4 +96,7 @@ def run():
       key_file=config.key_file, cert_file=config.cert_file)
   local = globals()
   local['slap'] = slap
+  # XXX-Cedric Maybe we should generate a new OpenOrder for each request?
+  local['request'] = slap.registerOpenOrder().request
+  
   __import__("code").interact(banner="", local=globals())
