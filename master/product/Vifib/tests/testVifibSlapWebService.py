@@ -35,6 +35,9 @@ from Products.ERP5Type.tests.backportUnittest import skip
 from VifibMixin import testVifibMixin
 from random import random
 from slapos import slap
+import urllib
+import urlparse
+import httplib
 from xml_marshaller import xml_marshaller
 import transaction
 import unittest
@@ -1351,6 +1354,25 @@ class TestVifibSlapWebService(testVifibMixin):
         requested_slap_computer_partition=requested_slap_computer_partition,
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
+
+  def stepDirectRequestComputerPartitionNotReadyResponseWithoutState(self,
+    sequence, **kw):
+    request_dict = { 'computer_id': sequence['computer_reference'] ,
+        'computer_partition_id': sequence['computer_partition_reference'],
+        'software_release': sequence['software_release_uri'],
+        'software_type': sequence.get('requested_reference', 'requested_reference'),
+        'partition_reference': sequence.get('requested_reference', 'requested_reference'),
+        'shared_xml': xml_marshaller.dumps(False),
+        'partition_parameter_xml': xml_marshaller.dumps({}),
+        'filter_xml': xml_marshaller.dumps({}),
+        #'state': Note: State is omitted
+      }
+    scheme, netloc, path, query, fragment = urlparse.urlsplit(self.server_url)
+    connection = httplib.HTTPConnection(host=netloc)
+    connection.request("POST", path + '/requestComputerPartition', urllib.urlencode(request_dict), {'Content-type': "application/x-www-form-urlencoded"})
+
+    response = connection.getresponse()
+    self.assertEqual(httplib.REQUEST_TIMEOUT, response.status)
 
   def stepRequestComputerPartitionNotReadyResponse(self, sequence, **kw):
     self.slap = slap.slap()
@@ -3818,6 +3840,23 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser \
       CheckComputerPartitionInstanceHostingSalePackingListDelivered \
       Logout \
+      \
+      '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_state_is_optional(self):
+    """Checks that state is optional parameter on Slap Tool
+    
+    This ensures backward compatibility with old libraries."""
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_install_requested_computer_partition_sequence_string + '\
+      SlapLoginCurrentSoftwareInstance \
+      DirectRequestComputerPartitionNotReadyResponseWithoutState \
+      Tic \
+      SlapLogout \
       \
       '
     sequence_list.addSequenceString(sequence_string)
