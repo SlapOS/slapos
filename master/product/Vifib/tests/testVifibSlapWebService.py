@@ -324,7 +324,6 @@ class TestVifibSlapWebService(testVifibMixin):
         sequence)
 
   def stepPersonRequestSlaveInstance(self, sequence, **kw):
-    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
     kw = dict(instance_portal_type=self.slave_instance_portal_type,
               slave=True,
               software_type="SlaveInstance")
@@ -4340,10 +4339,32 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  @skip("Not Implemented yet")
   def test_request_SlaveInstance_twice(self):
     """
+      Check that request a Slave Instance twice, the instances are created
+      correctly
     """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+    Tic
+    LoginTestVifibCustomer
+    PersonRequestSlaveInstance
+    Tic
+    Logout
+
+    LoginTestVifibCustomer
+    PersonRequestSlaveInstance
+    Tic
+    Logout
+
+    LoginDefaultUser
+    ConfirmOrderedSaleOrderActiveSense
+    Tic
+    CheckTwoSlaveInstanceRequest
+    Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   @skip("Not Implemented yet")
   def test_ComputerPartition_getInstanceParameterDict_withSlaveInstance(self):
@@ -5317,6 +5338,27 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEqual('stopped',
         self.portal.portal_catalog.getResultValue(uid=sequence[
           'purchase_packing_list_b_uid']).getSimulationState())
+
+  def stepCheckTwoSlaveInstanceRequest(self, sequence):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence["computer_partition_uid"])
+    sale_packing_list_line_list = computer_partition.getAggregateRelatedValueList(
+        portal_type=self.sale_packing_list_line_portal_type)
+    portal_type_list = [self.software_instance_portal_type,
+        self.slave_instance_portal_type]
+    instance_list = filter(None, [obj.getAggregateValue(portal_type=portal_type_list) \
+        for obj in sale_packing_list_line_list])
+    portal_type_list = [instance.getPortalType() for instance in instance_list]
+    expected_portal_type_list = [self.slave_instance_portal_type,
+        self.slave_instance_portal_type,
+        self.software_instance_portal_type]
+    self.assertEquals(expected_portal_type_list, sorted(portal_type_list))
+    computer_partition_list = [obj.getAggregateValue(
+      portal_type=self.computer_partition_portal_type) \
+          for obj in sale_packing_list_line_list]
+    uid_list = [computer_partition.getUid() \
+        for computer_partition in computer_partition_list]
+    self.assertEquals(1, len(set(uid_list)))
 
   def stepCheckSlaveInstanceReady(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
