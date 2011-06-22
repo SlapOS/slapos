@@ -3804,7 +3804,7 @@ class TestVifibSlapWebService(testVifibMixin):
       \
       SetCurrentSoftwareInstanceRequested \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListStopped \
+      CheckComputerPartitionInstanceHostingSalePackingListStopped \
       Logout \
       \
       SlapLoginCurrentComputer \
