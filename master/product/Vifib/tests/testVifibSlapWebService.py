@@ -3802,8 +3802,10 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic \
       SlapLogout \
       \
-      SetCurrentSoftwareInstanceRequested \
       LoginDefaultUser \
+      SetCurrentSoftwareInstanceRequested \
+      SetSelectedComputerPartition \
+      SelectCurrentlyUsedSalePackingListUid \
       CheckComputerPartitionInstanceHostingSalePackingListStopped \
       Logout \
       \
