@@ -132,12 +132,15 @@ else:\n
       activate_kw={\'tag\': tag},)\n
   if state == \'started\':\n
     request_software_instance.startRequested()\n
+    request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
   elif state == \'stopped\':\n
-    request_software_instance.stopRequested()\n
+    request_software_instance.stopRequested()    \n
+    request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
   else:\n
     raise ValueError(\'State %r is not supported\' % state)\n
-\n
 predecessor_list = software_instance.getPredecessorList() + [request_software_instance.getRelativeUrl()]\n
+\n
+\n
 software_instance.edit(\n
   predecessor_list=predecessor_list,\n
   activate_kw={\'tag\': tag},)\n
