@@ -4335,6 +4335,7 @@ class TestVifibSlapWebService(testVifibMixin):
     ConfirmOrderedSaleOrderActiveSense
     Tic
     CheckSlaveInstanceReady
+    CheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -5328,6 +5329,24 @@ class TestVifibSlapWebService(testVifibMixin):
         portal_type="Sale Packing List Line")
     self.assertNotEquals(sale_packing_list_line.getAggregateValue(
       portal_type="Computer Partition"), None)
+
+  def stepCheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals("Slave Instance", slave_instance.getPortalType())
+    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
+        portal_type="Sale Packing List Line")
+    software_release = sale_packing_list_line.getAggregateValue(
+        portal_type="Software Release")
+    sale_packing_list_line_list = software_release.aggregateRelatedValues(
+        portal_type="Sale Packing List Line")
+    computer_partition_list = [obj.getAggregateValue(portal_type="Computer Partition") \
+        for obj in sale_packing_list_line_list]
+    self.assertEquals(computer_partition_list[0],
+        computer_partition_list[1])
+    self.assertEquals(computer_partition_list[0].getReference(),
+        computer_partition_list[1].getReference())
+    self.assertEquals(2, len(computer_partition_list))
 
   def stepCheckSlaveInstanceNotReady(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
