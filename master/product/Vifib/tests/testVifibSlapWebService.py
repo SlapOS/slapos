@@ -1041,6 +1041,16 @@ class TestVifibSlapWebService(testVifibMixin):
         url = random_url
     sequence.edit(software_release_uri=url)
 
+  def stepStoreSoftwareReleaseUri(self, sequence, **kw):
+    """
+      Store the current software release uri in one list
+    """
+    software_release_uri = sequence["software_release_uri"]
+    software_release_uri_list = sequence.get("software_release_uri_list", [])
+    if software_release_uri not in software_release_uri_list:
+      software_release_uri_list.append(software_release_uri)
+    sequence.edit(software_release_uri_list=software_release_uri_list)
+
   def stepCheckSuccessSlapRegisterSoftwareReleaseCall(self, sequence, **kw):
     """
     Check that slap.registerSoftwareRelease is successfully called.
@@ -4285,8 +4295,7 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-
-  def test_ComputerPartition_request_SlaveInstance_noSoftwareInstance(self):
+  def test_Person_request_SlaveInstance_without_SoftwareInstance(self):
     """
       Check that one Slave Instance will wait allocation correctly when no
       exists Software Instance installed
@@ -4306,13 +4315,32 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  @skip("Not Implemented yet")
-  def test_ComputerPartition_request_SlaveInstance_twoSoftwareInstance(self):
+  def test_Person_request_SlaveInstance_Two_Different_SoftwareInstance(self):
     """
+      Check that one Slave Instance is allocated correctly when exists two different
+      Software Instances and Computer Partition. The slave instance must be
+      allocated in Computer Partition that exists one Software Instance with
+      the same Software Release.
     """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+    Tic
+    StoreSoftwareReleaseUri
+    SetRandomComputerReference
+    """ + self.prepare_install_requested_computer_partition_sequence_string + """
+    Tic
+    LoginTestVifibCustomer
+    PersonRequestSlaveInstance
+    Tic
+    ConfirmOrderedSaleOrderActiveSense
+    Tic
+    CheckSlaveInstanceReady
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   @skip("Not Implemented yet")
-  def test_ComputerPartition_request_SlaveInstance_twice(self):
+  def test_request_SlaveInstance_twice(self):
     """
     """
 
@@ -5289,6 +5317,18 @@ class TestVifibSlapWebService(testVifibMixin):
         self.portal.portal_catalog.getResultValue(uid=sequence[
           'purchase_packing_list_b_uid']).getSimulationState())
 
+  def stepCheckSlaveInstanceReady(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals("Slave Instance", slave_instance.getPortalType())
+    sale_order_line = slave_instance.getAggregateRelatedValue(
+        portal_type="Sale Order Line")
+    self.assertEquals("confirmed", sale_order_line.getSimulationState())
+    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
+        portal_type="Sale Packing List Line")
+    self.assertNotEquals(sale_packing_list_line.getAggregateValue(
+      portal_type="Computer Partition"), None)
+
   def stepCheckSlaveInstanceNotReady(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
@@ -5297,6 +5337,9 @@ class TestVifibSlapWebService(testVifibMixin):
         portal_type="Sale Order Line")
     self.assertEquals("ordered", sale_order_line.getSimulationState())
     self.assertRaises(ValueError, sale_order_line.confirm)
+    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
+        portal_type="Sale Packing List Line")
+    self.assertEquals(sale_packing_list_line, None)
 
   prepare_two_purchase_packing_list = \
       prepare_software_release_purchase_packing_list + '\
