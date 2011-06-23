@@ -103,13 +103,15 @@ def init(config):
       software_list.append(name)
       local[name] = url
   local['software_list'] = software_list
-  local['request'] = lambda software_release, reference: slap.registerOpenOrder().request(software_release, reference)
+  local['request'] = lambda software_release, reference: \
+      slap.registerOpenOrder().request(software_release, reference)
   return local
 
 def request():
   """Ran when invoking slapos-request"""
   # Parse arguments
-  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
+  usage = """usage: %s [options] CONFIGURATION_FILE SOFTWARE_INSTANCE INSTANCE_REFERENCE
+slapos-request allows you to request slapos instances.""" % sys.argv[0]
   config = Config()
   arguments = Parser(usage=usage).check_args()[1]
   config.setConfig(*Parser(usage=usage).check_args())
@@ -125,9 +127,10 @@ def request():
   print("Requesting %s..." % software_url)
   if software_url in local:
     software_url = local[software_url]
-  local['slap'].registerOpenOrder().request(software_url, partition_reference)
-  
-  print("done.")
+  partition = local['slap'].registerOpenOrder().request(software_url,
+      partition_reference)
+  # XXX-Cedric : provide a way to get informations about instance
+  print("Instance requested.")
 
 def run():
   """Ran when invoking slapconsole"""
