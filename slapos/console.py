@@ -58,10 +58,10 @@ class Parser(OptionParser):
     Check arguments
     """
     (options, args) = self.parse_args()
-    if len(args) != 1:
-      self.error("Incorrect number of arguments")
+    #if len(args) != 1:
+    #  self.error("Incorrect number of arguments")
 
-    return options, args[0]
+    return options, args
 
 class Config:
   def setConfig(self, option_dict, configuration_file_path):
@@ -85,25 +85,57 @@ class Config:
     setattr(self, 'master_url', configuration_dict['master_url'])
           
     if not self.master_url:
-      raise ValueError('master-url is required.')
-  
-def run():
-  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
-  # Parse arguments
-  config = Config()
-  config.setConfig(*Parser(usage=usage).check_args())
-  
+      raise ValueError('master_url is required.')
+
+def init(config):
+  """Initialize Slap instance, connects to server and create
+  aliases to common software releases"""
   slap = slapos.slap.slap()
-  slap.initializeConnection('https://slap.vifib.com',
+  slap.initializeConnection(config.master_url,
       key_file=config.key_file, cert_file=config.cert_file)
-  local = globals()
+  local = globals().copy()
   local['slap'] = slap
   alias = config.alias.split('\n')
+  software_list = []
   for software in alias:
     if software is not '':
       name, url = software.split(' ')
+      software_list.append(name)
       local[name] = url
+  local['software_list'] = software_list
   # XXX-Cedric Maybe we should generate a new OpenOrder for each request?
   local['request'] = slap.registerOpenOrder().request
+  return local
+
+def request():
+  """Ran when invoking slapos-request"""
+  # Parse arguments
+  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
+  config = Config()
+  arguments = Parser(usage=usage).check_args()[1]
+  config.setConfig(*Parser(usage=usage).check_args())
   
-  __import__("code").interact(banner="", local=globals())
+  local = init(config)
+  
+  # Request instance
+  # XXX-Cedric : support things like : 
+  # --instance-type std --configuration-size 23 --computer-region europe/france
+  # XXX-Cedric : add support for xml_parameter
+  software_url = arguments[1]
+  partition_reference = arguments[2]
+  print("Requesting %s..." % software_url)
+  if software_url in local:
+    software_url = local[software_url]
+  local['slap'].registerOpenOrder().request(software_url, partition_reference)
+  
+  print("done.")
+
+def run():
+  """Ran when invoking slapconsole"""
+  # Parse arguments
+  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
+  config = Config()
+  config.setConfig(*Parser(usage=usage).check_args())
+  
+  local = init(config)
+  __import__("code").interact(banner="", local=local)
