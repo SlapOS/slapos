@@ -103,8 +103,7 @@ def init(config):
       software_list.append(name)
       local[name] = url
   local['software_list'] = software_list
-  # XXX-Cedric Maybe we should generate a new OpenOrder for each request?
-  local['request'] = slap.registerOpenOrder().request
+  local['request'] = lambda software_release, reference: slap.registerOpenOrder().request(software_release, reference)
   return local
 
 def request():
