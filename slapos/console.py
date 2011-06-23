@@ -76,11 +76,13 @@ class Config:
     configuration_parser = ConfigParser.SafeConfigParser()
     configuration_parser.read(configuration_file_path)
     # Merges the arguments and configuration
-    for section in ("slapos",):
+    for section in ("slapconsole",):
       configuration_dict = dict(configuration_parser.items(section))
       for key in configuration_dict:
         if not getattr(self, key, None):
           setattr(self, key, configuration_dict[key])
+    configuration_dict = dict(configuration_parser.items('slapos'))
+    setattr(self, 'master_url', configuration_dict['master_url'])
           
     if not self.master_url:
       raise ValueError('master-url is required.')
@@ -96,6 +98,11 @@ def run():
       key_file=config.key_file, cert_file=config.cert_file)
   local = globals()
   local['slap'] = slap
+  alias = config.alias.split('\n')
+  for software in alias:
+    if software is not '':
+      name, url = software.split(' ')
+      local[name] = url
   # XXX-Cedric Maybe we should generate a new OpenOrder for each request?
   local['request'] = slap.registerOpenOrder().request
   
