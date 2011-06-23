@@ -33,12 +33,12 @@ from Products.ERP5Type.tests.utils import DummyMailHost
 import os
 
 REQUIRED_RULE_REFERENCE_LIST = [
-  'default_delivery_rule',
-  'default_order_rule',
   'default_delivering_rule',
-  'default_invoicing_rule',
-  'default_invoice_transaction_rule',
+  'default_delivery_rule',
   'default_invoice_rule',
+  'default_invoice_transaction_rule',
+  'default_invoicing_rule',
+  'default_order_rule',
 ]
 
 

@@ -259,7 +259,7 @@ class SlapTool(BaseTool):
   def requestComputerPartition(self, computer_id=None,
       computer_partition_id=None, software_release=None, software_type=None,
       partition_reference=None, shared_xml=None, partition_parameter_xml=None,
-      filter_xml=None):
+      filter_xml=None, state=None):
     """
     Asynchronously requests creation of computer partition for assigned
     parameters
@@ -273,7 +273,7 @@ class SlapTool(BaseTool):
     """
     return self._requestComputerPartition(computer_id, computer_partition_id,
         software_release, software_type, partition_reference,
-        shared_xml, partition_parameter_xml, filter_xml)
+        shared_xml, partition_parameter_xml, filter_xml, state)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'useComputer')
@@ -565,7 +565,7 @@ class SlapTool(BaseTool):
   @convertToREST
   def _requestComputerPartition(self, computer_id, computer_partition_id,
         software_release, software_type, partition_reference,
-        shared_xml, partition_parameter_xml, filter_xml):
+        shared_xml, partition_parameter_xml, filter_xml, state):
     """
     Asynchronously requests creation of computer partition for assigned
     parameters
@@ -578,6 +578,10 @@ class SlapTool(BaseTool):
 
     In any other case returns not important data and HTTP code is 403 Forbidden
     """
+    if state:
+      state = xml_marshaller.xml_marshaller.loads(state)
+    if state is None:
+      state = 'started'
     if shared_xml:
       shared = xml_marshaller.xml_marshaller.loads(shared_xml)
     else:
@@ -621,7 +625,8 @@ class SlapTool(BaseTool):
               partition_reference=partition_reference,
               shared=shared,
               instance_xml=instance_xml,
-              sla_xml=sla_xml)
+              sla_xml=sla_xml,
+              state=state)
 
       # Get requested software instance
       requested_software_instance = software_instance_document.portal_catalog.\
@@ -643,7 +648,8 @@ class SlapTool(BaseTool):
               software_title=partition_reference,
               shared=shared,
               instance_xml=instance_xml,
-              sla_xml=sla_xml)
+              sla_xml=sla_xml,
+              state=state)
       requested_software_instance = person.portal_catalog.\
           getResultValue(
                 portal_type="Software Instance",

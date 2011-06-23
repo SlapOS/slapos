@@ -56,14 +56,22 @@ software_instance = state_change[\'object\']\n
 service_relative_url = software_instance.portal_preferences.\\\n
                             getPreferredInstanceHostingResource()\n
 need_to_create_packing_list = False\n
-\n
 try:\n
-  sale_packing_list_line = context.SoftwareInstance_getInstanceHostingPackingListLine(state_change)\n
+  instance_setup_line = context.SoftwareInstance_getInstanceSetupPackingListLine(state_change)\n
 except ValueError:\n
-  need_to_create_packing_list = True\n
+  pass\n
 else:\n
-  if sale_packing_list_line.getSimulationState() == \'delivered\':\n
-    need_to_create_packing_list = True\n
+  if instance_setup_line.getSimulationState() == \'stopped\':\n
+    try:\n
+      sale_packing_list_line = context.SoftwareInstance_getInstanceHostingPackingListLine(state_change)\n
+    except ValueError:\n
+      need_to_create_packing_list = True\n
+    else:\n
+      if sale_packing_list_line.getSimulationState() == \'stopped\':\n
+        # previously it was still in stop in progress state, now it shall be started again\n
+        sale_packing_list_line.getParentValue().deliver()\n
+      if sale_packing_list_line.getSimulationState() == \'delivered\':\n
+        need_to_create_packing_list = True\n
 \n
 portal = context.getPortalObject()\n
 if need_to_create_packing_list:\n
