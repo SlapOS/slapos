@@ -20,3 +20,27 @@ host = 127.0.0.1
 port = 5000
 # You could also specify: /path/to/file
 database_uri = :memory:
+
+[slapconsole]
+cert_file = certificate file location coming from your slapos master account
+key_file = key file location coming from your slapos master account
+# Below are softwares supported by Vifib
+alias = kvm https://svn.erp5.org/repos/vifib/public/trunk/software_release/kvm/software.cfg
+  nbd https://svn.erp5.org/repos/vifib/public/trunk/software_release/nbdserver/software.cfg
+  kvm+ https://svn.erp5.org/repos/vifib/public/trunk/software_release/kvm+/software.cfg
+  testnode http://git.erp5.org/gitweb/slapos.git/blob_plain/testnode:/software/testnode/software.cfg
+  nosqltester http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/nosqltestbed:/software/nosqltestbed/software.cfg
+  slaposwebrunner https://svn.erp5.org/repos/vifib/public/trunk/software_release/runner/software.cfg
+  lightforum https://svn.erp5.org/repos/public/slapos/trunk/software_release.contribution/lightforum.Christophe.Lefloch/software.cfg
+  factux https://www.tiolive.com/vifib/P-OSOE.Factux.Wilfried.Rodrigues/Base_download
+  joomla https://svn.erp5.org/repos/public/slapos/trunk/software_release.contribution/joomla.Christophe.Laroulandie/software.cfg
+  dotclear https://svn.erp5.org/repos/public/slapos/trunk/software_release.contribution/dotclear.Kinwai.YIP/software.cfg
+  respest https://www.tiolive.com/vifib/P-OSOE.Respest.BENHAMED/Base_download
+  erp5scalabilitytestbed http://git.erp5.org/gitweb/slapos.git/blob_plain/erp5scalabilitytestbed:/software/erp5scalabilitytestbed/software.cfg
+  zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.5:/software/zabbix-agent/software.cfg
+  mysql-5.1 http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/mysql-5.1/software.cfg
+  mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/mariadb/software.cfg
+  memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/memcached/software.cfg
+  kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/kumofs/software.cfg
+  erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/erp5/software.cfg
+  erp5_branch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5:/software/erp5/software.cfg
