@@ -46,6 +46,7 @@ setup(name=name,
       entry_points={
         'console_scripts': [
           'slapconsole = slapos.console:run',
+          'slapos-request = slapos.console:request',
           'slapformat = slapos.format:main',
           'slapgrid = slapos.grid.slapgrid:run',
           'slapgrid-sr = slapos.grid.slapgrid:runSoftwareRelease',
