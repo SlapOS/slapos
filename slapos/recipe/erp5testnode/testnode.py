@@ -79,6 +79,8 @@ def killPreviousRun(process_group_pid_set, supervisord_pid_file):
   except:
     pass
 
+PROFILE_PATH_KEY = 'profile_path'
+
 def run(args):
   config = args[0]
   slapgrid = None
@@ -95,6 +97,14 @@ def run(args):
   vcs_repository_list = config['vcs_repository_list']
   profile_content = None
   assert len(vcs_repository_list), "we must have at least one repository"
+  try:
+    # BBB: Accept global profile_path, which is the same as setting it for the
+    # first configured repository.
+    profile_path = config.pop(PROFILE_PATH_KEY)
+  except KeyError:
+    pass
+  else:
+    vcs_repository_list[0][PROFILE_PATH_KEY] = profile_path
   for vcs_repository in vcs_repository_list:
     url = vcs_repository['url']
     buildout_section_id = vcs_repository.get('buildout_section_id', None)
@@ -103,12 +113,17 @@ def run(args):
     repository_path = os.path.join(config['working_directory'],repository_id)
     vcs_repository['repository_id'] = repository_id
     vcs_repository['repository_path'] = repository_path
-    if profile_content is None:
+    try:
+      profile_path = vcs_repository[PROFILE_PATH_KEY]
+    except KeyError:
+      pass
+    else:
+      if profile_content is not None:
+        raise ValueError(PROFILE_PATH_KEY + ' defined more than once')
       profile_content = """
 [buildout]
 extends = %(software_config_path)s
-""" %  {'software_config_path': os.path.join(repository_path,
-                                          config['profile_path'])}
+""" %  {'software_config_path': os.path.join(repository_path, profile_path)}
     if not(buildout_section_id is None):
       profile_content += """
 [%(buildout_section_id)s]
@@ -118,6 +133,8 @@ branch = %(branch)s
         'repository_path' : repository_path,
         'branch' : vcs_repository.get('branch','master')}
 
+  if profile_content is None:
+    raise ValueError(PROFILE_PATH_KEY + ' not defined')
   custom_profile = open(custom_profile_path, 'w')
   custom_profile.write(profile_content)
   custom_profile.close()

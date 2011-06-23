@@ -73,7 +73,7 @@ class Recipe(BaseSlapRecipe):
               ipv4_address=self.getLocalIPv4Address(),
               ipv6_address=self.getGlobalIPv6Address(),
               master_url=CONFIG['master_url'],
-              profile_path=self.parameter_dict['profile_path'],
+              profile_path=self.parameter_dict.get('profile_path', None),
               proxy_database=CONFIG['proxy_database'],
               proxy_port=CONFIG['proxy_port'],
               slapgrid_partition_binary=self.options['slapgrid_partition_binary'],
