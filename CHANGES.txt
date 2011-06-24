@@ -1,4 +1,4 @@
-0.4 (unreleased)
+0.4 (2011-06-24)
 ================
 
  * general: Polish requirement versions. [Arnaud Fontaine]
