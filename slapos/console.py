@@ -26,6 +26,7 @@
 ##############################################################################
 
 import slapos.slap.slap
+from slapos.slap import ResourceNotReady
 
 import sys
 from optparse import OptionParser, Option
@@ -104,7 +105,7 @@ def init(config):
       local[name] = url
   local['software_list'] = software_list
   local['request'] = lambda software_release, reference: \
-      slap.registerOpenOrder().request(software_release, reference)
+        slap.registerOpenOrder().request(software_release, reference)
   return local
 
 def request():
@@ -127,10 +128,16 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
   print("Requesting %s..." % software_url)
   if software_url in local:
     software_url = local[software_url]
-  partition = local['slap'].registerOpenOrder().request(software_url,
-      partition_reference)
-  # XXX-Cedric : provide a way to get informations about instance
-  print("Instance requested.")
+  try:
+    partition = local['slap'].registerOpenOrder().request(software_url,
+        partition_reference)
+    print("Instance requested.\nState is : %s.\nYou can "
+        "rerun to get up-to-date informations." % (
+        partition.getState()))
+  except ResourceNotReady:
+    print("Instance requested. Master is provisionning it. Please rerun in a "
+    "couple of minutes to get connection informations")
+    exit(2)
 
 def run():
   """Ran when invoking slapconsole"""
