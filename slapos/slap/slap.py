@@ -141,7 +141,7 @@ class Supply(SlapDocument):
 
   def supply(self, software_release, computer_guid=None):
     self._connection_helper.POST('/supplySupply', {
-      'url': software_release, 
+      'url': software_release,
       'computer_id': computer_guid})
 
 class OpenOrder(SlapDocument):
