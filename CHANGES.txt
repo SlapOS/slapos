@@ -1,4 +1,4 @@
-0.5 (unreleased)
+0.5 (2011-06-24)
 ================
 
  * slapgrid: Use temporary extends-cache directory in order to make faster
