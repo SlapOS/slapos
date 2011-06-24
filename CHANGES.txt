@@ -1,7 +1,8 @@
 0.5 (unreleased)
 ================
 
- * No changes yet.
+ * slapgrid: Use temporary extends-cache directory in order to make faster
+   remote profile refresh. [Łukasz Nowak]
 
 0.4 (2011-06-24)
 ================

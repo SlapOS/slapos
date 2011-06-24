@@ -29,7 +29,9 @@ import os
 import shutil
 import subprocess
 import pkg_resources
+import shutil
 import stat
+import tempfile
 from supervisor import xmlrpc
 import xmlrpclib
 import pwd
@@ -72,16 +74,21 @@ class Software(object):
              root_stat_info.st_gid != path_stat_info.st_gid:
             os.chown(path, root_stat_info.st_uid,
                 root_stat_info.st_gid)
-    buildout_parameter_list = [
-      'buildout:directory=%s' % self.software_path,
-      '-c', self.url]
-    bootstrapBuildout(self.software_path, self.buildout,
-        additional_buildout_parametr_list=buildout_parameter_list,
-        console=self.console)
-    launchBuildout(self.software_path,
-                   os.path.join(self.software_path, 'bin', 'buildout'),
-                   additional_buildout_parametr_list=buildout_parameter_list,
-                   console=self.console)
+    extends_cache = tempfile.mkdtemp()
+    try:
+      buildout_parameter_list = [
+        'buildout:extends-cache=%s' % extends_cache,
+        'buildout:directory=%s' % self.software_path,
+        '-c', self.url]
+      bootstrapBuildout(self.software_path, self.buildout,
+          additional_buildout_parametr_list=buildout_parameter_list,
+          console=self.console)
+      launchBuildout(self.software_path,
+                     os.path.join(self.software_path, 'bin', 'buildout'),
+                     additional_buildout_parametr_list=buildout_parameter_list,
+                     console=self.console)
+    finally:
+      shutil.rmtree(extends_cache)
 
   def remove(self):
     """Removes the part that was installed.
