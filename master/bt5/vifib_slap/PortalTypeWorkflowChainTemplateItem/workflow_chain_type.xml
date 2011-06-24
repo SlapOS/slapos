@@ -28,6 +28,10 @@
   <workflow>slap_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Slave Instance</type>
+  <workflow>slap_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Software Instance</type>
   <workflow>slap_interaction_workflow</workflow>
  </chain>
