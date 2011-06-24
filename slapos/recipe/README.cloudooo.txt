@@ -1,0 +1,4 @@
+cloudooo
+=========
+
+Instantiates CloudOOo instance.

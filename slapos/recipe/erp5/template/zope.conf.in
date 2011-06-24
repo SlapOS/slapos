@@ -9,10 +9,7 @@ instancehome $INSTANCE
 
 # Environment override
 <environment>
-  TMP %(tmp_directory)s
-  TMPDIR %(tmp_directory)s
-  HOME %(tmp_directory)s
-  PATH %(path)s
+%(environment)s
 </environment>
 
 # No need to debug
