@@ -1,12 +1,12 @@
-0.7 (unreleased)
+0.7 (2011-06-27)
 ================
 
- * No changes yet.
+ * slapgrid: Fallback to buildout in own search path. [Łukasz Nowak]
 
 0.6 (2011-06-27)
 ================
 
- * slap: Fix bug: state shall be XML encapsulated.
+ * slap: Fix bug: state shall be XML encapsulated. [Łukasz Nowak]
 
 0.5 (2011-06-24)
 ================
