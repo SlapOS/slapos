@@ -65,16 +65,16 @@ class Software(object):
     self.logger.info("Installing software release %s..." % self.url)
     if not os.path.isdir(self.software_path):
       os.mkdir(self.software_path)
+    extends_cache = tempfile.mkdtemp()
     if os.getuid() == 0:
       # In case when running as root copy ownership, to simplify logic
       root_stat_info = os.stat(self.software_root)
-      for path in [self.software_path]:
+      for path in [self.software_path, extends_cache]:
         path_stat_info = os.stat(path)
         if root_stat_info.st_uid != path_stat_info.st_uid or\
              root_stat_info.st_gid != path_stat_info.st_gid:
             os.chown(path, root_stat_info.st_uid,
                 root_stat_info.st_gid)
-    extends_cache = tempfile.mkdtemp()
     try:
       buildout_parameter_list = [
         'buildout:extends-cache=%s' % extends_cache,
