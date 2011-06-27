@@ -62,6 +62,7 @@ software_title = kwargs["software_title"]\n
 software_type = kwargs.get("software_type") or "RootSoftwareInstance"\n
 instance_xml = kwargs["instance_xml"]\n
 sla_xml = kwargs.get("sla_xml") or ""\n
+state = kwargs.get(\'state\') or \'started\'\n
 \n
 sale_order_portal_type = "Sale Order"\n
 sale_order_line_portal_type = "Sale Order Line"\n
@@ -108,6 +109,10 @@ if (request_software_instance is None):\n
       title=software_title,\n
       activate_kw={\'tag\': tag},\n
     )\n
+    if state == \'started\':\n
+      software_instance.startRequested()\n
+    elif state == \'stopped\':\n
+      software_instance.stopRequested()    \n
 \n
     software_release_document = context.portal_catalog.getResultValue(\n
       portal_type=\'Software Release\',\n
@@ -173,6 +178,12 @@ else:\n
     sla_xml=sla_xml,\n
     activate_kw={\'tag\': tag},\n
   )\n
+  if state == \'started\':\n
+    software_instance.startRequested()\n
+    software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
+  elif state == \'stopped\':\n
+    software_instance.stopRequested()\n
+    software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
 
 
 ]]></string> </value>
