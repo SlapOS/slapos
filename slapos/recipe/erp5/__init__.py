@@ -34,6 +34,10 @@ import sys
 import zc.buildout
 import zc.recipe.egg
 import ConfigParser
+import re
+
+_isurl = re.compile('([a-zA-Z0-9+.-]+)://').match
+
 
 # based on Zope2.utilities.mkzopeinstance.write_inituser
 def Zope2InitUser(path, username, password):
@@ -478,6 +482,44 @@ class Recipe(BaseSlapRecipe):
       self._createDirectory(os.path.join(self.erp5_directory, directory))
     self._createDirectory(os.path.join(self.erp5_directory, 'etc',
       'package-includes'))
+    # Symlink to BT5 repositories defined in instance config.
+    # Those paths will eventually end up in the ZODB, and having symlinks
+    # inside the XXX makes it possible to reuse such ZODB with another software
+    # release[ version].
+    # Note: this path cannot be used for development, it's really just a
+    # read-only repository.
+    repository_path = os.path.join(self.var_directory, "bt5_repository")
+    if not os.path.isdir(repository_path):
+      os.mkdir(repository_path)
+    self.path_list.append(repository_path)
+    self.bt5_repository_list = []
+    append = self.bt5_repository_list.append
+    for repository in self.options.get('bt5_repository_list', '').split():
+      repository = repository.strip()
+      if not repository:
+        continue
+
+      if _isurl(repository) and not repository.startswith("file://"):
+        # XXX: assume it's a valid URL
+        append(repository)
+        continue
+
+      if repository.startswith('file://'):
+        repository = repository.replace('file://', '', '')
+
+      if os.path.isabs(repository):
+        repo_id = hashlib.sha1(repository).hexdigest()
+        link = os.path.join(repository_path, repo_id)
+        if os.path.lexists(link):
+          if not os.path.islink(link):
+            raise zc.buildout.UserError(
+              'Target link already %r exists but it is not link' % link)
+          os.unlink(link)
+        os.symlink(repository, link)
+        self.logger.debug('Created link %r -> %r' % (link, repository_path))
+        # Always provide a URL-Type
+        append("file://" + link)
+
     return user, password
 
   def installERP5Site(self, user, password, zope_access, mysql_conf,
@@ -498,7 +540,8 @@ class Recipe(BaseSlapRecipe):
 
     # XXX URL list vs. repository + list of bt5 names?
     bt5_list = self.parameter_dict.get("bt5_list", "").split()
-    bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split()
+    bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
+      or getattr(self, 'bt5_repository_list', [])
 
     self.path_list.extend(zc.buildout.easy_install.scripts([('erp5_update',
             __name__ + '.erp5', 'updateERP5')], self.ws,
