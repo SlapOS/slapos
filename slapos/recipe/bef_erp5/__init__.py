@@ -114,7 +114,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
     }
 
   def installProductionMysql(self):
-    mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678,
+    mysql_conf = self.installMysqlServer(self.getGlobalIPv6Address(), 45678,
         template_filename=pkg_resources.resource_filename(__name__,
           'template/my.cnf.in'), parallel_test_database_amount=0,
           mysql_conf=dict(innodb_buffer_pool_size='10G'))
