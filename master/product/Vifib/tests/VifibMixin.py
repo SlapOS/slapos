@@ -186,7 +186,8 @@ class testVifibMixin(ERP5TypeTestCase):
     default_system_preference.edit(
       preferred_credential_recovery_automatic_approval=1,
       preferred_credential_request_automatic_approval=1,
-      preferred_subscription_assignment_category=['function/customer'],
+      preferred_subscription_assignment_category=['function/customer',
+        'role/internal'],
     )
     if default_system_preference.getPreferenceState() == 'disabled':
       default_system_preference.enable()
