@@ -54,20 +54,23 @@ class NoSQLTestBed(BaseSlapRecipe):
     kumo_cloud_config['address'] = self.getGlobalIPv6Address()
     kumo_cloud_config['report_path'] = self.log_directory
     
-    if 'nb_server_max' not in kumo_cloud_config:
-      kumo_cloud_config['nb_server_max'] = 2 # 3
+    kumo_cloud_config.setdefault('nb_server_max', 4) # 3
+    kumo_cloud_config.setdefault('nb_tester_max', 5) # 3
+    kumo_cloud_config.setdefault('nb_thread', 1) # 32
+    kumo_cloud_config.setdefault('nb_request', 1000) # 1024000
     
-    if 'nb_tester_max' not in kumo_cloud_config:
-      kumo_cloud_config['nb_tester_max'] = 1 # 3
+    computer_guid_list  = "COMP-13:" # manager
+    computer_guid_list += "COMP-13:" # server 1
+    computer_guid_list += "COMP-14:" # server 2
+    computer_guid_list += "COMP-20:" # server 3
+    computer_guid_list += "COMP-19:" # server 4
+    computer_guid_list += "COMP-21:" # tester 1
+    computer_guid_list += "COMP-22:" # tester 2
+    computer_guid_list += "COMP-14:" # tester 3
+    computer_guid_list += "COMP-20:" # tester 4
+    computer_guid_list += "COMP-19"  # tester 5
     
-    if 'nb_thread' not in kumo_cloud_config:
-      kumo_cloud_config['nb_thread'] = 1 # 32
-    
-    if 'nb_request' not in kumo_cloud_config:
-      kumo_cloud_config['nb_request'] = 1000 # 1024000
-    
-    if 'computer_guid_list' not in kumo_cloud_config:
-      kumo_cloud_config['computer_guid_list'] = "COMP-9:COMP-10:COMP-11:COMP-9"
+    kumo_cloud_config.setdefault('computer_guid_list', computer_guid_list)
     
     kumo_cloud_config['software_release_url'] = self.software_release_url
     kumo_cloud_config['server_url'] = self.server_url
@@ -214,7 +217,7 @@ class NoSQLTestBed(BaseSlapRecipe):
                               tester_config['gateway_address'].strip("[]") + " -p " + \
                               tester_config['gateway_port'] + " -t " + \
                               tester_config['nb_thread'] + " " + \
-                              tester_config['nb_request'] + " -x"
+                              tester_config['nb_request'] + " -g"
     tester_config['log_directory'] = self.log_directory
     tester_config['compress_method'] = "bz2"
 
@@ -229,4 +232,24 @@ class NoSQLTestBed(BaseSlapRecipe):
           self.substituteTemplate(tester_wrapper_template_location, tester_config))
 
     return [tester_runner_path]
+
+  def run_memstrike_set(self):
+    """ Runs memstrike in set mode. """
+    memstrike_config = {}
+    memstrike_config.update(self.options)
+    memstrike_config.update(self.parameter_dict)
+
+    memstrike_config['gateway_address'] = memstrike_config['gateway_address'].strip("[]")
+
+    memstrike_connection = {}
+    memstrike_connection['status'] = "OK"
+    self.computer_partition.setConnectionDict(memstrike_connection)
+
+    memstrike_wrapper_template_location = pkg_resources.resource_filename(
+                                             __name__, os.path.join(
+                                             'template', 'memstrike_run.in'))
+    memstrike_runner_path = self.createRunningWrapper("memstrike_set",
+          self.substituteTemplate(memstrike_wrapper_template_location, memstrike_config))
+
+    return [memstrike_runner_path]
 

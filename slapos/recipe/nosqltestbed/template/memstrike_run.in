@@ -1,0 +1,4 @@
+#!/bin/sh
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+exec %(memstrike_binary)s -s -l %(gateway_address)s -p %(gateway_port)s -t %(nb_thread)s %(nb_request)s
