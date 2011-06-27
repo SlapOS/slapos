@@ -41,6 +41,9 @@ REQUIRED_RULE_REFERENCE_LIST = [
   'default_order_rule',
 ]
 
+REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST = [
+  'crendential_request-confirmation-without-password',
+]
 
 class testVifibMixin(ERP5TypeTestCase):
   """
@@ -183,6 +186,17 @@ class testVifibMixin(ERP5TypeTestCase):
     if default_system_preference.getPreferenceState() == 'disabled':
       default_system_preference.enable()
 
+  def setupNotificationModule(self):
+    module = self.portal.notification_message_module
+    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
+
+    for reference in REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST:
+      for message in module.searchFolder(portal_type='Notification Message',
+        reference=reference):
+        message = message.getObject()
+        if isTransitionPossible(message, 'validate'):
+          message.validate()
+
   def setupRuleTool(self):
     """Validates newest version of each rule from REQUIRED_RULE_REFERENCE_LIST"""
     rule_tool = self.portal.portal_rules
@@ -252,6 +266,7 @@ class testVifibMixin(ERP5TypeTestCase):
     self.setPreference()
     self.setSystemPreference()
     self.setupRuleTool()
+    self.setupNotificationModule()
     self.openAssignments()
     transaction.commit()
     self.tic()
