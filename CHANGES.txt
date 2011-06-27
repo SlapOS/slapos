@@ -1,7 +1,7 @@
-0.8 (unreleased)
+0.8 (2011-06-27)
 ================
 
- * No changes yet.
+ * slapgrid: Bugfix for temporary extends cache permissions. [Łukasz Nowak]
 
 0.7 (2011-06-27)
 ================
