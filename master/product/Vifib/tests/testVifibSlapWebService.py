@@ -7590,6 +7590,73 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  ########################################
+  # Other tests
+  ########################################
+
+  def stepRequestCredentialFromWebSite(self, sequence, **kw):
+    sequence['web_user'] = 'vifib_web_user'
+    result = self.portal.ERP5Site_newCredentialRequest(\
+        first_name='Homer',
+        last_name='Simpson',
+        reference=sequence['web_user'],
+        password='secret',
+        default_email_text='homer.simpson@fox.com',
+        role_list=['internal'],
+        )
+
+  def stepSubmitCredentialRequest(self, sequence, **kw):
+    credential_request = self.portal.portal_catalog.getResultValue(
+      portal_type='Credential Request',
+      reference=sequence['web_user']
+      )
+    credential_request.submit()
+
+  def stepAcceptSubmittedCredentialsActiveSense(self, **kw):
+    self.portal.portal_alarms.accept_submitted_credentials.activeSense()
+
+  def stepLoginWebUser(self, sequence, **kw):
+    self.login(sequence['web_user'])
+
+  def test_person_from_credential_request_software_instance(self):
+    """Checks that person created from web can use the system"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+        self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      Logout
+      RequestCredentialFromWebSite
+      Tic
+
+      LoginDefaultUser
+      SubmitCredentialRequest # simulates click in email
+      Tic
+      AcceptSubmittedCredentialsActiveSense
+      Tic
+      Logout
+
+      LoginWebUser
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckWebPersonRequestedSoftwareInstance
+
+          """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+    raise NotImplementedError
+
 # class IComputerPartition
 #   def started():
 #   def stopped():
