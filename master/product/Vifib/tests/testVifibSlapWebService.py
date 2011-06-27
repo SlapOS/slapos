@@ -7602,7 +7602,6 @@ class TestVifibSlapWebService(testVifibMixin):
         reference=sequence['web_user'],
         password='secret',
         default_email_text='homer.simpson@fox.com',
-        role_list=['internal'],
         )
 
   def stepSubmitCredentialRequest(self, sequence, **kw):
@@ -7651,12 +7650,15 @@ class TestVifibSlapWebService(testVifibMixin):
       Logout
 
       LoginDefaultUser
-      CheckWebPersonRequestedSoftwareInstance
-
-          """
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+    """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-    raise NotImplementedError
 
 # class IComputerPartition
 #   def started():
