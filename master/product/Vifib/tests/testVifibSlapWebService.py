@@ -7606,6 +7606,7 @@ class TestVifibSlapWebService(testVifibMixin):
         )
 
   def stepSubmitCredentialRequest(self, sequence, **kw):
+    """Simulates click of user in email confirmation about account"""
     credential_request = self.portal.portal_catalog.getResultValue(
       portal_type='Credential Request',
       reference=sequence['web_user']
@@ -7638,7 +7639,7 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
 
       LoginDefaultUser
-      SubmitCredentialRequest # simulates click in email
+      SubmitCredentialRequest
       Tic
       AcceptSubmittedCredentialsActiveSense
       Tic
