@@ -79,7 +79,8 @@ def normalize_to_url(option, opt_str, value, parser):
             value = 'file://%s' % (
                 urllib.pathname2url(
                     os.path.abspath(os.path.expanduser(value))),)
-        if opt_str == '--download-base' and not value.endswith('/'):
+        if opt_str in ['--download-base', '--buildout-download-base'] \
+            and not value.endswith('/'):
             # Download base needs a trailing slash to make the world happy.
             value += '/'
     else:
@@ -116,6 +117,12 @@ parser.add_option("--download-base", action="callback", dest="download_base",
                   help=("Specify a URL or directory for downloading "
                         "zc.buildout and either Setuptools or Distribute. "
                         "Defaults to PyPI."))
+parser.add_option("--buildout-download-base", action="callback",
+                  dest="buildout_download_base", callback=normalize_to_url,
+                  nargs=1, type="string",
+                  help=("Specify a URL or directory for downloading "
+                        "zc.buildout. "
+                        "Defaults to PyPI or download_base."))
 parser.add_option("--eggs",
                   help=("Specify a directory for storing eggs.  Defaults to "
                         "a temporary directory that is deleted when the "
@@ -188,7 +195,7 @@ cmd = [quote(sys.executable),
 if not has_broken_dash_S:
     cmd.insert(1, '-S')
 
-find_links = options.download_base
+find_links = options.buildout_download_base or options.download_base
 if not find_links:
     find_links = os.environ.get('bootstrap-testing-find-links')
 if find_links:
