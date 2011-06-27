@@ -234,9 +234,7 @@ def bootstrapBuildout(path, buildout=None,
     logger.warning('Using old style bootstrap of included bootstrap file. '
       'Consider setting buildout binary location.')
     invocation_list.append(pkg_resources.resource_filename(__name__,
-      'zc.buildout-bootstap.py', '-v', '1.5.3-dev-SlapOS-004',
-      '--buildout-download-base',
-      'http://www.nexedi.org/static/packages/source/slapos.buildout/'))
+      'zc.buildout-bootstap.py'))
   invocation_list.extend(additional_buildout_parametr_list)
   if buildout is not None:
     invocation_list.append('bootstrap')
