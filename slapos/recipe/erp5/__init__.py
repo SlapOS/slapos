@@ -72,14 +72,9 @@ class Recipe(BaseSlapRecipe):
         self.getLocalIPv4Address(), 23000, 23060)
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
     user, password = self.installERP5()
-    zodb_dir = os.path.join(self.data_root_directory, 'zodb')
-    self._createDirectory(zodb_dir)
-    zodb_root_path = os.path.join(zodb_dir, 'root.fs')
-    zope_access = self.installZope(ip=self.getLocalIPv4Address(),
-          port=12000 + 1, name='zope_%s' % 1,
-          zodb_configuration_string=self.substituteTemplate(
-            self.getTemplateFilename('zope-zodb-snippet.conf.in'),
-            dict(zodb_root_path=zodb_root_path)), with_timerservice=True)
+    
+    zope_access = self.installStandaloneZope(zodb_root_path)
+
     key, certificate = self.requestCertificate('Login Based Access')
     apache_conf = dict(
         apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
@@ -99,6 +94,23 @@ class Recipe(BaseSlapRecipe):
       kumo_url=kumo_conf['kumo_address']
     ))
     return self.path_list
+
+  def installZopeStandalone(self):
+    """ Install a single Zope instance without ZEO Server.
+    """
+    zodb_dir = os.path.join(self.data_root_directory, 'zodb')
+    self._createDirectory(zodb_dir)
+    zodb_root_path = os.path.join(zodb_dir, 'root.fs')
+
+    thread_amount_per_zope = int(self.options.get(
+                                 'single_zope_thread_amount', 4))
+
+    return self.installZope(ip=self.getLocalIPv4Address(),
+          port=12000 + 1, name='zope_%s' % 1,
+          zodb_configuration_string=self.substituteTemplate(
+            self.getTemplateFilename('zope-zodb-snippet.conf.in'),
+            dict(zodb_root_path=zodb_root_path)), with_timerservice=True,
+            thread_amount=thread_amount_per_zope)
 
   def _requestZeoFileStorage(self, server_name, storage_name):
     """Local, slap.request compatible, call to ask for filestorage on Zeo
