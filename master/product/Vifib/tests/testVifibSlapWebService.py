@@ -7595,7 +7595,7 @@ class TestVifibSlapWebService(testVifibMixin):
   ########################################
 
   def stepRequestCredentialFromWebSite(self, sequence, **kw):
-    sequence['web_user'] = 'vifib_web_user'
+    sequence['web_user'] = '%s.%s' % (self.id(), random())
     result = self.portal.ERP5Site_newCredentialRequest(\
         first_name='Homer',
         last_name='Simpson',
@@ -7660,6 +7660,53 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepPersonRequestCredentialUpdate(self, sequence, **kw):
+    sequence['updated_last_name'] = 'Another'
+    result = self.portal.ERP5Site_newPersonCredentialUpdate(
+        first_name='Homer',
+        last_name=sequence['updated_last_name'],
+        reference=sequence['web_user'],
+        password='secret',
+        default_email_text='homer.simpson@fox.com',
+    )
+    self.assertTrue('Credential Update Created' in result)
+
+  def stepCheckPersonUpdatedCredential(self, sequence, **kw):
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
+      'web_user'])
+    self.assertEqual(sequence['updated_last_name'], person.getLastName())
+
+  def test_person_credential_update(self):
+    """Checks that Credential Update works in vifib environment."""
+    sequence_list = SequenceList()
+    sequence_string = """
+      Logout
+      RequestCredentialFromWebSite
+      Tic
+
+      LoginDefaultUser
+      SubmitCredentialRequest
+      Tic
+      AcceptSubmittedCredentialsActiveSense
+      Tic
+      Logout
+
+      LoginWebUser
+      PersonRequestCredentialUpdate
+      Tic
+      Logout
+
+      LoginDefaultUser
+      AcceptSubmittedCredentialsActiveSense
+      Tic
+      CheckPersonUpdatedCredential
+      Logout
+
+      LoginWebUser
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 # class IComputerPartition
 #   def started():
 #   def stopped():
