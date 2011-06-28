@@ -118,6 +118,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
         template_filename=pkg_resources.resource_filename(__name__,
           'template/my.cnf.in'), parallel_test_database_amount=0,
           mysql_conf=dict(innodb_buffer_pool_size='10G'), with_backup=False)
+    self.installMysqldumpBackup()
     self.setConnectionDict(dict(
       mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
     ))
@@ -238,6 +239,32 @@ class Recipe(slapos.recipe.erp5.Recipe):
     ))
     return self.path_list
 
+  def installMysqldumpBackup(self):
+    backup_directory = self.createBackupDirectory('mysqldump')
+    environment = dict(PATH='%s' % self.bin_directory)
+    executable = os.path.join(self.bin_directory, 'mysqldump')
+    mysql_socket = os.path.join(self.var_directory, 'run', 'mysqld.sock')
+    mysqldump_opt = ['-u', 'root', '-S', mysql_socket, '--single-transaction',
+      '--no-autocommit', '--opt']
+    mysqldump_cron = os.path.join(self.cron_d, 'mysqldump')
+    database = 'sanef_dms'
+    cronfile = open(mysqldump_cron, 'w')
+    cronfile.write("0 0 * * * %(mysqldump)s %(mysqldump_opt)s %(database)s | %(gzip)s > %(destination)s\n" % dict(
+      mysqldump=executable, mysqldump_opt=' '.join(mysqldump_opt),
+      database=database, gzip=self.options['gzip_binary'],
+      destination=os.path.join(backup_directory, '%s.sql.gz' % database)
+    ))
+    for table in ['message', 'message_queue', 'portal_ids']:
+      destination = os.path.join(backup_directory, '%s.%s.sql.gz' % (database,
+        table))
+      cronfile.write("0 0 * * * %(mysqldump)s %(mysqldump_opt)s %(database)s %(table)s | %(gzip)s > %(destination)s\n" % dict(
+        mysqldump=executable, mysqldump_opt=' '.join(mysqldump_opt),
+        database=database, gzip=self.options['gzip_binary'],
+        table=table, destination=destination)
+      )
+    cronfile.close()
+    self.path_list.append(mysqldump_cron)
+
   def installDevelopmentEnvironment(self):
     ca_conf = self.installCertificateAuthority()
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
@@ -248,6 +275,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
         template_filename=pkg_resources.resource_filename(__name__,
           'template/my.cnf.in'), parallel_test_database_amount=0,
           mysql_conf=dict(innodb_buffer_pool_size='1G'), with_backup=False)
+    self.installMysqldumpBackup()
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     user, password = self.installERP5()
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
