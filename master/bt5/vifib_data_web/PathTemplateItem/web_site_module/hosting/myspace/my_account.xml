@@ -73,7 +73,7 @@
         </item>
         <item>
             <key> <string>custom_render_method_id</string> </key>
-            <value> <string>WebSection_viewMyAccountRender</string> </value>
+            <value> <string>ERP5Site_viewNewPersonCredentialUpdateDialog</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
