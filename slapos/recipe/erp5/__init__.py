@@ -986,7 +986,8 @@ class Recipe(BaseSlapRecipe):
 
   def installMysqlServer(self, ip, port, database='erp5', user='user',
       test_database='test_erp5', test_user='test_user', template_filename=None,
-      parallel_test_database_amount=100, mysql_conf=None):
+      parallel_test_database_amount=100, mysql_conf=None, with_backup=True,
+      with_maatkit=True):
     if mysql_conf is None:
       mysql_conf = {}
     backup_directory = self.createBackupDirectory('mysql')
@@ -1060,62 +1061,64 @@ class Recipe(BaseSlapRecipe):
        )]))
     self.path_list.extend([mysql_conf_path])
 
-    # backup configuration
-    backup_directory = self.createBackupDirectory('mysql')
-    full_backup = os.path.join(backup_directory, 'full')
-    incremental_backup = os.path.join(backup_directory, 'incremental')
-    self._createDirectory(full_backup)
-    self._createDirectory(incremental_backup)
-    innobackupex_argument_list = [self.options['perl_binary'],
-        self.options['innobackupex_binary'],
-        '--defaults-file=%s' % mysql_conf_path,
-        '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
-        '--ibbackup=%s'% self.options['xtrabackup_binary']]
-    environment = dict(PATH='%s' % self.bin_directory)
-    innobackupex_incremental = zc.buildout.easy_install.scripts([(
-      'innobackupex_incremental','slapos.recipe.librecipe.execute', 'executee')],
-      self.ws, sys.executable, self.bin_directory, arguments=[
-        innobackupex_argument_list + ['--incremental'],
-        environment])[0]
-    self.path_list.append(innobackupex_incremental)
-    innobackupex_full = zc.buildout.easy_install.scripts([('innobackupex_full',
-     'slapos.recipe.librecipe.execute', 'executee')], self.ws,
-      sys.executable, self.bin_directory, arguments=[
-        innobackupex_argument_list,
-        environment])[0]
-    self.path_list.append(innobackupex_full)
-    backup_controller = zc.buildout.easy_install.scripts([
-      ('innobackupex_controller', __name__ + '.innobackupex', 'controller')],
-      self.ws, sys.executable, self.bin_directory,
-      arguments=[innobackupex_incremental, innobackupex_full, full_backup,
-        incremental_backup])[0]
-    self.path_list.append(backup_controller)
-    mysql_backup_cron = os.path.join(self.cron_d, 'mysql_backup')
-    open(mysql_backup_cron, 'w').write('0 0 * * * ' + backup_controller)
-    self.path_list.append(mysql_backup_cron)
-
-    # maatkit installation
-    for mk_script_name in (
-        'mk-variable-advisor',
-        'mk-table-usage',
-        'mk-visual-explain',
-        'mk-config-diff',
-        'mk-deadlock-logger',
-        'mk-error-log',
-        'mk-index-usage',
-        'mk-query-advisor',
-        ):
-      mk_argument_list = [self.options['perl_binary'],
-          self.options['%s_binary' % mk_script_name],
+    if with_backup:
+      # backup configuration
+      backup_directory = self.createBackupDirectory('mysql')
+      full_backup = os.path.join(backup_directory, 'full')
+      incremental_backup = os.path.join(backup_directory, 'incremental')
+      self._createDirectory(full_backup)
+      self._createDirectory(incremental_backup)
+      innobackupex_argument_list = [self.options['perl_binary'],
+          self.options['innobackupex_binary'],
           '--defaults-file=%s' % mysql_conf_path,
           '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
-          ]
+          '--ibbackup=%s'% self.options['xtrabackup_binary']]
       environment = dict(PATH='%s' % self.bin_directory)
-      mk_exe = zc.buildout.easy_install.scripts([(
-        mk_script_name,'slapos.recipe.librecipe.execute', 'executee')],
+      innobackupex_incremental = zc.buildout.easy_install.scripts([(
+        'innobackupex_incremental','slapos.recipe.librecipe.execute', 'executee')],
         self.ws, sys.executable, self.bin_directory, arguments=[
-          mk_argument_list, environment])[0]
-      self.path_list.append(mk_exe)
+          innobackupex_argument_list + ['--incremental'],
+          environment])[0]
+      self.path_list.append(innobackupex_incremental)
+      innobackupex_full = zc.buildout.easy_install.scripts([('innobackupex_full',
+       'slapos.recipe.librecipe.execute', 'executee')], self.ws,
+        sys.executable, self.bin_directory, arguments=[
+          innobackupex_argument_list,
+          environment])[0]
+      self.path_list.append(innobackupex_full)
+      backup_controller = zc.buildout.easy_install.scripts([
+        ('innobackupex_controller', __name__ + '.innobackupex', 'controller')],
+        self.ws, sys.executable, self.bin_directory,
+        arguments=[innobackupex_incremental, innobackupex_full, full_backup,
+          incremental_backup])[0]
+      self.path_list.append(backup_controller)
+      mysql_backup_cron = os.path.join(self.cron_d, 'mysql_backup')
+      open(mysql_backup_cron, 'w').write('0 0 * * * ' + backup_controller)
+      self.path_list.append(mysql_backup_cron)
+
+    if with_maatkit:
+      # maatkit installation
+      for mk_script_name in (
+          'mk-variable-advisor',
+          'mk-table-usage',
+          'mk-visual-explain',
+          'mk-config-diff',
+          'mk-deadlock-logger',
+          'mk-error-log',
+          'mk-index-usage',
+          'mk-query-advisor',
+          ):
+        mk_argument_list = [self.options['perl_binary'],
+            self.options['%s_binary' % mk_script_name],
+            '--defaults-file=%s' % mysql_conf_path,
+            '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+            ]
+        environment = dict(PATH='%s' % self.bin_directory)
+        mk_exe = zc.buildout.easy_install.scripts([(
+          mk_script_name,'slapos.recipe.librecipe.execute', 'executee')],
+          self.ws, sys.executable, self.bin_directory, arguments=[
+            mk_argument_list, environment])[0]
+        self.path_list.append(mk_exe)
 
     # The return could be more explicit database, user ...
     return mysql_conf
