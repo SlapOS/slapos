@@ -188,6 +188,7 @@ class testVifibMixin(ERP5TypeTestCase):
     default_system_preference.edit(
       preferred_credential_recovery_automatic_approval=1,
       preferred_credential_request_automatic_approval=1,
+      preferred_person_credential_update_automatic_approval=1,
       preferred_subscription_assignment_category=['function/customer',
         'role/internal'],
     )
