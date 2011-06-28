@@ -179,11 +179,11 @@ else:\n
     activate_kw={\'tag\': tag},\n
   )\n
   if state == \'started\':\n
-    software_instance.startRequested()\n
-    software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
+    request_software_instance.startRequested()\n
+    request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
   elif state == \'stopped\':\n
-    software_instance.stopRequested()\n
-    software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
+    request_software_instance.stopRequested()\n
+    request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
 
 
 ]]></string> </value>
