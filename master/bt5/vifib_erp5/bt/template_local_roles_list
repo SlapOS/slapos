@@ -28,3 +28,4 @@ software_product_module
 software_product_module/test_software_product
 software_release_module
 software_release_module/test_software_release
+credential_update_module
