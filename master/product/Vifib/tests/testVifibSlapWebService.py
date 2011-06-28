@@ -7669,7 +7669,7 @@ class TestVifibSlapWebService(testVifibMixin):
         password='secret',
         default_email_text='homer.simpson@fox.com',
     )
-    self.assertTrue('Credential Update Created' in result)
+    self.assertTrue('Credential%20Update%20Created' in result)
 
   def stepCheckPersonUpdatedCredential(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
@@ -7699,10 +7699,9 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser
       AcceptSubmittedCredentialsActiveSense
       Tic
-      CheckPersonUpdatedCredential
-      Logout
 
       LoginWebUser
+      CheckPersonUpdatedCredential
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
