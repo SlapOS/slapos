@@ -79,8 +79,15 @@ class Recipe(BaseSlapRecipe):
     apache_conf = dict(
         apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
           port=13000, backend=zope_access, key=key, certificate=certificate))
-    self.installERP5Site(user, password, zope_access, mysql_conf, 
-             conversion_server_conf, memcached_conf, kumo_conf, self.site_id)
+
+    default_bt5_list = []
+    if self.parameter_dict.get("flavour", "default") == 'configurator':
+      default_bt5_list = self.options.get("configurator_bt5_list", [])
+
+    self.installERP5Site(user, password, zope_access, mysql_conf,
+             conversion_server_conf, memcached_conf, kumo_conf,
+             self.site_id, default_bt5_list)
+
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
                            memcached_conf, kumo_conf)
     self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
