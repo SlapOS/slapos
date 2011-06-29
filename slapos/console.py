@@ -89,13 +89,14 @@ class Config:
       raise ValueError('master_url is required.')
 
 def init(config):
-  """Initialize Slap instance, connects to server and create
+  """Initialize Slap instance, connect to server and create
   aliases to common software releases"""
   slap = slapos.slap.slap()
   slap.initializeConnection(config.master_url,
       key_file=config.key_file, cert_file=config.cert_file)
   local = globals().copy()
   local['slap'] = slap
+  # Create aliases as global variables
   alias = config.alias.split('\n')
   software_list = []
   for software in alias:
@@ -103,9 +104,13 @@ def init(config):
       name, url = software.split(' ')
       software_list.append(name)
       local[name] = url
+  # Create global variable too see available aliases
   local['software_list'] = software_list
+  # Create global shortcut functions to request instance and software
   local['request'] = lambda software_release, reference: \
         slap.registerOpenOrder().request(software_release, reference)
+  local['supply'] = lambda software_release, computer: \
+        slap.registerSupply().supply(software_release, computer)
   return local
 
 def request():
@@ -144,7 +149,16 @@ def run():
   """Ran when invoking slapconsole"""
   # Parse arguments
   usage = """usage: %s [options] CONFIGURATION_FILE
-slapconsole allows you interact with slap API.""" % sys.argv[0]
+slapconsole allows you interact with slap API. You can play with the global
+"slap" object and with the global "request" method.
+
+examples :
+  >>> # Request instance
+  >>> request(kvm, "myuniquekvm")
+  >>> # Request software installation on owned computer
+  >>> supply(kvm, "mycomputer")
+  >>> # Fetch instance informations on already launched instance
+  >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
   config = Config()
   config.setConfig(*Parser(usage=usage).check_args())
   
