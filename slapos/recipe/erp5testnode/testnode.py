@@ -176,9 +176,11 @@ branch = %(branch)s
           full_revision_list.append('%s=%s' % (repository_id, revision))
         revision = ','.join(full_revision_list)
         if previous_revision == revision:
+          log('Sleeping a bit')
           time.sleep(120)
           if not(retry_software):
             continue
+          log('Retrying install')
         retry_software = False
         previous_revision = revision
 
@@ -202,13 +204,16 @@ branch = %(branch)s
         if test_result:
           test_result_path, test_revision = test_result
           if revision != test_revision:
+            log('Disagreement on tested revision, checking out:')
             for i, repository_revision in enumerate(test_revision.split(',')):
               vcs_repository = vcs_repository_list[i]
               repository_path = vcs_repository['repository_path']
+              revision = repository_revision.split('-')[1]
               # other testnodes on other boxes are already ready to test another
               # revision
+              log('  %s at %s' % (repository_path, revision))
               updater = Updater(repository_path, git_binary=config['git_binary'],
-                                revision=repository_revision.split('-')[1])
+                                revision=revision)
               updater.checkout()
 
           # Now prepare the installation of SlapOS and create instance
