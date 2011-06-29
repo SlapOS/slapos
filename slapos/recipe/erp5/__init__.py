@@ -494,6 +494,7 @@ class Recipe(BaseSlapRecipe):
       self._createDirectory(os.path.join(self.erp5_directory, directory))
     self._createDirectory(os.path.join(self.erp5_directory, 'etc',
       'package-includes'))
+
     # Symlink to BT5 repositories defined in instance config.
     # Those paths will eventually end up in the ZODB, and having symlinks
     # inside the XXX makes it possible to reuse such ZODB with another software
