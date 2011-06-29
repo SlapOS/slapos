@@ -57,9 +57,10 @@ class SlapOSControler(object):
     cpu_count = os.sysconf("SC_NPROCESSORS_ONLN")
     os.putenv('MAKEFLAGS', '-j%s' % cpu_count)
     os.environ['PATH'] = environment['PATH']
-    slapgrid = subprocess.Popen([config['slapgrid_software_binary'], '-v', '-c',
+    command = [config['slapgrid_software_binary'], '-v', '-c',
       #'--buildout-parameter',"'-U -N' -o",
-      config['slapos_config']],
+      config['slapos_config']]
+    slapgrid = subprocess.Popen(command,
       stdout=stdout, stderr=stderr,
       close_fds=True, preexec_fn=os.setsid)
     process_group_pid_set.add(slapgrid.pid)
@@ -68,6 +69,7 @@ class SlapOSControler(object):
     stderr.seek(0)
     process_group_pid_set.remove(slapgrid.pid)
     status_dict = {'status_code':slapgrid.returncode,
+                    'command': repr(command),
                     'stdout':stdout.read(),
                     'stderr':stderr.read()}
     stdout.close()
@@ -82,8 +84,9 @@ class SlapOSControler(object):
     slap.registerOpenOrder().request(self.software_profile,
         partition_reference='testing partition',
         partition_parameter_kw=config['instance_dict'])
-    slapgrid = subprocess.Popen([config['slapgrid_partition_binary'],
-      config['slapos_config'], '-c', '-v'],
+    command = [config['slapgrid_partition_binary'],
+      config['slapos_config'], '-c', '-v']
+    slapgrid = subprocess.Popen(command,
       stdout=stdout, stderr=stderr,
       close_fds=True, preexec_fn=os.setsid)
     process_group_pid_set.add(slapgrid.pid)
@@ -92,6 +95,7 @@ class SlapOSControler(object):
     stderr.seek(0)
     process_group_pid_set.remove(slapgrid.pid)
     status_dict = {'status_code':slapgrid.returncode,
+                    'command': repr(command),
                     'stdout':stdout.read(),
                     'stderr':stderr.read()}
     stdout.close()

@@ -227,19 +227,22 @@ branch = %(branch)s
               stdout=stdout, stderr=stderr
               )
             if status_dict['status_code'] != 0:
-              break
-          if status_dict['status_code'] != 0:
-            safeRpcCall(master.reportTaskFailure,
-              test_result_path, status_dict, config['test_node_title'])
-            retry_software = True
-            continue
+              safeRpcCall(master.reportTaskFailure,
+                test_result_path, status_dict, config['test_node_title'])
+              retry_software = True
+              raise SubprocessError(status_dict)
 
           partition_path = os.path.join(config['instance_root'],
                                         config['partition_reference'])
           run_test_suite_path = os.path.join(partition_path, 'bin',
                                             'runTestSuite')
           if not os.path.exists(run_test_suite_path):
-            raise ValueError('No %r provided' % run_test_suite_path)
+            raise SubprocessError({
+              'command': 'os.path.exists(run_test_suite_path)',
+              'status_code': 1,
+              'stdout': '',
+              'stderr': 'File does not exist: %r' % (run_test_suite_path, ),
+            })
 
           run_test_suite_revision = revision
           if isinstance(revision, tuple):
