@@ -52,7 +52,7 @@ def safeRpcCall(function, *args):
       return function(*args)
     except:
       traceback.print_exc()
-      pprint.pprint(args, file(function._Method__name, 'w'))
+      pprint.pprint(args)
       time.sleep(retry)
       retry += retry >> 1
 
