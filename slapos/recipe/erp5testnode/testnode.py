@@ -184,7 +184,6 @@ branch = %(branch)s
         retry_software = False
         previous_revision = revision
 
-        log(config)
         portal_url = config['test_suite_master_url']
         test_result_path = None
         test_result = (test_result_path, revision)
