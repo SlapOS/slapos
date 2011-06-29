@@ -3,7 +3,12 @@ from xml_marshaller import xml_marshaller
 
 class SlapOSControler(object):
 
-  def __init__(self, config, process_group_pid_set=None):
+  def log(self, message):
+    print message
+
+  def __init__(self, config, process_group_pid_set=None, log=None):
+    if log is not None:
+      self.log = log
     self.config = config
     # By erasing everything, we make sure that we are able to "update"
     # existing profiles. This is quite dirty way to do updates...
@@ -48,7 +53,7 @@ class SlapOSControler(object):
 
   def runSoftwareRelease(self, config, environment, process_group_pid_set=None,
                          stdout=None, stderr=None):
-    print "SlapOSControler.runSoftwareRelease"
+    self.log("SlapOSControler.runSoftwareRelease")
     cpu_count = os.sysconf("SC_NPROCESSORS_ONLN")
     os.putenv('MAKEFLAGS', '-j%s' % cpu_count)
     os.environ['PATH'] = environment['PATH']
@@ -72,7 +77,7 @@ class SlapOSControler(object):
   def runComputerPartition(self, config, environment,
                            process_group_pid_set=None,
                            stdout=None, stderr=None):
-    print "SlapOSControler.runComputerPartition"
+    self.log("SlapOSControler.runComputerPartition")
     slap = slapos.slap.slap()
     slap.registerOpenOrder().request(self.software_profile,
         partition_reference='testing partition',

@@ -169,7 +169,8 @@ branch = %(branch)s
             parameter_list.append(repository_path)
             subprocess.check_call(parameter_list)
           # Make sure we have local repository
-          updater = Updater(repository_path, git_binary=config['git_binary'])
+          updater = Updater(repository_path, git_binary=config['git_binary'],
+            log=log)
           updater.checkout()
           revision = "-".join(updater.getRevision())
           full_revision_list.append('%s=%s' % (repository_id, revision))
@@ -212,7 +213,7 @@ branch = %(branch)s
 
           # Now prepare the installation of SlapOS and create instance
           slapos_controler = SlapOSControler(config,
-            process_group_pid_set=process_group_pid_set)
+            process_group_pid_set=process_group_pid_set, log=log)
           for method_name in ("runSoftwareRelease", "runComputerPartition"):
             stdout, stderr = getInputOutputFileList(config, method_name)
             slapos_method = getattr(slapos_controler, method_name)

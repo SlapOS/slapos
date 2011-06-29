@@ -53,7 +53,13 @@ class Updater(object):
   realtime_output = True
   stdin = file(os.devnull)
 
-  def __init__(self, repository_path, revision=None, git_binary=None):
+  def log(self, message):
+    print message
+
+  def __init__(self, repository_path, revision=None, git_binary=None,
+      log=None):
+    if log is not None:
+      self.log = log
     self.revision = revision
     self._path_list = []
     self.repository_path = repository_path
@@ -94,7 +100,7 @@ class Updater(object):
     quiet = kw.pop('quiet', False)
     env = kw and dict(os.environ, **kw) or None
     command = format_command(*args, **kw)
-    print '\n$ ' + command
+    self.log('\n$ ' + command)
     sys.stdout.flush()
     p = subprocess.Popen(args, stdin=self.stdin, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, env=env,
