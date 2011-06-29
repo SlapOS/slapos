@@ -7,6 +7,7 @@ import subprocess
 import sys
 import socket
 import pprint
+import traceback
 from SlapOSControler import SlapOSControler
 
 
@@ -49,8 +50,8 @@ def safeRpcCall(function, *args):
   while True:
     try:
       return function(*args)
-    except (socket.error, xmlrpclib.ProtocolError), e:
-      print >>sys.stderr, e
+    except:
+      traceback.print_exc()
       pprint.pprint(args, file(function._Method__name, 'w'))
       time.sleep(retry)
       retry += retry >> 1
