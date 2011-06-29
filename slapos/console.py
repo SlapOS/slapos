@@ -59,8 +59,8 @@ class Parser(OptionParser):
     Check arguments
     """
     (options, args) = self.parse_args()
-    #if len(args) != 1:
-    #  self.error("Incorrect number of arguments")
+    if len(args) == 0:
+      self.error("Incorrect number of arguments")
 
     return options, args
 
@@ -134,6 +134,7 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
     print("Instance requested.\nState is : %s.\nYou can "
         "rerun to get up-to-date informations." % (
         partition.getState()))
+    # XXX-Cedric : provide a way for user to fetch parameter, url, object, etc
   except ResourceNotReady:
     print("Instance requested. Master is provisionning it. Please rerun in a "
     "couple of minutes to get connection informations")
@@ -142,7 +143,8 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
 def run():
   """Ran when invoking slapconsole"""
   # Parse arguments
-  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
+  usage = """usage: %s [options] CONFIGURATION_FILE
+slapconsole allows you interact with slap API.""" % sys.argv[0]
   config = Config()
   config.setConfig(*Parser(usage=usage).check_args())
   
