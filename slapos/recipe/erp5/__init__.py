@@ -535,7 +535,8 @@ class Recipe(BaseSlapRecipe):
     return user, password
 
   def installERP5Site(self, user, password, zope_access, mysql_conf,
-          conversion_server_conf=None, memcached_conf=None, kumo_conf=None, erp5_site_id='erp5'):
+          conversion_server_conf=None, memcached_conf=None, kumo_conf=None, 
+          erp5_site_id='erp5', default_bt5_list=[]):
     """ Create a script controlled by supervisor, which creates a erp5
     site on current available zope and mysql environment"""
     conversion_server = None
@@ -550,8 +551,7 @@ class Recipe(BaseSlapRecipe):
     # for pure site creation.
     mysql_connection_string = "%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s" % mysql_conf
 
-    # XXX URL list vs. repository + list of bt5 names?
-    bt5_list = self.parameter_dict.get("bt5_list", "").split()
+    bt5_list = self.parameter_dict.get("bt5_list", "").split() or default_bt5_list
     bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
       or getattr(self, 'bt5_repository_list', [])
 
