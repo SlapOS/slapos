@@ -100,7 +100,7 @@ class Updater(object):
     quiet = kw.pop('quiet', False)
     env = kw and dict(os.environ, **kw) or None
     command = format_command(*args, **kw)
-    self.log('\n$ ' + command)
+    self.log('$ ' + command)
     sys.stdout.flush()
     p = subprocess.Popen(args, stdin=self.stdin, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, env=env,
