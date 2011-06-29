@@ -84,8 +84,8 @@ PROFILE_PATH_KEY = 'profile_path'
 def run(args):
   config = args[0]
   slapgrid = None
-  supervisord_pid_file = os.path.join(config['instance_root'], 'var', 'run',
-        'supervisord.pid')
+  supervisord_pid_file = os.path.join(config['run_directory'],
+    'supervisord.pid')
   subprocess.check_call([config['git_binary'],
                 "config", "--global", "http.sslVerify", "false"])
   previous_revision = None

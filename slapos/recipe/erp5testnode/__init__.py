@@ -92,6 +92,7 @@ class Recipe(BaseSlapRecipe):
               test_node_title=self.parameter_dict.get('test_node_title'),
               project_title=self.parameter_dict.get('project_title'),
               bin_directory=self.bin_directory,
+              run_directory=self.run_directory,
               # botenvironemnt is splittable string of key=value to substitute
               # environment of running bot
               bot_environment=self.parameter_dict.get('bot_environment', ''),
