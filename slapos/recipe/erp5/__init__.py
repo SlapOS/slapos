@@ -72,8 +72,8 @@ class Recipe(BaseSlapRecipe):
         self.getLocalIPv4Address(), 23000, 23060)
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
     user, password = self.installERP5()
-    
-    zope_access = self.installStandaloneZope(zodb_root_path)
+
+    zope_access = self.installZopeStandalone()
 
     key, certificate = self.requestCertificate('Login Based Access')
     apache_conf = dict(
