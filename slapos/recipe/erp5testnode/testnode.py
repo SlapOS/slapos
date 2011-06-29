@@ -57,12 +57,12 @@ def safeRpcCall(function, *args):
 
 def getInputOutputFileList(config, command_name):
   stdout = open(os.path.join(
-                config['instance_root'],'.%s_out' % command_name),
-                'w+')
+    config['log_directory'], '%s_out' % (command_name, )),
+    'w+')
   stdout.write("%s\n" % command_name)
   stderr = open(os.path.join(
-                config['instance_root'],'.%s_err' % command_name),
-                'w+')
+    config['log_directory'], '%s_err' % (command_name, )),
+    'w+')
   return (stdout, stderr)
 
 slapos_controler = None
