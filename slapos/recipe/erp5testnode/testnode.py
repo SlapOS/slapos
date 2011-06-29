@@ -152,6 +152,7 @@ branch = %(branch)s
   retry_software = False
   try:
     while True:
+      remote_test_result_needs_cleanup = False
       # kill processes from previous loop if any
       try:
         killPreviousRun(process_group_pid_set, supervisord_pid_file)
@@ -199,6 +200,7 @@ branch = %(branch)s
             config['test_suite'], revision, [],
             False, test_suite_title,
             config['test_node_title'], config['project_title'])
+          remote_test_result_needs_cleanup = True
         log("testnode, test_result : %r" % (test_result, ))
         if test_result:
           test_result_path, test_revision = test_result
@@ -227,8 +229,6 @@ branch = %(branch)s
               stdout=stdout, stderr=stderr
               )
             if status_dict['status_code'] != 0:
-              safeRpcCall(master.reportTaskFailure,
-                test_result_path, status_dict, config['test_node_title'])
               retry_software = True
               raise SubprocessError(status_dict)
 
@@ -260,11 +260,19 @@ branch = %(branch)s
                                   '--test_suite_title', test_suite_title,
                                   '--node_quantity', config['node_quantity'],
                                   '--master_url', config['test_suite_master_url']])
+          # From this point, test runner becomes responsible for updating test
+          # result.
+          # XXX: is it good for all cases (eg: test runner fails too early for
+          # any custom code to pick the failure up and react ?)
+          remote_test_result_needs_cleanup = False
           run_test_suite = subprocess.Popen(invocation_list)
           process_group_pid_set.add(run_test_suite.pid)
           run_test_suite.wait()
           process_group_pid_set.remove(run_test_suite.pid)
-      except SubprocessError:
+      except SubprocessError, e:
+        if remote_test_result_needs_cleanup:
+          safeRpcCall(master.reportTaskFailure,
+            test_result_path, e.status_dict, config['test_node_title'])
         time.sleep(120)
 
   finally:
