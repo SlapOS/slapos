@@ -72,7 +72,7 @@ class SlapOSControler(object):
   def runComputerPartition(self, config, environment,
                            process_group_pid_set=None,
                            stdout=None, stderr=None):
-    print "SlapOSControler.runSoftwareRelease"
+    print "SlapOSControler.runComputerPartition"
     slap = slapos.slap.slap()
     slap.registerOpenOrder().request(self.software_profile,
         partition_reference='testing partition',
