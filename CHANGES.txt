@@ -1,3 +1,10 @@
+0.9 (not yet released)
+================
+
+ * slapconsole: Simplify usage and use configuration file. You can now 
+just run slapconsole and type things like "request(kvm, 'mykvm')".
+[Cedric de Saint Martin]
+
 0.8 (2011-06-27)
 ================
 
