@@ -38,7 +38,6 @@ import re
 
 _isurl = re.compile('([a-zA-Z0-9+.-]+)://').match
 
-
 # based on Zope2.utilities.mkzopeinstance.write_inituser
 def Zope2InitUser(path, username, password):
   open(path, 'w').write('')
