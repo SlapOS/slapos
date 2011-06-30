@@ -33,11 +33,6 @@ import sys
 import zc.recipe.egg
 
 class BaseRecipe(BaseSlapRecipe):
-  def __init__(self, buildout, name, options):
-    BaseSlapRecipe.__init__(self, buildout, name, options)
-    options['eggs'] = 'slapos.recipe.osoeslaptraining'
-    self.egg = zc.recipe.egg.Scripts(buildout, name, options)
-
   def installMysqlServer(self, ip=None, port=None):
     if ip is None:
       ip = self.getLocalIPv4Address()
