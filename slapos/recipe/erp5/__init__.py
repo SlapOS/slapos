@@ -82,7 +82,7 @@ class Recipe(BaseSlapRecipe):
 
     default_bt5_list = []
     if self.parameter_dict.get("flavour", "default") == 'configurator':
-      default_bt5_list = self.options.get("configurator_bt5_list", [])
+      default_bt5_list = self.options.get("configurator_bt5_list", '').split()
 
     self.installERP5Site(user, password, zope_access, mysql_conf,
              conversion_server_conf, memcached_conf, kumo_conf,
