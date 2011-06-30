@@ -122,7 +122,7 @@ SSLCARevocationPath %(ca_crl)s"""
     zodb_configuration_string = '\n'.join(zodb_configuration_list)
     zope_port = 12000
     # One Distribution Node
-    zope_port +=1
+    zope_port += 1
     self.installZope(ip, zope_port, 'zope_distribution', with_timerservice=True,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config)
