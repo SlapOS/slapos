@@ -72,12 +72,17 @@ class Recipe(BaseSlapRecipe):
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
     user, password = self.installERP5()
 
-    zope_access = self.installZopeStandalone()
+    if self.parameter_dict.get("slap_software_type", "").lower() == "cluster":
+      # Site access is done by HAProxy
+      zope_access, site_access = self.installZopeCluster()
+    else:
+      zope_access = self.installZopeStandalone()
+      site_access = zope_access
 
     key, certificate = self.requestCertificate('Login Based Access')
     apache_conf = dict(
         apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
-          port=13000, backend=zope_access, key=key, certificate=certificate))
+          port=13000, backend=site_access, key=key, certificate=certificate))
 
     default_bt5_list = []
     if self.parameter_dict.get("flavour", "default") == 'configurator':
@@ -117,6 +122,70 @@ class Recipe(BaseSlapRecipe):
             self.getTemplateFilename('zope-zodb-snippet.conf.in'),
             dict(zodb_root_path=zodb_root_path)), with_timerservice=True,
             thread_amount=thread_amount_per_zope)
+
+  def installZopeCluster(self):
+    """ Install ERP5 using ZEO Cluster
+    """
+    site_check_path = '/%s/getId' % self.site_id
+    thread_amount_per_zope = int(self.options.get(
+                                'cluster_zope_thread_amount', 1))
+
+    activity_node_amount = 2
+    user_node_amount = 2
+    ip = self.getLocalIPv4Address()
+    storage_dict = self._requestZeoFileStorage('Zeo Server 1', 'main')
+
+    zeo_conf = self.installZeo(ip)
+    tidstorage_config = dict(host=ip, port='6001')
+
+    mount_point = '/'
+    check_path = '/erp5/account_module'
+
+    known_tid_storage_identifier_dict = {}
+    known_tid_storage_identifier_dict[
+      (((storage_dict['ip'],storage_dict['port']),), storage_dict['storage_name'])
+        ] = (zeo_conf[storage_dict['storage_name']]['path'], check_path or mount_point)
+
+    zodb_configuration_string = self.substituteTemplate(
+        self.getTemplateFilename('zope-zeo-snippet.conf.in'), dict(
+        storage_name=storage_dict['storage_name'],
+        address='%s:%s' % (storage_dict['ip'], storage_dict['port']),
+        mount_point=mount_point
+        ))
+
+    zope_port = 12000
+    # One Distribution Node (Single Thread Always)
+    zope_port += 1
+    self.installZope(ip, zope_port, 'zope_distribution', with_timerservice=True,
+        zodb_configuration_string=zodb_configuration_string,
+        tidstorage_config=tidstorage_config)
+
+    # Activity Nodes (Single Thread Always)
+    for i in range(activity_node_amount):
+      zope_port += 1
+      self.installZope(ip, zope_port, 'zope_activity_%s' % i,
+          with_timerservice=True,
+          zodb_configuration_string=zodb_configuration_string,
+          tidstorage_config=tidstorage_config)
+
+    # Four Web Page Nodes (Human access)
+    login_url_list = []
+    for i in range(user_node_amount):
+      zope_port += 1
+      login_url_list.append(self.installZope(ip, zope_port,
+        'zope_login_%s' % i, with_timerservice=False,
+        zodb_configuration_string=zodb_configuration_string,
+        tidstorage_config=tidstorage_config,
+        thread_amount=thread_amount_per_zope))
+
+    login_haproxy = self.installHaproxy(ip, 15001, 'login',
+                               site_check_path, login_url_list)
+
+    self.installTidStorage(tidstorage_config['host'],
+                           tidstorage_config['port'],
+            known_tid_storage_identifier_dict, 'http://' + login_haproxy)
+
+    return login_url_list[-1], login_haproxy
 
   def _requestZeoFileStorage(self, server_name, storage_name):
     """Local, slap.request compatible, call to ask for filestorage on Zeo
