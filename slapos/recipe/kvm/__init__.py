@@ -104,10 +104,10 @@ class Recipe(BaseSlapRecipe):
 
     return [kvm_runner_path, kvm_controller_runner_path, websockify_runner_path]
   
-   def instanciate(self, name, list):
+  def instanciate(self, name, list):
     """
     Define the path to the wrapper of the thing you are instanciating
-
+    
     Parameters : name of what you are instanciating, list of arguments for the configuration dictionnary of the wrapper
     
     Returns    : path to the running wrapper
@@ -116,7 +116,7 @@ class Recipe(BaseSlapRecipe):
     name_config.update(self.options)
 
     for e in list:
-        name_config['i'] = i
+      name_config['i'] = i
 
     name_wrapper_template_location = pkg_resources.resource_filename(          
                                              __name__, os.path.join(          
