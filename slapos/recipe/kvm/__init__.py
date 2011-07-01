@@ -51,7 +51,7 @@ class Recipe(BaseSlapRecipe):
     
     vnc_port = 5900 + kvm_conf['vnc_display']
     
-    noVNC_conf = self.installNovnc(source_ip   = self.getGlobalIPv6Address(),
+    noVNC_conf = self.installNoVnc(source_ip   = self.getGlobalIPv6Address(),
                                    source_port = 6080,
                                    target_ip   = kvm_conf['vnc_ip'],
                                    target_port = vnc_port,
