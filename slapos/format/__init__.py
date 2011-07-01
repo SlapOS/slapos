@@ -605,8 +605,12 @@ class Bridge:
 
   def getGlobalScopeAddressList(self):
     """Returns currently configured global scope IPv6 addresses"""
-    address_list = [q for q in netifaces.ifaddresses(self.name)[socket.AF_INET6]
-        if isGlobalScopeAddress(q['addr'].split('%')[0])]
+    try:
+      address_list = [q for q in netifaces.ifaddresses(self.name)[socket.AF_INET6]
+                      if isGlobalScopeAddress(q['addr'].split('%')[0])]
+    except KeyError:
+      raise ValueError("%s must have at least one IPv6 address assigned" % \
+                         self.name)
     # XXX: Missing implementation of Unique Local IPv6 Unicast Addresses as
     # defined in http://www.rfc-editor.org/rfc/rfc4193.txt
     # XXX: XXX: XXX: IT IS DISALLOWED TO IMPLEMENT link-local addresses as
