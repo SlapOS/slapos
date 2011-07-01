@@ -11,7 +11,7 @@ so = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 connected = False
 while not connected:
   try:
-    so.connect('%(qmp_socket)s')
+    so.connect('%(socket_path)s')
   except socket.error:
     time.sleep(1)
   else:
