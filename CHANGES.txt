@@ -3,6 +3,7 @@
 
  * Add PHPMyAdmin software release used in SlapOS tutorials
  [Cedric de Saint Martin]
+ * Add slaprunner software release [Cedric de Saint Martin]
 
 0.9 (2011-06-24)
 ================
