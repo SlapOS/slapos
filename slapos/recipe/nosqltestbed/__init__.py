@@ -59,12 +59,12 @@ class NoSQLTestBed(BaseSlapRecipe):
     kumo_cloud_config.setdefault('nb_thread', 32) # 1
     kumo_cloud_config.setdefault('nb_request', 1024000) # 1000
     
-    computer_guid_list  = "COMP-13:" # manager
+    computer_guid_list  = "COMP-23:" # manager
     computer_guid_list += "COMP-13:" # server 1
     computer_guid_list += "COMP-14:" # server 2
     computer_guid_list += "COMP-20:" # server 3
     computer_guid_list += "COMP-19:" # server 4
-    computer_guid_list += "COMP-21:" # tester 1
+    computer_guid_list += "COMP-23:" # tester 1
     computer_guid_list += "COMP-22:" # tester 2
     computer_guid_list += "COMP-14:" # tester 3
     computer_guid_list += "COMP-20:" # tester 4
