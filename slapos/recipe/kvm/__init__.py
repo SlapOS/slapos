@@ -100,7 +100,7 @@ class Recipe(BaseSlapRecipe):
     kvm_conf['database_path'] = os.path.join(self.data_root_directory,
         'slapmonitor_database')
     kvm_conf['python_path'] = sys.executable
-    kvm_conf.append(self.options['qemu_path'])
+    kvm_conf['qemu_path'] = self.options['qemu_path']
     #xml_path = os.path.join(self.var_directory, 'slapreport.xml' )
 
     # Create disk if needed
@@ -153,13 +153,14 @@ class Recipe(BaseSlapRecipe):
     """
 
     noVNC_conf = {}
-    noVNC_conf.append(self.options['websockify_path'])
-    noVNC_conf.append(self.options['noVNC_location'])
-    noVNC_conf['source_ip']   = source_ip                                          
-    noVNC_conf['source_port'] = source_port
-    noVNC_conf['target_ip']   = target_ip
-    noVNC_conf['target_port'] = target_port
-    noVNC_conf['python_path'] = python_path
+    noVNC_conf['websockify_path'] = self.options['websockify_path']
+    noVNC_conf['noVNC_location']  = self.options['noVNC_location']
+    noVNC_conf['source_ip']       = source_ip                                          
+    noVNC_conf['source_port']     = source_port
+    noVNC_conf['target_ip']       = target_ip
+    noVNC_conf['target_port']     = target_port
+    noVNC_conf['python_path']     = python_path
+    
     # Instanciate Websockify
     websockify_runner_path = self.instanciate_wrapper("websockify",
         noVNC_conf)
