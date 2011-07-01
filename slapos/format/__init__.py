@@ -314,53 +314,66 @@ class Computer:
       os.chown(self.software_root, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0755)
 
-    for partition in self.partition_list:
-      # Reconstructing User's
-      partition.path = os.path.join(self.instance_root, partition.reference)
-      partition.user.setPath(partition.path)
-      partition.user.additional_group_list = [slapsoft.name]
-      if alter_user:
-        partition.user.create()
+    try:
+      for partition_index, partition in enumerate(self.partition_list):
+        # Reconstructing User's
+        partition.path = os.path.join(self.instance_root, partition.reference)
+        partition.user.setPath(partition.path)
+        partition.user.additional_group_list = [slapsoft.name]
+        if alter_user:
+          partition.user.create()
 
-      # Reconstructing Tap
-      if partition.user and partition.user.isAvailable():
-        owner = partition.user
-      else:
-        owner = User('root')
+        # Reconstructing Tap
+        if partition.user and partition.user.isAvailable():
+          owner = partition.user
+        else:
+          owner = User('root')
 
-      if alter_network:
-        partition.tap.createWithOwner(owner)
-        self.bridge.addTap(partition.tap)
-
-      # Reconstructing partition's directory
-      partition.createPath(alter_user)
-
-      # Reconstructing partition's address
-      # There should be two addresses on each Computer Partition:
-      #  * global IPv6
-      #  * local IPv4, took from slapformat:ipv4_local_network
-      if len(partition.address_list) == 0:
-        # regenerate
-        partition.address_list.append(self.bridge.addIPv4LocalAddress())
-        partition.address_list.append(self.bridge.addAddr())
-      elif alter_network:
-        # regenerate list of addresses
-        old_partition_address_list = partition.address_list
-        partition.address_list = []
-        if len(old_partition_address_list) != 2:
-          raise ValueError('There should be exactly 2 stored addresses')
-        if not any([netaddr.valid_ipv6(q['addr']) for q in old_partition_address_list]):
-          raise ValueError('Not valid ipv6 addresses loaded')
-        if not any([netaddr.valid_ipv4(q['addr']) for q in old_partition_address_list]):
-          raise ValueError('Not valid ipv6 addresses loaded')
-        for address in old_partition_address_list:
-          if netaddr.valid_ipv6(address['addr']):
-            partition.address_list.append(self.bridge.addAddr(address['addr'],
-              address['netmask']))
-          elif netaddr.valid_ipv4(address['addr']):
-            partition.address_list.append(self.bridge.addIPv4LocalAddress(address['addr']))
+        if alter_network:
+          # In case it has to be  attached to the TAP network device, only one
+          # is necessary for the bridge to assert carrier
+          if self.bridge.attach_to_tap and partition_index == 0:
+            partition.tap.createWithOwner(owner, attach_to_tap=True)
           else:
-            raise ValueError('Address %r is incorrect' % address['addr'])
+            partition.tap.createWithOwner(owner)
+
+          self.bridge.addTap(partition.tap)
+
+        # Reconstructing partition's directory
+        partition.createPath(alter_user)
+
+        # Reconstructing partition's address
+        # There should be two addresses on each Computer Partition:
+        #  * global IPv6
+        #  * local IPv4, took from slapformat:ipv4_local_network
+        if len(partition.address_list) == 0:
+          # regenerate
+          partition.address_list.append(self.bridge.addIPv4LocalAddress())
+          partition.address_list.append(self.bridge.addAddr())
+        elif alter_network:
+          # regenerate list of addresses
+          old_partition_address_list = partition.address_list
+          partition.address_list = []
+          if len(old_partition_address_list) != 2:
+            raise ValueError('There should be exactly 2 stored addresses')
+          if not any([netaddr.valid_ipv6(q['addr']) for q in old_partition_address_list]):
+            raise ValueError('Not valid ipv6 addresses loaded')
+          if not any([netaddr.valid_ipv4(q['addr']) for q in old_partition_address_list]):
+            raise ValueError('Not valid ipv6 addresses loaded')
+          for address in old_partition_address_list:
+            if netaddr.valid_ipv6(address['addr']):
+              partition.address_list.append(self.bridge.addAddr(address['addr'],
+                                                                address['netmask']))
+            elif netaddr.valid_ipv4(address['addr']):
+              partition.address_list.append(self.bridge.addIPv4LocalAddress(address['addr']))
+            else:
+              raise ValueError('Address %r is incorrect' % address['addr'])
+    finally:
+      if self.bridge.attach_to_tap:
+        try:
+          self.partition_list[0].tap.detach()
+        except IndexError:
+          pass
 
 class Partition:
   "Represent a computer partition"
@@ -461,8 +474,16 @@ class User:
     except KeyError:
       return False
 
+import struct
+import fcntl
+import errno
+import threading
+
 class Tap:
   "Tap represent a tap interface on the system"
+  IFF_TAP = 0x0002
+  TUNSETIFF = 0x400454ca
+  KEEP_TAP_ATTACHED_EVENT = threading.Event()
 
   def __init__(self, tap_name):
     """
@@ -476,7 +497,58 @@ class Tap:
   def __getinitargs__(self):
     return (self.name,)
 
-  def createWithOwner(self,owner):
+  def attach(self):
+    """
+    Attach to the TAP interface, meaning  that it just opens the TAP interface
+    and wait for the caller to notify that it can be safely detached.
+
+    Linux  distinguishes administrative  and operational  state of  an network
+    interface.  The  former can be set  manually by running ``ip  link set dev
+    <dev> up|down'', whereas the latter states that the interface can actually
+    transmit  data (for  a wired  network interface,  it basically  means that
+    there is  carrier, e.g.  the network  cable is plugged  into a  switch for
+    example).
+
+    In order  to be able to check  the uniqueness of IPv6  address assigned to
+    the bridge, the network interface  must be up from an administrative *and*
+    operational point of view.
+
+    However,  from  Linux  2.6.39,  the  bridge  reflects  the  state  of  the
+    underlying device (e.g.  the bridge asserts carrier if at least one of its
+    ports has carrier) whereas it  always asserted carrier before. This should
+    work fine for "real" network interface,  but will not work properly if the
+    bridge only binds TAP interfaces, which, from 2.6.36, reports carrier only
+    and only if an userspace program is attached.
+    """
+    tap_fd = os.open("/dev/net/tun", os.O_RDWR)
+
+    try:
+      # Attach to the TAP interface which has previously been created
+      fcntl.ioctl(tap_fd, self.TUNSETIFF,
+                  struct.pack("16sI", self.name, self.IFF_TAP))
+
+    except IOError, error:
+      # If  EBUSY, it  means another  program is  already attached,  thus just
+      # ignore it...
+      if error.errno != errno.EBUSY:
+        os.close(tap_fd)
+        raise
+    else:
+      # Block until the  caller send an event stating that  the program can be
+      # now detached safely,  thus bringing down the TAP  device (from 2.6.36)
+      # and the bridge at the same time (from 2.6.39)
+      self.KEEP_TAP_ATTACHED_EVENT.wait()
+    finally:
+      os.close(tap_fd)
+
+  def detach(self):
+    """
+    Detach to the  TAP network interface by notifying  the thread which attach
+    to the TAP and closing the TAP file descriptor
+    """
+    self.KEEP_TAP_ATTACHED_EVENT.set()
+
+  def createWithOwner(self, owner, attach_to_tap=False):
     """
     Create a tap interface on the system.
 
@@ -497,6 +569,9 @@ class Tap:
       callAndRead(['tunctl', '-t', self.name, '-u', owner.name])
     callAndRead(['ip', 'link', 'set', self.name, 'up'])
 
+    if attach_to_tap:
+      threading.Thread(target=self.attach).start()
+
     return True
 
 class Bridge:
@@ -510,6 +585,11 @@ class Bridge:
 
     self.name = str(name)
     self.ipv4_local_network = ipv4_local_network
+
+    # Attach to TAP  network interface, only if the  bridge interface does not
+    # report carrier
+    returncode, result = callAndRead(['ip', 'addr', 'list', self.name])
+    self.attach_to_tap = 'DOWN' in result.split('\n', 1)[0]
 
   def __getinitargs__(self):
     return (self.name,)
@@ -525,8 +605,12 @@ class Bridge:
 
   def getGlobalScopeAddressList(self):
     """Returns currently configured global scope IPv6 addresses"""
-    address_list = [q for q in netifaces.ifaddresses(self.name)[socket.AF_INET6]
-        if isGlobalScopeAddress(q['addr'].split('%')[0])]
+    try:
+      address_list = [q for q in netifaces.ifaddresses(self.name)[socket.AF_INET6]
+                      if isGlobalScopeAddress(q['addr'].split('%')[0])]
+    except KeyError:
+      raise ValueError("%s must have at least one IPv6 address assigned" % \
+                         self.name)
     # XXX: Missing implementation of Unique Local IPv6 Unicast Addresses as
     # defined in http://www.rfc-editor.org/rfc/rfc4193.txt
     # XXX: XXX: XXX: IT IS DISALLOWED TO IMPLEMENT link-local addresses as
