@@ -176,12 +176,10 @@ class Recipe(BaseSlapRecipe):
     
     Returns    : path to the running wrapper
     """
-    
-    config_dictionnary.update(self.options)
-
+  
     wrapper_template_location = pkg_resources.resource_filename(          
                                              __name__, os.path.join(         
-                                             'template', 'name_run.in'))     
+                                             'template', '%s_run.in' % name))     
     
     runner_path = self.createRunningWrapper(name,                        
           self.substituteTemplate(wrapper_template_location, config_dictionnary))
