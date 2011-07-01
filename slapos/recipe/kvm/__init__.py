@@ -100,6 +100,7 @@ class Recipe(BaseSlapRecipe):
     kvm_conf['database_path'] = os.path.join(self.data_root_directory,
         'slapmonitor_database')
     kvm_conf['python_path'] = sys.executable
+    kvm_conf.append(self.options['qemu_path'])
     #xml_path = os.path.join(self.var_directory, 'slapreport.xml' )
 
     # Create disk if needed
