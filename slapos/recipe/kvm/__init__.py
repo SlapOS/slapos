@@ -137,7 +137,8 @@ class Recipe(BaseSlapRecipe):
     #    [database_path, python_path])
     
     kvm_conf['vnc_display'] = 1
-
+    kvm_conf['smp_count']   = self.options['smp_count']
+    kvm_conf['ram_size']    = self.options['ram_size']
     return kvm_conf
 
   def installNoVnc(self, source_ip, source_port, target_ip, target_port, 
