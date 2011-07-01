@@ -56,8 +56,8 @@ class NoSQLTestBed(BaseSlapRecipe):
     
     kumo_cloud_config.setdefault('nb_server_max', 4) # 3
     kumo_cloud_config.setdefault('nb_tester_max', 5) # 3
-    kumo_cloud_config.setdefault('nb_thread', 1) # 32
-    kumo_cloud_config.setdefault('nb_request', 1000) # 1024000
+    kumo_cloud_config.setdefault('nb_thread', 32) # 1
+    kumo_cloud_config.setdefault('nb_request', 1024000) # 1000
     
     computer_guid_list  = "COMP-13:" # manager
     computer_guid_list += "COMP-13:" # server 1
