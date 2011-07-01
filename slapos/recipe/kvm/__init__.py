@@ -104,6 +104,7 @@ class Recipe(BaseSlapRecipe):
     kvm_conf['hostname'] = "slaposkvm"
 
     # Instanciate KVM
+
     kvm_runner_path = self.instanciate("kvm", kvm_conf)
     self.path_list.append(kvm_runner_path)
     # Instanciate KVM controller
@@ -126,7 +127,10 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(websockify_runner_path)
 
 
-  def instanciate(self, name, list):
+  
+  
+  def instanciate_Wrapper(self, name, config_dictionnary):
+
     """
     Define the path to the wrapper of the thing you are instanciating
     
@@ -135,19 +139,17 @@ class Recipe(BaseSlapRecipe):
     
     Returns    : path to the running wrapper
     """
-    name_config = {}
-    name_config.update(self.options)
+    
+    config_dictionnary.update(self.options)
 
-    for e in list:
-      name_config['i'] = i
-
-    name_wrapper_template_location = pkg_resources.resource_filename(          
+    wrapper_template_location = pkg_resources.resource_filename(          
                                              __name__, os.path.join(          
                                              'template', 'name_run.in'))       
     
-    name_runner_path = self.createRunningWrapper(name,                        
-          self.substituteTemplate(name_wrapper_template_location, name_config))
+    runner_path = self.createRunningWrapper(name,                        
+          self.substituteTemplate(wrapper_template_location, config_dictionnary))
     
+
     return name_runner_path
 
   def linkBinary(self):
@@ -171,3 +173,5 @@ class Recipe(BaseSlapRecipe):
       os.symlink(target, link)
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
+
+    return runner_path
