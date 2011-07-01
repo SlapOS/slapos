@@ -1,6 +1,8 @@
 0.9 (not yet released)
 ================
 
+ * slapformat: Fix issue of bridge not connected with real interface on
+   Linux >= 2.6.39 [Arnaud Fontaine]
  * slapconsole: Simplify usage and use configuration file. You can now 
 just run slapconsole and type things like "request(kvm, 'mykvm')".
 [Cedric de Saint Martin]
