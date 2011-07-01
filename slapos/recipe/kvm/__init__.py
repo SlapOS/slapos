@@ -40,23 +40,29 @@ class Recipe(BaseSlapRecipe):
 
     #Get the IP list
     connection_found = False
-    ip = self.getGlobalIPv6Address()
-    for tap, dummy in self.parameter_dict['ip_list']:
+    proxy_ip   = self.getGlobalIPv6Address()
+    proxy_port = 6080
+    vnc_ip     = self.getLocalIPv4Address()
+    vnc_port   = 5901
+
+    for tap_interface, dummy in self.parameter_dict['ip_list']:
       # Get an ip associated to a tap interface
-      if tap:
+      if tap_interface:
         connection_found = True
     if not connection_found:
       raise NotImplementedError("Do not support ip without tap interface")
 
     # Disk path
-    disk_path = os.path.join(self.data_root_directory, 'virtual.qcow2')
+    disk_path   = os.path.join(self.data_root_directory, 'virtual.qcow2')
     socket_path = os.path.join(self.var_directory, 'qmp_socket')
     # XXX Weak password
-    vnc_passwd = binascii.hexlify(os.urandom(4))
+    ##XXX -Vivien: add an option to generate one password for all instances and/or to input it yourself
+    vnc_passwd  = binascii.hexlify(os.urandom(4))
 
-    #XXX pid_file path, database_path and xml path
+    #XXX pid_file path, database_path, path to python binary and xml path
     pid_file_path = os.path.join(self.run_directory, 'pid_file')
     database_path = os.path.join(self.data_root_directory, 'slapmonitor_database')
+    python_path   = sys.executable
     #xml_path = os.path.join(self.var_directory, 'slapreport.xml' )
 
     # Create disk if needed
@@ -66,77 +72,57 @@ class Recipe(BaseSlapRecipe):
           int(self.options['disk_size']))], shell=True)
       if retcode != 0:
         raise OSError, "Disk creation failed!"
-
-    # Instanciate KVM
-    kvm_config = {}
-    # Options nbd_ip and nbd_port are provided by slapos master
-    kvm_config.update(self.options)
-    #raise NotImplementedError("%s" % self.parameter_dict)
-    kvm_config['vnc_ip'] = ip
-    kvm_config['tap_interface'] = tap
-    kvm_config['nbd_ip'] = self.parameter_dict['nbd_ip']
-    kvm_config['nbd_port'] = self.parameter_dict['nbd_port']
-    #XXX
-    kvm_config['pid_file'] = pid_file_path 
-    kvm_config['image'] = disk_path
-    # First octet has to represent a locally administered address
-    octet_list = [254] + [random.randint(0x00, 0xff) for x in range(5)]
-    kvm_config['mac_address'] = ':'.join(['%02x' % x for x in octet_list])
-    kvm_config['qmp_socket'] = socket_path
-    kvm_config['hostname'] = "slaposkvm"
-
-    kvm_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kvm_run.in'))
-    kvm_runner_path = self.createRunningWrapper("kvm",
-          self.substituteTemplate(kvm_wrapper_template_location, kvm_config))
-
-
-    # Instanciate KVM controller
-    controller_config = {}
-    # Options nbd_ip and nbd_port are provided by slapos master
-    controller_config.update(self.options)
-    controller_config['qmp_socket'] = socket_path
-    controller_config['vnc_passwd'] = vnc_passwd
-    controller_config['python_path'] = sys.executable
-
-    controller_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kvm_controller_run.in'))
-    controller_runner_path = self.createRunningWrapper("kvm_controller",
-          self.substituteTemplate(controller_wrapper_template_location, controller_config))
-
-    #XXX Instanciate Slapmonitor
-    slapmonitor_config={}
-    slapmonitor_config.update(self.options)
-    slapmonitor_config['database_path'] = database_path 
-    slapmonitor_config['pid_file'] = pid_file_path
-    slapmonitor_config['python_path'] = sys.executable
-    slapmonitor_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'slapmonitor_run.in'))
-    slapmonitor_runner_path = self.createRunningWrapper("slapmonitor",
-          self.substituteTemplate(slapmonitor_wrapper_template_location, slapmonitor_config))
-
-
-    #XXX Instanciate Slapreport
-    slapreport_config={}
-    slapreport_config.update(self.options)
-    slapreport_config['database_path'] = database_path 
-    slapreport_config['python_path'] = sys.executable
-    slapreport_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'slapreport_run.in'))
-    slapreport_runner_path = self.createReportRunningWrapper(self.substituteTemplate(
-                      slapreport_wrapper_template_location, slapreport_config))
     
+    # Options nbd_ip and nbd_port are provided by slapos master
+    nbd_ip   = self.parameter_dict['nbd_ip']
+    nbd_port = self.parameter_dict['nbd_port']
 
+    # First octet has to represent a locally administered address
+    octet_list  = [254] + [random.randint(0x00, 0xff) for x in range(5)]
+    mac_address = ':'.join(['%02x' % x for x in octet_list])
 
+    hostname = "slaposkvm"
+
+    #raise NotImplementedError("%s" % self.parameter_dict)
 
     self.computer_partition.setConnectionDict(dict(
-      vnc_connection_string="vnc://[%s]:1" % ip,
-      vnc_password=vnc_passwd,
+      vnc_connection_string = "vnc://[%s]:1" % vnc_ip,
+      vnc_password          = vnc_passwd,
     ))
 
-    return [kvm_runner_path, controller_runner_path]
+    # Instanciate KVM
+    kvm_runner_path            = self.instanciate("kvm", [vnc_ip, tap_interface, nbd_ip, nbd_port, pid_file_path, disk_path, mac_address, socket_path, hostname])
+    # Instanciate KVM controller
+    kvm_controller_runner_path = self.instanciate("kvm_controller", [socket_path, vnc_passwd, python_path])
+    #XXX Instanciate Slapmonitor
+    ##slapmonitor_runner_path    = self.instanciate("slapmonitor", [database_path, pid_file_path, python_path])
+    #XXX Instanciate Slapreport
+    ##slapreport_runner_path     = self.instanciate("slapreport", [database_path, python_path])
+    #XXX Instanciate Websockify
+    websockify_runner_path     = self.instanciate("websockify", [python_path, vnc_ip, proxy_ip, vnc_port, proxy_port])
 
+
+    return [kvm_runner_path, kvm_controller_runner_path, websockify_runner_path]
+  
+   def instanciate(self, name, list):
+    """
+    Define the path to the wrapper of the thing you are instanciating
+
+    Parameters : name of what you are instanciating, list of arguments for the configuration dictionnary of the wrapper
+    
+    Returns    : path to the running wrapper
+    """
+    name_config = {}
+    name_config.update(self.options)
+
+    for e in list:
+        name_config['i'] = i
+
+    name_wrapper_template_location = pkg_resources.resource_filename(          
+                                             __name__, os.path.join(          
+                                             'template', 'name_run.in'))       
+    
+    name_runner_path = self.createRunningWrapper(name,                        
+          self.substituteTemplate(name_wrapper_template_location, name_config))
+    
+    return name_runner_path
