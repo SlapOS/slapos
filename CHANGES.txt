@@ -1,4 +1,4 @@
-0.10 (unreleased)
+0.10 (2011-07-01)
 ================
 
  * Add PHPMyAdmin software release used in SlapOS tutorials
