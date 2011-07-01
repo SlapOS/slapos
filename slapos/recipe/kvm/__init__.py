@@ -30,33 +30,50 @@ from slapos.recipe.librecipe import BaseSlapRecipe
 import subprocess
 import binascii
 import random
-
+import zc.buildout
 import pkg_resources
 
 
 class Recipe(BaseSlapRecipe):
 
   def _install(self):
+    """
+    Set the connection dictionnary for the computer partition and create a list
+    of paths to the different wrappers
+
+    Parameters : none
+
+    Returns    : List path_list
+    """
     self.path_list = []
     
     kvm_conf = self.installKvm(vnc_ip = self.getLocalIPv4Address())
     
     vnc_port = 5900 + kvm_conf['vnc_display']
     
-    novnc_conf = self.installNovnc(source_ip = self.getGlobalIPv6Address(),
+    noVNC_conf = self.installNovnc(source_ip   = self.getGlobalIPv6Address(),
                                    source_port = 6080,
-                                   target_ip = kvm_conf['vnc_ip'],
-                                   target_port = vnc_port)
+                                   target_ip   = kvm_conf['vnc_ip'],
+                                   target_port = vnc_port,
+                                   python_path = kvm_conf['python_path'])
     
     self.linkBinary()
     self.computer_partition.setConnectionDict(dict(
-        vnc_connection_string = "vnc://[%s]:%s" % (vnc_port['vnc_ip'],
-                                                   vnc_port),
-        vnc_password = vnc_passwd,
-    ))
+        vnc_connection_string = "https://[%s]:%s" % (noVNC_conf['source_ip'],
+                                                     noVNC_conf['source_port'],
+                                                     )))
+    
     return self.path_list
 
   def installKvm(self, vnc_ip):
+    """
+    Create kvm configuration dictionnary and instanciate a wrapper for kvm and 
+    kvm controller 
+
+    Parameters : IP the vnc server is listening on
+
+    Returns    : Dictionnary kvm_conf
+    """
     kvm_conf = dict(vnc_ip = vnc_ip)
     
     connection_found = False
@@ -88,7 +105,7 @@ class Recipe(BaseSlapRecipe):
     # Create disk if needed
     if not os.path.exists(kvm_conf['disk_path']):
       retcode = subprocess.call(["%s create -f qcow2 %s %iG" % (
-          self.options['qemu_img_path'], disk_path,
+          self.options['qemu_img_path'], kvm_conf['disk_path'],
           int(self.options['disk_size']))], shell=True)
       if retcode != 0:
         raise OSError, "Disk creation failed!"
@@ -105,31 +122,51 @@ class Recipe(BaseSlapRecipe):
 
     # Instanciate KVM
 
-    kvm_runner_path = self.instanciate("kvm", kvm_conf)
+    kvm_runner_path = self.instanciate_wrapper("kvm", kvm_conf)
     self.path_list.append(kvm_runner_path)
     # Instanciate KVM controller
-    kvm_controller_runner_path = self.instanciate("kvm_controller", kvm_conf)
+    kvm_controller_runner_path = self.instanciate_wrapper("kvm_controller", 
+                                                          kvm_conf)
     self.path_list.append(kvm_controller_runner_path)
     # Instanciate Slapmonitor
-    ##slapmonitor_runner_path = self.instanciate("slapmonitor",
+    ##slapmonitor_runner_path = self.instanciate_wrapper("slapmonitor",
     #    [database_path, pid_file_path, python_path])
     # Instanciate Slapreport
-    ##slapreport_runner_path = self.instanciate("slapreport",
+    ##slapreport_runner_path = self.instanciate_wrapper("slapreport",
     #    [database_path, python_path])
     
     kvm_conf['vnc_display'] = 1
+
     return kvm_conf
 
-  def installNoVnc(self, source_ip, source_port, target_ip, target_port):
+  def installNoVnc(self, source_ip, source_port, target_ip, target_port, 
+                   python_path):
+    """
+    Create noVNC configuration dictionnary and instanciate Websockify proxy
+
+    Parameters : IP of the proxy, port on which is situated the proxy,
+                 IP of the vnc server, port on which is situated the vnc server,
+                 path to python binary
+
+    Returns    : nothing
+    """
+
+    noVNC_conf = {}
+    noVNC_conf.append(self.options['websockify_path'])
+    noVNC_conf.append(self.options['noVNC_location'])
+    noVNC_conf['source_ip']   = source_ip                                          
+    noVNC_conf['source_port'] = source_port
+    noVNC_conf['target_ip']   = target_ip
+    noVNC_conf['target_port'] = target_port
+    noVNC_conf['python_path'] = python_path
     # Instanciate Websockify
-    websockify_runner_path = self.instanciate("websockify",
-        [python_path, vnc_ip, proxy_ip, vnc_port, proxy_port])
+    websockify_runner_path = self.instanciate_wrapper("websockify",
+        noVNC_conf)
     self.path_list.append(websockify_runner_path)
-
-
   
-  
-  def instanciate_Wrapper(self, name, config_dictionnary):
+    return noVNC_conf
+
+  def instanciate_wrapper(self, name, config_dictionnary):
 
     """
     Define the path to the wrapper of the thing you are instanciating
@@ -143,14 +180,14 @@ class Recipe(BaseSlapRecipe):
     config_dictionnary.update(self.options)
 
     wrapper_template_location = pkg_resources.resource_filename(          
-                                             __name__, os.path.join(          
-                                             'template', 'name_run.in'))       
+                                             __name__, os.path.join(         
+                                             'template', 'name_run.in'))     
     
     runner_path = self.createRunningWrapper(name,                        
           self.substituteTemplate(wrapper_template_location, config_dictionnary))
     
 
-    return name_runner_path
+    return runner_path
 
   def linkBinary(self):
     """Links binaries to instance's bin directory for easier exposal"""
@@ -173,5 +210,3 @@ class Recipe(BaseSlapRecipe):
       os.symlink(target, link)
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
-
-    return runner_path
