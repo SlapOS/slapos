@@ -50,19 +50,32 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_packing_list_line = context\n
-software_instance = sale_packing_list_line.getAggregateValue(portal_type=\'Software Instance\')\n
-computer_partition = sale_packing_list_line.getAggregateValue(portal_type=[\'Computer Partition\', \'Slave Partition\'])\n
+            <value> <string>checkPermission = context.getPortalObject().portal_membership.checkPermission\n
+sale_packing_list_line = context\n
+instance_type_list = [\'Software Instance\', \'Slave Instance\']\n
+software_instance = sale_packing_list_line.getAggregateValue(portal_type=instance_type_list)\n
+computer_partition = sale_packing_list_line.getAggregateValue(portal_type=\'Computer Partition\')\n
 software_release = sale_packing_list_line.getAggregateValue(portal_type=\'Software Release\')\n
-slave_id_list = []\n
 ip_list = []\n
 if computer_partition.getPortalType() == \'Computer Partition\':\n
-  slave_id_list = [slave_partition.getReference() for slave_partition in \\\n
-     computer_partition.contentValues(portal_type=\'Slave Partition\') \\\n
-     if slave_partition.getSlapState() == \'busy\']\n
   for internet_protocol_address in computer_partition.contentValues(portal_type=\'Internet Protocol Address\'):\n
     ip_list.append((internet_protocol_address.getNetworkInterface(\'\'), internet_protocol_address.getIpAddress()))\n
 if software_instance is not None and computer_partition is not None and software_release is not None:\n
+  slave_instance_list = []\n
+  sale_packing_list_line_list = computer_partition.getAggregateRelatedValueList(portal_type="Sale Packing List Line")\n
+  for sale_packing_list_line in sale_packing_list_line_list:\n
+    if checkPermission("Access contents information", sale_packing_list_line):\n
+      instance = sale_packing_list_line.getAggregateValue(portal_type=instance_type_list)\n
+      if instance is None:\n
+        continue\n
+      elif instance.getPortalType() == "Slave Instance":\n
+        slave_instance_list.append(dict(slap_software_type=instance.getSourceReference(),\n
+                                        xml=instance.getTextContent(),\n
+                                        connection_xml=instance.getConnectionXml(),\n
+                                        ))\n
+      elif instance.getPortalType() == "Software Instance":\n
+        software_instance = instance\n
+\n
   return {\n
     \'xml\':software_instance.getTextContent(),\n
     \'connection_xml\':software_instance.getConnectionXml(),\n
@@ -71,7 +84,7 @@ if software_instance is not None and computer_partition is not None and software
     \'slap_software_type\': software_instance.getSourceReference(),\n
     \'slap_software_release_url\':software_release.getUrlString(),\n
     \'slap_server_url\':context.getPortalObject().portal_slap.absolute_url(),\n
-    \'slave_id_list\':slave_id_list, # XXX: Is it really ok to send non string in instance xml dict?\n
+    \'slave_instance_list\':slave_instance_list,\n
     \'ip_list\':ip_list,\n
   }\n
 return None\n
