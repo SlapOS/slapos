@@ -54,7 +54,7 @@ DEFAULT_INSTANCE_DICT_PARAMETER_LIST = [
     'slap_server_url',
     'slap_software_release_url',
     'slap_software_type',
-    'slave_id_list',
+    "slave_instance_list"
 ]
 
 
@@ -2871,7 +2871,6 @@ class TestVifibSlapWebService(testVifibMixin):
         'slap_software_release_url': software_release_uri,
         'slap_software_type': 'RootSoftwareInstance',
         'test_parameter': 'lala',
-        'slave_id_list': [],
         'ip_list': [],
     }
     self.assertSameDict(expected, result)
@@ -3570,7 +3569,6 @@ class TestVifibSlapWebService(testVifibMixin):
       ComputerSoftwareReleaseAvailable
       Tic
       SlapLogout
-      Logout
 
       LoginTestVifibCustomer
       PersonRequestSoftwareInstance
@@ -4458,8 +4456,58 @@ class TestVifibSlapWebService(testVifibMixin):
       RequestComputerPartitionNotFoundResponse \
       Tic \
       SlapLogout \
-      \
       '
+
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepCheckEmptySlaveInstanceListFromOneComputerPartition(self, sequence):
+    computer_guid = sequence["computer_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer = self.slap.registerComputer(computer_guid)
+    computer_partition = computer.getComputerPartitionList()[0]
+    self.assertEquals([],
+        computer_partition.getInstanceParameterDict()["slave_instance_list"])
+
+  def stepCheckSlaveInstanceListFromOneComputerPartition(self, sequence):
+    computer_guid = sequence["computer_reference"]
+    partition_id = sequence["computer_partition_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer_partition = self.slap.registerComputerPartition(computer_guid,
+        partition_id)
+    parameter_dict = computer_partition.getInstanceParameterDict()
+    self.assertEquals("RootSoftwareInstance",
+        parameter_dict["slap_software_type"])
+    slave_instance_list = parameter_dict["slave_instance_list"]
+    self.assertEquals(1, len(slave_instance_list))
+    slave_instance = slave_instance_list[0]
+    self.assertEquals("SlaveInstance", slave_instance["slap_software_type"])
+
+  def test_ComputerPartition_SlaveInstance_ParameterList(self):
+    """
+      Check that Computer Partition of user A is reinstanciated with new
+      parameters provided by user B. User B and Aget the right connection
+      parameter
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      SlapLoginCurrentComputer
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      Tic
+      SlapLogout
+      Tic
+      LoginAsCustomerA
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLoginCurrentComputer
+      CheckSlaveInstanceListFromOneComputerPartition
+      SlapLogout
+    """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
@@ -4468,6 +4516,8 @@ class TestVifibSlapWebService(testVifibMixin):
   #########################################
 
   def stepLoginAsCustomerA(self, sequence):
+    global REMOTE_USER
+    REMOTE_USER = "test_vifib_customer_a"
     self.login("test_vifib_customer_a")
 
   def test_Person_request_SlaveInstance_with_Different_User(self):
@@ -4487,7 +4537,7 @@ class TestVifibSlapWebService(testVifibMixin):
     SetSelectedComputerPartition
     SelectCurrentlyUsedSalePackingListUid
     Logout
-
+    SlapLoginCurrentComputer
     LoginDefaultUser
     CheckComputerPartitionSaleOrderAggregatedList
     Logout
@@ -4574,7 +4624,7 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
     Tic
-    LoginTestVifibCustomer
+    
     PersonRequestSlaveInstance
     Tic
     Logout
