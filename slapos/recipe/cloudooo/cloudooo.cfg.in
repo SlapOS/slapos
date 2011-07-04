@@ -41,13 +41,15 @@ env-PATH = ${PATH}
 # It is used to select the handler that will be used in conversion.
 # Priority matters, first match take precedence on next lines.
 mimetype_registry =
+  application/pdf text/* pdf
   application/pdf * ooo
   video/* * ffmpeg
   audio/* * ffmpeg
   application/x-shockwave-flash * ffmpeg
   application/ogg * ffmpeg
   application/ogv * ffmpeg
-  image/* * ooo
+  image/png * ooo
+  image/* image/* imagemagick
   text/* * ooo
   application/zip * ooo
   application/msword * ooo
