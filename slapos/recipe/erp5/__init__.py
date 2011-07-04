@@ -328,6 +328,12 @@ class Recipe(BaseSlapRecipe):
     # workaround wrong assumptions of ERP5Type.tests.runUnitTest about
     # directory existence
     unit_test = os.path.join(testinstance, 'unit_test')
+    connection_string_list = []
+    for test_database, test_user, test_password in \
+          mysql_conf['mysql_parallel_test_dict'][-4:]:
+      connection_string_list.append(
+          '%s@%s:%s %s %s' % (test_database, mysql_conf['ip'],
+                            mysql_conf['tcp_port'], test_user, test_password))
     if not os.path.isdir(unit_test):
       os.mkdir(unit_test)
     runUnitTest = zc.buildout.easy_install.scripts([
@@ -341,6 +347,7 @@ class Recipe(BaseSlapRecipe):
           '--erp5_sql_connection_string', '%(mysql_test_database)s@%'
           '(ip)s:%(tcp_port)s %(mysql_test_user)s '
           '%(mysql_test_password)s' % mysql_conf,
+          '--extra_sql_connection_string_list',','.join(connection_string_list),
           '--conversion_server_hostname=%(conversion_server_ip)s' % \
                                                          conversion_server_conf,
           '--conversion_server_port=%(conversion_server_port)s' % \
