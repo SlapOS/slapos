@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.8-dev'
+version = '0.11dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -49,8 +49,13 @@ setup(name=name,
           'libcloud = slapos.recipe.libcloud:Recipe',
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
           'memcached = slapos.recipe.memcached:Recipe',
+          'mysql = slapos.recipe.mysql:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'nosqltestbed = slapos.recipe.nosqltestbed:NoSQLTestBed',
+          'osoeslaptraining = slapos.recipe.osoeslaptraining:Request',
+          'osoeslaptraining.request = slapos.recipe.osoeslaptraining:Request',
+          'osoeslaptraining.static = slapos.recipe.osoeslaptraining:Static',
+          'osoeslaptraining.simple = slapos.recipe.osoeslaptraining:Simple',
           'proactive = slapos.recipe.proactive:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
           'siptester = slapos.recipe.siptester:SipTesterRecipe',
