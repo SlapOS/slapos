@@ -344,14 +344,14 @@ class Recipe(slapos.recipe.erp5.Recipe):
     self.path_list.append(self.killpidfromfile)
     self.linkBinary()
     self.installBT5Repo()
-    if self.parameter_dict.get('development', 'false').lower() == 'true':
-      self.development = True
-      return self.installDevelopmentEnvironment()
     if self.parameter_dict.get('production_mysql', 'false').lower() == 'true':
       self.development = False
       return self.installProductionMysql()
     if self.parameter_dict.get('production_application', 'false').lower() == 'true':
       self.development = False
       return self.installProductionApplication()
+    if self.parameter_dict.get('development', 'true').lower() == 'true':
+      self.development = True
+      return self.installDevelopmentEnvironment()
 
     raise NotImplementedError('Flavour of instance have to be given.')
