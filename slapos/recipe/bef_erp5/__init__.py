@@ -280,6 +280,8 @@ class Recipe(slapos.recipe.erp5.Recipe):
     user, password = self.installERP5()
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
         memcached_conf, kumo_conf)
+    self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
+                           memcached_conf, kumo_conf)
     ip = self.getLocalIPv4Address()
     zope_port = '18080'
     zodb_dir = os.path.join(self.data_root_directory, 'zodb')
