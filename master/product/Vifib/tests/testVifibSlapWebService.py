@@ -4643,7 +4643,7 @@ class TestVifibSlapWebService(testVifibMixin):
     self.failIfUserCanViewDocument(username, software_instance)
     self.login(username)
 
-  def test_SlaveInstance_Customer_Permission(self):
+  def test_SlaveInstance_check_permission_with_different_customer(self):
     """
       Check that one Customer A can not view the Slave Instance of a Customer B
     """
@@ -4672,7 +4672,7 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_SlaveInstance_Information_in_getInstanceParameterDict(self):
+  def test_SlaveInstance_Information_with_getInstanceParameterDict(self):
     """
       Check that Computer Partition of user A is reinstanciated with new
       parameters provided by user B. User B and Aget the right connection
