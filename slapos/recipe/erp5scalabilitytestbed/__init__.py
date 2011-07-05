@@ -69,6 +69,8 @@ class Recipe(BaseSlapRecipe):
     connection['repeat'] = config['repeat']
     connection['nb_users'] = config['nb_users']
     connection['benchmark_suites'] = config['benchmark_suites']
+    connection['erp5_publish_url'] = config.get('erp5_publish_url', '')
+    connection['erp5_publish_project'] = config.get('erp5_publish_project', '')
 
     self.computer_partition.setConnectionDict(connection)
 
