@@ -116,7 +116,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
   def installProductionMysql(self):
     mysql_conf = self.installMysqlServer(self.getGlobalIPv6Address(), 45678,
         template_filename=pkg_resources.resource_filename(__name__,
-          'template/my.cnf.in'), parallel_test_database_amount=0,
+          'template/my.cnf.in'), parallel_test_database_amount=1,
           mysql_conf=dict(innodb_buffer_pool_size='10G'), with_backup=False)
     self.installMysqldumpBackup()
     self.setConnectionDict(dict(
@@ -273,7 +273,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
         self.getLocalIPv4Address(), 23000, 23060)
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678,
         template_filename=pkg_resources.resource_filename(__name__,
-          'template/my.cnf.in'), parallel_test_database_amount=0,
+          'template/my.cnf.in'), parallel_test_database_amount=10,
           mysql_conf=dict(innodb_buffer_pool_size='1G'), with_backup=False)
     self.installMysqldumpBackup()
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
