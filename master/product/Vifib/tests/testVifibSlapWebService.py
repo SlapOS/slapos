@@ -4641,6 +4641,7 @@ class TestVifibSlapWebService(testVifibMixin):
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=software_instance_uid)
     self.failIfUserCanViewDocument(username, software_instance)
+    self.failIfUserCanAccessDocument(username, software_instance)
     self.login(username)
 
   def test_SlaveInstance_check_permission_with_different_customer(self):
