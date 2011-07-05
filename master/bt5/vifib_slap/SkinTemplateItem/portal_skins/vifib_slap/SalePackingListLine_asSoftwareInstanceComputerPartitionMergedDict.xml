@@ -64,18 +64,16 @@ if software_instance is not None and computer_partition is not None and software
   slave_instance_list = []\n
   sale_packing_list_line_list = computer_partition.getAggregateRelatedValueList(portal_type="Sale Packing List Line")\n
   for sale_packing_list_line in sale_packing_list_line_list:\n
-    if checkPermission("Access contents information", sale_packing_list_line):\n
-      instance = sale_packing_list_line.getAggregateValue(portal_type=instance_type_list)\n
-      if instance is None:\n
-        continue\n
-      elif instance.getPortalType() == "Slave Instance":\n
-        slave_instance_list.append(dict(slap_software_type=instance.getSourceReference(),\n
-                                        xml=instance.getTextContent(),\n
-                                        connection_xml=instance.getConnectionXml(),\n
-                                        ))\n
-      elif instance.getPortalType() == "Software Instance":\n
-        software_instance = instance\n
-\n
+    instance = sale_packing_list_line.getAggregateValue(portal_type=instance_type_list)\n
+    if instance is None:\n
+      continue\n
+    elif instance.getPortalType() == "Slave Instance":\n
+      slave_instance_list.append(dict(slap_software_type=instance.getSourceReference(),\n
+                                      xml=instance.getTextContent(),\n
+                                      connection_xml=instance.getConnectionXml(),\n
+                                     ))\n
+    elif instance.getPortalType() == "Software Instance":\n
+      software_instance = instance\n
   return {\n
     \'xml\':software_instance.getTextContent(),\n
     \'connection_xml\':software_instance.getConnectionXml(),\n
@@ -87,6 +85,7 @@ if software_instance is not None and computer_partition is not None and software
     \'slave_instance_list\':slave_instance_list,\n
     \'ip_list\':ip_list,\n
   }\n
+\n
 return None\n
 </string> </value>
         </item>
