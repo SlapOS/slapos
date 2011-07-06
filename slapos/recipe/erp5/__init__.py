@@ -142,6 +142,7 @@ class Recipe(BaseSlapRecipe):
     zeo_conf = self.installZeo(ip)
     tidstorage_config = dict(host=ip, port='6001')
 
+    # XXX How to define good values for this?
     mount_point = '/'
     check_path = '/erp5/account_module'
 
