@@ -28,9 +28,6 @@ plugin-load = ha_innodb_plugin.so
 #innodb_log_file_size = 256M
 #innodb_log_buffer_size = 8M
 
-# very important to allow parallel indexing
-innodb_locks_unsafe_for_binlog = 1
-
 # Some dangerous settings you may want to uncomment if you only want
 # performance or less disk access. Useful for unit tests.
 #innodb_flush_log_at_trx_commit = 0
