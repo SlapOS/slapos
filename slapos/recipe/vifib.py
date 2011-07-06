@@ -175,6 +175,12 @@ SSLCARevocationPath %(ca_crl)s"""
     self.installTidStorage(tidstorage_config['host'], tidstorage_config['port'],
         known_tid_storage_identifier_dict, 'http://'+login_haproxy)
     self.linkBinary()
+
+    # Connect direct to Zope to create the instance.
+    self.installERP5Site(user, password, service_url_list[-1], mysql_conf,
+             conversion_server_conf, memcached_conf, kumo_conf,
+             self.site_id, self.default_bt5_list)
+
     self.setConnectionDict(dict(
       front_end_url=apache_frontend_login,
       site_url=apache_login,
@@ -230,6 +236,10 @@ SSLCARevocationPath %(ca_crl)s"""
     self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
                            memcached_conf, kumo_conf)
     self.linkBinary()
+    self.installERP5Site(user, password, zope_access, mysql_conf,
+             conversion_server_conf, memcached_conf, kumo_conf,
+             self.site_id, self.default_bt5_list)
+
     self.setConnectionDict(dict(
       development_zope='http://%s:%s/' % (ip, zope_port),
       site_user=user,
