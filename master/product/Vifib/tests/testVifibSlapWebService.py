@@ -4614,7 +4614,6 @@ class TestVifibSlapWebService(testVifibMixin):
      available slot
     """
 
-  @skip("Not Finished yet")
   def test_request_destroy_SlaveInstance(self):
     """
       Check that the Slave Instance will be destroyed correctly
@@ -4630,6 +4629,10 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginTestVifibCustomer
       RequestSoftwareInstanceDestroy
       Tic
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
