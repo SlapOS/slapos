@@ -145,10 +145,6 @@ class SlapTool(BaseTool):
                                           portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
         self._convertToSlapPartition(computer_partition_document, computer_id))
-      for slave_partition_document in computer_partition_document\
-        .contentValues(portal_type='Slave Partition'):
-        slap_computer._computer_partition_list.append(
-          self._convertToSlapPartition(slave_partition_document, computer_id))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
