@@ -41,6 +41,9 @@ REQUIRED_RULE_REFERENCE_LIST = [
   'default_order_rule',
 ]
 
+REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST = [
+  'crendential_request-confirmation-without-password',
+]
 
 class testVifibMixin(ERP5TypeTestCase):
   """
@@ -103,7 +106,9 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_web',
       'vifib_open_trade',
       'vifib_l10n_fr',
-      'vifib_datas',
+      'vifib_data',
+      'vifib_data_category',
+      'vifib_data_web',
       'vifib_erp5',
     ]
     return result
@@ -180,8 +185,26 @@ class testVifibMixin(ERP5TypeTestCase):
     """Configures and enables default system preference"""
     default_system_preference = self.portal.portal_preferences\
         .restrictedTraverse(self.getDefaultSitePreferenceId())
+    default_system_preference.edit(
+      preferred_credential_recovery_automatic_approval=1,
+      preferred_credential_request_automatic_approval=1,
+      preferred_person_credential_update_automatic_approval=1,
+      preferred_subscription_assignment_category=['function/customer',
+        'role/internal'],
+    )
     if default_system_preference.getPreferenceState() == 'disabled':
       default_system_preference.enable()
+
+  def setupNotificationModule(self):
+    module = self.portal.notification_message_module
+    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
+
+    for reference in REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST:
+      for message in module.searchFolder(portal_type='Notification Message',
+        reference=reference):
+        message = message.getObject()
+        if isTransitionPossible(message, 'validate'):
+          message.validate()
 
   def setupRuleTool(self):
     """Validates newest version of each rule from REQUIRED_RULE_REFERENCE_LIST"""
@@ -252,6 +275,7 @@ class testVifibMixin(ERP5TypeTestCase):
     self.setPreference()
     self.setSystemPreference()
     self.setupRuleTool()
+    self.setupNotificationModule()
     self.openAssignments()
     transaction.commit()
     self.tic()

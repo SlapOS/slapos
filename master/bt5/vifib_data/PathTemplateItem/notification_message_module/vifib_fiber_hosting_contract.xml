@@ -1,0 +1,221 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Notification Message" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Delete_objects_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>vifib.fiber-hosting.contract</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value> <string>Contrat de dépôt pré-rempli avec les informations fournis par le client</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>vifib_fiber_hosting_contract</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value> <string>fr</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Notification Message</string> </value>
+        </item>
+        <item>
+            <key> <string>text_content</string> </key>
+            <value> <string>Contrat de dépôt\r\n
+ENTRE\r\n
+\r\n
+La société VIFIB SARL au capital de 1.000 euros, représentée par Monsieur Jean- Paul Smets.\r\n
+\r\n
+Ci-après dénommée le Déposant,\r\n
+ET\r\n
+\r\n
+${gender} ${customer_name}\r\n
+Né le ${birthday} à ${birthplace}\r\n
+Demeurant\r\n
+${street}\r\n
+${zip_code} ${city}\r\n
+Ci-après dénommée le Gardien,\r\n
+\r\n
+ \r\n
+Préambule\r\n
+\r\n
+VIFIB a mis au point une nouvelle méthode de stockage des données des entreprises afin d’assurer une conservation optimale et sécurisée de ces dernières. Ainsi, elle propose d’assurer la conservation de ces données par des particuliers en échange de la prise en charge de leur abonnement Internet.\r\n
+Glossaire\r\n
+\r\n
+Le Bien désigne un ordinateur détaillé en annexe 1 et connecté au réseau de manière permanente\r\n
+\r\n
+Le Réseau doit s’entendre comme le flux d’information géré par le Déposant et dont l’accès n’est possible que via une connexion à internet.\r\n
+\r\n
+L’Abonnement est une offre Internet standard de type « triple play » comprenant une offre Internet, de téléphonie et de télévision hors abonnement pris en supplément à des chaînes télévisuelles.\r\n
+\r\n
+Ceci étant exposé, il a été convenu ce qui suit :\r\n
+Objet\r\n
+\r\n
+Ce contrat a pour objet de régir la remise du Bien ainsi que les obligations en découlant.\r\n
+\r\n
+Lors de la conclusion du présent, le Gardien remettra un justificatif d’identité, une photocopie du contrat d’assurance souscrit afin de garantir la protection du bien, une attestation de domicile ainsi qu’un relevé d’identité bancaire au Déposant.\r\n
+Remise du bien\r\n
+\r\n
+Le Bien sera remis et installé par le Déposant au domicile du Gardien. Au préalable, le Déposant prendra contact avec le Gardien afin de fixer le moment de l’installation, ce rendez vous sera fixé dans un délai maximum de 10 jours ouvrables postérieurement à la signature du contrat. Le Gardien et le Déposant s’accorderont sur le lieu où le bien sera installé. Lors de l’installation, le Déposant délivra un bon de conformité au Gardien reprenant les éléments présents lors de la livraison et l’état de ces derniers.\r\n
+\r\n
+Le Bien ne pourra faire l’objet d’aucun déplacement sans l’autorisation au préalable du Déposant. Le déplacement sera effectué par le Déposant.\r\n
+\r\n
+Le Gardien préviendra le plus tôt possible le Déposant en cas de déménagement.\r\n
+\r\n
+Le Bien ne pourra faire l’objet d’aucune modification ou d’aucun aménagement. Il devra être conservé en l’état jusqu’à la restitution.\r\n
+Obligation du Gardien\r\n
+\r\n
+Le Gardien s’engage à conserver à son domicile le Bien connecté au Réseau 24h sur 24, 7 jours sur 7 sans utiliser le bien. Le Gardien s’interdit expressément d’accéder aux informations contenues dans le Bien.\r\n
+Obligation du Déposant\r\n
+\r\n
+En contrepartie, le Déposant s’engage à prendre en charge le montant de l’Abonnement Internet du Gardien durant la durée du contrat. Le remboursement s’effectuera sur justificatif sous un délai de 10 jours sur le compte bancaire de Gardien.\r\n
+\r\n
+En cas de déconnexion due à une absence d’alimentation électrique, les pénalités suivantes s’appliqueront :\r\n
+\r\n
+    * 25% du montant de l’Abonnement non remboursé pour le mois en cours lors du la première cessation d’alimentation\r\n
+    * 50% du montant de l’Abonnement non remboursé pour le mois en cours lors du la deuxième cessation d’alimentation\r\n
+    * 100% du montant de l’Abonnement non remboursé pour le mois en cours lors du la troisième cessation d’alimentation\r\n
+\r\n
+Frais\r\n
+\r\n
+Le Gardien reste tenu des frais de fonctionnement du Bien et notamment de coût de consommation électrique.\r\n
+Durée\r\n
+\r\n
+Le contrat prendra effet à la remise du Bien pour une durée indéterminée.\r\n
+\r\n
+Chaque partie pourra dénoncer le contrat chaque fin de mois en respectant un préavis de deux mois. Le préavis sera notifié par lettre avec accusé de réception à l’autre partie.\r\n
+Assurance et risque\r\n
+\r\n
+Le Gardien souscrira une assurance garantissant sa responsabilité envers le Déposant notamment pour vol, perte, incendie, détérioration à hauteur de 15 000 euros.\r\n
+\r\n
+En cas de vol, perte, incendie ou détérioration le Gardien sera responsable de plein droit sauf force majeur. En cas de vol ou tentative de vol le Gardien préviendra la police et déposera plainte, dans les 24 heures suivant le moment où il en a eu connaissance. Il préviendra le Déposant dans le même délai.\r\n
+\r\n
+Dans tous les cas de non assurance, le Gardien s’engage à régler le matériel sinistré, qu’elle qu’en soit la cause sur la base de sa valeur a neuf. La valeur neuve du Bien sera précisée lors de la remise.\r\n
+\r\n
+Le Déposant ne pourra être tenu responsable en cas d’incendie du Bien s’étant propagé en partie ou en totalité au domicile du Gardien et à celui de ses voisins.\r\n
+Entretien /Réparation\r\n
+\r\n
+Le Gardien préviendra le Déposant par voie électronique ou téléphonique au plus vite en cas d’anomalie, de panne constatée sur le Bien ou sur son fonctionnement.\r\n
+\r\n
+Le Gardien s’engage à faciliter l’accès du Déposant au Bien afin de lui permettre d’effectuer les entretiens et les réparations nécessaires. Le Déposant s’engage à ne pas abuser de ce droit et à effectuer ses déplacements à des heures décentes.\r\n
+Restitution\r\n
+\r\n
+A la suite de la réalisation du préavis, le Gardien restituera le bien dans un état identique à celui lors de la remise. Dans un délai de 5 jours ouvrables à compter du terme du contrat, le Déposant enlèvera le Bien après avoir préalablement convenu d’une date avec le Gardien.\r\n
+\r\n
+En cas de non restitution, le Gardien sera tenu d’une pénalité d’un montant de 3 000 euros.\r\n
+Résiliation\r\n
+\r\n
+En cas de non respect d’une des quelconques obligations du contrat par l’une ou par l’autre des parties, le contrat sera résilié à l’expiration d’un délai de 8 jours ouvrables, à compter de la réception par la partie défaillante d’une lettre recommandée avec accusé de réception, valant mise en demeure restée sans effet.\r\n
+\r\n
+Les causes suivantes donneront lieu à résiliation immédiate du contrat :La mise en curatelle, la mise sous tutelle, déménagement, interruption de connexion du fait du Gardien ou encore le décès du Gardien.\r\n
+\r\n
+En cas de résolution, le Déposant ne prendra pas en charge l’Abonnement du mois en cours à la date de la résolution.\r\n
+\r\n
+Le Déposant procédera immédiatement au retrait du Bien du domicile du déposant.\r\n
+Confidentialité\r\n
+\r\n
+Les Parties s’engage à garder la présente convention strictement confidentielle, tant pendant l’exécution de la présente convention qu’après son expiration ou sa résiliation.\r\n
+\r\n
+Le Gardien s’engage à ce que les informations contenues par le Bien ne soient pas divulguées à un tiers et à ne pas prendre connaissance des informations contenues par le Bien.\r\n
+\r\n
+Toute infraction constatée aux présentes obligations de confidentialité donnera lieu à l’application d’une pénalité forfaitaire de 15 000 euros, sans préjudice pour la partie victime de la divulgation ou de l’utilisation d’une information confidentielle d’obtenir réparation de son préjudice si celui-ci est d’un montant supérieur.\r\n
+Propriété\r\n
+\r\n
+Le Déposant reste propriétaire du Bien. Les créanciers du Gardien ne disposent d’aucun droit sur le Bien.\r\n
+Litige\r\n
+\r\n
+Le présent contrat sera soumis au droit français.\r\n
+\r\n
+Tout différend portant sur la validité, l’interprétation ou l’exécution sera porté devant le Tribunal de Grande instance du domicile du Gardien.\r\n
+Responsabilité\r\n
+\r\n
+Le Gardien est considéré comme hébergeur au sens de la loi de 2004-575 et est irresponsable quant au contenu des informations dont il n’a pas connaissance figurant dans le Bien.\r\n
+\r\n
+Fait en deux exemplaires.\r\n
+\r\n
+A\r\n
+\r\n
+Le\r\n
+\r\n
+Pour la société VIFIB,                                                                       Pour Mme et Monsieur,\r\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>text_content_substitution_mapping_method_id</string> </key>
+            <value> <string>WebPage_getSubstitutionMappingDictFromFreeFiberRequest</string> </value>
+        </item>
+        <item>
+            <key> <string>text_format</string> </key>
+            <value> <string>text/plain</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Contrat de dépôt</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

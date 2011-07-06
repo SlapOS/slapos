@@ -141,7 +141,7 @@ class Supply(SlapDocument):
 
   def supply(self, software_release, computer_guid=None):
     self._connection_helper.POST('/supplySupply', {
-      'url': software_release, 
+      'url': software_release,
       'computer_id': computer_guid})
 
 class OpenOrder(SlapDocument):
@@ -160,7 +160,7 @@ class OpenOrder(SlapDocument):
         'partition_reference': partition_reference,
         'partition_parameter_xml': xml_marshaller.dumps(partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
-        'state': state,
+        'state': xml_marshaller.dumps(state),
       }
     if software_type is not None:
       request_dict['software_type'] = software_type

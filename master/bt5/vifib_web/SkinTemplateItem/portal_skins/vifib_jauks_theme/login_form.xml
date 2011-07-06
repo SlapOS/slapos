@@ -90,11 +90,32 @@
             </div>\n
             <div class="field forgotten_password">\n
               <label>&nbsp;</label>\n
-              <div class="input">\n
-                <a tal:attributes="href string:${here/portal_url}/portal_password/PasswordTool_viewEmailPassword"\n
-                   i18n:translate="" i18n:domain="ui">I forgot my password!</a>\n
-              </div>\n
+<div class="field nolabel validate widthAuto" title="">\n
+        \n
+          <label>\n
+            Join\n
+            \n
+            \n
+          </label>\n
+          <div class="input"><input class="nolabel validate widthAuto" src="" name="ERP5Site_viewCredentialRequestForm:method" value="Join" type="submit"  /></div>\n
+          \n
+          \n
+        \n
+      </div>\n
             </div>\n
+      <div class="field nolabel cancel widthAuto" title="">\n
+\n
+        \n
+          <label>\n
+            Lost password?\n
+            \n
+            \n
+          </label>\n
+          <div class="input"><input class="nolabel cancel widthAuto" src="" name="ERP5Site_viewCredentialRecoveryLoginDialog:method" value="Lost password?" type="submit"  /></div>\n
+          \n
+          \n
+        \n
+      </div>\n
           </fieldset>\n
           <script type="text/javascript">setFocus()</script>\n
           <p i18n:translate="" i18n:domain="ui">Having trouble logging in? Make sure to enable cookies in your web browser.</p>\n
@@ -104,8 +125,7 @@
       </tal:block>\n
     </tal:block>\n
   </tal:block>\n
-</tal:block>\n
-
+</tal:block>
 
 ]]></unicode> </value>
         </item>

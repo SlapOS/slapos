@@ -25,5 +25,143 @@
 #
 ##############################################################################
 
+import slapos.slap.slap
+from slapos.slap import ResourceNotReady
+
+import sys
+from optparse import OptionParser, Option
+import ConfigParser
+
+class Parser(OptionParser):
+  """
+  Parse all arguments.
+  """
+  def __init__(self, usage=None, version=None):
+    """
+    Initialize all options possibles.
+    """
+    OptionParser.__init__(self, usage=usage, version=version,
+                          option_list=[
+        Option("-u", "--master_url",
+               default=None,
+               action="store",
+               help="Url of SlapOS Master to use."),
+        Option("-k", "--key_file",
+              action="store",
+              help="SSL Authorisation key file."),
+        Option("-c", "--cert_file",
+            action="store",
+            help="SSL Authorisation certificate file.")
+    ])
+
+  def check_args(self):
+    """
+    Check arguments
+    """
+    (options, args) = self.parse_args()
+    if len(args) == 0:
+      self.error("Incorrect number of arguments")
+
+    return options, args
+
+class Config:
+  def setConfig(self, option_dict, configuration_file_path):
+    """
+    Set options given by parameters.
+    """
+    # Set options parameters
+    for option, value in option_dict.__dict__.items():
+      setattr(self, option, value)
+
+    # Load configuration file
+    configuration_parser = ConfigParser.SafeConfigParser()
+    configuration_parser.read(configuration_file_path)
+    # Merges the arguments and configuration
+    for section in ("slapconsole",):
+      configuration_dict = dict(configuration_parser.items(section))
+      for key in configuration_dict:
+        if not getattr(self, key, None):
+          setattr(self, key, configuration_dict[key])
+    configuration_dict = dict(configuration_parser.items('slapos'))
+    setattr(self, 'master_url', configuration_dict['master_url'])
+          
+    if not self.master_url:
+      raise ValueError('master_url is required.')
+
+def init(config):
+
+  """Initialize Slap instance, connect to server and create
+  aliases to common software releases"""
+  slap = slapos.slap.slap()
+  slap.initializeConnection(config.master_url,
+      key_file=config.key_file, cert_file=config.cert_file)
+  local = globals().copy()
+  local['slap'] = slap
+  # Create aliases as global variables
+  alias = config.alias.split('\n')
+  software_list = []
+  for software in alias:
+    if software is not '':
+      name, url = software.split(' ')
+      software_list.append(name)
+      local[name] = url
+  # Create global variable too see available aliases
+  local['software_list'] = software_list
+  # Create global shortcut functions to request instance and software
+  local['request'] = lambda software_release, reference: \
+        slap.registerOpenOrder().request(software_release, reference)
+  local['supply'] = lambda software_release, computer: \
+        slap.registerSupply().supply(software_release, computer)
+  return local
+
+def request():
+  """Ran when invoking slapos-request"""
+  # Parse arguments
+  usage = """usage: %s [options] CONFIGURATION_FILE SOFTWARE_INSTANCE INSTANCE_REFERENCE
+slapos-request allows you to request slapos instances.""" % sys.argv[0]
+  config = Config()
+  arguments = Parser(usage=usage).check_args()[1]
+  config.setConfig(*Parser(usage=usage).check_args())
+  
+  local = init(config)
+  
+  # Request instance
+  # XXX-Cedric : support things like : 
+  # --instance-type std --configuration-size 23 --computer-region europe/france
+  # XXX-Cedric : add support for xml_parameter
+  software_url = arguments[1]
+  partition_reference = arguments[2]
+  print("Requesting %s..." % software_url)
+  if software_url in local:
+    software_url = local[software_url]
+  try:
+    partition = local['slap'].registerOpenOrder().request(software_url,
+        partition_reference)
+    print("Instance requested.\nState is : %s.\nYou can "
+        "rerun to get up-to-date informations." % (
+        partition.getState()))
+    # XXX-Cedric : provide a way for user to fetch parameter, url, object, etc
+  except ResourceNotReady:
+    print("Instance requested. Master is provisionning it. Please rerun in a "
+    "couple of minutes to get connection informations")
+    exit(2)
+
 def run():
-  __import__("code").interact(banner="", local=globals())
+  """Ran when invoking slapconsole"""
+  # Parse arguments
+  usage = """usage: %s [options] CONFIGURATION_FILE
+slapconsole allows you interact with slap API. You can play with the global
+"slap" object and with the global "request" method.
+
+examples :
+  >>> # Request instance
+  >>> request(kvm, "myuniquekvm")
+  >>> # Request software installation on owned computer
+  >>> supply(kvm, "mycomputer")
+  >>> # Fetch instance informations on already launched instance
+  >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
+  config = Config()
+  config.setConfig(*Parser(usage=usage).check_args())
+  
+  local = init(config)
+  __import__("code").interact(banner="", local=local)

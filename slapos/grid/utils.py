@@ -228,14 +228,26 @@ def bootstrapBuildout(path, buildout=None,
   gid = stat_info.st_gid
 
   invocation_list = [sys.executable, '-S']
+  kw = dict()
   if buildout is not None:
     invocation_list.append(buildout)
+    invocation_list.extend(additional_buildout_parametr_list)
   else:
-    logger.warning('Using old style bootstrap of included bootstrap file. '
-      'Consider setting buildout binary location.')
-    invocation_list.append(pkg_resources.resource_filename(__name__,
-      'zc.buildout-bootstap.py'))
-  invocation_list.extend(additional_buildout_parametr_list)
+    try:
+      import zc.buildout
+    except ImportError:
+      logger.warning('Using old style bootstrap of included bootstrap file. '
+        'Consider setting buildout binary location.')
+      invocation_list.append(pkg_resources.resource_filename(__name__,
+        'zc.buildout-bootstap.py'))
+      invocation_list.extend(additional_buildout_parametr_list)
+    else:
+      # buildout is importable, so use this one
+      invocation_list.extend(["-c", "import sys ; sys.path=" + str(sys.path) +
+        " ; import zc.buildout.buildout ; sys.argv[1:1]=" + \
+        repr(additional_buildout_parametr_list + ['bootstrap']) + " ; "
+        "zc.buildout.buildout.main()"])
+
   if buildout is not None:
     invocation_list.append('bootstrap')
   try:
@@ -243,7 +255,6 @@ def bootstrapBuildout(path, buildout=None,
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))
     logger.debug('Invoking: %r in directory %r' % (' '.join(invocation_list),
       path))
-    kw = dict()
     if not console:
       kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,

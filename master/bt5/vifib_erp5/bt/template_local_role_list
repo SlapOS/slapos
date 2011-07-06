@@ -1,5 +1,6 @@
 computer_module
 computer_module/test_computer
+credential_update_module
 currency_module
 currency_module/EUR
 hosting_subscription_module

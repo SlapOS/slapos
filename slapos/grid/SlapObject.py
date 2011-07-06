@@ -29,7 +29,9 @@ import os
 import shutil
 import subprocess
 import pkg_resources
+import shutil
 import stat
+import tempfile
 from supervisor import xmlrpc
 import xmlrpclib
 import pwd
@@ -63,25 +65,30 @@ class Software(object):
     self.logger.info("Installing software release %s..." % self.url)
     if not os.path.isdir(self.software_path):
       os.mkdir(self.software_path)
+    extends_cache = tempfile.mkdtemp()
     if os.getuid() == 0:
       # In case when running as root copy ownership, to simplify logic
       root_stat_info = os.stat(self.software_root)
-      for path in [self.software_path]:
+      for path in [self.software_path, extends_cache]:
         path_stat_info = os.stat(path)
         if root_stat_info.st_uid != path_stat_info.st_uid or\
              root_stat_info.st_gid != path_stat_info.st_gid:
             os.chown(path, root_stat_info.st_uid,
                 root_stat_info.st_gid)
-    buildout_parameter_list = [
-      'buildout:directory=%s' % self.software_path,
-      '-c', self.url]
-    bootstrapBuildout(self.software_path, self.buildout,
-        additional_buildout_parametr_list=buildout_parameter_list,
-        console=self.console)
-    launchBuildout(self.software_path,
-                   os.path.join(self.software_path, 'bin', 'buildout'),
-                   additional_buildout_parametr_list=buildout_parameter_list,
-                   console=self.console)
+    try:
+      buildout_parameter_list = [
+        'buildout:extends-cache=%s' % extends_cache,
+        'buildout:directory=%s' % self.software_path,
+        '-c', self.url]
+      bootstrapBuildout(self.software_path, self.buildout,
+          additional_buildout_parametr_list=buildout_parameter_list,
+          console=self.console)
+      launchBuildout(self.software_path,
+                     os.path.join(self.software_path, 'bin', 'buildout'),
+                     additional_buildout_parametr_list=buildout_parameter_list,
+                     console=self.console)
+    finally:
+      shutil.rmtree(extends_cache)
 
   def remove(self):
     """Removes the part that was installed.

@@ -1,4 +1,34 @@
-0.4 (unreleased)
+0.9 (not yet released)
+================
+
+ * slapformat: Fix issue of bridge not connected with real interface on
+   Linux >= 2.6.39 [Arnaud Fontaine]
+ * slapconsole: Simplify usage and use configuration file. You can now 
+just run slapconsole and type things like "request(kvm, 'mykvm')".
+[Cedric de Saint Martin]
+
+0.8 (2011-06-27)
+================
+
+ * slapgrid: Bugfix for temporary extends cache permissions. [Łukasz Nowak]
+
+0.7 (2011-06-27)
+================
+
+ * slapgrid: Fallback to buildout in own search path. [Łukasz Nowak]
+
+0.6 (2011-06-27)
+================
+
+ * slap: Fix bug: state shall be XML encapsulated. [Łukasz Nowak]
+
+0.5 (2011-06-24)
+================
+
+ * slapgrid: Use temporary extends-cache directory in order to make faster
+   remote profile refresh. [Łukasz Nowak]
+
+0.4 (2011-06-24)
 ================
 
  * general: Polish requirement versions. [Arnaud Fontaine]

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.4-dev'
+version = '0.8'
 name = 'slapos.core'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -46,6 +46,7 @@ setup(name=name,
       entry_points={
         'console_scripts': [
           'slapconsole = slapos.console:run',
+          'slapos-request = slapos.console:request',
           'slapformat = slapos.format:main',
           'slapgrid = slapos.grid.slapgrid:run',
           'slapgrid-sr = slapos.grid.slapgrid:runSoftwareRelease',
