@@ -4614,7 +4614,53 @@ class TestVifibSlapWebService(testVifibMixin):
      available slot
     """
 
-  def test_request_destroy_SlaveInstance(self):
+  def test_SlaveInstance_request_start(self):
+    """
+      Check that the Slave Instance will be started correctly
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceStart
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_request_stop(self):
+    """
+      Check that the Slave Instance will be stopped correctly
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceStop
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_request_destroy(self):
     """
       Check that the Slave Instance will be destroyed correctly
     """
