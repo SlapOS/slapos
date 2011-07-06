@@ -31,6 +31,9 @@ import zc.buildout
 import sys
 
 class Recipe(slapos.recipe.erp5.Recipe):
+  
+  default_bt5_list = []
+
   def installKeyAuthorisationApache(self, ip, port, backend, key, certificate,
       ca_conf, key_auth_path='/erp5/portal_slap'):
     ssl_template = """SSLEngine on
@@ -260,6 +263,9 @@ SSLCARevocationPath %(ca_crl)s"""
         [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
     self.path_list.append(self.killpidfromfile)
+    if self.parameter_dict.get("flavour", "default") == 'configurator':
+      self.default_bt5_list = self.options.get("configurator_bt5_list", '').split()
+
     if self.parameter_dict.get('development', 'false').lower() == 'true':
       return self.installDevelopment()
     if self.parameter_dict.get('production', 'false').lower() == 'true':
