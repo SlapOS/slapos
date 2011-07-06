@@ -130,8 +130,12 @@ class Recipe(BaseSlapRecipe):
     thread_amount_per_zope = int(self.options.get(
                                 'cluster_zope_thread_amount', 1))
 
-    activity_node_amount = 2
-    user_node_amount = 2
+    activity_node_amount = int(self.options.get(
+                   "cluster_activity_node_amount", 2))
+
+    user_node_amount = int(self.options.get(
+                   "cluster_user_node_amount", 2))
+
     ip = self.getLocalIPv4Address()
     storage_dict = self._requestZeoFileStorage('Zeo Server 1', 'main')
 
