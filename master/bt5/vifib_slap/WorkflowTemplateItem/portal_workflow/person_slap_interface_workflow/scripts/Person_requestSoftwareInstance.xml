@@ -55,7 +55,6 @@
 from DateTime import DateTime\n
 person = state_change[\'object\']\n
 portal = person.getPortalObject()\n
-isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
 # Get required arguments\n
 kwargs = state_change.kwargs\n
 software_release_url_string = state_change.kwargs[\'software_release\']\n
@@ -115,9 +114,9 @@ if (request_software_instance is None):\n
       title=software_title,\n
       activate_kw={\'tag\': tag},\n
     )\n
-    if state == \'started\' and isTransitionPossible(request_software_instance, "start_requested"):\n
+    if state == \'started\':\n
       software_instance.startRequested()\n
-    elif state == \'stopped\' and isTransitionPossible(request_software_instance, "stop_requested"):\n
+    elif state == \'stopped\':\n
       software_instance.stopRequested()    \n
 \n
     software_release_document = context.portal_catalog.getResultValue(\n
@@ -184,10 +183,10 @@ else:\n
     sla_xml=sla_xml,\n
     activate_kw={\'tag\': tag},\n
   )\n
-  if state == \'started\' and isTransitionPossible(request_software_instance, "start_requested"):\n
+  if state == \'started\':\n
     request_software_instance.startRequested()\n
     request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
-  elif state == \'stopped\' and isTransitionPossible(request_software_instance, "stop_requested"):\n
+  elif state == \'stopped\':\n
     request_software_instance.stopRequested()\n
     request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
 
