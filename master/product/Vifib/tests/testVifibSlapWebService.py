@@ -2789,7 +2789,7 @@ class TestVifibSlapWebService(testVifibMixin):
         'slap_server_url': self.server_url,
         'slap_software_release_url': software_release_uri,
         'slap_software_type': 'RootSoftwareInstance',
-        'slave_id_list': [],
+        'slave_instance_list': [],
         'ip_list': [],
     }
     self.assertSameDict(expected, result)
@@ -4484,7 +4484,7 @@ class TestVifibSlapWebService(testVifibMixin):
     REMOTE_USER = "test_vifib_customer_a"
     self.login("test_vifib_customer_a")
 
-  def test_Slaveinstance_Person_request_with_Different_User(self):
+  def test_SlaveInstance_Person_request_with_Different_User(self):
     """
       Check that user B can declare a slot of slave instance in computer
       partition used by user A
