@@ -50,12 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>slave_instance = state_change[\'object\']\n
-service_relative_url = slave_instance.portal_preferences.\\\n
-                            getPreferredInstanceHostingResource()\n
-return context.SlaveInstance_getInstancePackingListLine(\n
-                    state_change, \n
-                    service_relative_url=service_relative_url)\n
+            <value> <string>packing_list_line = context.SlaveInstance_getInstanceHostingPackingListLine(state_change)\n
+packing_list = packing_list_line.getParentValue()\n
+packing_list.start()\n
 </string> </value>
         </item>
         <item>
@@ -64,7 +61,7 @@ return context.SlaveInstance_getInstancePackingListLine(\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SlaveInstance_getInstanceHostingPackingListLine</string> </value>
+            <value> <string>SlaveInstance_startComputerPartition</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -29,6 +29,10 @@
                 <string>request_start_computer_partition_action</string>
                 <string>request_stop_computer_partition</string>
                 <string>request_stop_computer_partition_action</string>
+                <string>start_computer_partition</string>
+                <string>start_computer_partition_installation</string>
+                <string>stop_computer_partition</string>
+                <string>stop_computer_partition_installation</string>
                 <string>stop_requested</string>
               </tuple>
             </value>
