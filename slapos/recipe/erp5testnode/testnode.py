@@ -26,6 +26,7 @@ def log(message):
   # Log to stdout, with a timestamp.
   print time.strftime('%Y/%m/%d %H:%M:%S'), message
 
+supervisord_pid_file = None
 process_group_pid_set = set()
 def sigterm_handler(signal, frame):
   for pgpid in process_group_pid_set:
@@ -62,7 +63,7 @@ def getInputOutputFileList(config, command_name):
 
 slapos_controler = None
 
-def killPreviousRun(process_group_pid_set, supervisord_pid_file):
+def killPreviousRun():
   for pgpid in process_group_pid_set:
     try:
       os.killpg(pgpid, signal.SIGTERM)
@@ -79,7 +80,8 @@ PROFILE_PATH_KEY = 'profile_path'
 def run(args):
   config = args[0]
   slapgrid = None
-  supervisord_pid_file = os.path.join(config['run_directory'],
+  global supervisord_pid_file
+  supervisord_pid_file = os.path.join(config['instance_root'], 'var', 'run',
     'supervisord.pid')
   subprocess.check_call([config['git_binary'],
                 "config", "--global", "http.sslVerify", "false"])
@@ -143,7 +145,7 @@ branch = %(branch)s
       remote_test_result_needs_cleanup = False
       # kill processes from previous loop if any
       try:
-        killPreviousRun(process_group_pid_set, supervisord_pid_file)
+        killPreviousRun()
         process_group_pid_set.clear()
         full_revision_list = []
         # Make sure we have local repository
@@ -268,4 +270,4 @@ branch = %(branch)s
     # groups working only in POSIX compilant systems
     # Exceptions are swallowed during cleanup phase
     log("going to kill %r" % (process_group_pid_set, ))
-    killPreviousRun(process_group_pid_set, supervisord_pid_file)
+    killPreviousRun()
