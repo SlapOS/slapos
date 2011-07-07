@@ -50,10 +50,10 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
+            <value> <string>slave_instance = state_change[\'object\']\n
 hosting_subscription_uid = state_change.kwargs[\'hosting_subscription_uid\']\n
-hosting_subscription = software_instance.portal_catalog.getResultValue(uid=hosting_subscription_uid)\n
-portal = software_instance.getPortalObject()\n
+hosting_subscription = slave_instance.portal_catalog.getResultValue(uid=hosting_subscription_uid)\n
+portal = slave_instance.getPortalObject()\n
 \n
 # Get services\n
 portal_preferences = portal.portal_preferences\n

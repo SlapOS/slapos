@@ -55,7 +55,7 @@
 from DateTime import DateTime\n
 import random\n
 \n
-software_instance = state_change[\'object\']\n
+slave_instance = state_change[\'object\']\n
 software_release_url_string = state_change.kwargs[\'software_release\']\n
 hosting_subscription_uid = state_change.kwargs[\'hosting_subscription_uid\']\n
 shared = state_change.kwargs[\'shared\']\n
@@ -64,9 +64,9 @@ tag = state_change.kwargs[\'tag\']\n
 filter_kw = state_change.kwargs["filter_kw"]\n
 \n
 # Assertion: No packing list line should be related to this software instance\n
-packing_list_line = software_instance.getAggregateRelatedValue(portal_type=\'Sale Packing List Line\')\n
+packing_list_line = slave_instance.getAggregateRelatedValue(portal_type=\'Sale Packing List Line\')\n
 if packing_list_line is not None:\n
-  raise ValueError("Software Instance %s is already associated to a packing list line" % software_instance.getRelativeurl())\n
+  raise ValueError("Software Instance %s is already associated to a packing list line" % slave_instance.getRelativeurl())\n
 \n
 # Find a free computer partition. This means:\n
 # Computer Partition which doesn\'t have non delivered sale packing list related\n
@@ -83,16 +83,16 @@ if "computer_guid" in filter_kw:\n
   query_kw["parent_reference"] = filter_kw["computer_guid"]\n
 \n
 # fetch at mot 50 random Computer Partitions, and check if they are ok\n
-isTransitionPossible = software_instance.getPortalObject().portal_workflow.isTransitionPossible\n
+isTransitionPossible = slave_instance.getPortalObject().portal_workflow.isTransitionPossible\n
 query_kw.update(free_for_request=1) # is free\n
-result_count = software_instance.portal_catalog.countResults(**query_kw)[0][0]\n
+result_count = slave_instance.portal_catalog.countResults(**query_kw)[0][0]\n
 offset = max(0, result_count-1)\n
 if offset >= SQL_WINDOW_SIZE:\n
   limit = (random.randint(0, offset), SQL_WINDOW_SIZE)\n
 else:\n
   limit = (0, SQL_WINDOW_SIZE)\n
 \n
-for computer_partition_candidate in software_instance.portal_catalog(\n
+for computer_partition_candidate in slave_instance.portal_catalog(\n
                                           limit=limit, **query_kw):\n
   computer_partition_candidate = computer_partition_candidate.getObject()\n
   # Check if the computer partition can be marked as busy (done by an interaction workflow on sale packing list level)\n
@@ -112,7 +112,7 @@ software_release_document = context.portal_catalog.getResultValue(\n
 # protect computer partition from being selected again\n
 portal = context.getPortalObject()\n
 \n
-hosting_subscription = software_instance.portal_catalog.getResultValue(uid=hosting_subscription_uid)\n
+hosting_subscription = slave_instance.portal_catalog.getResultValue(uid=hosting_subscription_uid)\n
 sale_packing_list_line = context.HostingSubscription_getInstancePackingListLine(state_change)\n
 base_sale_packing_list = sale_packing_list_line.getParentValue()\n
 # XXX: SlaveInstance_createSalePackingList shall be used to create new Sale Packing List\n
@@ -135,7 +135,7 @@ sale_packing_list = sale_packing_list_module.newContent(\n
 sale_packing_list_line = sale_packing_list.newContent(\n
   portal_type=\'Sale Packing List Line\',\n
   resource=context.portal_preferences.getPreferredInstanceSetupResource(),\n
-  aggregate_value_list=[software_instance, software_release_document, computer_partition, hosting_subscription]\n
+  aggregate_value_list=[slave_instance, software_release_document, computer_partition, hosting_subscription]\n
 )\n
 \n
 # confirm Sale Packing List\n

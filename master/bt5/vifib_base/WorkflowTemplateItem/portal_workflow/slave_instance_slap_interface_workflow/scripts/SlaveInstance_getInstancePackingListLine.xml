@@ -50,9 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
+            <value> <string>slave_instance = state_change[\'object\']\n
 \n
-portal = software_instance.getPortalObject()\n
+portal = slave_instance.getPortalObject()\n
 \n
 # Get services\n
 portal_preferences = portal.portal_preferences\n
@@ -79,15 +79,14 @@ state_list.extend(portal.getPortalCurrentInventoryStateList())\n
 packing_list_line = portal.portal_catalog.getResultValue(\n
   portal_type=\'Sale Packing List Line\',\n
   simulation_state=state_list,\n
-  aggregate_uid=software_instance.getUid(),\n
+  aggregate_uid=slave_instance.getUid(),\n
   default_resource_uid=service_uid_list,\n
   sort_on=((\'movement.start_date\', \'DESC\'),),\n
   limit=1,\n
 )\n
 \n
 if packing_list_line is None:\n
-  raise ValueError("No sale packing list line found for %s" % \\\n
-        software_instance.getRelativeUrl())\n
+  raise ValueError("No sale packing list line found for %s - %s" % (slave_instance.getRelativeUrl(),slave_instance.getPortalType()))\n
 else:\n
   return packing_list_line\n
 </string> </value>

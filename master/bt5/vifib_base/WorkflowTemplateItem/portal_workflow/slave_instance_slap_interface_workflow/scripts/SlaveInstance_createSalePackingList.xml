@@ -50,11 +50,11 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
+            <value> <string>slave_instance = state_change[\'object\']\n
 instance_setup_sale_packing_list_line = \\\n
   context.SlaveInstance_getInstancePackingListLine(\n
                   state_change, \n
-                  service_relative_url=software_instance.portal_preferences.\\\n
+                  service_relative_url=slave_instance.portal_preferences.\\\n
                           getPreferredInstanceSetupResource())\n
 instance_setup_sale_packing_list = instance_setup_sale_packing_list_line.getParentValue()\n
 portal = context.getPortalObject()\n
