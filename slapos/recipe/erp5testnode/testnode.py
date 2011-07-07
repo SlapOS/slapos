@@ -185,7 +185,7 @@ branch = %(branch)s
                       (portal_url, 'portal_task_distribution'),
                       allow_none=1)
           master = portal.portal_task_distribution
-          assert master.getProtocolRevision() == 1
+          assert safeRpcCall(master.getProtocolRevision) == 1
           test_result = safeRpcCall(master.createTestResult,
             config['test_suite'], revision, [],
             False, test_suite_title,
