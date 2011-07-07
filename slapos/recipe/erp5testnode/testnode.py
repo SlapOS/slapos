@@ -255,7 +255,8 @@ branch = %(branch)s
           # XXX: is it good for all cases (eg: test runner fails too early for
           # any custom code to pick the failure up and react ?)
           remote_test_result_needs_cleanup = False
-          run_test_suite = subprocess.Popen(invocation_list)
+          run_test_suite = subprocess.Popen(invocation_list,
+            preexec_fn=os.setsid)
           process_group_pid_set.add(run_test_suite.pid)
           run_test_suite.wait()
           process_group_pid_set.remove(run_test_suite.pid)
