@@ -740,7 +740,6 @@ class TestVifibSlapWebService(testVifibMixin):
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
       Logout
-
       LoginDefaultUser
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
       Logout
@@ -752,7 +751,6 @@ class TestVifibSlapWebService(testVifibMixin):
       SoftwareInstanceBuilding \
       Tic \
       SlapLogout \
-      \
       LoginDefaultUser \
       CheckComputerPartitionInstanceSetupSalePackingListStarted \
       Logout \
@@ -764,7 +762,6 @@ class TestVifibSlapWebService(testVifibMixin):
       SoftwareInstanceAvailable
       Tic
       SlapLogout
-
       LoginDefaultUser
       SetSelectedComputerPartition
       CheckComputerPartitionInstanceSetupSalePackingListStopped
@@ -816,7 +813,6 @@ class TestVifibSlapWebService(testVifibMixin):
       RequestSoftwareInstanceStart \
       Tic \
       Logout \
-      \
       LoginDefaultUser \
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed \
       Logout \
@@ -4491,18 +4487,13 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
-    Tic
+    SlapLogout
     LoginAsCustomerA
     PersonRequestSlaveInstance
     Logout
     LoginDefaultUser
     ConfirmOrderedSaleOrderActiveSense
     Tic
-    SetSelectedComputerPartition
-    SelectCurrentlyUsedSalePackingListUid
-    Logout
-    SlapLoginCurrentComputer
-    LoginDefaultUser
     CheckComputerPartitionSaleOrderAggregatedList
     Logout
     """
@@ -4612,34 +4603,41 @@ class TestVifibSlapWebService(testVifibMixin):
      available slot
     """
 
-  @skip("Not Finished yet")
   def test_SlaveInstance_request_start(self):
     """
       Check that the Slave Instance will be started correctly
+      XXX - Review the sequence of steps to verify that the scenario is
+      validating the feature of  start a Instance Slave
     """
     sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+    sequence_string = self.prepare_started_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginDefaultUser
+      SetSelectedComputerPartition
       LoginTestVifibCustomer
       RequestSoftwareInstanceStart
       Tic
-      SlapLogout
+      Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  @skip("Not Finished yet")
   def test_SlaveInstance_request_stop(self):
     """
       Check that the Slave Instance will be stopped correctly
+      XXX - Review the sequence of steps to verify that the scenario is
+      validating the feature of stop a Instance Slave
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
@@ -4649,13 +4647,15 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
-      LoginTestVifibCustomer
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
       RequestSoftwareInstanceStop
       Tic
-      SlapLogout
-      LoginDefaultUser
-      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      Logout \
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
