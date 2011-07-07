@@ -126,6 +126,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
 
   def installProductionApplication(self):
     site_check_path = '/%s/getId' % self.site_id
+    access_control_string = self.parameter_dict['backend_acl_string']
     ca_conf = self.installCertificateAuthority()
     backend_key, backend_certificate = self.requestCertificate('Login Based Access')
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
@@ -187,7 +188,8 @@ class Recipe(slapos.recipe.erp5.Recipe):
     web_haproxy = self.installHaproxy(ip, 15002, 'web', site_check_path,
         web_url_list)
     apache_web = self.installBackendApache(self.getGlobalIPv6Address(), 15001,
-        web_haproxy, backend_key, backend_certificate, suffix='_web')
+        web_haproxy, backend_key, backend_certificate, suffix='_web',
+        access_control_string=access_control_string)
 
     # One Admin Node
     zope_port += 1
@@ -199,31 +201,22 @@ class Recipe(slapos.recipe.erp5.Recipe):
     admin_haproxy = self.installHaproxy(ip, 15003, 'admin', site_check_path,
         admin_url_list)
     apache_admin = self.installBackendApache(self.getGlobalIPv6Address(), 15002,
-        admin_haproxy, backend_key, backend_certificate, suffix='_admin')
+        admin_haproxy, backend_key, backend_certificate, suffix='_admin',
+        access_control_string=access_control_string)
 
     self.installTidStorage(tidstorage_config['host'], tidstorage_config['port'],
         known_tid_storage_identifier_dict, 'http://'+login_haproxy)
     apache_login = self.installBackendApache(self.getGlobalIPv6Address(), 15000,
-        login_haproxy, backend_key, backend_certificate,
-        access_control_string='%s' % self.getGlobalIPv6Address())
-    frontend_key, frontend_certificate = self.requestCertificate(
-        self.parameter_dict['frontend_name'])
-    login_frontend = self.installFrontendZopeApache(
-        self.getGlobalIPv6Address(), 18000,
-        self.parameter_dict['frontend_name'],
-        self.parameter_dict['frontend_path'],
-        apache_login,
-        self.parameter_dict['backend_path'], frontend_key,
-        frontend_certificate,
-        access_control_string=self.parameter_dict['frontend_acl_string'])
+        login_haproxy, backend_key, backend_certificate, suffix='_user',
+        access_control_string=access_control_string)
+
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     self.setConnectionDict(dict(
-      site_url='https://%s:%s%s' % (self.getGlobalIPv6Address(), 18000,
-        self.parameter_dict['frontend_path']),
       site_web_url=apache_web,
       site_admin_url=apache_admin,
+      site_user_url=apache_login,
       site_user=user,
       site_password=password,
       memcached_url=memcached_conf['memcached_url'],
@@ -236,6 +229,24 @@ class Recipe(slapos.recipe.erp5.Recipe):
       # As soon as there would be Vifib ERP5 configuration and possibility to
       # call it over the network this can be removed
       certificate_authority_path=ca_conf['certificate_authority_path'],
+    ))
+    return self.path_list
+
+  def installProductionFrontend(self):
+    frontend_key, frontend_certificate = self.requestCertificate(
+        self.parameter_dict['frontend_name'])
+    login_frontend = self.installFrontendZopeApache(
+        self.getGlobalIPv6Address(), 18000,
+        self.parameter_dict['frontend_name'],
+        self.parameter_dict['frontend_path'],
+        self.parameter_dict['backend_url'],
+        self.parameter_dict['backend_path'], frontend_key,
+        frontend_certificate,
+        access_control_string=self.parameter_dict['frontend_acl_string'])
+
+    self.setConnectionDict(dict(
+      site_url='https://%s:%s%s' % (self.getGlobalIPv6Address(), 18000,
+        self.parameter_dict['frontend_path']),
     ))
     return self.path_list
 
@@ -349,11 +360,16 @@ class Recipe(slapos.recipe.erp5.Recipe):
     if self.parameter_dict.get('production_mysql', 'false').lower() == 'true':
       self.development = False
       return self.installProductionMysql()
-    if self.parameter_dict.get('production_application', 'false').lower() == 'true':
+    elif self.parameter_dict.get(
+        'production_application', 'false').lower() == 'true':
       self.development = False
       return self.installProductionApplication()
-    if self.parameter_dict.get('development', 'true').lower() == 'true':
+    elif self.parameter_dict.get(
+        'production_frontend', 'false').lower() == 'true':
+      self.development = False
+      return self.installProductionFrontend()
+    elif self.parameter_dict.get('development', 'true').lower() == 'true':
       self.development = True
       return self.installDevelopmentEnvironment()
-
-    raise NotImplementedError('Flavour of instance have to be given.')
+    else:
+      raise NotImplementedError('Flavour of instance have to be given.')
