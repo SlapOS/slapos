@@ -27,22 +27,10 @@ def log(message):
   print time.strftime('%Y/%m/%d %H:%M:%S'), message
 
 process_group_pid_set = set()
-process_pid_file_list = []
-process_command_list = []
 def sigterm_handler(signal, frame):
   for pgpid in process_group_pid_set:
     try:
       os.killpg(pgpid, signal.SIGTERM)
-    except:
-      pass
-  for pid_file in process_pid_file_list:
-    try:
-      os.kill(int(open(pid_file).read().strip()), signal.SIGTERM)
-    except:
-      pass
-  for p in process_command_list:
-    try:
-      subprocess.call(p)
     except:
       pass
   sys.exit(1)
