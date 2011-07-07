@@ -59,7 +59,7 @@ bt5_installation_list = (      \n
       \'erp5_trade\', \n
       \'erp5_simulation_test\', \n
       \'erp5_item\', \n
-      \'erp5_open_trade\', \n
+      \'erp5_open_trade\',\n
       \'erp5_forge\', \n
       \'erp5_ingestion_mysql_innodb_catalog\', \n
       \'erp5_ingestion\', \n
@@ -98,12 +98,15 @@ bt5_installation_list = (      \n
       \'vifib_web\',\n
       \'vifib_open_trade\', \n
       \'vifib_l10n_fr\',\n
-      \'vifib_datas\',\n
+      \'vifib_data\',\n
+      \'vifib_data_web\',\n
+      \'vifib_data_category\',\n
       \'vifib_erp5\'\n
 )\n
 \n
 bt5_update_catalog = (\'erp5_ingestion_mysql_innodb_catalog\', \n
-                      \'vifib_mysql_innodb_catalog\')\n
+                      \'vifib_mysql_innodb_catalog\', \n
+                      \'erp5_content_translation\')\n
 \n
 for name in bt5_installation_list:\n
   configuration_save.addConfigurationItem("Standard BT5 Configurator Item",\n
