@@ -224,6 +224,8 @@ SSLCARevocationPath %(ca_crl)s"""
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
         memcached_conf, kumo_conf)
+    self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
+                           memcached_conf, kumo_conf)
     self.linkBinary()
     self.setConnectionDict(dict(
       development_zope='http://%s:%s/' % (ip, zope_port),
