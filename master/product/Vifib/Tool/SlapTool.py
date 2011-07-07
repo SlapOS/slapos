@@ -729,8 +729,9 @@ class SlapTool(BaseTool):
       raise NotFound, "No software instance found for: %s - %s" % (computer_id,
           computer_partition_id)
     else:
+      portal_type_list = ["Software Instance", "Slave Instance"]
       software_instance = packing_list_line.getAggregateValue(
-                                              portal_type="Software Instance")
+                                              portal_type=portal_type_list)
       if software_instance is None:
         raise NotFound, "No software instance found for: %s - %s" % (
           computer_id, computer_partition_id)
