@@ -1,4 +1,10 @@
-import os, sys, subprocess, re, threading, errno
+import errno
+import os
+import re
+import subprocess
+import sys
+import threading
+
 from testnode import SubprocessError
 
 _format_command_search = re.compile("[[\\s $({?*\\`#~';<>&|]").search
