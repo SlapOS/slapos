@@ -24,7 +24,7 @@
         </item>
         <item>
             <key> <string>after_script_name</string> </key>
-            <value> <string></string> </value>
+            <value> <string>SlaveInstance_requestDestroy</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -38,7 +38,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>request_slave_instance</string> </value>
+            <value> <string>request_destroy_computer_partition</string> </value>
         </item>
         <item>
             <key> <string>new_state_id</string> </key>
@@ -46,15 +46,15 @@
         </item>
         <item>
             <key> <string>script_name</string> </key>
-            <value> <string></string> </value>
+            <value> <string>SlaveInstance_checkConsistency</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Request Slave Instance</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>trigger_type</string> </key>
-            <value> <int>1</int> </value>
+            <value> <int>2</int> </value>
         </item>
       </dictionary>
     </pickle>

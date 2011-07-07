@@ -12,11 +12,11 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>draft</string> </value>
+            <value> <string>start_requested</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Draft</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>transitions</string> </key>
@@ -24,11 +24,11 @@
               <tuple>
                 <string>request_computer_partition</string>
                 <string>request_destroy_computer_partition</string>
+                <string>request_destroy_computer_partition_action</string>
                 <string>request_start_computer_partition</string>
                 <string>request_start_computer_partition_action</string>
                 <string>request_stop_computer_partition</string>
                 <string>request_stop_computer_partition_action</string>
-                <string>start_requested</string>
                 <string>stop_requested</string>
               </tuple>
             </value>
