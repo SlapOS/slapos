@@ -4590,12 +4590,10 @@ class TestVifibSlapWebService(testVifibMixin):
     Tic
     LoginAsCustomerA
     PersonRequestSlaveInstance
-    Tic
     SlapLogout
 
     LoginTestVifibCustomer
     PersonRequestSlaveInstance
-    Tic
     SlapLogout
 
     LoginDefaultUser
@@ -4614,6 +4612,7 @@ class TestVifibSlapWebService(testVifibMixin):
      available slot
     """
 
+  @skip("Not Finished yet")
   def test_SlaveInstance_request_start(self):
     """
       Check that the Slave Instance will be started correctly
@@ -4637,6 +4636,7 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip("Not Finished yet")
   def test_SlaveInstance_request_stop(self):
     """
       Check that the Slave Instance will be stopped correctly
