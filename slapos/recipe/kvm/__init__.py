@@ -219,6 +219,7 @@ class Recipe(BaseSlapRecipe):
   def installCertificateAuthority(self, ca_country_code='XX',
       ca_email='xx@example.com', ca_state='State', ca_city='City',
       ca_company='Company'):
+    self.requirements, self.ws = self.egg.working_set()
     backup_path = self.createBackupDirectory('ca')
     self.ca_dir = os.path.join(self.data_root_directory, 'ca')
     self._createDirectory(self.ca_dir)
