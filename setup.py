@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.4'
+version = '0.12dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -27,7 +27,6 @@ setup(name=name,
       include_package_data=True,
       install_requires=[
         'PyXML', # for full blown python interpreter
-        'Zope2', # some recipes like to play with zope
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
@@ -50,8 +49,13 @@ setup(name=name,
           'libcloud = slapos.recipe.libcloud:Recipe',
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
           'memcached = slapos.recipe.memcached:Recipe',
+          'mysql = slapos.recipe.mysql:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'nosqltestbed = slapos.recipe.nosqltestbed:NoSQLTestBed',
+          'osoeslaptraining = slapos.recipe.osoeslaptraining:Request',
+          'osoeslaptraining.request = slapos.recipe.osoeslaptraining:Request',
+          'osoeslaptraining.static = slapos.recipe.osoeslaptraining:Static',
+          'osoeslaptraining.simple = slapos.recipe.osoeslaptraining:Simple',
           'proactive = slapos.recipe.proactive:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
           'siptester = slapos.recipe.siptester:SipTesterRecipe',
@@ -60,5 +64,6 @@ setup(name=name,
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
           'apache = slapos.recipe.apache:Recipe', 
+          'zabbixagent = slapos.recipe.zabbixagent:Recipe',
       ]},
     )

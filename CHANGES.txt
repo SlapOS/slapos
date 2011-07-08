@@ -1,3 +1,52 @@
+0.12 (unreleased)
+=================
+
+ * No changes yet.
+
+0.11 (2011-07-07)
+=================
+
+ * Enable test suite runner for vifib.
+
+0.10 (2011-07-01)
+=================
+
+ * Add PHPMyAdmin software release used in SlapOS tutorials
+ [Cedric de Saint Martin]
+ * Add slaprunner software release [Cedric de Saint Martin]
+
+0.9 (2011-06-24)
+================
+
+ * mysql recipe : Changing slapos.recipe.erp5.execute to
+   slapos.recipe.librecipe.execute [Cedric de Saint Martin]
+
+0.8 (2011-06-15)
+================
+
+ * Add MySQL and MariaDB standalone software release and recipe
+   [Cedric de Saint Martin]
+ * Fixed slapos.recipe.erp5testnode instantiation [Sebastien Robin]
+
+0.7 (2011-06-14)
+================
+
+ * Fix slapos.recipe.erp5 package by providing site.zcml in it. [Łukasz Nowak]
+ * Improve slapos.recipe.erp5testnode partition instantiation error reporting
+   [Sebastien Robin]
+
+0.6 (2011-06-13)
+================
+
+ * Fixed slapos.recipe.erp5 instantiation. [Łukasz Nowak]
+
+0.5 (2011-06-13)
+================
+
+ * Implement zabbix agent instantiation. [Łukasz Nowak]
+ * Drop dependency on Zope2. [Łukasz Nowak]
+ * Share more in slapos.recipe.librecipe module. [Łukasz Nowak]
+
 0.4 (2011-06-09)
 ================
 
@@ -13,10 +62,10 @@
  * Fix apache module configuration [Kazuhiko Shiozaki]
  * Allow to control full environment in erp5 module [Łukasz Nowak]
 
-0.2 (unreleased)
+0.2 (2011-05-30)
 ================
 
-  * No changes yet.
+  * Allow to pass zope_environment in erp5 entry point [Łukasz Nowak]
 
 0.1 (2011-05-27)
 ================
