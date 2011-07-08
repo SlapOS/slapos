@@ -232,7 +232,7 @@ class Recipe(BaseSlapRecipe):
     self.ca_crl = os.path.join(self.ca_dir, 'crl')
     self.ca_newcerts = os.path.join(self.ca_dir, 'newcerts')
     self.ca_key_ext = '.key'
-    self.ca_crt_ext = '.crt'
+    self.ca_crt_ext = '.pem'
     for d in [self.ca_private, self.ca_crl, self.ca_newcerts, self.ca_certs]:
       self._createDirectory(d)
     for f in ['crlnumber', 'serial']:
