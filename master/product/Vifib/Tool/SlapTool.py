@@ -144,7 +144,7 @@ class SlapTool(BaseTool):
     for computer_partition_document in computer_document.contentValues(
                                           portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
-        self._convertToSlapPartition(computer_partition_document, computer_id))
+          self._getSlapPartitionByPackingList(computer_partition_document))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -352,15 +352,6 @@ class SlapTool(BaseTool):
         result_dict[key] = value
     return result_dict
 
-  def _getModificationStatusForSlave(self, computer_partition_document):
-    for slave in computer_partition_document.contentValues(
-      portal_type='Slave Partition'):
-      if slave.getSlapState() == 'busy':
-        slap_partition = self._getSlapPartitionByPackingList(slave)
-        if slap_partition._need_modification == 1:
-          return 1
-    return 0
-
   def _getSlapPartitionByPackingList(self, computer_partition_document):
     computer = computer_partition_document
     portal = self.getPortalObject()
@@ -436,18 +427,6 @@ class SlapTool(BaseTool):
       else:
         raise NotImplementedError, "Unexpected resource%s" % \
                                    movement.getResource()
-    return slap_partition
-
-  def _convertToSlapPartition(self, computer_partition_document, computer_id):
-
-    slap_partition = self._getSlapPartitionByPackingList(
-      computer_partition_document)
-    if computer_partition_document.getPortalType() == 'Slave Partition':
-      slap_partition._need_modification = 0
-    elif computer_partition_document.getQuantity() > 0 and \
-        slap_partition._need_modification == 0:
-      slap_partition._need_modification = self._getModificationStatusForSlave(
-        computer_partition_document)
     return slap_partition
 
   @convertToREST
@@ -698,14 +677,9 @@ class SlapTool(BaseTool):
     """
     # Related key might be nice
     computer = self._getComputerDocument(computer_reference)
-    try:
-      return self._getDocument(portal_type='Computer Partition',
+    return self._getDocument(portal_type='Computer Partition',
                              reference=computer_partition_reference,
                              parent_uid=computer.getUid())
-    except NotFound:
-      return self._getDocument(portal_type='Slave Partition',
-                             reference=computer_partition_reference,
-                             grand_parent_uid=computer.getUid())
 
   def _getUsageReportServiceDocument(self):
     service_document = self.Base_getUsageReportServiceDocument()
