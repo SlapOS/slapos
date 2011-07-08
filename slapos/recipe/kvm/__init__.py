@@ -220,6 +220,7 @@ class Recipe(BaseSlapRecipe):
       ca_email='xx@example.com', ca_state='State', ca_city='City',
       ca_company='Company'):
     self.requirements, self.ws = self.egg.working_set()
+    self.cron_d = self.installCrond()
     backup_path = self.createBackupDirectory('ca')
     self.ca_dir = os.path.join(self.data_root_directory, 'ca')
     self._createDirectory(self.ca_dir)
@@ -287,3 +288,25 @@ class Recipe(BaseSlapRecipe):
     parser.set('certificate', 'certificate_file', certificate)
     parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
     return key, certificate
+  
+  def installCrond(self):
+    timestamps = self.createDataDirectory('cronstamps')
+    cron_output = os.path.join(self.log_directory, 'cron-output')
+    self._createDirectory(cron_output)
+    catcher = zc.buildout.easy_install.scripts([('catchcron',
+      __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
+      self.bin_directory, arguments=[cron_output])[0]
+    self.path_list.append(catcher)
+    cron_d = os.path.join(self.etc_directory, 'cron.d')
+    crontabs = os.path.join(self.etc_directory, 'crontabs')
+    self._createDirectory(cron_d)
+    self._createDirectory(crontabs)
+    # Use execute from erp5.
+    wrapper = zc.buildout.easy_install.scripts([('crond',
+      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=[
+        self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
+        '-t', timestamps, '-f', '-l', '5', '-M', catcher]
+      )[0]
+    self.path_list.append(wrapper)
+    return cron_d
