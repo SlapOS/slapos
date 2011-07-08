@@ -623,7 +623,7 @@ class Slapgrid(object):
         server_url=self.master_url,
         software_release_url=software_url,
         certificate_repository_path=self.certificate_repository_path,
-        console=self.console
+        console=self.console, buildout=self.buildout
         )
       if computer_partition.getState() == "destroyed":
         try:
