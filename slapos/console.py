@@ -86,8 +86,13 @@ class Config:
         for key in configuration_dict:
           setattr(self, key, configuration_dict[key])
 
-    if not self.master_url:
-      raise ValueError('master_url is required.')
+    master_url = getattr(self, 'master_url', None)
+    if not master_url:
+      raise ValueError("No option 'master_url'")
+    elif master_url.startswith('https') and \
+         not getattr(self, 'key_file', None) and \
+         not getattr(self, 'cert_file', None):
+      raise ValueError("No option 'key_file' and/or 'cert_file'")
 
 def init(config):
 
