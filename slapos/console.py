@@ -29,6 +29,7 @@ import slapos.slap.slap
 from slapos.slap import ResourceNotReady
 
 import sys
+import os
 from optparse import OptionParser, Option
 import ConfigParser
 
@@ -61,6 +62,8 @@ class Parser(OptionParser):
     (options, args) = self.parse_args()
     if len(args) == 0:
       self.error("Incorrect number of arguments")
+    elif not os.path.isfile(args[0]):
+      self.error("%s: Not found or not a regular file." % args[0])
 
     return options, args
 
