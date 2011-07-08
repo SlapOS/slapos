@@ -77,17 +77,15 @@ class Config:
     configuration_parser = ConfigParser.SafeConfigParser()
     configuration_parser.read(configuration_file_path)
     # Merges the arguments and configuration
-    try:
-      configuration_dict = dict(configuration_parser.items("slapos"))
-    except ConfigParser.NoSectionError:
-      pass
-    else:
-      for key in configuration_dict:
-        if not getattr(self, key, None):
+    for section in ('slapos', 'slapconsole'):
+      try:
+        configuration_dict = dict(configuration_parser.items(section))
+      except ConfigParser.NoSectionError:
+        pass
+      else:
+        for key in configuration_dict:
           setattr(self, key, configuration_dict[key])
-    configuration_dict = dict(configuration_parser.items('slapos'))
-    setattr(self, 'master_url', configuration_dict['master_url'])
-          
+
     if not self.master_url:
       raise ValueError('master_url is required.')
 
