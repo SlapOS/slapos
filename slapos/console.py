@@ -77,8 +77,11 @@ class Config:
     configuration_parser = ConfigParser.SafeConfigParser()
     configuration_parser.read(configuration_file_path)
     # Merges the arguments and configuration
-    for section in ("slapconsole",):
-      configuration_dict = dict(configuration_parser.items(section))
+    try:
+      configuration_dict = dict(configuration_parser.items("slapos"))
+    except ConfigParser.NoSectionError:
+      pass
+    else:
       for key in configuration_dict:
         if not getattr(self, key, None):
           setattr(self, key, configuration_dict[key])
@@ -98,7 +101,10 @@ def init(config):
   local = globals().copy()
   local['slap'] = slap
   # Create aliases as global variables
-  alias = config.alias.split('\n')
+  try:
+    alias = config.alias.split('\n')
+  except AttributeError:
+    alias = []
   software_list = []
   for software in alias:
     if software is not '':
