@@ -45,6 +45,7 @@ class Recipe(BaseSlapRecipe):
   def installSlapOs(self):
     CONFIG['slapos_directory'] = self.createDataDirectory('slapos')
     CONFIG['working_directory'] = self.createDataDirectory('testnode')
+    CONFIG['test_suite_directory'] = self.createDataDirectory('test_suite')
     CONFIG['software_root'] = os.path.join(CONFIG['slapos_directory'],
         'software')
     CONFIG['instance_root'] = os.path.join(CONFIG['slapos_directory'],
@@ -83,6 +84,7 @@ class Recipe(BaseSlapRecipe):
               git_binary=self.options['git_binary'],
               software_root=CONFIG['software_root'],
               working_directory=CONFIG['working_directory'],
+              test_suite_directory=CONFIG['test_suite_directory'],
               vcs_repository_list=eval(self.parameter_dict.get('vcs_repository_list'),),
               node_quantity=self.parameter_dict.get('node_quantity', '1'),
               test_suite_master_url=self.parameter_dict.get(
