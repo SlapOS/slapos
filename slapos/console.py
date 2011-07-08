@@ -29,6 +29,7 @@ import slapos.slap.slap
 from slapos.slap import ResourceNotReady
 
 import sys
+import os
 from optparse import OptionParser, Option
 import ConfigParser
 
@@ -61,6 +62,19 @@ class Parser(OptionParser):
     (options, args) = self.parse_args()
     if len(args) == 0:
       self.error("Incorrect number of arguments")
+    elif not os.path.isfile(args[0]):
+      self.error("%s: Not found or not a regular file." % args[0])
+
+    return options, args
+
+class RequestParser(Parser):
+  def check_args(self):
+    """
+    Check arguments
+    """
+    (options, args) = Parser.check_args(self)
+    if len(args) < 3:
+      self.error("Incorrect number of arguments")
 
     return options, args
 
@@ -77,16 +91,22 @@ class Config:
     configuration_parser = ConfigParser.SafeConfigParser()
     configuration_parser.read(configuration_file_path)
     # Merges the arguments and configuration
-    for section in ("slapconsole",):
-      configuration_dict = dict(configuration_parser.items(section))
-      for key in configuration_dict:
-        if not getattr(self, key, None):
+    for section in ('slapos', 'slapconsole'):
+      try:
+        configuration_dict = dict(configuration_parser.items(section))
+      except ConfigParser.NoSectionError:
+        pass
+      else:
+        for key in configuration_dict:
           setattr(self, key, configuration_dict[key])
-    configuration_dict = dict(configuration_parser.items('slapos'))
-    setattr(self, 'master_url', configuration_dict['master_url'])
-          
-    if not self.master_url:
-      raise ValueError('master_url is required.')
+
+    master_url = getattr(self, 'master_url', None)
+    if not master_url:
+      raise ValueError("No option 'master_url'")
+    elif master_url.startswith('https') and \
+         not getattr(self, 'key_file', None) and \
+         not getattr(self, 'cert_file', None):
+      raise ValueError("No option 'key_file' and/or 'cert_file'")
 
 def init(config):
 
@@ -98,7 +118,10 @@ def init(config):
   local = globals().copy()
   local['slap'] = slap
   # Create aliases as global variables
-  alias = config.alias.split('\n')
+  try:
+    alias = config.alias.split('\n')
+  except AttributeError:
+    alias = []
   software_list = []
   for software in alias:
     if software is not '':
@@ -120,8 +143,8 @@ def request():
   usage = """usage: %s [options] CONFIGURATION_FILE SOFTWARE_INSTANCE INSTANCE_REFERENCE
 slapos-request allows you to request slapos instances.""" % sys.argv[0]
   config = Config()
-  arguments = Parser(usage=usage).check_args()[1]
-  config.setConfig(*Parser(usage=usage).check_args())
+  options, arguments = RequestParser(usage=usage).check_args()
+  config.setConfig(options, arguments[0])
   
   local = init(config)
   
