@@ -129,8 +129,8 @@ def request():
   usage = """usage: %s [options] CONFIGURATION_FILE SOFTWARE_INSTANCE INSTANCE_REFERENCE
 slapos-request allows you to request slapos instances.""" % sys.argv[0]
   config = Config()
-  arguments = Parser(usage=usage).check_args()[1]
-  config.setConfig(*Parser(usage=usage).check_args())
+  options, arguments = Parser(usage=usage).check_args()
+  config.setConfig(options, arguments[0])
   
   local = init(config)
   
