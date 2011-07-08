@@ -253,6 +253,9 @@ def _syncComputerPartitionInformation(func):
               for elt in inv:
                 if isinstance(elt, (list, tuple)):
                   new_inv.append([x.encode('utf-8') for x in elt])
+                elif isinstance(elt, dict):
+                  new_inv.append(dict([(x.encode('utf-8'),
+                    y and y.encode("utf-8")) for x,y in elt.iteritems()]))
                 else:
                   new_inv.append(elt.encode('utf-8'))
               new_dict[ink.encode('utf-8')] = new_inv
