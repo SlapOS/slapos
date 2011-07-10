@@ -2880,6 +2880,7 @@ class TestVifibSlapWebService(testVifibMixin):
         'slap_software_release_url': software_release_uri,
         'slap_software_type': 'RootSoftwareInstance',
         'test_parameter': 'lala',
+        'slave_instance_list': [],
         'ip_list': [],
     }
     self.assertSameDict(expected, result)
