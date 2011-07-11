@@ -1,10 +1,15 @@
-0.11 (not yet released)
-================
+0.12 (unreleased)
+=================
 
- * No change yet.
+ * No changes yet.
+
+0.11 (2011-07-07)
+=================
+
+ * Enable test suite runner for vifib.
 
 0.10 (2011-07-01)
-================
+=================
 
  * Add PHPMyAdmin software release used in SlapOS tutorials
  [Cedric de Saint Martin]
