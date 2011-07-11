@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>"""Update customer informations"""\n
+            <value> <string encoding="cdata"><![CDATA[
+
+"""Update customer informations"""\n
 portal = context.getPortalObject()\n
 \n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
@@ -71,17 +73,30 @@ params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
 instance_software_release_uid = params[\'instance_software_release_uid\']\n
 service_title = params[\'service_title\']\n
 instance_xml = params[\'instance_xml\']\n
+computer = params[\'computer\']\n
 software_release = portal.portal_catalog.getResultValue(uid=instance_software_release_uid)\n
 \n
-person.requestSoftwareInstance(\n
+request_kw = {}\n
+request_kw.update(\n
   software_release=software_release.getUrlString(),\n
   software_title=service_title,\n
   instance_xml=instance_xml,\n
 )\n
 \n
+if computer:\n
+  computer = context.restrictedTraverse(computer)\n
+  request_kw[\'sla_xml\'] = """<?xml version=\'1.0\' encoding=\'utf-8\'?>\n
+<instance>\n
+<parameter id="computer_guid">%s</parameter>\n
+</instance>""" % computer.getReference()\n
+\n
+person.requestSoftwareInstance(**request_kw)\n
+\n
 message = context.Base_translateString("Your instance is under creation. Thank you for using ViFiB!")\n
 return context.getWebSiteValue().Base_redirect(keep_items={\'portal_status_message\': message})\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
