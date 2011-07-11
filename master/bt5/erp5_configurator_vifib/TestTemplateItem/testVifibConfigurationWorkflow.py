@@ -82,7 +82,9 @@ class TestVifibConfiguratorWorkflow(TestLiveConfiguratorWorkflowMixin):
       'vifib_web', 
       'vifib_open_trade', 
       'vifib_l10n_fr',
-      'vifib_datas',
+      'vifib_data',
+      'vifib_data_category',
+      'vifib_data_web',
       'vifib_erp5')
 
   def getBusinessTemplateList(self):
@@ -119,10 +121,16 @@ class TestVifibConfiguratorWorkflow(TestLiveConfiguratorWorkflowMixin):
     self.setBusinessConfigurationWorkflow(business_configuration,
                           "workflow_module/vifib_configuration_workflow")
 
-
-
-  def stepCheckMaxmaDemoSampleObjectList(self, sequence=None, sequence_list=None, **kw):
+  def stepCheckVifibObjectList(self, sequence=None, sequence_list=None, **kw):
     """ Check if objects are placed into the appropriate state """
+
+    self.assertNotEquals(None, getattr(self.portal,
+                         "portal_certificate_authority", None))
+
+    self.assertNotEquals(None, getattr(self.portal, "portal_slap", None))
+
+    # Verify if acl_user is appropriatted configured.
+    # XXX Not implemented yet
 
     # Check Gadgets
     for gadget in self.portal.portal_gadgets.searchFolder():
@@ -148,6 +156,7 @@ class TestVifibConfiguratorWorkflow(TestLiveConfiguratorWorkflowMixin):
       stepStartConfigurationInstallation
       stepTic
       stepCheckInstanceIsConfigured%(country)s
+      stepCheckVifibObjectList
       """
 
   def test_vifib_workflow(self):
