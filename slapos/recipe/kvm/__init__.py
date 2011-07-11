@@ -75,7 +75,7 @@ class Recipe(BaseSlapRecipe):
 
     Returns    : Dictionnary kvm_conf
     """
-    kvm_conf = dict(vnc_ip = vnc_ip)
+    kvm_conf = dict(vnc_ip = "%s" % (vnc_ip))
     
     connection_found = False
     for tap_interface, dummy in self.parameter_dict['ip_list']:
