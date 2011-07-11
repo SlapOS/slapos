@@ -59,6 +59,7 @@ setup(name=name,
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
           'cloudooo = slapos.recipe.cloudooo:Recipe',
+          'cloudoootestnode = slapos.recipe.cloudoootestnode:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
       ]},
     )
