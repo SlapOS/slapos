@@ -70,7 +70,7 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(config_file)
     
     execute_arguments = dict(path = os.environ['PATH'],
-        args = [self.options['slaprunner'].strip(), config_file])
+        launch_args = [self.options['slaprunner'].strip(), config_file])
     self.path_list.extend(zc.buildout.easy_install.scripts([('slaprunner',
       'slapos.recipe.slaprunner.execute', 'execute')], self.ws, sys.executable,
       self.wrapper_directory, arguments=execute_arguments))
