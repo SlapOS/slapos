@@ -11,7 +11,7 @@ exec %(qemu_path)s \
   -m %(ram_size)s \
   -cdrom nbd:[%(nbd_ip)s]:%(nbd_port)s \
   -drive file=%(disk_path)s,if=virtio,boot=on \
-  -vnc [%(vnc_ip)s]:1,ipv6,tls,password \
+  -vnc %(vnc_ip)s:1,ipv4,tls,password \
   -boot menu=on \
   -qmp unix:%(socket_path)s,server \
   -pidfile %(pid_file_path)s
