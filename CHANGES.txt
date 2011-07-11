@@ -1,4 +1,9 @@
-0.12 (unreleased)
+0.13 (unreleased)
+================
+
+ * No change yet.
+
+0.12 (2011-07-11)
 =================
 
  * Fix slaprunner, phpmyadmin software releases, added
