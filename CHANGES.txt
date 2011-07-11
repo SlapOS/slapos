@@ -1,7 +1,8 @@
 0.12 (unreleased)
 =================
 
- * No changes yet.
+ * Fix slaprunner, phpmyadmin software releases, added
+   wordpress software release. [Cedric de Saint Martin]
 
 0.11 (2011-07-07)
 =================
