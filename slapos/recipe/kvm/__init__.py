@@ -76,7 +76,7 @@ class Recipe(BaseSlapRecipe):
 
     Returns    : Dictionnary kvm_conf
     """
-    kvm_conf = dict(vnc_ip = "%s" % (vnc_ip))
+    kvm_conf = dict(vnc_ip = vnc_ip)
     
     connection_found = False
     for tap_interface, dummy in self.parameter_dict['ip_list']:
@@ -156,15 +156,15 @@ class Recipe(BaseSlapRecipe):
     """
 
     noVNC_conf = {}
-    noVNC_conf['websockify_path'] = self.options['websockify_path']
-    noVNC_conf['noVNC_location']  = self.options['noVNC_location']
-    noVNC_conf['source_ip']       = source_ip                                          
-    noVNC_conf['source_port']     = source_port
-    noVNC_conf['target_ip']       = target_ip
-    noVNC_conf['target_port']     = target_port
-    noVNC_conf['python_path']     = python_path
+    noVNC_conf['websockify_path']                          = self.options['websockify_path']
+    noVNC_conf['noVNC_location']                           = self.options['noVNC_location']
+    noVNC_conf['source_ip']                                = source_ip                                          
+    noVNC_conf['source_port']                              = source_port
+    noVNC_conf['target_ip']                                = target_ip
+    noVNC_conf['target_port']                              = target_port
+    noVNC_conf['python_path']                              = python_path
 
-    noVNC_conf['ca_conf'] = self.installCertificateAuthority()
+    noVNC_conf['ca_conf']                                  = self.installCertificateAuthority()
     noVNC_conf['key_path'], noVNC_conf['certificate_path'] = self.requestCertificate('noVNC')
 
     # Instanciate Websockify
