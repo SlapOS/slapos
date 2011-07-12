@@ -165,7 +165,7 @@ class Recipe(BaseSlapRecipe):
     noVNC_conf['python_path']      = python_path
 
     noVNC_conf['ca_conf']          = self.installCertificateAuthority()
-    noVNC_conf['pem_path'] = self.createPem('noVNC')
+    noVNC_conf['certificate_path'] = self.requestCertificate('noVNC')
 
     # Instanciate Websockify
     websockify_runner_path = self.instanciate_wrapper("websockify",
@@ -311,26 +311,3 @@ class Recipe(BaseSlapRecipe):
       )[0]
     self.path_list.append(wrapper)
     return cron_d
-
-  def createPem(self,name):
-    """
-    Create self.pem file for noVNC encryption
-
-    Parameters: name for the requestCertificate function
-
-    Return: path to self.pem
-    """
-    key, certificate = self.requestCertificate(name)
-    pem = os.path.join(self.ca_certs, 'self.pem')
-    
-    pem_file = open(pem, 'w')
-    key_file = open(key, 'r')
-    pem_file.write(key_file.read())
-    key_file.close()
-    
-    certificate_file = open(certificate, 'r')
-    pem_file.write(certificate_file.read())
-    certificate_file.close()
-    pem_file.close()
-    
-    return pem
