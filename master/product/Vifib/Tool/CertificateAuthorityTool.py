@@ -224,7 +224,7 @@ class CertificateAuthorityTool(BaseTool):
       new_id = open(self.crl, 'r').read().strip().lower()
       crl_path = os.path.join(self.certificate_authority_path, 'crl')
       crl = os.path.join(crl_path, new_id + '.crl')
-      cert = os.path.join(self.certificate_authority_path, 'certs', serial + '.crt')
+      cert = os.path.join(self.certificate_authority_path, 'certs', serial.lower() + '.crt')
       if not os.path.exists(cert):
         raise ValueError('Certificate with serial %r does not exists' % serial)
       try:

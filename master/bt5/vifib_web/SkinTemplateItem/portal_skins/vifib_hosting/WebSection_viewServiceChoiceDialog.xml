@@ -101,6 +101,7 @@
                         <string>my_description</string>
                         <string>your_service_title</string>
                         <string>your_instance_xml</string>
+                        <string>your_computer</string>
                       </list>
                     </value>
                 </item>

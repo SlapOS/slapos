@@ -50,61 +50,23 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-"""Update customer informations"""\n
-portal = context.getPortalObject()\n
+            <value> <string>person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
+try:\n
+  person.revokeCertificate()\n
+  message = context.Base_translateString(\'Certificate revoked.\')\n
+except ValueError:\n
+  message = context.Base_translateString(\'No certificate found.\')\n
 \n
-person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
-person.edit(\n
-  last_name=last_name,\n
-  first_name=first_name,\n
-  career_subordination_title=career_subordination_title,\n
-  default_email_text=default_email_text,\n
-  default_telephone_text=default_telephone_text,\n
-  default_address_street_address=default_address_street_address,\n
-  default_address_zip_code=default_address_zip_code,\n
-  default_address_city=default_address_city,\n
-  )\n
-\n
-# return context.WebSection_viewNextStep()\n
-session = context.WebSection_getVifibSession()\n
-params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
-instance_software_release_uid = params[\'instance_software_release_uid\']\n
-service_title = params[\'service_title\']\n
-instance_xml = params[\'instance_xml\']\n
-computer = params[\'computer\']\n
-software_release = portal.portal_catalog.getResultValue(uid=instance_software_release_uid)\n
-\n
-request_kw = {}\n
-request_kw.update(\n
-  software_release=software_release.getUrlString(),\n
-  software_title=service_title,\n
-  instance_xml=instance_xml,\n
-)\n
-\n
-if computer:\n
-  computer = context.restrictedTraverse(computer)\n
-  request_kw[\'sla_xml\'] = """<?xml version=\'1.0\' encoding=\'utf-8\'?>\n
-<instance>\n
-<parameter id="computer_guid">%s</parameter>\n
-</instance>""" % computer.getReference()\n
-\n
-person.requestSoftwareInstance(**request_kw)\n
-\n
-message = context.Base_translateString("Your instance is under creation. Thank you for using ViFiB!")\n
-return context.getWebSiteValue().Base_redirect(keep_items={\'portal_status_message\': message})\n
-
-
-]]></string> </value>
+return context.getWebSiteValue().Base_redirect(keep_items=dict(portal_status_message=message))\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>career_subordination_title,default_address_street_address,default_address_zip_code,default_address_city,default_telephone_text,first_name,last_name,default_email_text,**kw</string> </value>
+            <value> <string>*args, **kwargs</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_setCustomerInformation</string> </value>
+            <value> <string>WebSection_revokeCertificate</string> </value>
         </item>
       </dictionary>
     </pickle>

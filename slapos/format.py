@@ -170,7 +170,8 @@ class AddressGenerationError(Error):
 class Computer:
   "Object representing the computer"
 
-  def __init__(self, reference, bridge=None, addr = None, netmask = None):
+  def __init__(self, reference, bridge=None, addr = None, netmask = None,
+    ipv6_interface=None):
     """
     Attributes:
       reference: String, the reference of the computer.
@@ -181,6 +182,7 @@ class Computer:
     self.partition_list = []
     self.address = addr
     self.netmask = netmask
+    self.ipv6_interface = ipv6_interface
 
   def __getinitargs__(self):
     return (self.reference, self.bridge)
@@ -244,7 +246,7 @@ class Computer:
     output_file.close()
 
   @classmethod
-  def load(cls, path_to_xml, reference):
+  def load(cls, path_to_xml, reference, ipv6_interface):
     """
     Create a computer object from a valid xml file.
 
@@ -264,6 +266,7 @@ class Computer:
         reference = reference,
         addr = dumped_dict['address'],
         netmask = dumped_dict['netmask'],
+        ipv6_interface=ipv6_interface,
     )
 
     for partition_dict in dumped_dict['partition_list']:
@@ -369,7 +372,7 @@ class Computer:
             else:
               raise ValueError('Address %r is incorrect' % address['addr'])
     finally:
-      if self.bridge.attach_to_tap:
+      if alter_network and self.bridge.attach_to_tap:
         try:
           self.partition_list[0].tap.detach()
         except IndexError:
@@ -577,7 +580,7 @@ class Tap:
 class Bridge:
   "Bridge represent a bridge on the system"
 
-  def __init__(self, name, ipv4_local_network):
+  def __init__(self, name, ipv4_local_network, ipv6_interface):
     """
     Attributes:
         name: String, the name of the bridge
@@ -585,6 +588,7 @@ class Bridge:
 
     self.name = str(name)
     self.ipv4_local_network = ipv4_local_network
+    self.ipv6_interface = ipv6_interface
 
     # Attach to TAP  network interface, only if the  bridge interface does not
     # report carrier
@@ -605,12 +609,16 @@ class Bridge:
 
   def getGlobalScopeAddressList(self):
     """Returns currently configured global scope IPv6 addresses"""
+    if self.ipv6_interface:
+      interface_name = self.ipv6_interface
+    else:
+      interface_name = self.name
     try:
-      address_list = [q for q in netifaces.ifaddresses(self.name)[socket.AF_INET6]
+      address_list = [q for q in netifaces.ifaddresses(interface_name)[socket.AF_INET6]
                       if isGlobalScopeAddress(q['addr'].split('%')[0])]
     except KeyError:
       raise ValueError("%s must have at least one IPv6 address assigned" % \
-                         self.name)
+                         interface_name)
     # XXX: Missing implementation of Unique Local IPv6 Unicast Addresses as
     # defined in http://www.rfc-editor.org/rfc/rfc4193.txt
     # XXX: XXX: XXX: IT IS DISALLOWED TO IMPLEMENT link-local addresses as
@@ -659,30 +667,36 @@ class Bridge:
     if ipv6:
       address_string = '%s/%s' % (address, netmaskToPrefixIPv6(netmask))
       af = socket.AF_INET6
+      if self.ipv6_interface:
+        interface_name = self.ipv6_interface
+      else:
+        interface_name = self.name
     else:
       af = socket.AF_INET
       address_string = '%s/%s' % (address, netmaskToPrefixIPv4(netmask))
+      interface_name = self.name
 
     # check if address is already took by any other interface
     for interface in netifaces.interfaces():
-      if interface != self.name:
+      if interface != interface_name:
         address_dict = netifaces.ifaddresses(interface)
         if af in address_dict:
          if address in [q['addr'].split('%')[0] for q in address_dict[af]]:
             return False
 
-    if not af in netifaces.ifaddresses(self.name) or not address in [q['addr'].split('%')[0] for q in netifaces.ifaddresses(self.name)[af]]:
+    if not af in netifaces.ifaddresses(interface_name) or not address in [q['addr'].split('%')[0] for q in netifaces.ifaddresses(interface_name)[af]]:
       # add an address
-      callAndRead(['ip', 'addr', 'add', address_string, 'dev', self.name])
+      callAndRead(['ip', 'addr', 'add', address_string, 'dev', interface_name])
       # wait few moments
       time.sleep(2)
     # check existence on interface
-    returncode, result = callAndRead(['ip', 'addr', 'list', self.name])
+    returncode, result = callAndRead(['ip', 'addr', 'list', interface_name])
     for l in result.split('\n'):
       if address in l:
         if 'tentative' in l:
           # duplicate, remove
-          callAndRead(['ip', 'addr', 'del', address_string, 'dev', self.name])
+          callAndRead(['ip', 'addr', 'del', address_string, 'dev',
+            interface_name])
           return False
         # found and clean
         return True
@@ -742,11 +756,15 @@ class Bridge:
           an address with.
     """
     # Getting one address of the bridge as base of the next addresses
+    if self.ipv6_interface:
+      interface_name = self.ipv6_interface
+    else:
+      interface_name = self.name
     bridge_addr_list = self.getGlobalScopeAddressList()
 
     # No address found
     if len(bridge_addr_list) == 0:
-      raise NoAddressOnBridge(self.name)
+      raise NoAddressOnBridge(interface_name)
     address_dict = bridge_addr_list[0]
 
     if addr is not None:
@@ -848,12 +866,14 @@ def run(config):
         address, netmask = computer_definition.get('computer', 'address').split('/')
       if config.alter_network and config.bridge_name is not None \
           and config.ipv4_local_network is not None:
-        bridge = Bridge(config.bridge_name, config.ipv4_local_network)
+        bridge = Bridge(config.bridge_name, config.ipv4_local_network,
+          config.ipv6_interface)
       computer = Computer(
           reference=config.computer_id,
           bridge=bridge,
           addr=address,
           netmask=netmask,
+          ipv6_interface=config.ipv6_interface
         )
       partition_list = []
       for partition_number in range(int(config.partition_amount)):
@@ -875,17 +895,20 @@ def run(config):
       # no definition file, figure out computer
       if os.path.exists(config.computer_xml):
         config.logger.info('Loading previous computer data from %r' % config.computer_xml)
-        computer = Computer.load(config.computer_xml, reference=config.computer_id)
+        computer = Computer.load(config.computer_xml, reference=config.computer_id, ipv6_interface=config.ipv6_interface)
         # Connect to the bridge interface defined by the configuration
-        computer.bridge = Bridge(config.bridge_name, config.ipv4_local_network)
+        computer.bridge = Bridge(config.bridge_name, config.ipv4_local_network,
+            config.ipv6_interface)
       else:
         # If no pre-existent configuration found, creating a new computer object
         config.logger.warning('Creating new data computer with id %r' % config.computer_id)
         computer = Computer(
           reference=config.computer_id,
-          bridge=Bridge(config.bridge_name, config.ipv4_local_network),
+          bridge=Bridge(config.bridge_name, config.ipv4_local_network,
+            config.ipv6_interface),
           addr=None,
           netmask=None,
+          ipv6_interface=config.ipv6_interface
         )
 
       partition_amount = int(config.partition_amount)
@@ -990,7 +1013,7 @@ class Config:
 
     # setup some nones
     for parameter in ['bridge_name', 'partition_base_name', 'user_base_name',
-        'tap_base_name', 'ipv4_local_network']:
+        'tap_base_name', 'ipv4_local_network', 'ipv6_interface']:
       if getattr(self, parameter, None) is None:
         setattr(self, parameter, None)
 
