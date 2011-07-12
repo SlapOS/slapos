@@ -372,7 +372,7 @@ class Computer:
             else:
               raise ValueError('Address %r is incorrect' % address['addr'])
     finally:
-      if self.bridge.attach_to_tap:
+      if alter_network and self.bridge.attach_to_tap:
         try:
           self.partition_list[0].tap.detach()
         except IndexError:
