@@ -54,8 +54,8 @@ class NoSQLTestBed(BaseSlapRecipe):
     kumo_cloud_config['address'] = self.getGlobalIPv6Address()
     kumo_cloud_config['report_path'] = self.log_directory
     
-    kumo_cloud_config.setdefault('nb_server_max', 4) # 3
-    kumo_cloud_config.setdefault('nb_tester_max', 5) # 3
+    kumo_cloud_config.setdefault('max_server', 4)
+    kumo_cloud_config.setdefault('max_tester', 5)
     kumo_cloud_config.setdefault('nb_thread', 32)
     kumo_cloud_config.setdefault('nb_request', 1024000)
     kumo_cloud_config.setdefault('erp5_publish_url', '')
@@ -215,11 +215,11 @@ class NoSQLTestBed(BaseSlapRecipe):
     # tester_config['url'] = "http://%s:5000/" % tester_config['tester_address']
     # tester_config['start_url'] = "http://%s:5000/start" % tester_config['tester_address']
     tester_config['report_path'] = self.log_directory
-    tester_config['binary'] = tester_config['memstrike_binary'] + " -l " + \
-                              tester_config['gateway_address'].strip("[]") + " -p " + \
-                              tester_config['gateway_port'] + " -t " + \
-                              tester_config['nb_thread'] + " " + \
-                              tester_config['nb_request'] + " -g"
+    config_dict['binary'] = "%s -g -l %s -p %s -t %s %s" % (config_dict['memstrike_binary'],
+                                                            config_dict['gateway_address'].strip("[]"),
+                                                            str(config_dict['gateway_port']),
+                                                            str(config_dict['nb_thread']),
+                                                            str(config_dict['nb_request']))
     tester_config['log_directory'] = self.log_directory
     tester_config['compress_method'] = "bz2"
 
@@ -234,6 +234,50 @@ class NoSQLTestBed(BaseSlapRecipe):
           self.substituteTemplate(tester_wrapper_template_location, tester_config))
 
     return [tester_runner_path]
+
+  def run_kumo_tester_and_gateway(self):
+    """ Runs the kumofs tester and gateway on the same partition. """
+    address = self.getGlobalIPv6Address()
+
+    config_dict = {}
+    config_dict.update(self.options)
+    config_dict.update(self.parameter_dict)
+
+    # Gateway part
+    config_dict['gateway_address'] = "[%s]" % address
+    config_dict['gateway_port'] = 11411
+    config_dict['gateway_log'] = os.path.join(self.log_directory, "kumo-gateway.log")
+
+    # Tester part
+    config_dict['tester_address'] = address
+    config_dict['report_path'] = self.log_directory
+    config_dict['binary'] = "%s -g -l %s -p %s -t %s %s" % (config_dict['memstrike_binary'],
+                                                            config_dict['gateway_address'].strip("[]"),
+                                                            str(config_dict['gateway_port']),
+                                                            str(config_dict['nb_thread']),
+                                                            str(config_dict['nb_request']))
+    config_dict['log_directory'] = self.log_directory
+    config_dict['compress_method'] = "bz2"
+
+    connection_dict = {}
+    # connection_dict['address'] = config_dict['gateway_address']
+    # connection_dict['port'] = config_dict['gateway_port']
+    connection_dict['url'] = "http://%s:5000/" % config_dict['tester_address']
+    self.computer_partition.setConnectionDict(connection_dict)
+
+    gateway_wrapper_template_location = pkg_resources.resource_filename(
+                                             __name__, os.path.join(
+                                             'template', 'kumo_gateway_run.in'))
+    gateway_runner_path = self.createRunningWrapper("kumo-gateway",
+          self.substituteTemplate(gateway_wrapper_template_location, config_dict))
+
+    tester_wrapper_template_location = pkg_resources.resource_filename(
+                                             __name__, os.path.join(
+                                             'template', 'nosqltester_run.in'))
+    tester_runner_path = self.createRunningWrapper("nosqltester",
+          self.substituteTemplate(tester_wrapper_template_location, config_dict))
+
+    return [gateway_runner_path, tester_runner_path]
 
   def run_memstrike_set(self):
     """ Runs memstrike in set mode. """
