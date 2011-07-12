@@ -101,8 +101,8 @@ class Recipe(BaseSlapRecipe):
     kvm_conf['pid_file_path'] = os.path.join(self.run_directory, 'pid_file')
     kvm_conf['database_path'] = os.path.join(self.data_root_directory,
         'slapmonitor_database')
-    kvm_conf['python_path'] = sys.executable
-    kvm_conf['qemu_path'] = self.options['qemu_path']
+    kvm_conf['python_path']   = sys.executable
+    kvm_conf['qemu_path']     = self.options['qemu_path']
     #xml_path = os.path.join(self.var_directory, 'slapreport.xml' )
 
     # Create disk if needed
@@ -114,17 +114,18 @@ class Recipe(BaseSlapRecipe):
         raise OSError, "Disk creation failed!"
     
     # Options nbd_ip and nbd_port are provided by slapos master
-    kvm_conf['nbd_ip'] = self.parameter_dict['nbd_ip']
+    kvm_conf['nbd_ip']   = self.parameter_dict['nbd_ip']
     kvm_conf['nbd_port'] = self.parameter_dict['nbd_port']
 
     # First octet has to represent a locally administered address
-    octet_list = [254] + [random.randint(0x00, 0xff) for x in range(5)]
+    octet_list              = [254] + [random.randint(0x00, 0xff) for x in range(5)]
     kvm_conf['mac_address'] = ':'.join(['%02x' % x for x in octet_list])
 
-    kvm_conf['hostname'] = "slaposkvm"
+    kvm_conf['hostname']    = "slaposkvm"
     kvm_conf['smp_count']   = self.options['smp_count']
     kvm_conf['ram_size']    = self.options['ram_size']
 
+    kvm_conf['vnc_display'] = 1
     # Instanciate KVM
 
     kvm_runner_path = self.instanciate_wrapper("kvm", kvm_conf)
@@ -140,7 +141,6 @@ class Recipe(BaseSlapRecipe):
     ##slapreport_runner_path = self.instanciate_wrapper("slapreport",
     #    [database_path, python_path])
     
-    kvm_conf['vnc_display'] = 1
     return kvm_conf
 
   def installNoVnc(self, source_ip, source_port, target_ip, target_port, 
@@ -156,16 +156,16 @@ class Recipe(BaseSlapRecipe):
     """
 
     noVNC_conf = {}
-    noVNC_conf['websockify_path']                          = self.options['websockify_path']
-    noVNC_conf['noVNC_location']                           = self.options['noVNC_location']
-    noVNC_conf['source_ip']                                = source_ip                                          
-    noVNC_conf['source_port']                              = source_port
-    noVNC_conf['target_ip']                                = target_ip
-    noVNC_conf['target_port']                              = target_port
-    noVNC_conf['python_path']                              = python_path
+    noVNC_conf['websockify_path']  = self.options['websockify_path']
+    noVNC_conf['noVNC_location']   = self.options['noVNC_location']
+    noVNC_conf['source_ip']        = source_ip                                          
+    noVNC_conf['source_port']      = source_port
+    noVNC_conf['target_ip']        = target_ip
+    noVNC_conf['target_port']      = target_port
+    noVNC_conf['python_path']      = python_path
 
-    noVNC_conf['ca_conf']                                  = self.installCertificateAuthority()
-    noVNC_conf['key_path'], noVNC_conf['certificate_path'] = self.requestCertificate('noVNC')
+    noVNC_conf['ca_conf']          = self.installCertificateAuthority()
+    noVNC_conf['pem_path'] = self.createPem('noVNC')
 
     # Instanciate Websockify
     websockify_runner_path = self.instanciate_wrapper("websockify",
@@ -311,3 +311,26 @@ class Recipe(BaseSlapRecipe):
       )[0]
     self.path_list.append(wrapper)
     return cron_d
+
+  def createPem(self,name):
+    """
+    Create self.pem file for noVNC encryption
+
+    Parameters: name for the requestCertificate function
+
+    Return: path to self.pem
+    """
+    key, certificate = self.requestCertificate(name)
+    pem = os.path.join(self.ca_certs, 'self.pem')
+    
+    pem_file = open(pem, 'w')
+    key_file = open(key, 'r')
+    pem_file.write(key_file.read())
+    key_file.close()
+    
+    certificate_file = open(certificate, 'r')
+    pem_file.write(certificate_file.read())
+    certificate_file.close()
+    pem_file.close()
+    
+    return pem
