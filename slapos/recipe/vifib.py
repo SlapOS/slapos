@@ -122,7 +122,7 @@ SSLCARevocationPath %(ca_crl)s"""
     zodb_configuration_string = '\n'.join(zodb_configuration_list)
     zope_port = 12000
     # One Distribution Node
-    zope_port +=1
+    zope_port += 1
     self.installZope(ip, zope_port, 'zope_distribution', with_timerservice=True,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config)
@@ -147,6 +147,9 @@ SSLCARevocationPath %(ca_crl)s"""
         login_url_list)
     apache_login = self.installBackendApache(self.getGlobalIPv6Address(), 15000,
         login_haproxy, backend_key, backend_certificate)
+    apache_frontend_login = self.installFrontendZopeApache(
+        self.getGlobalIPv6Address(), 4443, 'vifib', '/',
+        apache_login, '/', backend_key, backend_certificate)
     # Four Web Service Nodes (Machine access)
     service_url_list = []
     for i in (1, 2, 3, 4):
@@ -170,6 +173,7 @@ SSLCARevocationPath %(ca_crl)s"""
         known_tid_storage_identifier_dict, 'http://'+login_haproxy)
     self.linkBinary()
     self.setConnectionDict(dict(
+      front_end_url=apache_frontend_login,
       site_url=apache_login,
       site_user=user,
       site_password=password,
@@ -220,6 +224,8 @@ SSLCARevocationPath %(ca_crl)s"""
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
         memcached_conf, kumo_conf)
+    self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
+                           memcached_conf, kumo_conf)
     self.linkBinary()
     self.setConnectionDict(dict(
       development_zope='http://%s:%s/' % (ip, zope_port),

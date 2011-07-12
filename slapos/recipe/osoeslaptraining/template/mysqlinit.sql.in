@@ -1,0 +1,7 @@
+CREATE DATABASE IF NOT EXISTS %(database)s;
+GRANT ALL PRIVILEGES ON %(database)s.* TO %(user)s@localhost IDENTIFIED BY %(password)r;
+GRANT ALL PRIVILEGES ON %(database)s.* TO %(user)s@'%%' IDENTIFIED BY %(password)r;
+GRANT SHOW DATABASES ON *.* TO %(user)s@localhost IDENTIFIED BY %(password)r;
+GRANT SHOW DATABASES ON *.* TO %(user)s@'%%' IDENTIFIED BY %(password)r;
+FLUSH PRIVILEGES;
+EXIT
