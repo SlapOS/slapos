@@ -152,7 +152,7 @@ class Recipe(BaseSlapRecipe):
                  IP of the vnc server, port on which is situated the vnc server,
                  path to python binary
 
-    Returns    : nothing
+    Returns    : noVNC configuration dictionnary
     """
 
     noVNC_conf = {}
