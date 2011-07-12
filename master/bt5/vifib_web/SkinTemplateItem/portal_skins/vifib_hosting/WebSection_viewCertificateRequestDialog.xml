@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string></string> </value>
+            <value> <string>WebSection_requestNewCertificate</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -62,7 +62,6 @@
                 <string>normal</string>
                 <string>left</string>
                 <string>right</string>
-                <string>normal width100</string>
                 <string>hidden</string>
               </list>
             </value>
@@ -87,16 +86,8 @@
                     <key> <string>normal</string> </key>
                     <value>
                       <list>
-                        <string>my_certificate_request_button</string>
-                        <string>my_certificate_revoke_button</string>
-                        <string>my_update_credential_button</string>
+                        <string>your_description</string>
                       </list>
-                    </value>
-                </item>
-                <item>
-                    <key> <string>normal width100</string> </key>
-                    <value>
-                      <list/>
                     </value>
                 </item>
                 <item>
@@ -110,7 +101,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_viewMyAccountRender</string> </value>
+            <value> <string>WebSection_viewCertificateRequestDialog</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -118,11 +109,11 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>WebSection_viewMyAccountRender</string> </value>
+            <value> <string>WebSection_viewCertificateRequestDialog</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
-            <value> <string>form_view_editable</string> </value>
+            <value> <string>form_dialog</string> </value>
         </item>
         <item>
             <key> <string>row_length</string> </key>
@@ -134,7 +125,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string></string> </value>
+            <value> <string>Request SSL Certificate</string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>
