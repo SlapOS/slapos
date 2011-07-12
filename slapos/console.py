@@ -91,22 +91,24 @@ class Config:
     configuration_parser = ConfigParser.SafeConfigParser()
     configuration_parser.read(configuration_file_path)
     # Merges the arguments and configuration
-    for section in ('slapos', 'slapconsole'):
-      try:
-        configuration_dict = dict(configuration_parser.items(section))
-      except ConfigParser.NoSectionError:
-        pass
-      else:
-        for key in configuration_dict:
+    try:
+      configuration_dict = dict(configuration_parser.items("slapconsole"))
+    except ConfigParser.NoSectionError:
+      pass
+    else:
+      for key in configuration_dict:
+        if not getattr(self, key, None):
           setattr(self, key, configuration_dict[key])
-
-    master_url = getattr(self, 'master_url', None)
+    configuration_dict = dict(configuration_parser.items('slapos'))
+    master_url = configuration_dict.get('master_url', None)
     if not master_url:
       raise ValueError("No option 'master_url'")
     elif master_url.startswith('https') and \
          not getattr(self, 'key_file', None) and \
          not getattr(self, 'cert_file', None):
       raise ValueError("No option 'key_file' and/or 'cert_file'")
+    else:
+      setattr(self, 'master_url', master_url)
 
 def init(config):
 
