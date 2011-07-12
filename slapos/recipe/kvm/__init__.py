@@ -60,11 +60,10 @@ class Recipe(BaseSlapRecipe):
     
     self.linkBinary()
     self.computer_partition.setConnectionDict(dict(
-        vnc_connection_string = "https://[%s]:%s/vnc.html?host=[%s]&port=%s" % (noVNC_conf['source_ip'],
+        url = "https://[%s]:%s/vnc.html?host=[%s]&port=%s" % (noVNC_conf['source_ip'],
                                                      noVNC_conf['source_port'], noVNC_conf['source_ip'],
                                                      noVNC_conf['source_port']
-                                                     ), vnc_password = kvm_conf['vnc_passwd']))
-    
+                                                     ), password = kvm_conf['vnc_passwd']))
     return self.path_list
 
   def installKvm(self, vnc_ip):
