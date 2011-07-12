@@ -43,7 +43,7 @@ class CertificateAuthority:
       # no CA, let us create new one
       popenCommunicate([self.openssl_binary, 'req', '-nodes', '-config',
           self.openssl_configuration, '-new', '-x509', '-extensions',
-          'v3_ca', '-keyout', self.certificate, '-out', self.certificate,
+          'v3_ca', '-keyout', self.key, '-out', self.certificate,
           '-days', '10950'], 'Automatic Certificate Authority\n')
     except:
       try:

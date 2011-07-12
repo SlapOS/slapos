@@ -2,5 +2,5 @@
 # BEWARE: This file is operated by slapgrid
 # BEWARE: It will be overwritten automatically
 
-%(python_path)s %(websockify_path)s --web %(noVNC_location)s --cert=%(certificate_path)s --ssl-only %(source_ip)s:%(source_port)s %(target_ip)s:%(target_port)s
+%(python_path)s %(websockify_path)s --web %(noVNC_location)s --key=%(key_path)s --cert=%(certificate_path)s --ssl-only %(source_ip)s:%(source_port)s %(target_ip)s:%(target_port)s
 
