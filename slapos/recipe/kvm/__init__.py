@@ -165,7 +165,7 @@ class Recipe(BaseSlapRecipe):
     noVNC_conf['python_path']      = python_path
 
     noVNC_conf['ca_conf']          = self.installCertificateAuthority()
-    noVNC_conf['certificate_path'] = self.requestCertificate('noVNC')
+    key, noVNC_conf['certificate_path'] = self.requestCertificate('noVNC')
 
     # Instanciate Websockify
     websockify_runner_path = self.instanciate_wrapper("websockify",
