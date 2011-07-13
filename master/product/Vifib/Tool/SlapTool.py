@@ -374,15 +374,20 @@ class SlapTool(BaseTool):
       slap_partition._software_release_document =  SoftwareRelease(
             software_release=software_release_document.getUrlString(),
             computer_guid=computer_id)
-
       parameter_dict = self._getSalePackingListLineAsSoftwareInstance(
                                                        movement)
-
       # software instance has to define an xml parameter
       slap_partition._parameter_dict = self._instanceXmlToDict(
         parameter_dict.pop('xml'))
       slap_partition._connection_dict = self._instanceXmlToDict(
         parameter_dict.pop('connection_xml'))
+      for slave_instance_dict in parameter_dict.get("slave_instance_list", []):
+        if slave_instance_dict.has_key("connection_xml"):
+          slave_instance_dict.update(self._instanceXmlToDict(
+            slave_instance_dict.pop("connection_xml")))
+        if slave_instance_dict.has_key("xml"):
+          slave_instance_dict.update(self._instanceXmlToDict(
+            slave_instance_dict.pop("xml")))
       slap_partition._parameter_dict.update(parameter_dict)
 
       # Apply state and buildout run conditions
