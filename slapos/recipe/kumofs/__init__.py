@@ -220,9 +220,10 @@ class Recipe(BaseSlapRecipe):
         self.substituteTemplate(template_filename,
           stunnel_conf))
     wrapper = zc.buildout.easy_install.scripts([('stunnel',
-      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[
-        self.options['stunnel_binary'].strip(), stunnel_conf_path]
+      'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
+      sys.executable, self.wrapper_directory, arguments=[
+        [self.options['stunnel_binary'].strip(), stunnel_conf_path],
+        [ca_certificate, key]]
       )[0]
     self.path_list.append(wrapper)
 
