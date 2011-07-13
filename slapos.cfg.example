@@ -27,10 +27,10 @@ key_file = key file location coming from your slapos master account
 # Below are softwares supported by Vifib
 alias = kvm https://svn.erp5.org/repos/vifib/public/trunk/software_release/kvm/software.cfg
   nbd https://svn.erp5.org/repos/vifib/public/trunk/software_release/nbdserver/software.cfg
-  kvm+ https://svn.erp5.org/repos/vifib/public/trunk/software_release/kvm+/software.cfg
+  kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.22:/software/kvm/software.cfg
   testnode http://git.erp5.org/gitweb/slapos.git/blob_plain/testnode:/software/testnode/software.cfg
   nosqltester http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/nosqltestbed:/software/nosqltestbed/software.cfg
-  slaposwebrunner https://svn.erp5.org/repos/vifib/public/trunk/software_release/runner/software.cfg
+  slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.17:/software/slaprunner/software.cfg
   lightforum https://svn.erp5.org/repos/public/slapos/trunk/software_release.contribution/lightforum.Christophe.Lefloch/software.cfg
   factux https://www.tiolive.com/vifib/P-OSOE.Factux.Wilfried.Rodrigues/Base_download
   joomla https://svn.erp5.org/repos/public/slapos/trunk/software_release.contribution/joomla.Christophe.Laroulandie/software.cfg
@@ -38,9 +38,9 @@ alias = kvm https://svn.erp5.org/repos/vifib/public/trunk/software_release/kvm/s
   respest https://www.tiolive.com/vifib/P-OSOE.Respest.BENHAMED/Base_download
   erp5scalabilitytestbed http://git.erp5.org/gitweb/slapos.git/blob_plain/erp5scalabilitytestbed:/software/erp5scalabilitytestbed/software.cfg
   zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.5:/software/zabbix-agent/software.cfg
-  mysql-5.1 http://git.erp5.org/gitweb/slapos.git/blob_plain/ee6caee6215a00b92aa6016d46ff291dbc4d4e2c:/software/mysql-5.1/software.cfg
-  mariadb-5.2 http://git.erp5.org/gitweb/slapos.git/blob_plain/ee6caee6215a00b92aa6016d46ff291dbc4d4e2c:/software/mariadb/software.cfg
-  memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/ee6caee6215a00b92aa6016d46ff291dbc4d4e2c:/software/memcached/software.cfg
-  kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/ee6caee6215a00b92aa6016d46ff291dbc4d4e2c:/software/kumofs/software.cfg
+  mysql-5.1 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.21:/software/mysql-5.1/software.cfg
+  mariadb-5.2 https://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/mariadb/software.cfg
+  memcached https://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/memcached/software.cfg
+  kumofs https://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.21:/software/kumofs/software.cfg
   erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/erp5/software.cfg
   erp5_branch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5:/software/erp5/software.cfg
