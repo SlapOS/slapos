@@ -173,8 +173,12 @@ class Recipe(BaseSlapRecipe):
     noVNC_conf['certificate_path'] = self.certificate_path
    
     # Instanciate Websockify
-    websockify_runner_path = self.instanciate_wrapper("websockify",
-        noVNC_conf)
+    websockify_runner_path =zc.buildout.easy_install.scripts([('stunnel',
+      'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
+      sys.executable, self.wrapper_directory, arguments=[
+        [noVNC_conf['python_path'].strip(), 'self.options['websockify_path']', '--web', 'self.options['noVNC_location']', '--key=%s' % (noVNC_conf['key_path']), '--cert=%r' % (noVNC_conf['certificate_path']), '--ssl-only', noVNC_conf['source_ip']:noVNC_conf['source_port'], noVNC_conf['target_ip']:noVNC_conf['target_port']],
+        [self.certificate_path, self.key_path]]
+       )[0]
     self.path_list.append(websockify_runner_path)
   
     return noVNC_conf
