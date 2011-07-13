@@ -10,6 +10,23 @@ def execute(args):
   # Note: Candidate for slapos.lib.recipe
   os.execv(args[0], args + sys.argv[1:])
 
+def execute_wait(args):
+  """Execution but after all files in args[1] exists"""
+  exec_list = list(args[0])
+  file_list = list(args[1])
+  sleep = 60
+  while True:
+    ready = True
+    for f in file_list:
+      if not os.path.exists(f):
+        print 'File %r does not exists, sleeping for %s' % (f, sleep)
+        ready = False
+    if ready:
+      break
+    time.sleep(sleep)
+  os.execv(exec_list[0], exec_list + sys.argv[1:])
+
+
 child_pg = None
 
 
