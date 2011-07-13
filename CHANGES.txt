@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.15 (unreleased)
+0.15 (2011-07-13)
 -----------------
 
- * No changes yet.
+ * Encrypt connection by default. [Vivien Alger]
 
 0.14 (2011-07-13)
 -----------------
