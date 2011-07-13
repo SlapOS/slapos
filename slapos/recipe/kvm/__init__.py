@@ -47,13 +47,13 @@ class Recipe(BaseSlapRecipe):
     Returns    : List path_list
     """
     self.path_list = []
-    
+
+    self.requirements, self.ws           = self.egg.working_set()
+    self.cron_d                          = self.installCrond()    
+
     self.ca_conf                         = self.installCertificateAuthority()
     self.key_path, self.certificate_path = self.requestCertificate('noVNC')
-    
-    self.requirements, self.ws           = self.egg.working_set()
-    self.cron_d                          = self.installCrond()
-    
+     
     kvm_conf = self.installKvm(vnc_ip = self.getLocalIPv4Address())
     
     vnc_port = 5900 + kvm_conf['vnc_display']
