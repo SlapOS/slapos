@@ -67,9 +67,12 @@ class Recipe(BaseSlapRecipe):
     self.linkBinary()
     self.computer_partition.setConnectionDict(dict(
         url = "https://[%s]:%s/vnc.html?host=[%s]&port=%s" % (noVNC_conf['source_ip'],
-                                                     noVNC_conf['source_port'], noVNC_conf['source_ip'],
+                                                     noVNC_conf['source_port'],
+                                                     noVNC_conf['source_ip'],
                                                      noVNC_conf['source_port']
-                                                     ), password = kvm_conf['vnc_passwd']))
+                                                     ), 
+        password = kvm_conf['vnc_passwd']))
+    
     return self.path_list
 
   def installKvm(self, vnc_ip):
@@ -123,7 +126,7 @@ class Recipe(BaseSlapRecipe):
     kvm_conf['nbd_port'] = self.parameter_dict['nbd_port']
 
     # First octet has to represent a locally administered address
-    octet_list              = [254] + [random.randint(0x00, 0xff) for x in range(5)]
+    octet_list         = [254] + [random.randint(0x00, 0xff) for x in range(5)]
     kvm_conf['mac_address'] = ':'.join(['%02x' % x for x in octet_list])
 
     kvm_conf['hostname']    = "slaposkvm"
@@ -131,14 +134,30 @@ class Recipe(BaseSlapRecipe):
     kvm_conf['ram_size']    = self.options['ram_size']
 
     kvm_conf['vnc_display'] = 1
+    
     # Instanciate KVM
-
-    kvm_runner_path = self.instanciate_wrapper("kvm", kvm_conf)
+    kvm_template_location = pkg_resources.resource_filename(          
+                                             __name__, os.path.join(         
+                                             'template', 'kvm_run.in'))     
+    
+    kvm_runner_path = self.createRunningWrapper(kvm,                        
+          self.substituteTemplate(wrapper_template_location,
+                                  config_dictionnary))
+   
     self.path_list.append(kvm_runner_path)
+
     # Instanciate KVM controller
-    kvm_controller_runner_path = self.instanciate_wrapper("kvm_controller", 
-                                                          kvm_conf)
+    kvm_controller_template_location = pkg_resources.resource_filename(          
+                                             __name__, os.path.join(         
+                                             'template',
+                                             'kvm_controller_run.in' ))     
+    
+    kvm_controller_runner_path = self.createRunningWrapper(name,                        
+          self.substituteTemplate(wrapper_template_location,
+                                  config_dictionnary))
+   
     self.path_list.append(kvm_controller_runner_path)
+   
     # Instanciate Slapmonitor
     ##slapmonitor_runner_path = self.instanciate_wrapper("slapmonitor",
     #    [database_path, pid_file_path, python_path])
@@ -161,48 +180,29 @@ class Recipe(BaseSlapRecipe):
     """
 
     noVNC_conf = {}
-    noVNC_conf['websockify_path']  = self.options['websockify_path']
-    noVNC_conf['noVNC_location']   = self.options['noVNC_location']
-    noVNC_conf['source_ip']        = source_ip                                          
-    noVNC_conf['source_port']      = source_port
-    noVNC_conf['target_ip']        = target_ip
-    noVNC_conf['target_port']      = target_port
-    noVNC_conf['python_path']      = python_path
-    noVNC_conf['ca_conf']          = self.ca_conf
-    noVNC_conf['key_path']         = self.key_path
-    noVNC_conf['certificate_path'] = self.certificate_path
    
+    noVNC_conf['source_ip']   = source_ip                                          
+    noVNC_conf['source_port'] = source_port
+    
     # Instanciate Websockify
-    websockify_runner_path =zc.buildout.easy_install.scripts([('stunnel',
+    websockify_runner_path = zc.buildout.easy_install.scripts([('stunnel',
       'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
       sys.executable, self.wrapper_directory, arguments=[
-        [noVNC_conf['python_path'].strip(), 'self.options['websockify_path']', '--web', 'self.options['noVNC_location']', '--key=%s' % (noVNC_conf['key_path']), '--cert=%r' % (noVNC_conf['certificate_path']), '--ssl-only', noVNC_conf['source_ip']:noVNC_conf['source_port'], noVNC_conf['target_ip']:noVNC_conf['target_port']],
+        [python_path.strip(),
+         self.options['websockify_path'],
+         '--web',
+         self.options['noVNC_location'],
+         '--key=%s' % (self.key_path),
+         '--cert=%s' % (self.certificate_path),
+         '--ssl-only',
+         '%s:%s' % (source_ip, source_port),
+         '%s:%s' % (target_ip, target_port)],
         [self.certificate_path, self.key_path]]
        )[0]
+    
     self.path_list.append(websockify_runner_path)
   
     return noVNC_conf
-
-  def instanciate_wrapper(self, name, config_dictionnary):
-
-    """
-    Define the path to the wrapper of the thing you are instanciating
-    
-    Parameters : name of what you are instanciating, list of arguments for the 
-    configuration dictionnary of the wrapper
-    
-    Returns    : path to the running wrapper
-    """
-  
-    wrapper_template_location = pkg_resources.resource_filename(          
-                                             __name__, os.path.join(         
-                                             'template', '%s_run.in' % name))     
-    
-    runner_path = self.createRunningWrapper(name,                        
-          self.substituteTemplate(wrapper_template_location, config_dictionnary))
-    
-
-    return runner_path
 
   def linkBinary(self):
     """Links binaries to instance's bin directory for easier exposal"""
