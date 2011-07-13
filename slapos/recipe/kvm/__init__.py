@@ -66,7 +66,7 @@ class Recipe(BaseSlapRecipe):
     
     self.linkBinary()
     self.computer_partition.setConnectionDict(dict(
-        url = "https://[%s]:%s/vnc.html?host=[%s]&port=%s" % (noVNC_conf['source_ip'],
+        url = "https://[%s]:%s/vnc.html?host=[%s]&port=%s&encrypt=1" % (noVNC_conf['source_ip'],
                                                      noVNC_conf['source_port'],
                                                      noVNC_conf['source_ip'],
                                                      noVNC_conf['source_port']
