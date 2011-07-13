@@ -1,7 +1,8 @@
-0.10 (unreleased)
+0.10 (2011-07-13)
 =================
 
- * No changes yet.
+ * Fix a bug in slapconsole where request and supply shorthand methods
+   don't accept all needed parameters. [Cedric de Saint Martin]
 
 0.9 (2011-07-11)
 ================
