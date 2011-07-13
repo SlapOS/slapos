@@ -140,7 +140,7 @@ class Recipe(BaseSlapRecipe):
                                              __name__, os.path.join(         
                                              'template', 'kvm_run.in'))     
     
-    kvm_runner_path = self.createRunningWrapper(kvm,                        
+    kvm_runner_path = self.createRunningWrapper("kvm",                        
           self.substituteTemplate(wrapper_template_location,
                                   config_dictionnary))
    
@@ -152,7 +152,7 @@ class Recipe(BaseSlapRecipe):
                                              'template',
                                              'kvm_controller_run.in' ))     
     
-    kvm_controller_runner_path = self.createRunningWrapper(name,                        
+    kvm_controller_runner_path = self.createRunningWrapper("kvm_controller",                        
           self.substituteTemplate(wrapper_template_location,
                                   config_dictionnary))
    
