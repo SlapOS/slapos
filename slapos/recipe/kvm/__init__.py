@@ -48,6 +48,12 @@ class Recipe(BaseSlapRecipe):
     """
     self.path_list = []
     
+    self.ca_conf                         = self.installCertificateAuthority()
+    self.key_path, self.certificate_path = self.requestCertificate('noVNC')
+    
+    self.requirements, self.ws           = self.egg.working_set()
+    self.cron_d                          = self.installCrond()
+    
     kvm_conf = self.installKvm(vnc_ip = self.getLocalIPv4Address())
     
     vnc_port = 5900 + kvm_conf['vnc_display']
@@ -162,10 +168,10 @@ class Recipe(BaseSlapRecipe):
     noVNC_conf['target_ip']        = target_ip
     noVNC_conf['target_port']      = target_port
     noVNC_conf['python_path']      = python_path
-
-    noVNC_conf['ca_conf']          = self.installCertificateAuthority()
-    noVNC_conf['key_path'], noVNC_conf['certificate_path'] = self.requestCertificate('noVNC')
-
+    noVNC_conf['ca_conf']          = self.ca_conf
+    noVNC_conf['key_path']         = self.key_path
+    noVNC_conf['certificate_path'] = self.certificate_path
+   
     # Instanciate Websockify
     websockify_runner_path = self.instanciate_wrapper("websockify",
         noVNC_conf)
@@ -219,8 +225,6 @@ class Recipe(BaseSlapRecipe):
   def installCertificateAuthority(self, ca_country_code='XX',
       ca_email='xx@example.com', ca_state='State', ca_city='City',
       ca_company='Company'):
-    self.requirements, self.ws = self.egg.working_set()
-    self.cron_d = self.installCrond()
     backup_path = self.createBackupDirectory('ca')
     self.ca_dir = os.path.join(self.data_root_directory, 'ca')
     self._createDirectory(self.ca_dir)
