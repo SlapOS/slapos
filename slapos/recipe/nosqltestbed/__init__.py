@@ -45,7 +45,7 @@ class NoSQLTestBed(BaseSlapRecipe):
       raise NotImplementedError("Do not support %s" % software_type)
 
   def run_kumo_cloud(self):
-    """ Deploy kumofs systeom on a cloud. """
+    """ Deploy kumofs system on a cloud. """
 
     kumo_cloud_config = {}
     kumo_cloud_config.update(self.options)
@@ -96,7 +96,7 @@ class NoSQLTestBed(BaseSlapRecipe):
     return [nosqltester_manager_runner_path]
 
   def run_all(self):
-    """ Runs all services on one machine. """
+    """ Run all services on one machine. """
     all_config = {}
     all_config.update(self.options)
 
@@ -132,16 +132,12 @@ class NoSQLTestBed(BaseSlapRecipe):
 
     return [manager_runner_path, server_runner_path, gateway_runner_path]
 
-  def run_kumo_manager(self, ipaddress=None):
-    """ Runs the kumofs manager. """
+  def run_kumo_manager(self):
+    """ Run the kumofs manager. """
     manager_config = {}
     manager_config.update(self.options)
 
-    if ipaddress is None:
-      manager_config['manager_address'] = "[%s]" % self.getGlobalIPv6Address()
-    else:
-      manager_config['manager_address'] = ipaddress
-    
+    manager_config['manager_address'] = "[%s]" % self.getGlobalIPv6Address()
     manager_config['manager_port'] = 19700
     manager_config['manager_log'] = os.path.join(self.log_directory, "kumo-manager.log")
 
@@ -159,7 +155,7 @@ class NoSQLTestBed(BaseSlapRecipe):
     return [manager_runner_path]
 
   def run_kumo_server(self):
-    """ Runs the kumofs server. """
+    """ Run the kumofs server. """
     server_config = {}
     server_config.update(self.options)
     server_config.update(self.parameter_dict)
@@ -183,7 +179,7 @@ class NoSQLTestBed(BaseSlapRecipe):
     return [server_runner_path]
 
   def run_kumo_gateway(self):
-    """ Runs the kumofs gateway. """
+    """ Run the kumofs gateway. """
     gateway_config = {}
     gateway_config.update(self.options)
     gateway_config.update(self.parameter_dict)
@@ -206,7 +202,7 @@ class NoSQLTestBed(BaseSlapRecipe):
     return [gateway_runner_path]
 
   def run_kumo_tester(self):
-    """ Runs the kumofs tester. """
+    """ Run the kumofs tester. """
     tester_config = {}
     tester_config.update(self.options)
     tester_config.update(self.parameter_dict)
@@ -236,7 +232,7 @@ class NoSQLTestBed(BaseSlapRecipe):
     return [tester_runner_path]
 
   def run_kumo_tester_and_gateway(self):
-    """ Runs the kumofs tester and gateway on the same partition. """
+    """ Run the kumofs tester and gateway on the same partition. """
     address = self.getGlobalIPv6Address()
 
     config_dict = {}
@@ -280,7 +276,7 @@ class NoSQLTestBed(BaseSlapRecipe):
     return [gateway_runner_path, tester_runner_path]
 
   def run_memstrike_set(self):
-    """ Runs memstrike in set mode. """
+    """ Run memstrike in set mode. """
     memstrike_config = {}
     memstrike_config.update(self.options)
     memstrike_config.update(self.parameter_dict)
