@@ -141,8 +141,8 @@ class Recipe(BaseSlapRecipe):
                                              'template', 'kvm_run.in'))     
     
     kvm_runner_path = self.createRunningWrapper("kvm",                        
-          self.substituteTemplate(wrapper_template_location,
-                                  config_dictionnary))
+          self.substituteTemplate(kvm_template_location,
+                                  kvm_conf))
    
     self.path_list.append(kvm_runner_path)
 
@@ -153,8 +153,8 @@ class Recipe(BaseSlapRecipe):
                                              'kvm_controller_run.in' ))     
     
     kvm_controller_runner_path = self.createRunningWrapper("kvm_controller",                        
-          self.substituteTemplate(wrapper_template_location,
-                                  config_dictionnary))
+          self.substituteTemplate(kvm_controller_template_location,
+                                  kvm_conf))
    
     self.path_list.append(kvm_controller_runner_path)
    
@@ -185,7 +185,7 @@ class Recipe(BaseSlapRecipe):
     noVNC_conf['source_port'] = source_port
     
     # Instanciate Websockify
-    websockify_runner_path = zc.buildout.easy_install.scripts([('stunnel',
+    websockify_runner_path = zc.buildout.easy_install.scripts([('websockify',
       'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
       sys.executable, self.wrapper_directory, arguments=[
         [python_path.strip(),
