@@ -9,7 +9,7 @@ Changes
 0.14 (2011-07-13)
 -----------------
 
- * Provide new way to instantiate kvm.
+ * Provide new way to instantiate kvm. [Cedric de Saint Martin, Vivien Alger]
 
 0.13 (2011-07-13)
 -----------------
