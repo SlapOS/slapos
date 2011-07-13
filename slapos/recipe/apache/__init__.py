@@ -202,10 +202,24 @@ class Recipe(BaseSlapRecipe):
       apache_conf['pid_file'] + ' SIGUSR1')
     return apache_conf
 
+  def generateNewId(self):
+    """Temporary way to generate id"""
+    import random
+    return str(random.randint(2**9,9**9))
+
   def installFrontendApache(self, ip, port, key, certificate,
                             name, access_control_string=None):
 
     rewrite_rule_include_path = self.createDataDirectory('apachevhost')
+    slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
+    for slave_instance in slave_instance_list:
+      id = self.generateNewId()
+      site_url = slave_instance.get("site_url", "")
+      rewrite_rule_content = self.substituteTemplate(
+        self.getTemplateFilename('apache.vhost.conf.in'),
+        dict(id=id, ip=ip, port=port, site_url=site_url))
+      self._writeFile(os.path.join(rewrite_rule_include_path, id),
+        rewrite_rule_content)
 
     apache_conf = self._getApacheConfigurationDict(name, ip, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(

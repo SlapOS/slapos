@@ -1,0 +1,1 @@
+RewriteRule ^/%(id)s($|/.*) %(site_url)s/VirtualHostBase/http/%(ip)s:%(port)s/VirtualHostRoot/_vh_%(id)s$1 [L,P]
