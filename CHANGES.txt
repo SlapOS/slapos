@@ -1,7 +1,8 @@
 0.13 (unreleased)
 ================
 
- * No change yet.
+ * Implement generic execute_wait wrapper, which allows to wait for some files
+   to appear before starting service depending on it. [Łukasz Nowak]
 
 0.12 (2011-07-11)
 =================
