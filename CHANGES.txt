@@ -1,24 +1,86 @@
-0.6 (unreleased)
-================
+Changes
+=======
+
+0.16 (unreleased)
+-----------------
 
  * No changes yet.
 
+0.15 (2011-07-13)
+-----------------
+
+ * Encrypt connection by default. [Vivien Alger]
+
+0.14 (2011-07-13)
+-----------------
+
+ * Provide new way to instantiate kvm. [Cedric de Saint Martin, Vivien Alger]
+
+0.13 (2011-07-13)
+-----------------
+
+ * Implement generic execute_wait wrapper, which allows to wait for some files
+   to appear before starting service depending on it. [Łukasz Nowak]
+
+0.12 (2011-07-11)
+-----------------
+
+ * Fix slaprunner, phpmyadmin software releases, added
+   wordpress software release. [Cedric de Saint Martin]
+
+0.11 (2011-07-07)
+-----------------
+
+ * Enable test suite runner for vifib.
+
+0.10 (2011-07-01)
+-----------------
+
+ * Add PHPMyAdmin software release used in SlapOS tutorials
+   [Cedric de Saint Martin]
+ * Add slaprunner software release [Cedric de Saint Martin]
+
+0.9 (2011-06-24)
+----------------
+
+ * mysql recipe : Changing slapos.recipe.erp5.execute to
+   slapos.recipe.librecipe.execute [Cedric de Saint Martin]
+
+0.8 (2011-06-15)
+----------------
+
+ * Add MySQL and MariaDB standalone software release and recipe
+   [Cedric de Saint Martin]
+ * Fixed slapos.recipe.erp5testnode instantiation [Sebastien Robin]
+
+0.7 (2011-06-14)
+----------------
+
+ * Fix slapos.recipe.erp5 package by providing site.zcml in it. [Łukasz Nowak]
+ * Improve slapos.recipe.erp5testnode partition instantiation error reporting
+   [Sebastien Robin]
+
+0.6 (2011-06-13)
+----------------
+
+ * Fixed slapos.recipe.erp5 instantiation. [Łukasz Nowak]
+
 0.5 (2011-06-13)
-================
+----------------
 
  * Implement zabbix agent instantiation. [Łukasz Nowak]
  * Drop dependency on Zope2. [Łukasz Nowak]
  * Share more in slapos.recipe.librecipe module. [Łukasz Nowak]
 
 0.4 (2011-06-09)
-================
+----------------
 
  * Remove reference to slapos.tool.networkcache as it was removed from pypi. [Łukasz Nowak]
  * Add Kumofs standalone software release and recipe [Cedric de Saint Martin]
  * Add Memcached standalone software release and recipe [Cedric de Saint Martin]
 
 0.3 (2011-06-09)
-================
+----------------
 
  * Moved out template and build to separate distributions [Łukasz Nowak]
  * Depend on slapos.core instead of depracated slapos.slap [Romain Courteaud]
@@ -26,11 +88,11 @@
  * Allow to control full environment in erp5 module [Łukasz Nowak]
 
 0.2 (2011-05-30)
-================
+----------------
 
   * Allow to pass zope_environment in erp5 entry point [Łukasz Nowak]
 
 0.1 (2011-05-27)
-================
+----------------
 
   * All slapos.recipe.* became slapos.cookbook:* [Łukasz Nowak]
