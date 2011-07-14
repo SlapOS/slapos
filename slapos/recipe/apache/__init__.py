@@ -56,7 +56,8 @@ class Recipe(BaseSlapRecipe):
     key, certificate = self.requestCertificate('Apache Front end')
 
     # This should come from parameter.
-    frontend_domain_name = self.parameter_dict.get("domain", "host.vifib.net")
+    frontend_domain_name = self.parameter_dict.get("domain",
+        "http://host.vifib.net")
 
     site_url = self.installFrontendApache(
           ip=self.getGlobalIPv6Address(),
