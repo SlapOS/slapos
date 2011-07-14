@@ -57,7 +57,7 @@ class Recipe(BaseSlapRecipe):
 
     # This should come from parameter.
     frontend_domain_name = self.parameter_dict.get("domain",
-        "http://host.vifib.net")
+        "host.vifib.net")
 
     site_url = self.installFrontendApache(
           ip=self.getGlobalIPv6Address(),
@@ -212,18 +212,15 @@ class Recipe(BaseSlapRecipe):
                             name, access_control_string=None):
     rewrite_rule_include_path = self.createDataDirectory('apachevhost')
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
-    clean_name = name.replace("http://", "").replace("https://", "")
-    print self.parameter_dict
     for slave_instance in slave_instance_list:
       id = self.generateNewId()
-      protocol = name.split(":")[0]
       url = slave_instance.get("url")
       rewrite_rule_content = self.substituteTemplate(
         self.getTemplateFilename('apache.vhost.conf.in'),
-        dict(id=id, ip=ip, port=port, domain=clean_name, url=url, protocol=protocol))
+        dict(id=id, ip=ip, port=port, domain=name, url=url))
       self._writeFile(os.path.join(rewrite_rule_include_path, id),
         rewrite_rule_content)
-    apache_conf = self._getApacheConfigurationDict(clean_name, ip, port)
+    apache_conf = self._getApacheConfigurationDict(name, ip, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
         dict(login_certificate=certificate, login_key=key))
@@ -240,16 +237,16 @@ class Recipe(BaseSlapRecipe):
     apache_conf_string = self.substituteTemplate(
           self.getTemplateFilename('apache.conf.in'), apache_conf)
 
-    apache_config_file = self.createConfigurationFile(clean_name + '.conf',
+    apache_config_file = self.createConfigurationFile(name + '.conf',
         apache_conf_string)
 
     self.path_list.append(apache_config_file)
     self.path_list.extend(zc.buildout.easy_install.scripts([(
-      clean_name, 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
+      name, 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
           sys.executable, self.wrapper_directory, arguments=[
             dict(
               required_path_list=[key, certificate],
               binary=self.options['httpd_binary'],
               config=apache_config_file)
           ]))
-    return "%s:%s/" % (name, port)
+    return "https://%s:%s/" % (name, port)
