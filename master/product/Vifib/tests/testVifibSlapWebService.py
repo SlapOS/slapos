@@ -391,8 +391,7 @@ class TestVifibSlapWebService(testVifibMixin):
         portal_type='Hosting Subscription').getUid())
 
   def stepSetSelectedComputerPartition(self, sequence, **kw):
-    """Sets in sequence computer partition parameters related to current
-    software instance"""
+    """Sets in sequence computer partition parameters related to current software instance"""
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
     delivery_line = [q for q in software_instance
@@ -4525,44 +4524,6 @@ class TestVifibSlapWebService(testVifibMixin):
     CheckComputerPartitionSaleOrderAggregatedList
     Logout
     """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_SlaveInstance_getInstanceParameterDict_with_two_SlaveInstance(self):
-    """
-      Check that with two Slave Instance installed in different computers, the
-      Slave Instance are allocated correctly
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """ 
-      Tic
-      LoginTestVifibCustomer
-      PersonRequestSlaveInstance
-      ConfirmOrderedSaleOrderActiveSense
-      Tic """ + self.prepare_published_software_release + \
-          self.prepare_formated_computer + """
-      Tic
-      LoginTestVifibAdmin
-      RequestSoftwareInstallation
-      Tic
-      Logout
-      SlapLoginCurrentComputer
-      ComputerSoftwareReleaseAvailable
-      Tic
-      SlapLogout
-      Tic
-      LoginTestVifibCustomer
-      PersonRequestSoftwareInstance
-      ConfirmOrderedSaleOrderActiveSense
-      Tic
-      LoginTestVifibCustomer
-      PersonRequestSlaveInstance
-      ConfirmOrderedSaleOrderActiveSense
-      Tic
-      SlapLoginCurrentComputer
-      CheckSlaveInstanceListFromOneComputerPartition
-      """
-      
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
