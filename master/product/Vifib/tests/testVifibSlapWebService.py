@@ -4539,8 +4539,7 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       ConfirmOrderedSaleOrderActiveSense
-      Tic """ + self.prepare_published_software_release + \
-          self.prepare_formated_computer + """
+      Tic """ + self.prepare_formated_computer + """
       Tic
       LoginTestVifibAdmin
       RequestSoftwareInstallation
