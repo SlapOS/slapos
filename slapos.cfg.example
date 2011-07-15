@@ -38,8 +38,8 @@ alias =
   respest https://www.tiolive.com/vifib/P-OSOE.Respest.BENHAMED/Base_download
   erp5scalabilitytestbed http://git.erp5.org/gitweb/slapos.git/blob_plain/erp5scalabilitytestbed:/software/erp5scalabilitytestbed/software.cfg
   zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.5:/software/zabbix-agent/software.cfg
-  mysql-5.1 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.21:/software/mysql-5.1/software.cfg
-  mariadb-5.2 https://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/mariadb/software.cfg
+  mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.21:/software/mysql-5.1/software.cfg
+  mariadb https://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/mariadb/software.cfg
   memcached https://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/memcached/software.cfg
   kumofs https://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.21:/software/kumofs/software.cfg
   erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/erp5/software.cfg
