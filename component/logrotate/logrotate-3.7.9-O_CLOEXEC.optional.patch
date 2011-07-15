@@ -1,0 +1,16 @@
+diff --git a/config.c b/config.c
+index e6d5d1d..dd004a9 100644
+--- a/config.c
++++ b/config.c
+@@ -519,7 +519,11 @@ static int readConfigFile(const char *configFile, struct logInfo *defConfig)
+        length arrays -- of course, if we aren't run setuid it doesn't
+        matter much */
+ 
++#ifdef O_CLOEXEC
+     fd = open(configFile, O_RDONLY | O_CLOEXEC);
++#else
++    fd = open(configFile, O_RDONLY);
++#endif
+     if (fd < 0) {
+ 	message(MESS_ERROR, "failed to open config file %s: %s\n",
+ 		configFile, strerror(errno));
