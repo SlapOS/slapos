@@ -52,123 +52,12 @@
             <key> <string>_body</string> </key>
             <value> <string>person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
 request = context.REQUEST\n
-#try:\n
-#  certificate = person.getCertificate()\n
-#  request.set(\'portal_status_message\', context.Base_translateString(\'Certificate created.\'))\n
-#except ValueError:\n
-#  certificate = {\'certificate\': \'\', \'key\': \'\'}\n
-#  request.set(\'portal_status_message\', context.Base_translateString(\'Certificate was already requested, please revoke existing one.\'))\n
-certificate = {}\n
-certificate[\'key\'] = """-----BEGIN PRIVATE KEY-----\n
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCn5ArY6o1jSkTD\n
-y/De6SW5oD6BzOVJgmZBa5Xjf3rwFVcvD2MeXyv34eh5Btsiu1dkVHk6G7vfPnxL\n
-zjeCnRHemjQEfP1cEdLmTZiaAqoYlNq/rOLHMdX71DC8BENTNiP2mmgbUa6EXWML\n
-pGSUmXZwPNZt7PsgtfANdiWQqMzMq0NXUbNfZ5eku6bMWWxljgBmnaD5CXA5AuXd\n
-tUeJ39WCgfp86pXVIEZtL0e2Hw+TOTA79QM3q29tYF3+ZR/Gi2koiu4PsdgOHhhI\n
-C/hrx3mk99tOBSika7654sNjMDDTib2FjDN7ofXuHB6uNXf2sZuaRHaQrDN04rLa\n
-xW4yTjkjAgMBAAECggEAPYtCzrFskvEus/eWnKAqzBkJ0NsjUgcTJPgjQfoBPvET\n
-vJSPaRrKK1wMtBDnU5wJNSYiKkLwY62sMr2ta5vYaRlt6BdJaO6/uNzJC+veHpSy\n
-e4EMwKhsIJxwIPwPEfnOxR9k+l6+8papMCNbG34GBK7IjBNLG3qWPNkKfDTknkGx\n
-d4ibnNEBQ/yyr1gGkb7NNBwIZz6egmkmnH1sglfrGyc1wMRfQszDkR9xKCDoPZqp\n
-8kQkY9mL5y+UZjENZkonQVpnjGsCoUBgFI3BRz9nJaaQFiyCGL8I301Brc2ygZos\n
-dFC0USX8svzIolYjDV67Xi3VNQDiB4iv8szhXCONgQKBgQDbhGPCWro25aWcOSps\n
-BvKBQrr+L0lSlrAmmVYrFVK0OUn7oPCNo1WQ60wpy/6Euo3mJFNpYgUndY2Bq+zH\n
-7mwt+HDYyGhwsTj/exHSIMu53jCbM+/3echlyYLfQzqUIWMvIk/wNGx/EUP/MnJI\n
-aPEi1JeoBJC3UdQL7aQWK/tQKwKBgQDDyyZXmWLOaFNDekMkaR713BfeK8vRlPFi\n
-B+M8K4ggqBM+dGCrn7gOnThBYeDxgDxi7qW1B18EMCKzK8tr+EPp/o4YnZ2jln2X\n
-bURA1kWBfdSSvfdEYGrlXDu8SAhdBeZMw0FJI/oRv4DKVHnmdW/nitdPPd62nNkJ\n
-WcUldjPG6QKBgQCnFlJIsX5kItC35NthdrhHo19p8txAvOo/tx9bk9Nr0t95ZLs1\n
-VEnhEPjcJ6YHqWgw8R18bVu2+UdImHCWjehR5XUfzQuSG5NjA25BHy1ywKkGubXC\n
-DTR4JbYz8pw3/GHekqN+Fqku3xl+ugs7CoXhGSiGf1MX9nUMz0nChp+4GQKBgHqZ\n
-YXfmvvz6THDrRNGu1UkkOPnQOL8SYZd90uchZwrz06D+5G1zBKB6B/jA3ka6gpV8\n
-U9yoMfIAZioFGUqRWY1S7Q0y3LvLhvbj36ItybYM4afFNejl6umVuH3sKPh+sjeM\n
-5/txgKvOW0nWXcJV9O1qfenLlwKH8kstoAoWGtPJAoGAJJvG554vX5QczlVT1ppo\n
-s05D3ZqVuaqnV7lC5jpN4ajI3bBzL1jIzpLo2DvwE2oBaiU0NObLKQIufq+M45TQ\n
-odunD1bfVZgrjBwmpGQs2O1TNAf1b4lD3RKOxwcAn4rE2U6ruJ0Yu/ASkrqnZaxl\n
-6GCTkojhLUOrEpkVEN6k310=\n
------END PRIVATE KEY-----"""\n
-certificate[\'certificate\'] = """Certificate:\n
-Data:\n
-Version: 3 (0x2)\n
-Serial Number: 12 (0xc)\n
-Signature Algorithm: sha1WithRSAEncryption\n
-Issuer: C=XX, ST=State, L=City, O=Company, CN=Automatic Certificate Authority/emailAddress=xx@example.com\n
-Validity\n
-Not Before: Jul 12 12:07:50 2011 GMT\n
-Not After : Jul 9 12:07:50 2021 GMT\n
-Subject: C=XX, ST=State, O=Company, CN=test_vifib_customer/emailAddress=xx@example.com\n
-Subject Public Key Info:\n
-Public Key Algorithm: rsaEncryption\n
-Public-Key: (2048 bit)\n
-Modulus:\n
-00:a7:e4:0a:d8:ea:8d:63:4a:44:c3:cb:f0:de:e9:\n
-25:b9:a0:3e:81:cc:e5:49:82:66:41:6b:95:e3:7f:\n
-7a:f0:15:57:2f:0f:63:1e:5f:2b:f7:e1:e8:79:06:\n
-db:22:bb:57:64:54:79:3a:1b:bb:df:3e:7c:4b:ce:\n
-37:82:9d:11:de:9a:34:04:7c:fd:5c:11:d2:e6:4d:\n
-98:9a:02:aa:18:94:da:bf:ac:e2:c7:31:d5:fb:d4:\n
-30:bc:04:43:53:36:23:f6:9a:68:1b:51:ae:84:5d:\n
-63:0b:a4:64:94:99:76:70:3c:d6:6d:ec:fb:20:b5:\n
-f0:0d:76:25:90:a8:cc:cc:ab:43:57:51:b3:5f:67:\n
-97:a4:bb:a6:cc:59:6c:65:8e:00:66:9d:a0:f9:09:\n
-70:39:02:e5:dd:b5:47:89:df:d5:82:81:fa:7c:ea:\n
-95:d5:20:46:6d:2f:47:b6:1f:0f:93:39:30:3b:f5:\n
-03:37:ab:6f:6d:60:5d:fe:65:1f:c6:8b:69:28:8a:\n
-ee:0f:b1:d8:0e:1e:18:48:0b:f8:6b:c7:79:a4:f7:\n
-db:4e:05:28:a4:6b:be:b9:e2:c3:63:30:30:d3:89:\n
-bd:85:8c:33:7b:a1:f5:ee:1c:1e:ae:35:77:f6:b1:\n
-9b:9a:44:76:90:ac:33:74:e2:b2:da:c5:6e:32:4e:\n
-39:23\n
-Exponent: 65537 (0x10001)\n
-X509v3 extensions:\n
-X509v3 Basic Constraints:\n
-CA:FALSE\n
-Netscape Comment:\n
-OpenSSL Generated Certificate\n
-X509v3 Subject Key Identifier:\n
-2F:12:E1:CF:0C:6D:E5:93:92:EC:10:DD:33:3A:03:0D:5A:4A:65:04\n
-X509v3 Authority Key Identifier:\n
-keyid:93:30:A5:99:77:10:DF:05:13:21:3E:8D:40:D1:6B:FD:61:80:51:50\n
-\n
-Signature Algorithm: sha1WithRSAEncryption\n
-34:d3:e0:7f:87:87:2a:17:b6:5f:c4:72:cf:b9:8a:fd:d5:3c:\n
-ba:a1:2d:6d:95:11:b6:18:cc:67:c3:80:f5:d2:ae:ed:a2:6b:\n
-7b:d9:51:43:56:84:17:80:f3:ec:c3:c9:e0:88:63:26:56:02:\n
-82:8d:4a:04:c3:a3:7c:99:bb:4c:fa:b7:eb:10:8d:e2:86:31:\n
-42:dc:f8:3d:b1:e9:91:8c:87:88:fe:ba:40:6a:64:45:16:0f:\n
-0a:4e:72:ea:91:37:62:93:1a:f7:77:29:90:0c:60:0f:be:50:\n
-c3:c9:e9:40:bd:bb:8c:22:0c:54:d8:fb:f7:62:df:83:0f:01:\n
-54:f0:c0:03:59:5b:56:c7:09:8d:f5:64:12:53:e1:2e:31:f6:\n
-36:25:6f:8d:87:5c:ab:b0:f3:f5:41:d3:17:38:88:f2:7d:15:\n
-90:cd:7f:92:89:24:05:cf:32:85:c1:8f:f8:aa:6a:b5:2e:48:\n
-65:29:35:05:eb:ed:7e:32:35:88:d7:0d:39:4a:28:8e:d1:16:\n
-99:f9:0e:2a:7a:1f:6f:c0:3d:79:26:9a:57:05:90:1c:01:31:\n
-df:b2:e1:b7:ba:f8:81:d2:9f:e4:42:34:50:6b:b4:c2:5b:fb:\n
-92:12:5c:f6:5d:89:ab:36:e5:dc:d0:c3:8b:42:87:f9:ae:cf:\n
-95:65:8d:52\n
------BEGIN CERTIFICATE-----\n
-MIID6jCCAtKgAwIBAgIBDDANBgkqhkiG9w0BAQUFADCBhzELMAkGA1UEBhMCWFgx\n
-DjAMBgNVBAgMBVN0YXRlMQ0wCwYDVQQHDARDaXR5MRAwDgYDVQQKDAdDb21wYW55\n
-MSgwJgYDVQQDDB9BdXRvbWF0aWMgQ2VydGlmaWNhdGUgQXV0aG9yaXR5MR0wGwYJ\n
-KoZIhvcNAQkBFg54eEBleGFtcGxlLmNvbTAeFw0xMTA3MTIxMjA3NTBaFw0yMTA3\n
-MDkxMjA3NTBaMGwxCzAJBgNVBAYTAlhYMQ4wDAYDVQQIDAVTdGF0ZTEQMA4GA1UE\n
-CgwHQ29tcGFueTEcMBoGA1UEAwwTdGVzdF92aWZpYl9jdXN0b21lcjEdMBsGCSqG\n
-SIb3DQEJARYOeHhAZXhhbXBsZS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw\n
-ggEKAoIBAQCn5ArY6o1jSkTDy/De6SW5oD6BzOVJgmZBa5Xjf3rwFVcvD2MeXyv3\n
-4eh5Btsiu1dkVHk6G7vfPnxLzjeCnRHemjQEfP1cEdLmTZiaAqoYlNq/rOLHMdX7\n
-1DC8BENTNiP2mmgbUa6EXWMLpGSUmXZwPNZt7PsgtfANdiWQqMzMq0NXUbNfZ5ek\n
-u6bMWWxljgBmnaD5CXA5AuXdtUeJ39WCgfp86pXVIEZtL0e2Hw+TOTA79QM3q29t\n
-YF3+ZR/Gi2koiu4PsdgOHhhIC/hrx3mk99tOBSika7654sNjMDDTib2FjDN7ofXu\n
-HB6uNXf2sZuaRHaQrDN04rLaxW4yTjkjAgMBAAGjezB5MAkGA1UdEwQCMAAwLAYJ\n
-YIZIAYb4QgENBB8WHU9wZW5TU0wgR2VuZXJhdGVkIENlcnRpZmljYXRlMB0GA1Ud\n
-DgQWBBQvEuHPDG3lk5LsEN0zOgMNWkplBDAfBgNVHSMEGDAWgBSTMKWZdxDfBRMh\n
-Po1A0Wv9YYBRUDANBgkqhkiG9w0BAQUFAAOCAQEANNPgf4eHKhe2X8Ryz7mK/dU8\n
-uqEtbZURthjMZ8OA9dKu7aJre9lRQ1aEF4Dz7MPJ4IhjJlYCgo1KBMOjfJm7TPq3\n
-6xCN4oYxQtz4PbHpkYyHiP66QGpkRRYPCk5y6pE3YpMa93cpkAxgD75Qw8npQL27\n
-jCIMVNj792Lfgw8BVPDAA1lbVscJjfVkElPhLjH2NiVvjYdcq7Dz9UHTFziI8n0V\n
-kM1/kokkBc8yhcGP+KpqtS5IZSk1BevtfjI1iNcNOUoojtEWmfkOKnofb8A9eSaa\n
-VwWQHAEx37Lht7r4gdKf5EI0UGu0wlv7khJc9l2Jqzbl3NDDi0KH+a7PlWWNUg==\n
------END CERTIFICATE-----"""\n
+try:\n
+  certificate = person.getCertificate()\n
+  request.set(\'portal_status_message\', context.Base_translateString(\'Certificate created.\'))\n
+except ValueError:\n
+  certificate = {\'certificate\': \'\', \'key\': \'\'}\n
+  request.set(\'portal_status_message\', context.Base_translateString(\'Certificate was already requested, please revoke existing one.\'))\n
 request.set(\'your_certificate\', certificate[\'certificate\'])\n
 request.set(\'your_key\', certificate[\'key\'])\n
 \n
