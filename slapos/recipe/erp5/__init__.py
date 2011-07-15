@@ -81,8 +81,9 @@ class Recipe(BaseSlapRecipe):
 
     key, certificate = self.requestCertificate('Login Based Access')
     apache_conf = dict(
-        apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
-          port=13000, backend=site_access, key=key, certificate=certificate))
+         apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
+         port=13000, backend=site_access, key=key, certificate=certificate))
+
 
     default_bt5_list = []
     if self.parameter_dict.get("flavour", "default") == 'configurator':
@@ -623,7 +624,7 @@ class Recipe(BaseSlapRecipe):
     return user, password
 
   def installERP5Site(self, user, password, zope_access, mysql_conf,
-          conversion_server_conf=None, memcached_conf=None, kumo_conf=None, 
+          conversion_server_conf=None, memcached_conf=None, kumo_conf=None,
           erp5_site_id='erp5', default_bt5_list=[]):
     """ Create a script controlled by supervisor, which creates a erp5
     site on current available zope and mysql environment"""
@@ -899,7 +900,11 @@ class Recipe(BaseSlapRecipe):
 
     rewrite_rule_template = \
         "RewriteRule ^%(path)s($|/.*) %(backend_url)s/VirtualHostBase/https/%(server_name)s:%(port)s%(backend_path)s/VirtualHostRoot/_vh_%(vhname)s$1 [L,P]\n"
-    path = pkg_resources.resource_string(__name__, 'template/apache.zope.conf.path-protected.in') % dict(path='/', access_control_string='none')
+
+    path = pkg_resources.resource_string(__name__,
+           'template/apache.zope.conf.path-protected.in') % \
+              dict(path='/', access_control_string='none')
+
     if access_control_string is None:
       path_template = pkg_resources.resource_string(__name__,
         'template/apache.zope.conf.path.in')
@@ -915,8 +920,7 @@ class Recipe(BaseSlapRecipe):
           backend_path=backend_path,
           port=apache_conf['port'],
           vhname=frontend_path.replace('/', ''),
-          server_name=name
-    )
+          server_name=name)
     rewrite_rule = rewrite_rule_template % d
     apache_conf.update(**dict(
       path_enable=path,
