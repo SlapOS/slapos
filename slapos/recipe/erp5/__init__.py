@@ -81,8 +81,25 @@ class Recipe(BaseSlapRecipe):
 
     key, certificate = self.requestCertificate('Login Based Access')
     apache_conf = dict(
-        apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
-          port=13000, backend=site_access, key=key, certificate=certificate))
+         apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
+         port=13000, backend=site_access, key=key, certificate=certificate))
+
+    connection_dict = dict(site_url=apache_conf['apache_login'])
+
+    if self.parameter_dict.get("domain_name") is not None:
+      connection_dict["backend_url"] = apache_conf['apache_login']
+      connection_dict["domain_ip"] = self.getGlobalIPv6Address()
+
+      # XXX Define a fake domain_name for now.
+      frontend_name = self.parameter_dict.get("domain_name")
+      frontend_key, frontend_certificate = \
+             self.requestCertificate(frontend_name)
+
+      connection_dict["site_url"] = self.installFrontendZopeApache(
+        ip=self.getGlobalIPv6Address(), port=13001, name=frontend_name,
+        frontend_path='/%s' % self.site_id, backend_path='/%s' % self.site_id,
+        backend_url="http://%s" % site_access, key=frontend_key,
+        certificate=frontend_certificate)
 
     default_bt5_list = []
     if self.parameter_dict.get("flavour", "default") == 'configurator':
@@ -97,13 +114,13 @@ class Recipe(BaseSlapRecipe):
     self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
                            memcached_conf, kumo_conf)
     self.linkBinary()
-    self.setConnectionDict(dict(
-      site_url=apache_conf['apache_login'],
+    connection_dict.update(**dict(
       site_user=user,
       site_password=password,
       memcached_url=memcached_conf['memcached_url'],
       kumo_url=kumo_conf['kumo_address']
     ))
+    self.setConnectionDict(connection_dict)
     return self.path_list
 
   def installZopeStandalone(self):
@@ -130,14 +147,19 @@ class Recipe(BaseSlapRecipe):
     thread_amount_per_zope = int(self.options.get(
                                 'cluster_zope_thread_amount', 1))
 
-    activity_node_amount = 2
-    user_node_amount = 2
+    activity_node_amount = int(self.options.get(
+                   "cluster_activity_node_amount", 2))
+
+    user_node_amount = int(self.options.get(
+                   "cluster_user_node_amount", 2))
+
     ip = self.getLocalIPv4Address()
     storage_dict = self._requestZeoFileStorage('Zeo Server 1', 'main')
 
     zeo_conf = self.installZeo(ip)
     tidstorage_config = dict(host=ip, port='6001')
 
+    # XXX How to define good values for this?
     mount_point = '/'
     check_path = '/erp5/account_module'
 
@@ -328,6 +350,12 @@ class Recipe(BaseSlapRecipe):
     # workaround wrong assumptions of ERP5Type.tests.runUnitTest about
     # directory existence
     unit_test = os.path.join(testinstance, 'unit_test')
+    connection_string_list = []
+    for test_database, test_user, test_password in \
+          mysql_conf['mysql_parallel_test_dict'][-4:]:
+      connection_string_list.append(
+          '%s@%s:%s %s %s' % (test_database, mysql_conf['ip'],
+                            mysql_conf['tcp_port'], test_user, test_password))
     if not os.path.isdir(unit_test):
       os.mkdir(unit_test)
     runUnitTest = zc.buildout.easy_install.scripts([
@@ -341,6 +369,7 @@ class Recipe(BaseSlapRecipe):
           '--erp5_sql_connection_string', '%(mysql_test_database)s@%'
           '(ip)s:%(tcp_port)s %(mysql_test_user)s '
           '%(mysql_test_password)s' % mysql_conf,
+          '--extra_sql_connection_string_list',','.join(connection_string_list),
           '--conversion_server_hostname=%(conversion_server_ip)s' % \
                                                          conversion_server_conf,
           '--conversion_server_port=%(conversion_server_port)s' % \
@@ -611,7 +640,7 @@ class Recipe(BaseSlapRecipe):
     return user, password
 
   def installERP5Site(self, user, password, zope_access, mysql_conf,
-          conversion_server_conf=None, memcached_conf=None, kumo_conf=None, 
+          conversion_server_conf=None, memcached_conf=None, kumo_conf=None,
           erp5_site_id='erp5', default_bt5_list=[]):
     """ Create a script controlled by supervisor, which creates a erp5
     site on current available zope and mysql environment"""
@@ -881,13 +910,18 @@ class Recipe(BaseSlapRecipe):
     ident = 'frontend_' + name
     apache_conf = self._getApacheConfigurationDict(ident, ip, port)
     apache_conf['server_name'] = name
+    apache_conf['frontend_path'] = frontend_path
     apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
         'template/apache.ssl-snippet.conf.in') % dict(
         login_certificate=certificate, login_key=key)
 
     rewrite_rule_template = \
         "RewriteRule ^%(path)s($|/.*) %(backend_url)s/VirtualHostBase/https/%(server_name)s:%(port)s%(backend_path)s/VirtualHostRoot/_vh_%(vhname)s$1 [L,P]\n"
-    path = pkg_resources.resource_string(__name__, 'template/apache.zope.conf.path-protected.in') % dict(path='/', access_control_string='none')
+
+    path = pkg_resources.resource_string(__name__,
+           'template/apache.zope.conf.path-protected.in') % \
+              dict(path='/', access_control_string='none')
+
     if access_control_string is None:
       path_template = pkg_resources.resource_string(__name__,
         'template/apache.zope.conf.path.in')
@@ -903,8 +937,7 @@ class Recipe(BaseSlapRecipe):
           backend_path=backend_path,
           port=apache_conf['port'],
           vhname=frontend_path.replace('/', ''),
-          server_name=name
-    )
+          server_name=name)
     rewrite_rule = rewrite_rule_template % d
     apache_conf.update(**dict(
       path_enable=path,
@@ -925,7 +958,7 @@ class Recipe(BaseSlapRecipe):
             )
           ]))
     # Note: IPv6 is assumed always
-    return 'https://[%(ip)s]:%(port)s' % apache_conf
+    return 'https://%(server_name)s:%(port)s%(frontend_path)s' % (apache_conf)
 
   def installBackendApache(self, ip, port, backend, key, certificate,
       suffix='', access_control_string=None):
