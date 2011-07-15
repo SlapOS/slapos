@@ -27,7 +27,7 @@ key_file = key file location coming from your slapos master account
 # Below are softwares supported by Vifib
 alias = 
   nbd https://svn.erp5.org/repos/vifib/public/trunk/software_release/nbdserver/software.cfg
-  kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.24:/software/kvm/software.cfg
+  kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.25:/software/kvm/software.cfg
   testnode http://git.erp5.org/gitweb/slapos.git/blob_plain/testnode:/software/testnode/software.cfg
   nosqltester http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/nosqltestbed:/software/nosqltestbed/software.cfg
   slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.17:/software/slaprunner/software.cfg
