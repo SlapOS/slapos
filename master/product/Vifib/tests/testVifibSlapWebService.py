@@ -1069,6 +1069,20 @@ class TestVifibSlapWebService(testVifibMixin):
         url = random_url
     sequence.edit(software_release_uri=url)
 
+  def stepSelectDifferentSoftwareReleaseUri(self, sequence, **kw):
+    """
+      Change the software release uri
+    """
+    software_release_uri_list = sequence.get("software_release_uri_list", [])
+    software_release_uri = sequence.get("software_release_uri")
+    old_software_release_uri = software_release_uri
+    for uri in software_release_uri_list:
+      if uri != software_release_uri:
+        sequence.edit(software_release_uri=uri)
+        break
+    self.assertNotEquals(sequence["software_release_uri"], 
+        old_software_release_uri)
+
   def stepStoreSoftwareReleaseUri(self, sequence, **kw):
     """
       Store the current software release uri in one list
@@ -4585,7 +4599,7 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_SlaveInstance_Person_request_with_Two_Different_SoftwareInstance(self):
+  def test_SlaveInstance_Person_request_with_Two_Different_ComputerPartition(self):
     """
       Check that one Slave Instance is allocated correctly when exists two different
       Software Instances and Computer Partition. The slave instance must be
@@ -4606,6 +4620,46 @@ class TestVifibSlapWebService(testVifibMixin):
     Tic
     CheckSlaveInstanceReady
     CheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_Person_request_with_Two_Different_SoftwareInstance(self):
+    """
+      Check that one Slave Instance is allocated correctly when exists two different
+      Software Instances. The slave instance must be allocated in the same
+      Computer Partition that exists one Software Instance installed.
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      StoreSoftwareReleaseUri
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      """ + self.prepare_published_software_release + """
+      Tic
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SelectDifferentSoftwareReleaseUri
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      CheckSlaveInstanceAssociationWithSoftwareInstance
+      SlapLogout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -5788,6 +5842,23 @@ class TestVifibSlapWebService(testVifibMixin):
         portal_type=self.sale_packing_list_line_portal_type)
     self.assertNotEquals(sale_packing_list_line.getAggregateValue(
       portal_type=self.computer_partition_portal_type), None)
+
+  def stepCheckSlaveInstanceAssociationWithSoftwareInstance(self, sequence):
+    portal_catalog = self.portal.portal_catalog
+    computer_partition_reference_list = \
+        sequence['computer_partition_reference_list']
+    for reference in computer_partition_reference_list:
+      computer_partition = portal_catalog.getResultValue(
+          portal_type="Computer Partition", reference=reference)
+      sale_packing_list_line_list = portal_catalog(
+          portal_type="Sale Packing List Line",
+          aggregate_relative_url=computer_partition.getRelativeUrl())
+      software_release_uri_list = []
+      for sale_packing_list_line in sale_packing_list_line_list:
+        software_release_uri = sale_packing_list_line.getResultValue(
+            portal_type="Software Release")
+        software_release_uri_list.append(software_release_uri.getUrlString())
+      self.assertEquals(1, len(set(software_release_uri_list)))
 
   def stepCheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
