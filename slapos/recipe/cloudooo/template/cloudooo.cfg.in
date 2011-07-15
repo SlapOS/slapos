@@ -29,27 +29,24 @@ limit_memory_used = 3000
 ## OOFactory Settings
 #
 # The pool consist of several OpenOffice.org instances
-application_hostname = %(openoffice_host)s
+application_hostname = %(ip)s
 # OpenOffice Port
 openoffice_port = %(openoffice_port)s
 # LD_LIBRARY_PATH passed to OpenOffice
 env-LD_LIBRARY_PATH = %(LD_LIBRARY_PATH)s
-env-PATH = ${PATH}
 
 #
 # Mimetype Registry
 # It is used to select the handler that will be used in conversion.
 # Priority matters, first match take precedence on next lines.
 mimetype_registry =
-  application/pdf text/* pdf
   application/pdf * ooo
   video/* * ffmpeg
   audio/* * ffmpeg
   application/x-shockwave-flash * ffmpeg
   application/ogg * ffmpeg
   application/ogv * ffmpeg
-  image/png * ooo
-  image/* image/* imagemagick
+  image/* * ooo
   text/* * ooo
   application/zip * ooo
   application/msword * ooo
@@ -65,6 +62,6 @@ mimetype_registry =
   * application/vnd.oasis.opendocument* ooo
 
 [server:main]
-use = egg:PasteScript#cherrypy
+use = egg:PasteScript#wsgiutils
 host = %(ip)s
 port = %(port)s
