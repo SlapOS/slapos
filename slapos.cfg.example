@@ -25,7 +25,7 @@ database_uri = :memory:
 cert_file = certificate file location coming from your slapos master account
 key_file = key file location coming from your slapos master account
 # Below are softwares supported by Vifib
-alias = kvm https://svn.erp5.org/repos/vifib/public/trunk/software_release/kvm/software.cfg
+alias = 
   nbd https://svn.erp5.org/repos/vifib/public/trunk/software_release/nbdserver/software.cfg
   kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.22:/software/kvm/software.cfg
   testnode http://git.erp5.org/gitweb/slapos.git/blob_plain/testnode:/software/testnode/software.cfg
