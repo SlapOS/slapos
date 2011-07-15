@@ -84,6 +84,22 @@ class Recipe(BaseSlapRecipe):
          apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
          port=13000, backend=site_access, key=key, certificate=certificate))
 
+    connection_dict = dict(site_url=apache_conf['apache_login'])
+
+    if self.parameter_dict.get("domain_name") is not None:
+      connection_dict["backend_url"] = apache_conf['apache_login']
+      connection_dict["domain_ip"] = self.getGlobalIPv6Address()
+
+      # XXX Define a fake domain_name for now.
+      frontend_name = self.parameter_dict.get("domain_name")
+      frontend_key, frontend_certificate = \
+             self.requestCertificate(frontend_name)
+
+      connection_dict["site_url"] = self.installFrontendZopeApache(
+        ip=self.getGlobalIPv6Address(), port=13001, name=frontend_name,
+        frontend_path='/%s' % self.site_id, backend_path='/%s' % self.site_id,
+        backend_url="http://%s" % site_access, key=frontend_key,
+        certificate=frontend_certificate)
 
     default_bt5_list = []
     if self.parameter_dict.get("flavour", "default") == 'configurator':
@@ -98,13 +114,13 @@ class Recipe(BaseSlapRecipe):
     self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
                            memcached_conf, kumo_conf)
     self.linkBinary()
-    self.setConnectionDict(dict(
-      site_url=apache_conf['apache_login'],
+    connection_dict.update(**dict(
       site_user=user,
       site_password=password,
       memcached_url=memcached_conf['memcached_url'],
       kumo_url=kumo_conf['kumo_address']
     ))
+    self.setConnectionDict(connection_dict)
     return self.path_list
 
   def installZopeStandalone(self):
