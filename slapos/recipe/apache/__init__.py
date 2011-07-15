@@ -64,7 +64,7 @@ class Recipe(BaseSlapRecipe):
           port=8080, name=frontend_domain_name,
           key=key, certificate=certificate)
 
-    self.setConnectionDict(dict(site_url=site_url, ))
+    self.setConnectionDict(dict(site_url=site_url))
     return self.path_list
 
   def installLogrotate(self):
@@ -203,23 +203,22 @@ class Recipe(BaseSlapRecipe):
       apache_conf['pid_file'] + ' SIGUSR1')
     return apache_conf
 
-  def generateNewId(self):
-    """Temporary way to generate id"""
-    import random
-    return str(random.randint(2**9,9**9))
+  def generateRewriteRule(self, parameter_dict):
+    return "RewriteRule ^/%(id)s($|/.*) %(url)s/VirtualHostBase/" % parameter_dict + \
+      "https/%(domain)s:%(port)s/VirtualHostRoot/_vh_%(id)s$1 [L,P]" % parameter_dict
 
   def installFrontendApache(self, ip, port, key, certificate,
                             name, access_control_string=None):
-    rewrite_rule_include_path = self.createDataDirectory('apachevhost')
+    vhost_name = "apachevhost.conf"
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
+    rewrite_rule_list = []
     for slave_instance in slave_instance_list:
-      id = self.generateNewId()
       url = slave_instance.get("url")
-      rewrite_rule_content = self.substituteTemplate(
-        self.getTemplateFilename('apache.vhost.conf.in'),
-        dict(id=id, ip=ip, port=port, domain=name, url=url))
-      self._writeFile(os.path.join(rewrite_rule_include_path, id),
-        rewrite_rule_content)
+      id = str(slave_instance_list.index(slave_instance))
+      vhost_dict = dict(id=id, ip=ip, port=port,
+          domain=name, url=url)
+      rewrite_rule_list.append(self.generateRewriteRule(vhost_dict))
+    self.createConfigurationFile(vhost_name, "\n".join(rewrite_rule_list))
     apache_conf = self._getApacheConfigurationDict(name, ip, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
@@ -231,7 +230,7 @@ class Recipe(BaseSlapRecipe):
 
     apache_conf.update(**dict(
       path_enable=path,
-      rewrite_rule_include_path=rewrite_rule_include_path
+      rewrite_rule_path=os.path.join(self.etc_directory, vhost_name),
     ))
 
     apache_conf_string = self.substituteTemplate(

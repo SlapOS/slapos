@@ -37,7 +37,7 @@ CustomLog "%(access_log)s" common
 
 # Magic of Zope related rewrite
 RewriteEngine On
-Include %(rewrite_rule_include_path)s/*.conf
+Include %(rewrite_rule_path)s
 
 # List of modules
 LoadModule authz_host_module modules/mod_authz_host.so
