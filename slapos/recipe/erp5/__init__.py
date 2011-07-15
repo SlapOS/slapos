@@ -894,6 +894,7 @@ class Recipe(BaseSlapRecipe):
     ident = 'frontend_' + name
     apache_conf = self._getApacheConfigurationDict(ident, ip, port)
     apache_conf['server_name'] = name
+    apache_conf['frontend_path'] = frontend_path
     apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
         'template/apache.ssl-snippet.conf.in') % dict(
         login_certificate=certificate, login_key=key)
@@ -941,7 +942,7 @@ class Recipe(BaseSlapRecipe):
             )
           ]))
     # Note: IPv6 is assumed always
-    return 'https://[%(ip)s]:%(port)s' % apache_conf
+    return 'https://%(server_name)s:%(port)s%(frontend_path)s' % (apache_conf)
 
   def installBackendApache(self, ip, port, backend, key, certificate,
       suffix='', access_control_string=None):
