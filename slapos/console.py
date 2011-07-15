@@ -137,10 +137,10 @@ def init(config):
   def shorthandRequest(software_release, partition_reference,
       partition_parameter_kw=None, software_type=None, filter_kw=None,
       state=None):
-    slap.registerOpenOrder().request(software_release, partition_reference,
+    return slap.registerOpenOrder().request(software_release, partition_reference,
       partition_parameter_kw, software_type, filter_kw, state)
   def shorthandSupply(software_release, computer_guid=None):
-    slap.registerSupply().supply(software_release, computer_guid)
+    return slap.registerSupply().supply(software_release, computer_guid)
   local['request'] = shorthandRequest
   local['supply'] = shorthandSupply
 
