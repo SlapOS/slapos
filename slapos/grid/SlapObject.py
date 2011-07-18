@@ -47,7 +47,8 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 
 class Software(object):
   """This class is responsible of installing a software release"""
-  def __init__(self, url, software_root, console, buildout):
+  def __init__(self, url, software_root, console, buildout,
+      signature_public_file, signature_private_file):
     """Initialisation of class parameters
     """
     self.url = url
@@ -57,6 +58,8 @@ class Software(object):
     self.buildout = buildout
     self.logger = logging.getLogger('BuildoutManager')
     self.console = console
+    self.signature_private_file = signature_private_file
+    self.signature_public_file = signature_public_file
 
   def install(self):
     """ Fetches buildout configuration from the server, run buildout with
@@ -79,6 +82,8 @@ class Software(object):
       buildout_parameter_list = [
         'buildout:extends-cache=%s' % extends_cache,
         'buildout:directory=%s' % self.software_path,
+        'buildout:signature_public_file=%s' % self.signature_public_file,
+        'buildout:signature_private_file=%s' % self.signature_private_file,
         '-c', self.url]
       bootstrapBuildout(self.software_path, self.buildout,
           additional_buildout_parametr_list=buildout_parameter_list,
