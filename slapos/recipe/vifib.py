@@ -276,8 +276,6 @@ SSLCARevocationPath %(ca_crl)s"""
     if self.parameter_dict.get("flavour", "default") == 'configurator':
       self.default_bt5_list = self.options.get("configurator_bt5_list", '').split()
 
-    if self.parameter_dict.get('development', 'false').lower() == 'true':
-      return self.installDevelopment()
     if self.parameter_dict.get('production', 'false').lower() == 'true':
       return self.installProduction()
-    raise NotImplementedError('Flavour of instance have to be given.')
+    return self.installDevelopment()
