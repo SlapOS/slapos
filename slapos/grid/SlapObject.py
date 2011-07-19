@@ -81,7 +81,7 @@ class Software(object):
       buildout_parameter_list = [
         'buildout:extends-cache=%s' % extends_cache,
         'buildout:directory=%s' % self.software_path,
-        'buildout:signature_private_key_file=%s' % self.signature_private_key_file,
+        'buildout:signature-private-key-file=%s' % self.signature_private_key_file,
         '-c', self.url]
       bootstrapBuildout(self.software_path, self.buildout,
           additional_buildout_parametr_list=buildout_parameter_list,
