@@ -111,7 +111,6 @@ class Config:
       setattr(self, 'master_url', master_url)
 
 def init(config):
-
   """Initialize Slap instance, connect to server and create
   aliases to common software releases"""
   slap = slapos.slap.slap()
@@ -133,10 +132,18 @@ def init(config):
   # Create global variable too see available aliases
   local['software_list'] = software_list
   # Create global shortcut functions to request instance and software
-  local['request'] = lambda software_release, reference: \
-        slap.registerOpenOrder().request(software_release, reference)
-  local['supply'] = lambda software_release, computer: \
-        slap.registerSupply().supply(software_release, computer)
+  # XXX-Cedric : can we change given parameters to something like
+  # *args, **kwargs, but without the bad parts, in order to be generic?
+  def shorthandRequest(software_release, partition_reference,
+      partition_parameter_kw=None, software_type=None, filter_kw=None,
+      state=None):
+    return slap.registerOpenOrder().request(software_release, partition_reference,
+      partition_parameter_kw, software_type, filter_kw, state)
+  def shorthandSupply(software_release, computer_guid=None):
+    return slap.registerSupply().supply(software_release, computer_guid)
+  local['request'] = shorthandRequest
+  local['supply'] = shorthandSupply
+
   return local
 
 def request():
