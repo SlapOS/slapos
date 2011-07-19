@@ -97,8 +97,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--key_file", help="SSL Authorisation key file.")
   parser.add_argument("--cert_file",
       help="SSL Authorisation certificate file.")
-  parser.add_argument("--signature_private_file", help="Private Key File.")
-  parser.add_argument("--signature_public_file", help="Public Key File.")
+  parser.add_argument("--signature_private_key_file", default='',
+      help="Signature private key file.")
   parser.add_argument("--master_ca_file", help="Root certificate of SlapOS "
       "master key.")
   parser.add_argument("--certificate_repository_path",
@@ -166,11 +166,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   key_file = option_dict.get('key_file')
   cert_file = option_dict.get('cert_file')
   master_ca_file = option_dict.get('master_ca_file')
-  signature_private_file = option_dict.get('signature_private_file', '')
-  signature_public_file = option_dict.get('signature_public_file', '')
+  signature_private_key_file = option_dict.get('signature_private_key_file')
 
-  for f in [key_file, cert_file, master_ca_file,
-            signature_private_file, signature_public_file]:
+  for f in [key_file, cert_file, master_ca_file, signature_private_file]:
     if f not in ('', None,):
       if not os.path.exists(f):
         parser.error('File %r does not exists.' % f)
@@ -201,8 +199,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             key_file=key_file,
             cert_file=cert_file,
             master_ca_file=master_ca_file,
-            signature_private_file=signature_private_file,
-            signature_public_file=signature_public_file,
+            signature_private_key_file=signature_private_key_file,
             certificate_repository_path=certificate_repository_path,
             console=option_dict['console'],
             buildout=option_dict.get('buildout')),
@@ -272,8 +269,7 @@ class Slapgrid(object):
                buildout,
                key_file=None,
                cert_file=None,
-               signature_private_file=None,
-               signature_public_file=None,
+               signature_private_key_file=None,
                master_ca_file=None,
                certificate_repository_path=None,
                console=False):
@@ -290,8 +286,7 @@ class Slapgrid(object):
     self.cert_file = cert_file
     self.master_ca_file = master_ca_file
     self.certificate_repository_path = certificate_repository_path
-    self.signature_private_file = signature_private_file
-    self.signature_public_file = signature_public_file
+    self.signature_private_key_file = signature_private_key_file
     # Configures logger
     self.logger = logging.getLogger('Slapgrid')
     # Creates objects from slap module
@@ -364,8 +359,7 @@ class Slapgrid(object):
         software_release_uri = software_release.getURI()
         Software(url=software_release_uri, software_root=self.software_root,
             console=self.console, buildout=self.buildout,
-            signature_private_file=self.signature_private_file,
-            signature_public_file=self.signature_public_file).install()
+            signature_private_key_file=self.signature_private_key_file).install()
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         software_release.error(exception)
