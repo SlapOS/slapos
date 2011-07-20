@@ -91,31 +91,14 @@
             <div class="field forgotten_password">\n
               <label>&nbsp;</label>\n
 <div class="field nolabel validate widthAuto" title="">\n
-        \n
-          <label>\n
-            Join\n
-            \n
-            \n
-          </label>\n
-          <div class="input"><input class="nolabel validate widthAuto" src="" name="ERP5Site_viewCredentialRequestForm:method" value="Join" type="submit"  /></div>\n
-          \n
-          \n
-        \n
+<label>Join</label>\n
+<a href="ERP5Site_viewCredentialRequestForm">Join</a>\n
+</div>\n
+<div class="field nolabel cancel widthAuto" title="">\n
+<label>Lost password?</label>\n
+            <a href="ERP5Site_viewCredentialRecoveryLoginDialog">Lost password?</a>\n
       </div>\n
-            </div>\n
-      <div class="field nolabel cancel widthAuto" title="">\n
-\n
-        \n
-          <label>\n
-            Lost password?\n
-            \n
-            \n
-          </label>\n
-          <div class="input"><input class="nolabel cancel widthAuto" src="" name="ERP5Site_viewCredentialRecoveryLoginDialog:method" value="Lost password?" type="submit"  /></div>\n
-          \n
-          \n
-        \n
-      </div>\n
+</div>\n
           </fieldset>\n
           <script type="text/javascript">setFocus()</script>\n
           <p i18n:translate="" i18n:domain="ui">Having trouble logging in? Make sure to enable cookies in your web browser.</p>\n
