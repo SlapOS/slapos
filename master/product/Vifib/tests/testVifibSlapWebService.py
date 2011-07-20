@@ -33,7 +33,8 @@ from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 from Products.ERP5Type.tests.Sequence import SequenceList
 from Products.ERP5Type.tests.backportUnittest import expectedFailure
 from Products.ERP5Type.tests.backportUnittest import skip
-from Products.ERP5Type.tests.SecurityTestCase import AssertNoPermissionMethod
+from Products.ERP5Type.tests.SecurityTestCase import AssertNoPermissionMethod, \
+    AssertPermissionMethod
 from Products.ERP5Type import Permissions
 from VifibMixin import testVifibMixin
 from random import random
@@ -95,7 +96,6 @@ class TestVifibSlapWebService(testVifibMixin):
   sale_order_line_portal_type = "Sale Order Line"
   sale_packing_list_portal_type = "Sale Packing List"
   service_portal_type = "Service"
-  slave_partition_portal_type = "Slave Partition"
   slave_instance_portal_type = "Slave Instance"
   software_instance_portal_type = "Software Instance"
   software_release_portal_type = "Software Release"
@@ -107,6 +107,11 @@ class TestVifibSlapWebService(testVifibMixin):
   failIfUserCanViewDocument = AssertNoPermissionMethod(Permissions.View)
   failIfUserCanAccessDocument = AssertNoPermissionMethod(
       Permissions.AccessContentsInformation)
+  failIfUserCanModifyDocument = AssertNoPermissionMethod(
+                                     Permissions.ModifyPortalContent)
+  assertUserCanViewDocument = AssertPermissionMethod(Permissions.View)
+  assertUserCanAccessDocument =\
+      AssertPermissionMethod(Permissions.AccessContentsInformation)
 
   def afterSetUp(self):
     fakeSlapAuth()
@@ -4748,7 +4753,7 @@ class TestVifibSlapWebService(testVifibMixin):
       Logout
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListStopped
-      Logout \
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -4778,7 +4783,8 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepCheckSlaveInstanceSecurityWithDifferentCustomer(self, sequence):
     software_instance_uid = sequence["software_instance_uid"]
-    username = str(self.portal.portal_membership.getAuthenticatedMember())
+    portal_membership = self.portal.portal_membership
+    username = portal_membership.getAuthenticatedMember().getUserName()
     self.login()
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=software_instance_uid)
@@ -4823,11 +4829,9 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
       SlapLoginCurrentComputer
       CheckEmptySlaveInstanceListFromOneComputerPartition
-      Tic
-      SlapLogout
-      Tic
       LoginAsCustomerA
       PersonRequestSlaveInstance
       SlapLogout
@@ -4837,6 +4841,122 @@ class TestVifibSlapWebService(testVifibMixin):
       SlapLoginCurrentComputer
       CheckSlaveInstanceListFromOneComputerPartition
       SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepCheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    portal_membership = self.portal.portal_membership
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, slave_instance)
+    self.assertUserCanAccessDocument(username, slave_instance)
+
+  def stepSlapLoginSoftwareInstanceFromCurrentSoftwareInstance(self, sequence):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence["computer_partition_uid"])
+    sale_packing_list_line_list = self.portal.portal_catalog(
+        portal_type="Sale Packing List Line",
+        aggregate_uid=computer_partition.getUid())
+    for sale_packing_list_line in sale_packing_list_line_list:
+      software_instance = sale_packing_list_line.getAggregateValue(
+          portal_type="Software Instance")
+      if software_instance is not None:
+        self.stepSlapLogout()
+        global REMOTE_USER
+        REMOTE_USER = software_instance.getReference()
+        self.login(software_instance.getReference())
+        break
+
+  def stepCheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        uid=sequence["sale_packing_list_line_uid"])
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, sale_packing_list_line)
+    self.failIfUserCanModifyDocument(username, sale_packing_list_line)
+
+  def stepCheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        uid=sequence["sale_packing_list_line_uid"])
+    hosting_subscription = sale_packing_list_line.getAggregateValue(
+        portal_type="Hosting Subscription")
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, hosting_subscription)
+    self.failIfUserCanModifyDocument(username, hosting_subscription)
+
+  def stepStoreSalePackingListLineFromSlaveInstance(self, sequence):
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        aggregate_uid=sequence["software_instance_uid"])
+    sequence.edit(sale_packing_list_line_uid=sale_packing_list_line.getUid(),
+        sale_packing_list_uid=sale_packing_list_line.getParent().getUid())
+
+  def test_SlaveInstance_security_with_SoftwareInstance_user(self):
+    """
+      Check that the software instance user can access a Slave Instance
+      installed in the same computer partition than your software instance
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      StoreSalePackingListLineFromSlaveInstance
+      SlapLoginCurrentComputer
+      CheckSlaveInstanceListFromOneComputerPartition
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
+      CheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser
+      CheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser
+      CheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepSetConnectionXmlToSlaveInstance(self, sequence):
+    computer_reference = sequence["computer_reference"]
+    computer_partition_reference = sequence["computer_partition_reference"]
+    connection_dict = dict(site_url="https://www.example.com:8080/DeF45uef")
+    slave_reference = sequence["software_instance_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer_partition = self.slap.registerComputerPartition(
+        computer_reference, computer_partition_reference)
+    computer_partition.setConnectionDict(connection_dict,
+        slave_reference)
+
+  @skip("Not finished yet")
+  def test_SlaveInstance_update_connection_xml(self):
+    """
+      Check that the connection_xml will be update correctly using portal_slap
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      LoginAsCustomerA
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLoginSoftwareInstanceFromCurrentComputerPartition
+      Stop
+      SetConnectionXmlToSlaveInstance
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
