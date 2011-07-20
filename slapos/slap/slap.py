@@ -376,11 +376,12 @@ class ComputerPartition(SlapDocument):
     else:
       return self._software_release_document
 
-  def setConnectionDict(self, connection_dict):
+  def setConnectionDict(self, connection_dict, slave_reference=None):
     self._connection_helper.POST('/setComputerPartitionConnectionXml', {
       'computer_id': self._computer_id,
       'computer_partition_id': self._partition_id,
-      'connection_xml': xml_marshaller.dumps(connection_dict)})
+      'connection_xml': xml_marshaller.dumps(connection_dict),
+      'slave_reference': slave_reference})
 
   @_syncComputerPartitionInformation
   def getConnectionParameter(self, key):
