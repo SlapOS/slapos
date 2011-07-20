@@ -35,6 +35,7 @@ from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type.Tool.BaseTool import BaseTool
 from Products.ERP5Type import Permissions
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from lxml import etree
 try:
   from slapos.slap.slap import Computer
@@ -168,13 +169,17 @@ class SlapTool(BaseTool):
     'setComputerPartitionConnectionXml')
   def setComputerPartitionConnectionXml(self, computer_id,
                                         computer_partition_id,
-                                        connection_xml):
+                                        connection_xml, slave_reference=None):
     """
     Set instance parameter informations on the slagrid server
     """
+    # When None is passed in POST, it is converted to string
+    if slave_reference is not None and slave_reference.lower() == "none":
+      slave_reference = None
     return self._setComputerPartitionConnectionXml(computer_id,
                                                    computer_partition_id,
-                                                   connection_xml)
+                                                   connection_xml,
+                                                   slave_reference)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'buildingSoftwareRelease')
@@ -521,13 +526,15 @@ class SlapTool(BaseTool):
   @convertToREST
   def _setComputerPartitionConnectionXml(self, computer_id,
                                          computer_partition_id,
-                                         connection_xml):
+                                         connection_xml,
+                                         slave_reference=None):
     """
     Sets Computer Partition connection Xml
     """
     software_instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id)
+        computer_partition_id,
+        slave_reference)
     partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
                                               connection_xml)
     instance = etree.Element('instance')
@@ -693,7 +700,7 @@ class SlapTool(BaseTool):
     raise Unauthorized
 
   def _getSoftwareInstanceForComputerPartition(self, computer_id,
-      computer_partition_id):
+      computer_partition_id, slave_reference=None):
     computer_partition_document = self._getComputerPartitionDocument(
       computer_id, computer_partition_id)
     if computer_partition_document.getSlapState() != 'busy':
@@ -703,7 +710,8 @@ class SlapTool(BaseTool):
       raise NotFound, "No software instance found for: %s - %s" % (computer_id,
           computer_partition_id)
     packing_list_line = self._getSalePackingListLineForComputerPartition(
-                                                computer_partition_document)
+                                                computer_partition_document,
+                                                slave_reference)
     if packing_list_line is None:
       raise NotFound, "No software instance found for: %s - %s" % (computer_id,
           computer_partition_id)
@@ -745,7 +753,8 @@ class SlapTool(BaseTool):
     return software_release_list
 
   def _getSalePackingListLineForComputerPartition(self,
-                                                  computer_partition_document):
+                                                  computer_partition_document,
+                                                  slave_reference=None):
     """
     Return latest meaningfull sale packing list related to a computer partition
     document
@@ -766,12 +775,22 @@ class SlapTool(BaseTool):
     state_list.extend(portal.getPortalCurrentInventoryStateList())
     state_list.extend(portal.getPortalReservedInventoryStateList())
     state_list.extend(portal.getPortalTransitInventoryStateList())
-
+    if slave_reference is not None:
+      slave_instance = portal.portal_catalog.getResultValue(portal_type="Slave Instance",
+          reference=slave_reference)
+      query = ComplexQuery(
+          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+          Query(aggregate_relative_url=slave_instance.getRelativeUrl()),
+          operator="AND",
+          )
+    else:
+      query = Query(aggregate_relative_url=computer_partition_document.getRelativeUrl())
+     
     # Use getTrackingList
     catalog_result = portal.portal_catalog(
       portal_type='Sale Packing List Line',
       simulation_state=state_list,
-      aggregate_relative_url=computer_partition_document.getRelativeUrl(),
+      aggregate_relative_url=query,
       default_resource_uid=service_uid_list,
       sort_on=(('movement.start_date', 'DESC'),),
       limit=1,
