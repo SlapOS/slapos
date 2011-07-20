@@ -4929,7 +4929,8 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepSetConnectionXmlToSlaveInstance(self, sequence):
     computer_reference = sequence["computer_reference"]
     computer_partition_reference = sequence["computer_partition_reference"]
-    connection_dict = dict(site_url="https://www.example.com:8080/DeF45uef")
+    site_url = "https://www.example.com:8080/DeF45uef"
+    connection_dict = dict(site_url=site_url)
     slave_reference = sequence["software_instance_reference"]
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
@@ -4937,8 +4938,14 @@ class TestVifibSlapWebService(testVifibMixin):
         computer_reference, computer_partition_reference)
     computer_partition.setConnectionDict(connection_dict,
         slave_reference)
+    sequence.edit(site_url=site_url)
 
-  @skip("Not finished yet")
+  def stepCheckConnectionXmlFromSlaveInstance(self, sequence):
+    portal_catalog = self.portal.portal_catalog
+    slave_instance = portal_catalog.getResultValue(
+        reference=sequence["software_instance_reference"])
+    self.assertTrue(sequence["site_url"] in slave_instance.getConnectionXml())
+
   def test_SlaveInstance_update_connection_xml(self):
     """
       Check that the connection_xml will be update correctly using portal_slap
@@ -4954,9 +4961,9 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
-      SlapLoginSoftwareInstanceFromCurrentComputerPartition
-      Stop
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
       SetConnectionXmlToSlaveInstance
+      CheckConnectionXmlFromSlaveInstance
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
