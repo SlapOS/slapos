@@ -35,7 +35,6 @@ from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type.Tool.BaseTool import BaseTool
 from Products.ERP5Type import Permissions
-from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from lxml import etree
 try:
   from slapos.slap.slap import Computer
@@ -775,25 +774,19 @@ class SlapTool(BaseTool):
     state_list.extend(portal.getPortalCurrentInventoryStateList())
     state_list.extend(portal.getPortalReservedInventoryStateList())
     state_list.extend(portal.getPortalTransitInventoryStateList())
+    aggregate_dict = {"aggregate_relative_url" : \
+        computer_partition_document.getRelativeUrl()}
     if slave_reference is not None:
-      slave_instance = portal.portal_catalog.getResultValue(portal_type="Slave Instance",
-          reference=slave_reference)
-      query = ComplexQuery(
-          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
-          Query(aggregate_relative_url=slave_instance.getRelativeUrl()),
-          operator="AND",
-          )
-    else:
-      query = Query(aggregate_relative_url=computer_partition_document.getRelativeUrl())
+      aggregate_dict["aggregate_reference"] = slave_reference
      
     # Use getTrackingList
     catalog_result = portal.portal_catalog(
       portal_type='Sale Packing List Line',
       simulation_state=state_list,
-      aggregate_relative_url=query,
       default_resource_uid=service_uid_list,
       sort_on=(('movement.start_date', 'DESC'),),
       limit=1,
+      **aggregate_dict
     )
     if len(catalog_result):
       return catalog_result[0].getObject()
