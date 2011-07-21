@@ -1,4 +1,5 @@
 SSLEngine on
+SSLProxyEngine on
 SSLCertificateFile %(login_certificate)s
 SSLCertificateKeyFile %(login_key)s
 SSLRandomSeed startup builtin
