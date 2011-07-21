@@ -172,6 +172,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   # the configuration file.
   signature_private_key_file = option_dict.get('signature_private_key_file') \
                           or option_dict.get('signature-private-key-file')
+  upload_authentication_file = option_dict.get( \
+                                 'upload-authentication-file', None)
 
   for f in [key_file, cert_file, master_ca_file, signature_private_key_file]:
     if f not in ('', None,):
@@ -208,6 +210,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             signature_private_key_file=signature_private_key_file,
             upload_cache_url=option_dict.get('upload-cache-url', None),
             upload_dir_url=option_dict.get('upload-dir-url', None),
+            upload_authentication_file=upload_authentication_file,
             console=option_dict['console'],
             buildout=option_dict.get('buildout')),
           option_dict])
@@ -279,6 +282,7 @@ class Slapgrid(object):
                signature_private_key_file=None,
                upload_cache_url=None,
                upload_dir_url=None,
+               upload_authentication_file=None,
                master_ca_file=None,
                certificate_repository_path=None,
                console=False):
@@ -298,6 +302,7 @@ class Slapgrid(object):
     self.signature_private_key_file = signature_private_key_file
     self.upload_cache_url = upload_cache_url
     self.upload_dir_url = upload_dir_url
+    self.upload_authentication_file = upload_authentication_file
     # Configures logger
     self.logger = logging.getLogger('Slapgrid')
     # Creates objects from slap module
@@ -372,7 +377,9 @@ class Slapgrid(object):
             console=self.console, buildout=self.buildout,
             signature_private_key_file=self.signature_private_key_file,
             upload_cache_url=self.upload_cache_url,
-            upload_dir_url=self.upload_dir_url).install()
+            upload_dir_url=self.upload_dir_url,
+            upload_authentication_file=self.upload_authentication_file) \
+                .install()
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         software_release.error(exception)
