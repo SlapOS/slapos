@@ -35,6 +35,7 @@ import ConfigParser
 
 
 class Recipe(BaseSlapRecipe):
+
   def getTemplateFilename(self, template_name):
     return pkg_resources.resource_filename(__name__,
         'template/%s' % template_name)
@@ -53,18 +54,23 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(self.killpidfromfile)
 
     ca_conf = self.installCertificateAuthority()
-    key, certificate = self.requestCertificate('Apache Front end')
 
     # This should come from parameter.
     frontend_domain_name = self.parameter_dict.get("domain",
         "host.vifib.net")
 
-    site_url = self.installFrontendApache(
-          ip=self.getGlobalIPv6Address(),
-          port=8080, name=frontend_domain_name,
-          key=key, certificate=certificate)
+    key, certificate = self.requestCertificate(frontend_domain_name)
 
-    self.setConnectionDict(dict(site_url=site_url))
+    apache_parameter_dict = self.installFrontendApache(
+        ip=self.getGlobalIPv6Address(),
+        port=8080, name=frontend_domain_name,
+        key=key, certificate=certificate)
+
+    slave_dict = apache_parameter_dict.pop("slave_dict")
+    for reference, url in slave_dict.iteritems():
+      self.setConnectionDict(dict(site_url=url), reference)
+
+    self.setConnectionDict(dict(site_url=apache_parameter_dict["site_url"]))
     return self.path_list
 
   def installLogrotate(self):
@@ -212,12 +218,15 @@ class Recipe(BaseSlapRecipe):
     vhost_name = "apachevhost.conf"
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
     rewrite_rule_list = []
+    slave_dict = {}
     for slave_instance in slave_instance_list:
       url = slave_instance.get("url")
-      id = str(slave_instance_list.index(slave_instance))
+      id = slave_instance.get("slave_reference").replace("-", "").lower()
       vhost_dict = dict(id=id, ip=ip, port=port,
           domain=name, url=url)
       rewrite_rule_list.append(self.generateRewriteRule(vhost_dict))
+      slave_dict[slave_instance.get("slave_reference")] = \
+          "https://%s:%s/%s" % (name, port, id)
     self.createConfigurationFile(vhost_name, "\n".join(rewrite_rule_list))
     apache_conf = self._getApacheConfigurationDict(name, ip, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
@@ -248,4 +257,6 @@ class Recipe(BaseSlapRecipe):
               binary=self.options['httpd_binary'],
               config=apache_config_file)
           ]))
-    return "https://%s:%s/" % (name, port)
+
+    return dict(site_url="https://%s:%s/" % (name, port),
+        slave_dict=slave_dict)
