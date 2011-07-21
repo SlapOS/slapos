@@ -90,23 +90,14 @@ class Software(object):
           self.upload_cache_url or  self.upload_dir_url or \
           self.upload_authentication_file is not None:
         buildout_parameter_list.append('buildout:networkcache-section=networkcache')
-
-      if self.signature_private_key_file is not None:
-        buildout_parameter_list.append( \
-            'networkcache:signature-private-key-file=%s' % \
-              self.signature_private_key_file)
-      if self.upload_cache_url is not None:
-        buildout_parameter_list.append( \
-            'networkcache:upload-cache-url=%s' % \
-              self.upload_cache_url)
-      if self.upload_dir_url is not None:
-        buildout_parameter_list.append( \
-            'networkcache:upload-dir-url=%s' % \
-              self.upload_dir_url)
-      if self.upload_authentication_file is not None:
-        buildout_parameter_list.append( \
-            'networkcache:upload-authentication-file=%s' % \
-              self.upload_authentication_file)
+      for  buildout_option, value in (
+         ('%ssignature-private-key-file=%s', self.signature_private_key_file),
+         ('%supload-cache-url=%s', self.upload_cache_url),
+         ('%supload-dir-url=%s', self.upload_dir_url),
+         ('%supload-authentication-file=%s', self.upload_authentication_file)):
+        if value:
+          buildout_parameter_list.append( \
+              buildout_option % ('networkcache:', value))
 
       buildout_parameter_list.extend(['-c', self.url])
       bootstrapBuildout(self.software_path, self.buildout,
