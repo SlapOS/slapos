@@ -293,41 +293,12 @@ class ERP5Updater(object):
     if activity_dict["failure"] > 0:
        return True
 
-  def _updatePreRequiredBusinessTemplateList(self):
-    """ Update only the first part of bt5."""
-
-    # This list contains the minimal set of bt5 required to install
-    # portal_introspections. Move portal_introspection to erp5_core
-    # can remove this set.
-    pre_required_business_template_list = [i for i in self.business_template_list\
-                if i.startswith("erp5_full_text") or i == "erp5_base"]
-
-    if len(self.business_template_repository_list) > 0 and \
-         len(pre_required_business_template_list):
-      pre_required_business_template_list.insert(0, "erp5_core_proxy_field_legacy")
-      self._setRepositoryList(self.business_template_repository_list)
-      time.sleep(30)
-      for bt in pre_required_business_template_list:
-        update_catalog = bt.endswith("_catalog")
-        self._installBusinessTemplateList([bt], update_catalog)
-    else:
-      self.log("ERROR", "Unable to install erp5_base, it is not on your " +\
-               "requested business templates list. Once it is installed " +\
-               "setup will continue")
-
   def run(self):
     """ Keep running until kill"""
     while 1:
       time.sleep(30)
       if not self.updateERP5Site():
         self.loadSystemSignatureDict()
-        if self.getSystemSignatureDict() is None:
-          self.log("INFO", "The erp5_base is not installed yet, trying to " +\
-                           "install it before continue.")
-          self._updatePreRequiredBusinessTemplateList()
-          time.sleep(60)
-          continue
-
         if self._hasActivityPresent():
           self.log("DEBUG", "Waiting for activities on ERP5...")
           if self._hasFailureActivity():
