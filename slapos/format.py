@@ -209,7 +209,11 @@ class Computer:
       if address_dict['addr'] not in computer_partition_address_list:
         return address_dict
 
-    return None
+    # all addresses on interface are for partition, so lets add new one
+    computer_tap = Tap('compdummy')
+    computer_tap.createWithOwner('root', attach_to_tap=True)
+    self.bridge.addTap(computer_tap)
+    return self.bridge.addAddr()
 
   def send(self, config):
     """
