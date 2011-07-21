@@ -97,7 +97,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--key_file", help="SSL Authorisation key file.")
   parser.add_argument("--cert_file",
       help="SSL Authorisation certificate file.")
-  parser.add_argument("--signature_private_key_file", default='',
+  parser.add_argument("--signature_private_key_file", default=None,
       help="Signature private key file.")
   parser.add_argument("--master_ca_file", help="Root certificate of SlapOS "
       "master key.")
