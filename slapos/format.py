@@ -846,11 +846,14 @@ class Parser(OptionParser):
         help="Shall slapformat alter network configuration [default: True]"),
       ])
 
-  def check_args(self):
+  def check_args(self, args):
     """
     Check arguments
     """
-    (options, args) = self.parse_args()
+    if args:
+      (options, args) = self.parse_args(list(args))
+    else:
+      (options, args) = self.parse_args()
     if len(args) != 1:
       self.error("Incorrect number of arguments")
     return options, args[0]
@@ -1093,7 +1096,7 @@ class Config:
     self.computer_xml = os.path.abspath(self.computer_xml)
 
 
-def main():
+def main(*args):
   "Run default configuration."
   global os
   global callAndRead
@@ -1103,7 +1106,7 @@ def main():
 
   try:
     # Parse arguments
-    options, configuration_file_path = Parser(usage=usage).check_args()
+    options, configuration_file_path = Parser(usage=usage).check_args(args)
     config = Config()
     config.setConfig(options, configuration_file_path)
     os = OS(config)
