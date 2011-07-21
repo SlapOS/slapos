@@ -48,7 +48,8 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 class Software(object):
   """This class is responsible of installing a software release"""
   def __init__(self, url, software_root, console, buildout,
-      signature_private_key_file):
+      signature_private_key_file=None, upload_cache_url=None,
+      upload_dir_url=None):
     """Initialisation of class parameters
     """
     self.url = url
@@ -59,6 +60,8 @@ class Software(object):
     self.logger = logging.getLogger('BuildoutManager')
     self.console = console
     self.signature_private_key_file = signature_private_key_file
+    self.upload_cache_url = upload_cache_url
+    self.upload_dir_url = upload_dir_url
 
   def install(self):
     """ Fetches buildout configuration from the server, run buildout with
@@ -80,9 +83,28 @@ class Software(object):
     try:
       buildout_parameter_list = [
         'buildout:extends-cache=%s' % extends_cache,
-        'buildout:directory=%s' % self.software_path,
-        'buildout:signature-private-key-file=%s' % self.signature_private_key_file,
-        '-c', self.url]
+        'buildout:directory=%s' % self.software_path,]
+
+      if self.signature_private_key_file or \
+          self.upload_cache_url or \
+            self.upload_dir_url is not None:
+        buildout_parameter_list.append('buildout:networkcache-section=networkcache')
+
+      if self.signature_private_key_file is not None:
+        buildout_parameter_list.append( \
+            'networkcache:signature-private-key-file=%s' % \
+              self.signature_private_key_file)
+
+      if self.upload_cache_url is not None:
+        buildout_parameter_list.append( \
+            'networkcache:upload-cache-url=%s' % \
+              self.upload_cache_url)
+      if self.upload_dir_url is not None:
+        buildout_parameter_list.append( \
+            'networkcache:upload-dir-url=%s' % \
+              self.upload_dir_url)
+
+      buildout_parameter_list.extend(['-c', self.url])
       bootstrapBuildout(self.software_path, self.buildout,
           additional_buildout_parametr_list=buildout_parameter_list,
           console=self.console)
