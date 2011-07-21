@@ -148,7 +148,7 @@ class ERP5Updater(object):
                     if i not in found_list]
 
   def getMissingBusinessTemplateList(self):
-    bt5_dict = self.getSystemSignatureDict("business_template_dict", [])
+    bt5_dict = self.getSystemSignatureDict("business_template_dict", {})
     found_bt5_list = bt5_dict.keys()
     return [bt for bt in self.business_template_list\
                           if bt not in found_bt5_list]
