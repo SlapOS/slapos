@@ -125,6 +125,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   slapgrid_configuration.readfp(configuration_file)
   # Merges the two dictionnaries
   option_dict = dict(slapgrid_configuration.items("slapos"))
+  if slapgrid_configuration.has_section("networkcache"):
+    option_dict.update(dict(slapgrid_configuration.items("networkcache")))
   for argument_key, argument_value in vars(argument_option_instance
       ).iteritems():
     if argument_value is not None:
@@ -166,7 +168,10 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   key_file = option_dict.get('key_file')
   cert_file = option_dict.get('cert_file')
   master_ca_file = option_dict.get('master_ca_file')
-  signature_private_key_file = option_dict.get('signature_private_key_file')
+  # If it was not passed as argument, we must check if it was defined into
+  # the configuration file.
+  signature_private_key_file = option_dict.get('signature_private_key_file') \
+                          or option_dict.get('signature-private-key-file')
 
   for f in [key_file, cert_file, master_ca_file, signature_private_key_file]:
     if f not in ('', None,):
@@ -199,8 +204,10 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             key_file=key_file,
             cert_file=cert_file,
             master_ca_file=master_ca_file,
-            signature_private_key_file=signature_private_key_file,
             certificate_repository_path=certificate_repository_path,
+            signature_private_key_file=signature_private_key_file,
+            upload_cache_url=option_dict.get('upload-cache-url', None),
+            upload_dir_url=option_dict.get('upload-dir-url', None),
             console=option_dict['console'],
             buildout=option_dict.get('buildout')),
           option_dict])
@@ -270,6 +277,8 @@ class Slapgrid(object):
                key_file=None,
                cert_file=None,
                signature_private_key_file=None,
+               upload_cache_url=None,
+               upload_dir_url=None,
                master_ca_file=None,
                certificate_repository_path=None,
                console=False):
@@ -287,6 +296,8 @@ class Slapgrid(object):
     self.master_ca_file = master_ca_file
     self.certificate_repository_path = certificate_repository_path
     self.signature_private_key_file = signature_private_key_file
+    self.upload_cache_url = upload_cache_url
+    self.upload_dir_url = upload_dir_url
     # Configures logger
     self.logger = logging.getLogger('Slapgrid')
     # Creates objects from slap module
@@ -359,7 +370,9 @@ class Slapgrid(object):
         software_release_uri = software_release.getURI()
         Software(url=software_release_uri, software_root=self.software_root,
             console=self.console, buildout=self.buildout,
-            signature_private_key_file=self.signature_private_key_file).install()
+            signature_private_key_file=self.signature_private_key_file,
+            upload_cache_url=self.upload_cache_url,
+            upload_dir_url=self.upload_dir_url).install()
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         software_release.error(exception)
