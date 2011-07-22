@@ -1,13 +1,13 @@
-0.11 (unreleased)
+0.12 (2011-07-15)
 ================
 
- * No changes yet.
+ * Include modifications that should have been included in 0.11.
 
 0.11 (2011-07-15)
 ================
 
  * Bug fix : slapconsole : shorthand methods request and supply now correctly
-   return an object
+   return an object. [Cedric de Saint Martin]
 
 0.10 (2011-07-13)
 =================

@@ -7590,6 +7590,39 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepArchiveSoftwareRelease(self, sequence, **kw):
+    """
+    Submit the software release document.
+    """
+    software_release_uid = sequence["software_release_uid"]
+    software_release = self.portal.portal_catalog.getResultValue(
+        uid=software_release_uid)
+    software_release.portal_workflow.doActionFor(software_release,
+                                                 'archive_action')
+
+  def test_bug_archived_software_release_access(self):
+    """Checks that Computer has access to archived Software Release"""
+    sequence_string = self.\
+      prepare_start_requested_computer_partition_sequence_string + \
+      """
+      LoginTestVifibDeveloper
+      ArchiveSoftwareRelease
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      Logout
+    """
+    sequence_list = SequenceList()
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   ########################################
   # Other tests
   ########################################
