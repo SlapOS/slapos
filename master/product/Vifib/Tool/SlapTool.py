@@ -34,6 +34,7 @@ from OFS.Traversable import NotFound
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type.Tool.BaseTool import BaseTool
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from Products.ERP5Type import Permissions
 from lxml import etree
 try:
