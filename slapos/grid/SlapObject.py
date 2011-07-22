@@ -49,7 +49,7 @@ class Software(object):
   """This class is responsible of installing a software release"""
   def __init__(self, url, software_root, console, buildout,
       signature_private_key_file=None, upload_cache_url=None,
-      upload_dir_url=None, upload_authentication_file=None):
+      upload_dir_url=None):
     """Initialisation of class parameters
     """
     self.url = url
@@ -62,7 +62,6 @@ class Software(object):
     self.signature_private_key_file = signature_private_key_file
     self.upload_cache_url = upload_cache_url
     self.upload_dir_url = upload_dir_url
-    self.upload_authentication_file = upload_authentication_file
 
   def install(self):
     """ Fetches buildout configuration from the server, run buildout with
@@ -87,14 +86,13 @@ class Software(object):
         'buildout:directory=%s' % self.software_path,]
 
       if self.signature_private_key_file or \
-          self.upload_cache_url or  self.upload_dir_url or \
-          self.upload_authentication_file is not None:
+          self.upload_cache_url or \
+            self.upload_dir_url is not None:
         buildout_parameter_list.append('buildout:networkcache-section=networkcache')
       for  buildout_option, value in (
          ('%ssignature-private-key-file=%s', self.signature_private_key_file),
          ('%supload-cache-url=%s', self.upload_cache_url),
-         ('%supload-dir-url=%s', self.upload_dir_url),
-         ('%supload-authentication-file=%s', self.upload_authentication_file)):
+         ('%supload-dir-url=%s', self.upload_dir_url)):
         if value:
           buildout_parameter_list.append( \
               buildout_option % ('networkcache:', value))
