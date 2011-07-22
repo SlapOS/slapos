@@ -4781,17 +4781,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepCheckSlaveInstanceSecurityWithDifferentCustomer(self, sequence):
-    software_instance_uid = sequence["software_instance_uid"]
-    portal_membership = self.portal.portal_membership
-    username = portal_membership.getAuthenticatedMember().getUserName()
-    self.login()
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    self.failIfUserCanViewDocument(username, software_instance)
-    self.failIfUserCanAccessDocument(username, software_instance)
-    self.login(username)
-
   def test_SlaveInstance_check_permission_with_different_customer(self):
     """
       Check that one Customer A can not view the Slave Instance of a Customer B
@@ -4845,58 +4834,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepCheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    portal_membership = self.portal.portal_membership
-    username = portal_membership.getAuthenticatedMember().getUserName()
-    self.assertUserCanViewDocument(username, slave_instance)
-    self.assertUserCanAccessDocument(username, slave_instance)
-
-  def stepSlapLoginSoftwareInstanceFromCurrentSoftwareInstance(self, sequence):
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=sequence["computer_partition_uid"])
-    sale_packing_list_line_list = self.portal.portal_catalog(
-        portal_type="Sale Packing List Line",
-        aggregate_uid=computer_partition.getUid())
-    for sale_packing_list_line in sale_packing_list_line_list:
-      software_instance = sale_packing_list_line.getAggregateValue(
-          portal_type="Software Instance")
-      if software_instance is not None:
-        self.stepSlapLogout()
-        global REMOTE_USER
-        REMOTE_USER = software_instance.getReference()
-        self.login(software_instance.getReference())
-        break
-
-  def stepCheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
-      sequence):
-    portal_membership = self.portal.portal_membership
-    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
-        portal_type="Sale Packing List Line",
-        uid=sequence["sale_packing_list_line_uid"])
-    username = portal_membership.getAuthenticatedMember().getUserName()
-    self.assertUserCanViewDocument(username, sale_packing_list_line)
-    self.failIfUserCanModifyDocument(username, sale_packing_list_line)
-
-  def stepCheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
-      sequence):
-    portal_membership = self.portal.portal_membership
-    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
-        portal_type="Sale Packing List Line",
-        uid=sequence["sale_packing_list_line_uid"])
-    hosting_subscription = sale_packing_list_line.getAggregateValue(
-        portal_type="Hosting Subscription")
-    username = portal_membership.getAuthenticatedMember().getUserName()
-    self.assertUserCanViewDocument(username, hosting_subscription)
-    self.failIfUserCanModifyDocument(username, hosting_subscription)
-
-  def stepStoreSalePackingListLineFromSlaveInstance(self, sequence):
-    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
-        portal_type="Sale Packing List Line",
-        aggregate_uid=sequence["software_instance_uid"])
-    sequence.edit(sale_packing_list_line_uid=sale_packing_list_line.getUid(),
-        sale_packing_list_uid=sale_packing_list_line.getParent().getUid())
 
   def test_SlaveInstance_security_with_SoftwareInstance_user(self):
     """
@@ -4925,26 +4862,6 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-
-  def stepSetConnectionXmlToSlaveInstance(self, sequence):
-    computer_reference = sequence["computer_reference"]
-    computer_partition_reference = sequence["computer_partition_reference"]
-    site_url = "https://www.example.com:8080/DeF45uef"
-    connection_dict = dict(site_url=site_url)
-    slave_reference = sequence["software_instance_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_reference, computer_partition_reference)
-    computer_partition.setConnectionDict(connection_dict,
-        slave_reference)
-    sequence.edit(site_url=site_url)
-
-  def stepCheckConnectionXmlFromSlaveInstance(self, sequence):
-    portal_catalog = self.portal.portal_catalog
-    slave_instance = portal_catalog.getResultValue(
-        reference=sequence["software_instance_reference"])
-    self.assertTrue(sequence["site_url"] in slave_instance.getConnectionXml())
 
   def test_SlaveInstance_update_connection_xml(self):
     """
@@ -5936,6 +5853,17 @@ class TestVifibSlapWebService(testVifibMixin):
         self.portal.portal_catalog.getResultValue(uid=sequence[
           'purchase_packing_list_b_uid']).getSimulationState())
 
+  def stepCheckSlaveInstanceSecurityWithDifferentCustomer(self, sequence):
+    software_instance_uid = sequence["software_instance_uid"]
+    portal_membership = self.portal.portal_membership
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.login()
+    software_instance = self.portal.portal_catalog.getResultValue(
+        uid=software_instance_uid)
+    self.failIfUserCanViewDocument(username, software_instance)
+    self.failIfUserCanAccessDocument(username, software_instance)
+    self.login(username)
+
   def stepCheckTwoSlaveInstanceRequest(self, sequence):
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=sequence["computer_partition_uid"])
@@ -6043,6 +5971,89 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEquals(1, len(slave_instance_list))
     slave_instance = slave_instance_list[0]
     self.assertEquals("SlaveInstance", slave_instance["slap_software_type"])
+
+  def stepCheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    portal_membership = self.portal.portal_membership
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, slave_instance)
+    self.assertUserCanAccessDocument(username, slave_instance)
+
+  def stepSlapLoginSoftwareInstanceFromCurrentSoftwareInstance(self, sequence):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence["computer_partition_uid"])
+    sale_packing_list_line_list = self.portal.portal_catalog(
+        portal_type="Sale Packing List Line",
+        aggregate_uid=computer_partition.getUid())
+    for sale_packing_list_line in sale_packing_list_line_list:
+      software_instance = sale_packing_list_line.getAggregateValue(
+          portal_type="Software Instance")
+      if software_instance is not None:
+        self.stepSlapLogout()
+        global REMOTE_USER
+        REMOTE_USER = software_instance.getReference()
+        self.login(software_instance.getReference())
+        break
+
+  def stepCheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        uid=sequence["sale_packing_list_line_uid"])
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, sale_packing_list_line)
+    self.failIfUserCanModifyDocument(username, sale_packing_list_line)
+
+  def stepCheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        uid=sequence["sale_packing_list_line_uid"])
+    hosting_subscription = sale_packing_list_line.getAggregateValue(
+        portal_type="Hosting Subscription")
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, hosting_subscription)
+    self.failIfUserCanModifyDocument(username, hosting_subscription)
+
+  def stepStoreSalePackingListLineFromSlaveInstance(self, sequence):
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        aggregate_uid=sequence["software_instance_uid"])
+    sequence.edit(sale_packing_list_line_uid=sale_packing_list_line.getUid(),
+        sale_packing_list_uid=sale_packing_list_line.getParent().getUid())
+
+  def stepSetConnectionXmlToSlaveInstance(self, sequence):
+    computer_reference = sequence["computer_reference"]
+    computer_partition_reference = sequence["computer_partition_reference"]
+    site_url = "https://www.example.com:8080/"
+    connection_dict = dict(site_url=site_url)
+    slave_reference = sequence["software_instance_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer_partition = self.slap.registerComputerPartition(
+        computer_reference, computer_partition_reference)
+    computer_partition.setConnectionDict(connection_dict)
+    sequence.edit(site_url=site_url)
+    connection_dict["site_url"] += "DeF45uef"
+    computer_partition.setConnectionDict(connection_dict,
+        slave_reference)
+    sequence.edit(slave_instance_site_url=site_url)
+
+  def stepCheckConnectionXmlFromSlaveInstance(self, sequence):
+    portal_catalog = self.portal.portal_catalog
+    slave_instance = portal_catalog.getResultValue(
+        reference=sequence["software_instance_reference"])
+    self.assertTrue(sequence["slave_instance_site_url"] in \
+        slave_instance.getConnectionXml())
+
+  def stepCheckConnectionXmlFromSoftwareInstance(self, sequence):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      portal_type="Software Instance")
+    self.assertTrue("%s</parameter>" % sequence["site_url"] in \
+        software_instance.getConnectionXml())
 
   prepare_two_purchase_packing_list = \
       prepare_software_release_purchase_packing_list + '\
