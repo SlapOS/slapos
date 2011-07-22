@@ -4881,6 +4881,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
       SetConnectionXmlToSlaveInstance
       CheckConnectionXmlFromSlaveInstance
+      CheckConnectionXmlFromSoftwareInstance
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
