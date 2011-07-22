@@ -1,4 +1,4 @@
 #!/bin/sh
 # BEWARE: This file is operated by slapgrid
 # BEWARE: It will be overwritten automatically
-exec %(python_path)s %(slapmonitor_path)s %(pid_file)s %(database_path)s
+exec %(python_path)s %(slapmonitor_path)s %(pid_file_path)s %(database_path)s

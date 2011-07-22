@@ -68,9 +68,11 @@ class Recipe(BaseSlapRecipe):
         self.substituteTemplate(pkg_resources.resource_filename(__name__,
           'template/slapos.cfg.in'), configuration))
     self.path_list.append(config_file)
+    
+    execute_arguments = dict(path = os.environ['PATH'],
+        launch_args = [self.options['slaprunner'].strip(), config_file])
     self.path_list.extend(zc.buildout.easy_install.scripts([('slaprunner',
       'slapos.recipe.slaprunner.execute', 'execute')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[self.options['slaprunner'].strip(),
-        config_file]))
+      self.wrapper_directory, arguments=execute_arguments))
     self.setConnectionDict(dict(url='http://[%s]:%s' % (ipv6, runner_port)))
     return self.path_list

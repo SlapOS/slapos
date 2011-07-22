@@ -31,6 +31,9 @@ import zc.buildout
 import sys
 
 class Recipe(slapos.recipe.erp5.Recipe):
+  
+  default_bt5_list = []
+
   def installKeyAuthorisationApache(self, ip, port, backend, key, certificate,
       ca_conf, key_auth_path='/erp5/portal_slap'):
     ssl_template = """SSLEngine on
@@ -172,6 +175,12 @@ SSLCARevocationPath %(ca_crl)s"""
     self.installTidStorage(tidstorage_config['host'], tidstorage_config['port'],
         known_tid_storage_identifier_dict, 'http://'+login_haproxy)
     self.linkBinary()
+
+    # Connect direct to Zope to create the instance.
+    self.installERP5Site(user, password, service_url_list[-1], mysql_conf,
+             conversion_server_conf, memcached_conf, kumo_conf,
+             self.site_id, self.default_bt5_list)
+
     self.setConnectionDict(dict(
       front_end_url=apache_frontend_login,
       site_url=apache_login,
@@ -224,7 +233,13 @@ SSLCARevocationPath %(ca_crl)s"""
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
         memcached_conf, kumo_conf)
+    self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
+                           memcached_conf, kumo_conf)
     self.linkBinary()
+    self.installERP5Site(user, password, zope_access, mysql_conf,
+             conversion_server_conf, memcached_conf, kumo_conf,
+             self.site_id, self.default_bt5_list)
+
     self.setConnectionDict(dict(
       development_zope='http://%s:%s/' % (ip, zope_port),
       site_user=user,
@@ -258,6 +273,9 @@ SSLCARevocationPath %(ca_crl)s"""
         [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
     self.path_list.append(self.killpidfromfile)
+    if self.parameter_dict.get("flavour", "default") == 'configurator':
+      self.default_bt5_list = self.options.get("configurator_bt5_list", '').split()
+
     if self.parameter_dict.get('development', 'false').lower() == 'true':
       return self.installDevelopment()
     if self.parameter_dict.get('production', 'false').lower() == 'true':
