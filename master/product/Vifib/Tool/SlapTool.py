@@ -774,11 +774,15 @@ class SlapTool(BaseTool):
     state_list.extend(portal.getPortalCurrentInventoryStateList())
     state_list.extend(portal.getPortalReservedInventoryStateList())
     state_list.extend(portal.getPortalTransitInventoryStateList())
-    aggregate_dict = {"aggregate_relative_url" : \
-        computer_partition_document.getRelativeUrl()}
     if slave_reference is not None:
-      aggregate_dict["aggregate_reference"] = slave_reference
-     
+      query = ComplexQuery(Query(aggregate_reference=slave_reference),
+          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+          operator="AND")
+    else:
+      query = ComplexQuery(Query(aggregate_portal_type="Software Instance"),
+          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+          operator="AND")
+
     # Use getTrackingList
     catalog_result = portal.portal_catalog(
       portal_type='Sale Packing List Line',
@@ -786,7 +790,7 @@ class SlapTool(BaseTool):
       default_resource_uid=service_uid_list,
       sort_on=(('movement.start_date', 'DESC'),),
       limit=1,
-      **aggregate_dict
+      query=query
     )
     if len(catalog_result):
       return catalog_result[0].getObject()

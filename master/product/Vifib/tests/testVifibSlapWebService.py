@@ -4725,7 +4725,7 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -4752,7 +4752,7 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
