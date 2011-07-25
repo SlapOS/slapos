@@ -538,6 +538,43 @@ class Slapgrid(object):
         if len(failed_script_list):
           computer_partition.error('\n'.join(failed_script_list))
 
+      #
+      # Checking if the promises are kept
+      #
+      # XXX-Antoine: I thought about factorizing this code with
+      # the above one. But it seemed like a lot to get through.
+
+      # Get the list of promises
+      promise_dir = os.join(instance_path, 'etc', 'promise')
+      promises_list = os.listdir(promise_dir)
+
+      # Check whether every promise is kept
+      for promise in promises_list:
+        command_line = [promise]
+
+        uid, gid = None, None
+        stat_info = os.stat(instance_path)
+
+        kw = dict()
+        if not self.console:
+          kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        # TODO-Antoine: Implement a timeout on promise script execution
+        process_handler = SlapPopen(invocation_list,
+          preexec_fn=lambda: dropPrivileges(uid, gid),
+          cwd=instance_path,
+          env=None, **kw)
+        stderr = process_handler.communicate()[1]
+
+        if process_handler.returncode is None:
+          process_handler.kill()
+          computer_partition.error("The promise '%s' timed out" % promise)
+        if process_handler.returncode != 0:
+          if stderr is None:
+            stderr = 'No error output from %s.' % promise
+          computer_partition.error(stderr)
+
+
     #Now we loop through the different computer partitions to ggetId()et reports
     report_usage_issue_cp_list = []
     for computer_partition in slap_computer_usage.getComputerPartitionList():
