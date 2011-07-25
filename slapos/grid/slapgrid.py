@@ -567,7 +567,7 @@ class Slapgrid(object):
 
         time.sleep(3) # 3 seconds timeout
 
-        if process_handler.returncode is None:
+        if process_handler.poll() is None:
           process_handler.kill()
           computer_partition.error("The promise '%s' timed out" % promise)
         elif process_handler.returncode != 0:
