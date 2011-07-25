@@ -61,18 +61,19 @@ class NoSQLTestBed(BaseSlapRecipe):
     kumo_cloud_config.setdefault('erp5_publish_url', '')
     kumo_cloud_config.setdefault('erp5_publish_project', '')
     
-    computer_guid_list  = "COMP-23:" # manager
-    computer_guid_list += "COMP-13:" # server 1
-    computer_guid_list += "COMP-14:" # server 2
-    computer_guid_list += "COMP-20:" # server 3
-    computer_guid_list += "COMP-19:" # server 4
-    computer_guid_list += "COMP-23:" # tester 1
-    computer_guid_list += "COMP-22:" # tester 2
-    computer_guid_list += "COMP-14:" # tester 3
-    computer_guid_list += "COMP-20:" # tester 4
-    computer_guid_list += "COMP-19"  # tester 5
+    computer_guid_list = []
+    computer_guid_list.append("COMP-23") # manager
+    computer_guid_list.append("COMP-13") # server 1
+    computer_guid_list.append("COMP-14") # server 2
+    computer_guid_list.append("COMP-20") # server 3
+    computer_guid_list.append("COMP-19") # server 4
+    computer_guid_list.append("COMP-23") # tester 1
+    computer_guid_list.append("COMP-22") # tester 2
+    computer_guid_list.append("COMP-14") # tester 3
+    computer_guid_list.append("COMP-20") # tester 4
+    computer_guid_list.append("COMP-19") # tester 5
     
-    kumo_cloud_config.setdefault('computer_guid_list', computer_guid_list)
+    kumo_cloud_config.setdefault('computer_guid_list', ":".join(computer_guid_list))
     
     kumo_cloud_config['software_release_url'] = self.software_release_url
     kumo_cloud_config['server_url'] = self.server_url
