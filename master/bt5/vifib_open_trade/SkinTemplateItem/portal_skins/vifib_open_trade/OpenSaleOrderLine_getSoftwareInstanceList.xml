@@ -67,7 +67,7 @@ order_line_list =  context.portal_catalog( \n
 \n
 portal_type_list = ["Software Instance", "Slave Instance"]\n
 result = [x.getAggregateValue(portal_type=portal_type_list) for x in line_list]\n
-result.extend([x.getAggregateValue(portal_type="Software Instance") for x in order_line_list])\n
+result.extend([x.getAggregateValue(portal_type=portal_type_list) for x in order_line_list])\n
 # result.extend([x.getObject() for x in order_line_list])\n
 return result\n
 </string> </value>
