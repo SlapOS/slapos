@@ -102,6 +102,7 @@
                         <string>your_service_title</string>
                         <string>your_instance_xml</string>
                         <string>your_computer</string>
+                        <string>your_slave</string>
                       </list>
                     </value>
                 </item>

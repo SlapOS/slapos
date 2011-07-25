@@ -73,6 +73,7 @@ params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
 instance_software_release_uid = params[\'instance_software_release_uid\']\n
 service_title = params[\'service_title\']\n
 instance_xml = params[\'instance_xml\']\n
+slave = params.get(\'slave\', False)\n
 computer = params[\'computer\']\n
 software_release = portal.portal_catalog.getResultValue(uid=instance_software_release_uid)\n
 \n
@@ -81,6 +82,7 @@ request_kw.update(\n
   software_release=software_release.getUrlString(),\n
   software_title=service_title,\n
   instance_xml=instance_xml,\n
+  slave=slave\n
 )\n
 \n
 if computer:\n
