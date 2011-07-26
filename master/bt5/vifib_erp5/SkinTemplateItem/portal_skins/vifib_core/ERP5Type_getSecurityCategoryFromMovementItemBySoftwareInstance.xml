@@ -64,6 +64,11 @@ state_list = portal.getPortalCurrentInventoryStateList() + \\\n
   portal.getPortalReservedInventoryStateList() + \\\n
   portal.getPortalTransitInventoryStateList()\n
 \n
+if obj.getPortalType() == "Sale Packing List":\n
+  movement_portal_type = "Sale Packing List Line"\n
+elif obj.getPortalType() == "Sale Order":\n
+  movement_portal_type = "Sale Order Line"\n
+\n
 item_portal_type = "Slave Instance"\n
 \n
 for movement in obj.getMovementList():\n
@@ -71,12 +76,14 @@ for movement in obj.getMovementList():\n
   if item is not None:\n
     software_release = movement.getAggregateValue(portal_type="Software Release")\n
     computer_partition = movement.getAggregateValue(portal_type="Computer Partition")\n
+    if computer_partition is None:\n
+      continue\n
     query = ComplexQuery(\n
       Query(aggregate_relative_url=computer_partition.getRelativeUrl()),\n
       Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
       operator="AND",\n
     )\n
-    catalog_result = portal.portal_catalog(portal_type="Sale Packing List Line",\n
+    catalog_result = portal.portal_catalog(portal_type=movement_portal_type,\n
       simulation_state=state_list,\n
       aggregate_relative_url=query,\n
     )\n
