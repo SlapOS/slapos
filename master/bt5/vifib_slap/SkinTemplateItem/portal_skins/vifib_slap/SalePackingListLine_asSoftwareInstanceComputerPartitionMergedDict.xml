@@ -50,12 +50,11 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>checkPermission = context.getPortalObject().portal_membership.checkPermission\n
-sale_packing_list_line = context\n
+            <value> <string>sale_packing_list_line = context\n
 instance_type_list = [\'Software Instance\', \'Slave Instance\']\n
 software_instance = sale_packing_list_line.getAggregateValue(portal_type=instance_type_list)\n
 computer_partition = sale_packing_list_line.getAggregateValue(portal_type=\'Computer Partition\')\n
-software_release = sale_packing_list_line.getAggregateValue(portal_type=\'Software Release\')\n
+software_release = sale_packing_list_line.getAggregateValue(portal_type="Software Release")\n
 ip_list = []\n
 if computer_partition.getPortalType() == \'Computer Partition\':\n
   for internet_protocol_address in computer_partition.contentValues(portal_type=\'Internet Protocol Address\'):\n
@@ -68,10 +67,13 @@ if software_instance is not None and computer_partition is not None and software
     if instance is None:\n
       continue\n
     elif instance.getPortalType() == "Slave Instance":\n
-      slave_instance_list.append(dict(slap_software_type=instance.getSourceReference(),\n
-                                      xml=instance.getTextContent(),\n
-                                      connection_xml=instance.getConnectionXml(),\n
-                                     ))\n
+      slave_instance = dict(slap_software_type=instance.getSourceReference(),\n
+                            slave_reference=instance.getReference(),\n
+                            xml=instance.getTextContent(),\n
+                            connection_xml=instance.getConnectionXml(),\n
+                            )\n
+      if slave_instance not in slave_instance_list:\n
+        slave_instance_list.append(slave_instance)\n
     elif instance.getPortalType() == "Software Instance":\n
       software_instance = instance\n
   return {\n
@@ -82,7 +84,7 @@ if software_instance is not None and computer_partition is not None and software
     \'slap_software_type\': software_instance.getSourceReference(),\n
     \'slap_software_release_url\':software_release.getUrlString(),\n
     \'slap_server_url\':context.getPortalObject().portal_slap.absolute_url(),\n
-    \'slave_instance_list\':slave_instance_list,\n
+    \'slave_instance_list\': slave_instance_list,\n
     \'ip_list\':ip_list,\n
   }\n
 \n
