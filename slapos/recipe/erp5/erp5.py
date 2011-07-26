@@ -302,9 +302,6 @@ class ERP5Updater(object):
 
         self.updateMemcached()
         if self.updateConversionServer():
-          # If update Conversion Server adds a bit more delay to continue
-          # To wait for activiies.
-          time.sleep(60)
           continue
 
         time.sleep(self.sleeping_time)
