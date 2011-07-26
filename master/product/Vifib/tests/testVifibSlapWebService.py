@@ -1545,7 +1545,7 @@ class TestVifibSlapWebService(testVifibMixin):
                                             computer_guid,
                                             children_partition.getReference())
     self.assertRaises(slap.ResourceNotReady, slap_computer_partition.request,
-        sofware_release=software_release_uri, software_type=requested_reference,
+        software_release=software_release_uri, software_type=requested_reference,
         partition_reference=requested_reference,
         partition_parameter_kw=requested_parameter_dict)
 
