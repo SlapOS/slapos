@@ -186,10 +186,12 @@ class ERP5Updater(object):
 
   def _installBusinessTemplateList(self, name_list, update_catalog=False):
     """ Install a Business Template on Remote ERP5 setup """
-    set_path = "/%s/portal_templates/installBusinessTemplatesFromRepositories" % self.site_id
+    set_path = "/%s/portal_templates/installBusinessTemplateListFromRepository" % self.site_id
     self.POST(set_path, {"template_list": name_list,
                          "only_newer": 1,
-                         "update_catalog": int(update_catalog)})
+                         "update_catalog": int(update_catalog),
+                         "activate": 1,
+                         "install_dependency": 1})
 
   def _createActiveSystemPreference(self):
     """ Assert that at least one enabled System Preference is present on
