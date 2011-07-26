@@ -1405,7 +1405,7 @@ class TestVifibSlapWebService(testVifibMixin):
         'software_release': sequence['software_release_uri'],
         'software_type': sequence.get('requested_reference', 'requested_reference'),
         'partition_reference': sequence.get('requested_reference', 'requested_reference'),
-        'shared_xml': xml_marshaller.dumps(False),
+        'slave_xml': xml_marshaller.dumps(False),
         'partition_parameter_xml': xml_marshaller.dumps({}),
         'filter_xml': xml_marshaller.dumps({}),
         #'state': Note: State is omitted
