@@ -286,12 +286,18 @@ class ERP5Updater(object):
   def _hasActivityPresent(self):
     activity_dict = self.getSystemSignatureDict("activity_dict")
     if activity_dict["total"] > 0:
+      self.log("DEBUG", "Waiting for activities on ERP5...")
       return True
+    return False
 
   def _hasFailureActivity(self):
     activity_dict = self.getSystemSignatureDict("activity_dict")
     if activity_dict["failure"] > 0:
+       self.log("ERROR", "Update progress found Failure activities" +\
+                         "and it will not be able to progress until" +\
+                         " activites issue be solved")
        return True
+    return False
 
   def run(self):
     """ Keep running until kill"""
@@ -299,12 +305,11 @@ class ERP5Updater(object):
       time.sleep(30)
       if not self.updateERP5Site():
         self.loadSystemSignatureDict()
+        if self._hasFailureActivity():
+          time.sleep(self.sleeping_time)
+          continue
+          
         if self._hasActivityPresent():
-          self.log("DEBUG", "Waiting for activities on ERP5...")
-          if self._hasFailureActivity():
-            self.log("ERROR", "Update progress found " +\
-                     "Failure activities and it will not progress until " +\
-                     " activites issue be solved")
           continue
 
         if self.updateBusinessTemplateList():
