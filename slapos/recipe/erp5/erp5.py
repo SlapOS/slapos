@@ -147,14 +147,12 @@ class ERP5Updater(object):
     return [i for i in self.business_template_repository_list
                     if i not in found_list]
 
-  def getMissingBusinessTemplateList(self):
-    bt5_dict = self.getSystemSignatureDict("business_template_dict", {})
-    found_bt5_list = bt5_dict.keys()
-    return [bt for bt in self.business_template_list\
-                          if bt not in found_bt5_list]
+  def getMissingBusinessTemplateSet(self):
+    found_dict = self.getSystemSignatureDict("business_template_dict", {})
+    return set(self.business_template_list).difference(found_dict)
 
   def isBusinessTemplateUpdated(self):
-    return len(self.getMissingBusinessTemplateList()) == 0
+    return len(self.getMissingBusinessTemplateSet()) == 0
 
   def isBusinessTemplateRepositoryUpdated(self):
     return len(self.getMissingBusinessTemplateRepositoryList()) == 0
@@ -173,8 +171,7 @@ class ERP5Updater(object):
         self._setRepositoryList(repository_list)
 
       # Require to update Business template
-      for bt in self.getMissingBusinessTemplateList():
-        self._installBusinessTemplateList([bt])
+      self._installBusinessTemplateList(list(self.getMissingBusinessTemplateSet()))
       return True
 
     return False
