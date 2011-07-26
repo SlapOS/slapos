@@ -4687,6 +4687,7 @@ class TestVifibSlapWebService(testVifibMixin):
      Check the behaviour when one Slave Instance is requested and not exist one
      available slot
     """
+    raise NotImplementedError
 
   def test_SlaveInstance_request_start(self):
     """
