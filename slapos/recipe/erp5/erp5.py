@@ -260,20 +260,6 @@ class ERP5Updater(object):
       return True
     return False
 
-  def updateMysql(self):
-    """ This API is not implemented yet, because it is not needed to
-    update Mysql Connection on ERP5 Sites.
-    """
-    pass
-
-  def updatePortalActivities(self):
-    """ This API is not implemented yet, because it is not needed for
-        a single instance configuration. This method should define which
-        instances will handle activities, which one will distribute
-        activities
-    """
-    pass
-
   def updateERP5Site(self):
     if not self.isERP5Present():
       url = '/manage_addProduct/ERP5/manage_addERP5Site'
