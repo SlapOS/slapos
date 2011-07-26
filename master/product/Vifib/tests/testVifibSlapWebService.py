@@ -995,25 +995,6 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertRaises(slap.NotFoundError,
         self.slap.registerComputerPartition, computer_guid, partition_id)
 
-  def stepMarkSlavePartitionBusy(self, sequence, **kw):
-    slave_partition_uid = sequence['slave_partition_uid']
-    slave_partition = self.portal.portal_catalog.getResultValue(
-        uid=slave_partition_uid)
-    slave_partition.markBusy()
-
-  def stepCreateSlavePartition(self, sequence, **kw):
-    """
-    Create a Slave Partition document.
-    """
-    computer_partition_uid = sequence["computer_partition_uid"]
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=computer_partition_uid)
-    slave_partition = computer_partition.newContent(
-        portal_type=self.slave_partition_portal_type)
-    slave_partition.markFree()
-    # Mark newly created computer partition as free by default
-    sequence.edit(slave_partition_uid=slave_partition.getUid())
-
   def stepSelect0QuantityComputerPartition(self, sequence, **kw):
     sequence.edit(computer_partition_quantity=0)
 
@@ -3089,33 +3070,6 @@ class TestVifibSlapWebService(testVifibMixin):
             portal_type=self.sale_packing_list_line_portal_type)
     self.assertEqual(1, len(software_instance_sale_packing_list_line_list))
 
-  def stepCheckSoftwareInstanceAndRelatedSlavePartition(self,
-      sequence, **kw):
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    # There should be only one predecessor
-    self.assertEqual(1, len(software_instance.getPredecessorList()))
-
-    self._checkSoftwareInstanceAndRelatedPartition(software_instance,
-        self.computer_partition_portal_type)
-
-  def stepCheckRequestedSoftwareInstanceAndRelatedSlavePartition(self,
-      sequence, **kw):
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    # There should be only one predecessor
-    predecessor_list = software_instance.getPredecessorValueList()
-    self.assertEqual(1, len(predecessor_list))
-    predecessor = predecessor_list[0]
-
-    # This predecessor shall have only one related predecessor
-    self.assertEqual(1, len(predecessor.getPredecessorRelatedList()))
-
-    self._checkSoftwareInstanceAndRelatedPartition(predecessor,
-        self.slave_partition_portal_type)
-
   def _checkSoftwareInstanceAndRelatedPartition(self, software_instance,
       partition_portal_type=computer_partition_portal_type):
     # There should be only one Sale Packing List Line
@@ -4934,155 +4888,8 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.play(self)
 
   ########################################
-  # ComputerPartition.request - shared
-  ########################################
-
-  computer_with_software_release = """
-      CreateComputer
-      Tic
-      CreatePurchasePackingList
-      Tic
-      CreatePurchasePackingListLine
-      Tic
-      SelectNewSoftwareReleaseUri
-      CreateSoftwareRelease
-      Tic \
-      SubmitSoftwareRelease \
-      Tic \
-      CreateSoftwareProduct \
-      Tic \
-      ValidateSoftwareProduct \
-      Tic \
-      SetSoftwareProductToSoftwareRelease \
-      PublishByActionSoftwareRelease \
-      Tic
-      SetPurchasePackingListLineSetupResource
-      SetPurchasePackingListLineAggregate
-      ConfirmPurchasePackingList
-      StopPurchasePackingList
-      Tic
-  """
-  requesting_computer_partition_with_software_instance = """
-      SelectNewComputerPartitionReference
-      CreateComputerPartition
-      CreateSalePackingList
-      Tic
-      CreateSalePackingListLine
-      Tic
-      SetSalePackingListLineSetupResource
-      SetSalePackingListLineAggregate
-      ConfirmSalePackingList
-      Tic
-  """
-
-  slave_owner_computer_partition_with_software_instance = """
-      SelectNewComputerPartitionReference
-      CreateComputerPartition
-      SetSoftwareInstanceTitle
-      CreateSalePackingList
-      Tic
-      CreateSalePackingListLine
-      Tic
-      SetSalePackingListLineSetupResource
-      SetSalePackingListLineAggregate
-      ConfirmSalePackingList
-      Tic
-      SetComputerPartitionQuantity
-      Tic
-      SelectCurrentComputerPartitionAsSlaveOwner
-  """
-
-  check_positive_request_shared = """
-      RequestSharedComputerPartitionNotReadyResponse
-      Tic
-      RequestSharedComputerPartition
-      CheckSoftwareInstanceAndRelatedSlavePartition
-      CheckRequestedSoftwareInstanceAndRelatedSlavePartition
-  """
-
-  @skip('Not implemented')
-  def test_ComputerPartition_request_shared_simpleCase(self):
-    """
-    Check that requesting shared partition works in system capable to fulfill
-    such request, with existing slave partition
-    """
-    sequence_list = SequenceList()
-    sequence_string = \
-        self.computer_with_software_release +\
-        self.slave_owner_computer_partition_with_software_instance +\
-        """
-      CreateSlavePartition
-      Tic
-        """ +\
-        self.requesting_computer_partition_with_software_instance +\
-        self.check_positive_request_shared
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  @skip('Not implemented')
-  def test_ComputerPartition_request_shared_simpleCase_noSlave(self):
-    """
-    Check that requesting shared partition works in system capable to fulfill
-    such request, with Slave Partition does not exist yet.
-    """
-    sequence_list = SequenceList()
-    sequence_string = \
-        self.computer_with_software_release +\
-        self.slave_owner_computer_partition_with_software_instance +\
-        self.requesting_computer_partition_with_software_instance +\
-        self.check_positive_request_shared
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  check_notfound_request_shared = """
-      RequestSharedComputerPartitionNotFoundResponse
-  """
-
-  @skip('Not implemented')
-  def test_ComputerPartition_request_shared_noAvailability(self):
-    """
-    Check that requesting shared partition raises in case if there is no
-    free Slave Partition, with Slave Partition existing.
-    """
-    sequence_list = SequenceList()
-    sequence_string = \
-        self.computer_with_software_release +\
-        self.slave_owner_computer_partition_with_software_instance +\
-        """
-      CreateSlavePartition
-      Tic
-      MarkSlavePartitionBusy
-      Tic
-        """ +\
-        self.requesting_computer_partition_with_software_instance +\
-        self.check_notfound_request_shared
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  @skip('Not implemented')
-  def test_ComputerPartition_request_shared_noAvailability_noSlave(self):
-    """
-    Check that requesting shared partition raises in case if there is no
-    free Slave Partition, with Slave Partition does not exist yet.
-    """
-    sequence_list = SequenceList()
-    sequence_string = \
-        self.computer_with_software_release +\
-        self.slave_owner_computer_partition_with_software_instance +\
-        """
-      Select0QuantityComputerPartition
-      SetComputerPartitionQuantity
-      Tic
-        """ +\
-        self.requesting_computer_partition_with_software_instance +\
-        self.check_notfound_request_shared
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  ########################################
   # Computer.getComputerPartitionList
   ########################################
-
   def test_Computer_getComputerPartitionList_validatedComputer(self):
     """
     Check that getComputerPartitionList returns an empty result if the
