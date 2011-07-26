@@ -37,7 +37,7 @@ class ERP5Updater(object):
   erp5_catalog_storage = "erp5_mysql_innodb_catalog"
   header_dict = {}
 
-  sleeping_time = 120
+  sleeping_time = 300
 
   def __init__(self, user, password, host,
       site_id, mysql_url, memcached_address,
