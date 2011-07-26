@@ -4700,16 +4700,6 @@ class TestVifibSlapWebService(testVifibMixin):
      Check the behaviour when one Slave Instance is requested and not exist one
      available slot
     """
-  
-  def stepSlaveInstanceStarted(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence["software_instance_uid"])
-    slave_instance.startComputerPartition()
-
-  def stepSlaveInstanceStopped(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence["software_instance_uid"])
-    slave_instance.stopComputerPartition()
 
   def test_SlaveInstance_request_start(self):
     """
@@ -6148,6 +6138,16 @@ class TestVifibSlapWebService(testVifibMixin):
       portal_type="Software Instance")
     self.assertTrue("%s</parameter>" % sequence["site_url"] in \
         software_instance.getConnectionXml())
+
+  def stepSlaveInstanceStarted(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.startComputerPartition()
+
+  def stepSlaveInstanceStopped(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.stopComputerPartition()
 
   prepare_two_purchase_packing_list = \
       prepare_software_release_purchase_packing_list + '\
