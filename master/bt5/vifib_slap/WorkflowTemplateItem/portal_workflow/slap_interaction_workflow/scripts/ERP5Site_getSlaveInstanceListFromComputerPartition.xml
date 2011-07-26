@@ -50,22 +50,32 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change["object"]\n
-sale_packing_list_line_list = context.ERP5Site_getSlaveInstanceListFromComputerPartition(\n
- software_instance.getRelativeUrl(),["%requested", "started"])\n
+            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+portal = context.getPortalObject()\n
 \n
-for sale_packing_list_line in sale_packing_list_line_list:\n
-  slave_instance = sale_packing_list_line.getAggregateValue(portal_type="Slave Instance")\n
-  slave_instance.stopComputerPartition()\n
+sale_packing_list_line = portal.portal_catalog.getResultValue(\n
+  portal_type="Sale Packing List Line",\n
+  aggregate_relative_url=relative_url)\n
+computer_partition = sale_packing_list_line.getAggregateValue(portal_type="Computer Partition")\n
+\n
+slave_instance_query = ComplexQuery(\n
+  Query(aggregate_portal_type="Slave Instance"),\n
+  Query(aggregate_validation_state=state_list),\n
+  operator="AND")\n
+\n
+computer_partition_query = Query(aggregate_relative_url=computer_partition.getRelativeUrl())\n
+query = ComplexQuery(computer_partition_query, slave_instance_query, operator="AND")\n
+\n
+return portal.portal_catalog(portal_type=\'Sale Packing List Line\', query=query)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string>relative_url, state_list</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_stopSlaveInstanceListFromComputerPartition</string> </value>
+            <value> <string>ERP5Site_getSlaveInstanceListFromComputerPartition</string> </value>
         </item>
       </dictionary>
     </pickle>
