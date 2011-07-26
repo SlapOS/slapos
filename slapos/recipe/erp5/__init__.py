@@ -98,7 +98,7 @@ class Recipe(BaseSlapRecipe):
       connection_dict["site_url"] = self.installFrontendZopeApache(
         ip=self.getGlobalIPv6Address(), port=13001, name=frontend_name,
         frontend_path='/%s' % self.site_id, backend_path='/%s' % self.site_id,
-        backend_url="http://%s" % site_access, key=frontend_key,
+        backend_url=apache_conf['apache_login'], key=frontend_key,
         certificate=frontend_certificate)
 
     default_bt5_list = []
