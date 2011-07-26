@@ -4426,6 +4426,59 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  ########################################
+  # ComputerPartition.request - slave
+  ########################################
+  def test_ComputerPartition_request_slave_simpleCase(self):
+    """
+    Check that requesting shared partition works in system capable to fulfill
+    such request, with existing slave partition
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_install_requested_computer_partition_sequence_string +\
+      """
+       SlapLoginCurrentSoftwareInstance
+       SelectEmptyRequestedParameterDict \
+       SetRandomRequestedReference \
+       RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
+       Tic \
+       SlapLogout \
+       \
+       SlapLoginCurrentSoftwareInstance \
+       RequestSlaveInstanceFromComputerPartition \
+       Tic \
+       SlapLogout
+       LoginDefaultUser
+       ConfirmOrderedSaleOrderActiveSense
+       Tic
+       SlapLoginCurrentComputer
+       CheckSlaveInstanceListFromOneComputerPartition
+       SlapLogout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_slave_NotFound(self):
+    """
+    Check that requesting shared partition worksi in system capable to fulfill
+    such request, with Slave Partition does not exist yet.
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+        self.prepare_install_requested_computer_partition_sequence_string +\
+        """
+      Tic
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SelectRequestedReference
+      RequestSlaveInstanceFromComputerPartitionNotFoundResponse
+      SlapLogout
+        """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   #########################################
   # SlaveInstance.request
   #########################################
