@@ -52,21 +52,39 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
+portal = context.getPortalObject()\n
+\n
+def checkSoftwareInstanceIsInstalledOnComputerPartition(software_release,\n
+    computer_partition):\n
+  from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+  query = ComplexQuery(Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
+                       Query(aggregate_relative_url=computer_partition.getRelativeUrl()),\n
+                       operator="AND",\n
+                      )\n
+  sale_packing_list_line = portal.portal_catalog.getResultValue(\n
+    portal_type=\'Sale Packing List Line\', aggregate_relative_url=query)\n
+  if sale_packing_list_line is not None:\n
+    return True\n
+  return False\n
+\n
 from DateTime import DateTime\n
 import random\n
 \n
 slave_instance = state_change[\'object\']\n
 software_release_url_string = state_change.kwargs[\'software_release\']\n
 hosting_subscription_uid = state_change.kwargs[\'hosting_subscription_uid\']\n
-shared = state_change.kwargs[\'shared\']\n
 software_type = state_change.kwargs["software_type"]\n
 tag = state_change.kwargs[\'tag\']\n
-filter_kw = state_change.kwargs["filter_kw"]\n
+filter_kw = slave_instance.getSlaXmlAsDict()\n
 \n
-# Assertion: No packing list line should be related to this software instance\n
+# Assertion: No packing list line should be related to this slave instance\n
 packing_list_line = slave_instance.getAggregateRelatedValue(portal_type=\'Sale Packing List Line\')\n
 if packing_list_line is not None:\n
   raise ValueError("Software Instance %s is already associated to a packing list line" % slave_instance.getRelativeurl())\n
+\n
+software_release = context.portal_catalog.getResultValue(\n
+  portal_type=\'Software Release\',\n
+  url_string=software_release_url_string)\n
 \n
 # Find a free computer partition. This means:\n
 # Computer Partition which doesn\'t have non delivered sale packing list related\n
@@ -76,17 +94,21 @@ SQL_WINDOW_SIZE = 50\n
 computer_partition = None\n
 query_kw = {\n
   \'software_release_url\': software_release_url_string,\n
-  \'portal_type\': \'Computer Partition\'\n
+  \'portal_type\': \'Computer Partition\',\n
+  \'free_for_request\' : 0\n
 }\n
 # support SLA\n
 if "computer_guid" in filter_kw:\n
   query_kw["parent_reference"] = filter_kw["computer_guid"]\n
 \n
 # fetch at mot 50 random Computer Partitions, and check if they are ok\n
-isTransitionPossible = slave_instance.getPortalObject().portal_workflow.isTransitionPossible\n
-query_kw.update(free_for_request=1) # is free\n
+portal = context.getPortalObject()\n
+isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
+\n
+\n
 result_count = slave_instance.portal_catalog.countResults(**query_kw)[0][0]\n
 offset = max(0, result_count-1)\n
+\n
 if offset >= SQL_WINDOW_SIZE:\n
   limit = (random.randint(0, offset), SQL_WINDOW_SIZE)\n
 else:\n
@@ -96,25 +118,18 @@ for computer_partition_candidate in slave_instance.portal_catalog(\n
                                           limit=limit, **query_kw):\n
   computer_partition_candidate = computer_partition_candidate.getObject()\n
   # Check if the computer partition can be marked as busy (done by an interaction workflow on sale packing list level)\n
-  if isTransitionPossible(computer_partition_candidate, \'mark_busy\'):\n
+  if checkSoftwareInstanceIsInstalledOnComputerPartition(software_release, computer_partition_candidate):\n
     computer_partition = computer_partition_candidate\n
-    break\n
+    break \n
 \n
 if computer_partition is None:\n
   raise ValueError(\'It was not possible to find free Computer Partition\')\n
 \n
-# lock computer partition\n
-computer_partition.serialize()\n
-software_release_document = context.portal_catalog.getResultValue(\n
-  portal_type=\'Software Release\',\n
-  url_string=software_release_url_string)\n
-\n
 # protect computer partition from being selected again\n
-portal = context.getPortalObject()\n
-\n
 hosting_subscription = slave_instance.portal_catalog.getResultValue(uid=hosting_subscription_uid)\n
 sale_packing_list_line = context.HostingSubscription_getInstancePackingListLine(state_change)\n
 base_sale_packing_list = sale_packing_list_line.getParentValue()\n
+\n
 # XXX: SlaveInstance_createSalePackingList shall be used to create new Sale Packing List\n
 sale_packing_list_module = portal.getDefaultModule(portal_type=\'Sale Packing List\')\n
 \n
@@ -132,10 +147,11 @@ sale_packing_list = sale_packing_list_module.newContent(\n
   source=base_sale_packing_list.getSource(),\n
   source_section=base_sale_packing_list.getSourceSection(),\n
   price_currency=base_sale_packing_list.getPriceCurrency())\n
+\n
 sale_packing_list_line = sale_packing_list.newContent(\n
   portal_type=\'Sale Packing List Line\',\n
   resource=context.portal_preferences.getPreferredInstanceSetupResource(),\n
-  aggregate_value_list=[slave_instance, software_release_document, computer_partition, hosting_subscription]\n
+  aggregate_value_list=[slave_instance, software_release, computer_partition, hosting_subscription]\n
 )\n
 \n
 # confirm Sale Packing List\n
