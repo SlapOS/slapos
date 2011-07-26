@@ -92,6 +92,8 @@ def convertToREST(function):
   wrapper.__doc__ = function.__doc__
   return wrapper
 
+_MARKER = []
+
 class SlapTool(BaseTool):
   """SlapTool"""
 
@@ -259,8 +261,8 @@ class SlapTool(BaseTool):
     'requestComputerPartition')
   def requestComputerPartition(self, computer_id=None,
       computer_partition_id=None, software_release=None, software_type=None,
-      partition_reference=None, shared_xml=None, partition_parameter_xml=None,
-      filter_xml=None, state=None):
+      partition_reference=None, slave_xml=None, partition_parameter_xml=None,
+      filter_xml=None, state=None, shared_xml=_MARKER):
     """
     Asynchronously requests creation of computer partition for assigned
     parameters
@@ -272,9 +274,13 @@ class SlapTool(BaseTool):
 
     In any other case returns not important data and HTTP code is 403 Forbidden
     """
+    # Backward compatibility API, translate shared_xml into slave_xml.
+    # This should be removed as soon slap API be updated.
+    if shared_xml is not _MARKER:
+      slave_xml = shared_xml
     return self._requestComputerPartition(computer_id, computer_partition_id,
         software_release, software_type, partition_reference,
-        shared_xml, partition_parameter_xml, filter_xml, state)
+        slave_xml, partition_parameter_xml, filter_xml, state)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'useComputer')
@@ -552,7 +558,7 @@ class SlapTool(BaseTool):
   @convertToREST
   def _requestComputerPartition(self, computer_id, computer_partition_id,
         software_release, software_type, partition_reference,
-        shared_xml, partition_parameter_xml, filter_xml, state):
+        slave_xml, partition_parameter_xml, filter_xml, state):
     """
     Asynchronously requests creation of computer partition for assigned
     parameters
@@ -569,10 +575,10 @@ class SlapTool(BaseTool):
       state = xml_marshaller.xml_marshaller.loads(state)
     if state is None:
       state = 'started'
-    if shared_xml:
-      shared = xml_marshaller.xml_marshaller.loads(shared_xml)
+    if slave_xml:
+      slave = xml_marshaller.xml_marshaller.loads(slave_xml)
     else:
-      shared = False
+      slave = False
     if partition_parameter_xml:
       partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
                                               partition_parameter_xml)
