@@ -138,9 +138,9 @@ password %(password)s
           interpreter='python'))
 
   def installLocalRunUnitTest(self):
-    link = os.path.join(self.bin_directory, 'runUnitTest')
+    link = os.path.join(self.bin_directory, 'runCloudoooUnitTest')
     destination = os.path.join(CONFIG['instance_root'],
-        CONFIG['partition_reference'], 'bin', 'runUnitTest')
+        CONFIG['partition_reference'], 'bin', 'runCloudoooUnitTest')
     if os.path.lexists(link):
       if not os.readlink(link) != destination:
         os.unlink(link)

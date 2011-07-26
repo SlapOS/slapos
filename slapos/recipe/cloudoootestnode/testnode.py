@@ -84,7 +84,7 @@ def run(args):
     if profile_content is None:
       profile_content = """
 [buildout]
-extends = /home/slap/slapconfig/cloudooos.cfg
+extends = /home/slap/config/cloudooo.cfg
 """
 #extends = %(software_config_path)s
 #""" %  {'software_config_path': os.path.join(repository_path,
@@ -207,6 +207,7 @@ branch = %(branch)s
           partition_path = os.path.join(config['instance_root'],
                                         config['partition_reference'])
           run_test_suite_path = os.path.join(partition_path, 'bin',
+                                            'runCloudoooUnitTest')
                                             'runTestSuite')
           if not os.path.exists(run_test_suite_path):
             raise ValueError('No %r provided' % run_test_suite_path)
