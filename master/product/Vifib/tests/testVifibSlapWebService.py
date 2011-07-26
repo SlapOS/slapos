@@ -4852,11 +4852,13 @@ class TestVifibSlapWebService(testVifibMixin):
       ConfirmOrderedSaleOrderActiveSense
       Tic
       StoreSalePackingListLineFromSlaveInstance
+      StoreSaleOrderFromSlaveInstance
       SlapLoginCurrentComputer
       CheckSlaveInstanceListFromOneComputerPartition
       SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
       CheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser
       CheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser
+      CheckSaleOrderFromSlaveInstanceAccessUsingSoftwareInstanceUser
       CheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser
       SlapLogout
     """
@@ -6007,6 +6009,16 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertUserCanViewDocument(username, sale_packing_list_line)
     self.failIfUserCanModifyDocument(username, sale_packing_list_line)
 
+  def stepCheckSaleOrderFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_order = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Order",
+        uid=sequence["sale_order_uid"])
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, sale_order)
+    self.failIfUserCanModifyDocument(username, sale_order)
+
   def stepCheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
       sequence):
     portal_membership = self.portal.portal_membership
@@ -6018,6 +6030,13 @@ class TestVifibSlapWebService(testVifibMixin):
     username = portal_membership.getAuthenticatedMember().getUserName()
     self.assertUserCanViewDocument(username, hosting_subscription)
     self.failIfUserCanModifyDocument(username, hosting_subscription)
+
+  def stepStoreSaleOrderFromSlaveInstance(self, sequence):
+    sale_order_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Order Line",
+        aggregate_refence=sequence["software_instance_reference"])
+    sequence.edit(sale_order_line_uid=sale_order_line.getUid(),
+        sale_order_uid=sale_order_line.getParent().getUid())
 
   def stepStoreSalePackingListLineFromSlaveInstance(self, sequence):
     sale_packing_list_line = self.portal.portal_catalog.getResultValue(
