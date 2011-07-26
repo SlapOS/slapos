@@ -607,6 +607,11 @@ class SlapTool(BaseTool):
     sla_xml = etree.tostring(instance, pretty_print=True,
                                   xml_declaration=True, encoding='utf-8')
 
+    if slave:
+      instance_portal_type = "Slave Instance"
+    else:
+      instance_portal_type = "Software Instance"
+
     if computer_id and computer_partition_id:
       # requested by Software Instance, there is already top part of tree
       software_instance_document = self.\
@@ -616,15 +621,15 @@ class SlapTool(BaseTool):
               software_release=software_release,
               software_type=software_type,
               partition_reference=partition_reference,
-              shared=shared,
               instance_xml=instance_xml,
+              slave=slave,
               sla_xml=sla_xml,
               state=state)
 
       # Get requested software instance
       requested_software_instance = software_instance_document.portal_catalog.\
           getResultValue(
-                portal_type="Software Instance",
+                portal_type=instance_portal_type,
                 source_reference=software_type,
                 # predecessor_related_uid is inconsistent with
                 # SoftwareInstancae.requestSoftwareInstance but in this case it
@@ -639,13 +644,13 @@ class SlapTool(BaseTool):
       person.requestSoftwareInstance(software_release=software_release,
               software_type=software_type,
               software_title=partition_reference,
-              shared=shared,
+              slave=slave,
               instance_xml=instance_xml,
               sla_xml=sla_xml,
               state=state)
       requested_software_instance = person.portal_catalog.\
           getResultValue(
-                portal_type="Software Instance",
+                portal_type=instance_portal_type,
                 # In order be in sync with defaults of person.
                 #   requestSoftwareInstance it is required to default here
                 # too
@@ -656,8 +661,13 @@ class SlapTool(BaseTool):
     if requested_software_instance is None:
       raise SoftwareInstanceNotReady
     else:
+      query_kw = {}
+      if slave:
+        # Provide precise reference when search for a slave.
+        query_kw['slave_reference'] = requested_software_instance.getReference()
+
       movement = self._getSalePackingListLineForComputerPartition(
-                                             requested_software_instance)
+                         requested_software_instance, **query_kw)
       if movement is None:
         raise SoftwareInstanceNotReady
       software_instance = SoftwareInstance(
