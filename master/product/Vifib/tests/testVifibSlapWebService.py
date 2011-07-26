@@ -1294,89 +1294,69 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEqual('value',
         slap_computer_partition.getConnectionParameter('parameter'))
 
-  def stepRequestSharedComputerPartition(self, sequence, **kw):
+  def stepRequestSlaveInstanceFromComputerPartition(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
     requested_reference = sequence['requested_reference']
     requested_parameter_dict = sequence['requested_parameter_dict']
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-
-    computer_partition = software_instance.getAggregateRelatedValue(
-        portal_type=self.sale_packing_list_line_portal_type).getAggregateValue(
-            portal_type=self.computer_partition_portal_type)
-    computer = computer_partition
-    while computer.getPortalType() != self.computer_portal_type:
-      computer = computer.getParentValue()
 
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
     slap_computer_partition = self.slap.registerComputerPartition(
-        computer.getReference(), computer_partition.getReference())
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
 
-    software_type = None
-    raise NotImplementedError('software_type not propagated')
     requested_slap_computer_partition = slap_computer_partition.request(
-        software_release=software_release_uri, software_type=software_type,
+        software_release=software_release_uri,
+        software_type="SlaveInstance",
         partition_reference=requested_reference,
-        partition_parameter_kw=requested_parameter_dict, shared=True)
+        partition_parameter_kw=requested_parameter_dict,
+        # XXX The follow API should be slave, but shared was kept for
+        # Backward compatibility with older versions of slap
+        shared=True)
 
     sequence.edit(
         requested_slap_computer_partition=requested_slap_computer_partition,
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
 
-  def stepRequestSharedComputerPartitionNotReadyResponse(self, sequence, **kw):
+  def stepRequestSlaveInstanceFromComputerPartitionNotReadyResponse(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
     requested_reference = sequence['requested_reference']
     requested_parameter_dict = sequence['requested_parameter_dict']
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    computer_partition = software_instance.getAggregateRelatedValue(
-        portal_type=self.sale_packing_list_line_portal_type).getAggregateValue(
-            portal_type=self.computer_partition_portal_type)
-    computer = computer_partition
-    while computer.getPortalType() != self.computer_portal_type:
-      computer = computer.getParentValue()
 
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
     slap_computer_partition = self.slap.registerComputerPartition(
-        computer.getReference(), computer_partition.getReference())
-    software_type = None
-    raise NotImplementedError('software_type not propagated')
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+    
     # first try will raise slap.ResourceNotReady
-    self.assertRaises(slap.ResourceNotReady, slap_computer_partition.request,
-      software_release=software_release_uri, software_type=software_type,
+    self.assertRaises(slap.ResourceNotReady, 
+      slap_computer_partition.request,
+      software_release=software_release_uri, 
+      software_type="SlaveInstance",
       partition_reference=requested_reference,
-      partition_parameter_kw=requested_parameter_dict, shared=True)
+      partition_parameter_kw=requested_parameter_dict, 
+      shared=True)
 
-  def stepRequestSharedComputerPartitionNotFoundResponse(self, sequence, **kw):
+  def stepRequestSlaveInstanceFromComputerPartitionNotFoundResponse(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
     requested_reference = sequence['requested_reference']
     requested_parameter_dict = sequence['requested_parameter_dict']
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-
-    computer_partition = software_instance.getAggregateRelatedValue(
-        portal_type=self.sale_packing_list_line_portal_type).getAggregateValue(
-            portal_type=self.computer_partition_portal_type)
-    computer = computer_partition
-    while computer.getPortalType() != self.computer_portal_type:
-      computer = computer.getParentValue()
 
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
     slap_computer_partition = self.slap.registerComputerPartition(
-        computer.getReference(), computer_partition.getReference())
-    software_type = None
-    raise NotImplementedError('software_type not propagated')
-    self.assertRaises(slap.NotFoundError, slap_computer_partition.request,
-      software_release=software_release_uri, sofware_type=software_type,
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+
+    self.assertRaises(slap.NotFoundError, 
+      slap_computer_partition.request,
+      software_release=software_release_uri,
+      software_type="SlaveInstance",
       partition_reference=requested_reference,
-      partition_parameter_kw=requested_parameter_dict, shared=True)
+      partition_parameter_kw=requested_parameter_dict,
+      shared=True)
 
   def stepRequestTwoAndCheckDifferentResult(self, sequence, **kw):
     self.slap = slap.slap()
