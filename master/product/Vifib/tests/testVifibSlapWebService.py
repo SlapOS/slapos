@@ -4719,9 +4719,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepSetDeliveryLineAmountAsTwo(self, sequence):
-    sequence.edit(delivery_line_amount=2)
-
   def test_SlaveInstance_request_stop_from_SoftwareInstance(self):
     """
       Check that the Slave Instance will be stopped and started correctly when
@@ -6029,6 +6026,9 @@ class TestVifibSlapWebService(testVifibMixin):
     slave_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence["software_instance_uid"])
     slave_instance.stopComputerPartitionInstallation()
+
+  def stepSetDeliveryLineAmountAsTwo(self, sequence):
+    sequence.edit(delivery_line_amount=2)
 
   prepare_two_purchase_packing_list = \
       prepare_software_release_purchase_packing_list + '\
