@@ -4721,8 +4721,8 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_SlaveInstance_request_stop_from_SoftwareInstance(self):
     """
-      Check that the Slave Instance will be stopped and started correctly when
-      a Software Instance is started/stopped
+      Check that the Slave Instance will be stopped correctly when
+      a Software Instance is stopped
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
@@ -4757,8 +4757,8 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_SlaveInstance_request_start_from_SoftwareInstance(self):
     """
-      Check that the Slave Instance will be start and started correctly when
-      a Software Instance is started/stopped
+      Check that the Slave Instance will be started correctly when
+      a Software Instance is started
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
