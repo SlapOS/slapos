@@ -555,6 +555,7 @@ class Slapgrid(object):
 
         uid, gid = None, None
         stat_info = os.stat(instance_path)
+        uid, gid = stat_info.st_uid, stat_info.st_gid
 
         kw = dict()
         if not self.console:
