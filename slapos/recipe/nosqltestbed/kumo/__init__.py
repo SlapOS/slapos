@@ -26,15 +26,13 @@
 ##############################################################################
 
 import os
-import urllib
-import urllib2
 import pkg_resources
 from logging import Formatter
 
 class KumoTestBed(object):
 
   def run_default(self, recipe):
-    run_kumo_cloud()
+    run_kumo_cloud(recipe)
 
   def run_kumo_cloud(self, recipe):
     """ Deploy kumofs system on a cloud. """
