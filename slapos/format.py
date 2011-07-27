@@ -430,6 +430,8 @@ class User:
     """
     self.name = str(user_name)
     self.additional_group_list = additional_group_list
+    self._getpwnam = getpwnam
+    self._grp = grp
 
   def __getinitargs__(self):
     return (self.name,)
@@ -449,7 +451,7 @@ class User:
     #      This method shall check if all is correctly done
     #      This method shall not reset groups, just add them
     try:
-      grp.getgrnam(self.name)
+      self._grp.getgrnam(self.name)
     except KeyError:
       callAndRead(['groupadd', self.name])
 
@@ -458,7 +460,7 @@ class User:
       user_parameter_list.extend(['-G', ','.join(self.additional_group_list)])
     user_parameter_list.append(self.name)
     try:
-      getpwnam(self.name)
+      self._getpwnam(self.name)
     except KeyError:
       callAndRead(['useradd'] + user_parameter_list)
     else:
@@ -476,7 +478,7 @@ class User:
     """
 
     try:
-      getpwnam(self.name)
+      self._getpwnam(self.name)
       return True
 
     except KeyError:
