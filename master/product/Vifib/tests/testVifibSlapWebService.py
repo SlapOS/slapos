@@ -4715,28 +4715,41 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetDeliveryLineAmountAsTwo(self, sequence):
+    sequence.edit(delivery_line_amount=2)
+
   def test_SlaveInstance_request_stop_from_SoftwareInstance(self):
     """
       Check that the Slave Instance will be stopped and started correctly when
       a Software Instance is started/stopped
     """
     sequence_list = SequenceList()
-    sequence_string = self.prepare_started_computer_partition_sequence_string + """
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
       LoginTestVifibCustomer
-      SlaveInstanceStarted
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      Logout
+      LoginDefaultUser
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
+      SoftwareInstanceStarted
       Tic
       SlapLogout
       LoginDefaultUser
       SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
       SoftwareInstanceStopped
       Tic
-      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      SetDeliveryLineAmountAsTwo
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -4747,7 +4760,7 @@ class TestVifibSlapWebService(testVifibMixin):
       a Software Instance is started/stopped
     """
     sequence_list = SequenceList()
-    sequence_string = self.prepare_start_requested_computer_partition_sequence_string + """
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       SlapLogout
@@ -4755,11 +4768,20 @@ class TestVifibSlapWebService(testVifibMixin):
       ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLogout
-      LoginDefaultUser
-      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
+      SoftwareInstanceAvailable
+      Tic
+      LoginTestVifibCustomer
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      Logout
+      SlapLoginCurrentComputer
       SoftwareInstanceStarted
       Tic
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      SlapLogout
+      LoginDefaultUser
+      SetDeliveryLineAmountAsTwo
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -4771,23 +4793,24 @@ class TestVifibSlapWebService(testVifibMixin):
       validating the feature of stop a Instance Slave
     """
     sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+    sequence_string = self.prepare_started_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
-      LoginTestVifibCustomer
-      SlaveInstanceStarted
-      Tic
       SlapLogout
       LoginTestVifibCustomer
+      SlaveInstanceStopComputerPartitionInstallation
+      Tic
+      SlaveInstanceStarted
+      Tic
       SlaveInstanceStopped
       Tic
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -5987,10 +6010,20 @@ class TestVifibSlapWebService(testVifibMixin):
         uid=sequence["software_instance_uid"])
     slave_instance.startComputerPartition()
 
+  def stepRequestSlaveInstanceStart(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.requestStartComputerPartition()
+
   def stepSlaveInstanceStopped(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence["software_instance_uid"])
     slave_instance.stopComputerPartition()
+
+  def stepSlaveInstanceStopComputerPartitionInstallation(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.stopComputerPartitionInstallation()
 
   prepare_two_purchase_packing_list = \
       prepare_software_release_purchase_packing_list + '\
