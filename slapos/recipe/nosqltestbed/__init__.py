@@ -25,274 +25,31 @@
 #
 ##############################################################################
 
-import os
-import urllib
-import urllib2
+import sys
 import pkg_resources
+from logging import Formatter
 from slapos.recipe.librecipe import BaseSlapRecipe
 
 class NoSQLTestBed(BaseSlapRecipe):
 
   def _install(self):
     self.parameter_dict = self.computer_partition.getInstanceParameterDict()
+    try:
+      entry_point = pkg_resources.iter_entry_points(group='slapos.recipe.nosqltestbed.plugin',
+                                                    name=self.parameter_dict['plugin']).next()
+      plugin_class = entry_point.load()
+
+      testbed = plugin_class()
+    except:
+      print Formatter().formatException(sys.exc_info())
+      return None
+
     software_type = self.parameter_dict.get('slap_software_type', 'default')
     if software_type is None or software_type == 'RootSoftwareInstance':
-      software_type = 'kumo_cloud'
-    if "run_%s" % software_type in dir(self) and \
-       callable(getattr(self, "run_%s" % software_type)):
-      return getattr(self, "run_%s" % software_type)()
+      software_type = 'default'
+    if "run_%s" % software_type in dir(testbed) and \
+       callable(getattr(testbed, "run_%s" % software_type)):
+      return getattr(testbed, "run_%s" % software_type)(self)
     else:
       raise NotImplementedError("Do not support %s" % software_type)
-
-  def run_kumo_cloud(self):
-    """ Deploy kumofs system on a cloud. """
-
-    kumo_cloud_config = {}
-    kumo_cloud_config.update(self.options)
-    kumo_cloud_config.update(self.parameter_dict)
-
-    kumo_cloud_config['address'] = self.getGlobalIPv6Address()
-    kumo_cloud_config['report_path'] = self.log_directory
-    
-    kumo_cloud_config.setdefault('max_server', 4)
-    kumo_cloud_config.setdefault('max_tester', 5)
-    kumo_cloud_config.setdefault('nb_thread', 32)
-    kumo_cloud_config.setdefault('nb_request', 1024000)
-    kumo_cloud_config.setdefault('erp5_publish_url', '')
-    kumo_cloud_config.setdefault('erp5_publish_project', '')
-    
-    computer_guid_list = []
-    computer_guid_list.append("COMP-23") # manager
-    computer_guid_list.append("COMP-13") # server 1
-    computer_guid_list.append("COMP-14") # server 2
-    computer_guid_list.append("COMP-20") # server 3
-    computer_guid_list.append("COMP-19") # server 4
-    computer_guid_list.append("COMP-23") # tester 1
-    computer_guid_list.append("COMP-22") # tester 2
-    computer_guid_list.append("COMP-14") # tester 3
-    computer_guid_list.append("COMP-20") # tester 4
-    computer_guid_list.append("COMP-19") # tester 5
-    
-    kumo_cloud_config.setdefault('computer_guid_list', ":".join(computer_guid_list))
-    
-    kumo_cloud_config['software_release_url'] = self.software_release_url
-    kumo_cloud_config['server_url'] = self.server_url
-    kumo_cloud_config['key_file'] = self.key_file
-    kumo_cloud_config['cert_file'] = self.cert_file
-    kumo_cloud_config['computer_id'] = self.computer_id
-    kumo_cloud_config['computer_partition_id'] = self.computer_partition_id
-    kumo_cloud_config['plugin_name'] = 'kumo'
-
-    kumo_cloud_connection = {}
-    kumo_cloud_connection['url'] = "http://["+kumo_cloud_config['address']+"]:5000/"
-    kumo_cloud_connection['computer_guid_list'] = kumo_cloud_config['computer_guid_list']
-    self.computer_partition.setConnectionDict(kumo_cloud_connection)
-
-    nosqltester_manager_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kumotester_manager_run.in'))
-    nosqltester_manager_runner_path = self.createRunningWrapper("kumotester_manager",
-          self.substituteTemplate(nosqltester_manager_wrapper_template_location, kumo_cloud_config))
-
-    return [nosqltester_manager_runner_path]
-
-  def run_all(self):
-    """ Run all services on one machine. """
-    all_config = {}
-    all_config.update(self.options)
-
-    ipaddress = "[%s]" % self.getGlobalIPv6Address()
-
-    all_config['manager_address'] = ipaddress
-    all_config['manager_port'] = 19700
-    all_config['server_address'] = ipaddress
-    all_config['server_port'] = 19800
-    all_config['server_listen_port'] = 19900
-    all_config['server_storage'] = os.path.join(self.data_root_directory, "kumodb.tch")
-    all_config['gateway_address'] = ipaddress
-    all_config['gateway_port'] = 11411
-    all_config['manager_log'] = os.path.join(self.log_directory, "kumo-manager.log")
-    all_config['server_log'] = os.path.join(self.log_directory, "kumo-server.log")
-    all_config['gateway_log'] = os.path.join(self.log_directory, "kumo-gateway.log")
-
-    manager_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kumo_manager_run.in'))
-    manager_runner_path = self.createRunningWrapper("kumo-manager",
-          self.substituteTemplate(manager_wrapper_template_location, all_config))
-    server_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kumo_server_run.in'))
-    server_runner_path = self.createRunningWrapper("kumo-server",
-          self.substituteTemplate(server_wrapper_template_location, all_config))
-    gateway_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kumo_gateway_run.in'))
-    gateway_runner_path = self.createRunningWrapper("kumo-gateway",
-          self.substituteTemplate(gateway_wrapper_template_location, all_config))
-
-    return [manager_runner_path, server_runner_path, gateway_runner_path]
-
-  def run_kumo_manager(self):
-    """ Run the kumofs manager. """
-    manager_config = {}
-    manager_config.update(self.options)
-
-    manager_config['manager_address'] = "[%s]" % self.getGlobalIPv6Address()
-    manager_config['manager_port'] = 19700
-    manager_config['manager_log'] = os.path.join(self.log_directory, "kumo-manager.log")
-
-    manager_connection = {}
-    manager_connection['address'] = manager_config['manager_address']
-    manager_connection['port'] = manager_config['manager_port']
-    self.computer_partition.setConnectionDict(manager_connection)
-
-    manager_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kumo_manager_run.in'))
-    manager_runner_path = self.createRunningWrapper("kumo-manager",
-          self.substituteTemplate(manager_wrapper_template_location, manager_config))
-
-    return [manager_runner_path]
-
-  def run_kumo_server(self):
-    """ Run the kumofs server. """
-    server_config = {}
-    server_config.update(self.options)
-    server_config.update(self.parameter_dict)
-
-    server_config['server_address'] = "[%s]" % self.getGlobalIPv6Address()
-    server_config['server_port'] = 19800
-    server_config['server_listen_port'] = 19900
-    server_config['server_storage'] = os.path.join(self.var_directory,"kumodb.tch")
-    server_config['server_log'] = os.path.join(self.log_directory, "kumo-server.log")
-
-    server_connection = {}
-    server_connection['address'] = server_config['server_address']
-    self.computer_partition.setConnectionDict(server_connection)
-
-    server_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kumo_server_run.in'))
-    server_runner_path = self.createRunningWrapper("kumo-server",
-          self.substituteTemplate(server_wrapper_template_location, server_config))
-
-    return [server_runner_path]
-
-  def run_kumo_gateway(self):
-    """ Run the kumofs gateway. """
-    gateway_config = {}
-    gateway_config.update(self.options)
-    gateway_config.update(self.parameter_dict)
-
-    gateway_config['gateway_address'] = "[%s]" % self.getGlobalIPv6Address()
-    gateway_config['gateway_port'] = 11411
-    gateway_config['gateway_log'] = os.path.join(self.log_directory, "kumo-gateway.log")
-
-    gateway_connection = {}
-    gateway_connection['address'] = gateway_config['gateway_address']
-    gateway_connection['port'] = gateway_config['gateway_port']
-    self.computer_partition.setConnectionDict(gateway_connection)
-
-    gateway_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kumo_gateway_run.in'))
-    gateway_runner_path = self.createRunningWrapper("kumo-gateway",
-          self.substituteTemplate(gateway_wrapper_template_location, gateway_config))
-
-    return [gateway_runner_path]
-
-  def run_kumo_tester(self):
-    """ Run the kumofs tester. """
-    tester_config = {}
-    tester_config.update(self.options)
-    tester_config.update(self.parameter_dict)
-
-    tester_config['tester_address'] = self.getGlobalIPv6Address()
-    # tester_config['url'] = "http://%s:5000/" % tester_config['tester_address']
-    # tester_config['start_url'] = "http://%s:5000/start" % tester_config['tester_address']
-    tester_config['report_path'] = self.log_directory
-    config_dict['binary'] = "%s -g -l %s -p %s -t %s %s" % (config_dict['memstrike_binary'],
-                                                            config_dict['gateway_address'].strip("[]"),
-                                                            str(config_dict['gateway_port']),
-                                                            str(config_dict['nb_thread']),
-                                                            str(config_dict['nb_request']))
-    tester_config['log_directory'] = self.log_directory
-    tester_config['compress_method'] = "bz2"
-
-    tester_connection = {}
-    tester_connection['url'] = "http://%s:5000/" % tester_config['tester_address']
-    self.computer_partition.setConnectionDict(tester_connection)
-
-    tester_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'nosqltester_run.in'))
-    tester_runner_path = self.createRunningWrapper("nosqltester",
-          self.substituteTemplate(tester_wrapper_template_location, tester_config))
-
-    return [tester_runner_path]
-
-  def run_kumo_tester_and_gateway(self):
-    """ Run the kumofs tester and gateway on the same partition. """
-    address = self.getGlobalIPv6Address()
-
-    config_dict = {}
-    config_dict.update(self.options)
-    config_dict.update(self.parameter_dict)
-
-    # Gateway part
-    config_dict['gateway_address'] = "[%s]" % address
-    config_dict['gateway_port'] = 11411
-    config_dict['gateway_log'] = os.path.join(self.log_directory, "kumo-gateway.log")
-
-    # Tester part
-    config_dict['tester_address'] = address
-    config_dict['report_path'] = self.log_directory
-    config_dict['binary'] = "%s -g -l %s -p %s -t %s %s" % (config_dict['memstrike_binary'],
-                                                            config_dict['gateway_address'].strip("[]"),
-                                                            str(config_dict['gateway_port']),
-                                                            str(config_dict['nb_thread']),
-                                                            str(config_dict['nb_request']))
-    config_dict['log_directory'] = self.log_directory
-    config_dict['compress_method'] = "bz2"
-
-    connection_dict = {}
-    # connection_dict['address'] = config_dict['gateway_address']
-    # connection_dict['port'] = config_dict['gateway_port']
-    connection_dict['url'] = "http://%s:5000/" % config_dict['tester_address']
-    self.computer_partition.setConnectionDict(connection_dict)
-
-    gateway_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'kumo_gateway_run.in'))
-    gateway_runner_path = self.createRunningWrapper("kumo-gateway",
-          self.substituteTemplate(gateway_wrapper_template_location, config_dict))
-
-    tester_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'nosqltester_run.in'))
-    tester_runner_path = self.createRunningWrapper("nosqltester",
-          self.substituteTemplate(tester_wrapper_template_location, config_dict))
-
-    return [gateway_runner_path, tester_runner_path]
-
-  def run_memstrike_set(self):
-    """ Run memstrike in set mode. """
-    memstrike_config = {}
-    memstrike_config.update(self.options)
-    memstrike_config.update(self.parameter_dict)
-
-    memstrike_config['gateway_address'] = memstrike_config['gateway_address'].strip("[]")
-
-    memstrike_connection = {}
-    memstrike_connection['status'] = "OK"
-    self.computer_partition.setConnectionDict(memstrike_connection)
-
-    memstrike_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'memstrike_run.in'))
-    memstrike_runner_path = self.createRunningWrapper("memstrike_set",
-          self.substituteTemplate(memstrike_wrapper_template_location, memstrike_config))
-
-    return [memstrike_runner_path]
 
