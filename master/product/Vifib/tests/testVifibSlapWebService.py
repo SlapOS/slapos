@@ -1313,7 +1313,9 @@ class TestVifibSlapWebService(testVifibMixin):
         partition_parameter_kw=requested_parameter_dict,
         # XXX The follow API should be slave, but shared was kept for
         # Backward compatibility with older versions of slap
-        shared=True)
+        shared=True,       
+        filter_kw=sequence.get('requested_filter_dict', {}),
+        state=sequence.get('instance_state'))
 
     sequence.edit(
         requested_slap_computer_partition=requested_slap_computer_partition,
@@ -1338,7 +1340,9 @@ class TestVifibSlapWebService(testVifibMixin):
       software_type="SlaveInstance",
       partition_reference=requested_reference,
       partition_parameter_kw=requested_parameter_dict, 
-      shared=True)
+      shared=True,
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
 
   def stepRequestSlaveInstanceFromComputerPartitionNotFoundResponse(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
@@ -1357,7 +1361,9 @@ class TestVifibSlapWebService(testVifibMixin):
       software_type="SlaveInstance",
       partition_reference=requested_reference,
       partition_parameter_kw=requested_parameter_dict,
-      shared=True)
+      shared=True, 
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
 
   def stepRequestTwoAndCheckDifferentResult(self, sequence, **kw):
     self.slap = slap.slap()
@@ -1406,7 +1412,7 @@ class TestVifibSlapWebService(testVifibMixin):
         'software_release': sequence['software_release_uri'],
         'software_type': sequence.get('requested_reference', 'requested_reference'),
         'partition_reference': sequence.get('requested_reference', 'requested_reference'),
-        'slave_xml': xml_marshaller.dumps(False),
+        'slave_xml': xml_marshaller.dumps(kw.get("slave", False)),
         'partition_parameter_xml': xml_marshaller.dumps({}),
         'filter_xml': xml_marshaller.dumps({}),
         #'state': Note: State is omitted
