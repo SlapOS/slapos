@@ -4489,6 +4489,45 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_ComputerPartition_request_slave_twice_different(self):
+    """
+    Check that requesting shared partition works in system capable to fulfill
+    such request, with existing slave partition
+    """
+    simple_request_with_random = """
+         SlapLoginCurrentSoftwareInstance
+         SelectEmptyRequestedParameterDict \
+         SetRandomRequestedReference \
+         RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
+         Tic \
+         SlapLogout \
+         \
+         SlapLoginCurrentSoftwareInstance \
+         RequestSlaveInstanceFromComputerPartition \
+         Tic \
+         SlapLogout
+         LoginDefaultUser
+         ConfirmOrderedSaleOrderActiveSense
+         Tic
+         """
+
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+        self.prepare_install_requested_computer_partition_sequence_string +\
+        simple_request_with_random + """
+	SlapLoginCurrentComputer
+	CheckSlaveInstanceListFromOneComputerPartition
+	SlapLogout
+	""" + \
+        simple_request_with_random + \
+        """
+        SlapLoginCurrentComputer
+        CheckTwoSlaveInstanceListFromOneComputerPartition
+        SlapLogout
+        """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
   def test_ComputerPartition_request_slave_NotFound(self):
     """
     Check that requesting shared partition worksi in system capable to fulfill
