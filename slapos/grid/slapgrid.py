@@ -560,7 +560,7 @@ class Slapgrid(object):
         if not self.console:
           kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-        process_handler = SlapPopen(invocation_list,
+        process_handler = SlapPopen(command_line,
           preexec_fn=lambda: dropPrivileges(uid, gid),
           cwd=instance_path,
           env=None, **kw)
