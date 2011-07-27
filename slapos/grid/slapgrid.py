@@ -527,16 +527,17 @@ class Slapgrid(object):
 
       failed_script_list = []
 
-      commands_to_run = [ (os.path.join(instance_path, 'etc', 'report', script),
+      commands_to_run = [ (os.path.join(instance_path, 'etc', 'report',
+                                        script),
                            path_to_slapreport,
                           )
                           for script in script_list_to_run ]
 
       cwd = os.path.join(instance_path, 'etc', 'report')
 
-      for process_handler, command in self._runCommandAsUserAndYieldPopen(commands_to_run,
-                                                                          (uid, gid),
-                                                                          cwd):
+      for process_handler, command in \
+        self._runCommandAsUserAndYieldPopen(commands_to_run,
+                                            (uid, gid), cwd):
 
         result = process_handler.communicate()[0]
         if self.console:
@@ -545,7 +546,8 @@ class Slapgrid(object):
           process_handler.kill()
         if process_handler.returncode != 0:
           clean_run = False
-          failed_script_list.append("Script %r failed with %s." % (script, result))
+          failed_script_list.append("Script %r failed with %s." % (script,
+                                                                   result))
           logger.warning("Failed to run %r, the result was. \n%s" %
             (command, result))
         if len(failed_script_list):
@@ -561,9 +563,10 @@ class Slapgrid(object):
       cwd = instance_path
 
       # Check whether every promise is kept
-      for process_handler, command in self._runCommandAsUserAndYieldPopen(commands_to_run,
-                                                                          (uid, gid),
-                                                                          cwd):
+      for process_handler, command in \
+        self._runCommandAsUserAndYieldPopen(commands_to_run,
+                                            (uid, gid), cwd):
+
         time.sleep(3) # 3 seconds timeout
 
         promise = os.path.basename(command)
