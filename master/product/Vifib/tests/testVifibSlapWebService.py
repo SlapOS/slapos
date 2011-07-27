@@ -4442,6 +4442,22 @@ class TestVifibSlapWebService(testVifibMixin):
   ########################################
   # ComputerPartition.request - slave
   ########################################
+  def test_ComputerPartition_request_slave_firstNotReady(self):
+    """
+    Check that first call to request raises NotReady response
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
+       SlapLoginCurrentSoftwareInstance \
+       SelectEmptyRequestedParameterDict \
+       SetRandomRequestedReference \
+       RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
+       SlapLogout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_ComputerPartition_request_slave_simpleCase(self):
     """
     Check that requesting shared partition works in system capable to fulfill
