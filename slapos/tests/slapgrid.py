@@ -25,7 +25,7 @@ class BasicMixin:
   def tearDown(self):
     shutil.rmtree(self._tempdir)
 
-class TestSlapgridCP(BasicMixin, unittest.TestCase):
+class TestBasicSlapgridCP(BasicMixin, unittest.TestCase):
   def test_no_software_root(self):
     self.assertRaises(OSError, self.grid.processComputerPartitionList)
 
@@ -37,3 +37,28 @@ class TestSlapgridCP(BasicMixin, unittest.TestCase):
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
     self.assertRaises(socket.error, self.grid.processComputerPartitionList)
+
+class MasterMixin(BasicMixin):
+  _master_port = 45678
+  _master_host = '127.0.0.1'
+  def startMaster(self):
+    self._master_dir = tempfile.mkdtemp()
+
+  def stopMaster(self):
+    shutil.rmtree(self._master_dir)
+
+  def setUp(self):
+    BasicMixin.setUp(self)
+    self.startMaster()
+    self.master_url = 'http://%s:%s' % (self._master_host, self._master_port)
+    # prepare master
+
+  def tearDown(self):
+    self.stopMaster()
+    BasicMixin.tearDown(self)
+
+class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
+  def test_nothing_to_do(self):
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    self.grid.processComputerPartitionList()
