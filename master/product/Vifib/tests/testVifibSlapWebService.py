@@ -4768,6 +4768,7 @@ class TestVifibSlapWebService(testVifibMixin):
       ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLogout
+      SlapLoginCurrentComputer
       SoftwareInstanceAvailable
       Tic
       LoginTestVifibCustomer
