@@ -4501,7 +4501,7 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       SlapLoginCurrentSoftwareInstance
       SelectEmptyRequestedParameterDict
-      SelectRequestedReference
+      SetRandomRequestedReference
       RequestSlaveInstanceFromComputerPartitionNotFoundResponse
       SlapLogout
         """
@@ -4570,6 +4570,7 @@ class TestVifibSlapWebService(testVifibMixin):
     LoginDefaultUser
     ConfirmOrderedSaleOrderActiveSense
     Tic
+    
     SetSelectedComputerPartition
     SelectCurrentlyUsedSalePackingListUid
     Logout
