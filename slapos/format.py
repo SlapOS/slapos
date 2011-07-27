@@ -400,6 +400,7 @@ class Partition:
     self.user = user
     self.address_list = address_list or []
     self.tap = tap
+    self._os = os
 
   def __getinitargs__(self):
     return (self.reference, self.path, self.user, self.address_list, self.tap)
@@ -410,14 +411,14 @@ class Partition:
     it the 750 permission. In case if path exists just modifies it.
     """
 
-    self.path = os.path.abspath(self.path)
+    self.path = self._os.path.abspath(self.path)
     owner = self.user if self.user else User('root')
-    if not os.path.exists(self.path):
-      os.mkdir(self.path, 0750)
+    if not self._os.path.exists(self.path):
+      self._os.mkdir(self.path, 0750)
     if alter_user:
       owner_pw = getpwnam(owner.name)
-      os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
-    os.chmod(self.path, 0750)
+      self._os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
+    self._os.chmod(self.path, 0750)
 
 class User:
   "User: represent and manipulate a user on the system."
