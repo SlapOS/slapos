@@ -472,6 +472,23 @@ class Slapgrid(object):
 
     return False
 
+  def _runCommandsAsUserAndYieldPopen(self, commands_list, user, cwd):
+
+    uid, gid = user
+
+    for command in commands_list:
+
+      kw = dict()
+      if not self.console:
+        kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+      process_handler = SlapPopen(command,
+        preexec_fn=lambda: dropPrivileges(uid, gid),
+        cwd=cwd,
+        env=None, **kw)
+
+      yield (process_handler, command)
+
   def agregateAndSendUsage(self):
     """Will agregate usage from each Computer Partition.
     """
@@ -494,6 +511,13 @@ class Slapgrid(object):
       else:
         script_list_to_run = []
 
+      uid, gid = None, None
+      stat_info = os.stat(instance_path)
+      #stat sys call to get statistics informations
+      uid = stat_info.st_uid
+      gid = stat_info.st_gid
+
+
       #We now generate the pseudorandom name for the xml file
       # and we add it in the invocation_list
       f = tempfile.NamedTemporaryFile()
@@ -502,30 +526,18 @@ class Slapgrid(object):
           name_xml)
 
       failed_script_list = []
-      for script in script_list_to_run:
 
-        invocation_list = []
-        invocation_list.append(os.path.join(instance_path, 'etc', 'report',
-          script))
-        #We add the xml_file name in the invocation_list
-        #f = tempfile.NamedTemporaryFile()
-        #name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
-        #path_to_slapreport = os.path.join(instance_path, 'var', name_xml)
+      commands_to_run = [ (os.path.join(instance_path, 'etc', 'report', script),
+                           path_to_slapreport,
+                          )
+                          for script in script_list_to_run ]
 
-        invocation_list.append(path_to_slapreport)
-        #Dropping privileges
-        uid, gid = None, None
-        stat_info = os.stat(instance_path)
-        #stat sys call to get statistics informations
-        uid = stat_info.st_uid
-        gid = stat_info.st_gid
-        kw = dict()
-        if not self.console:
-          kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        process_handler = SlapPopen(invocation_list,
-          preexec_fn=lambda: dropPrivileges(uid, gid),
-          cwd=os.path.join(instance_path, 'etc', 'report'),
-          env=None, **kw)
+      cwd = os.path.join(instance_path, 'etc', 'report')
+
+      for process_handler, command in self._runCommandAsUserAndYieldPopen(commands_to_run,
+                                                                          (uid, gid),
+                                                                          cwd):
+
         result = process_handler.communicate()[0]
         if self.console:
           result = 'Please consult messages above'
@@ -535,38 +547,26 @@ class Slapgrid(object):
           clean_run = False
           failed_script_list.append("Script %r failed with %s." % (script, result))
           logger.warning("Failed to run %r, the result was. \n%s" %
-            (invocation_list, result))
+            (command, result))
         if len(failed_script_list):
           computer_partition.error('\n'.join(failed_script_list))
 
       #
       # Checking if the promises are kept
       #
-      # XXX-Antoine: I thought about factorizing this code with
-      # the above one. But it seemed like a lot to get through.
 
       # Get the list of promises
       promise_dir = os.join(instance_path, 'etc', 'promise')
-      promises_list = os.listdir(promise_dir)
+      commands_to_run = os.listdir(promise_dir)
+      cwd = instance_path
 
       # Check whether every promise is kept
-      for promise in promises_list:
-        command_line = [promise]
-
-        uid, gid = None, None
-        stat_info = os.stat(instance_path)
-        uid, gid = stat_info.st_uid, stat_info.st_gid
-
-        kw = dict()
-        if not self.console:
-          kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-        process_handler = SlapPopen(command_line,
-          preexec_fn=lambda: dropPrivileges(uid, gid),
-          cwd=instance_path,
-          env=None, **kw)
-
+      for process_handler, command in self._runCommandAsUserAndYieldPopen(commands_to_run,
+                                                                          (uid, gid),
+                                                                          cwd):
         time.sleep(3) # 3 seconds timeout
+
+        promise = os.path.basename(command)
 
         if process_handler.poll() is None:
           process_handler.kill()
