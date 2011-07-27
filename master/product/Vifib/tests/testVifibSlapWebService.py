@@ -4704,12 +4704,16 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
+      SlapLogout
       LoginTestVifibCustomer
+      SlaveInstanceStopComputerPartitionInstallation
+      Tic
       SlaveInstanceStarted
       Tic
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      SetDeliveryLineAmountAsTwo
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
