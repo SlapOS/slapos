@@ -5940,7 +5940,7 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepStoreSaleOrderFromSlaveInstance(self, sequence):
     sale_order_line = self.portal.portal_catalog.getResultValue(
         portal_type="Sale Order Line",
-        aggregate_refence=sequence["software_instance_reference"])
+        aggregate_reference=sequence["software_instance_reference"])
     sequence.edit(sale_order_line_uid=sale_order_line.getUid(),
         sale_order_uid=sale_order_line.getParent().getUid())
 
