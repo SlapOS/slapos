@@ -4874,6 +4874,59 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  prepare_started_slave_instance_sequence_string = \
+      prepare_started_computer_partition_sequence_string + """
+        LoginTestVifibCustomer
+        PersonRequestSlaveInstance
+        SlapLogout
+        LoginDefaultUser
+        ConfirmOrderedSaleOrderActiveSense
+        Tic
+        SlapLogout
+        LoginTestVifibCustomer
+        SlaveInstanceStopComputerPartitionInstallation
+        Tic
+        RequestSoftwareInstanceStart
+        Tic
+        SlaveInstanceStarted
+        Tic
+      """
+
+  def test_SlaveInstance_request_destroy_from_SoftwareInstance(self):
+    """
+      Check that the Slave Instance will be stopped correctly when
+      a Software Instance is destroyed
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_slave_instance_sequence_string + """
+      RequestDestroySoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
+      SoftwareInstanceDestroyed
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_call_requestDestroy_from_SoftwareInstance(self):
+    """
+      Check that the Slave Instance will be stopped correctly when
+      a Software Instance is destroyed
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_slave_instance_sequence_string + """
+      RequestDestroySoftwareInstanceFromCurrentComputerPartition
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_SlaveInstance_request_stop(self):
     """
       Check that the Slave Instance will be stopped correctly
@@ -6007,10 +6060,10 @@ class TestVifibSlapWebService(testVifibMixin):
         query=query).getAggregateValue(portal_type="Software Instance")
     return software_instance
 
-  def stepStopSoftwareInstanceFromCurrentComputerPartition(self, sequence):
+  def stepRequestDestroySoftwareInstanceFromCurrentComputerPartition(self, sequence):
     software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
-    software_instance.requestStopComputerPartition()
+    software_instance.requestDestroyComputerPartition()
 
   def stepStartSoftwareInstanceFromCurrentComputerPartition(self, sequence):
     software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
