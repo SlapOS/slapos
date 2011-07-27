@@ -1405,6 +1405,12 @@ class TestVifibSlapWebService(testVifibMixin):
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
 
+  def stepDirectRequestComputerPartitionNotReadyResponseWithoutStateAndSlaveTrue(
+      self, sequence, **kw):
+    kw["slave"] = True
+    self.stepDirectRequestComputerPartitionNotReadyResponseWithoutState(
+       sequence, **kw)
+
   def stepDirectRequestComputerPartitionNotReadyResponseWithoutState(self,
     sequence, **kw):
     request_dict = { 'computer_id': sequence['computer_reference'] ,
@@ -4485,6 +4491,24 @@ class TestVifibSlapWebService(testVifibMixin):
         """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
+  def test_ComputerPartition_request_slave_state_is_optional(self):
+    """Checks that state is optional parameter on Slap Tool
+    
+    This ensures backward compatibility with old libraries."""
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_install_requested_computer_partition_sequence_string + '\
+      SlapLoginCurrentSoftwareInstance \
+      DirectRequestComputerPartitionNotReadyResponseWithoutStateAndSlaveTrue \
+      Tic \
+      SlapLogout \
+      \
+      '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
 
   #########################################
   # SlaveInstance.request
