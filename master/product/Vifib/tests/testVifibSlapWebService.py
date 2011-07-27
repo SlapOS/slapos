@@ -5885,6 +5885,7 @@ class TestVifibSlapWebService(testVifibMixin):
         REMOTE_USER = software_instance.getReference()
         self.login(software_instance.getReference())
         break
+
   def _getSoftwareInstanceFromCurrentComputerPartition(self, sequence):
     query = ComplexQuery(
         Query(aggregate_reference=sequence['computer_partition_reference']),
