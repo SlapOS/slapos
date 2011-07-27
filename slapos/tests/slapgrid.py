@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import socket
 
-class TestSlapgridCP(unittest.TestCase):
+class BasicMixin:
   def setUp(self):
     self._tempdir = tempfile.mkdtemp()
     self.software_root = os.path.join(self._tempdir, 'software')
@@ -25,6 +25,7 @@ class TestSlapgridCP(unittest.TestCase):
   def tearDown(self):
     shutil.rmtree(self._tempdir)
 
+class TestSlapgridCP(BasicMixin, unittest.TestCase):
   def test_no_software_root(self):
     self.assertRaises(OSError, self.grid.processComputerPartitionList)
 
