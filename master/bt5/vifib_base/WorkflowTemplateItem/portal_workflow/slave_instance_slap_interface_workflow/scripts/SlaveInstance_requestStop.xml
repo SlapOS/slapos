@@ -55,8 +55,10 @@
 except ValueError:\n
   pass\n
 else:\n
+  isTransitionPossible = context.portal_workflow.isTransitionPossible\n
   packing_list = packing_list_line.getParentValue()\n
-  packing_list.stop()\n
+  if isTransitionPossible(packing_list, "stop"):\n
+    packing_list.stop()\n
 </string> </value>
         </item>
         <item>
