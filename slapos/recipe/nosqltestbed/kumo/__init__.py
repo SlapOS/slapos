@@ -76,7 +76,6 @@ class KumoTestBed(object):
     kumo_cloud_connection = {}
     kumo_cloud_connection['url'] = "http://["+kumo_cloud_config['address']+"]:5000/"
     kumo_cloud_connection['computer_guid_list'] = kumo_cloud_config['computer_guid_list']
-    kumo_cloud_connection['plugin'] = kumo_cloud_config['plugin']
     recipe.computer_partition.setConnectionDict(kumo_cloud_connection)
 
     nosqltester_manager_wrapper_template_location = pkg_resources.resource_filename(

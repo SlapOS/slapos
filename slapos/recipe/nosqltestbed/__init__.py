@@ -36,7 +36,7 @@ class NoSQLTestBed(BaseSlapRecipe):
     self.parameter_dict = self.computer_partition.getInstanceParameterDict()
     try:
       entry_point = pkg_resources.iter_entry_points(group='slapos.recipe.nosqltestbed.plugin',
-                                                    name=self.parameter_dict['plugin']).next()
+                                                    name=self.parameter_dict.get('plugin', 'kumo')).next()
       plugin_class = entry_point.load()
 
       testbed = plugin_class()
