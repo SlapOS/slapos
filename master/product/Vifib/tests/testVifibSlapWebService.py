@@ -217,6 +217,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def _checkComputerPartitionSalePackingListState(self, state,
       resource, sequence):
+    delivery_line_amount = sequence.get("delivery_line_amount", 1)
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=sequence['computer_partition_uid'])
     delivery_line_list = [q for q in computer_partition
@@ -224,7 +225,7 @@ class TestVifibSlapWebService(testVifibMixin):
           portal_type=self.sale_packing_list_line_portal_type)
         if q.getResource() == resource
         and q.getSimulationState() == state]
-    self.assertEqual(1, len(delivery_line_list))
+    self.assertEqual(delivery_line_amount, len(delivery_line_list))
 
   def _checkComputerPartitionNoSalePackingList(self, resource, sequence):
     computer_partition = self.portal.portal_catalog.getResultValue(
