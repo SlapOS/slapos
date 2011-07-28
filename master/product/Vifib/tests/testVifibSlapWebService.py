@@ -4489,6 +4489,60 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_ComputerPartition_request_slave_instantiate(self):
+    """
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_install_requested_computer_partition_sequence_string +\
+      """
+       SlapLoginCurrentSoftwareInstance
+       SelectEmptyRequestedParameterDict
+       SetRandomRequestedReference
+       RequestSlaveInstanceFromComputerPartitionNotReadyResponse
+       Tic
+       SlapLogout
+
+       SlapLoginCurrentSoftwareInstance
+       RequestSlaveInstanceFromComputerPartition
+       Tic
+       SlapLogout
+       LoginDefaultUser
+       ConfirmOrderedSaleOrderActiveSense
+
+       Tic
+       SlapLoginCurrentSoftwareInstance
+       CheckSlaveInstanceListFromOneComputerPartition
+       SelectSlaveInstanceFromOneComputerPartition
+       SlapLogout
+
+       LoginDefaultUser
+       SetDeliveryLineAmountAsTwo
+       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+       SlapLogout
+
+       SlapLoginCurrentComputer
+       SoftwareInstanceAvailable
+       Tic
+       SlapLogout
+
+       LoginDefaultUser \
+       CheckComputerPartitionInstanceSetupSalePackingListStopped
+       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+       Logout
+
+       SlapLoginCurrentComputer \
+       SoftwareInstanceStarted \
+       Tic \
+       SlapLogout \
+       \
+       LoginDefaultUser \
+       CheckComputerPartitionInstanceHostingSalePackingListStarted \
+       Logout \
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
   def test_ComputerPartition_request_slave_twice_different(self):
     """
     Check that requesting shared partition works in system capable to fulfill
