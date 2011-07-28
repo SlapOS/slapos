@@ -74,17 +74,18 @@ else:\n
     computer_partition.markFree()\n
 \n
 # Deliver all SPL related to this software instance\n
+isTransitionPossible = context.portal_workflow.isTransitionPossible\n
 software_instance = current_delivery_line.getAggregateValue(portal_type="Software Instance")\n
 for sale_packing_list_line in portal.portal_catalog(\n
   portal_type="Sale Packing List Line", \n
   default_aggregate_uid=software_instance.getUid(),\n
   simulation_state=NegatedQuery(Query(simulation_state="delivered")),):\n
   sale_packing_list = sale_packing_list_line.getParentValue()\n
-  if sale_packing_list.getPortalObject().portal_workflow.isTransitionPossible(sale_packing_list, \'start\'):\n
+  if isTransitionPossible(sale_packing_list, \'start\'):\n
     sale_packing_list.start()\n
-  if sale_packing_list.getPortalObject().portal_workflow.isTransitionPossible(sale_packing_list, \'stop\'):\n
+  if isTransitionPossible(sale_packing_list, \'stop\'):\n
     sale_packing_list.stop()\n
-  if sale_packing_list.getPortalObject().portal_workflow.isTransitionPossible(sale_packing_list, \'deliver\'):\n
+  if isTransitionPossible(sale_packing_list, \'deliver\'):\n
     sale_packing_list.deliver()\n
   if sale_packing_list.getSimulationState() != \'delivered\':\n
     raise ValueError(\'It was not possible to deliver %r during destruction of %r\' % (sale_packing_list.getRelativeUrl(), software_instance.getRelativeUrl()))\n
