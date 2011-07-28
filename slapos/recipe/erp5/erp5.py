@@ -38,6 +38,7 @@ class ERP5Updater(object):
   header_dict = {}
 
   sleeping_time = 300
+  short_sleeping_time = 60
 
   def __init__(self, user, password, host,
       site_id, mysql_url, memcached_address,
@@ -288,7 +289,7 @@ class ERP5Updater(object):
   def run(self):
     """ Keep running until kill"""
     while 1:
-      time.sleep(30)
+      time.sleep(self.short_sleeping_time)
       if not self.updateERP5Site():
         self.loadSystemSignatureDict()
         if self._hasFailureActivity():
