@@ -4460,8 +4460,8 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_ComputerPartition_request_slave_simpleCase(self):
     """
-    Check that requesting shared partition works in system capable to fulfill
-    such request, with existing slave partition
+    Check the most simple case of request. The behaviour should
+    keep the same as Software Instance.
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
