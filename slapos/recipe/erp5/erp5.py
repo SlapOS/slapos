@@ -190,13 +190,13 @@ class ERP5Updater(object):
                          "activate": 1,
                          "install_dependency": 1})
 
-  def _createActiveSystemPreference(self):
+  def _createActiveSystemPreference(self, edit_kw={}):
     """ Assert that at least one enabled System Preference is present on
         the erp5 instance.
     """
     self.log("INFO", "Try to create New System Preference into ERP5!")
     path = "/%s/portal_preferences/createActiveSystemPreference" % self.site_id
-    status, data = self.POST(path, {})
+    status, data = self.POST(path, edit_kw)
     if status != 200:
       self.log("ERROR", "Unable to create System Preference, an error ocurred %s." % data)
 
@@ -216,15 +216,17 @@ class ERP5Updater(object):
 
     if None in [host_key, port_key]:
       self.log("ERROR", "Unable to find the Active System Preference to Update!")
-      self._createActiveSystemPreference()
+      self._createActiveSystemPreference(
+          {"preferred_ooodoc_server_address" : self.conversion_server_address,
+           "preferred_ooodoc_server_port_number": self.conversion_server_port })
       return True
 
     is_updated = self._assertAndUpdateDocument(host_key, self.conversion_server_address,
          "setPreferredOoodocServerAddress")
 
-    is_updated = is_updated or self._assertAndUpdateDocument(port_key,
+    is_updated = self._assertAndUpdateDocument(port_key,
          self.conversion_server_port,
-         "setPreferredOoodocServerPortNumber")
+         "setPreferredOoodocServerPortNumber") or is_updated
 
     return is_updated
 
