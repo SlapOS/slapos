@@ -34,6 +34,7 @@
                 <string>start_requested</string>
                 <string>stop_computer_partition</string>
                 <string>stop_computer_partition_installation</string>
+                <string>stop_requested</string>
               </tuple>
             </value>
         </item>
