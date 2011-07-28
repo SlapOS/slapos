@@ -4632,6 +4632,9 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       ConfirmOrderedSaleOrderActiveSense
+      Tic 
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
       Tic """ + self.prepare_formated_computer + """
       Tic
       LoginTestVifibAdmin
@@ -4649,12 +4652,16 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
       CheckSlaveInstanceListFromOneComputerPartition
       """
-      
+
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
