@@ -6073,7 +6073,8 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEquals([],
         computer_partition.getInstanceParameterDict()["slave_instance_list"])
 
-  def stepCheckSlaveInstanceListFromOneComputerPartition(self, sequence):
+  def stepCheckSlaveInstanceListFromOneComputerPartition(self, sequence,
+          expected_amount=1):
     computer_guid = sequence["computer_reference"]
     partition_id = sequence["computer_partition_reference"]
     self.slap = slap.slap()
@@ -6084,9 +6085,13 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEquals("RootSoftwareInstance",
         parameter_dict["slap_software_type"])
     slave_instance_list = parameter_dict["slave_instance_list"]
-    self.assertEquals(1, len(slave_instance_list))
-    slave_instance = slave_instance_list[0]
-    self.assertEquals("SlaveInstance", slave_instance["slap_software_type"])
+    self.assertEquals(expected_amount, len(slave_instance_list))
+    for slave_instance in slave_instance_list:
+      self.assertEquals("SlaveInstance", slave_instance["slap_software_type"])
+
+  def stepCheckTwoSlaveInstanceListFromOneComputerPartition(self, sequence):
+    self.stepCheckSlaveInstanceListFromOneComputerPartition(sequence, 
+        expected_amount=2)
 
   def stepCheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
