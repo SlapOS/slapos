@@ -6064,6 +6064,10 @@ class TestVifibSlapWebService(testVifibMixin):
         portal_type=self.sale_packing_list_line_portal_type)
     self.assertEquals(sale_packing_list_line, None)
 
+  def stepSelectSlaveInstanceFromOneComputerPartition(self, sequence):
+    slave_instance = self._getSlaveInstanceFromCurrentComputerPartition(sequence)
+    sequence['software_instance_uid'] = slave_instance.getUid()
+
   def stepCheckEmptySlaveInstanceListFromOneComputerPartition(self, sequence):
     computer_guid = sequence["computer_reference"]
     self.slap = slap.slap()
