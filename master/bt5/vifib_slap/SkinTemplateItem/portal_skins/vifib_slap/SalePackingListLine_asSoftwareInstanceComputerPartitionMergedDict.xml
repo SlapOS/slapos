@@ -52,17 +52,28 @@
             <key> <string>_body</string> </key>
             <value> <string>sale_packing_list_line = context\n
 instance_type_list = [\'Software Instance\', \'Slave Instance\']\n
+\n
+service_relative_url_list = (\n
+  context.portal_preferences.getPreferredInstanceHostingResource(),\n
+  context.portal_preferences.getPreferredInstanceSetupResource())\n
+\n
+state_list = ["confirmed", "started"]\n
+\n
 software_instance = sale_packing_list_line.getAggregateValue(portal_type=instance_type_list)\n
 computer_partition = sale_packing_list_line.getAggregateValue(portal_type=\'Computer Partition\')\n
 software_release = sale_packing_list_line.getAggregateValue(portal_type="Software Release")\n
+\n
 ip_list = []\n
 if computer_partition.getPortalType() == \'Computer Partition\':\n
   for internet_protocol_address in computer_partition.contentValues(portal_type=\'Internet Protocol Address\'):\n
     ip_list.append((internet_protocol_address.getNetworkInterface(\'\'), internet_protocol_address.getIpAddress()))\n
 if software_instance is not None and computer_partition is not None and software_release is not None:\n
   slave_instance_list = []\n
-  sale_packing_list_line_list = computer_partition.getAggregateRelatedValueList(portal_type="Sale Packing List Line")\n
+  sale_packing_list_line_list = computer_partition.getAggregateRelatedValueList(\n
+    portal_type="Sale Packing List Line", resource_relative_url=service_relative_url_list)\n
   for sale_packing_list_line in sale_packing_list_line_list:\n
+    if sale_packing_list_line.getParent().getSimulationState() not in state_list:\n
+      continue\n
     instance = sale_packing_list_line.getAggregateValue(portal_type=instance_type_list)\n
     if instance is None:\n
       continue\n
