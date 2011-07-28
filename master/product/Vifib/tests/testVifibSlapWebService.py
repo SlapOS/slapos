@@ -4543,6 +4543,47 @@ class TestVifibSlapWebService(testVifibMixin):
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
+  def test_ComputerPartition_request_slave_same_twice_SR(self):
+    """
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+        self.prepare_install_requested_computer_partition_sequence_string +\
+        """
+         SlapLoginCurrentSoftwareInstance
+         SelectEmptyRequestedParameterDict
+         SelectRequestedReference
+         RequestSlaveInstanceFromComputerPartitionNotReadyResponse
+         Tic
+         SlapLogout
+         
+         SlapLoginCurrentSoftwareInstance \
+         RequestSlaveInstanceFromComputerPartition \
+         Tic
+         SlapLogout
+         LoginDefaultUser
+         ConfirmOrderedSaleOrderActiveSense
+         Tic
+         SlapLoginCurrentComputer
+         CheckSlaveInstanceListFromOneComputerPartition
+         SlapLogout
+
+         SlapLoginCurrentSoftwareInstance \
+         RequestSlaveInstanceFromComputerPartition \
+         Tic
+         SlapLogout
+         LoginDefaultUser
+         ConfirmOrderedSaleOrderActiveSense
+         Tic
+         SlapLoginCurrentComputer
+         CheckSlaveInstanceListFromOneComputerPartition
+         SlapLogout
+        """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_ComputerPartition_request_slave_twice_different(self):
     """
      Check request 2 diferent slave partitions on same Software 
