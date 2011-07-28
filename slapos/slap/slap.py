@@ -150,7 +150,7 @@ class OpenOrder(SlapDocument):
 
   def request(self, software_release, partition_reference,
       partition_parameter_kw=None, software_type=None, filter_kw=None,
-      state=None):
+      state=None, slave=False):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
     if filter_kw is None:
@@ -161,6 +161,7 @@ class OpenOrder(SlapDocument):
         'partition_parameter_xml': xml_marshaller.dumps(partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
         'state': xml_marshaller.dumps(state),
+        'slave_xml': xml_marshaller.dumps(slave),
       }
     if software_type is not None:
       request_dict['software_type'] = software_type
