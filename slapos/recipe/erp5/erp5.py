@@ -259,8 +259,7 @@ class ERP5Updater(object):
 
   def updateERP5Site(self):
     if not self.isERP5Present():
-      url = '/manage_addProduct/ERP5/manage_addERP5Site'
-      self.POST(url, {
+      self.POST('/manage_addProduct/ERP5/manage_addERP5Site', {
           "id": self.site_id,
           "erp5_catalog_storage": self.erp5_catalog_storage,
           "erp5_sql_connection_string": self.mysql_url,
