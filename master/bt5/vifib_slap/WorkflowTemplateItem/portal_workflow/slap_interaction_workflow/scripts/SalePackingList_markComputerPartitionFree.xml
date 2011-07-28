@@ -68,7 +68,7 @@ if computer_partition is None:\n
   raise ValueError("Sale Packing List Line \'%s\' should have a computer partition aggregated" % current_delivery_line.getRelativeUrl())\n
 else:\n
   # Slave instance do not change state of computer partitions.\n
-  if sale_packing_list_line.getAggregate(portal_type=["Slave Instance"]) is None:\n
+  if current_delivery_line.getAggregate(portal_type=["Slave Instance"]) is None:\n
     # Mark computer partition as free\n
     # This method should be always callable in this step to prevent having 2 packing list related to the same computer partition\n
     computer_partition.markFree()\n
@@ -78,8 +78,7 @@ software_instance = current_delivery_line.getAggregateValue(portal_type="Softwar
 for sale_packing_list_line in portal.portal_catalog(\n
   portal_type="Sale Packing List Line", \n
   default_aggregate_uid=software_instance.getUid(),\n
-  simulation_state=NegatedQuery(Query(simulation_state="delivered")),\n
-  ):\n
+  simulation_state=NegatedQuery(Query(simulation_state="delivered")),):\n
   sale_packing_list = sale_packing_list_line.getParentValue()\n
   if sale_packing_list.getPortalObject().portal_workflow.isTransitionPossible(sale_packing_list, \'start\'):\n
     sale_packing_list.start()\n
