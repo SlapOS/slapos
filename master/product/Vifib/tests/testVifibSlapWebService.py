@@ -4798,7 +4798,7 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       Logout
       LoginDefaultUser
-      SetDeliveryLineAmountAsTwo
+      SetDeliveryLineAmountEqualTwo
       CheckComputerPartitionInstanceHostingSalePackingListStarted
       Logout
     """
@@ -4834,7 +4834,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
       SoftwareInstanceStopped
       Tic
-      SetDeliveryLineAmountAsTwo
+      SetDeliveryLineAmountEqualTwo
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
       CheckComputerPartitionInstanceSetupSalePackingListStopped
     """
@@ -4867,7 +4867,7 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      SetDeliveryLineAmountAsTwo
+      SetDeliveryLineAmountEqualTwo
       CheckComputerPartitionInstanceHostingSalePackingListStarted
       CheckComputerPartitionInstanceSetupSalePackingListStopped
     """
@@ -6166,7 +6166,7 @@ class TestVifibSlapWebService(testVifibMixin):
         uid=sequence["software_instance_uid"])
     slave_instance.stopComputerPartitionInstallation()
 
-  def stepSetDeliveryLineAmountAsTwo(self, sequence):
+  def stepSetDeliveryLineAmountEqualTwo(self, sequence):
     sequence.edit(delivery_line_amount=2)
 
   prepare_two_purchase_packing_list = \
