@@ -6131,6 +6131,16 @@ class TestVifibSlapWebService(testVifibMixin):
         query=query).getAggregateValue(portal_type="Software Instance")
     return software_instance
 
+  def _getSlaveInstanceFromCurrentComputerPartition(self, sequence):
+    query = ComplexQuery(
+        Query(aggregate_reference=sequence['computer_partition_reference']),
+        Query(aggregate_portal_type=self.slave_instance_portal_type),
+        operator="AND")
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        query=query).getAggregateValue(portal_type=self.slave_instance_portal_type)
+    return slave_instance
+
   def stepRequestDestroySoftwareInstanceFromCurrentComputerPartition(self, sequence):
     software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
