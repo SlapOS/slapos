@@ -4619,6 +4619,49 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetRequestedWrongFilterParameterDict(self, sequence):
+        sequence['requested_filter_dict'] = dict(
+          computer_guid="COMP-99999999999999999999999")
+
+  def test_ComputerPartition_request_filter_computer_guid(self):
+    """
+    Check that requesting with filter computer_guid key works as expected
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    # There are two partitions on another computer
+    # so request shall be processed twice correctly, 3rd time it shall
+    # fail
+    sequence_string = \
+    self.prepare_install_requested_computer_partition_sequence_string + \
+      self.prepare_another_computer_sequence_string + '\
+      SelectAnotherRequestedReference \
+      SelectEmptyRequestedParameterDict \
+      SlapLoginCurrentSoftwareInstance \
+      RequestSlaveInstanceFromComputerPartitionNotFoundResponse \
+      Tic \
+      SlapLogout \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      SetRequestedFilterParameterDict \
+      RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
+      Tic \
+      SlapLogout \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      RequestSlaveInstanceFromComputerPartition \
+      Tic \
+      SlapLogout \
+      \
+      SetRequestedWrongFilterParameterDict \
+      SelectYetAnotherRequestedReference \
+      SlapLoginCurrentSoftwareInstance \
+      RequestSlaveInstanceFromComputerPartitionNotFoundResponse \
+      Tic \
+      SlapLogout \
+      '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   #########################################
   # SlaveInstance.request
