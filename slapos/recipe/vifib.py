@@ -152,8 +152,9 @@ SSLCARevocationPath %(ca_crl)s"""
         login_haproxy, backend_key, backend_certificate)
 
     # Install Frontend
+    frontend_domain_name = self.parameter_dict.get("domain_name", 'vifib')
     apache_frontend_login = self.installFrontendZopeApache(
-        self.getGlobalIPv6Address(), 4443, 'vifib', '/',
+        self.getGlobalIPv6Address(), 4443, frontend_domain_name, '/',
         apache_login, '/', backend_key, backend_certificate)
     # Four Web Service Nodes (Machine access)
     service_url_list = []
