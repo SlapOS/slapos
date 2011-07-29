@@ -96,8 +96,8 @@ class Recipe(BaseSlapRecipe):
              self.requestCertificate(frontend_name)
 
       connection_dict["site_url"] = self.installFrontendZopeApache(
-        ip=self.getGlobalIPv6Address(), port=13001, name=frontend_name,
-        frontend_path='/%s' % self.site_id, backend_path='/%s' % self.site_id,
+        ip=self.getGlobalIPv6Address(), port=4443, name=frontend_name,
+        frontend_path='/', backend_path='',
         backend_url=apache_conf['apache_login'], key=frontend_key,
         certificate=frontend_certificate)
 
