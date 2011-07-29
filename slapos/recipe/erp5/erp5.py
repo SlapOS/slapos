@@ -55,7 +55,7 @@ class ERP5Updater(object):
     self.business_template_repository_list = bt5_repository_list
     self.business_template_list = bt5_list
     self.memcached_address = memcached_address
-    self.persintent_cached_address = persistent_cache_address
+    self.persistent_cached_address = persistent_cache_address
     self.mysql_url = mysql_url
 
     host, port = conversion_server_address.split(":")
@@ -241,7 +241,7 @@ class ERP5Updater(object):
     # Assert Persistent cache configuration (Kumofs)
     self._assertAndUpdateDocument(
       "portal_memcached/persistent_memcached_plugin/getUrlString",
-      self.persintent_cached_address,
+      self.persistent_cached_address,
       "setUrlString")
 
   def _assertAndUpdateDocument(self, key, expected_value, update_method):
