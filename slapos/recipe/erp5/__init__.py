@@ -915,9 +915,6 @@ class Recipe(BaseSlapRecipe):
         'template/apache.ssl-snippet.conf.in') % dict(
         login_certificate=certificate, login_key=key)
 
-    rewrite_rule_template = \
-        "RewriteRule ^%(path)s($|/.*) %(backend_url)s/VirtualHostBase/https/%(server_name)s:%(port)s%(backend_path)s/VirtualHostRoot/_vh_%(vhname)s$1 [L,P]\n"
-
     path = pkg_resources.resource_string(__name__,
            'template/apache.zope.conf.path-protected.in') % \
               dict(path='/', access_control_string='none')
@@ -931,14 +928,18 @@ class Recipe(BaseSlapRecipe):
         'template/apache.zope.conf.path-protected.in')
       path += path_template % dict(path=frontend_path,
           access_control_string=access_control_string)
-    d = dict(
+
+    rewrite_rule_template = \
+        "RewriteRule ^%(path)s($|/.*) %(backend_url)s/VirtualHostBase/https/%(server_name)s:%(port)s%(backend_path)s/VirtualHostRoot/%(vhname)s$1 [L,P]\n"
+
+    rewrite_rule = rewrite_rule_template % dict(
           path=frontend_path,
           backend_url=backend_url,
           backend_path=backend_path,
           port=apache_conf['port'],
           vhname=frontend_path.replace('/', ''),
           server_name=name)
-    rewrite_rule = rewrite_rule_template % d
+
     apache_conf.update(**dict(
       path_enable=path,
       rewrite_rule=rewrite_rule
