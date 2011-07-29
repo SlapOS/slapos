@@ -932,12 +932,18 @@ class Recipe(BaseSlapRecipe):
     rewrite_rule_template = \
         "RewriteRule ^%(path)s($|/.*) %(backend_url)s/VirtualHostBase/https/%(server_name)s:%(port)s%(backend_path)s/VirtualHostRoot/%(vhname)s$1 [L,P]\n"
 
+    if frontend_path not in ["", None, "/"]:
+      vhname = "_vh_%s" % frontend_path.replace('/', '')
+    else:
+      vhname = ""
+      frontend_path = ""
+
     rewrite_rule = rewrite_rule_template % dict(
           path=frontend_path,
           backend_url=backend_url,
           backend_path=backend_path,
           port=apache_conf['port'],
-          vhname=frontend_path.replace('/', ''),
+          vhname=vhname,
           server_name=name)
 
     apache_conf.update(**dict(
