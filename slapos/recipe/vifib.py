@@ -31,7 +31,7 @@ import zc.buildout
 import sys
 
 class Recipe(slapos.recipe.erp5.Recipe):
-  
+
   default_bt5_list = []
 
   def installKeyAuthorisationApache(self, ip, port, backend, key, certificate,
@@ -150,6 +150,8 @@ SSLCARevocationPath %(ca_crl)s"""
         login_url_list)
     apache_login = self.installBackendApache(self.getGlobalIPv6Address(), 15000,
         login_haproxy, backend_key, backend_certificate)
+
+    # Install Frontend
     apache_frontend_login = self.installFrontendZopeApache(
         self.getGlobalIPv6Address(), 4443, 'vifib', '/',
         apache_login, '/', backend_key, backend_certificate)
