@@ -53,11 +53,14 @@
             <value> <string>sale_packing_list_line = context\n
 instance_type_list = [\'Software Instance\', \'Slave Instance\']\n
 \n
-service_relative_url_list = (\n
-  context.portal_preferences.getPreferredInstanceHostingResource(),\n
+hosting_service = context.restrictedTraverse(\n
+  context.portal_preferences.getPreferredInstanceHostingResource())\n
+setup_service = context.restrictedTraverse(\n
   context.portal_preferences.getPreferredInstanceSetupResource())\n
 \n
-state_list = ["confirmed", "started"]\n
+service_uid_list = [hosting_service.getUid(), setup_service.getUid()]\n
+\n
+state_list = ("confirmed", "started")\n
 \n
 software_instance = sale_packing_list_line.getAggregateValue(portal_type=instance_type_list)\n
 computer_partition = sale_packing_list_line.getAggregateValue(portal_type=\'Computer Partition\')\n
@@ -70,7 +73,9 @@ if computer_partition.getPortalType() == \'Computer Partition\':\n
 if software_instance is not None and computer_partition is not None and software_release is not None:\n
   slave_instance_list = []\n
   sale_packing_list_line_list = computer_partition.getAggregateRelatedValueList(\n
-    portal_type="Sale Packing List Line", resource_relative_url=service_relative_url_list)\n
+    portal_type="Sale Packing List Line",\n
+    default_resource_uid=service_uid_list)\n
+\n
   for sale_packing_list_line in sale_packing_list_line_list:\n
     if sale_packing_list_line.getParent().getSimulationState() not in state_list:\n
       continue\n
