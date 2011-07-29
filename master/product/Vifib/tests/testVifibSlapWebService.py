@@ -4896,20 +4896,20 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
-    Tic
-    LoginAsCustomerA
-    PersonRequestSlaveInstance
-    SlapLogout
+      Tic
+      LoginAsCustomerA
+      PersonRequestSlaveInstance
+      SlapLogout
 
-    LoginTestVifibCustomer
-    PersonRequestSlaveInstance
-    SlapLogout
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
 
-    LoginDefaultUser
-    ConfirmOrderedSaleOrderActiveSense
-    Tic
-    CheckTwoSlaveInstanceRequest
-    SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      CheckTwoSlaveInstanceRequest
+      SlapLogout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
