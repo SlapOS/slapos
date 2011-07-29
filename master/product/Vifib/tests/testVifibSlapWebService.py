@@ -4518,7 +4518,7 @@ class TestVifibSlapWebService(testVifibMixin):
        SlapLogout
 
        LoginDefaultUser
-       SetDeliveryLineAmountAsTwo
+       SetDeliveryLineAmountEqualTwo
        CheckComputerPartitionInstanceSetupSalePackingListConfirmed
        SlapLogout
 
