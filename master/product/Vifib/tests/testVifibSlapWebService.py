@@ -6154,12 +6154,14 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepCheckEmptySlaveInstanceListFromOneComputerPartition(self, sequence):
     computer_guid = sequence["computer_reference"]
+    partition_id = sequence["computer_partition_reference"]
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
-    computer = self.slap.registerComputer(computer_guid)
-    computer_partition = computer.getComputerPartitionList()[0]
-    self.assertEquals([],
-        computer_partition.getInstanceParameterDict()["slave_instance_list"])
+    computer_partition = self.slap.registerComputerPartition(computer_guid,
+        partition_id)
+    parameter_dict = computer_partition.getInstanceParameterDict()
+    slave_instance_list = parameter_dict["slave_instance_list"]
+    self.assertEquals([], slave_instance_list)
 
   def stepCheckSlaveInstanceListFromOneComputerPartition(self, sequence,
           expected_amount=1):
