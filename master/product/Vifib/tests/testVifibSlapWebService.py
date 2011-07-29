@@ -4760,6 +4760,37 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SlaveInstance_getInstanceParameterDict_with_SlaveInstance_stopped(self):
+    """
+      Check that the Slave Instance is ignored when the state of Sale Packing
+      List in stopped.
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+      LoginTestVifibCustomer
+      SlaveInstanceStopComputerPartitionInstallation
+      Tic
+      SlaveInstanceStarted
+      Tic
+      SlaveInstanceStopped
+      Tic
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      SlapLoginCurrentComputer
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_SlaveInstance_getInstanceParameterDict_with_two_SlaveInstance(self):
     """
       Check that with two Slave Instance installed in different computers, the
