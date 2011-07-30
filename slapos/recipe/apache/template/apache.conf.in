@@ -35,9 +35,10 @@ CustomLog "%(access_log)s" common
 
 %(path_enable)s
 
+RewriteMap apachemap txt:%(apachemap_path)s
 # Magic of Zope related rewrite
 RewriteEngine On
-Include %(rewrite_rule_path)s
+RewriteRule ^/(\w+)($|/.*) ${apachemap:$1}/VirtualHostBase/https/%(apache_domain)s:%(port)s/VirtualHostRoot/_vh_$1$2 [L,P]
 
 # List of modules
 LoadModule authz_host_module modules/mod_authz_host.so

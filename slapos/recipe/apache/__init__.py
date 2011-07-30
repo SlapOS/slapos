@@ -209,25 +209,21 @@ class Recipe(BaseSlapRecipe):
       apache_conf['pid_file'] + ' SIGUSR1')
     return apache_conf
 
-  def generateRewriteRule(self, parameter_dict):
-    return "RewriteRule ^/%(id)s($|/.*) %(url)s/VirtualHostBase/" % parameter_dict + \
-      "https/%(domain)s:%(port)s/VirtualHostRoot/_vh_%(id)s$1 [L,P]" % parameter_dict
-
   def installFrontendApache(self, ip, port, key, certificate,
                             name, access_control_string=None):
-    vhost_name = "apachevhost.conf"
+    apachemap_name = "apachemap.txt"
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
     rewrite_rule_list = []
     slave_dict = {}
     for slave_instance in slave_instance_list:
       url = slave_instance.get("url")
+      if url is None:
+        continue
       id = slave_instance.get("slave_reference").replace("-", "").lower()
-      vhost_dict = dict(id=id, ip=ip, port=port,
-          domain=name, url=url)
-      rewrite_rule_list.append(self.generateRewriteRule(vhost_dict))
+      rewrite_rule_list.append("%s %s" % (id, url))
       slave_dict[slave_instance.get("slave_reference")] = \
           "https://%s:%s/%s" % (name, port, id)
-    self.createConfigurationFile(vhost_name, "\n".join(rewrite_rule_list))
+    self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
     apache_conf = self._getApacheConfigurationDict(name, ip, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
@@ -239,7 +235,9 @@ class Recipe(BaseSlapRecipe):
 
     apache_conf.update(**dict(
       path_enable=path,
-      rewrite_rule_path=os.path.join(self.etc_directory, vhost_name),
+      apachemap_path=os.path.join(self.etc_directory, apachemap_name),
+      apache_domain=name,
+      port=port,
     ))
 
     apache_conf_string = self.substituteTemplate(
