@@ -4671,6 +4671,8 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_ComputerPartition_request_filter_slave_computer_guid(self):
     """
     Check that requesting with filter computer_guid key works as expected
+
+    This include tests for slave case.
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
