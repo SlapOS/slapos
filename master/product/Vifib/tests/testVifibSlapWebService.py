@@ -1348,7 +1348,7 @@ class TestVifibSlapWebService(testVifibMixin):
       filter_kw=sequence.get('requested_filter_dict', {}),
       state=sequence.get('instance_state'))
 
-  def stepRequestSlaveInstanceFromComputerPartitionNotFoundResponse(self, sequence, **kw):
+  def stepRequestSlaveInstanceFromComputerPartitionNotFoundError(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
     requested_reference = sequence['requested_reference']
     requested_parameter_dict = sequence['requested_parameter_dict']
@@ -4630,20 +4630,20 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_ComputerPartition_request_slave_NotFound(self):
     """
-    Check that requesting shared partition worksi in system capable to fulfill
+    Check that requesting a Slave Instance works in system capable to fulfill
     such request, with Slave Partition does not exist yet.
     """
     sequence_list = SequenceList()
-    sequence_string = \
-        self.prepare_install_requested_computer_partition_sequence_string +\
-        """
-      Tic
-      SlapLoginCurrentSoftwareInstance
-      SelectEmptyRequestedParameterDict
-      SetRandomRequestedReference
-      RequestSlaveInstanceFromComputerPartitionNotFoundResponse
-      SlapLogout
-        """
+    sequence_string = self.prepare_formated_computer + """
+        LoginDefaultUser
+        SetRandomComputerPartition
+        SlapLoginCurrentComputer
+        SelectEmptyRequestedParameterDict
+        SetRandomRequestedReference
+        SelectNewSoftwareReleaseUri
+        RequestSlaveInstanceFromComputerPartitionNotFoundError
+        SlapLogout
+      """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
