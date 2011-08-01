@@ -4615,10 +4615,10 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_string = \
         self.prepare_install_requested_computer_partition_sequence_string +\
         simple_request_with_random + """
-	SlapLoginCurrentComputer
-	CheckSlaveInstanceListFromOneComputerPartition
-	SlapLogout
-	""" + \
+          SlapLoginCurrentComputer
+          CheckSlaveInstanceListFromOneComputerPartition
+          SlapLogout
+        """ + \
         simple_request_with_random + \
         """
         SlapLoginCurrentComputer
