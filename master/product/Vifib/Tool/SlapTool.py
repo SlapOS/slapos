@@ -671,8 +671,7 @@ class SlapTool(BaseTool):
       if movement is None:
         raise SoftwareInstanceNotReady
       software_instance = SoftwareInstance(
-        **self._getSalePackingListLineAsSoftwareInstance(
-                                      movement))
+        **self._getSalePackingListLineAsSoftwareInstance(movement))
       return xml_marshaller.xml_marshaller.dumps(software_instance)
 
   ####################################################
