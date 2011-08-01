@@ -8378,11 +8378,6 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       SlapLogout
 
-      SlapLoginTestVifibCustomer
-      PersonRequestSlapSoftwareInstanceNotReadyResponse
-      Tic
-      SlapLogout
-
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
@@ -8459,11 +8454,6 @@ class TestVifibSlapWebService(testVifibMixin):
       Logout
 
       SetRandomRequestedReference
-      SlapLoginTestVifibCustomer
-      PersonRequestSlapSoftwareInstanceNotReadyResponse
-      Tic
-      SlapLogout
-
       SlapLoginTestVifibCustomer
       PersonRequestSlapSoftwareInstanceNotReadyResponse
       Tic
