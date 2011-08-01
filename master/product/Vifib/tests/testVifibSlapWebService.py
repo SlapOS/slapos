@@ -4840,8 +4840,6 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
-      SlapLogout
-      LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLoginCurrentComputer
