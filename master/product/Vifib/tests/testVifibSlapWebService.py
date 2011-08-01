@@ -6249,6 +6249,7 @@ class TestVifibSlapWebService(testVifibMixin):
         operator="AND")
     software_instance = self.portal.portal_catalog.getResultValue(
         portal_type="Sale Packing List Line",
+        sort_on=(('movement.start_date', 'DESC'),),
         query=query).getAggregateValue(portal_type="Software Instance")
     return software_instance
 
