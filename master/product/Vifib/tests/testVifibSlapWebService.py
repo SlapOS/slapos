@@ -5612,7 +5612,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SlapLogout \
       \
       LoginTestVifibCustomer \
-      SlaveInstanceStopped \
+      stepRequestSlaveInstanceStop \
       Tic \
       Logout \
       \
@@ -5622,7 +5622,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      SetDeliveryLineAmountEqualThree \
+      SetDeliveryLineAmountEqualTwo \
       CheckComputerPartitionInstanceHostingSalePackingListStarted \
       SetDeliveryLineAmountEqualOne \
       CheckComputerPartitionInstanceHostingSalePackingListDelivered \
@@ -6461,6 +6461,11 @@ class TestVifibSlapWebService(testVifibMixin):
     slave_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence["software_instance_uid"])
     slave_instance.requestStartComputerPartition()
+
+  def stepRequestSlaveInstanceStop(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.requestStopComputerPartition()
 
   def stepSlaveInstanceStopped(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
