@@ -4590,7 +4590,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_ComputerPartition_request_slave_twice_different(self):
     """
-     Check request 2 diferent slave partitions on same Software 
+     Check request 2 diferent slave instances on same Software 
      Instance.
     """
     simple_request_with_random = """
