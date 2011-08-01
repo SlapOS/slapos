@@ -4668,7 +4668,7 @@ class TestVifibSlapWebService(testVifibMixin):
         sequence['requested_filter_dict'] = dict(
           computer_guid="COMP-99999999999999999999999")
 
-  def test_ComputerPartition_request_filter_computer_guid(self):
+  def test_ComputerPartition_request_filter_slave_computer_guid(self):
     """
     Check that requesting with filter computer_guid key works as expected
     """
@@ -4683,7 +4683,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SelectAnotherRequestedReference \
       SelectEmptyRequestedParameterDict \
       SlapLoginCurrentSoftwareInstance \
-      RequestSlaveInstanceFromComputerPartitionNotFoundResponse \
+      RequestSlaveInstanceFromComputerPartitionNotFoundError \
       Tic \
       SlapLogout \
       \
@@ -4701,7 +4701,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SetRequestedWrongFilterParameterDict \
       SelectYetAnotherRequestedReference \
       SlapLoginCurrentSoftwareInstance \
-      RequestSlaveInstanceFromComputerPartitionNotFoundResponse \
+      RequestSlaveInstanceFromComputerPartitionNotFoundError \
       Tic \
       SlapLogout \
       '
