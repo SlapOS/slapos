@@ -546,6 +546,10 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepSetRandomComputerReference(self, sequence, **kw):
     sequence['computer_reference'] = str(random())
 
+  def stepSetRandomComputerPartition(self, sequence, **kw):
+    sequence.edit(computer_partition_reference=\
+        sequence["computer_partition_reference_list"][0])
+
   def stepFormatComputer(self, sequence, **kw):
     computer_partition_reference_list = []
     computer_guid = sequence["computer_reference"]
