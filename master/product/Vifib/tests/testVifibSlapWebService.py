@@ -5019,14 +5019,8 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginTestVifibCustomer
       StartSoftwareInstanceFromCurrentComputerPartition
       Tic
-      Logout
-      LoginDefaultUser
-      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
       SoftwareInstanceStarted
       Tic
-      SlapLogout
-      LoginDefaultUser
-      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
       SoftwareInstanceStopped
       Tic
       SetDeliveryLineAmountEqualTwo
