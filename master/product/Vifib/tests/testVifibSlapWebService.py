@@ -4971,7 +4971,7 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     raise NotImplementedError
 
-  def test_SlaveInstance_request_start(self):
+  def test_SlaveInstance_request_start_when_SoftwareInstance_is_started(self):
     """
       Check that the Slave Instance will be started correctly
       XXX - Review the sequence of steps to verify that the scenario is
@@ -4985,14 +4985,11 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
-      SlapLogout
-      LoginTestVifibCustomer
-      SlaveInstanceStopComputerPartitionInstallation
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
       Tic
-      SlaveInstanceStarted
+      SoftwareInstanceStarted
       Tic
-      Logout
-      LoginDefaultUser
       SetDeliveryLineAmountEqualTwo
       CheckComputerPartitionInstanceHostingSalePackingListStarted
       Logout
@@ -5072,12 +5069,10 @@ class TestVifibSlapWebService(testVifibMixin):
         ConfirmOrderedSaleOrderActiveSense
         Tic
         SlapLogout
-        LoginTestVifibCustomer
-        SlaveInstanceStopComputerPartitionInstallation
+        SlapLoginCurrentComputer
+        SoftwareInstanceAvailable
         Tic
-        RequestSoftwareInstanceStart
-        Tic
-        SlaveInstanceStarted
+        SoftwareInstanceStarted
         Tic
       """
 
@@ -5088,6 +5083,7 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_slave_instance_sequence_string + """
+      LoginTestVifibCustomer
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
       SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
