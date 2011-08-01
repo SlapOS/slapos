@@ -4811,6 +4811,20 @@ class TestVifibSlapWebService(testVifibMixin):
       SoftwareInstanceAvailable
       Tic """ + self.prepare_formated_computer + """
       Tic
+      LoginTestVifibDeveloper \
+      SelectNewSoftwareReleaseUri \
+      CreateSoftwareRelease \
+      Tic \
+      SubmitSoftwareRelease \
+      Tic \
+      CreateSoftwareProduct \
+      Tic \
+      ValidateSoftwareProduct \
+      Tic \
+      SetSoftwareProductToSoftwareRelease \
+      PublishByActionSoftwareRelease \
+      Tic
+      Logout \
       LoginTestVifibAdmin
       RequestSoftwareInstallation
       Tic
