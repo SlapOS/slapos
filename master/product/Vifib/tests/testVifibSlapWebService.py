@@ -5130,23 +5130,29 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + """
+      SlapLoginCurrentComputer
+      CheckEmptyComputerGetComputerPartitionCall
+      SlapLogout
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      CheckSuccessComputerGetComputerPartitionCall
+      SoftwareInstanceStarted
+      Tic
       SlapLogout
       LoginTestVifibCustomer
-      SlaveInstanceStopComputerPartitionInstallation
-      Tic
-      SlaveInstanceStarted
-      Tic
-      SlaveInstanceStopped
+      RequestSlaveInstanceStop
       Tic
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
