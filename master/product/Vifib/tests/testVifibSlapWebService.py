@@ -5148,7 +5148,16 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
-    """
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      Logout
+     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
