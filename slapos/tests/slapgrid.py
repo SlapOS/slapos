@@ -1,15 +1,16 @@
 from slapos.grid import slapgrid
+import flask
+import multiprocessing
 import os
 import shutil
-import tempfile
 import signal
-import unittest
+import slapos.slap.slap
 import socket
-import BaseHTTPServer
-import time
-import urllib2
-import errno
-import threading
+import tempfile
+import unittest
+import xml_marshaller
+
+app = flask.Flask(__name__)
 
 class BasicMixin:
   def setUp(self):
@@ -45,46 +46,23 @@ class TestBasicSlapgridCP(BasicMixin, unittest.TestCase):
     os.mkdir(self.instance_root)
     self.assertRaises(socket.error, self.grid.processComputerPartitionList)
 
-class Server(BaseHTTPServer.HTTPServer):
-    __run = True
-    def serve_forever(self):
-        while self.__run:
-            self.handle_request()
-
-    def handle_error(self, *_):
-        self.__run = False
-
-class SlapOSMasterHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-  def do_GET(self):
-    if '!killme!' in self.path:
-      self.send_response(200)
-      raise SystemExit
-
-    self.send_response(200)
-    return
-
 def _run_server(host, port):
-  address = (host, port)
-  httpd = Server(address, SlapOSMasterHTTPRequestHandler)
-  httpd.serve_forever()
+  global app
+  app.run(host=host, port=port, use_reloader=False, debug=True)
 
 class MasterMixin(BasicMixin):
   _master_port = 45678
   _master_host = '127.0.0.1'
 
   def startMaster(self):
-    self.thread = threading.Thread(target=_run_server, args=(self._master_host,
-      self._master_port))
-    self.thread.start()
+    self.process = multiprocessing.Process(target=_run_server,
+      args=(self._master_host, self._master_port))
+    self.process.start()
     self.master_url = 'http://%s:%s/' % (self._master_host, self._master_port)
 
   def stopMaster(self):
-    try:
-      urllib2.urlopen(self.master_url+'!killme!')
-    except Exception:
-      pass
-    if self.thread is not None:
-      self.thread.join()
+    self.process.terminate()
+    self.process.join()
 
   def setUp(self):
     # prepare master
@@ -105,8 +83,15 @@ class MasterMixin(BasicMixin):
     BasicMixin.tearDown(self)
 
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
+  @app.route('/getComputerInformation', methods=['GET'])
+  def getComputerInformation():
+    computer_id = flask.request.args['computer_id']
+    slap_computer = slapos.slap.Computer(computer_id)
+    slap_computer._software_release_list = []
+    slap_computer._computer_partition_list = []
+    return xml_marshaller.xml_marshaller.dumps(slap_computer)
+
   def test_nothing_to_do(self):
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
-    self.grid.processComputerPartitionList()
-    raise NotImplementedError
+    self.assertTrue(self.grid.processComputerPartitionList())
