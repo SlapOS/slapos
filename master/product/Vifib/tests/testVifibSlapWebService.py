@@ -1348,7 +1348,7 @@ class TestVifibSlapWebService(testVifibMixin):
       filter_kw=sequence.get('requested_filter_dict', {}),
       state=sequence.get('instance_state'))
 
-  def stepRequestSlaveInstanceFromComputerPartitionNotFoundError(self, sequence, **kw):
+  def stepRequestSlaveInstanceFromComputerPartitionNotFoundResponse(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
     requested_reference = sequence['requested_reference']
     requested_parameter_dict = sequence['requested_parameter_dict']
@@ -4641,7 +4641,7 @@ class TestVifibSlapWebService(testVifibMixin):
         SelectEmptyRequestedParameterDict
         SetRandomRequestedReference
         SelectNewSoftwareReleaseUri
-        RequestSlaveInstanceFromComputerPartitionNotFoundError
+        RequestSlaveInstanceFromComputerPartitionNotFoundResponse
         SlapLogout
       """
     sequence_list.addSequenceString(sequence_string)
