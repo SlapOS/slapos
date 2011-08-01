@@ -5546,6 +5546,95 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_Computer_getComputerPartitionList_HostingResource_StartedState_with_slave(self):
+    """
+    Check that calling Computer.getComputerPartitionList works in 
+    started state with the hosting resource when a Slave Partition is present.
+
+    We validate checking more them one Slave Instance allocation.
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + '\
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetComputerPartitionCall \
+      SlapLogout \
+      \
+      LoginTestVifibCustomer \
+      PersonRequestSlaveInstance \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceAvailable \
+      Tic \
+      CheckSuccessComputerGetComputerPartitionCall \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      SetDeliveryLineAmountEqualTwo \
+      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetComputerPartitionCall \
+      SlapLogout \
+      \
+      LoginTestVifibCustomer \
+      PersonRequestSlaveInstance \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceAvailable \
+      Tic \
+      CheckSuccessComputerGetComputerPartitionCall \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      SetDeliveryLineAmountEqualThree \
+      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetComputerPartitionCall \
+      SlapLogout \
+      \
+      LoginTestVifibCustomer \
+      SlaveInstanceStopped \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetComputerPartitionCall \
+      SoftwareInstanceStarted \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      SetDeliveryLineAmountEqualThree \
+      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      SetDeliveryLineAmountEqualOne \
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetComputerPartitionCall \
+      SlapLogout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_Computer_getComputerPartitionList_HostingResource_StoppedState(self):
     """
     Check that calling Computer.getComputerPartitionList works in 
@@ -6385,6 +6474,12 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepSetDeliveryLineAmountEqualTwo(self, sequence):
     sequence.edit(delivery_line_amount=2)
+
+  def stepSetDeliveryLineAmountEqualThree(self, sequence):
+    sequence.edit(delivery_line_amount=3)
+
+  def stepSetDeliveryLineAmountEqualOne(self, sequence):
+    sequence.edit(delivery_line_amount=1)
 
   prepare_two_purchase_packing_list = \
       prepare_software_release_purchase_packing_list + '\

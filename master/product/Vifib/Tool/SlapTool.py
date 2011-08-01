@@ -424,6 +424,8 @@ class SlapTool(BaseTool):
           slap_partition._need_modification = 1
         elif movement.getSimulationState() == 'started':
           slap_partition._requested_state = 'started'
+          slap_partition._need_modification = \
+            self._hasSlaveInstanceNeedModification(computer_partition_document)
         elif movement.getSimulationState() == 'stopped':
           slap_partition._requested_state = 'stopped'
           slap_partition._need_modification = 1
@@ -444,6 +446,33 @@ class SlapTool(BaseTool):
         raise NotImplementedError, "Unexpected resource%s" % \
                                    movement.getResource()
     return slap_partition
+
+  def _hasSlaveInstanceNeedModification(self, computer_partition_document):
+    """
+      Check if modification is needed for...
+    """
+    portal = self.getPortalObject()
+    portal_preferences = portal.portal_preferences
+       
+    service = portal.restrictedTraverse(
+       portal_preferences.getPreferredInstanceHostingResource())
+
+    query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
+       Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+       operator="AND")
+
+    # Use getTrackingList
+    catalog_result = portal.portal_catalog(
+      portal_type='Sale Packing List Line',
+      # Search only for Confirmed and Stopped, the only one states that require
+      # buildout be re-updated.
+      simulation_state= ["confirmed", 'stopped'],
+      default_resource_uid=service.getUid(),
+      sort_on=(('movement.start_date', 'DESC'),),
+      limit=1,
+      query=query)
+
+    return len(catalog_result)
 
   @convertToREST
   def _buildingSoftwareRelease(self, url, computer_id):
