@@ -546,10 +546,6 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepSetRandomComputerReference(self, sequence, **kw):
     sequence['computer_reference'] = str(random())
 
-  def stepSetRandomComputerPartition(self, sequence, **kw):
-    sequence.edit(computer_partition_reference=\
-        sequence["computer_partition_reference_list"][0])
-
   def stepFormatComputer(self, sequence, **kw):
     computer_partition_reference_list = []
     computer_guid = sequence["computer_reference"]
@@ -4630,20 +4626,20 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_ComputerPartition_request_slave_NotFound(self):
     """
-    Check that requesting a Slave Instance works in system capable to fulfill
+    Check that requesting shared partition worksi in system capable to fulfill
     such request, with Slave Partition does not exist yet.
     """
     sequence_list = SequenceList()
-    sequence_string = self.prepare_formated_computer + """
-        LoginDefaultUser
-        SetRandomComputerPartition
-        SlapLoginCurrentComputer
-        SelectEmptyRequestedParameterDict
-        SetRandomRequestedReference
-        SelectNewSoftwareReleaseUri
-        RequestSlaveInstanceFromComputerPartitionNotFoundResponse
-        SlapLogout
-      """
+    sequence_string = \
+        self.prepare_install_requested_computer_partition_sequence_string +\
+        """
+      Tic
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SetRandomRequestedReference
+      RequestSlaveInstanceFromComputerPartitionNotFoundResponse
+      SlapLogout
+        """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
