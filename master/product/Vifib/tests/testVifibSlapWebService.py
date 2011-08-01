@@ -4798,7 +4798,7 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_SlaveInstance_getInstanceParameterDict_with_two_SlaveInstance(self):
     """
       Check that with two Slave Instance installed in different computers, the
-      Slave Instance are allocated correctly
+      method getInstanceParameterDict returns correctly the slave instance list
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """ 
