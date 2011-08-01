@@ -211,7 +211,7 @@ class Computer:
 
     # all addresses on interface are for partition, so lets add new one
     computer_tap = Tap('compdummy')
-    computer_tap.createWithOwner('root', attach_to_tap=True)
+    computer_tap.createWithOwner(User('root'), attach_to_tap=True)
     self.bridge.addTap(computer_tap)
     return self.bridge.addAddr()
 

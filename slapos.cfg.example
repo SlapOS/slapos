@@ -42,5 +42,7 @@ alias =
   mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/mariadb/software.cfg
   memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/memcached/software.cfg
   kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.21:/software/kumofs/software.cfg
-  erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/erp5/software.cfg
+  erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.30:/software/erp5/software.cfg
   erp5_branch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5:/software/erp5/software.cfg
+  vifib http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.30:/software/vifib/software.cfg
+
