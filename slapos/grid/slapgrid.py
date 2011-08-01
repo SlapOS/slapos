@@ -64,6 +64,8 @@ MANDATORY_PARAMETER_LIST = [
     'software_root',
 ]
 
+DEFAULT_PROMISE_TIMEOUT = 3
+
 
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Parses arguments either from command line, from method parameters or from
@@ -106,6 +108,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="Enables console output and live output from subcommands.")
   parser.add_argument("-v", "--verbose", action="store_true", default=False,
       help="Be verbose.")
+  parser.add_argument("--promise-timeout",
+                      type=int, default=DEFAULT_PROMISE_TIMEOUT,
+                      help="Promise timeout in seconds.")
   parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
       help="SlapOS configuration file.")
 
@@ -199,7 +204,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             master_ca_file=master_ca_file,
             certificate_repository_path=certificate_repository_path,
             console=option_dict['console'],
-            buildout=option_dict.get('buildout')),
+            buildout=option_dict.get('buildout'),
+            promise_timeout=option_dict['promise-timeout']),
           option_dict])
 
 
@@ -268,7 +274,8 @@ class Slapgrid(object):
                cert_file=None,
                master_ca_file=None,
                certificate_repository_path=None,
-               console=False):
+               console=False,
+               promise_timeout=DEFAULT_PROMISE_TIMEOUT):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
     self.software_root = os.path.abspath(software_root)
@@ -295,6 +302,7 @@ class Slapgrid(object):
         os.path.join(self.instance_etc_directory, 'supervisord.conf.d')
     self.console = console
     self.buildout = buildout
+    self.promise_timeout = DEFAULT_PROMISE_TIMEOUT
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -567,7 +575,7 @@ class Slapgrid(object):
         self._runCommandAsUserAndYieldPopen(commands_to_run,
                                             (uid, gid), cwd):
 
-        time.sleep(3) # 3 seconds timeout
+        time.sleep(self.promise_timeout)
 
         promise = os.path.basename(command)
 
