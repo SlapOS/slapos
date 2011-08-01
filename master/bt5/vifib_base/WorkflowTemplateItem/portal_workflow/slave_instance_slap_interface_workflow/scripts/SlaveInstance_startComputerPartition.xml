@@ -50,11 +50,14 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>isTransitionPossible = context.portal_workflow.isTransitionPossible\n
+            <value> <string>from Products.ERP5Type.Log import log\n
 packing_list_line = context.SlaveInstance_getInstanceHostingPackingListLine(state_change)\n
-packing_list = packing_list_line.getParentValue()\n
-if isTransitionPossible(packing_list, "start"):\n
-  packing_list.start()\n
+if packing_list_line.getSimulationState() != "started":\n
+  packing_list_line.getParentValue().start()\n
+else:\n
+  slave_instance = state_change["object"].getRelativeUrl()\n
+  log("Unable to start sale Packing List %s for Software Instance %s" % \\\n
+       (packing_list_line.getRelativeUrl(), slave_instance))\n
 </string> </value>
         </item>
         <item>

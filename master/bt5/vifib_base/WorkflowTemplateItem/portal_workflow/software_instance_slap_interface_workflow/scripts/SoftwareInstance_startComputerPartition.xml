@@ -50,9 +50,14 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>packing_list_line = context.SoftwareInstance_getInstanceHostingPackingListLine(state_change)\n
-packing_list = packing_list_line.getParentValue()\n
-packing_list.start()\n
+            <value> <string>from Products.ERP5Type.Log import log\n
+packing_list_line = context.SoftwareInstance_getInstanceHostingPackingListLine(state_change)\n
+if packing_list_line.getSimulationState() != "started":\n
+  packing_list_line.getParentValue().start()\n
+else:\n
+  software_instance = state_change["object"].getRelativeUrl()\n
+  log("Unable to start sale Packing List %s for Software Instance %s" % \\\n
+       (packing_list_line.getRelativeUrl(), software_instance))\n
 </string> </value>
         </item>
         <item>
