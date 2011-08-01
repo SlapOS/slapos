@@ -205,7 +205,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             certificate_repository_path=certificate_repository_path,
             console=option_dict['console'],
             buildout=option_dict.get('buildout'),
-            promise_timeout=option_dict['promise-timeout']),
+            promise_timeout=option_dict['promise_timeout']),
           option_dict])
 
 
