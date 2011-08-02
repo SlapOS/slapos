@@ -6360,7 +6360,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def _getSoftwareInstanceFromCurrentComputerPartition(self, sequence):
     query = ComplexQuery(
-        Query(aggregate_reference=sequence['computer_partition_reference']),
+        Query(aggregate_uid=sequence['computer_partition_uid']),
         Query(aggregate_portal_type=self.software_instance_portal_type),
         operator="AND")
     software_instance = self.portal.portal_catalog.getResultValue(
@@ -6371,7 +6371,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def _getSlaveInstanceFromCurrentComputerPartition(self, sequence):
     query = ComplexQuery(
-        Query(aggregate_reference=sequence['computer_partition_reference']),
+        Query(aggregate_uid=sequence['computer_partition_uid']),
         Query(aggregate_portal_type=self.slave_instance_portal_type),
         operator="AND")
     slave_instance = self.portal.portal_catalog.getResultValue(
