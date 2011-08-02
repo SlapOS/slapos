@@ -5074,6 +5074,11 @@ class TestVifibSlapWebService(testVifibMixin):
         Tic
         SoftwareInstanceStarted
         Tic
+        LoginDefaultUser
+        SetDeliveryLineAmountEqualTwo
+        CheckComputerPartitionInstanceHostingSalePackingListStarted
+        CheckComputerPartitionInstanceSetupSalePackingListStopped
+        Logout
       """
 
   def test_SlaveInstance_request_destroy_from_SoftwareInstance(self):
@@ -5089,6 +5094,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
       SoftwareInstanceDestroyed
       Tic
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceHostingSalePackingListStopped
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       Logout
@@ -5106,6 +5112,7 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginTestVifibCustomer
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceHostingSalePackingListStopped
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
