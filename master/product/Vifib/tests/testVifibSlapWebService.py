@@ -7623,6 +7623,14 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_bug_destruction_of_partition_originated_from_another_computer(self):
+    """Checks that computer is capable to destroy own Software Instance
+
+    If software instance originated on computer comes from another computer it
+    shall be possible to sucesfully destroy it.
+    """
+    raise NotImplementedError
+
   ########################################
   # Other tests
   ########################################
