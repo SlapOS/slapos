@@ -5153,6 +5153,13 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
       Logout
+      LoginTestVifibCustomer
+      StopSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      Logout
      """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -6380,6 +6387,11 @@ class TestVifibSlapWebService(testVifibMixin):
     software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
     software_instance.requestStartComputerPartition()
+
+  def stepStopSoftwareInstanceFromCurrentComputerPartition(self, sequence):
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    software_instance.requestStopComputerPartition()
 
   def stepCheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
       sequence):
