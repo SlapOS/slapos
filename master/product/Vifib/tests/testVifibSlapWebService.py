@@ -6350,20 +6350,13 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertUserCanAccessDocument(username, slave_instance)
 
   def stepSlapLoginSoftwareInstanceFromCurrentSoftwareInstance(self, sequence):
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=sequence["computer_partition_uid"])
-    sale_packing_list_line_list = self.portal.portal_catalog(
-        portal_type="Sale Packing List Line",
-        aggregate_uid=computer_partition.getUid())
-    for sale_packing_list_line in sale_packing_list_line_list:
-      software_instance = sale_packing_list_line.getAggregateValue(
-          portal_type="Software Instance")
-      if software_instance is not None:
-        self.stepSlapLogout()
-        global REMOTE_USER
-        REMOTE_USER = software_instance.getReference()
-        self.login(software_instance.getReference())
-        break
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    self.assertNotEquals(None, software_instance)
+    self.stepSlapLogout()
+    global REMOTE_USER
+    REMOTE_USER = software_instance.getReference()
+    self.login(software_instance.getReference())
 
   def _getSoftwareInstanceFromCurrentComputerPartition(self, sequence):
     query = ComplexQuery(
