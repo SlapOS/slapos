@@ -5625,13 +5625,14 @@ class TestVifibSlapWebService(testVifibMixin):
       SlapLogout \
       \
       LoginTestVifibCustomer \
-      stepRequestSlaveInstanceStop \
+      RequestSlaveInstanceStop \
       Tic \
       Logout \
       \
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetComputerPartitionCall \
       SoftwareInstanceStarted \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \
@@ -5640,7 +5641,6 @@ class TestVifibSlapWebService(testVifibMixin):
       SetDeliveryLineAmountEqualOne \
       CheckComputerPartitionInstanceHostingSalePackingListDelivered \
       Logout \
-      \
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetComputerPartitionCall \
       SlapLogout \
