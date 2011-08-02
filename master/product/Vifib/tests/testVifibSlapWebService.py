@@ -5103,6 +5103,7 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_slave_instance_sequence_string + """
+      LoginTestVifibCustomer
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
       CheckComputerPartitionInstanceHostingSalePackingListStopped
