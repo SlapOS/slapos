@@ -640,10 +640,14 @@ class Recipe(BaseSlapRecipe):
     return user, password
 
   def installERP5Site(self, user, password, zope_access, mysql_conf,
-          conversion_server_conf=None, memcached_conf=None, kumo_conf=None,
-          erp5_site_id='erp5', default_bt5_list=[]):
-    """ Create a script controlled by supervisor, which creates a erp5
-    site on current available zope and mysql environment"""
+                      conversion_server_conf=None, memcached_conf=None,
+                      kumo_conf=None,
+                      erp5_site_id='erp5', default_bt5_list=[],
+                      supervisor_controlled=True):
+    """
+    Create  a script  to  automatically set  up  an erp5  site (controlled  by
+    supervisor by default) on available zope and mysql environments.
+    """
     conversion_server = None
     if conversion_server_conf is not None:
       conversion_server = "%s:%s" % (conversion_server_conf['conversion_server_ip'],
@@ -660,7 +664,7 @@ class Recipe(BaseSlapRecipe):
     bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
       or getattr(self, 'bt5_repository_list', [])
 
-    self.path_list.extend(zc.buildout.easy_install.scripts([('erp5_update',
+    script = zc.buildout.easy_install.scripts([('erp5_update',
             __name__ + '.erp5', 'updateERP5')], self.ws,
                   sys.executable, self.wrapper_directory,
                   arguments=[erp5_site_id,
@@ -670,7 +674,11 @@ class Recipe(BaseSlapRecipe):
                              conversion_server,
                              kumo_conf.get("kumo_address"),
                              bt5_list,
-                             bt5_repository_list]))
+                             bt5_repository_list])
+
+    if supervisor_controlled:
+      self.path_list.extend(script)
+
     return []
 
   def installZeo(self, ip):
