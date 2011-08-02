@@ -5162,7 +5162,7 @@ class TestVifibSlapWebService(testVifibMixin):
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
       Logout
       LoginTestVifibCustomer
-      StopSoftwareInstanceFromCurrentComputerPartition
+      RequestStopSoftwareInstanceFromCurrentComputerPartition
       Tic
       Logout
       LoginDefaultUser
@@ -6396,7 +6396,8 @@ class TestVifibSlapWebService(testVifibMixin):
         sequence)
     software_instance.requestStartComputerPartition()
 
-  def stepStopSoftwareInstanceFromCurrentComputerPartition(self, sequence):
+  def stepRequestStopSoftwareInstanceFromCurrentComputerPartition(self,
+      sequence):
     software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
     software_instance.requestStopComputerPartition()
