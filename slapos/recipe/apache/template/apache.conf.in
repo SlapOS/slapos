@@ -5,7 +5,9 @@
 PidFile "%(pid_file)s"
 LockFile "%(lock_file)s"
 ServerName %(server_name)s
-Listen [%(ip)s]:%(port)s
+
+%(listen)s
+
 ServerAdmin %(server_admin)s
 DefaultType text/plain
 TypesConfig conf/mime.types

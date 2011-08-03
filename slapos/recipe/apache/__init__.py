@@ -62,15 +62,19 @@ class Recipe(BaseSlapRecipe):
     key, certificate = self.requestCertificate(frontend_domain_name)
 
     apache_parameter_dict = self.installFrontendApache(
-        ip=self.getGlobalIPv6Address(),
-        port=8080, name=frontend_domain_name,
+        ip_list=["[%s]" % self.getGlobalIPv6Address(), 
+                 self.getLocalIPv4Address()],
+        port=4443, name=frontend_domain_name,
         key=key, certificate=certificate)
 
     slave_dict = apache_parameter_dict.pop("slave_dict")
     for reference, url in slave_dict.iteritems():
       self.setConnectionDict(dict(site_url=url), reference)
 
-    self.setConnectionDict(dict(site_url=apache_parameter_dict["site_url"]))
+    self.setConnectionDict(
+      dict(site_url=apache_parameter_dict["site_url"],
+           domain_ipv6_address=self.getGlobalIPv6Address(), 
+           domain_ipv4_address=self.getLocalIPv4Address()))
     return self.path_list
 
   def installLogrotate(self):
@@ -190,14 +194,14 @@ class Recipe(BaseSlapRecipe):
       certificate_authority_path=config['ca_dir']
     )
 
-  def _getApacheConfigurationDict(self, name, ip, port):
+  def _getApacheConfigurationDict(self, name, ip_list, port):
     apache_conf = dict()
     apache_conf['server_name'] = name
     apache_conf['pid_file'] = os.path.join(self.run_directory,
         name + '.pid')
     apache_conf['lock_file'] = os.path.join(self.run_directory,
         name + '.lock')
-    apache_conf['ip'] = ip
+    apache_conf['ip_list'] = ip_list
     apache_conf['port'] = port
     apache_conf['server_admin'] = 'admin@'
     apache_conf['error_log'] = os.path.join(self.log_directory,
@@ -209,7 +213,7 @@ class Recipe(BaseSlapRecipe):
       apache_conf['pid_file'] + ' SIGUSR1')
     return apache_conf
 
-  def installFrontendApache(self, ip, port, key, certificate,
+  def installFrontendApache(self, ip_list, port, key, certificate,
                             name, access_control_string=None):
     apachemap_name = "apachemap.txt"
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
@@ -224,10 +228,12 @@ class Recipe(BaseSlapRecipe):
       slave_dict[slave_instance.get("slave_reference")] = \
           "https://%s:%s/%s" % (name, port, id)
     self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
-    apache_conf = self._getApacheConfigurationDict(name, ip, port)
+    apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
         dict(login_certificate=certificate, login_key=key))
+
+    apache_conf["listen"] = "\n".join(["Listen %s:%s" % (ip, port) for ip in ip_list])
 
     path = self.substituteTemplate(
         self.getTemplateFilename('apache.conf.path-protected.in'),
