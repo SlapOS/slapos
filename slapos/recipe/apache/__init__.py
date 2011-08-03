@@ -60,12 +60,13 @@ class Recipe(BaseSlapRecipe):
     frontend_domain_name = self.parameter_dict.get("domain",
         "host.vifib.net")
 
-
     key, certificate = self.requestCertificate(frontend_domain_name)
 
+    base_varnish_port = 26009
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
     rewrite_rule_list = []
     slave_dict = {}
+    stunnel_list = []
     base_url = "https://%s:%s/" % (frontend_domain_name, frontend_port_number)
     for slave_instance in slave_instance_list:
       url = slave_instance.get("url")
@@ -74,6 +75,32 @@ class Recipe(BaseSlapRecipe):
         continue
       rewrite_rule_list.append("%s %s" % (reference.replace("-", ""), url))
       slave_dict[reference] = "%s%s" % (base_url, reference.replace("-", ""))
+      if 0:
+      # XXX To be finished by Gabriel bellow
+
+      #if slave_instance.get("enable_cache") == 1:
+
+        # Varnish should use stunnel to connect to the backend
+        base_varnish_control_port = base_varnish_port + 1
+        base_varnish_port += 2
+        # Use regex
+        slave_host = url.split("://")[1].split(":")[0].split("/")[0]
+        slave_port = url.split("://")[1].split(":")
+        if len(slave_port) > 1:
+          slave_port = slave_port[0].split("/")[0]
+        elif url.startswith("https://"):
+          slave_port = 443
+        else:
+          slave_port = 80
+        
+        
+        self.installVarnishCache(name=id,
+                                 ip=self.getLocalIPv4Address(), 
+                                 port=base_varnish_port, 
+                                 control_port=base_varnish_control_port,
+                                 backend_host=slave_host,
+                                 backend_port=slave_port, 
+                                 size="1G")
 
     apache_parameter_dict = self.installFrontendApache(
         ip_list=["[%s]" % self.getGlobalIPv6Address(), 
