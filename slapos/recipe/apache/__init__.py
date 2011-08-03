@@ -228,6 +228,42 @@ class Recipe(BaseSlapRecipe):
       apache_conf['pid_file'] + ' SIGUSR1')
     return apache_conf
 
+
+  def installStunnel(self, service_dict, ca_certificate, key, ca_crl, ca_path):
+    """Installs stunnel
+	service_dict = \
+	    { name: (public_ip, private_ip, public_port, private_port),}
+    """
+    template_filename = self.getTemplateFilename('stunnel.conf.in')
+    template_entry_filename = self.getTemplateFilename('stunnel.conf.entry.in') 
+
+    log = os.path.join(self.log_directory, 'stunnel.log')
+    pid_file = os.path.join(self.run_directory, 'stunnel.pid')
+    stunnel_conf = dict(
+        pid_file=pid_file,
+        log=log,
+        cert = ca_certificate,
+        key = key,
+        ca_crl = ca_crl,
+        ca_path = ca_path,
+        entry_list=''
+    )
+    for service in service_dict:
+      # Get template_entry_filename and generate the entry_list
+      pass
+
+    stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
+        self.substituteTemplate(template_filename,
+          stunnel_conf))
+    wrapper = zc.buildout.easy_install.scripts([('stunnel',
+      'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
+      sys.executable, self.wrapper_directory, arguments=[
+        [self.options['stunnel_binary'].strip(), stunnel_conf_path],
+        [ca_certificate, key]]
+      )[0]
+    self.path_list.append(wrapper)
+    return stunnel_conf
+
   def installFrontendApache(self, ip_list, port, key, certificate,
                             name, rewrite_rule_list, access_control_string=None):
     apachemap_name = "apachemap.txt"

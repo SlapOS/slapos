@@ -1,0 +1,3 @@
+[%(name)s]
+accept = %(public_ip)s:%(public_port)s
+connect = %(private_ip)s:%(private_port)s
