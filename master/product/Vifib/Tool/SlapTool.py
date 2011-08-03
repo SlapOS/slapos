@@ -418,7 +418,6 @@ class SlapTool(BaseTool):
 
       elif movement.getResource() == \
               portal_preferences.getPreferredInstanceHostingResource():
-
         if movement.getSimulationState() == 'confirmed':
           slap_partition._requested_state = 'started'
           slap_partition._need_modification = 1
@@ -460,7 +459,7 @@ class SlapTool(BaseTool):
     setup_service = portal.restrictedTraverse(
        portal_preferences.getPreferredInstanceSetupResource())
 
-    slave_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
+    hosting_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
       Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
       # Search only for Confirmed and Stopped, the only one states that require
       # buildout be re-updated.
@@ -474,7 +473,7 @@ class SlapTool(BaseTool):
       Query(default_resource_uid=setup_service.getUid()),
       operator="AND")
 
-    query = ComplexQuery(slave_query, setup_query, operator="OR")
+    query = ComplexQuery(hosting_query, setup_query, operator="OR")
 
     # Use getTrackingList
     catalog_result = portal.portal_catalog(
