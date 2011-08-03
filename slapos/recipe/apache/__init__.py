@@ -303,4 +303,5 @@ class Recipe(BaseSlapRecipe):
               config=apache_config_file)
           ]))
 
-    return dict(site_url="https://%s:%s/" % (name, port))
+    return dict(site_url="https://%s:%s/" % (name, port),
+        slave_dict=slave_dict)
