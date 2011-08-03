@@ -8,6 +8,7 @@ import tempfile
 import unittest
 import xml_marshaller
 import httplib
+import logging
 
 class BasicMixin:
   def setUp(self):
@@ -22,6 +23,7 @@ class BasicMixin:
       'supervisord')
     self.usage_report_periodicity = 1
     self.buildout = None
+    logging.basicConfig(level=logging.DEBUG)
     self.grid = slapgrid.Slapgrid(self.software_root, self.instance_root,
       self.master_url, self.computer_id, self.supervisord_socket,
       self.supervisord_configuration_path, self.usage_report_periodicity,
@@ -148,4 +150,3 @@ touch worked""")
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['etc', 'var'])
     self.assertSortedListEqual(os.listdir(self.software_root), [])
-    rasie NotImplementedError
