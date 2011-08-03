@@ -8739,6 +8739,145 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepStoreCurrentComputerReferenceBufferA(self, sequence, **kw):
+    sequence['buffer_a_computer_reference'] = sequence['computer_reference']
+
+  def stepStoreCurrentComputerReferenceBufferB(self, sequence, **kw):
+    sequence['buffer_b_computer_reference'] = sequence['computer_reference']
+
+  def stepStoreCurrentComputerPartitionReferenceBufferA(self, sequence, **kw):
+    sequence['buffer_a_computer_partition_reference'] = sequence['computer_partition_reference']
+
+  def stepStoreCurrentComputerPartitionReferenceBufferB(self, sequence, **kw):
+    sequence['buffer_b_computer_partition_reference'] = sequence['computer_partition_reference']
+
+  def stepRestoreComputerReferenceFromBufferA(self, sequence, **kw):
+    sequence['computer_reference'] = sequence['buffer_a_computer_reference']
+
+  def stepRestoreComputerReferenceFromBufferB(self, sequence, **kw):
+    sequence['computer_reference'] = sequence['buffer_b_computer_reference']
+
+  def stepRestoreComputerPartitionReferenceFromBufferA(self, sequence, **kw):
+    sequence['computer_partition_reference'] = sequence['buffer_a_computer_partition_reference']
+
+  def stepRestoreComputerPartitionReferenceFromBufferB(self, sequence, **kw):
+    sequence['computer_partition_reference'] = sequence['buffer_b_computer_partition_reference']
+
+  def test_bug_destruction_of_partition_originated_from_another_computer(self):
+    """Checks that computer is capable to destroy own Software Instance
+
+    If software instance originated on computer comes from another computer it
+    shall be possible to sucesfully destroy it.
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + \
+      """
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerPartitionReferenceBufferA
+      """ + \
+      self.prepare_formated_computer + \
+      """
+      StoreCurrentComputerReferenceBufferB
+      StoreCurrentComputerPartitionReferenceBufferB
+
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      RestoreComputerReferenceFromBufferA
+      RestoreComputerPartitionReferenceFromBufferA
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartition
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      RestoreComputerReferenceFromBufferB
+      RestoreComputerPartitionReferenceFromBufferB
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceBuilding
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      SetCurrentSoftwareInstanceRequester
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      RestoreComputerReferenceFromBufferA
+      RestoreComputerPartitionReferenceFromBufferA
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+    raise NotImplementedError
+
   ########################################
   # Other tests
   ########################################
