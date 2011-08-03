@@ -86,9 +86,9 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     def server_response(self, path, method, body, header):
       import urlparse
 
-      parsed_url = urlparse.urlparse('/' + path)
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
-      if parsed_url.path == '/getComputerInformation' and \
+      if parsed_url.path == 'getComputerInformation' and \
          'computer_id' in parsed_qs:
         slap_computer = slapos.slap.Computer(parsed_qs['computer_id'])
         slap_computer._software_release_list = []
