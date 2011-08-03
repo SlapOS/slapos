@@ -5081,28 +5081,7 @@ class TestVifibSlapWebService(testVifibMixin):
         Logout
       """
 
-  def test_SlaveInstance_request_destroy_from_SoftwareInstance(self):
-    """
-      Check that the Slave Instance will be stopped correctly when
-      a Software Instance is destroyed
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_started_slave_instance_sequence_string + """
-      LoginTestVifibCustomer
-      RequestDestroySoftwareInstanceFromCurrentComputerPartition
-      Tic
-      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
-      SoftwareInstanceDestroyed
-      Tic
-      SetDeliveryLineAmountEqualOne
-      CheckComputerPartitionInstanceHostingSalePackingListStopped
-      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
-      Logout
-    """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_SlaveInstance_call_requestDestroy_from_SoftwareInstance(self):
+  def test_SlaveInstance_call_destroy_from_SoftwareInstance(self):
     """
       Check that the Slave Instance will be stopped correctly when
       a Software Instance is destroyed
@@ -5115,6 +5094,12 @@ class TestVifibSlapWebService(testVifibMixin):
       SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceHostingSalePackingListStopped
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
+      SoftwareInstanceDestroyed
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
