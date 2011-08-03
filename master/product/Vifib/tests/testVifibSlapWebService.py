@@ -5571,9 +5571,11 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser \
       ConfirmOrderedSaleOrderActiveSense \
       Tic \
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
       Logout \
       \
       SlapLoginCurrentComputer \
+      CheckSuccessComputerGetComputerPartitionCall \
       SoftwareInstanceAvailable \
       Tic \
       CheckSuccessComputerGetComputerPartitionCall \
