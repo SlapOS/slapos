@@ -106,3 +106,46 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['etc', 'var'])
     self.assertSortedListEqual(os.listdir(self.software_root), [])
+
+  def test_one_partition(self):
+
+    def server_response(self, path, method, body, header):
+      import urlparse
+
+      parsed_url = urlparse.urlparse('/' + path)
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == '/getComputerInformation' and \
+         'computer_id' in parsed_qs:
+        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'])
+        slap_computer._software_release_list = []
+        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'],
+            '0')
+        partition._need_modification = True
+        sr = slapos.slap.SoftwareRelease()
+        sr._software_release = 'http://sr/'
+        partition._software_release_document = sr
+        partition._requested_state = 'stopped'
+        slap_computer._computer_partition_list = [partition]
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
+      else:
+        return (404, {}, '')
+
+    httplib.HTTPConnection._callback = server_response
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    srdir = os.path.join(self.software_root,
+      slapos.grid.utils.getSoftwareUrlHash('http://sr/'))
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'template.cfg'), 'w').write(
+      """[buildout]""")
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['etc', 'var'])
+    self.assertSortedListEqual(os.listdir(self.software_root), [])
+    rasie NotImplementedError
