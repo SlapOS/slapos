@@ -81,6 +81,9 @@ class MasterMixin(BasicMixin):
 
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
 
+  def assertSortedListEqual(self, list1, list2, msg=None):
+    self.assertListEqual(sorted(list1), sorted(list2), msg)
+
   def test_nothing_to_do(self):
 
     def server_response(self, path, method, body, header):
@@ -101,3 +104,5 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
     self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['etc', 'var'])
+    self.assertSortedListEqual(os.listdir(self.software_root), [])
