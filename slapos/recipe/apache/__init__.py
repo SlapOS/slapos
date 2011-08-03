@@ -228,6 +228,32 @@ class Recipe(BaseSlapRecipe):
       apache_conf['pid_file'] + ' SIGUSR1')
     return apache_conf
 
+  def installVarnishCache(self, name, ip, port, control_port, backend_host,
+                                backend_port, size="1G"):
+    """
+      Install a varnish daemon for a certain address
+    """
+    directory = self.createDataDirectory(name)
+    varnish_config = dict(
+      directory=directory,
+      pid = "%s/varnish.pid" % directory,
+      port="%s:%s" % (ip, port),
+      control_port="%s:%s" % (ip, control_port),
+      storage="file,%s/storage.bin,%s" % (directory, size))
+
+    config_file = self.createConfigurationFile("%s.conf" % name,
+          self.substituteTemplate(self.getTemplateFilename(
+                'varnish.vcl.in', dict(
+                backend_host=backend_host,
+                backend_port=backend_port))))
+
+    varnish_config["configuration_file"] = config_file
+
+    self.path_list.append(self.createRunningWrapper('varnishd',
+        self.substituteTemplate(self.getTemplateFilename('varnishd.in'),
+          config)))
+
+    return varnish_config
 
   def installStunnel(self, service_dict, ca_certificate, key, ca_crl, ca_path):
     """Installs stunnel
