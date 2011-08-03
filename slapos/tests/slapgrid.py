@@ -1,6 +1,4 @@
 from slapos.grid import slapgrid
-import flask
-import multiprocessing
 import os
 import shutil
 import signal
@@ -9,8 +7,7 @@ import socket
 import tempfile
 import unittest
 import xml_marshaller
-
-app = flask.Flask(__name__)
+import httplib
 
 class BasicMixin:
   def setUp(self):
@@ -46,31 +43,31 @@ class TestBasicSlapgridCP(BasicMixin, unittest.TestCase):
     os.mkdir(self.instance_root)
     self.assertRaises(socket.error, self.grid.processComputerPartitionList)
 
-def _run_server(host, port):
-  global app
-  app.run(host=host, port=port, use_reloader=False, debug=True)
-
 class MasterMixin(BasicMixin):
-  _master_port = 45678
-  _master_host = '127.0.0.1'
 
-  def startMaster(self):
-    self.process = multiprocessing.Process(target=_run_server,
-      args=(self._master_host, self._master_port))
-    self.process.start()
-    self.master_url = 'http://%s:%s/' % (self._master_host, self._master_port)
+  def _patchHttplib(self):
+    # XXX-Antoine: save and override the httplib
+    import mock.httplib
 
-  def stopMaster(self):
-    self.process.terminate()
-    self.process.join()
+    self.saved_httplib = dict()
+
+    for fake in vars(mock.httplib):
+      self.saved_httplib[fake] = getattr(httplib, fake, None)
+      setattr(httplib, fake, getattr(mock.httplib, fake))
+
+  def _unpatchHttplib(self):
+    # XXX-Antoine: restore the httplib like it was
+    import httplib
+    for name, original_value in self.saved_httplib.items():
+      setattr(httplib, name, original_value)
+    del self.saved_httplib
 
   def setUp(self):
-    # prepare master
-    self.startMaster()
+    self._patchHttplib()
     BasicMixin.setUp(self)
 
   def tearDown(self):
-    self.stopMaster()
+    self._unpatchHttplib()
     # XXX: Hardcoded pid, as it is not configurable in slapos
     svc = os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')
     if os.path.exists(svc):
@@ -83,15 +80,24 @@ class MasterMixin(BasicMixin):
     BasicMixin.tearDown(self)
 
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
-  @app.route('/getComputerInformation', methods=['GET'])
-  def getComputerInformation():
-    computer_id = flask.request.args['computer_id']
-    slap_computer = slapos.slap.Computer(computer_id)
-    slap_computer._software_release_list = []
-    slap_computer._computer_partition_list = []
-    return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   def test_nothing_to_do(self):
+
+    def server_response(self, path, method, body, header):
+      import urlparse
+
+      parsed_url = urlparse.urlparse('/' + path)
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == '/getComputerInformation' and \
+         'computer_id' in parsed_qs:
+        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'])
+        slap_computer._software_release_list = []
+        slap_computer._computer_partition_list = []
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
+      else:
+        return (404, {}, '')
+
+    httplib.HTTPConnection._callback = server_response
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
     self.assertTrue(self.grid.processComputerPartitionList())
