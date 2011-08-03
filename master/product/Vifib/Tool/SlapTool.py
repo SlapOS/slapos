@@ -454,20 +454,31 @@ class SlapTool(BaseTool):
     portal = self.getPortalObject()
     portal_preferences = portal.portal_preferences
        
-    service = portal.restrictedTraverse(
+    hosting_service = portal.restrictedTraverse(
        portal_preferences.getPreferredInstanceHostingResource())
 
-    query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
-       Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
-       operator="AND")
+    setup_service = portal.restrictedTraverse(
+       portal_preferences.getPreferredInstanceSetupResource())
+
+    slave_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
+      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+      # Search only for Confirmed and Stopped, the only one states that require
+      # buildout be re-updated.
+      Query(simulation_state=["confirmed", "stopped"]),
+      Query(default_resource_uid=hosting_service.getUid()),
+      operator="AND")
+
+    setup_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
+      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+      Query(simulation_state=["confirmed", "started"]),
+      Query(default_resource_uid=setup_service.getUid()),
+      operator="AND")
+
+    query = ComplexQuery(slave_query, setup_query, operator="OR")
 
     # Use getTrackingList
     catalog_result = portal.portal_catalog(
       portal_type='Sale Packing List Line',
-      # Search only for Confirmed and Stopped, the only one states that require
-      # buildout be re-updated.
-      simulation_state= ["confirmed", 'stopped'],
-      default_resource_uid=service.getUid(),
       sort_on=(('movement.start_date', 'DESC'),),
       limit=1,
       query=query)
