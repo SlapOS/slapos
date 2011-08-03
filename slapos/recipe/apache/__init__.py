@@ -56,18 +56,33 @@ class Recipe(BaseSlapRecipe):
     ca_conf = self.installCertificateAuthority()
 
     # This should come from parameter.
+    frontend_port_number = 4443
     frontend_domain_name = self.parameter_dict.get("domain",
         "host.vifib.net")
 
+
     key, certificate = self.requestCertificate(frontend_domain_name)
+
+    slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
+    rewrite_rule_list = []
+    slave_dict = {}
+    base_url = "https://%s:%s/" % (frontend_domain_name, frontend_port_number)
+    for slave_instance in slave_instance_list:
+      url = slave_instance.get("url")
+      reference = slave_instance.get("slave_reference")
+      if url is None:
+        continue
+      rewrite_rule_list.append("%s %s" % (reference.replace("-", ""), url))
+      slave_dict[reference] = "%s%s" % (base_url, reference.replace("-", ""))
 
     apache_parameter_dict = self.installFrontendApache(
         ip_list=["[%s]" % self.getGlobalIPv6Address(), 
                  self.getLocalIPv4Address()],
-        port=4443, name=frontend_domain_name,
+        port=frontend_port_number, 
+        name=frontend_domain_name,
+        rewrite_rule_list=rewrite_rule_list,
         key=key, certificate=certificate)
 
-    slave_dict = apache_parameter_dict.pop("slave_dict")
     for reference, url in slave_dict.iteritems():
       self.setConnectionDict(dict(site_url=url), reference)
 
@@ -214,19 +229,9 @@ class Recipe(BaseSlapRecipe):
     return apache_conf
 
   def installFrontendApache(self, ip_list, port, key, certificate,
-                            name, access_control_string=None):
+                            name, rewrite_rule_list, access_control_string=None):
     apachemap_name = "apachemap.txt"
-    slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
-    rewrite_rule_list = []
-    slave_dict = {}
-    for slave_instance in slave_instance_list:
-      url = slave_instance.get("url")
-      if url is None:
-        continue
-      id = slave_instance.get("slave_reference").replace("-", "").lower()
-      rewrite_rule_list.append("%s %s" % (id, url))
-      slave_dict[slave_instance.get("slave_reference")] = \
-          "https://%s:%s/%s" % (name, port, id)
+
     self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
@@ -262,5 +267,4 @@ class Recipe(BaseSlapRecipe):
               config=apache_config_file)
           ]))
 
-    return dict(site_url="https://%s:%s/" % (name, port),
-        slave_dict=slave_dict)
+    return dict(site_url="https://%s:%s/" % (name, port))
