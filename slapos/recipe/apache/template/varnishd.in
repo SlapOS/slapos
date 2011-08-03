@@ -1,0 +1,2 @@
+#!/bin/sh
+exec %(varnishd_binary)s -F -n $(directory)s -P $(pid)s -f $(configuration_file) -a %(port)s -T %(control_port) -s $(storage)s
