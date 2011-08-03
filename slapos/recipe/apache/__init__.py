@@ -126,7 +126,7 @@ class Recipe(BaseSlapRecipe):
    self._createDirectory(crontabs)
    # Use execute from erp5.
    wrapper = zc.buildout.easy_install.scripts([('crond',
-     'slapos.recipe.erp5.execute', 'execute')], self.ws, sys.executable,
+     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
      self.wrapper_directory, arguments=[
        self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
        '-t', timestamps, '-f', '-l', '5', '-M', catcher]
