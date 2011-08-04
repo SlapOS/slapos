@@ -5,8 +5,8 @@
 # server.
 # 
 backend default {
-    .host = "${:backend_host}";
-    .port = "${:backend_port}";
+    .host = "%(backend_host)s";
+    .port = "%(backend_port)s";
     .probe = { 
         .url = "/";
         .timeout = 10s;
