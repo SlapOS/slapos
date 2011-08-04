@@ -266,27 +266,25 @@ class Recipe(BaseSlapRecipe):
       directory=directory,
       pid = "%s/varnish.pid" % directory,
       port="%s:%s" % (ip, port),
+      varnishd_binary=self.options["varnishd_binary"],
       control_port="%s:%s" % (ip, control_port),
       storage="file,%s/storage.bin,%s" % (directory, size))
 
     config_file = self.createConfigurationFile("%s.conf" % name,
-          self.substituteTemplate(self.getTemplateFilename(
-                'varnish.vcl.in', dict(
-                backend_host=backend_host,
-                backend_port=backend_port))))
+          self.substituteTemplate(self.getTemplateFilename('varnish.vcl.in'),
+            dict(backend_host=backend_host,backend_port=backend_port)))
 
     varnish_config["configuration_file"] = config_file
-
     self.path_list.append(self.createRunningWrapper('varnishd',
         self.substituteTemplate(self.getTemplateFilename('varnishd.in'),
-          config)))
+          varnish_config)))
 
     return varnish_config
 
   def installStunnel(self, service_dict, ca_certificate, key, ca_crl, ca_path):
     """Installs stunnel
-	service_dict = \
-	    { name: (public_ip, private_ip, public_port, private_port),}
+      service_dict = 
+        { name: (public_ip, private_ip, public_port, private_port),}
     """
     template_filename = self.getTemplateFilename('stunnel.conf.in')
     template_entry_filename = self.getTemplateFilename('stunnel.conf.entry.in') 
