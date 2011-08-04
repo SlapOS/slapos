@@ -181,11 +181,9 @@ branch = %(branch)s
               test_result_path, status_dict, config['test_node_title'])
             retry_software = True
             continue
-
           # create instances, it should take some seconds only
           slapos_controler.runComputerPartition(config,
                   process_group_pid_set=process_group_pid_set)
-
 
           partition_path = os.path.join(config['instance_root'],
                                         config['partition_reference'])
@@ -193,6 +191,10 @@ branch = %(branch)s
                                             'runCloudoooUnitTest')
           if not os.path.exists(run_test_suite_path):
             raise ValueError('No %r provided' % run_test_suite_path)
+          cloudooo_paster = os.path.join(partition_path, 'bin',
+                                            'cloudooo_paster')
+          cloudooo_conf = os.path.join(partition_path, 'etc',
+                                            'conversion_server.cfg')
 
           run_test_suite_revision = revision
           if isinstance(revision, tuple):
@@ -201,15 +203,17 @@ branch = %(branch)s
           file_object = open(run_test_suite_path, 'r')
           line = file_object.readline()
           file_object.close()
+#          cloudooo_tests = glob(
+#                    '%s/*/src/cloudooo/cloudooo/handler/*/tests/test*.py' %
+#                    config['software_root'])
+#          for test in cloudooo_tests:
           invocation_list = []
           if line[:2] == '#!':
             invocation_list = line[2:].split()
           invocation_list.extend([run_test_suite_path,
-                                  '--test_suite', config['test_suite'],
-                                  '--revision', revision,
-                                  '--test_suite_title', test_suite_title,
-                                  '--node_quantity', config['node_quantity'],
-                                  '--master_url', config['test_suite_master_url']])
+                                  '--paster_path', cloudooo_paster,
+                                  cloudooo_conf,
+                                  'testFfmpegServer'])
           run_test_suite = subprocess.Popen(invocation_list)
           process_group_pid_set.add(run_test_suite.pid)
           run_test_suite.wait()
