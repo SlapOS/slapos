@@ -41,7 +41,7 @@ env-LD_LIBRARY_PATH = %(LD_LIBRARY_PATH)s
 # It is used to select the handler that will be used in conversion.
 # Priority matters, first match take precedence on next lines.
 mimetype_registry =
-application/pdf text/* pdf
+  application/pdf text/* pdf
   application/pdf * ooo
   video/* * ffmpeg
   audio/* * ffmpeg
