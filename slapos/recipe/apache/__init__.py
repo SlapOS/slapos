@@ -32,6 +32,7 @@ import sys
 import zc.buildout
 import zc.recipe.egg
 import ConfigParser
+import re
 
 
 class Recipe(BaseSlapRecipe):
@@ -75,31 +76,31 @@ class Recipe(BaseSlapRecipe):
         continue
       rewrite_rule_list.append("%s %s" % (reference.replace("-", ""), url))
       slave_dict[reference] = "%s%s" % (base_url, reference.replace("-", ""))
-      if 0:
-      # XXX To be finished by Gabriel bellow
 
-      #if slave_instance.get("enable_cache") == 1:
-
+      enable_cache = slave_instance.get("enable_cache", "")
+      if enable_cache.upper() in ('1', 'TRUE'):
         # Varnish should use stunnel to connect to the backend
         base_varnish_control_port = base_varnish_port + 1
         base_varnish_port += 2
         # Use regex
-        slave_host = url.split("://")[1].split(":")[0].split("/")[0]
-        slave_port = url.split("://")[1].split(":")
-        if len(slave_port) > 1:
-          slave_port = slave_port[0].split("/")[0]
+        host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9])"
+        slave_host = re.search(host_regex, url).group(0)
+        port_regex = "\w+(\/|)$"
+        matcher = re.search(port_regex, url)
+        if matcher is not None:
+          slave_port = matcher.group(0)
+          slave_port = slave_port.replace("/", "")
         elif url.startswith("https://"):
           slave_port = 443
         else:
           slave_port = 80
-        
-        
-        self.installVarnishCache(name=id,
+
+        self.installVarnishCache(name="varnish",
                                  ip=self.getLocalIPv4Address(), 
-                                 port=base_varnish_port, 
+                                 port=base_varnish_port,
                                  control_port=base_varnish_control_port,
                                  backend_host=slave_host,
-                                 backend_port=slave_port, 
+                                 backend_port=slave_port,
                                  size="1G")
 
     apache_parameter_dict = self.installFrontendApache(
