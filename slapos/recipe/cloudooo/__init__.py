@@ -47,6 +47,23 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(self.killpidfromfile)
     conversion_server_conf = self.installConversionServer(
         self.getLocalIPv4Address(), 23000, 23060)
+    runCloudoooUnitTest = os.path.join(self.bin_directory, 'runCloudoooUnitTest')
+    runUnitTest = self.options['runUnitTest_binary']
+    if os.path.lexists(runCloudoooUnitTest):
+      if not os.readlink(runCloudoooUnitTest) != runUnitTest:
+        os.unlink(runCloudoooUnitTest)
+    if not os.path.lexists(runCloudoooUnitTest):
+      os.symlink(runUnitTest, runCloudoooUnitTest)
+    self.path_list.append(runCloudoooUnitTest)
+
+    cloudooo_paster = os.path.join(self.bin_directory, 'cloudooo_paster')
+    ooo_paster = self.options['ooo_paster']
+    if os.path.lexists(cloudooo_paster):
+      if not os.readlink(cloudooo_paster) != ooo_paster:
+        os.unlink(cloudooo_paster)
+    if not os.path.lexists(cloudooo_paster):
+      os.symlink(ooo_paster, cloudooo_paster)
+    self.path_list.append(cloudooo_paster)
 
     self.linkBinary()
     self.setConnectionDict(dict(
