@@ -26,6 +26,7 @@
 ##############################################################################
 from slapos.recipe.librecipe import BaseSlapRecipe
 import os
+from os.path import sep
 import pkg_resources
 import sys
 import zc.buildout
@@ -95,11 +96,17 @@ class Recipe(BaseSlapRecipe):
 
   def installConversionServer(self, ip, port, openoffice_port):
     name = 'conversion_server'
+    env_path = []
+    for binary in self.options.get('link_binary_list', '').splitlines():
+      path = sep.join(binary.split(sep)[:-1])
+      if not path in env_path:
+        env_path.append(path)
     working_directory = self.createDataDirectory(name)
     conversion_server_dict = dict(
       working_path=working_directory,
       uno_path=self.options['ooo_uno_path'],
       office_binary_path=self.options['ooo_binary_path'],
+      env_PATH = ':'.join(env_path)[1:],
       ip=ip,
       port=port,
       openoffice_port=openoffice_port,
