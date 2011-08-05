@@ -282,20 +282,26 @@ class Recipe(BaseSlapRecipe):
       storage="file,%s/storage.bin,%s" % (directory, size))
 
     config_file = self.createConfigurationFile("%s.conf" % name,
-          self.substituteTemplate(self.getTemplateFilename('varnish.vcl.in'),
-            dict(backend_host=backend_host,backend_port=backend_port)))
+      self.substituteTemplate(self.getTemplateFilename('varnish.vcl.in'),
+        dict(backend_host=backend_host, backend_port=backend_port)))
 
-    varnish_config["configuration_file"] = config_file
-    self.path_list.append(self.createRunningWrapper('varnishd',
-        self.substituteTemplate(self.getTemplateFilename('varnishd.in'),
-          varnish_config)))
+    varnish_argument_list = [varnish_config['varnishd_binary'].strip(),
+        "-F", "-n", directory, "-P", varnish_config["pid"], "-f", config_file,
+        "-a", varnish_config["port"], "-T", varnish_config["control_port"],
+        "-s", varnish_config["storage"]]
+
+    wrapper = zc.buildout.easy_install.scripts([('varnishd',
+      'slapos.recipe.librecipe.execute', 'execute')], self.ws,
+      sys.executable, self.wrapper_directory, arguments=varnish_argument_list,
+      )[0]
+    self.path_list.append(wrapper)
 
     return varnish_config
 
   def installStunnel(self, service_dict, certificate,
       key, ca_crl, ca_path):
     """Installs stunnel
-      service_dict = 
+      service_dict =
         { name: (public_ip, private_ip, public_port, private_port),}
     """
     template_filename = self.getTemplateFilename('stunnel.conf.in')
