@@ -41,13 +41,23 @@ class Recipe(BaseSlapRecipe):
 
   def _install(self):
     self.path_list = []
-    self.requirements, self.ws = self.egg.working_set([__name__])
-    self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', __name__ + 'slapos.recipe.erp5.killpidfromfile',
-          'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-    self.path_list.append(self.killpidfromfile)
+    self.requirements, self.ws = self.egg.working_set()
+
+    self.cron_d = self.installCrond()
+    ca_conf = self.installCertificateAuthority()
+
+    key, certificate = self.requestCertificate('Cloudooo')
+
     conversion_server_conf = self.installConversionServer(
         self.getLocalIPv4Address(), 23000, 23060)
+
+    stunnel_conf = self.installStunnel(
+        self.getGlobalIPv6Address(),
+        conversion_server_conf['conversion_server_ip'],
+        23000, conversion_server_conf['conversion_server_port'],
+        certificate, key, ca_conf['ca_crl'],
+        ca_conf['certificate_authority_path'])
+
     runCloudoooUnitTest = os.path.join(self.bin_directory, 'runCloudoooUnitTest')
     runUnitTest = self.options['runUnitTest_binary']
     if os.path.lexists(runCloudoooUnitTest):
@@ -68,8 +78,9 @@ class Recipe(BaseSlapRecipe):
 
     self.linkBinary()
     self.setConnectionDict(dict(
-      site_url="https://[%s]:%s/" % (self.getLocalIPv4Address(), 23000),
-    ))
+          site_url="https://[%s]:%s/" % (stunnel_conf['public_ip'],
+                                        stunnel_conf['public_port']),
+        ))
     return self.path_list
 
   def linkBinary(self):
@@ -94,22 +105,139 @@ class Recipe(BaseSlapRecipe):
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
 
+  def installStunnel(self, public_ip, private_ip, public_port, private_port,
+                              ca_certificate, key, ca_crl, ca_path):
+    """Installs stunnel"""
+    template_filename = self.getTemplateFilename('stunnel.conf.in')
+    log = os.path.join(self.log_directory, 'stunnel.log')
+    pid_file = os.path.join(self.run_directory, 'stunnel.pid')
+    stunnel_conf = dict(
+        public_ip=public_ip,
+        private_ip=private_ip,
+        public_port=public_port,
+        pid_file=pid_file,
+        log=log,
+        cert=ca_certificate,
+        key=key,
+        ca_crl=ca_crl,
+        ca_path=ca_path,
+        private_port=private_port,
+    )
+    stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
+        self.substituteTemplate(template_filename,
+        stunnel_conf))
+    wrapper = zc.buildout.easy_install.scripts([('stunnel',
+      'slapos.recipe.erp5.execute', 'execute')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=[
+      self.options['stunnel_binary'].strip(), stunnel_conf_path]
+      )[0]
+    self.path_list.append(wrapper)
+    return stunnel_conf
+
+  def installCrond(self):
+    timestamps = self.createDataDirectory('cronstamps')
+    cron_output = os.path.join(self.log_directory, 'cron-output')
+    self._createDirectory(cron_output)
+    catcher = zc.buildout.easy_install.scripts([('catchcron',
+      __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
+      self.bin_directory, arguments=[cron_output])[0]
+    self.path_list.append(catcher)
+    cron_d = os.path.join(self.etc_directory, 'cron.d')
+    crontabs = os.path.join(self.etc_directory, 'crontabs')
+    self._createDirectory(cron_d)
+    self._createDirectory(crontabs)
+    wrapper = zc.buildout.easy_install.scripts([('crond',
+      __name__ + '.execute', 'execute')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=[
+      self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
+      '-t', timestamps, '-f', '-l', '5', '-M', catcher]
+      )[0]
+    self.path_list.append(wrapper)
+    return cron_d
+
+  def installCertificateAuthority(self, ca_country_code='XX',
+      ca_email='xx@example.com', ca_state='State', ca_city='City',
+      ca_company='Company'):
+    backup_path = self.createBackupDirectory('ca')
+    self.ca_dir = os.path.join(self.data_root_directory, 'ca')
+    self._createDirectory(self.ca_dir)
+    self.ca_request_dir = os.path.join(self.ca_dir, 'requests')
+    self._createDirectory(self.ca_request_dir)
+    config = dict(ca_dir=self.ca_dir, request_dir=self.ca_request_dir)
+    self.ca_private = os.path.join(self.ca_dir, 'private')
+    self.ca_certs = os.path.join(self.ca_dir, 'certs')
+    self.ca_crl = os.path.join(self.ca_dir, 'crl')
+    self.ca_newcerts = os.path.join(self.ca_dir, 'newcerts')
+    self.ca_key_ext = '.key'
+    self.ca_crt_ext = '.crt'
+    for d in [self.ca_private, self.ca_crl, self.ca_newcerts, self.ca_certs]:
+      self._createDirectory(d)
+    for f in ['crlnumber', 'serial']:
+      if not os.path.exists(os.path.join(self.ca_dir, f)):
+        open(os.path.join(self.ca_dir, f), 'w').write('01')
+    if not os.path.exists(os.path.join(self.ca_dir, 'index.txt')):
+      open(os.path.join(self.ca_dir, 'index.txt'), 'w').write('')
+    openssl_configuration = os.path.join(self.ca_dir, 'openssl.cnf')
+    config.update(
+        working_directory=self.ca_dir,
+        country_code=ca_country_code,
+        state=ca_state,
+        city=ca_city,
+        company=ca_company,
+        email_address=ca_email,
+    )
+    self._writeFile(openssl_configuration,
+        self.getTemplateFilename('openssl.cnf.ca.in'))
+    self.path_list.extend(zc.buildout.easy_install.scripts([
+      ('certificate_authority',
+        'slapos.recipe.erp5.certificate_authority',
+        'runCertificateAuthority')],
+        self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
+          openssl_configuration=openssl_configuration,
+          openssl_binary=self.options['openssl_binary'],
+          certificate=os.path.join(self.ca_dir, 'cacert.pem'),
+          key=os.path.join(self.ca_private, 'cakey.pem'),
+          crl=os.path.join(self.ca_crl),
+          request_dir=self.ca_request_dir
+           )]))
+    # configure backup
+    backup_cron = os.path.join(self.cron_d, 'ca_rdiff_backup')
+    open(backup_cron, 'w').write(
+        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
+          rdiff_backup=self.options['rdiff_backup_binary'],
+          source=self.ca_dir,
+          destination=backup_path))
+    self.path_list.append(backup_cron)
+
+    return dict(
+      ca_certificate=os.path.join(config['ca_dir'], 'cacert.pem'),
+      ca_crl=os.path.join(config['ca_dir'], 'crl'),
+      certificate_authority_path=config['ca_dir']
+    )
+
+  def requestCertificate(self, name):
+    hash = hashlib.sha512(name).hexdigest()
+    key = os.path.join(self.ca_private, hash + self.ca_key_ext)
+    certificate = os.path.join(self.ca_certs, hash + self.ca_crt_ext)
+    parser = ConfigParser.RawConfigParser()
+    parser.add_section('certificate')
+    parser.set('certificate', 'name', name)
+    parser.set('certificate', 'key_file', key)
+    parser.set('certificate', 'certificate_file', certificate)
+    parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
+    return key, certificate
+
   def installConversionServer(self, ip, port, openoffice_port):
     name = 'conversion_server'
-    env_path = []
-    for binary in self.options.get('link_binary_list', '').splitlines():
-      path = sep.join(binary.split(sep)[:-1])
-      if not path in env_path:
-        env_path.append(path)
     working_directory = self.createDataDirectory(name)
     conversion_server_dict = dict(
       working_path=working_directory,
       uno_path=self.options['ooo_uno_path'],
       office_binary_path=self.options['ooo_binary_path'],
-      env_PATH = ':'.join(env_path)[1:],
       ip=ip,
       port=port,
-      openoffice_port=openoffice_port,
+      openoffice_port=ip,
+      PATH="$PATH:%s" % self.bin_directory
     )
     for env_line in self.options['environment'].splitlines():
       env_line = env_line.strip()
@@ -131,6 +259,7 @@ class Recipe(BaseSlapRecipe):
       sys.executable, self.wrapper_directory,
       arguments=[self.options['ooo_paster'].strip(), 'serve', config_file]))
     return {
+      name + '_conf': config_file,
       name + '_port': conversion_server_dict['port'],
       name + '_ip': conversion_server_dict['ip']
       }

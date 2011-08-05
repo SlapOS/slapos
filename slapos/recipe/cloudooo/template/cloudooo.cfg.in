@@ -32,7 +32,7 @@ limit_memory_used = 3000
 application_hostname = %(ip)s
 # OpenOffice Port
 openoffice_port = %(openoffice_port)s
-env-PATH = %(env_PATH)s
+env-PATH = ${PATH}
 # LD_LIBRARY_PATH passed to OpenOffice
 env-LD_LIBRARY_PATH = %(LD_LIBRARY_PATH)s
 
