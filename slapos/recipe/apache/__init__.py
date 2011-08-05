@@ -96,18 +96,24 @@ class Recipe(BaseSlapRecipe):
           slave_port = 80
         service_name = "varnish_%s" % reference
         varnish_ip = self.getLocalIPv4Address()
+        stunnel_port = base_varnish_port + 1
         self.installVarnishCache(service_name,
           ip=varnish_ip,
           port=base_varnish_port,
           control_port=base_varnish_control_port,
-          backend_host=slave_host,
-          backend_port=slave_port,
+          backend_host=varnish_ip,
+          backend_port=stunnel_port,
           size="1G")
 
         service_dict[service_name] = dict(public_ip=varnish_ip,
-            public_port=base_varnish_port,
+            public_port=stunnel_port,
             private_ip=slave_host,
             private_port=slave_port)
+        rewrite_rule_list.append("%s http://%s:%s" % \
+            (reference.replace("-", ""), varnish_ip, base_varnish_port))
+      else:
+        rewrite_rule_list.append("%s %s" % (reference.replace("-", ""), url))
+
     if service_dict != {}:
       self.installStunnel(service_dict,
         certificate, key,
