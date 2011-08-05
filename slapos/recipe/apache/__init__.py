@@ -94,14 +94,25 @@ class Recipe(BaseSlapRecipe):
           slave_port = 443
         else:
           slave_port = 80
+        service_name = "varnish_%s" % reference
+        varnish_ip = self.getLocalIPv4Address()
+        self.installVarnishCache(service_name,
+          ip=varnish_ip,
+          port=base_varnish_port,
+          control_port=base_varnish_control_port,
+          backend_host=slave_host,
+          backend_port=slave_port,
+          size="1G")
 
-        self.installVarnishCache(name="varnish",
-                                 ip=self.getLocalIPv4Address(), 
-                                 port=base_varnish_port,
-                                 control_port=base_varnish_control_port,
-                                 backend_host=slave_host,
-                                 backend_port=slave_port,
-                                 size="1G")
+        service_dict[service_name] = dict(public_ip=varnish_ip,
+            public_port=base_varnish_port,
+            private_ip=slave_host,
+            private_port=slave_port)
+    if service_dict != {}:
+      self.installStunnel(service_dict,
+        certificate, key,
+        ca_conf["ca_crl"],
+        ca_conf["certificate_authority_path"])
 
     apache_parameter_dict = self.installFrontendApache(
         ip_list=["[%s]" % self.getGlobalIPv6Address(), 
