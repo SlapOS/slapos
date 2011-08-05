@@ -7,4 +7,4 @@ key = %(key)s
 CRLpath = %(ca_crl)s
 cert = %(cert)s
 
-%(entry_list)s
+%(entry_str)s
