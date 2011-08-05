@@ -67,7 +67,7 @@ class Recipe(BaseSlapRecipe):
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
     rewrite_rule_list = []
     slave_dict = {}
-    stunnel_list = []
+    service_dict = {}
     base_url = "https://%s:%s/" % (frontend_domain_name, frontend_port_number)
     for slave_instance in slave_instance_list:
       url = slave_instance.get("url")
@@ -292,7 +292,8 @@ class Recipe(BaseSlapRecipe):
 
     return varnish_config
 
-  def installStunnel(self, service_dict, ca_certificate, key, ca_crl, ca_path):
+  def installStunnel(self, service_dict, certificate,
+      key, ca_crl, ca_path):
     """Installs stunnel
       service_dict = 
         { name: (public_ip, private_ip, public_port, private_port),}
@@ -305,16 +306,20 @@ class Recipe(BaseSlapRecipe):
     stunnel_conf = dict(
         pid_file=pid_file,
         log=log,
-        cert = ca_certificate,
+        cert = certificate,
         key = key,
         ca_crl = ca_crl,
         ca_path = ca_path,
-        entry_list=''
+        entry_str=''
     )
-    for service in service_dict:
-      # Get template_entry_filename and generate the entry_list
-      pass
+    entry_list = []
+    for name, parameter_dict in service_dict.iteritems():
+      parameter_dict["name"] = name
+      entry_str = self.substituteTemplate(template_entry_filename,
+          parameter_dict)
+      entry_list.append(entry_str)
 
+    stunnel_conf["entry_str"] = "\n".join(entry_list)
     stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
         self.substituteTemplate(template_filename,
           stunnel_conf))
@@ -322,7 +327,7 @@ class Recipe(BaseSlapRecipe):
       'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
       sys.executable, self.wrapper_directory, arguments=[
         [self.options['stunnel_binary'].strip(), stunnel_conf_path],
-        [ca_certificate, key]]
+        [certificate, key]]
       )[0]
     self.path_list.append(wrapper)
     return stunnel_conf
