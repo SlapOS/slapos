@@ -22,6 +22,7 @@ call_and_read_list = []
 def fakeCallAndRead(argument_list, raise_on_error=True):
   global call_and_read_list
   call_and_read_list.append(argument_list)
+  return 0, 'UP'
 
 class LoggableWrapper:
   def __init__(self, logger, name):
@@ -43,13 +44,13 @@ class GrpMock:
 class PwdMock:
   @classmethod
   def getpwnam(self, name):
-    if name == 'testuser':
+    if name in ['testuser', 'slapsoft']:
       class result:
         pw_uid = 0
         pw_gid = 0
       return result
     raise KeyError
-  
+
 class SlapformatMixin(unittest.TestCase):
 
   @classmethod
@@ -126,6 +127,19 @@ class TestComputer(SlapformatMixin):
   def test_construct_empty(self):
     computer = slapos.format.Computer('computer')
     computer.construct()
+
+  def test_construct_empty_prepared(self):
+    computer = slapos.format.Computer('computer',
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16', 'eth0'))
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    computer.construct()
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chown('/software_root', 0, 0)",
+      "chmod('/software_root', 493)"],
+      self.test_result.bucket)
 
 class TestPartition(SlapformatMixin):
 
