@@ -7,6 +7,9 @@ import grp
 import os
 import pwd
 
+USER_LIST = []
+CALL_AND_READ_LIST = []
+
 class FakeConfig:
   pass
 
@@ -18,10 +21,12 @@ class TestLoggerHandler(logging.Handler):
   def emit(self, record):
     self.bucket.append(record.msg)
 
-call_and_read_list = []
 def fakeCallAndRead(argument_list, raise_on_error=True):
-  global call_and_read_list
-  call_and_read_list.append(argument_list)
+  if 'useradd' in argument_list:
+    global USER_LIST
+    USER_LIST.append(argument_list[-1])
+  global CALL_AND_READ_LIST
+  CALL_AND_READ_LIST.append(argument_list)
   return 0, 'UP'
 
 class LoggableWrapper:
@@ -44,7 +49,8 @@ class GrpMock:
 class PwdMock:
   @classmethod
   def getpwnam(self, name):
-    if name in ['testuser', 'slapsoft']:
+    global USER_LIST
+    if name in USER_LIST:
       class result:
         pw_uid = 0
         pw_gid = 0
@@ -102,8 +108,11 @@ class SlapformatMixin(unittest.TestCase):
     config.logger = logger
     self.partition = slapos.format.Partition('partition', '/part_path',
       slapos.format.User('testuser'), [], None)
-    global call_and_read_list
-    call_and_read_list = []
+    global CALL_AND_READ_LIST
+    global USER_LIST
+    CALL_AND_READ_LIST = []
+    USER_LIST = ['testuser']
+
     self.real_callAndRead = slapos.format.callAndRead
     slapos.format.callAndRead = fakeCallAndRead
     self.patchOs(logger)
@@ -114,10 +123,11 @@ class SlapformatMixin(unittest.TestCase):
     self.restoreOs()
     self.restoreGrp()
     self.restorePwd()
-    global call_and_read_list
-    call_and_read_list = []
+    global CALL_AND_READ_LIST
+    global USER_LIST
+    CALL_AND_READ_LIST = []
+    USER_LIST = ['testuser']
     slapos.format.callAndRead = self.real_callAndRead
-
 
 class TestComputer(SlapformatMixin):
   def test_getAddress_empty_computer(self):
@@ -127,6 +137,7 @@ class TestComputer(SlapformatMixin):
   def test_construct_empty(self):
     computer = slapos.format.Computer('computer')
     computer.construct()
+    raise NotImplementedError
 
   def test_construct_empty_prepared(self):
     computer = slapos.format.Computer('computer',
@@ -140,6 +151,66 @@ class TestComputer(SlapformatMixin):
       "chown('/software_root', 0, 0)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
+    global CALL_AND_READ_LIST
+    self.assertEqual([
+      ['ip', 'addr', 'list', 'bridge'],
+      ['groupadd', 'slapsoft'],
+      ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
+        '/bin/false', 'slapsoft']],
+      CALL_AND_READ_LIST)
+
+  def test_construct_empty_prepared_no_alter_user(self):
+    computer = slapos.format.Computer('computer',
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16', 'eth0'))
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    computer.construct(alter_user=False)
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chmod('/software_root', 493)"],
+      self.test_result.bucket)
+    global CALL_AND_READ_LIST
+    self.assertEqual([
+      ['ip', 'addr', 'list', 'bridge'],],
+      CALL_AND_READ_LIST)
+
+  def test_construct_empty_prepared_no_alter_network(self):
+    computer = slapos.format.Computer('computer',
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16', 'eth0'))
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    computer.construct(alter_network=False)
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chown('/software_root', 0, 0)",
+      "chmod('/software_root', 493)"],
+      self.test_result.bucket)
+    global CALL_AND_READ_LIST
+    self.assertEqual([
+      ['ip', 'addr', 'list', 'bridge'],
+      ['groupadd', 'slapsoft'],
+      ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
+        '/bin/false', 'slapsoft']],
+      CALL_AND_READ_LIST)
+
+  def test_construct_empty_prepared_no_alter_network_user(self):
+    computer = slapos.format.Computer('computer',
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16', 'eth0'))
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    computer.construct(alter_network=False, alter_user=False)
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chmod('/software_root', 493)"],
+      self.test_result.bucket)
+    global CALL_AND_READ_LIST
+    self.assertEqual([
+      ['ip', 'addr', 'list', 'bridge'],
+      ],
+      CALL_AND_READ_LIST)
 
 class TestPartition(SlapformatMixin):
 
@@ -166,7 +237,7 @@ class TestPartition(SlapformatMixin):
 
 class TestUser(SlapformatMixin):
   def test_create(self):
-    global call_and_read_list
+    global CALL_AND_READ_LIST
     user = slapos.format.User('doesnotexistsyet')
     user.setPath('/doesnotexistsyet')
     user.create()
@@ -177,10 +248,10 @@ class TestUser(SlapformatMixin):
         ['useradd', '-d', '/doesnotexistsyet', '-g', 'doesnotexistsyet', '-s',
           '/bin/false', 'doesnotexistsyet']
       ],
-      call_and_read_list)
+      CALL_AND_READ_LIST)
 
   def test_create_additional_groups(self):
-    global call_and_read_list
+    global CALL_AND_READ_LIST
     user = slapos.format.User('doesnotexistsyet', ['additionalgroup1',
       'additionalgroup2'])
     user.setPath('/doesnotexistsyet')
@@ -193,11 +264,11 @@ class TestUser(SlapformatMixin):
           '/bin/false', '-G', 'additionalgroup1,additionalgroup2',
           'doesnotexistsyet']
       ],
-      call_and_read_list)
+      CALL_AND_READ_LIST)
 
   def test_create_group_exists(self):
     pwd.getpwnam = self.raisingKeyError
-    global call_and_read_list
+    global CALL_AND_READ_LIST
 
     user = slapos.format.User('testuser')
     user.setPath('/testuser')
@@ -208,11 +279,11 @@ class TestUser(SlapformatMixin):
         ['useradd', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
           'testuser']
       ],
-      call_and_read_list)
+      CALL_AND_READ_LIST)
 
   def test_create_user_exists_additional_groups(self):
     grp.getgrnam = self.raisingKeyError
-    global call_and_read_list
+    global CALL_AND_READ_LIST
     user = slapos.format.User('testuser', ['additionalgroup1',
       'additionalgroup2'])
     user.setPath('/testuser')
@@ -224,11 +295,11 @@ class TestUser(SlapformatMixin):
         ['usermod', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
           '-G', 'additionalgroup1,additionalgroup2', 'testuser']
       ],
-      call_and_read_list)
+      CALL_AND_READ_LIST)
 
   def test_create_user_exists(self):
     grp.getgrnam = self.raisingKeyError
-    global call_and_read_list
+    global CALL_AND_READ_LIST
     user = slapos.format.User('testuser')
     user.setPath('/testuser')
     user.create()
@@ -239,10 +310,10 @@ class TestUser(SlapformatMixin):
         ['usermod', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
           'testuser']
       ],
-      call_and_read_list)
+      CALL_AND_READ_LIST)
 
   def test_create_user_group_exists(self):
-    global call_and_read_list
+    global CALL_AND_READ_LIST
     user = slapos.format.User('testuser')
     user.setPath('/testuser')
     user.create()
@@ -252,7 +323,7 @@ class TestUser(SlapformatMixin):
         ['usermod', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
           'testuser']
       ],
-      call_and_read_list)
+      CALL_AND_READ_LIST)
 
   def test_isAvailable(self):
     user = slapos.format.User('testuser')
