@@ -1,4 +1,6 @@
 from slapos.grid import slapgrid
+import httplib
+import logging
 import os
 import shutil
 import signal
@@ -8,8 +10,6 @@ import tempfile
 import unittest
 import urlparse
 import xml_marshaller
-import httplib
-import logging
 
 class BasicMixin:
   def assertSortedListEqual(self, list1, list2, msg=None):
