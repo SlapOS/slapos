@@ -2,16 +2,6 @@ import logging
 import slapos.format
 import unittest
 
-class TestComputer(unittest.TestCase):
-
-  def test_getAddress_empty_computer(self):
-    computer = slapos.format.Computer('computer')
-    self.assertEqual(computer.getAddress(), {'netmask': None, 'addr': None})
-
-  def test_construct_empty(self):
-    computer = slapos.format.Computer('computer')
-    computer.construct()
-
 class FakeConfig:
   pass
 
@@ -23,7 +13,20 @@ class TestLoggerHandler(logging.Handler):
   def emit(self, record):
     self.bucket.append(record.msg)
 
-class TestPartition(unittest.TestCase):
+call_and_read_list = []
+def fakeCallAndRead(argument_list, raise_on_error=True):
+  global call_and_read_list
+  call_and_read_list.append(argument_list)
+
+def raising_KeyError(name):
+  raise KeyError
+
+def returning_True(name):
+  return True
+class FakeClass:
+  pass
+
+class SlapformatMixin(unittest.TestCase):
   def setUp(self):
     config = FakeConfig()
     config.dry_run = True
@@ -36,6 +39,27 @@ class TestPartition(unittest.TestCase):
     self.partition = slapos.format.Partition('partition', '/part_path',
       slapos.format.User('root'), [], None)
     self.partition._os = slapos.format.OS(config)
+    global call_and_read_list
+    call_and_read_list = []
+    self.real_callAndRead = slapos.format.callAndRead
+    slapos.format.callAndRead = fakeCallAndRead
+
+  def tearDown(self):
+    global call_and_read_list
+    call_and_read_list = []
+    slapos.format.callAndRead = self.real_callAndRead
+
+
+class TestComputer(SlapformatMixin):
+  def test_getAddress_empty_computer(self):
+    computer = slapos.format.Computer('computer')
+    self.assertEqual(computer.getAddress(), {'netmask': None, 'addr': None})
+
+  def test_construct_empty(self):
+    computer = slapos.format.Computer('computer')
+    computer.construct()
+
+class TestPartition(SlapformatMixin):
 
   def test_createPath(self):
     self.partition.createPath()
@@ -58,31 +82,7 @@ class TestPartition(unittest.TestCase):
       self.test_result.bucket
     )
 
-call_and_read_list = []
-def fakeCallAndRead(argument_list, raise_on_error=True):
-  global call_and_read_list
-  call_and_read_list.append(argument_list)
-
-def raising_KeyError(name):
-  raise KeyError
-
-def returning_True(name):
-  return True
-class FakeClass:
-  pass
-
-class TestUser(unittest.TestCase):
-  def setUp(self):
-    global call_and_read_list
-    call_and_read_list = []
-    self.real_callAndRead = slapos.format.callAndRead
-    slapos.format.callAndRead = fakeCallAndRead
-
-  def tearDown(self):
-    global call_and_read_list
-    call_and_read_list = []
-    slapos.format.callAndRead = self.real_callAndRead
-
+class TestUser(SlapformatMixin):
   def test_create(self):
     global call_and_read_list
     user = slapos.format.User('testuser')
