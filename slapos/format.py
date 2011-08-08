@@ -400,7 +400,6 @@ class Partition:
     self.user = user
     self.address_list = address_list or []
     self.tap = tap
-    self._os = os
 
   def __getinitargs__(self):
     return (self.reference, self.path, self.user, self.address_list, self.tap)
@@ -411,14 +410,14 @@ class Partition:
     it the 750 permission. In case if path exists just modifies it.
     """
 
-    self.path = self._os.path.abspath(self.path)
+    self.path = os.path.abspath(self.path)
     owner = self.user if self.user else User('root')
-    if not self._os.path.exists(self.path):
-      self._os.mkdir(self.path, 0750)
+    if not os.path.exists(self.path):
+      os.mkdir(self.path, 0750)
     if alter_user:
       owner_pw = getpwnam(owner.name)
-      self._os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
-    self._os.chmod(self.path, 0750)
+      os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
+    os.chmod(self.path, 0750)
 
 class User:
   "User: represent and manipulate a user on the system."
@@ -430,8 +429,6 @@ class User:
     """
     self.name = str(user_name)
     self.additional_group_list = additional_group_list
-    self._getpwnam = getpwnam
-    self._grp = grp
 
   def __getinitargs__(self):
     return (self.name,)
@@ -451,7 +448,7 @@ class User:
     #      This method shall check if all is correctly done
     #      This method shall not reset groups, just add them
     try:
-      self._grp.getgrnam(self.name)
+      grp.getgrnam(self.name)
     except KeyError:
       callAndRead(['groupadd', self.name])
 
@@ -460,7 +457,7 @@ class User:
       user_parameter_list.extend(['-G', ','.join(self.additional_group_list)])
     user_parameter_list.append(self.name)
     try:
-      self._getpwnam(self.name)
+      getpwnam(self.name)
     except KeyError:
       callAndRead(['useradd'] + user_parameter_list)
     else:
@@ -478,7 +475,7 @@ class User:
     """
 
     try:
-      self._getpwnam(self.name)
+      getpwnam(self.name)
       return True
 
     except KeyError:
