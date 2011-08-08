@@ -74,7 +74,6 @@ class Recipe(BaseSlapRecipe):
       reference = slave_instance.get("slave_reference")
       if url is None:
         continue
-      rewrite_rule_list.append("%s %s" % (reference.replace("-", ""), url))
       slave_dict[reference] = "%s%s" % (base_url, reference.replace("-", ""))
 
       enable_cache = slave_instance.get("enable_cache", "")
