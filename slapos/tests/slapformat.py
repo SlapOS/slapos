@@ -93,7 +93,7 @@ class SlapformatMixin(unittest.TestCase):
 
   def setUp(self):
     config = FakeConfig()
-    config.dry_run = False
+    config.dry_run = True
     config.verbose = True
     logger = logging.getLogger('testcatch')
     logger.setLevel(logging.DEBUG)
