@@ -6,6 +6,7 @@ import slapos.slap.slap
 import socket
 import tempfile
 import unittest
+import urlparse
 import xml_marshaller
 import httplib
 import logging
@@ -89,8 +90,6 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
   def test_nothing_to_do(self):
 
     def server_response(self, path, method, body, header):
-      import urlparse
-
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
       if parsed_url.path == 'getComputerInformation' and \
@@ -112,8 +111,6 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
   def test_one_partition(self):
 
     def server_response(self, path, method, body, header):
-      import urlparse
-
       parsed_url = urlparse.urlparse('/' + path)
       parsed_qs = urlparse.parse_qs(parsed_url.query)
       if parsed_url.path == '/getComputerInformation' and \
