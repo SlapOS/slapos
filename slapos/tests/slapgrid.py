@@ -137,8 +137,8 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     os.mkdir(self.instance_root)
     partition_path = os.path.join(self.instance_root, '0')
     os.mkdir(partition_path, 0750)
-    srdir = os.path.join(self.software_root,
-      slapos.grid.utils.getSoftwareUrlHash('http://sr/'))
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
     os.mkdir(srdir)
     open(os.path.join(srdir, 'template.cfg'), 'w').write(
       """[buildout]""")
@@ -148,5 +148,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
 touch worked""")
     os.chmod(os.path.join(srbindir, 'buildout'), 0755)
     self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['etc', 'var'])
-    self.assertSortedListEqual(os.listdir(self.software_root), [])
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
+      'var'])
+    self.assertSortedListEqual(os.listdir(self.software_root),
+      [software_hash])
