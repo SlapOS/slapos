@@ -8,6 +8,10 @@ class TestComputer(unittest.TestCase):
     computer = slapos.format.Computer('computer')
     self.assertEqual(computer.getAddress(), {'netmask': None, 'addr': None})
 
+  def test_construct_empty(self):
+    computer = slapos.format.Computer('computer')
+    computer.construct()
+
 class FakeConfig:
   pass
 
