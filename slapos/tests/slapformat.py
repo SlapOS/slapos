@@ -8,7 +8,6 @@ import os
 import pwd
 
 USER_LIST = []
-EXTERNAL_COMMAND_LIST = []
 
 class FakeConfig:
   pass
@@ -21,13 +20,16 @@ class TestLoggerHandler(logging.Handler):
   def emit(self, record):
     self.bucket.append(record.msg)
 
-def fakeCallAndRead(argument_list, raise_on_error=True):
-  if 'useradd' in argument_list:
-    global USER_LIST
-    USER_LIST.append(argument_list[-1])
-  global EXTERNAL_COMMAND_LIST
-  EXTERNAL_COMMAND_LIST.append(argument_list)
-  return 0, 'UP'
+class FakeCallAndRead:
+  def __init__(self):
+    self.external_command_list = []
+
+  def __call__(self, argument_list, raise_on_error=True):
+    if 'useradd' in argument_list:
+      global USER_LIST
+      USER_LIST.append(argument_list[-1])
+    self.external_command_list.append(argument_list)
+    return 0, 'UP'
 
 class LoggableWrapper:
   def __init__(self, logger, name):
@@ -108,13 +110,12 @@ class SlapformatMixin(unittest.TestCase):
     config.logger = logger
     self.partition = slapos.format.Partition('partition', '/part_path',
       slapos.format.User('testuser'), [], None)
-    global EXTERNAL_COMMAND_LIST
     global USER_LIST
-    EXTERNAL_COMMAND_LIST = []
     USER_LIST = ['testuser']
 
     self.real_callAndRead = slapos.format.callAndRead
-    slapos.format.callAndRead = fakeCallAndRead
+    self.fakeCallAndRead = FakeCallAndRead()
+    slapos.format.callAndRead = self.fakeCallAndRead
     self.patchOs(logger)
     self.patchGrp()
     self.patchPwd()
@@ -123,9 +124,7 @@ class SlapformatMixin(unittest.TestCase):
     self.restoreOs()
     self.restoreGrp()
     self.restorePwd()
-    global EXTERNAL_COMMAND_LIST
     global USER_LIST
-    EXTERNAL_COMMAND_LIST = []
     USER_LIST = ['testuser']
     slapos.format.callAndRead = self.real_callAndRead
 
@@ -151,13 +150,12 @@ class TestComputer(SlapformatMixin):
       "chown('/software_root', 0, 0)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
-    global EXTERNAL_COMMAND_LIST
     self.assertEqual([
       ['ip', 'addr', 'list', 'bridge'],
       ['groupadd', 'slapsoft'],
       ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
         '/bin/false', 'slapsoft']],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
   def test_construct_empty_prepared_no_alter_user(self):
     computer = slapos.format.Computer('computer',
@@ -170,10 +168,9 @@ class TestComputer(SlapformatMixin):
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
-    global EXTERNAL_COMMAND_LIST
     self.assertEqual([
       ['ip', 'addr', 'list', 'bridge'],],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
   def test_construct_empty_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
@@ -187,13 +184,12 @@ class TestComputer(SlapformatMixin):
       "chown('/software_root', 0, 0)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
-    global EXTERNAL_COMMAND_LIST
     self.assertEqual([
       ['ip', 'addr', 'list', 'bridge'],
       ['groupadd', 'slapsoft'],
       ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
         '/bin/false', 'slapsoft']],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
   def test_construct_empty_prepared_no_alter_network_user(self):
     computer = slapos.format.Computer('computer',
@@ -206,11 +202,10 @@ class TestComputer(SlapformatMixin):
       "makedirs('/software_root', 493)",
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
-    global EXTERNAL_COMMAND_LIST
     self.assertEqual([
       ['ip', 'addr', 'list', 'bridge'],
       ],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
 class TestPartition(SlapformatMixin):
 
@@ -237,7 +232,6 @@ class TestPartition(SlapformatMixin):
 
 class TestUser(SlapformatMixin):
   def test_create(self):
-    global EXTERNAL_COMMAND_LIST
     user = slapos.format.User('doesnotexistsyet')
     user.setPath('/doesnotexistsyet')
     user.create()
@@ -248,10 +242,9 @@ class TestUser(SlapformatMixin):
         ['useradd', '-d', '/doesnotexistsyet', '-g', 'doesnotexistsyet', '-s',
           '/bin/false', 'doesnotexistsyet']
       ],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
   def test_create_additional_groups(self):
-    global EXTERNAL_COMMAND_LIST
     user = slapos.format.User('doesnotexistsyet', ['additionalgroup1',
       'additionalgroup2'])
     user.setPath('/doesnotexistsyet')
@@ -264,11 +257,10 @@ class TestUser(SlapformatMixin):
           '/bin/false', '-G', 'additionalgroup1,additionalgroup2',
           'doesnotexistsyet']
       ],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
   def test_create_group_exists(self):
     pwd.getpwnam = self.raisingKeyError
-    global EXTERNAL_COMMAND_LIST
 
     user = slapos.format.User('testuser')
     user.setPath('/testuser')
@@ -279,11 +271,10 @@ class TestUser(SlapformatMixin):
         ['useradd', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
           'testuser']
       ],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
   def test_create_user_exists_additional_groups(self):
     grp.getgrnam = self.raisingKeyError
-    global EXTERNAL_COMMAND_LIST
     user = slapos.format.User('testuser', ['additionalgroup1',
       'additionalgroup2'])
     user.setPath('/testuser')
@@ -295,11 +286,10 @@ class TestUser(SlapformatMixin):
         ['usermod', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
           '-G', 'additionalgroup1,additionalgroup2', 'testuser']
       ],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
   def test_create_user_exists(self):
     grp.getgrnam = self.raisingKeyError
-    global EXTERNAL_COMMAND_LIST
     user = slapos.format.User('testuser')
     user.setPath('/testuser')
     user.create()
@@ -310,10 +300,9 @@ class TestUser(SlapformatMixin):
         ['usermod', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
           'testuser']
       ],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
   def test_create_user_group_exists(self):
-    global EXTERNAL_COMMAND_LIST
     user = slapos.format.User('testuser')
     user.setPath('/testuser')
     user.create()
@@ -323,7 +312,7 @@ class TestUser(SlapformatMixin):
         ['usermod', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
           'testuser']
       ],
-      EXTERNAL_COMMAND_LIST)
+      self.fakeCallAndRead.external_command_list)
 
   def test_isAvailable(self):
     user = slapos.format.User('testuser')
