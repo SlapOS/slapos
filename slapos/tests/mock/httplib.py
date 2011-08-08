@@ -110,6 +110,3 @@ class HTTPResponse(object):
 
   def getheaders(self):
     pass
-
-class HTTPMessage(object):
-  pass
