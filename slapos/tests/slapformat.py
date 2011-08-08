@@ -8,6 +8,7 @@ import os
 import pwd
 
 USER_LIST = []
+GROUP_LIST = []
 
 class FakeConfig:
   pass
@@ -28,6 +29,9 @@ class FakeCallAndRead:
     if 'useradd' in argument_list:
       global USER_LIST
       USER_LIST.append(argument_list[-1])
+    if 'groupadd' in argument_list:
+      global GROUP_LIST
+      GROUP_LIST.append(argument_list[-1])
     self.external_command_list.append(argument_list)
     return 0, 'UP'
 
@@ -44,7 +48,8 @@ class LoggableWrapper:
 class GrpMock:
   @classmethod
   def getgrnam(self, name):
-    if name == 'testuser':
+    global GROUP_LIST
+    if name in GROUP_LIST:
       return True
     raise KeyError
 
@@ -60,11 +65,6 @@ class PwdMock:
     raise KeyError
 
 class SlapformatMixin(unittest.TestCase):
-
-  @classmethod
-  def raisingKeyError(self, *args, **kwargs):
-    raise KeyError
-
   def patchPwd(self):
     self.saved_pwd = dict()
     for fake in vars(PwdMock):
@@ -111,7 +111,9 @@ class SlapformatMixin(unittest.TestCase):
     self.partition = slapos.format.Partition('partition', '/part_path',
       slapos.format.User('testuser'), [], None)
     global USER_LIST
-    USER_LIST = ['testuser']
+    USER_LIST = []
+    global GROUP_LIST
+    GROUP_LIST = []
 
     self.real_callAndRead = slapos.format.callAndRead
     self.fakeCallAndRead = FakeCallAndRead()
@@ -124,8 +126,6 @@ class SlapformatMixin(unittest.TestCase):
     self.restoreOs()
     self.restoreGrp()
     self.restorePwd()
-    global USER_LIST
-    USER_LIST = ['testuser']
     slapos.format.callAndRead = self.real_callAndRead
 
 class TestComputer(SlapformatMixin):
@@ -210,6 +210,8 @@ class TestComputer(SlapformatMixin):
 class TestPartition(SlapformatMixin):
 
   def test_createPath(self):
+    global USER_LIST
+    USER_LIST = ['testuser']
     self.partition.createPath()
     self.assertEqual(
       [
@@ -260,8 +262,8 @@ class TestUser(SlapformatMixin):
       self.fakeCallAndRead.external_command_list)
 
   def test_create_group_exists(self):
-    pwd.getpwnam = self.raisingKeyError
-
+    global GROUP_LIST
+    GROUP_LIST = ['testuser']
     user = slapos.format.User('testuser')
     user.setPath('/testuser')
     user.create()
@@ -274,7 +276,8 @@ class TestUser(SlapformatMixin):
       self.fakeCallAndRead.external_command_list)
 
   def test_create_user_exists_additional_groups(self):
-    grp.getgrnam = self.raisingKeyError
+    global USER_LIST
+    USER_LIST = ['testuser']
     user = slapos.format.User('testuser', ['additionalgroup1',
       'additionalgroup2'])
     user.setPath('/testuser')
@@ -289,7 +292,8 @@ class TestUser(SlapformatMixin):
       self.fakeCallAndRead.external_command_list)
 
   def test_create_user_exists(self):
-    grp.getgrnam = self.raisingKeyError
+    global USER_LIST
+    USER_LIST = ['testuser']
     user = slapos.format.User('testuser')
     user.setPath('/testuser')
     user.create()
@@ -303,6 +307,10 @@ class TestUser(SlapformatMixin):
       self.fakeCallAndRead.external_command_list)
 
   def test_create_user_group_exists(self):
+    global USER_LIST
+    USER_LIST = ['testuser']
+    global GROUP_LIST
+    GROUP_LIST = ['testuser']
     user = slapos.format.User('testuser')
     user.setPath('/testuser')
     user.create()
@@ -315,6 +323,8 @@ class TestUser(SlapformatMixin):
       self.fakeCallAndRead.external_command_list)
 
   def test_isAvailable(self):
+    global USER_LIST
+    USER_LIST = ['testuser']
     user = slapos.format.User('testuser')
     self.assertTrue(user.isAvailable())
 
