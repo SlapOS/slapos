@@ -11,6 +11,9 @@ import httplib
 import logging
 
 class BasicMixin:
+  def assertSortedListEqual(self, list1, list2, msg=None):
+    self.assertListEqual(sorted(list1), sorted(list2), msg)
+
   def setUp(self):
     self._tempdir = tempfile.mkdtemp()
     self.software_root = os.path.join(self._tempdir, 'software')
@@ -82,9 +85,6 @@ class MasterMixin(BasicMixin):
     BasicMixin.tearDown(self)
 
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
-
-  def assertSortedListEqual(self, list1, list2, msg=None):
-    self.assertListEqual(sorted(list1), sorted(list2), msg)
 
   def test_nothing_to_do(self):
 
