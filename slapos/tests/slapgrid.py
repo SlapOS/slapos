@@ -51,7 +51,7 @@ class TestBasicSlapgridCP(BasicMixin, unittest.TestCase):
 class MasterMixin(BasicMixin):
 
   def _patchHttplib(self):
-    # XXX-Antoine: save and override the httplib
+    """Overrides httplib"""
     import mock.httplib
 
     self.saved_httplib = dict()
@@ -61,7 +61,7 @@ class MasterMixin(BasicMixin):
       setattr(httplib, fake, getattr(mock.httplib, fake))
 
   def _unpatchHttplib(self):
-    # XXX-Antoine: restore the httplib like it was
+    """Restores httplib overriding"""
     import httplib
     for name, original_value in self.saved_httplib.items():
       setattr(httplib, name, original_value)
