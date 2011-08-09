@@ -9,6 +9,7 @@ import grp
 import netifaces
 import os
 import pwd
+import time
 
 USER_LIST = []
 GROUP_LIST = []
@@ -67,6 +68,11 @@ class LoggableWrapper:
       '%s=%r' % (x, y) for x, y in kwargs.iteritems()]
     self.__logger.debug('%s(%s)' % (self.__name, ', '.join(arg_list)))
 
+class TimeMock:
+  @classmethod
+  def sleep(self, seconds):
+    return
+
 class GrpMock:
   @classmethod
   def getgrnam(self, name):
@@ -123,6 +129,17 @@ class SlapformatMixin(unittest.TestCase):
       setattr(pwd, name, original_value)
     del self.saved_pwd
 
+  def patchTime(self):
+    self.saved_time = dict()
+    for fake in vars(TimeMock):
+      self.saved_time[fake] = getattr(time, fake, None)
+      setattr(time, fake, getattr(TimeMock, fake))
+
+  def restoreTime(self):
+    for name, original_value in self.saved_time.items():
+      setattr(time, name, original_value)
+    del self.saved_time
+
   def patchGrp(self):
     self.saved_grp = dict()
     for fake in vars(GrpMock):
@@ -169,12 +186,14 @@ class SlapformatMixin(unittest.TestCase):
     slapos.format.callAndRead = self.fakeCallAndRead
     self.patchOs(logger)
     self.patchGrp()
+    self.patchTime()
     self.patchPwd()
     self.patchNetifaces()
 
   def tearDown(self):
     self.restoreOs()
     self.restoreGrp()
+    self.restoreTime()
     self.restorePwd()
     self.restoreNetifaces()
     slapos.format.callAndRead = self.real_callAndRead
