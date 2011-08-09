@@ -55,7 +55,7 @@ class FakeCallAndRead:
       argument_list[3] = 'ip/%s' % netmask
     elif argument_list[:3] == ['ip', 'addr', 'list']:
       retval = 0, str(INTERFACE_DICT)
-    self.external_command_list.append(argument_list)
+    self.external_command_list.append(' '.join(argument_list))
     return retval
 
 class LoggableWrapper:
@@ -221,10 +221,10 @@ class TestComputer(SlapformatMixin):
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
     self.assertEqual([
-      ['ip', 'addr', 'list', 'bridge'],
-      ['groupadd', 'slapsoft'],
-      ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
-        '/bin/false', 'slapsoft']],
+      'ip addr list bridge',
+      'groupadd slapsoft',
+      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft'
+      ],
       self.fakeCallAndRead.external_command_list)
 
   def test_construct_empty_prepared_no_alter_user(self):
@@ -239,7 +239,7 @@ class TestComputer(SlapformatMixin):
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
     self.assertEqual([
-      ['ip', 'addr', 'list', 'bridge'],],
+      'ip addr list bridge',],
       self.fakeCallAndRead.external_command_list)
 
   def test_construct_empty_prepared_no_alter_network(self):
@@ -255,10 +255,10 @@ class TestComputer(SlapformatMixin):
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
     self.assertEqual([
-      ['ip', 'addr', 'list', 'bridge'],
-      ['groupadd', 'slapsoft'],
-      ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
-        '/bin/false', 'slapsoft']],
+      'ip addr list bridge',
+      'groupadd slapsoft',
+      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft'
+      ],
       self.fakeCallAndRead.external_command_list)
 
   def test_construct_empty_prepared_no_alter_network_user(self):
@@ -273,7 +273,7 @@ class TestComputer(SlapformatMixin):
       "chmod('/software_root', 493)"],
       self.test_result.bucket)
     self.assertEqual([
-      ['ip', 'addr', 'list', 'bridge'],
+      'ip addr list bridge',
       ],
       self.fakeCallAndRead.external_command_list)
 
@@ -305,20 +305,19 @@ class TestComputer(SlapformatMixin):
     ],
       self.test_result.bucket)
     self.assertEqual([
-      ['ip', 'addr', 'list', 'bridge'],
-      ['groupadd', 'slapsoft'],
-      ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
-        '/bin/false', 'slapsoft'], ['groupadd', 'testuser'],
-      ['useradd', '-d', '/instance_root/partition', '-g', 'testuser', '-s',
-        '/bin/false', '-G', 'slapsoft', 'testuser'],
-      ['tunctl', '-t', 'tap', '-u', 'testuser'],
-      ['ip', 'link', 'set', 'tap', 'up'],
-      ['brctl', 'show'],
-      ['brctl', 'addif', 'bridge', 'tap'],
-      ['ip', 'addr', 'add', 'ip/255.255.255.255', 'dev', 'bridge'],
-      ['ip', 'addr', 'list', 'bridge'],
-      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge'],
-      ['ip', 'addr', 'list', 'bridge'],
+      'ip addr list bridge',
+      'groupadd slapsoft',
+      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft',
+      'groupadd testuser',
+      'useradd -d /instance_root/partition -g testuser -s /bin/false -G slapsoft testuser',
+      'tunctl -t tap -u testuser',
+      'ip link set tap up',
+      'brctl show',
+      'brctl addif bridge tap',
+      'ip addr add ip/255.255.255.255 dev bridge',
+      'ip addr list bridge',
+      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
+      'ip addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -348,15 +347,15 @@ class TestComputer(SlapformatMixin):
     ],
       self.test_result.bucket)
     self.assertEqual([
-      ['ip', 'addr', 'list', 'bridge'],
-      ['tunctl', '-t', 'tap', '-u', 'root'],
-      ['ip', 'link', 'set', 'tap', 'up'],
-      ['brctl', 'show'],
-      ['brctl', 'addif', 'bridge', 'tap'],
-      ['ip', 'addr', 'add', 'ip/255.255.255.255', 'dev', 'bridge'],
-      ['ip', 'addr', 'list', 'bridge'],
-      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge'],
-      ['ip', 'addr', 'list', 'bridge'],
+      'ip addr list bridge',
+      'tunctl -t tap -u root',
+      'ip link set tap up',
+      'brctl show',
+      'brctl addif bridge tap',
+      'ip addr add ip/255.255.255.255 dev bridge',
+      'ip addr list bridge',
+      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
+      'ip addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -388,16 +387,15 @@ class TestComputer(SlapformatMixin):
     ],
       self.test_result.bucket)
     self.assertEqual([
-      ['ip', 'addr', 'list', 'bridge'],
-      ['groupadd', 'slapsoft'],
-      ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
-        '/bin/false', 'slapsoft'], ['groupadd', 'testuser'],
-      ['useradd', '-d', '/instance_root/partition', '-g', 'testuser', '-s',
-        '/bin/false', '-G', 'slapsoft', 'testuser'],
-      ['ip', 'addr', 'add', 'ip/255.255.255.255', 'dev', 'bridge'],
-      ['ip', 'addr', 'list', 'bridge'],
-      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge'],
-      ['ip', 'addr', 'list', 'bridge'],
+      'ip addr list bridge',
+      'groupadd slapsoft',
+      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft',
+      'groupadd testuser',
+      'useradd -d /instance_root/partition -g testuser -s /bin/false -G slapsoft testuser',
+      'ip addr add ip/255.255.255.255 dev bridge',
+      'ip addr list bridge',
+      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
+      'ip addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -427,11 +425,11 @@ class TestComputer(SlapformatMixin):
     ],
       self.test_result.bucket)
     self.assertEqual([
-      ['ip', 'addr', 'list', 'bridge'],
-      ['ip', 'addr', 'add', 'ip/255.255.255.255', 'dev', 'bridge'],
-      ['ip', 'addr', 'list', 'bridge'],
-      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge'],
-      ['ip', 'addr', 'list', 'bridge'],
+      'ip addr list bridge',
+      'ip addr add ip/255.255.255.255 dev bridge',
+      'ip addr list bridge',
+      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
+      'ip addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -466,12 +464,11 @@ class TestUser(SlapformatMixin):
     user.setPath('/doesnotexistsyet')
     user.create()
 
-    self.assertEqual(
-      [
-        ['groupadd', 'doesnotexistsyet'],
-        ['useradd', '-d', '/doesnotexistsyet', '-g', 'doesnotexistsyet', '-s',
-          '/bin/false', 'doesnotexistsyet']
-      ],
+    self.assertEqual([
+      'groupadd doesnotexistsyet',
+      'useradd -d /doesnotexistsyet -g doesnotexistsyet -s /bin/false '\
+        'doesnotexistsyet'
+    ],
       self.fakeCallAndRead.external_command_list)
 
   def test_create_additional_groups(self):
@@ -480,12 +477,10 @@ class TestUser(SlapformatMixin):
     user.setPath('/doesnotexistsyet')
     user.create()
 
-    self.assertEqual(
-      [
-        ['groupadd', 'doesnotexistsyet'],
-        ['useradd', '-d', '/doesnotexistsyet', '-g', 'doesnotexistsyet', '-s',
-          '/bin/false', '-G', 'additionalgroup1,additionalgroup2',
-          'doesnotexistsyet']
+    self.assertEqual([
+      'groupadd doesnotexistsyet',
+      'useradd -d /doesnotexistsyet -g doesnotexistsyet -s /bin/false -G '\
+        'additionalgroup1,additionalgroup2 doesnotexistsyet'
       ],
       self.fakeCallAndRead.external_command_list)
 
@@ -496,11 +491,9 @@ class TestUser(SlapformatMixin):
     user.setPath('/testuser')
     user.create()
 
-    self.assertEqual(
-      [
-        ['useradd', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
-          'testuser']
-      ],
+    self.assertEqual([
+      'useradd -d /testuser -g testuser -s /bin/false testuser'
+    ],
       self.fakeCallAndRead.external_command_list)
 
   def test_create_user_exists_additional_groups(self):
@@ -511,12 +504,11 @@ class TestUser(SlapformatMixin):
     user.setPath('/testuser')
     user.create()
 
-    self.assertEqual(
-      [
-        ['groupadd', 'testuser'],
-        ['usermod', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
-          '-G', 'additionalgroup1,additionalgroup2', 'testuser']
-      ],
+    self.assertEqual([
+      'groupadd testuser',
+      'usermod -d /testuser -g testuser -s /bin/false -G '\
+        'additionalgroup1,additionalgroup2 testuser'
+    ],
       self.fakeCallAndRead.external_command_list)
 
   def test_create_user_exists(self):
@@ -526,12 +518,10 @@ class TestUser(SlapformatMixin):
     user.setPath('/testuser')
     user.create()
 
-    self.assertEqual(
-      [
-        ['groupadd', 'testuser'],
-        ['usermod', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
-          'testuser']
-      ],
+    self.assertEqual([
+      'groupadd testuser',
+      'usermod -d /testuser -g testuser -s /bin/false testuser'
+    ],
       self.fakeCallAndRead.external_command_list)
 
   def test_create_user_group_exists(self):
@@ -543,11 +533,9 @@ class TestUser(SlapformatMixin):
     user.setPath('/testuser')
     user.create()
 
-    self.assertEqual(
-      [
-        ['usermod', '-d', '/testuser', '-g', 'testuser', '-s', '/bin/false',
-          'testuser']
-      ],
+    self.assertEqual([
+      'usermod -d /testuser -g testuser -s /bin/false testuser'
+    ],
       self.fakeCallAndRead.external_command_list)
 
   def test_isAvailable(self):
