@@ -7623,11 +7623,41 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepStoreCurrentSoftwareInstanceUidBufferA(self, sequence, **kw):
+    sequence['buffer_a_software_instance_uid'] = sequence['software_instance_uid']
+
+  def stepStoreCurrentSoftwareInstanceUidBufferB(self, sequence, **kw):
+    sequence['buffer_b_software_instance_uid'] = sequence['software_instance_uid']
+
+  def stepStoreCurrentComputerUidBufferA(self, sequence, **kw):
+    sequence['buffer_a_computer_uid'] = sequence['computer_uid']
+
+  def stepStoreCurrentComputerUidBufferB(self, sequence, **kw):
+    sequence['buffer_b_computer_uid'] = sequence['computer_uid']
+
+  def stepRestoreSoftwareInstanceUidFromBufferA(self, sequence, **kw):
+    sequence['software_instance_uid_uid'] = sequence['buffer_a_software_instance_uid']
+
+  def stepRestoreSoftwareInstanceUidFromBufferB(self, sequence, **kw):
+    sequence['software_instance_uid_uid'] = sequence['buffer_b_software_instance_uid']
+
+  def stepRestoreComputerUidFromBufferA(self, sequence, **kw):
+    sequence['computer_uid'] = sequence['buffer_a_computer_uid']
+
+  def stepRestoreComputerUidFromBufferB(self, sequence, **kw):
+    sequence['computer_uid'] = sequence['buffer_b_computer_uid']
+
   def stepStoreCurrentComputerReferenceBufferA(self, sequence, **kw):
     sequence['buffer_a_computer_reference'] = sequence['computer_reference']
 
   def stepStoreCurrentComputerReferenceBufferB(self, sequence, **kw):
     sequence['buffer_b_computer_reference'] = sequence['computer_reference']
+
+  def stepStoreCurrentComputerPartitionUidBufferA(self, sequence, **kw):
+    sequence['buffer_a_computer_partition_uid'] = sequence['computer_partition_uid']
+
+  def stepStoreCurrentComputerPartitionUidBufferB(self, sequence, **kw):
+    sequence['buffer_b_computer_partition_uid'] = sequence['computer_partition_uid']
 
   def stepStoreCurrentComputerPartitionReferenceBufferA(self, sequence, **kw):
     sequence['buffer_a_computer_partition_reference'] = sequence['computer_partition_reference']
@@ -7640,6 +7670,12 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepRestoreComputerReferenceFromBufferB(self, sequence, **kw):
     sequence['computer_reference'] = sequence['buffer_b_computer_reference']
+
+  def stepRestoreComputerPartitionUidFromBufferA(self, sequence, **kw):
+    sequence['computer_partition_uid'] = sequence['buffer_a_computer_partition_uid']
+
+  def stepRestoreComputerPartitionUidFromBufferB(self, sequence, **kw):
+    sequence['computer_partition_uid'] = sequence['buffer_b_computer_partition_uid']
 
   def stepRestoreComputerPartitionReferenceFromBufferA(self, sequence, **kw):
     sequence['computer_partition_reference'] = sequence['buffer_a_computer_partition_reference']
@@ -7654,29 +7690,93 @@ class TestVifibSlapWebService(testVifibMixin):
     shall be possible to sucesfully destroy it.
     """
     sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + \
-      """
-      StoreCurrentComputerReferenceBufferA
-      StoreCurrentComputerPartitionReferenceBufferA
-      """ + \
-      self.prepare_formated_computer + \
-      """
-      StoreCurrentComputerReferenceBufferB
-      StoreCurrentComputerPartitionReferenceBufferB
+    sequence_string = """
+      # Prepare software release shared by both Computers
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
 
+      # Create first computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install software on first computer
       LoginTestVifibAdmin
       RequestSoftwareInstallation
       Tic
       Logout
-
       SlapLoginCurrentComputer
       ComputerSoftwareReleaseAvailable
       Tic
       SlapLogout
 
-      RestoreComputerReferenceFromBufferA
-      RestoreComputerPartitionReferenceFromBufferA
 
+      # Now request and instantiate this software release on first computer
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      StoreCurrentComputerPartitionReferenceBufferA
+      StoreCurrentComputerPartitionUidBufferA
+      StoreCurrentSoftwareInstanceUidBufferA
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # Now prepare second computer
+
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferB
+      StoreCurrentComputerUidBufferB
+
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferB
+      StoreCurrentComputerUidBufferB
+
+      # Now request self software release from one computer to another
+      RestoreComputerReferenceFromBufferA
+      RestoreComputerUidFromBufferA
+      RestoreSoftwareInstanceUidFromBufferA
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartitionNotReadyResponse
       Tic
@@ -7702,41 +7802,15 @@ class TestVifibSlapWebService(testVifibMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
 
+      StoreCurrentComputerPartitionReferenceBufferB
+      StoreCurrentComputerPartitionUidBufferB
+      StoreCurrentSoftwareInstanceUidBufferB
+
+      # Now request destruction of second software instance
       RestoreComputerReferenceFromBufferB
-      RestoreComputerPartitionReferenceFromBufferB
-
-      SlapLoginCurrentComputer
-      SoftwareInstanceBuilding
-      Tic
-      SlapLogout
+      RestoreComputerUidFromBufferB
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
-      Logout
-
-      SlapLoginCurrentComputer
-      SoftwareInstanceAvailable
-      Tic
-      SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
-      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
-      Logout
-
-      SlapLoginCurrentComputer
-      SoftwareInstanceStarted
-      Tic
-      SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
-      SetCurrentSoftwareInstanceRequester
-      SetSelectedComputerPartition
-      SelectCurrentlyUsedSalePackingListUid
-      Logout
-
-      LoginTestVifibCustomer
       RequestSoftwareInstanceDestroy
       Tic
       Logout
@@ -7744,9 +7818,6 @@ class TestVifibSlapWebService(testVifibMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
-
-      RestoreComputerReferenceFromBufferA
-      RestoreComputerPartitionReferenceFromBufferA
 
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
