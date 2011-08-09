@@ -297,7 +297,7 @@ class Recipe(BaseSlapRecipe):
         "-a", varnish_config["port"], "-T", varnish_config["control_port"],
         "-s", varnish_config["storage"]]
     environment = dict(PATH=self.options["binutils_directory"])
-    wrapper = zc.buildout.easy_install.scripts([('varnishd',
+    wrapper = zc.buildout.easy_install.scripts([(name,
       'slapos.recipe.librecipe.execute', 'executee')], self.ws,
       sys.executable, self.wrapper_directory, arguments=[varnish_argument_list,
       environment])[0]
