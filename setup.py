@@ -57,4 +57,5 @@ setup(name=name,
           'slapproxy = slapos.proxy:main',
         ]
       },
+      test_suite="slapos.tests",
     )
