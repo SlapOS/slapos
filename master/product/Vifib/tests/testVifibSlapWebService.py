@@ -3103,6 +3103,11 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepCheckSoftwareInstanceAndRelatedComputerPartition(self,
       sequence, **kw):
+    self.stepCheckSoftwareInstanceAndRelatedComputerPartitionNoPackingList(sequence, **kw)
+    self._checkSoftwareInstanceAndRelatedPartition(software_instance)
+
+  def stepCheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck(self,
+      sequence, **kw):
     software_instance_uid = sequence['software_instance_uid']
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=software_instance_uid)
@@ -3110,7 +3115,6 @@ class TestVifibSlapWebService(testVifibMixin):
     predecessor_value_list = software_instance.getPredecessorValueList()
     self.assertEqual(1, len(predecessor_value_list))
 
-    self._checkSoftwareInstanceAndRelatedPartition(software_instance)
     sequence.edit(
       requested_software_instance_uid=predecessor_value_list[0].getUid(),
       requested_software_instance_reference=predecessor_value_list[0].getReference())
@@ -7636,10 +7640,10 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence['buffer_b_computer_uid'] = sequence['computer_uid']
 
   def stepRestoreSoftwareInstanceUidFromBufferA(self, sequence, **kw):
-    sequence['software_instance_uid_uid'] = sequence['buffer_a_software_instance_uid']
+    sequence['software_instance_uid'] = sequence['buffer_a_software_instance_uid']
 
   def stepRestoreSoftwareInstanceUidFromBufferB(self, sequence, **kw):
-    sequence['software_instance_uid_uid'] = sequence['buffer_b_software_instance_uid']
+    sequence['software_instance_uid'] = sequence['buffer_b_software_instance_uid']
 
   def stepRestoreComputerUidFromBufferA(self, sequence, **kw):
     sequence['computer_uid'] = sequence['buffer_a_computer_uid']
@@ -7688,6 +7692,10 @@ class TestVifibSlapWebService(testVifibMixin):
 
     If software instance originated on computer comes from another computer it
     shall be possible to sucesfully destroy it.
+
+    Test is done in a way to trigger unstable Assignor role calculation
+    on Hosting Subscription which leads to unavailability of Software Instances
+    from one computer to another.
     """
     sequence_list = SequenceList()
     sequence_string = """
@@ -7728,7 +7736,6 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       SlapLogout
 
-
       # Now request and instantiate this software release on first computer
       LoginTestVifibCustomer
       PersonRequestSoftwareInstance
@@ -7747,6 +7754,57 @@ class TestVifibSlapWebService(testVifibMixin):
 
       LoginDefaultUser
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # Start it..
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetSelectedComputerPartition
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      Logout
+
+      # ...stop it...
+
+      LoginDefaultUser
+      RequestSoftwareInstanceStop
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      Logout
+
+      # ...and request destruction
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 
       # Now prepare second computer
@@ -7788,12 +7846,8 @@ class TestVifibSlapWebService(testVifibMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckSoftwareInstanceAndRelatedComputerPartition
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition
-      Logout
-
-      SlapLoginCurrentSoftwareInstance
-      CheckRequestedComputerPartitionCleanParameterList
       Logout
 
       LoginDefaultUser
@@ -7802,13 +7856,60 @@ class TestVifibSlapWebService(testVifibMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
 
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
       StoreCurrentComputerPartitionReferenceBufferB
       StoreCurrentComputerPartitionUidBufferB
       StoreCurrentSoftwareInstanceUidBufferB
 
-      # Now request destruction of second software instance
       RestoreComputerReferenceFromBufferB
       RestoreComputerUidFromBufferB
+
+      # Start the requested software instance...
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetSelectedComputerPartition
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      Logout
+
+      # ...and stop it
+
+      LoginDefaultUser
+      RequestSoftwareInstanceStop
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      Logout
+
+      # Now request destruction of second software instance...
 
       LoginDefaultUser
       RequestSoftwareInstanceDestroy
@@ -7819,6 +7920,25 @@ class TestVifibSlapWebService(testVifibMixin):
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 
+      # ...and destroy it
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+
+      # Time to switch back to first software instance and destroy it
+      RestoreComputerPartitionReferenceFromBufferA
+      RestoreComputerPartitionUidFromBufferA
+      RestoreSoftwareInstanceUidFromBufferA
+      RestoreComputerReferenceFromBufferA
+      RestoreComputerUidFromBufferA
+      
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
       Tic
@@ -7831,7 +7951,6 @@ class TestVifibSlapWebService(testVifibMixin):
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-    raise NotImplementedError
 
   ########################################
   # Other tests
