@@ -55,7 +55,6 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(self.killpidfromfile)
 
     ca_conf = self.installCertificateAuthority()
-
     # This should come from parameter.
     frontend_port_number = 4443
     frontend_domain_name = self.parameter_dict.get("domain",
@@ -291,14 +290,17 @@ class Recipe(BaseSlapRecipe):
         dict(backend_host=backend_host, backend_port=backend_port)))
 
     varnish_argument_list = [varnish_config['varnishd_binary'].strip(),
-        "-F", "-n", directory, "-P", varnish_config["pid"], "-f", config_file,
+        "-F", "-n", directory, "-P", varnish_config["pid"], "-p",
+        "cc_command=exec %s " % self.options["gcc_binary"] +\
+            "-fpic -shared -o %o %s",
+        "-f", config_file,
         "-a", varnish_config["port"], "-T", varnish_config["control_port"],
         "-s", varnish_config["storage"]]
-
+    environment = dict(PATH=self.options["binutils_directory"])
     wrapper = zc.buildout.easy_install.scripts([('varnishd',
-      'slapos.recipe.librecipe.execute', 'execute')], self.ws,
-      sys.executable, self.wrapper_directory, arguments=varnish_argument_list,
-      )[0]
+      'slapos.recipe.librecipe.execute', 'executee')], self.ws,
+      sys.executable, self.wrapper_directory, arguments=[varnish_argument_list,
+      environment])[0]
     self.path_list.append(wrapper)
 
     return varnish_config
