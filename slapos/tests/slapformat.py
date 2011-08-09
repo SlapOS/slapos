@@ -106,6 +106,8 @@ class NetifacesMock:
     return INTERFACE_DICT.keys()
 
 class SlapformatMixin(unittest.TestCase):
+  # keep big diffs
+  maxDiff = None
   def patchNetifaces(self):
     self.netifaces = NetifacesMock()
     self.saved_netifaces = dict()
