@@ -387,15 +387,15 @@ class TestComputer(SlapformatMixin):
     ],
       self.test_result.bucket)
     self.assertEqual([
-      'ip addr list bridge',
+#      'ip addr list bridge',
       'groupadd slapsoft',
       'useradd -d /software_root -g slapsoft -s /bin/false slapsoft',
       'groupadd testuser',
       'useradd -d /instance_root/partition -g testuser -s /bin/false -G slapsoft testuser',
-      'ip addr add ip/255.255.255.255 dev bridge',
-      'ip addr list bridge',
-      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-      'ip addr list bridge',
+#      'ip addr add ip/255.255.255.255 dev bridge',
+#      'ip addr list bridge',
+#      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
+#      'ip addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -425,11 +425,11 @@ class TestComputer(SlapformatMixin):
     ],
       self.test_result.bucket)
     self.assertEqual([
-      'ip addr list bridge',
-      'ip addr add ip/255.255.255.255 dev bridge',
-      'ip addr list bridge',
-      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-      'ip addr list bridge',
+#      'ip addr list bridge',
+#      'ip addr add ip/255.255.255.255 dev bridge',
+#      'ip addr list bridge',
+#      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
+#      'ip addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
