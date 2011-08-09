@@ -147,5 +147,8 @@ touch worked""")
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
+    partition = os.path.join(self.instance_root, '0')
+    self.assertSortedListEqual(os.listdir(partition), ['worked',
+      'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])
