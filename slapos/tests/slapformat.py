@@ -30,6 +30,7 @@ class FakeCallAndRead:
     self.external_command_list = []
 
   def __call__(self, argument_list, raise_on_error=True):
+    retval = 0, 'UP'
     global INTERFACE_DICT
     if 'useradd' in argument_list:
       global USER_LIST
@@ -52,10 +53,9 @@ class FakeCallAndRead:
       # stabilise by mangling ip to just ip string
       argument_list[3] = 'ip/%s' % netmask
     elif argument_list[:3] == ['ip', 'addr', 'list']:
-      return 0, str(INTERFACE_DICT)
-
+      retval = 0, str(INTERFACE_DICT)
     self.external_command_list.append(argument_list)
-    return 0, 'UP'
+    return retval
 
 class LoggableWrapper:
   def __init__(self, logger, name):
@@ -286,6 +286,7 @@ class TestComputer(SlapformatMixin):
     ],
       self.test_result.bucket)
     self.assertEqual([
+      ['ip', 'addr', 'list', 'bridge'],
       ['groupadd', 'slapsoft'],
       ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
         '/bin/false', 'slapsoft'], ['groupadd', 'testuser'],
@@ -296,7 +297,122 @@ class TestComputer(SlapformatMixin):
       ['brctl', 'show'],
       ['brctl', 'addif', 'bridge', 'tap'],
       ['ip', 'addr', 'add', 'ip/255.255.255.255', 'dev', 'bridge'],
-      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge']
+      ['ip', 'addr', 'list', 'bridge'],
+      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge'],
+      ['ip', 'addr', 'list', 'bridge'],
+    ],
+      self.fakeCallAndRead.external_command_list)
+
+  def test_construct_prepared_no_alter_user(self):
+    computer = slapos.format.Computer('computer',
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    partition = slapos.format.Partition('partition', '/part_path',
+      slapos.format.User('testuser'), [], None)
+    partition.tap = slapos.format.Tap('tap')
+    computer.partition_list = [partition]
+    global INTERFACE_DICT
+    INTERFACE_DICT['bridge'] = {
+      2: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+        'netmask': '255.255.255.0'}],
+      10: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+    }
+
+    computer.construct(alter_user=False)
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chmod('/software_root', 493)",
+      "mkdir('/instance_root/partition', 488)",
+      "chmod('/instance_root/partition', 488)"
+    ],
+      self.test_result.bucket)
+    self.assertEqual([
+      ['ip', 'addr', 'list', 'bridge'],
+      ['tunctl', '-t', 'tap', '-u', 'root'],
+      ['ip', 'link', 'set', 'tap', 'up'],
+      ['brctl', 'show'],
+      ['brctl', 'addif', 'bridge', 'tap'],
+      ['ip', 'addr', 'add', 'ip/255.255.255.255', 'dev', 'bridge'],
+      ['ip', 'addr', 'list', 'bridge'],
+      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge'],
+      ['ip', 'addr', 'list', 'bridge'],
+    ],
+      self.fakeCallAndRead.external_command_list)
+
+  def test_construct_prepared_no_alter_network(self):
+    computer = slapos.format.Computer('computer',
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    partition = slapos.format.Partition('partition', '/part_path',
+      slapos.format.User('testuser'), [], None)
+    partition.tap = slapos.format.Tap('tap')
+    computer.partition_list = [partition]
+    global INTERFACE_DICT
+    INTERFACE_DICT['bridge'] = {
+      2: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+        'netmask': '255.255.255.0'}],
+      10: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+    }
+
+    computer.construct(alter_network=False)
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chown('/software_root', 0, 0)",
+      "chmod('/software_root', 493)",
+      "mkdir('/instance_root/partition', 488)",
+      "chown('/instance_root/partition', 0, 0)",
+      "chmod('/instance_root/partition', 488)"
+    ],
+      self.test_result.bucket)
+    self.assertEqual([
+      ['ip', 'addr', 'list', 'bridge'],
+      ['groupadd', 'slapsoft'],
+      ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
+        '/bin/false', 'slapsoft'], ['groupadd', 'testuser'],
+      ['useradd', '-d', '/instance_root/partition', '-g', 'testuser', '-s',
+        '/bin/false', '-G', 'slapsoft', 'testuser'],
+      ['ip', 'addr', 'add', 'ip/255.255.255.255', 'dev', 'bridge'],
+      ['ip', 'addr', 'list', 'bridge'],
+      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge'],
+      ['ip', 'addr', 'list', 'bridge'],
+    ],
+      self.fakeCallAndRead.external_command_list)
+
+  def test_construct_prepared_no_alter_network_user(self):
+    computer = slapos.format.Computer('computer',
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    partition = slapos.format.Partition('partition', '/part_path',
+      slapos.format.User('testuser'), [], None)
+    partition.tap = slapos.format.Tap('tap')
+    computer.partition_list = [partition]
+    global INTERFACE_DICT
+    INTERFACE_DICT['bridge'] = {
+      2: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+        'netmask': '255.255.255.0'}],
+      10: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+    }
+
+    computer.construct(alter_network=False, alter_user=False)
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chmod('/software_root', 493)",
+      "mkdir('/instance_root/partition', 488)",
+      "chmod('/instance_root/partition', 488)"
+    ],
+      self.test_result.bucket)
+    self.assertEqual([
+      ['ip', 'addr', 'list', 'bridge'],
+      ['ip', 'addr', 'add', 'ip/255.255.255.255', 'dev', 'bridge'],
+      ['ip', 'addr', 'list', 'bridge'],
+      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge'],
+      ['ip', 'addr', 'list', 'bridge'],
     ],
       self.fakeCallAndRead.external_command_list)
 
