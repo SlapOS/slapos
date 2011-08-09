@@ -475,27 +475,28 @@ class Slapgrid(object):
       gid = stat_info.st_gid
 
       # Get the list of promises
-      promise_dir = os.join(instance_path, 'etc', 'promise')
-      commands_to_run = os.listdir(promise_dir)
-      cwd = instance_path
+      promise_dir = os.path.join(instance_path, 'etc', 'promise')
+      if os.path.exists(promise_dir) and os.path.isdir(promise_dir):
+        commands_to_run = os.listdir(promise_dir)
+        cwd = instance_path
 
-      # Check whether every promise is kept
-      for process_handler, command in \
-        self._runCommandAsUserAndYieldPopen(commands_to_run,
-                                            (uid, gid), cwd):
+        # Check whether every promise is kept
+        for process_handler, command in \
+          self._runCommandAsUserAndYieldPopen(commands_to_run,
+                                              (uid, gid), cwd):
 
-        time.sleep(self.promise_timeout)
+          time.sleep(self.promise_timeout)
 
-        promise = os.path.basename(command)
+          promise = os.path.basename(command)
 
-        if process_handler.poll() is None:
-          process_handler.kill()
-          computer_partition.error("The promise %r timed out" % promise)
-        elif process_handler.returncode != 0:
-          stderr = process_handler.communicate()[1]
-          if stderr is None:
-            stderr = 'No error output from %r.' % promise
-          computer_partition.error(stderr)
+          if process_handler.poll() is None:
+            process_handler.kill()
+            computer_partition.error("The promise %r timed out" % promise)
+          elif process_handler.returncode != 0:
+            stderr = process_handler.communicate()[1]
+            if stderr is None:
+              stderr = 'No error output from %r.' % promise
+            computer_partition.error(stderr)
 
 
     logger.info("Finished computer partitions...")
