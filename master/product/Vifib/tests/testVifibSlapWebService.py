@@ -7938,7 +7938,7 @@ class TestVifibSlapWebService(testVifibMixin):
       RestoreSoftwareInstanceUidFromBufferA
       RestoreComputerReferenceFromBufferA
       RestoreComputerUidFromBufferA
-      
+
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
       Tic
