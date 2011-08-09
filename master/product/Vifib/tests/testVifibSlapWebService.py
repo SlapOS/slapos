@@ -7952,6 +7952,18 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_bug_hosting_subscription_assignor_role_instability(self):
+    """Show instability issue of Assignor role on Hosting Subscription
+
+    Related to fact when Hosting Subscription is associated to
+    Software Instances deployed on many computers"""
+    raise NotImplementedError
+
+  def test_bug_destruction_with_unfinished_packing_list(self):
+    """Proves that even if some packing lists are not fully delivered
+    it is possible to destroy software instance"""
+    raise NotImplementedError
+
   ########################################
   # Other tests
   ########################################
