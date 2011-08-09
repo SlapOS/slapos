@@ -584,7 +584,7 @@ class Tap:
 class Bridge:
   "Bridge represent a bridge on the system"
 
-  def __init__(self, name, ipv4_local_network, ipv6_interface):
+  def __init__(self, name, ipv4_local_network, ipv6_interface=None):
     """
     Attributes:
         name: String, the name of the bridge
