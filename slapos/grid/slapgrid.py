@@ -461,6 +461,43 @@ class Slapgrid(object):
         exception = traceback.format_exc()
         logger.error(exception)
         computer_partition.error(exception)
+
+      # Promises
+
+      instance_path = os.path.join(self.instance_root,
+          computer_partition.getId())
+
+      uid, gid = None, None
+      stat_info = os.stat(instance_path)
+
+      #stat sys call to get statistics informations
+      uid = stat_info.st_uid
+      gid = stat_info.st_gid
+
+      # Get the list of promises
+      promise_dir = os.join(instance_path, 'etc', 'promise')
+      commands_to_run = os.listdir(promise_dir)
+      cwd = instance_path
+
+      # Check whether every promise is kept
+      for process_handler, command in \
+        self._runCommandAsUserAndYieldPopen(commands_to_run,
+                                            (uid, gid), cwd):
+
+        time.sleep(self.promise_timeout)
+
+        promise = os.path.basename(command)
+
+        if process_handler.poll() is None:
+          process_handler.kill()
+          computer_partition.error("The promise %r timed out" % promise)
+        elif process_handler.returncode != 0:
+          stderr = process_handler.communicate()[1]
+          if stderr is None:
+            stderr = 'No error output from %r.' % promise
+          computer_partition.error(stderr)
+
+
     logger.info("Finished computer partitions...")
     return clean_run
 
@@ -560,34 +597,6 @@ class Slapgrid(object):
             (command, result))
         if len(failed_script_list):
           computer_partition.error('\n'.join(failed_script_list))
-
-      #
-      # Checking if the promises are kept
-      #
-
-      # Get the list of promises
-      promise_dir = os.join(instance_path, 'etc', 'promise')
-      commands_to_run = os.listdir(promise_dir)
-      cwd = instance_path
-
-      # Check whether every promise is kept
-      for process_handler, command in \
-        self._runCommandAsUserAndYieldPopen(commands_to_run,
-                                            (uid, gid), cwd):
-
-        time.sleep(self.promise_timeout)
-
-        promise = os.path.basename(command)
-
-        if process_handler.poll() is None:
-          process_handler.kill()
-          computer_partition.error("The promise %r timed out" % promise)
-        elif process_handler.returncode != 0:
-          stderr = process_handler.communicate()[1]
-          if stderr is None:
-            stderr = 'No error output from %r.' % promise
-          computer_partition.error(stderr)
-
 
     #Now we loop through the different computer partitions to ggetId()et reports
     report_usage_issue_cp_list = []
