@@ -105,7 +105,7 @@ class Recipe(BaseSlapRecipe):
 
         service_dict[service_name] = dict(public_ip=varnish_ip,
             public_port=stunnel_port,
-            private_ip=slave_host,
+            private_ip=slave_host.replace("[", "").replace("]", ""),
             private_port=slave_port)
         rewrite_rule_list.append("%s http://%s:%s" % \
             (reference.replace("-", ""), varnish_ip, base_varnish_port))
