@@ -155,21 +155,17 @@ class ERP5Updater(object):
   def isBusinessTemplateUpdated(self):
     return len(self.getMissingBusinessTemplateSet()) == 0
 
-  def isBusinessTemplateRepositoryUpdated(self):
-    return len(self.getMissingBusinessTemplateRepositoryList()) == 0
-
   def updateBusinessTemplateList(self):
     """ Update Business Template Configuration, including the repositories
     """
     if not self.isBusinessTemplateUpdated():
-      # Before update the business templates, it is required to make
-      # sure the repositories are updated.
-      if not self.isBusinessTemplateRepositoryUpdated():
-        # Require to update Business template Repository
-        repository_list = self.getSystemSignatureDict(
-           "business_template_repository_list", [])
-        repository_list.extend(self.getMissingBusinessTemplateRepositoryList())
-        self._setRepositoryList(repository_list)
+      # Before updating  the business templates,  it is required to  make sure
+      # the  repositories are  updated,  thus  update them  even  if they  are
+      # already present because there may be new business templates...
+      repository_list = self.getSystemSignatureDict(
+        "business_template_repository_list", [])
+      repository_list.extend(self.getMissingBusinessTemplateRepositoryList())
+      self._setRepositoryList(repository_list)
 
       # Require to update Business template
       self._installBusinessTemplateList(list(self.getMissingBusinessTemplateSet()))
