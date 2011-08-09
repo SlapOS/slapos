@@ -7962,7 +7962,85 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_bug_destruction_with_unfinished_packing_list(self):
     """Proves that even if some packing lists are not fully delivered
     it is possible to destroy software instance"""
-    raise NotImplementedError
+    sequence_list = SequenceList()
+    sequence_string = """
+      # Prepare software release
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
+
+      # Create first computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install software on first computer
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # Now request and instantiate this software release on first computer
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # Request destruction...
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # ...and destroy it
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   ########################################
   # Other tests
