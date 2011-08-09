@@ -27,13 +27,13 @@
 ##############################################################################
 from optparse import OptionParser, Option
 from xml_marshaller import xml_marshaller
-from pwd import getpwnam
 import ConfigParser
 import grp
 import logging
 import netaddr
 import netifaces
 import os
+import pwd
 import random
 import slapos.slap as slap
 import socket
@@ -317,7 +317,7 @@ class Computer:
     slapsoft.path = self.software_root
     if alter_user:
       slapsoft.create()
-      slapsoft_pw = getpwnam(slapsoft.name)
+      slapsoft_pw = pwd.getpwnam(slapsoft.name)
       os.chown(self.software_root, slapsoft_pw.pw_uid, slapsoft_pw.pw_gid)
     os.chmod(self.software_root, 0755)
 
@@ -415,7 +415,7 @@ class Partition:
     if not os.path.exists(self.path):
       os.mkdir(self.path, 0750)
     if alter_user:
-      owner_pw = getpwnam(owner.name)
+      owner_pw = pwd.getpwnam(owner.name)
       os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
     os.chmod(self.path, 0750)
 
@@ -457,7 +457,7 @@ class User:
       user_parameter_list.extend(['-G', ','.join(self.additional_group_list)])
     user_parameter_list.append(self.name)
     try:
-      getpwnam(self.name)
+      pwd.getpwnam(self.name)
     except KeyError:
       callAndRead(['useradd'] + user_parameter_list)
     else:
@@ -475,7 +475,7 @@ class User:
     """
 
     try:
-      getpwnam(self.name)
+      pwd.getpwnam(self.name)
       return True
 
     except KeyError:
@@ -572,7 +572,7 @@ class Tap:
         owner_id = int(open(check_file).read().strip())
       except Exception:
         pass
-    if (owner_id is None) or (owner_id != getpwnam(owner.name).pw_uid):
+    if (owner_id is None) or (owner_id != pwd.getpwnam(owner.name).pw_uid):
       callAndRead(['tunctl', '-t', self.name, '-u', owner.name])
     callAndRead(['ip', 'link', 'set', self.name, 'up'])
 
@@ -584,7 +584,7 @@ class Tap:
 class Bridge:
   "Bridge represent a bridge on the system"
 
-  def __init__(self, name, ipv4_local_network, ipv6_interface):
+  def __init__(self, name, ipv4_local_network, ipv6_interface=None):
     """
     Attributes:
         name: String, the name of the bridge
@@ -846,11 +846,14 @@ class Parser(OptionParser):
         help="Shall slapformat alter network configuration [default: True]"),
       ])
 
-  def check_args(self):
+  def check_args(self, args):
     """
     Check arguments
     """
-    (options, args) = self.parse_args()
+    if args:
+      (options, args) = self.parse_args(list(args))
+    else:
+      (options, args) = self.parse_args()
     if len(args) != 1:
       self.error("Incorrect number of arguments")
     return options, args[0]
@@ -1093,17 +1096,17 @@ class Config:
     self.computer_xml = os.path.abspath(self.computer_xml)
 
 
-def main():
+def main(*args):
   "Run default configuration."
   global os
   global callAndRead
-  global getpwnam
+  global pwd
   real_callAndRead = callAndRead
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
 
   try:
     # Parse arguments
-    options, configuration_file_path = Parser(usage=usage).check_args()
+    options, configuration_file_path = Parser(usage=usage).check_args(args)
     config = Config()
     config.setConfig(options, configuration_file_path)
     os = OS(config)
@@ -1125,7 +1128,7 @@ def main():
           pw_uid = 12345
           pw_gid = 54321
         return result
-      getpwnam = fake_getpwnam
+      pwd.getpwnam = fake_getpwnam
     else:
       dry_callAndRead = real_callAndRead
     if config.verbose:

@@ -346,7 +346,7 @@ class Slapgrid(object):
       computer_partition_list = self.computer.getComputerPartitionList()
     except socket.error as error:
       self.logger.fatal(error)
-      sys.exit(1)
+      raise
     return computer_partition_list
 
   def processSoftwareReleaseList(self):
