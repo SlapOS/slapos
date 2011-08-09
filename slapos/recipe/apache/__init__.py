@@ -70,16 +70,16 @@ class Recipe(BaseSlapRecipe):
     base_url = "https://%s:%s/" % (frontend_domain_name, frontend_port_number)
     for slave_instance in slave_instance_list:
       url = slave_instance.get("url")
-      reference = slave_instance.get("slave_reference")
       if url is None:
         continue
+      reference = slave_instance.get("slave_reference")
       slave_dict[reference] = "%s%s" % (base_url, reference.replace("-", ""))
 
       enable_cache = slave_instance.get("enable_cache", "")
       if enable_cache.upper() in ('1', 'TRUE'):
         # Varnish should use stunnel to connect to the backend
-        base_varnish_control_port = base_varnish_port + 1
-        base_varnish_port += 2
+        base_varnish_control_port = base_varnish_port
+        base_varnish_port += 1
         # Use regex
         host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9])"
         slave_host = re.search(host_regex, url).group(0)
@@ -102,13 +102,13 @@ class Recipe(BaseSlapRecipe):
           backend_host=varnish_ip,
           backend_port=stunnel_port,
           size="1G")
-
         service_dict[service_name] = dict(public_ip=varnish_ip,
             public_port=stunnel_port,
             private_ip=slave_host.replace("[", "").replace("]", ""),
             private_port=slave_port)
         rewrite_rule_list.append("%s http://%s:%s" % \
             (reference.replace("-", ""), varnish_ip, base_varnish_port))
+        base_varnish_port += 2
       else:
         rewrite_rule_list.append("%s %s" % (reference.replace("-", ""), url))
 
