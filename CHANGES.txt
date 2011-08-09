@@ -1,10 +1,16 @@
 Changes
 =======
 
-0.16 (unreleased)
+0.17 (unreleased)
 -----------------
 
  * No changes yet.
+
+0.16 (2011-07-15)
+-----------------
+
+ * Improve Vifib and pure ERP5 instantiation [Rafael Monnerat]
+ * Use configurator for Vifib [Rafael Monnerat]
 
 0.15 (2011-07-13)
 -----------------
