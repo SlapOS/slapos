@@ -2,13 +2,17 @@ import logging
 import slapos.format
 import unittest
 
+import netaddr
+
 # for mocking
 import grp
+import netifaces
 import os
 import pwd
 
 USER_LIST = []
 GROUP_LIST = []
+INTERFACE_DICT = {}
 
 class FakeConfig:
   pass
@@ -26,12 +30,30 @@ class FakeCallAndRead:
     self.external_command_list = []
 
   def __call__(self, argument_list, raise_on_error=True):
+    global INTERFACE_DICT
     if 'useradd' in argument_list:
       global USER_LIST
       USER_LIST.append(argument_list[-1])
-    if 'groupadd' in argument_list:
+    elif 'groupadd' in argument_list:
       global GROUP_LIST
       GROUP_LIST.append(argument_list[-1])
+    elif argument_list[:3] == ['ip', 'addr', 'add']:
+      ip, interface = argument_list[3], argument_list[5]
+      if ':' not in ip:
+        netmask = netaddr.strategy.ipv4.int_to_str(
+          netaddr.strategy.ipv4.prefix_to_netmask[int(ip.split('/')[1])])
+        ip = ip.split('/')[0]
+        INTERFACE_DICT[interface][2].append({'addr': ip, 'netmask': netmask})
+      else:
+        netmask = netaddr.strategy.ipv6.int_to_str(
+          netaddr.strategy.ipv6.prefix_to_netmask[int(ip.split('/')[1])])
+        ip = ip.split('/')[0]
+        INTERFACE_DICT[interface][10].append({'addr': ip, 'netmask': netmask})
+      # stabilise by mangling ip to just ip string
+      argument_list[3] = 'ip/%s' % netmask
+    elif argument_list[:3] == ['ip', 'addr', 'list']:
+      return 0, str(INTERFACE_DICT)
+
     self.external_command_list.append(argument_list)
     return 0, 'UP'
 
@@ -64,7 +86,32 @@ class PwdMock:
       return result
     raise KeyError
 
+class NetifacesMock:
+  @classmethod
+  def ifaddresses(self, name):
+    global INTERFACE_DICT
+    if name in INTERFACE_DICT:
+      return INTERFACE_DICT[name]
+    raise ValueError
+
+  @classmethod
+  def interfaces(self):
+    global INTERFACE_DICT
+    return INTERFACE_DICT.keys()
+
 class SlapformatMixin(unittest.TestCase):
+  def patchNetifaces(self):
+    self.netifaces = NetifacesMock()
+    self.saved_netifaces = dict()
+    for fake in vars(NetifacesMock):
+      self.saved_netifaces[fake] = getattr(netifaces, fake, None)
+      setattr(netifaces, fake, getattr(self.netifaces, fake))
+
+  def restoreNetifaces(self):
+    for name, original_value in self.saved_netifaces.items():
+      setattr(netifaces, name, original_value)
+    del self.saved_netifaces
+
   def patchPwd(self):
     self.saved_pwd = dict()
     for fake in vars(PwdMock):
@@ -114,6 +161,8 @@ class SlapformatMixin(unittest.TestCase):
     USER_LIST = []
     global GROUP_LIST
     GROUP_LIST = []
+    global INTERFACE_DICT
+    INTERFACE_DICT = {}
 
     self.real_callAndRead = slapos.format.callAndRead
     self.fakeCallAndRead = FakeCallAndRead()
@@ -121,11 +170,13 @@ class SlapformatMixin(unittest.TestCase):
     self.patchOs(logger)
     self.patchGrp()
     self.patchPwd()
+    self.patchNetifaces()
 
   def tearDown(self):
     self.restoreOs()
     self.restoreGrp()
     self.restorePwd()
+    self.restoreNetifaces()
     slapos.format.callAndRead = self.real_callAndRead
 
 class TestComputer(SlapformatMixin):
@@ -140,7 +191,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16', 'eth0'))
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct()
@@ -159,7 +210,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_user(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16', 'eth0'))
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct(alter_user=False)
@@ -174,7 +225,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16', 'eth0'))
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct(alter_network=False)
@@ -193,7 +244,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_network_user(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16', 'eth0'))
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct(alter_network=False, alter_user=False)
@@ -205,6 +256,48 @@ class TestComputer(SlapformatMixin):
     self.assertEqual([
       ['ip', 'addr', 'list', 'bridge'],
       ],
+      self.fakeCallAndRead.external_command_list)
+
+  def test_construct_prepared(self):
+    computer = slapos.format.Computer('computer',
+      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+    computer.instance_root = '/instance_root'
+    computer.software_root = '/software_root'
+    partition = slapos.format.Partition('partition', '/part_path',
+      slapos.format.User('testuser'), [], None)
+    partition.tap = slapos.format.Tap('tap')
+    computer.partition_list = [partition]
+    global INTERFACE_DICT
+    INTERFACE_DICT['bridge'] = {
+      2: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+        'netmask': '255.255.255.0'}],
+      10: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+    }
+
+    computer.construct()
+    self.assertEqual([
+      "makedirs('/instance_root', 493)",
+      "makedirs('/software_root', 493)",
+      "chown('/software_root', 0, 0)",
+      "chmod('/software_root', 493)",
+      "mkdir('/instance_root/partition', 488)",
+      "chown('/instance_root/partition', 0, 0)",
+      "chmod('/instance_root/partition', 488)"
+    ],
+      self.test_result.bucket)
+    self.assertEqual([
+      ['groupadd', 'slapsoft'],
+      ['useradd', '-d', '/software_root', '-g', 'slapsoft', '-s',
+        '/bin/false', 'slapsoft'], ['groupadd', 'testuser'],
+      ['useradd', '-d', '/instance_root/partition', '-g', 'testuser', '-s',
+        '/bin/false', '-G', 'slapsoft', 'testuser'],
+      ['tunctl', '-t', 'tap', '-u', 'testuser'],
+      ['ip', 'link', 'set', 'tap', 'up'],
+      ['brctl', 'show'],
+      ['brctl', 'addif', 'bridge', 'tap'],
+      ['ip', 'addr', 'add', 'ip/255.255.255.255', 'dev', 'bridge'],
+      ['ip', 'addr', 'add', 'ip/ffff:ffff:ffff:ffff::', 'dev', 'bridge']
+    ],
       self.fakeCallAndRead.external_command_list)
 
 class TestPartition(SlapformatMixin):
