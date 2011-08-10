@@ -81,7 +81,6 @@ class HTTPSConnection(HTTPConnection):
                source_address=None):
     super().__init__(self, host, port, strict, timeout,
                      source_address)
-    pass
 
 class HTTPResponse(object):
 
