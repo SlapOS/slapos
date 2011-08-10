@@ -306,13 +306,14 @@ chmod 755 etc/run/wrapper
     self.assertSortedListEqual(os.listdir(partition_path), ['.0_wrapper.log',
       '.0_wrapper.log.1', 'worked', 'buildout.cfg', 'etc'])
     tries = 10
+    expected_text = 'Signal handler called with signal 15'
     while tries > 0:
       tries -= 1
-      if os.path.getsize(wrapper_log) > last_size:
+      found = expected_text in open(wrapper_log, 'r').read()
+      if found:
         break
       time.sleep(0.2)
-    self.assertTrue('Signal handler called with signal 15' in
-      open(wrapper_log, 'r').read())
+    self.assertTrue(found)
 
   def test_one_partition_stopped_started(self):
 
