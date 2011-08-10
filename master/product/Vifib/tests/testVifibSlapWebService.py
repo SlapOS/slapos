@@ -8042,6 +8042,10 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_bug_orhpaned_software_instance(self):
+    """"""
+    raise NotImplementedError
+
   ########################################
   # Other tests
   ########################################
