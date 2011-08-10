@@ -8055,6 +8055,69 @@ class TestVifibSlapWebService(testVifibMixin):
         SR(B) <- SR(C)
       do B would become root of orphaned tree.
     """
+    # Setup sufficient amount of CP
+    self.computer_partition_amount = 3
+    sequence_list = SequenceList()
+    sequence_string = """
+      # Prepare software release
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
+
+      # Create the computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install the software release
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # Create Software Instance A (originates from Open Order)
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # From A request B
+      # From B request C
+      # Try to: from C request B and prove that it raises
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
     raise NotImplementedError
 
   ########################################
