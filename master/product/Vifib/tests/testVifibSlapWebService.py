@@ -1187,6 +1187,12 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepSelectRequestedReferenceChildrenBChild(self, sequence, **kw):
     sequence.edit(requested_reference='children_b_child')
 
+  def stepSelectRequestedReferenceB(self, sequence, **kw):
+    sequence.edit(requested_reference='b')
+
+  def stepSelectRequestedReferenceC(self, sequence, **kw):
+    sequence.edit(requested_reference='c')
+
   def stepSelectEmptyRequestedParameterDict(self, sequence, **kw):
     sequence.edit(requested_parameter_dict=None)
 
@@ -1354,6 +1360,7 @@ class TestVifibSlapWebService(testVifibMixin):
         requested_slap_computer_partition=requested_slap_computer_partition,
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
+
 
   def stepDirectRequestComputerPartitionNotReadyResponseWithoutState(self,
     sequence, **kw):
@@ -7938,7 +7945,7 @@ class TestVifibSlapWebService(testVifibMixin):
       RestoreSoftwareInstanceUidFromBufferA
       RestoreComputerReferenceFromBufferA
       RestoreComputerUidFromBufferA
-      
+
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
       Tic
@@ -8038,6 +8045,155 @@ class TestVifibSlapWebService(testVifibMixin):
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       CheckComputerPartitionIsFree
       Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepDirectRequestComputerPartitionRaisesValueError(self,
+    sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid = sequence['software_instance_uid'])
+    requested_reference = sequence['requested_reference']
+    self.assertRaises(ValueError,
+      software_instance.requestSoftwareInstance,
+      software_release=sequence['software_release_uri'],
+      software_type=sequence['requested_reference'],
+      partition_reference=sequence['requested_reference'],
+      shared=False,
+      instance_xml=self.minimal_correct_xml,
+      sla_xml=self.minimal_correct_xml,
+      state='started'
+    )
+
+  def test_bug_orhpaned_software_instance(self):
+    """Check that no orphaned Software Instances would be created
+
+    In below scenario system shall behave like mentioned:
+
+      OpenOrder.request(SR, A)  | SR(A)
+      A.request(SR, B)          | SR(A) <- SR(B)
+      B.request(SR, C)          | SR(A) <- SR(B) <- SR(C)
+      C.request(SR, B) raises immediately, because the result would be:
+        SR(A)
+        SR(B) <- SR(C)
+      do B would become root of orphaned tree.
+    """
+    # Setup sufficient amount of CP
+    self.computer_partition_amount = 3
+    sequence_list = SequenceList()
+    sequence_string = """
+      # Prepare software release
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
+
+      # Create the computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install the software release
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # Create Software Instance A (originates from Open Order)
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # From root request B
+      SelectRequestedReferenceB
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      # From B request C
+      SelectRequestedReferenceC
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      # Try to: from C request B and prove that it raises
+      SelectRequestedReferenceB
+
+      LoginDefaultUser # login as superuser in order to work in erp5
+      DirectRequestComputerPartitionRaisesValueError
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
