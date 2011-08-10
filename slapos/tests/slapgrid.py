@@ -149,3 +149,85 @@ touch worked""")
       'var'])
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])
+
+class TestSlapgridArgumentTuple(unittest.TestCase):
+  """
+  """
+
+  def setUp(self):
+    """
+      Create the minimun default argument and configuration.
+    """
+    self.certificate_repository_path = tempfile.mkdtemp()
+    self.fake_file_descriptor = tempfile.NamedTemporaryFile()
+    self.slapos_config_descriptor = tempfile.NamedTemporaryFile()
+    self.slapos_config_descriptor.write("""
+[slapos]
+software_root = /opt/slapgrid
+instance_root = /srv/slapgrid
+master_url = https://slap.vifib.com/
+computer_id = your computer id
+buildout = /path/to/buildout/binary
+""" % dict(fake_file=self.fake_file_descriptor.name))
+    self.slapos_config_descriptor.seek(0)
+    self.default_arg_tuple = (
+        '--cert_file', self.fake_file_descriptor.name,
+        '--key_file', self.fake_file_descriptor.name,
+        '--master_ca_file', self.fake_file_descriptor.name,
+        '--certificate_repository_path', self.certificate_repository_path,
+        '-c', self.slapos_config_descriptor.name)
+
+    self.signature_key_file_descriptor = tempfile.NamedTemporaryFile()
+    self.signature_key_file_descriptor.seek(0)
+
+  def tearDown(self):
+    """
+      Removing the temp file.
+    """
+    self.fake_file_descriptor.close()
+    self.slapos_config_descriptor.close()
+    self.signature_key_file_descriptor.close()
+    shutil.rmtree(self.certificate_repository_path, True)
+
+  def test_empty_argument_tuple(self):
+    """
+      Raises if the argument list if empty and without configuration file.
+    """
+    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    self.assertRaises(IOError, parser, *())
+
+  def test_default_argument_tuple(self):
+    """
+      Check if we can have the slapgrid object returned with the minimum
+      arguments.
+    """
+    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    return_list = parser(*self.default_arg_tuple)
+    self.assertEquals(2, len(return_list))
+
+  # XXX(lucas): the error method from argparse.ArgumentParser()
+  # uses a bad approach to raise an error. It just print the message
+  # and call a exit method which stops the process completly and the other
+  # tests are not able to be executed.
+  # Could we patch the error method for a better coverage?
+  def test_signature_private_key_file_non_exists(self):
+    """
+      Raises if the  signature_private_key_file does not exists.
+    """
+    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    argument_tuple = ("--signature_private_key_file", "/non/exists/path") + \
+                      self.default_arg_tuple
+    #self.assertRaises(Exception, parser, *argument_tuple)
+
+  def test_signature_private_key_file(self):
+    """
+      Check if the signature private key argument value is available on
+      slapgrid object.
+    """
+    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    argument_tuple = ("--signature_private_key_file",
+                      self.signature_key_file_descriptor.name) + \
+                      self.default_arg_tuple
+    slapgrid_object = parser(*argument_tuple)[0]
+    self.assertEquals(self.signature_key_file_descriptor.name,
+                          slapgrid_object.signature_private_key_file)
