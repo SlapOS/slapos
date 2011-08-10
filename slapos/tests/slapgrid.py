@@ -36,6 +36,15 @@ class BasicMixin:
       self.buildout)
 
   def tearDown(self):
+    # XXX: Hardcoded pid, as it is not configurable in slapos
+    svc = os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')
+    if os.path.exists(svc):
+      try:
+        pid = int(open(svc).read().strip())
+      except ValueError:
+        pass
+      else:
+        os.kill(pid, signal.SIGTERM)
     shutil.rmtree(self._tempdir, True)
 
 class TestBasicSlapgridCP(BasicMixin, unittest.TestCase):
@@ -76,15 +85,6 @@ class MasterMixin(BasicMixin):
 
   def tearDown(self):
     self._unpatchHttplib()
-    # XXX: Hardcoded pid, as it is not configurable in slapos
-    svc = os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')
-    if os.path.exists(svc):
-      try:
-        pid = int(open(svc).read().strip())
-      except ValueError:
-        pass
-      else:
-        os.kill(pid, signal.SIGTERM)
     BasicMixin.tearDown(self)
 
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
