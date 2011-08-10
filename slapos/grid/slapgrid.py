@@ -168,10 +168,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   key_file = option_dict.get('key_file')
   cert_file = option_dict.get('cert_file')
   master_ca_file = option_dict.get('master_ca_file')
-  # If it was not passed as argument, we must check if it was defined into
-  # the configuration file.
   signature_private_key_file = option_dict.get('signature_private_key_file', '')
-
   for f in [key_file, cert_file, master_ca_file, signature_private_key_file]:
     if not os.path.exists(f):
       parser.error('File %r does not exists.' % f)
