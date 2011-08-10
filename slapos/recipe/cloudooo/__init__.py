@@ -127,7 +127,7 @@ class Recipe(BaseSlapRecipe):
         self.substituteTemplate(template_filename,
         stunnel_conf))
     wrapper = zc.buildout.easy_install.scripts([('stunnel',
-      'slapos.recipe.erp5.execute', 'execute')], self.ws, sys.executable,
+      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
       self.wrapper_directory, arguments=[
       self.options['stunnel_binary'].strip(), stunnel_conf_path]
       )[0]
@@ -139,7 +139,7 @@ class Recipe(BaseSlapRecipe):
     cron_output = os.path.join(self.log_directory, 'cron-output')
     self._createDirectory(cron_output)
     catcher = zc.buildout.easy_install.scripts([('catchcron',
-      __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
+      'slapos.recipe.erp5.catdatefile', 'catdatefile')], self.ws, sys.executable,
       self.bin_directory, arguments=[cron_output])[0]
     self.path_list.append(catcher)
     cron_d = os.path.join(self.etc_directory, 'cron.d')
@@ -147,7 +147,7 @@ class Recipe(BaseSlapRecipe):
     self._createDirectory(cron_d)
     self._createDirectory(crontabs)
     wrapper = zc.buildout.easy_install.scripts([('crond',
-      __name__ + '.execute', 'execute')], self.ws, sys.executable,
+      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
       self.wrapper_directory, arguments=[
       self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
       '-t', timestamps, '-f', '-l', '5', '-M', catcher]
@@ -236,7 +236,8 @@ class Recipe(BaseSlapRecipe):
       office_binary_path=self.options['ooo_binary_path'],
       ip=ip,
       port=port,
-      openoffice_port=ip,
+      openoffice_port=openoffice_port,
+      openoffice_host=ip,
       PATH="$PATH:%s" % self.bin_directory
     )
     for env_line in self.options['environment'].splitlines():
