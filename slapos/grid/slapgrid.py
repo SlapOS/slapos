@@ -167,8 +167,15 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   key_file = option_dict.get('key_file')
   cert_file = option_dict.get('cert_file')
   master_ca_file = option_dict.get('master_ca_file')
-  signature_private_key_file = option_dict.get('signature_private_key_file', '')
-  for f in [key_file, cert_file, master_ca_file, signature_private_key_file]:
+  signature_private_key_file = option_dict.get('signature_private_key_file')
+
+  mandatory_file_list = [key_file, cert_file, master_ca_file]
+  # signature_private_key_file is not mandatory, we must be able to run
+  # slapgrid scripts without this parameter.
+  if signature_private_key_file:
+    mandatory_file_list.append(signature_private_key_file)
+
+  for f in mandatory_file_list:
     if not os.path.exists(f):
       parser.error('File %r does not exists.' % f)
 
