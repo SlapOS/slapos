@@ -64,8 +64,6 @@ MANDATORY_PARAMETER_LIST = [
     'software_root',
 ]
 
-DEFAULT_PROMISE_TIMEOUT = 3
-
 
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Parses arguments either from command line, from method parameters or from
@@ -109,7 +107,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("-v", "--verbose", action="store_true", default=False,
       help="Be verbose.")
   parser.add_argument("--promise-timeout",
-                      type=int, default=DEFAULT_PROMISE_TIMEOUT,
+                      type=int, default=3,
                       help="Promise timeout in seconds.")
   parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
       help="SlapOS configuration file.")
@@ -275,7 +273,7 @@ class Slapgrid(object):
                master_ca_file=None,
                certificate_repository_path=None,
                console=False,
-               promise_timeout=DEFAULT_PROMISE_TIMEOUT):
+               promise_timeout=3):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
     self.software_root = os.path.abspath(software_root)
@@ -302,7 +300,7 @@ class Slapgrid(object):
         os.path.join(self.instance_etc_directory, 'supervisord.conf.d')
     self.console = console
     self.buildout = buildout
-    self.promise_timeout = DEFAULT_PROMISE_TIMEOUT
+    self.promise_timeout = promise_timeout
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -477,14 +475,22 @@ class Slapgrid(object):
       # Get the list of promises
       promise_dir = os.path.join(instance_path, 'etc', 'promise')
       if os.path.exists(promise_dir) and os.path.isdir(promise_dir):
-        commands_to_run = [os.path.join(promise_dir, command)
-                           for command in os.listdir(promise_dir)]
         cwd = instance_path
+        promises_list = os.listdir(promise_dir)
 
         # Check whether every promise is kept
-        for process_handler, command in \
-          self._runCommandsAsUserAndYieldPopen(commands_to_run,
-                                              (uid, gid), cwd):
+        for promise in promises_list:
+
+          command = os.path.join(promise_dir, promise)
+
+          kw = dict()
+          if not self.console:
+            kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+          process_handler = SlapPopen(command,
+            preexec_fn=lambda: dropPrivileges(uid, gid),
+            cwd=cwd,
+            env=None, **kw)
 
           time.sleep(self.promise_timeout)
 
@@ -519,23 +525,6 @@ class Slapgrid(object):
 
     return False
 
-  def _runCommandsAsUserAndYieldPopen(self, commands_list, user, cwd):
-
-    uid, gid = user
-
-    for command in commands_list:
-
-      kw = dict()
-      if not self.console:
-        kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-      process_handler = SlapPopen(command,
-        preexec_fn=lambda: dropPrivileges(uid, gid),
-        cwd=cwd,
-        env=None, **kw)
-
-      yield (process_handler, command)
-
   def agregateAndSendUsage(self):
     """Will agregate usage from each Computer Partition.
     """
@@ -558,13 +547,6 @@ class Slapgrid(object):
       else:
         script_list_to_run = []
 
-      uid, gid = None, None
-      stat_info = os.stat(instance_path)
-      #stat sys call to get statistics informations
-      uid = stat_info.st_uid
-      gid = stat_info.st_gid
-
-
       #We now generate the pseudorandom name for the xml file
       # and we add it in the invocation_list
       f = tempfile.NamedTemporaryFile()
@@ -573,19 +555,30 @@ class Slapgrid(object):
           name_xml)
 
       failed_script_list = []
+      for script in script_list_to_run:
 
-      commands_to_run = [ (os.path.join(instance_path, 'etc', 'report',
-                                        script),
-                           path_to_slapreport,
-                          )
-                          for script in script_list_to_run ]
+        invocation_list = []
+        invocation_list.append(os.path.join(instance_path, 'etc', 'report',
+          script))
+        #We add the xml_file name in the invocation_list
+        #f = tempfile.NamedTemporaryFile()
+        #name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
+        #path_to_slapreport = os.path.join(instance_path, 'var', name_xml)
 
-      cwd = os.path.join(instance_path, 'etc', 'report')
-
-      for process_handler, command in \
-        self._runCommandsAsUserAndYieldPopen(commands_to_run,
-                                            (uid, gid), cwd):
-
+        invocation_list.append(path_to_slapreport)
+        #Dropping privileges
+        uid, gid = None, None
+        stat_info = os.stat(instance_path)
+        #stat sys call to get statistics informations
+        uid = stat_info.st_uid
+        gid = stat_info.st_gid
+        kw = dict()
+        if not self.console:
+          kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        process_handler = SlapPopen(invocation_list,
+          preexec_fn=lambda: dropPrivileges(uid, gid),
+          cwd=os.path.join(instance_path, 'etc', 'report'),
+          env=None, **kw)
         result = process_handler.communicate()[0]
         if self.console:
           result = 'Please consult messages above'
@@ -593,10 +586,9 @@ class Slapgrid(object):
           process_handler.kill()
         if process_handler.returncode != 0:
           clean_run = False
-          failed_script_list.append("Script %r failed with %s." % (script,
-                                                                   result))
+          failed_script_list.append("Script %r failed with %s." % (script, result))
           logger.warning("Failed to run %r, the result was. \n%s" %
-            (command, result))
+            (invocation_list, result))
         if len(failed_script_list):
           computer_partition.error('\n'.join(failed_script_list))
 
