@@ -8043,7 +8043,18 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.play(self)
 
   def test_bug_orhpaned_software_instance(self):
-    """"""
+    """Check that no orphaned Software Instances would be created
+
+    In below scenario system shall behave like mentioned:
+
+      OpenOrder.request(SR, A)  | SR(A)
+      A.request(SR, B)          | SR(A) <- SR(B)
+      B.request(SR, C)          | SR(A) <- SR(B) <- SR(C)
+      C.request(SR, B) raises immediately, because the result would be:
+        SR(A)
+        SR(B) <- SR(C)
+      do B would become root of orphaned tree.
+    """
     raise NotImplementedError
 
   ########################################
