@@ -766,25 +766,23 @@ exit 0""" % {'worked_file': worked_file_2})
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
 
-    succeed = os.path.join(promise_path, 'succeed')
-    worked_file_succeed = os.path.join(instance_path, 'succeed_worked')
-    with open(succeed, 'w') as f:
-      f.write("""#!/usr/bin/env sh
+    promises_files = []
+    for i in range(2):
+      promise = os.path.join(promise_path, 'promise_%d')
+      promises_files.append(promise)
+      worked_file = os.path.join(instance_path, 'promise_worked_%d')
+      lockfile = os.path.join(instance_path, 'lock')
+      with open(promise, 'w') as f:
+        f.write("""#!/usr/bin/env sh
 touch "%(worked_file)s"
-exit 0""" % {'worked_file': worked_file_succeed})
-    os.chmod(succeed, 0777)
+[[ ! -f "%(lockfile)s" ]] || { touch "%(lockfile)s" ; exit 127 }
+exit 0""" % {'worked_file': worked_file, 'lockfile': lockfile})
+      os.chmod(promise, 0777)
 
-    fail = os.path.join(promise_path, 'fail')
-    worked_file_failed = os.path.join(instance_path, 'fail_worked')
-    with open(fail, 'w') as f:
-      f.write("""#!/usr/bin/env sh
-touch "%(worked_file)s"
-exit 127""" % {'worked_file': worked_file_failed})
-    os.chmod(fail, 0777)
 
     self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertTrue(os.path.isfile(worked_file_succeed))
-    self.assertTrue(os.path.isfile(worked_file_failed))
+    for file_ in promises_files:
+      self.assertTrue(os.path.isfile(file_))
 
     self.assertEquals(self.error, 1)
 
@@ -814,11 +812,7 @@ exit 127""" % {'worked_file': worked_file_failed})
       if parsed_url.path == 'softwareInstanceError' and \
          method == 'POST' and 'computer_partition_id' in parsed_qs:
         self.error += 1
-        # XXX: Hardcoded dropPrivileges line ignore
-        error_log = '\n'.join([line for line in parsed_qs['error_log'][0].splitlines()
-                               if 'dropPrivileges' not in line])
-        # end XXX
-        self.assertEqual(error_log, 'The promise %r timed out' % 'timeout')
+        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
         return (200, {}, '')
       else:
         return (404, {}, '')
@@ -833,26 +827,23 @@ exit 127""" % {'worked_file': worked_file_failed})
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
 
-    succeed = os.path.join(promise_path, 'succeed')
-    worked_file_succeed = os.path.join(instance_path, 'succeed_worked')
-    with open(succeed, 'w') as f:
-      f.write("""#!/usr/bin/env sh
+    promises_files = []
+    for i in range(2):
+      promise = os.path.join(promise_path, 'promise_%d')
+      promises_files.append(promise)
+      worked_file = os.path.join(instance_path, 'promise_worked_%d')
+      lockfile = os.path.join(instance_path, 'lock')
+      with open(promise, 'w') as f:
+        f.write("""#!/usr/bin/env sh
 touch "%(worked_file)s"
-exit 0""" % {'worked_file': worked_file_succeed})
-    os.chmod(succeed, 0777)
+[[ ! -f "%(lockfile)s" ]] || { touch "%(lockfile)s" ; sleep 5 }
+exit 0""" % {'worked_file': worked_file, 'lockfile': lockfile})
+      os.chmod(promise, 0777)
 
-    timeout = os.path.join(promise_path, 'timeout')
-    worked_file_timeout = os.path.join(instance_path, 'timeout_worked')
-    with open(timeout, 'w') as f:
-      f.write("""#!/usr/bin/env sh
-touch "%(worked_file)s"
-sleep 5
-exit 0""" % {'worked_file': worked_file_timeout})
-    os.chmod(timeout, 0777)
 
     self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertTrue(os.path.isfile(worked_file_succeed))
-    self.assertTrue(os.path.isfile(worked_file_timeout))
+    for file_ in promises_files:
+      self.assertTrue(os.path.isfile(file_))
 
     self.assertEquals(self.error, 1)
 
