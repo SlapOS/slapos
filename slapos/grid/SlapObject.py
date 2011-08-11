@@ -35,9 +35,7 @@ import tempfile
 from supervisor import xmlrpc
 import xmlrpclib
 import pwd
-from utils import launchBuildout, getCleanEnvironment,\
-                   dropPrivileges, bootstrapBuildout, updateFile,\
-                   getSoftwareUrlHash, SlapPopen
+import utils
 from svcbackend import getSupervisorRPC
 from exception import BuildoutFailedError, WrongPermissionError, \
     PathDoesNotExistError
@@ -55,7 +53,7 @@ class Software(object):
     self.url = url
     self.software_root = software_root
     self.software_path = os.path.join(self.software_root,
-                                      getSoftwareUrlHash(self.url))
+                                      utils.getSoftwareUrlHash(self.url))
     self.buildout = buildout
     self.logger = logging.getLogger('BuildoutManager')
     self.console = console
@@ -98,10 +96,10 @@ class Software(object):
               buildout_option % ('networkcache:', value))
 
       buildout_parameter_list.extend(['-c', self.url])
-      bootstrapBuildout(self.software_path, self.buildout,
+      utils.bootstrapBuildout(self.software_path, self.buildout,
           additional_buildout_parametr_list=buildout_parameter_list,
           console=self.console)
-      launchBuildout(self.software_path,
+      utils.launchBuildout(self.software_path,
                      os.path.join(self.software_path, 'bin', 'buildout'),
                      additional_buildout_parametr_list=buildout_parameter_list,
                      console=self.console)
@@ -255,9 +253,9 @@ class Partition(object):
       kw = dict()
       if not self.console:
         kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-      process_handler = SlapPopen(invocation_list,
-        preexec_fn=lambda: dropPrivileges(uid, gid), cwd=self.instance_path,
-        env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
+      process_handler = utils.SlapPopen(invocation_list,
+        preexec_fn=lambda: utils.dropPrivileges(uid, gid), cwd=self.instance_path,
+        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
       result_std = process_handler.communicate()[0]
       if self.console:
         result_std = 'Please consult messages above.'
@@ -269,12 +267,12 @@ class Partition(object):
 
     if not os.path.exists(buildout_binary):
       # use own buildout generation
-      bootstrapBuildout(self.instance_path, self.buildout,
+      utils.bootstrapBuildout(self.instance_path, self.buildout,
         ['buildout:bin-directory=%s'% os.path.join(self.instance_path,
         'sbin')], console=self.console)
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
     # Launches buildout
-    launchBuildout(self.instance_path,
+    utils.launchBuildout(self.instance_path,
                    buildout_binary, console=self.console)
     # Generates supervisord configuration file from template
     self.logger.info("Generating supervisord config file from template...")
@@ -314,7 +312,7 @@ class Partition(object):
           HOME=pwd.getpwuid(uid).pw_dir,
           USER=pwd.getpwuid(uid).pw_name,
         )
-      updateFile(self.supervisord_partition_configuration_path,
+      utils.updateFile(self.supervisord_partition_configuration_path,
           partition_supervisor_configuration)
     self.updateSupervisor()
 
@@ -361,9 +359,9 @@ class Partition(object):
       kw = dict()
       if not self.console:
         kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-      process_handler = SlapPopen([destroy_executable_location],
-        preexec_fn=lambda: dropPrivileges(uid, gid), cwd=self.instance_path,
-        env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
+      process_handler = utils.SlapPopen([destroy_executable_location],
+        preexec_fn=lambda: utils.dropPrivileges(uid, gid), cwd=self.instance_path,
+        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
       result_std = process_handler.communicate()[0]
       if self.console:
         result_std = 'Please consult messages above'
