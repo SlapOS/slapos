@@ -697,7 +697,7 @@ exit 0""")
 exit 0""")
     os.chmod(succeed, 0777)
 
-    succeed_2 = os.path.join(promise_path, 'succeed')
+    succeed_2 = os.path.join(promise_path, 'succeed_2')
     with open(succeed_2, 'w') as f:
       f.write("""#!/usr/bin/env sh
 exit 0""")
