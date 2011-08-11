@@ -474,6 +474,7 @@ chmod 755 etc/run/wrapper
         return (404, {}, '')
 
     httplib.HTTPConnection._callback = server_response
+    self.fake_waiting_time = 0.2
     self.error = False
 
     instance_path = self._create_instance('0')
@@ -522,6 +523,7 @@ exit 127""")
         return (404, {}, '')
 
     httplib.HTTPConnection._callback = server_response
+    self.fake_waiting_time = 0.2
     self.error = False
 
     instance_path = self._create_instance('0')
