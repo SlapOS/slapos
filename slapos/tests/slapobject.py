@@ -6,13 +6,17 @@ import unittest
 import tempfile
 import sys
 
-def mockBootstrapBuildout(*args, **kwargs):
-  print args, kwargs
-utils.bootstrapBuildout = mockBootstrapBuildout
 
-def mockLaunchBuildout(*args, **kwargs):
-  print args, kwargs
-utils.launchBuildout = mockLaunchBuildout
+class FakeCallAndRead:
+  def __init__(self):
+    self.external_command_dict = {}
+
+  def __call__(self, *args, **kwargs):
+    self.external_command_dict.update(kwargs)
+
+FakeCallAndRead = FakeCallAndRead()
+utils.bootstrapBuildout = FakeCallAndRead
+utils.launchBuildout = FakeCallAndRead
 
 class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
   """
@@ -22,24 +26,13 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
   def setUp(self):
     BasicMixin.setUp(self)
     os.mkdir(self.software_root)
-    self.output_file = tempfile.NamedTemporaryFile()
-    self.stdout = sys.stdout
     self.signature_private_key_file = '/signature/private/key_file'
     self.upload_cache_url = 'http://example.com/uploadcache'
     self.upload_dir_url = 'http://example.com/uploaddir'
 
   def tearDown(self):
     BasicMixin.tearDown(self)
-    self.output_file.close()
-
-  # Utils methods
-  def _printToFile(self):
-    self.output_file.seek(0)
-    sys.stdout = self.output_file
-
-  def _printToScreen(self):
-    self.output_file.seek(0)
-    sys.stdout = self.stdout
+    FakeCallAndRead.external_command_dict = {}
 
   # Test methods
   def test_software_install_with_networkcache(self):
@@ -55,15 +48,15 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
             upload_cache_url='http://example.com/uploadcache',
             upload_dir_url='http://example.com/uploaddir')
 
-    self._printToFile()
     software.install()
-    self._printToScreen()
 
-    content = self.output_file.read()
-    self.assertTrue('networkcache' in content)
-    self.assertTrue(self.upload_cache_url in content)
-    self.assertTrue(self.upload_dir_url in content)
-    self.assertTrue(self.signature_private_key_file in content)
+    additional_buildout_parameter = ' '.join(
+        FakeCallAndRead.external_command_dict.\
+            get('additional_buildout_parametr_list'))
+    self.assertTrue('networkcache' in additional_buildout_parameter)
+    self.assertTrue(self.upload_cache_url in additional_buildout_parameter)
+    self.assertTrue(self.upload_dir_url in additional_buildout_parameter)
+    self.assertTrue(self.signature_private_key_file in additional_buildout_parameter)
 
   def test_software_install_without_networkcache(self):
     """
@@ -76,12 +69,12 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
             console=False,
             buildout=self.buildout)
 
-    self._printToFile()
     software.install()
-    self._printToScreen()
 
-    content = self.output_file.read()
-    self.assertFalse('networkcache' in content)
-    self.assertFalse(self.upload_cache_url in content)
-    self.assertFalse(self.upload_dir_url in content)
-    self.assertFalse(self.signature_private_key_file in content)
+    additional_buildout_parameter = ' '.join(FakeCallAndRead.\
+        external_command_dict.\
+            get('additional_buildout_parametr_list'))
+    self.assertFalse('networkcache' in additional_buildout_parameter)
+    self.assertFalse(self.upload_cache_url in additional_buildout_parameter)
+    self.assertFalse(self.upload_dir_url in additional_buildout_parameter)
+    self.assertFalse(self.signature_private_key_file in additional_buildout_parameter)
