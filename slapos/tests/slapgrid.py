@@ -539,3 +539,58 @@ exit 0""")
     self.assertTrue(self.grid.processComputerPartitionList())
 
     self.assertFalse(self.error)
+
+  def test_stderr_has_been_sent(self):
+
+    def server_response(self_httplib, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+
+      if method == 'GET':
+        parsed_qs = urlparse.parse_qs(parsed_url.query)
+      else:
+        parsed_qs = urlparse.parse_qs(body)
+
+      if parsed_url.path == 'getComputerInformation' and \
+         'computer_id' in parsed_qs:
+        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
+        slap_computer._software_release_list = []
+        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
+            '0')
+        partition._need_modification = True
+        sr = slapos.slap.SoftwareRelease()
+        sr._software_release = 'http://sr/'
+        partition._software_release_document = sr
+        partition._requested_state = 'stopped'
+        slap_computer._computer_partition_list = [partition]
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
+      if parsed_url.path == 'softwareInstanceError' and \
+         method == 'POST' and 'computer_partition_id' in parsed_qs:
+        self.error = True
+        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
+        # XXX: Hardcoded dropPrivileges line ignore
+        error_log = '\n'.join([line for line in parsed_qs['error_log'][0].splitlines()
+                               if 'dropPrivileges' not in line])
+        # end XXX
+        self.assertEqual(error_log, 'Error')
+        return (200, {}, '')
+      else:
+        return (404, {}, '')
+
+    httplib.HTTPConnection._callback = server_response
+    self.fake_waiting_time = 0.5
+    self.error = False
+
+    instance_path = self._create_instance('0')
+    software_hash = self._bootstrap()
+
+    promise_path = os.path.join(instance_path, 'etc', 'promise')
+    os.makedirs(promise_path)
+    succeed = os.path.join(promise_path, 'succeed')
+    with open(succeed, 'w') as f:
+      f.write("""#!/usr/bin/env sh
+echo -n Error 1>&2
+exit 127""")
+    os.chmod(succeed, 0777)
+    self.assertTrue(self.grid.processComputerPartitionList())
+
+    self.assertTrue(self.error)
