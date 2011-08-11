@@ -585,7 +585,7 @@ exit 0""")
 
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
-    succeed = os.path.join(promise_path, 'succeed')
+    succeed = os.path.join(promise_path, 'stderr_writer')
     with open(succeed, 'w') as f:
       f.write("""#!/usr/bin/env sh
 echo -n Error 1>&2
