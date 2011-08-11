@@ -9,10 +9,12 @@ import sys
 
 class FakeCallAndRead:
   def __init__(self):
-    self.external_command_dict = {}
+    self.external_command_list = []
 
   def __call__(self, *args, **kwargs):
-    self.external_command_dict.update(kwargs)
+    additional_buildout_parametr_list = \
+        kwargs.get('additional_buildout_parametr_list')
+    self.external_command_list.extend(additional_buildout_parametr_list)
 
 FakeCallAndRead = FakeCallAndRead()
 utils.bootstrapBuildout = FakeCallAndRead
@@ -32,7 +34,7 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
 
   def tearDown(self):
     BasicMixin.tearDown(self)
-    FakeCallAndRead.external_command_dict = {}
+    FakeCallAndRead.external_command_list = []
 
   # Test methods
   def test_software_install_with_networkcache(self):
@@ -50,13 +52,15 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
 
     software.install()
 
-    additional_buildout_parameter = ' '.join(
-        FakeCallAndRead.external_command_dict.\
-            get('additional_buildout_parametr_list'))
-    self.assertTrue('networkcache' in additional_buildout_parameter)
-    self.assertTrue(self.upload_cache_url in additional_buildout_parameter)
-    self.assertTrue(self.upload_dir_url in additional_buildout_parameter)
-    self.assertTrue(self.signature_private_key_file in additional_buildout_parameter)
+    command_list = FakeCallAndRead.external_command_list
+    self.assertTrue('buildout:networkcache-section=networkcache'
+                    in command_list)
+    self.assertTrue('networkcache:signature-private-key-file=%s' %
+                    self.signature_private_key_file in command_list)
+    self.assertTrue('networkcache:upload-cache-url=%s' % self.upload_cache_url
+                    in command_list)
+    self.assertTrue('networkcache:upload-dir-url=%s' % self.upload_dir_url
+                    in command_list)
 
   def test_software_install_without_networkcache(self):
     """
@@ -71,10 +75,12 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
 
     software.install()
 
-    additional_buildout_parameter = ' '.join(FakeCallAndRead.\
-        external_command_dict.\
-            get('additional_buildout_parametr_list'))
-    self.assertFalse('networkcache' in additional_buildout_parameter)
-    self.assertFalse(self.upload_cache_url in additional_buildout_parameter)
-    self.assertFalse(self.upload_dir_url in additional_buildout_parameter)
-    self.assertFalse(self.signature_private_key_file in additional_buildout_parameter)
+    command_list = FakeCallAndRead.external_command_list
+    self.assertFalse('buildout:networkcache-section=networkcache'
+                    in command_list)
+    self.assertFalse('networkcache:signature-private-key-file=%s' %
+                    self.signature_private_key_file in command_list)
+    self.assertFalse('networkcache:upload-cache-url=%s' % self.upload_cache_url
+                    in command_list)
+    self.assertFalse('networkcache:upload-dir-url=%s' % self.upload_dir_url
+                    in command_list)
