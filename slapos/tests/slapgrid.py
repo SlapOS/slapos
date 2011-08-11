@@ -725,3 +725,65 @@ exit 0""" % {'worked_file': worked_file_2})
 
     self.assertFalse(self.error)
 
+  def test_one_succeeding_one_failing_promises(self):
+
+    def server_response(self_httplib, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+
+      if method == 'GET':
+        parsed_qs = urlparse.parse_qs(parsed_url.query)
+      else:
+        parsed_qs = urlparse.parse_qs(body)
+
+      if parsed_url.path == 'getComputerInformation' and \
+         'computer_id' in parsed_qs:
+        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
+        slap_computer._software_release_list = []
+        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
+            '0')
+        partition._need_modification = True
+        sr = slapos.slap.SoftwareRelease()
+        sr._software_release = 'http://sr/'
+        partition._software_release_document = sr
+        partition._requested_state = 'stopped'
+        slap_computer._computer_partition_list = [partition]
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
+      if parsed_url.path == 'softwareInstanceError' and \
+         method == 'POST' and 'computer_partition_id' in parsed_qs:
+        self.error += 1
+        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
+        return (200, {}, '')
+      else:
+        return (404, {}, '')
+
+    httplib.HTTPConnection._callback = server_response
+    self.fake_waiting_time = 0.2
+    self.error = 0
+
+    instance_path = self._create_instance('0')
+    software_hash = self._bootstrap()
+
+    promise_path = os.path.join(instance_path, 'etc', 'promise')
+    os.makedirs(promise_path)
+
+    succeed = os.path.join(promise_path, 'succeed')
+    worked_file_succeed = os.path.join(instance_path, 'succeed_worked')
+    with open(succeed, 'w') as f:
+      f.write("""#!/usr/bin/env sh
+touch "%(worked_file)s"
+exit 0""" % {'worked_file': worked_file_succeed})
+    os.chmod(succeed, 0777)
+
+    fail = os.path.join(promise_path, 'fail')
+    worked_file_failed = os.path.join(instance_path, 'fail_worked')
+    with open(fail, 'w') as f:
+      f.write("""#!/usr/bin/env sh
+touch "%(worked_file)s"
+exit 127""" % {'worked_file': worked_file_failed})
+    os.chmod(fail, 0777)
+
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertTrue(os.path.isfile(worked_file_succeed))
+    self.assertTrue(os.path.isfile(worked_file_failed))
+
+    self.assertEquals(self.error, 1)
