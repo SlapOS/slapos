@@ -574,10 +574,9 @@ exit 0""" % {'worked_file': worked_file})
         self.error = True
         self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
         # XXX: Hardcoded dropPrivileges line ignore
-        error_log = '\n'.join([line for line in parsed_qs['error_log'][0].splitlines()
+        self.error_log = '\n'.join([line for line in parsed_qs['error_log'][0].splitlines()
                                if 'dropPrivileges' not in line])
         # end XXX
-        self.assertEqual(error_log, 'Error')
         return (200, {}, '')
       else:
         return (404, {}, '')
@@ -602,6 +601,7 @@ exit 127""" % {'worked_file': worked_file})
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertTrue(os.path.isfile(worked_file))
 
+    self.assertEqual(self.error_log, 'Error')
     self.assertTrue(self.error)
 
   def test_timeout_works(self):
