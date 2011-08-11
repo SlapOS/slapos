@@ -442,6 +442,7 @@ chmod 755 etc/run/wrapper
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
 
 
+class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
   def test_one_failing_promise(self):
 
     def server_response(self_httplib, path, method, body, header):
