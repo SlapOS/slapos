@@ -79,6 +79,20 @@ class MasterMixin(BasicMixin):
       setattr(httplib, name, original_value)
     del self.saved_httplib
 
+  def _mock_sleep(self):
+    self.fake_waiting_time = None
+    self.real_sleep = time.sleep
+
+    def mocked_sleep(secs):
+      if self.fake_waiting_time is not None:
+        secs = self.fake_waiting_time
+      self.real_sleep(secs)
+
+    time.sleep = mocked_sleep
+
+  def _unmock_sleep(self):
+    time.sleep = self.real_sleep
+
   def _create_instance(self, name=0):
 
     if not os.path.isdir(self.instance_root):
@@ -104,10 +118,12 @@ touch worked""")
 
   def setUp(self):
     self._patchHttplib()
+    self._mock_sleep()
     BasicMixin.setUp(self)
 
   def tearDown(self):
     self._unpatchHttplib()
+    self._unmock_sleep()
     BasicMixin.tearDown(self)
 
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
@@ -521,4 +537,3 @@ exit 0""")
     self.assertTrue(self.grid.processComputerPartitionList())
 
     self.assertFalse(self.error)
-
