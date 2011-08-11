@@ -485,7 +485,7 @@ class Slapgrid(object):
 
           kw = dict()
           if not self.console:
-            kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            kw.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
           process_handler = SlapPopen(command,
             preexec_fn=lambda: dropPrivileges(uid, gid),
