@@ -483,11 +483,14 @@ chmod 755 etc/run/wrapper
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
     fail = os.path.join(promise_path, 'fail')
+    worked_file = os.path.join(instance_path, 'fail_worked')
     with open(fail, 'w') as f:
       f.write("""#!/usr/bin/env sh
-exit 127""")
+touch "%(worked_file)s"
+exit 127""" % {'worked_file': worked_file})
     os.chmod(fail, 0777)
     self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertTrue(os.path.isfile(worked_file))
 
     self.assertTrue(self.error)
 
@@ -532,11 +535,14 @@ exit 127""")
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
     succeed = os.path.join(promise_path, 'succeed')
+    worked_file = os.path.join(instance_path, 'succeed_worked')
     with open(succeed, 'w') as f:
       f.write("""#!/usr/bin/env sh
-exit 0""")
+touch "%(worked_file)s"
+exit 0""" % {'worked_file': worked_file})
     os.chmod(succeed, 0777)
     self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertTrue(os.path.isfile(worked_file))
 
     self.assertFalse(self.error)
 
@@ -586,12 +592,15 @@ exit 0""")
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
     succeed = os.path.join(promise_path, 'stderr_writer')
+    worked_file = os.path.join(instance_path, 'stderr_worked')
     with open(succeed, 'w') as f:
       f.write("""#!/usr/bin/env sh
+touch "%(worked_file)s"
 echo -n Error 1>&2
-exit 127""")
+exit 127""" % {'worked_file': worked_file})
     os.chmod(succeed, 0777)
     self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertTrue(os.path.isfile(worked_file))
 
     self.assertTrue(self.error)
 
@@ -641,12 +650,15 @@ exit 127""")
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
     succeed = os.path.join(promise_path, 'timed_out_promise')
+    worked_file = os.path.join(instance_path, 'timed_out_worked')
     with open(succeed, 'w') as f:
       f.write("""#!/usr/bin/env sh
+touch "%(worked_file)s"
 sleep 5
-exit 0""")
+exit 0""" % {'worked_file': worked_file})
     os.chmod(succeed, 0777)
     self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertTrue(os.path.isfile(worked_file))
 
     self.assertTrue(self.error)
 
@@ -692,18 +704,24 @@ exit 0""")
     os.makedirs(promise_path)
 
     succeed = os.path.join(promise_path, 'succeed')
+    worked_file = os.path.join(instance_path, 'succeed_worked')
     with open(succeed, 'w') as f:
       f.write("""#!/usr/bin/env sh
-exit 0""")
+touch "%(worked_file)s"
+exit 0""" % {'worked_file': worked_file})
     os.chmod(succeed, 0777)
 
     succeed_2 = os.path.join(promise_path, 'succeed_2')
+    worked_file_2 = os.path.join(instance_path, 'succeed_2_worked')
     with open(succeed_2, 'w') as f:
       f.write("""#!/usr/bin/env sh
-exit 0""")
+touch "%(worked_file)s"
+exit 0""" % {'worked_file': worked_file_2})
     os.chmod(succeed_2, 0777)
 
     self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertTrue(os.path.isfile(worked_file))
+    self.assertTrue(os.path.isfile(worked_file_2))
 
     self.assertFalse(self.error)
 
