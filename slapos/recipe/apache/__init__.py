@@ -81,7 +81,7 @@ class Recipe(BaseSlapRecipe):
         base_varnish_control_port = base_varnish_port
         base_varnish_port += 1
         # Use regex
-        host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9])"
+        host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9]+)"
         slave_host = re.search(host_regex, url).group(0)
         port_regex = "\w+(\/|)$"
         matcher = re.search(port_regex, url)
