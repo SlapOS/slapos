@@ -8357,6 +8357,7 @@ class TestVifibSlapWebService(testVifibMixin):
     software_instance = self.portal.software_instance_module.newContent(
       portal_type='Software Instance')
     self.checkConnected = software_instance.checkConnected
+    self.checkNotCyclic = software_instance.checkNotCyclic
 
   def test_si_tree_simple_connected(self):
     """Graph of one element is connected
@@ -8425,10 +8426,10 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_si_tree_cyclic_disconnected(self):
     """Two trees, where one is cyclic are disconnected
 
-    B --> A
-      \-> H
-    C --> D --> G
-      \-> E --> F
+    B --> A <-\
+      \-> H --/
+    C --> D --> G <-\
+      \-> E --> F --/
     """
     self._test_si_tree()
     graph = {
@@ -8437,14 +8438,92 @@ class TestVifibSlapWebService(testVifibMixin):
       'C': ['D', 'E'],
       'D': ['G'],
       'E': ['F'],
-      'F': [],
+      'F': ['G'],
       'G': [],
-      'H': [],
+      'H': ['A'],
     }
     root = 'B'
     from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
     self.assertRaises(DisconnectedSoftwareTree, self.checkConnected, graph,
       root)
+
+  def test_si_tree_simple_not_cyclic(self):
+    """Graph of one element is not cyclic
+
+    A
+    """
+    self._test_si_tree()
+    graph = {'A': []}
+    self.assertEqual(True, self.checkNotCyclic(graph))
+
+  def test_si_tree_simple_list_not_cyclic(self):
+    """Graph of list is not cyclic
+
+    B->C->A
+    """
+    self._test_si_tree()
+    graph = {'A': [], 'B': ['C'], 'C': ['A']}
+    self.assertEqual(True, self.checkNotCyclic(graph))
+
+  def test_si_tree_complex_not_cyclic(self):
+    """Tree is not cyclic
+
+    B --> A
+      \-> C --> D
+            \-> E --> F
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'C'],
+      'C': ['D', 'E'],
+      'D': [],
+      'E': ['F'],
+      'F': [],
+    }
+    self.assertEqual(True, self.checkNotCyclic(graph))
+
+  def test_si_tree_simple_list_disconnected_not_cyclic(self):
+    """Two lists are disconnected
+
+    A->B
+    C
+    """
+    self._test_si_tree()
+    graph = {'A': ['B'], 'B': [], 'C': []}
+    self.assertEqual(True, self.checkNotCyclic(graph))
+
+  def test_si_tree_cyclic(self):
+    """Cyclic is connected
+
+    A<->B
+    """
+    self._test_si_tree()
+    graph = {'A': ['B'], 'B': ['A']}
+    from erp5.document.SoftwareInstance import CyclicSoftwareTree
+    self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
+
+  def test_si_tree_cyclic_disconnected_cyclic(self):
+    """Two trees, where one is cyclic are disconnected
+
+    B --> A <-\
+      \-> H --/
+    C --> D --> G <-\
+      \-> E --> F --/
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'H'],
+      'C': ['D', 'E'],
+      'D': ['G'],
+      'E': ['F'],
+      'F': ['G'],
+      'G': [],
+      'H': ['A'],
+    }
+    from erp5.document.SoftwareInstance import CyclicSoftwareTree
+    self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
 
   ########################################
   # Other tests
