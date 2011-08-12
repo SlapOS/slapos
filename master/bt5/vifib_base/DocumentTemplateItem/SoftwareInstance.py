@@ -67,7 +67,7 @@ class SoftwareInstance(Item):
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'checkConnected')
-  def checkDisconnected(self, graph, root):
+  def checkConnected(self, graph, root):
     size = len(graph)
     visited = set()
     to_crawl = collections.deque(graph[root])
