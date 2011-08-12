@@ -87,6 +87,11 @@ request_software_instance = software_instance.portal_catalog.getResultValue(\n
   root_uid=root_software_instance.getUid(),\n
 )\n
 \n
+# above query does not find root software instance, but as this case is easy\n
+# to find, just check if such request does not come and raise\n
+if root_software_instance.getTitle() == requested_partition_reference:\n
+  raise ValueError(\'It is disallowed to request root software instance\')\n
+\n
 if (request_software_instance is None):\n
   if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
     # The software instance is already under creation but can not be fetched from catalog\n
