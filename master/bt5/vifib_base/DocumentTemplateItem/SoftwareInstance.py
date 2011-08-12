@@ -29,6 +29,13 @@ from AccessControl import ClassSecurityInfo
 from Products.ERP5Type import Permissions
 from Products.ERP5.Document.Item import Item
 from lxml import etree
+import collections
+
+class DisconnectedSoftwareTree(Exception):
+  pass
+
+class CyclicSoftwareTree(Exception):
+  pass
 
 class SoftwareInstance(Item):
   """
@@ -60,3 +67,44 @@ class SoftwareInstance(Item):
           value = element.text
         result_dict[key] = value
     return result_dict
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'checkNotCyclic')
+  def checkNotCyclic(self, graph):
+    # see http://neopythonic.blogspot.com/2009/01/detecting-cycles-in-directed-graph.html
+    todo = set(graph.keys())
+    while todo:
+      node = todo.pop()
+      stack = [node]
+      while stack:
+        top = stack[-1]
+        for node in graph[top]:
+          if node in stack:
+            raise CyclicSoftwareTree
+          if node in todo:
+            stack.append(node)
+            todo.remove(node)
+            break
+        else:
+          node = stack.pop()
+    return True
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'checkConnected')
+  def checkConnected(self, graph, root):
+    size = len(graph)
+    visited = set()
+    to_crawl = collections.deque(graph[root])
+    while to_crawl:
+      current = to_crawl.popleft()
+      if current in visited:
+        continue
+      visited.add(current)
+      node_children = set(graph[current])
+      to_crawl.extend(node_children - visited)
+    # add one to visited, as root won't be visited, only children
+    # this is false positive in case of cyclic graphs, but they are
+    # anyway wrong in Software Instance trees
+    if size != len(visited) + 1:
+      raise DisconnectedSoftwareTree
+    return True

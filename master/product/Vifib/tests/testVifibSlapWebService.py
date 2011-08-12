@@ -391,11 +391,12 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEqual(1, len(software_instance_list))
     software_instance = software_instance_list[0]
     sequence.edit(
-      software_instance_uid=software_instance.getUid(),
-      software_instance_reference=software_instance.getReference(),
-      hosting_subscription_uid=software_instance.getAggregateRelatedValue(
-        portal_type='Sale Order Line').getAggregateValue(
-        portal_type='Hosting Subscription').getUid())
+        root_software_instance_title=software_title,
+        software_instance_uid=software_instance.getUid(),
+        software_instance_reference=software_instance.getReference(),
+        hosting_subscription_uid=software_instance.getAggregateRelatedValue(
+          portal_type='Sale Order Line').getAggregateValue(
+            portal_type='Hosting Subscription').getUid())
 
   def stepSetSelectedComputerPartition(self, sequence, **kw):
     """Sets in sequence computer partition parameters related to current
@@ -1254,6 +1255,16 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepSelectRequestedReferenceChildrenBChild(self, sequence, **kw):
     sequence.edit(requested_reference='children_b_child')
+
+  def stepSelectRequestedReferenceRootSoftwareInstanceTitle(self, sequence,
+      **kw):
+    sequence.edit(requested_reference=sequence['root_software_instance_title'])
+
+  def stepSelectRequestedReferenceB(self, sequence, **kw):
+    sequence.edit(requested_reference='b')
+
+  def stepSelectRequestedReferenceC(self, sequence, **kw):
+    sequence.edit(requested_reference='c')
 
   def stepSelectEmptyRequestedParameterDict(self, sequence, **kw):
     sequence.edit(requested_parameter_dict=None)
@@ -3136,6 +3147,11 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepCheckSoftwareInstanceAndRelatedComputerPartition(self,
       sequence, **kw):
+    self.stepCheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck(sequence, **kw)
+    self._checkSoftwareInstanceAndRelatedPartition(software_instance)
+
+  def stepCheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck(self,
+      sequence, **kw):
     software_instance_uid = sequence['software_instance_uid']
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=software_instance_uid)
@@ -3143,7 +3159,6 @@ class TestVifibSlapWebService(testVifibMixin):
     predecessor_value_list = software_instance.getPredecessorValueList()
     self.assertEqual(1, len(predecessor_value_list))
 
-    self._checkSoftwareInstanceAndRelatedPartition(software_instance)
     sequence.edit(
       requested_software_instance_uid=predecessor_value_list[0].getUid(),
       requested_software_instance_reference=predecessor_value_list[0].getReference())
@@ -8726,11 +8741,41 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepStoreCurrentSoftwareInstanceUidBufferA(self, sequence, **kw):
+    sequence['buffer_a_software_instance_uid'] = sequence['software_instance_uid']
+
+  def stepStoreCurrentSoftwareInstanceUidBufferB(self, sequence, **kw):
+    sequence['buffer_b_software_instance_uid'] = sequence['software_instance_uid']
+
+  def stepStoreCurrentComputerUidBufferA(self, sequence, **kw):
+    sequence['buffer_a_computer_uid'] = sequence['computer_uid']
+
+  def stepStoreCurrentComputerUidBufferB(self, sequence, **kw):
+    sequence['buffer_b_computer_uid'] = sequence['computer_uid']
+
+  def stepRestoreSoftwareInstanceUidFromBufferA(self, sequence, **kw):
+    sequence['software_instance_uid'] = sequence['buffer_a_software_instance_uid']
+
+  def stepRestoreSoftwareInstanceUidFromBufferB(self, sequence, **kw):
+    sequence['software_instance_uid'] = sequence['buffer_b_software_instance_uid']
+
+  def stepRestoreComputerUidFromBufferA(self, sequence, **kw):
+    sequence['computer_uid'] = sequence['buffer_a_computer_uid']
+
+  def stepRestoreComputerUidFromBufferB(self, sequence, **kw):
+    sequence['computer_uid'] = sequence['buffer_b_computer_uid']
+
   def stepStoreCurrentComputerReferenceBufferA(self, sequence, **kw):
     sequence['buffer_a_computer_reference'] = sequence['computer_reference']
 
   def stepStoreCurrentComputerReferenceBufferB(self, sequence, **kw):
     sequence['buffer_b_computer_reference'] = sequence['computer_reference']
+
+  def stepStoreCurrentComputerPartitionUidBufferA(self, sequence, **kw):
+    sequence['buffer_a_computer_partition_uid'] = sequence['computer_partition_uid']
+
+  def stepStoreCurrentComputerPartitionUidBufferB(self, sequence, **kw):
+    sequence['buffer_b_computer_partition_uid'] = sequence['computer_partition_uid']
 
   def stepStoreCurrentComputerPartitionReferenceBufferA(self, sequence, **kw):
     sequence['buffer_a_computer_partition_reference'] = sequence['computer_partition_reference']
@@ -8744,6 +8789,12 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepRestoreComputerReferenceFromBufferB(self, sequence, **kw):
     sequence['computer_reference'] = sequence['buffer_b_computer_reference']
 
+  def stepRestoreComputerPartitionUidFromBufferA(self, sequence, **kw):
+    sequence['computer_partition_uid'] = sequence['buffer_a_computer_partition_uid']
+
+  def stepRestoreComputerPartitionUidFromBufferB(self, sequence, **kw):
+    sequence['computer_partition_uid'] = sequence['buffer_b_computer_partition_uid']
+
   def stepRestoreComputerPartitionReferenceFromBufferA(self, sequence, **kw):
     sequence['computer_partition_reference'] = sequence['buffer_a_computer_partition_reference']
 
@@ -8755,74 +8806,78 @@ class TestVifibSlapWebService(testVifibMixin):
 
     If software instance originated on computer comes from another computer it
     shall be possible to sucesfully destroy it.
+
+    Test is done in a way to trigger unstable Assignor role calculation
+    on Hosting Subscription which leads to unavailability of Software Instances
+    from one computer to another.
     """
     sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + \
-      """
-      StoreCurrentComputerReferenceBufferA
-      StoreCurrentComputerPartitionReferenceBufferA
-      """ + \
-      self.prepare_formated_computer + \
-      """
-      StoreCurrentComputerReferenceBufferB
-      StoreCurrentComputerPartitionReferenceBufferB
+    sequence_string = """
+      # Prepare software release shared by both Computers
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
 
+      # Create first computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install software on first computer
       LoginTestVifibAdmin
       RequestSoftwareInstallation
       Tic
       Logout
-
       SlapLoginCurrentComputer
       ComputerSoftwareReleaseAvailable
       Tic
       SlapLogout
 
-      RestoreComputerReferenceFromBufferA
-      RestoreComputerPartitionReferenceFromBufferA
-
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
+      # Now request and instantiate this software release on first computer
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
       Tic
-      SlapLogout
-
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartition
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
-      SlapLogout
-
-      LoginDefaultUser
-      CheckSoftwareInstanceAndRelatedComputerPartition
-      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
-      Logout
-
-      SlapLoginCurrentSoftwareInstance
-      CheckRequestedComputerPartitionCleanParameterList
-      Logout
-
-      LoginDefaultUser
-      SetCurrentSoftwareInstanceRequested
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
       Logout
 
-      RestoreComputerReferenceFromBufferB
-      RestoreComputerPartitionReferenceFromBufferB
-
-      SlapLoginCurrentComputer
-      SoftwareInstanceBuilding
-      Tic
-      SlapLogout
+      StoreCurrentComputerPartitionReferenceBufferA
+      StoreCurrentComputerPartitionUidBufferA
+      StoreCurrentSoftwareInstanceUidBufferA
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
       Logout
 
+      # Start it..
       SlapLoginCurrentComputer
       SoftwareInstanceAvailable
       Tic
       SlapLogout
 
       LoginDefaultUser
+      SetSelectedComputerPartition
       CheckComputerPartitionInstanceSetupSalePackingListStopped
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
@@ -8834,12 +8889,30 @@ class TestVifibSlapWebService(testVifibMixin):
 
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListStarted
-      SetCurrentSoftwareInstanceRequester
-      SetSelectedComputerPartition
-      SelectCurrentlyUsedSalePackingListUid
       Logout
 
-      LoginTestVifibCustomer
+      # ...stop it...
+
+      LoginDefaultUser
+      RequestSoftwareInstanceStop
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      Logout
+
+      # ...and request destruction
+      LoginDefaultUser
       RequestSoftwareInstanceDestroy
       Tic
       Logout
@@ -8848,8 +8921,137 @@ class TestVifibSlapWebService(testVifibMixin):
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 
+      # Now prepare second computer
+
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferB
+      StoreCurrentComputerUidBufferB
+
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferB
+      StoreCurrentComputerUidBufferB
+
+      # Now request self software release from one computer to another
       RestoreComputerReferenceFromBufferA
+      RestoreComputerUidFromBufferA
+      RestoreSoftwareInstanceUidFromBufferA
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      StoreCurrentComputerPartitionReferenceBufferB
+      StoreCurrentComputerPartitionUidBufferB
+      StoreCurrentSoftwareInstanceUidBufferB
+
+      RestoreComputerReferenceFromBufferB
+      RestoreComputerUidFromBufferB
+
+      # Start the requested software instance...
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetSelectedComputerPartition
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      Logout
+
+      # ...and stop it
+
+      LoginDefaultUser
+      RequestSoftwareInstanceStop
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      Logout
+
+      # Now request destruction of second software instance...
+
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # ...and destroy it
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+
+      # Time to switch back to first software instance and destroy it
       RestoreComputerPartitionReferenceFromBufferA
+      RestoreComputerPartitionUidFromBufferA
+      RestoreSoftwareInstanceUidFromBufferA
+      RestoreComputerReferenceFromBufferA
+      RestoreComputerUidFromBufferA
 
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
@@ -8863,7 +9065,736 @@ class TestVifibSlapWebService(testVifibMixin):
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
+  def test_bug_hosting_subscription_assignor_role_instability(self):
+    """Show instability issue of Assignor role on Hosting Subscription
+
+    Related to fact when Hosting Subscription is associated to
+    Software Instances deployed on many computers"""
     raise NotImplementedError
+
+  def test_bug_destruction_with_unfinished_packing_list(self):
+    """Proves that even if some packing lists are not fully delivered
+    it is possible to destroy software instance"""
+    sequence_list = SequenceList()
+    sequence_string = """
+      # Prepare software release
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
+
+      # Create first computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install software on first computer
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # Now request and instantiate this software release on first computer
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # Request destruction...
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # ...and destroy it
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepDirectRequestComputerPartitionRaisesDisconnectedSoftwareTree(self,
+    sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid = sequence['software_instance_uid'])
+    requested_reference = sequence['requested_reference']
+    from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
+    self.assertRaises(DisconnectedSoftwareTree,
+      software_instance.requestSoftwareInstance,
+      software_release=sequence['software_release_uri'],
+      software_type=sequence['requested_reference'],
+      partition_reference=sequence['requested_reference'],
+      shared=False,
+      instance_xml=self.minimal_correct_xml,
+      sla_xml=self.minimal_correct_xml,
+      state='started'
+    )
+
+  def test_bug_orhpaned_software_instance(self):
+    """Check that no orphaned Software Instances would be created
+
+    In below scenario system shall behave like mentioned:
+
+      OpenOrder.request(SR, A)  | SR(A)
+      A.request(SR, B)          | SR(A) <- SR(B)
+      B.request(SR, C)          | SR(A) <- SR(B) <- SR(C)
+      C.request(SR, B) raises immediately, because the result would be:
+        SR(A)
+        SR(B) <- SR(C)
+      do B would become root of orphaned tree.
+    """
+    # Setup sufficient amount of CP
+    self.computer_partition_amount = 3
+    sequence_list = SequenceList()
+    sequence_string = """
+      # Prepare software release
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
+
+      # Create the computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install the software release
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # Create Software Instance A (originates from Open Order)
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # From root request B
+      SelectRequestedReferenceB
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      # From B request C
+      SelectRequestedReferenceC
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      # Try to: from C request B and prove that it raises
+      SelectRequestedReferenceB
+
+      LoginDefaultUser # login as superuser in order to work in erp5
+      DirectRequestComputerPartitionRaisesDisconnectedSoftwareTree
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepDirectRequestComputerPartitionRaisesCyclicSoftwareTree(self,
+    sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid = sequence['software_instance_uid'])
+    requested_reference = sequence['requested_reference']
+    from erp5.document.SoftwareInstance import CyclicSoftwareTree
+    self.assertRaises(CyclicSoftwareTree,
+      software_instance.requestSoftwareInstance,
+      software_release=sequence['software_release_uri'],
+      software_type=sequence['requested_reference'],
+      partition_reference=sequence['requested_reference'],
+      shared=False,
+      instance_xml=self.minimal_correct_xml,
+      sla_xml=self.minimal_correct_xml,
+      state='started'
+    )
+
+  def test_bug_cyclic_software_instance(self):
+    """Check that no cyclic Software Instance trees would be created
+
+    In below scenario system shall behave like mentioned:
+
+      OpenOrder.request(SR, A)  | SR(A)
+      A.request(SR, B)          | SR(A) <- SR(B)
+      B.request(SR, A)          | SR(A) <- SR(B) <- SR(C)
+      C.request(SR, B) raises immediately, because the result would be:
+        SR(A)
+        SR(B) <-> SR(C)
+      so B and C would be cyclic
+    """
+    # Setup sufficient amount of CP
+    self.computer_partition_amount = 3
+    sequence_list = SequenceList()
+    sequence_string = """
+      # Prepare software release
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
+
+      # Create the computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install the software release
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # Create Software Instance A (originates from Open Order)
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # From root request B
+      SelectRequestedReferenceB
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      # From B request C
+      SelectRequestedReferenceC
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      # Try to: from C request B and prove that it raises
+      SelectRequestedReferenceB
+
+      LoginDefaultUser # login as superuser in order to work in erp5
+      DirectRequestComputerPartitionRaisesCyclicSoftwareTree
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepDirectRequestComputerPartitionRaisesValueError(self,
+    sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid = sequence['software_instance_uid'])
+    requested_reference = sequence['requested_reference']
+    self.assertRaises(ValueError,
+      software_instance.requestSoftwareInstance,
+      software_release=sequence['software_release_uri'],
+      software_type=sequence['requested_reference'],
+      partition_reference=sequence['requested_reference'],
+      shared=False,
+      instance_xml=self.minimal_correct_xml,
+      sla_xml=self.minimal_correct_xml,
+      state='started'
+    )
+
+  def test_bug_cyclic_software_instance_small_tree(self):
+    """Check that no cyclic Software Instance trees would be created
+
+    In below scenario system shall behave like mentioned:
+
+      OpenOrder.request(SR, A)  | SR(A)
+      A.request(SR, B)          | SR(A) <- SR(B)
+      B.request(SR, A) raises immediately, because the result would be:
+        SR(A) <-> SR(B)
+      so B and A would be cyclic
+    """
+    # Setup sufficient amount of CP
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = """
+      # Prepare software release
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
+
+      # Create the computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install the software release
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # Create Software Instance A (originates from Open Order)
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # From root request B
+      SelectRequestedReferenceB
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      # Try to: From B request root
+      SelectRequestedReferenceRootSoftwareInstanceTitle
+
+      LoginDefaultUser # login as superuser in order to work in erp5
+      DirectRequestComputerPartitionRaisesValueError
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  ########################################
+  # Software Instance graph helpers
+  ########################################
+
+  def _test_si_tree(self):
+    software_instance = self.portal.software_instance_module.newContent(
+      portal_type='Software Instance')
+    self.checkConnected = software_instance.checkConnected
+    self.checkNotCyclic = software_instance.checkNotCyclic
+
+  def test_si_tree_simple_connected(self):
+    """Graph of one element is connected
+
+    A
+    """
+    self._test_si_tree()
+    graph = {'A': []}
+    root = 'A'
+    self.assertEqual(True, self.checkConnected(graph, root))
+
+  def test_si_tree_simple_list_connected(self):
+    """Graph of list is connected
+
+    B->C->A
+    """
+    self._test_si_tree()
+    graph = {'A': [], 'B': ['C'], 'C': ['A']}
+    root = 'B'
+    self.assertEqual(True, self.checkConnected(graph, root))
+
+  def test_si_tree_complex_connected(self):
+    """Tree is connected
+
+    B --> A
+      \-> C --> D
+            \-> E --> F
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'C'],
+      'C': ['D', 'E'],
+      'D': [],
+      'E': ['F'],
+      'F': [],
+    }
+    root = 'B'
+    self.assertEqual(True, self.checkConnected(graph, root))
+
+  def test_si_tree_simple_list_disconnected(self):
+    """Two lists are disconnected
+
+    A->B
+    C
+    """
+    self._test_si_tree()
+    graph = {'A': ['B'], 'B': [], 'C': []}
+    root = 'A'
+    from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
+    self.assertRaises(DisconnectedSoftwareTree, self.checkConnected, graph,
+      root)
+
+  # For now limitation of implementation gives false positive
+  @expectedFailure
+  def test_si_tree_cyclic_connected(self):
+    """Cyclic is connected
+
+    A<->B
+    """
+    self._test_si_tree()
+    graph = {'A': ['B'], 'B': ['A']}
+    root = 'B'
+    self.assertEqual(True, self.checkConnected(graph, root))
+
+  def test_si_tree_cyclic_disconnected(self):
+    """Two trees, where one is cyclic are disconnected
+
+    B --> A
+      \-> H
+    C --> D --> G
+    ^ \-> E --> F \
+     \------------/
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'H'],
+      'C': ['D', 'E'],
+      'D': ['G'],
+      'E': ['F'],
+      'F': ['C'],
+      'G': [],
+      'H': [],
+    }
+    root = 'B'
+    from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
+    self.assertRaises(DisconnectedSoftwareTree, self.checkConnected, graph,
+      root)
+
+  def test_si_tree_simple_not_cyclic(self):
+    """Graph of one element is not cyclic
+
+    A
+    """
+    self._test_si_tree()
+    graph = {'A': []}
+    self.assertEqual(True, self.checkNotCyclic(graph))
+
+  def test_si_tree_simple_list_not_cyclic(self):
+    """Graph of list is not cyclic
+
+    B->C->A
+    """
+    self._test_si_tree()
+    graph = {'A': [], 'B': ['C'], 'C': ['A']}
+    self.assertEqual(True, self.checkNotCyclic(graph))
+
+  def test_si_tree_simple_list_cyclic(self):
+    """Graph of cyclic list is cyclic
+
+    B->C->A-\
+    ^-------/
+    """
+    self._test_si_tree()
+    graph = {'A': ['B'], 'B': ['C'], 'C': ['A']}
+    from erp5.document.SoftwareInstance import CyclicSoftwareTree
+    self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
+
+  def test_si_tree_simple_list_cyclic(self):
+    """Graph of cyclic list is cyclic
+
+    B->C->D->A-\
+       ^-------/
+    """
+    self._test_si_tree()
+    graph = {'A': ['C'], 'B': ['C'], 'C': ['D'], 'D': ['A']}
+    from erp5.document.SoftwareInstance import CyclicSoftwareTree
+    self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
+
+  def test_si_tree_complex_not_cyclic(self):
+    """Tree is not cyclic
+
+    B --> A
+      \-> C --> D
+            \-> E --> F
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'C'],
+      'C': ['D', 'E'],
+      'D': [],
+      'E': ['F'],
+      'F': [],
+    }
+    self.assertEqual(True, self.checkNotCyclic(graph))
+
+  def test_si_tree_complex_cyclic(self):
+    """Tree is not cyclic
+
+    B --> A
+      \-> C --> D
+          ^ \-> E --> F -\
+           \-------------/
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'C'],
+      'C': ['D', 'E'],
+      'D': [],
+      'E': ['F'],
+      'F': ['C'],
+    }
+    from erp5.document.SoftwareInstance import CyclicSoftwareTree
+    self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
+
+  def test_si_tree_simple_list_disconnected_not_cyclic(self):
+    """Two lists are disconnected
+
+    A->B
+    C
+    """
+    self._test_si_tree()
+    graph = {'A': ['B'], 'B': [], 'C': []}
+    self.assertEqual(True, self.checkNotCyclic(graph))
+
+  def test_si_tree_cyclic(self):
+    """Cyclic is connected
+
+    A<->B
+    """
+    self._test_si_tree()
+    graph = {'A': ['B'], 'B': ['A']}
+    from erp5.document.SoftwareInstance import CyclicSoftwareTree
+    self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
+
+  def test_si_tree_cyclic_disconnected_cyclic(self):
+    """Two trees, where one is cyclic are disconnected
+
+    B --> A
+      \-> H
+    C --> D --> G
+    ^ \-> E --> F \
+     \------------/
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'H'],
+      'C': ['D', 'E'],
+      'D': ['G'],
+      'E': ['F'],
+      'F': ['C'],
+      'G': [],
+      'H': ['A'],
+    }
+    from erp5.document.SoftwareInstance import CyclicSoftwareTree
+    self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
 
   ########################################
   # Other tests
