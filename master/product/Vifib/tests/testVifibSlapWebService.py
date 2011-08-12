@@ -8049,12 +8049,13 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepDirectRequestComputerPartitionRaisesValueError(self,
+  def stepDirectRequestComputerPartitionRaisesDisconnectedSoftwareTree(self,
     sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid = sequence['software_instance_uid'])
     requested_reference = sequence['requested_reference']
-    self.assertRaises(ValueError,
+    from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
+    self.assertRaises(DisconnectedSoftwareTree,
       software_instance.requestSoftwareInstance,
       software_release=sequence['software_release_uri'],
       software_type=sequence['requested_reference'],
@@ -8193,7 +8194,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SelectRequestedReferenceB
 
       LoginDefaultUser # login as superuser in order to work in erp5
-      DirectRequestComputerPartitionRaisesValueError
+      DirectRequestComputerPartitionRaisesDisconnectedSoftwareTree
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
