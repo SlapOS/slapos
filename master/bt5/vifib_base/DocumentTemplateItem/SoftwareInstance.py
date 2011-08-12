@@ -66,7 +66,7 @@ class SoftwareInstance(Item):
     return result_dict
 
   security.declareProtected(Permissions.AccessContentsInformation,
-    'checkDisconnected')
+    'checkConnected')
   def checkDisconnected(self, graph, root):
     size = len(graph)
     visited = set()
@@ -83,3 +83,4 @@ class SoftwareInstance(Item):
     # anyway wrong in Software Instance trees
     if size != len(visited) + 1:
       raise DisconnectedSoftwareTree
+    return True

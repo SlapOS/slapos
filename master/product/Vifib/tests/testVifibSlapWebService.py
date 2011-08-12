@@ -8206,31 +8206,31 @@ class TestVifibSlapWebService(testVifibMixin):
   def _test_si_tree(self):
     software_instance = self.portal.software_instance_module.newContent(
       portal_type='Software Instance')
-    self.checkDisconnected = software_instance.checkDisconnected
+    self.checkConnected = software_instance.checkConnected
 
   def test_si_tree_simple_connected(self):
     """Graph of one element is connected
-    
+
     A
     """
     self._test_si_tree()
     graph = {'A': []}
     root = 'A'
-    self.assertEqual(None, self.checkDisconnected(graph, root))
+    self.assertEqual(True, self.checkConnected(graph, root))
 
   def test_si_tree_simple_list_connected(self):
     """Graph of list is connected
-    
+
     B->C->A
     """
     self._test_si_tree()
     graph = {'A': [], 'B': ['C'], 'C': ['A']}
     root = 'B'
-    self.assertEqual(None, self.checkDisconnected(graph, root))
+    self.assertEqual(True, self.checkConnected(graph, root))
 
   def test_si_tree_complex_connected(self):
     """Tree is connected
-    
+
     B --> A
       \-> C --> D
             \-> E --> F
@@ -8245,11 +8245,11 @@ class TestVifibSlapWebService(testVifibMixin):
       'F': [],
     }
     root = 'B'
-    self.assertEqual(None, self.checkDisconnected(graph, root))
+    self.assertEqual(True, self.checkConnected(graph, root))
 
   def test_si_tree_simple_list_disconnected(self):
     """Two lists are disconnected
-    
+
     A->B
     C
     """
@@ -8257,23 +8257,24 @@ class TestVifibSlapWebService(testVifibMixin):
     graph = {'A': ['B'], 'B': [], 'C': []}
     root = 'A'
     from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
-    self.assertRaises(DisconnectedSoftwareTree, self.checkDisconnected, graph,
+    self.assertRaises(DisconnectedSoftwareTree, self.checkConnected, graph,
       root)
 
   # For now limitation of implementation gives false positive
   @expectedFailure
   def test_si_tree_cyclic_connected(self):
     """Cyclic is connected
-    
+
     A<->B
     """
     self._test_si_tree()
     graph = {'A': ['B'], 'B': ['A']}
     root = 'B'
-    self.assertEqual(None, self.checkDisconnected(graph, root))
+    self.assertEqual(True, self.checkConnected(graph, root))
 
   def test_si_tree_cyclic_disconnected(self):
     """Two trees, where one is cyclic are disconnected
+
     B --> A
       \-> H
     C --> D --> G
@@ -8292,7 +8293,7 @@ class TestVifibSlapWebService(testVifibMixin):
     }
     root = 'B'
     from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
-    self.assertRaises(DisconnectedSoftwareTree, self.checkDisconnected, graph,
+    self.assertRaises(DisconnectedSoftwareTree, self.checkConnected, graph,
       root)
 
   ########################################
