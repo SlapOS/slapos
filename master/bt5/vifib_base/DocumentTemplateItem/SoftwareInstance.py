@@ -29,6 +29,10 @@ from AccessControl import ClassSecurityInfo
 from Products.ERP5Type import Permissions
 from Products.ERP5.Document.Item import Item
 from lxml import etree
+import collections
+
+class DisconnectedSoftwareTree(Exception):
+  pass
 
 class SoftwareInstance(Item):
   """
@@ -60,3 +64,22 @@ class SoftwareInstance(Item):
           value = element.text
         result_dict[key] = value
     return result_dict
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'checkDisconnected')
+  def checkDisconnected(self, graph, root):
+    size = len(graph)
+    visited = set()
+    to_crawl = collections.deque(graph[root])
+    while to_crawl:
+      current = to_crawl.popleft()
+      if current in visited:
+        continue
+      visited.add(current)
+      node_children = set(graph[current])
+      to_crawl.extend(node_children - visited)
+    # add one to visited, as root won't be visited, only children
+    # this is false positive in case of cyclic graphs, but they are
+    # anyway wrong in Software Instance trees
+    if size != len(visited) + 1:
+      raise DisconnectedSoftwareTree
