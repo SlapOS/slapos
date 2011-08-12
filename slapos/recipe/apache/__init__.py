@@ -54,13 +54,10 @@ class Recipe(BaseSlapRecipe):
 
     self.path_list.append(self.killpidfromfile)
 
-    ca_conf = self.installCertificateAuthority()
     # This should come from parameter.
     frontend_port_number = 4443
     frontend_domain_name = self.parameter_dict.get("domain",
         "host.vifib.net")
-
-    key, certificate = self.requestCertificate(frontend_domain_name)
 
     base_varnish_port = 26009
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
@@ -112,9 +109,27 @@ class Recipe(BaseSlapRecipe):
       else:
         rewrite_rule_list.append("%s %s" % (reference.replace("-", ""), url))
 
+    valid_certificate_str = self.parameter_dict.get("domain_ssl_ca_cert")
+    valid_key_str = self.parameter_dict.get("domain_ssl_ca_key")
+
+    if valid_certificate_str is None and valid_key_str is None:
+      ca_conf = self.installCertificateAuthority()
+      key, certificate = self.requestCertificate(frontend_domain_name)
+    else:
+      ca_conf = self.installValidCertificateAuthority(
+          frontend_domain_name, valid_certificate_str, valid_key_str)
+      key = ca_conf.pop("key")
+      certificate = ca_conf.pop("certificate")
+
     if service_dict != {}:
+      if valid_certificate_str is not None and valid_key_str is not None:
+        self.installCertificateAuthority()
+        stunnel_key, stunnel_certificate = \
+            self.requestCertificate(frontend_domain_name)
+      else:
+        stunnel_key, stunnet_certificate = key, certificate
       self.installStunnel(service_dict,
-        certificate, key,
+        stunnel_certificate, stunnel_key,
         ca_conf["ca_crl"],
         ca_conf["certificate_authority_path"])
 
@@ -191,6 +206,23 @@ class Recipe(BaseSlapRecipe):
      )[0]
    self.path_list.append(wrapper)
    return cron_d
+
+  def installValidCertificateAuthority(self, domain_name, certificate, key):
+    ca_dir = os.path.join(self.data_root_directory, 'ca')
+    ca_private = os.path.join(ca_dir, 'private')
+    ca_certs = os.path.join(ca_dir, 'certs')
+    ca_crl = os.path.join(ca_dir, 'crl')
+    self._createDirectory(ca_dir)
+    for path in (ca_private, ca_certs, ca_crl):
+      self._createDirectory(path)
+    key_path = os.path.join(ca_private, domain_name + ".key")
+    certificate_path = os.path.join(ca_certs, domain_name + ".crt")
+    self._writeFile(key_path, key)
+    self._writeFile(certificate_path, certificate)
+    return dict(certificate_authority_path=ca_dir,
+        ca_crl=ca_crl,
+        certificate=certificate_path,
+        key=key_path)
 
   def installCertificateAuthority(self, ca_country_code='XX',
       ca_email='xx@example.com', ca_state='State', ca_city='City',
