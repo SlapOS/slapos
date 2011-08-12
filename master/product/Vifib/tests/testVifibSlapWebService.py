@@ -8505,6 +8505,26 @@ class TestVifibSlapWebService(testVifibMixin):
     }
     self.assertEqual(True, self.checkNotCyclic(graph))
 
+  def test_si_tree_complex_cyclic(self):
+    """Tree is not cyclic
+
+    B --> A
+      \-> C --> D
+          ^ \-> E --> F -\
+           \-------------/
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'C'],
+      'C': ['D', 'E'],
+      'D': [],
+      'E': ['F'],
+      'F': ['C'],
+    }
+    from erp5.document.SoftwareInstance import CyclicSoftwareTree
+    self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
+
   def test_si_tree_simple_list_disconnected_not_cyclic(self):
     """Two lists are disconnected
 
