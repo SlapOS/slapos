@@ -34,6 +34,9 @@ import collections
 class DisconnectedSoftwareTree(Exception):
   pass
 
+class CyclicSoftwareTree(Exception):
+  pass
+
 class SoftwareInstance(Item):
   """
   """
@@ -64,6 +67,27 @@ class SoftwareInstance(Item):
           value = element.text
         result_dict[key] = value
     return result_dict
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'checkNotCyclic')
+  def checkNotCyclic(self, graph):
+    # see http://neopythonic.blogspot.com/2009/01/detecting-cycles-in-directed-graph.html
+    todo = set(graph.keys())
+    while todo:
+      node = todo.pop()
+      stack = [node]
+      while stack:
+        top = stack[-1]
+        for node in graph[top]:
+          if node in stack:
+            raise CyclicSoftwareTree
+          if node in todo:
+            stack.append(node)
+            todo.remove(node)
+            break
+        else:
+          node = stack.pop()
+    return True
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'checkConnected')
