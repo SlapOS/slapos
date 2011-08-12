@@ -152,7 +152,6 @@ if not request_software_instance.getUid() in graph:\n
 graph[software_instance.getUid()] = software_instance.getPredecessorUidList() + [request_software_instance.getUid()]\n
 \n
 # check if all elements are still connected\n
-script.log(graph)\n
 software_instance.checkNotCyclic(graph)\n
 software_instance.checkConnected(graph, root_software_instance.getUid())\n
 \n
