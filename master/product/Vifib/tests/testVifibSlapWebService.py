@@ -361,6 +361,7 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEqual(1, len(software_instance_list))
     software_instance = software_instance_list[0]
     sequence.edit(
+        root_software_instance_title=software_title,
         software_instance_uid=software_instance.getUid(),
         software_instance_reference=software_instance.getReference(),
         hosting_subscription_uid=software_instance.getAggregateRelatedValue(
@@ -1186,6 +1187,10 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepSelectRequestedReferenceChildrenBChild(self, sequence, **kw):
     sequence.edit(requested_reference='children_b_child')
+
+  def stepSelectRequestedReferenceRootSoftwareInstanceTitle(self, sequence,
+      **kw):
+    sequence.edit(requested_reference=sequence['root_software_instance_title'])
 
   def stepSelectRequestedReferenceB(self, sequence, **kw):
     sequence.edit(requested_reference='b')
@@ -8342,6 +8347,110 @@ class TestVifibSlapWebService(testVifibMixin):
 
       # Try to: from C request B and prove that it raises
       SelectRequestedReferenceB
+
+      LoginDefaultUser # login as superuser in order to work in erp5
+      DirectRequestComputerPartitionRaisesCyclicSoftwareTree
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_cyclic_software_instance_small_tree(self):
+    """Check that no cyclic Software Instance trees would be created
+
+    In below scenario system shall behave like mentioned:
+
+      OpenOrder.request(SR, A)  | SR(A)
+      A.request(SR, B)          | SR(A) <- SR(B)
+      B.request(SR, A) raises immediately, because the result would be:
+        SR(A) <-> SR(B)
+      so B and A would be cyclic
+    """
+    # Setup sufficient amount of CP
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = """
+      # Prepare software release
+      LoginTestVifibDeveloper
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic
+      SubmitSoftwareRelease
+      Tic
+      CreateSoftwareProduct
+      Tic
+      ValidateSoftwareProduct
+      Tic
+      SetSoftwareProductToSoftwareRelease
+      PublishByActionSoftwareRelease
+      Logout
+
+      # Create the computer
+      LoginTestVifibAdmin
+      CreateComputer
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      StoreCurrentComputerReferenceBufferA
+      StoreCurrentComputerUidBufferA
+
+      # Install the software release
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # Create Software Instance A (originates from Open Order)
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      # From root request B
+      SelectRequestedReferenceB
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck
+      CheckRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      LoginDefaultUser
+      SetCurrentSoftwareInstanceRequested
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      Logout
+
+      # Try to: From B request root
+      SelectRequestedReferenceRootSoftwareInstanceTitle
 
       LoginDefaultUser # login as superuser in order to work in erp5
       DirectRequestComputerPartitionRaisesCyclicSoftwareTree
