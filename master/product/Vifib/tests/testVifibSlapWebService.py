@@ -8200,6 +8200,102 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.play(self)
 
   ########################################
+  # Software Instance graph helpers
+  ########################################
+
+  def _test_si_tree(self):
+    software_instance = self.portal.software_instance_module.newContent(
+      portal_type='Software Instance')
+    self.checkDisconnected = software_instance.checkDisconnected
+
+  def test_si_tree_simple_connected(self):
+    """Graph of one element is connected
+    
+    A
+    """
+    self._test_si_tree()
+    graph = {'A': []}
+    root = 'A'
+    self.assertEqual(None, self.checkDisconnected(graph, root))
+
+  def test_si_tree_simple_list_connected(self):
+    """Graph of list is connected
+    
+    B->C->A
+    """
+    self._test_si_tree()
+    graph = {'A': [], 'B': ['C'], 'C': ['A']}
+    root = 'B'
+    self.assertEqual(None, self.checkDisconnected(graph, root))
+
+  def test_si_tree_complex_connected(self):
+    """Tree is connected
+    
+    B --> A
+      \-> C --> D
+            \-> E --> F
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'C'],
+      'C': ['D', 'E'],
+      'D': [],
+      'E': ['F'],
+      'F': [],
+    }
+    root = 'B'
+    self.assertEqual(None, self.checkDisconnected(graph, root))
+
+  def test_si_tree_simple_list_disconnected(self):
+    """Two lists are disconnected
+    
+    A->B
+    C
+    """
+    self._test_si_tree()
+    graph = {'A': ['B'], 'B': [], 'C': []}
+    root = 'A'
+    from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
+    self.assertRaises(DisconnectedSoftwareTree, self.checkDisconnected, graph,
+      root)
+
+  # For now limitation of implementation gives false positive
+  @expectedFailure
+  def test_si_tree_cyclic_connected(self):
+    """Cyclic is connected
+    
+    A<->B
+    """
+    self._test_si_tree()
+    graph = {'A': ['B'], 'B': ['A']}
+    root = 'B'
+    self.assertEqual(None, self.checkDisconnected(graph, root))
+
+  def test_si_tree_cyclic_disconnected(self):
+    """Two trees, where one is cyclic are disconnected
+    B --> A
+      \-> H
+    C --> D --> G
+      \-> E --> F
+    """
+    self._test_si_tree()
+    graph = {
+      'A': [],
+      'B': ['A', 'H'],
+      'C': ['D', 'E'],
+      'D': ['G'],
+      'E': ['F'],
+      'F': [],
+      'G': [],
+      'H': [],
+    }
+    root = 'B'
+    from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
+    self.assertRaises(DisconnectedSoftwareTree, self.checkDisconnected, graph,
+      root)
+
+  ########################################
   # Other tests
   ########################################
 
