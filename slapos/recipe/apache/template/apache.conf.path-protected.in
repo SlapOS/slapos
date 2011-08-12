@@ -4,4 +4,3 @@
   Deny from all
   Allow from %(access_control_string)s
 </Location>
-
