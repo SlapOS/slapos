@@ -8426,10 +8426,11 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_si_tree_cyclic_disconnected(self):
     """Two trees, where one is cyclic are disconnected
 
-    B --> A <-\
-      \-> H --/
-    C --> D --> G <-\
-      \-> E --> F --/
+    B --> A
+      \-> H
+    C --> D --> G
+    ^ \-> E --> F \
+     \------------/
     """
     self._test_si_tree()
     graph = {
@@ -8438,9 +8439,9 @@ class TestVifibSlapWebService(testVifibMixin):
       'C': ['D', 'E'],
       'D': ['G'],
       'E': ['F'],
-      'F': ['G'],
+      'F': ['C'],
       'G': [],
-      'H': ['A'],
+      'H': [],
     }
     root = 'B'
     from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
@@ -8548,10 +8549,11 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_si_tree_cyclic_disconnected_cyclic(self):
     """Two trees, where one is cyclic are disconnected
 
-    B --> A <-\
-      \-> H --/
-    C --> D --> G <-\
-      \-> E --> F --/
+    B --> A
+      \-> H
+    C --> D --> G
+    ^ \-> E --> F \
+     \------------/
     """
     self._test_si_tree()
     graph = {
@@ -8560,7 +8562,7 @@ class TestVifibSlapWebService(testVifibMixin):
       'C': ['D', 'E'],
       'D': ['G'],
       'E': ['F'],
-      'F': ['G'],
+      'F': ['C'],
       'G': [],
       'H': ['A'],
     }
