@@ -8354,6 +8354,22 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepDirectRequestComputerPartitionRaisesValueError(self,
+    sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid = sequence['software_instance_uid'])
+    requested_reference = sequence['requested_reference']
+    self.assertRaises(ValueError,
+      software_instance.requestSoftwareInstance,
+      software_release=sequence['software_release_uri'],
+      software_type=sequence['requested_reference'],
+      partition_reference=sequence['requested_reference'],
+      shared=False,
+      instance_xml=self.minimal_correct_xml,
+      sla_xml=self.minimal_correct_xml,
+      state='started'
+    )
+
   def test_bug_cyclic_software_instance_small_tree(self):
     """Check that no cyclic Software Instance trees would be created
 
@@ -8453,7 +8469,7 @@ class TestVifibSlapWebService(testVifibMixin):
       SelectRequestedReferenceRootSoftwareInstanceTitle
 
       LoginDefaultUser # login as superuser in order to work in erp5
-      DirectRequestComputerPartitionRaisesCyclicSoftwareTree
+      DirectRequestComputerPartitionRaisesValueError
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
