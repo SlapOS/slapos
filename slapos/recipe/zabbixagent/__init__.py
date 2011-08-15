@@ -79,7 +79,8 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(wrapper)
     return cron_d
 
-  def installZabbixAgentd(self, ip, port, hostname, server_ip):
+  def installZabbixAgentd(self, ip, port, hostname, server_ip,
+                          user_parameter_string=''):
     log_file = os.path.join(self.log_directory, 'zabbix_agentd.log')
     self.registerLogRotation('zabbix_agentd', [log_file])
 
@@ -89,7 +90,8 @@ class Recipe(BaseSlapRecipe):
       ip=ip,
       server=server_ip,
       hostname=hostname,
-      port=port)
+      port=port,
+      user_parameter_string=user_parameter_string)
 
     zabbix_agentd_path = self.createConfigurationFile(
       "zabbix_agentd.conf",
