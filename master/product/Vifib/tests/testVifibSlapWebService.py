@@ -5071,6 +5071,63 @@ class TestVifibSlapWebService(testVifibMixin):
       SetDeliveryLineAmountEqualTwo
       CheckComputerPartitionInstanceHostingSalePackingListStarted
       CheckComputerPartitionInstanceSetupSalePackingListStopped
+      LoginTestVifibCustomer
+      RequestStopSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      RequestStopSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      SetDeliveryLineAmountEqualZero
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceStart
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SetDeliveryLineAmountEqualThree
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      RequestStopSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      LoginTestVifibCustomer
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -6497,6 +6554,9 @@ class TestVifibSlapWebService(testVifibMixin):
     slave_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence["software_instance_uid"])
     slave_instance.stopComputerPartitionInstallation()
+
+  def stepSetDeliveryLineAmountEqualZero(self, sequence):
+    sequence.edit(delivery_line_amount=0)
 
   def stepSetDeliveryLineAmountEqualTwo(self, sequence):
     sequence.edit(delivery_line_amount=2)
