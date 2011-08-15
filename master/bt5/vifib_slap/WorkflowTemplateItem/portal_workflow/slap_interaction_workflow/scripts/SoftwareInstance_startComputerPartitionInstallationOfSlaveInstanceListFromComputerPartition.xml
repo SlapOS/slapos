@@ -55,7 +55,7 @@ service_relative_url = software_instance.portal_preferences.\\\n
                             getPreferredInstanceSetupResource()\n
 \n
 sale_packing_list_line_list = context.ERP5Site_getSlaveInstanceListFromComputerPartition(\n
- software_instance.getRelativeUrl(), service_relative_url, ["%requested", "stopped"])\n
+ software_instance.getRelativeUrl(), service_relative_url)\n
 \n
 for sale_packing_list_line in sale_packing_list_line_list:\n
   slave_instance = sale_packing_list_line.getAggregateValue(portal_type="Slave Instance")\n
