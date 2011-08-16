@@ -64,9 +64,18 @@ instance_xml = kwargs["instance_xml"]\n
 sla_xml = kwargs["sla_xml"]\n
 state = kwargs["state"]\n
 \n
-# Get root software instance\n
+# graph allows to "simulate" tree change after requested operation\n
+graph = {}\n
+# Get root software instance and create initial graph\n
 predecessor_software_instance = software_instance\n
 while (predecessor_software_instance is not None):\n
+  predecessor_software_instance_pred_uid_list = predecessor_software_instance.getPredecessorUidList()\n
+  graph[predecessor_software_instance.getUid()] = predecessor_software_instance_pred_uid_list\n
+  # as this walking is not fetching all instances fill predecessors into graph, in order to have\n
+  # "nearly" complete representation\n
+  for uid in predecessor_software_instance_pred_uid_list:\n
+    if uid not in graph:\n
+      graph[uid] = []\n
   root_software_instance = predecessor_software_instance\n
   predecessor_software_instance = predecessor_software_instance.getPredecessorRelatedValue(\n
       portal_type="Software Instance")\n
@@ -83,6 +92,11 @@ request_software_instance = software_instance.portal_catalog.getResultValue(\n
   source_reference=software_type,\n
   root_uid=root_software_instance.getUid(),\n
 )\n
+\n
+# above query does not find root software instance, but as this case is easy\n
+# to find, just check if such request does not come and raise\n
+if root_software_instance.getTitle() == requested_partition_reference:\n
+  raise ValueError(\'It is disallowed to request root software instance\')\n
 \n
 if (request_software_instance is None):\n
   if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
@@ -130,6 +144,8 @@ else:\n
     predecessor_software_instance.edit(\n
       predecessor_uid_list=predecessor_uid_list,\n
       activate_kw={\'tag\': tag},)\n
+    graph[predecessor_software_instance.getUid()] = predecessor_uid_list\n
+\n
   if state == \'started\':\n
     request_software_instance.startRequested()\n
     request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
@@ -139,7 +155,16 @@ else:\n
   else:\n
     raise ValueError(\'State %r is not supported\' % state)\n
 predecessor_list = software_instance.getPredecessorList() + [request_software_instance.getRelativeUrl()]\n
+# Add requested software instance to graph if does not exists there yet\n
+if not request_software_instance.getUid() in graph:\n
+  graph[request_software_instance.getUid()] = []\n
 \n
+# update graph to reflect requested operation\n
+graph[software_instance.getUid()] = software_instance.getPredecessorUidList() + [request_software_instance.getUid()]\n
+\n
+# check if all elements are still connected and if there is no cycle\n
+software_instance.checkConnected(graph, root_software_instance.getUid())\n
+software_instance.checkNotCyclic(graph)\n
 \n
 software_instance.edit(\n
   predecessor_list=predecessor_list,\n
