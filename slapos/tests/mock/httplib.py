@@ -3,8 +3,6 @@
 """Mocked httplib
 """
 
-from urlparse import urlparse
-
 __all__ = []
 
 def log(message):
@@ -21,13 +19,13 @@ class HTTPConnection(object):
     HTTPConnection._callback.  This method received the instance, the path,
     method and request body as parameter, and it has to return a tuple with
     headers dictionary and body response string.
-    
+
     @param self object instance reference
     @param URL the parsed URL
     @param method the http method
     @param body the request body
     @param headers the request headers
-    
+
     @return tuple containing status integer, headers dictionary and body
     response"""
     return (0, {}, '', )
@@ -83,7 +81,6 @@ class HTTPSConnection(HTTPConnection):
                source_address=None):
     super().__init__(self, host, port, strict, timeout,
                      source_address)
-    pass
 
 class HTTPResponse(object):
 

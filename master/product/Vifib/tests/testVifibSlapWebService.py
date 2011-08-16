@@ -3149,6 +3149,9 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepCheckSoftwareInstanceAndRelatedComputerPartition(self,
       sequence, **kw):
     self.stepCheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck(sequence, **kw)
+    software_instance_uid = sequence['software_instance_uid']
+    software_instance = self.portal.portal_catalog.getResultValue(
+        uid=software_instance_uid)
     self._checkSoftwareInstanceAndRelatedPartition(software_instance)
 
   def stepCheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck(self,
@@ -9220,7 +9223,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid = sequence['software_instance_uid'])
-    requested_reference = sequence['requested_reference']
     from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
     self.assertRaises(DisconnectedSoftwareTree,
       software_instance.requestSoftwareInstance,
@@ -9370,7 +9372,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid = sequence['software_instance_uid'])
-    requested_reference = sequence['requested_reference']
     from erp5.document.SoftwareInstance import CyclicSoftwareTree
     self.assertRaises(CyclicSoftwareTree,
       software_instance.requestSoftwareInstance,
@@ -9520,7 +9521,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid = sequence['software_instance_uid'])
-    requested_reference = sequence['requested_reference']
     self.assertRaises(ValueError,
       software_instance.requestSoftwareInstance,
       software_release=sequence['software_release_uri'],
@@ -9764,7 +9764,7 @@ class TestVifibSlapWebService(testVifibMixin):
     from erp5.document.SoftwareInstance import CyclicSoftwareTree
     self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
 
-  def test_si_tree_simple_list_cyclic(self):
+  def test_si_tree_simple_list_cyclic_non_root(self):
     """Graph of cyclic list is cyclic
 
     B->C->D->A-\
@@ -9862,7 +9862,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepRequestCredentialFromWebSite(self, sequence, **kw):
     sequence['web_user'] = '%s.%s' % (self.id(), random())
-    result = self.portal.ERP5Site_newCredentialRequest(\
+    self.portal.ERP5Site_newCredentialRequest(\
         first_name='Homer',
         last_name='Simpson',
         reference=sequence['web_user'],

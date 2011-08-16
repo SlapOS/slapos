@@ -35,6 +35,7 @@ if sys.version_info < (2, 6):
 import socket
 import subprocess
 import traceback
+import time
 #from time import strftime
 
 from SlapObject import Software, Partition, WrongPermissionError, \
@@ -105,6 +106,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="Enables console output and live output from subcommands.")
   parser.add_argument("-v", "--verbose", action="store_true", default=False,
       help="Be verbose.")
+  parser.add_argument("--promise-timeout",
+                      type=int, default=3,
+                      help="Promise timeout in seconds.")
   parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
       help="SlapOS configuration file.")
 
@@ -198,7 +202,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             master_ca_file=master_ca_file,
             certificate_repository_path=certificate_repository_path,
             console=option_dict['console'],
-            buildout=option_dict.get('buildout')),
+            buildout=option_dict.get('buildout'),
+            promise_timeout=option_dict['promise_timeout']),
           option_dict])
 
 
@@ -267,7 +272,8 @@ class Slapgrid(object):
                cert_file=None,
                master_ca_file=None,
                certificate_repository_path=None,
-               console=False):
+               console=False,
+               promise_timeout=3):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
     self.software_root = os.path.abspath(software_root)
@@ -294,6 +300,7 @@ class Slapgrid(object):
         os.path.join(self.instance_etc_directory, 'supervisord.conf.d')
     self.console = console
     self.buildout = buildout
+    self.promise_timeout = promise_timeout
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -452,6 +459,53 @@ class Slapgrid(object):
         exception = traceback.format_exc()
         logger.error(exception)
         computer_partition.error(exception)
+
+      # Promises
+
+      instance_path = os.path.join(self.instance_root,
+          computer_partition.getId())
+
+      uid, gid = None, None
+      stat_info = os.stat(instance_path)
+
+      #stat sys call to get statistics informations
+      uid = stat_info.st_uid
+      gid = stat_info.st_gid
+
+      # Get the list of promises
+      promise_dir = os.path.join(instance_path, 'etc', 'promise')
+      if os.path.exists(promise_dir) and os.path.isdir(promise_dir):
+        cwd = instance_path
+        promises_list = os.listdir(promise_dir)
+
+        # Check whether every promise is kept
+        for promise in promises_list:
+
+          command = os.path.join(promise_dir, promise)
+
+          kw = dict()
+          if not self.console:
+            kw.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+          process_handler = SlapPopen(command,
+            preexec_fn=lambda: dropPrivileges(uid, gid),
+            cwd=cwd,
+            env=None, **kw)
+
+          time.sleep(self.promise_timeout)
+
+          promise = os.path.basename(command)
+
+          if process_handler.poll() is None:
+            process_handler.kill()
+            computer_partition.error("The promise %r timed out" % promise)
+          elif process_handler.poll() != 0:
+            stderr = process_handler.communicate()[1]
+            if stderr is None:
+              stderr = 'No error output from %r.' % promise
+            computer_partition.error(stderr)
+
+
     logger.info("Finished computer partitions...")
     return clean_run
 
