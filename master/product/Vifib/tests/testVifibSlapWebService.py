@@ -1328,7 +1328,7 @@ class TestVifibSlapWebService(testVifibMixin):
         partition_parameter_kw=requested_parameter_dict,
         # XXX The follow API should be slave, but shared was kept for
         # Backward compatibility with older versions of slap
-        shared=True,       
+        shared=True,
         filter_kw=sequence.get('requested_filter_dict', {}),
         state=sequence.get('instance_state'))
 

@@ -261,7 +261,7 @@ class SlapTool(BaseTool):
     'requestComputerPartition')
   def requestComputerPartition(self, computer_id=None,
       computer_partition_id=None, software_release=None, software_type=None,
-      partition_reference=None, slave_xml=None, partition_parameter_xml=None,
+      partition_reference=None, partition_parameter_xml=None,
       filter_xml=None, state=None, shared_xml=_MARKER):
     """
     Asynchronously requests creation of computer partition for assigned
@@ -274,13 +274,9 @@ class SlapTool(BaseTool):
 
     In any other case returns not important data and HTTP code is 403 Forbidden
     """
-    # Backward compatibility API, translate shared_xml into slave_xml.
-    # This should be removed as soon slap API be updated.
-    if shared_xml is not _MARKER:
-      slave_xml = shared_xml
     return self._requestComputerPartition(computer_id, computer_partition_id,
         software_release, software_type, partition_reference,
-        slave_xml, partition_parameter_xml, filter_xml, state)
+        shared_xml, partition_parameter_xml, filter_xml, state)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'useComputer')
@@ -597,7 +593,7 @@ class SlapTool(BaseTool):
   @convertToREST
   def _requestComputerPartition(self, computer_id, computer_partition_id,
         software_release, software_type, partition_reference,
-        slave_xml, partition_parameter_xml, filter_xml, state):
+        shared_xml, partition_parameter_xml, filter_xml, state):
     """
     Asynchronously requests creation of computer partition for assigned
     parameters
@@ -614,10 +610,10 @@ class SlapTool(BaseTool):
       state = xml_marshaller.xml_marshaller.loads(state)
     if state is None:
       state = 'started'
-    if slave_xml:
-      slave = xml_marshaller.xml_marshaller.loads(slave_xml)
+    if shared_xml is not _MARKER:
+      shared = xml_marshaller.xml_marshaller.loads(shared_xml)
     else:
-      slave = False
+      shared = False
     if partition_parameter_xml:
       partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
                                               partition_parameter_xml)
@@ -646,7 +642,7 @@ class SlapTool(BaseTool):
     sla_xml = etree.tostring(instance, pretty_print=True,
                                   xml_declaration=True, encoding='utf-8')
 
-    if slave:
+    if shared:
       instance_portal_type = "Slave Instance"
     else:
       instance_portal_type = "Software Instance"
@@ -661,7 +657,7 @@ class SlapTool(BaseTool):
               software_type=software_type,
               partition_reference=partition_reference,
               instance_xml=instance_xml,
-              slave=slave,
+              shared=shared,
               sla_xml=sla_xml,
               state=state)
 
@@ -683,7 +679,7 @@ class SlapTool(BaseTool):
       person.requestSoftwareInstance(software_release=software_release,
               software_type=software_type,
               software_title=partition_reference,
-              slave=slave,
+              shared=shared,
               instance_xml=instance_xml,
               sla_xml=sla_xml,
               state=state)
@@ -701,7 +697,7 @@ class SlapTool(BaseTool):
       raise SoftwareInstanceNotReady
     else:
       query_kw = {}
-      if slave:
+      if shared:
         # Provide precise reference when search for a slave.
         query_kw['slave_reference'] = requested_software_instance.getReference()
 
