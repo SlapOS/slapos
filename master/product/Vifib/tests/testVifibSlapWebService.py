@@ -363,7 +363,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepPersonRequestSlaveInstance(self, sequence, **kw):
     kw = dict(instance_portal_type=self.slave_instance_portal_type,
-              slave=True,
+              shared=True,
               software_type="SlaveInstance")
     self.stepPersonRequestSoftwareInstance(sequence, **kw)
 
