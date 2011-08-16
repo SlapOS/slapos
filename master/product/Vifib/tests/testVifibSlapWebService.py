@@ -3116,6 +3116,9 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepCheckSoftwareInstanceAndRelatedComputerPartition(self,
       sequence, **kw):
     self.stepCheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck(sequence, **kw)
+    software_instance_uid = sequence['software_instance_uid']
+    software_instance = self.portal.portal_catalog.getResultValue(
+        uid=software_instance_uid)
     self._checkSoftwareInstanceAndRelatedPartition(software_instance)
 
   def stepCheckSoftwareInstanceAndRelatedComputerPartitionNoPackingListCheck(self,
