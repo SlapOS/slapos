@@ -69,7 +69,13 @@ graph = {}\n
 # Get root software instance and create initial graph\n
 predecessor_software_instance = software_instance\n
 while (predecessor_software_instance is not None):\n
-  graph[predecessor_software_instance.getUid()] = predecessor_software_instance.getPredecessorUidList()\n
+  predecessor_software_instance_pred_uid_list = predecessor_software_instance.getPredecessorUidList()\n
+  graph[predecessor_software_instance.getUid()] = predecessor_software_instance_pred_uid_list\n
+  # as this walking is not fetching all instances fill predecessors into graph, in order to have\n
+  # "nearly" complete representation\n
+  for uid in predecessor_software_instance_pred_uid_list:\n
+    if uid not in graph:\n
+      graph[uid] = []\n
   root_software_instance = predecessor_software_instance\n
   predecessor_software_instance = predecessor_software_instance.getPredecessorRelatedValue(\n
       portal_type="Software Instance")\n
