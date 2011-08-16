@@ -1347,14 +1347,14 @@ class TestVifibSlapWebService(testVifibMixin):
     slap_computer_partition = self.slap.registerComputerPartition(
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
-    
+
     # first try will raise slap.ResourceNotReady
-    self.assertRaises(slap.ResourceNotReady, 
+    self.assertRaises(slap.ResourceNotReady,
       slap_computer_partition.request,
-      software_release=software_release_uri, 
+      software_release=software_release_uri,
       software_type="SlaveInstance",
       partition_reference=requested_reference,
-      partition_parameter_kw=requested_parameter_dict, 
+      partition_parameter_kw=requested_parameter_dict,
       shared=True,
       filter_kw=sequence.get('requested_filter_dict', {}),
       state=sequence.get('instance_state'))
