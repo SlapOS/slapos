@@ -485,6 +485,8 @@ buildout = /path/to/buildout/binary
       Raises if the argument list if empty and without configuration file.
     """
     parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    # XXX: SystemExit is too generic exception, it is only known that
+    #      something is wrong
     self.assertRaises(SystemExit, parser, *())
 
   def test_default_argument_tuple(self):
@@ -496,11 +498,6 @@ buildout = /path/to/buildout/binary
     return_list = parser(*self.default_arg_tuple)
     self.assertEquals(2, len(return_list))
 
-  # XXX(lucas): the error method from argparse.ArgumentParser()
-  # uses a bad approach to raise an error. It just print the message
-  # and call a exit method which stops the process completly and the other
-  # tests are not able to be executed.
-  # Could we patch the error method for a better coverage?
   def test_signature_private_key_file_non_exists(self):
     """
       Raises if the  signature_private_key_file does not exists.
@@ -508,7 +505,9 @@ buildout = /path/to/buildout/binary
     parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
     argument_tuple = ("--signature_private_key_file", "/non/exists/path") + \
                       self.default_arg_tuple
-    #self.assertRaises(Exception, parser, *argument_tuple)
+    # XXX: SystemExit is too generic exception, it is only known that
+    #      something is wrong
+    self.assertRaises(SystemExit, parser, *argument_tuple)
 
   def test_signature_private_key_file(self):
     """
