@@ -4463,7 +4463,7 @@ class TestVifibSlapWebService(testVifibMixin):
   ########################################
   def test_ComputerPartition_request_slave_firstNotReady(self):
     """
-    Check that first call to request raises NotReady response
+    Check that first call to request raises NotReadyResponse
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
@@ -4510,6 +4510,8 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_ComputerPartition_request_slave_instantiate(self):
     """
+      Check that one Slave Instance is instantiate correctly and the validate
+      the Sale Packing List states
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
@@ -4565,6 +4567,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_ComputerPartition_request_slave_same_twice_SR(self):
     """
+      Check that requesting the same slave instance twice, only one is created
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
@@ -4605,7 +4608,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_ComputerPartition_request_slave_twice_different(self):
     """
-     Check request 2 diferent slave instances on same Software 
+     Check request 2 different slave instances on same Software 
      Instance.
     """
     simple_request_with_random = """
@@ -4646,7 +4649,7 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_ComputerPartition_request_slave_NotFound(self):
     """
     Check that requesting a Slave Instance works in system capable to fulfill
-    such request, with Slave Partition does not exist yet.
+    such request, when Software Instance is not installed yet.
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_formated_computer + """
@@ -4663,18 +4666,16 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.play(self)
 
   def test_ComputerPartition_request_slave_state_is_optional(self):
-    """Checks that state is optional parameter on Slap Tool
-    
-    This ensures backward compatibility with old libraries."""
+    """Checks that state is optional parameter on Slap Tool This ensures
+    backward compatibility with old libraries."""
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string = \
       self.prepare_install_requested_computer_partition_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
-      DirectRequestComputerPartitionNotReadyResponseWithoutStateAndSlaveTrue \
+      DirectRequestComputerPartitionNotReadyResponseWithoutStateAndSharedTrue \
       Tic \
       SlapLogout \
-      \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -4684,11 +4685,9 @@ class TestVifibSlapWebService(testVifibMixin):
           computer_guid="COMP-99999999999999999999999")
 
   def test_ComputerPartition_request_filter_slave_computer_guid(self):
-    """
-    Check that requesting with filter computer_guid key works as expected
+    """Check that requesting with filter computer_guid key works as expected.
 
-    This include tests for slave case.
-    """
+    This include tests for slave instance case."""
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     # There are two partitions on another computer
