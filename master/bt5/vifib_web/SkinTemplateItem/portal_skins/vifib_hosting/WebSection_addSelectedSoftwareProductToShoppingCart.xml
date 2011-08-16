@@ -79,7 +79,7 @@ params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
 params["instance_software_product_uid"] = uids[0]\n
 params["service_title"] = service_title\n
 params["instance_xml"] = instance_xml\n
-params["slave"] = slave\n
+params["shared"] = shared\n
 params["computer"] = computer\n
 portal.portal_selections.setSelectionParamsFor(\'vifib_session_id\', params)\n
 \n
@@ -94,7 +94,7 @@ context.WebSection_viewNextStep()\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>dialog_id, service_title, instance_xml, computer=\'\', uids=[], slave=0, quantity = 1, reset_shopping_cart=True, **kw</string> </value>
+            <value> <string>dialog_id, service_title, instance_xml, computer=\'\', uids=[], shared=0, quantity=1, reset_shopping_cart=True, **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
