@@ -485,7 +485,7 @@ buildout = /path/to/buildout/binary
       Raises if the argument list if empty and without configuration file.
     """
     parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
-    self.assertRaises(IOError, parser, *())
+    self.assertRaises(SystemExit, parser, *())
 
   def test_default_argument_tuple(self):
     """
