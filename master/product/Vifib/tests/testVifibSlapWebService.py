@@ -1420,9 +1420,9 @@ class TestVifibSlapWebService(testVifibMixin):
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
 
-  def stepDirectRequestComputerPartitionNotReadyResponseWithoutStateAndSlaveTrue(
+  def stepDirectRequestComputerPartitionNotReadyResponseWithoutStateAndSharedTrue(
       self, sequence, **kw):
-    kw["slave"] = True
+    kw["shared"] = True
     self.stepDirectRequestComputerPartitionNotReadyResponseWithoutState(
        sequence, **kw)
 
@@ -1433,15 +1433,16 @@ class TestVifibSlapWebService(testVifibMixin):
         'software_release': sequence['software_release_uri'],
         'software_type': sequence.get('requested_reference', 'requested_reference'),
         'partition_reference': sequence.get('requested_reference', 'requested_reference'),
-        'slave_xml': xml_marshaller.dumps(kw.get("slave", False)),
+        'shared_xml': xml_marshaller.dumps(kw.get("shared", False)),
         'partition_parameter_xml': xml_marshaller.dumps({}),
         'filter_xml': xml_marshaller.dumps({}),
         #'state': Note: State is omitted
       }
     scheme, netloc, path, query, fragment = urlparse.urlsplit(self.server_url)
     connection = httplib.HTTPConnection(host=netloc)
-    connection.request("POST", path + '/requestComputerPartition', urllib.urlencode(request_dict), {'Content-type': "application/x-www-form-urlencoded"})
-
+    connection.request("POST", path + '/requestComputerPartition',
+        urllib.urlencode(request_dict),
+        {'Content-type': "application/x-www-form-urlencoded"})
     response = connection.getresponse()
     self.assertEqual(httplib.REQUEST_TIMEOUT, response.status)
 
