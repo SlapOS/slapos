@@ -8602,7 +8602,7 @@ class TestVifibSlapWebService(testVifibMixin):
     from erp5.document.SoftwareInstance import CyclicSoftwareTree
     self.assertRaises(CyclicSoftwareTree, self.checkNotCyclic, graph)
 
-  def test_si_tree_simple_list_cyclic(self):
+  def test_si_tree_simple_list_cyclic_non_root(self):
     """Graph of cyclic list is cyclic
 
     B->C->D->A-\
