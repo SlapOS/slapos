@@ -8061,7 +8061,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid = sequence['software_instance_uid'])
-    requested_reference = sequence['requested_reference']
     from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
     self.assertRaises(DisconnectedSoftwareTree,
       software_instance.requestSoftwareInstance,
@@ -8211,7 +8210,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid = sequence['software_instance_uid'])
-    requested_reference = sequence['requested_reference']
     from erp5.document.SoftwareInstance import CyclicSoftwareTree
     self.assertRaises(CyclicSoftwareTree,
       software_instance.requestSoftwareInstance,
@@ -8361,7 +8359,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid = sequence['software_instance_uid'])
-    requested_reference = sequence['requested_reference']
     self.assertRaises(ValueError,
       software_instance.requestSoftwareInstance,
       software_release=sequence['software_release_uri'],
@@ -8703,7 +8700,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepRequestCredentialFromWebSite(self, sequence, **kw):
     sequence['web_user'] = '%s.%s' % (self.id(), random())
-    result = self.portal.ERP5Site_newCredentialRequest(\
+    self.portal.ERP5Site_newCredentialRequest(\
         first_name='Homer',
         last_name='Simpson',
         reference=sequence['web_user'],
