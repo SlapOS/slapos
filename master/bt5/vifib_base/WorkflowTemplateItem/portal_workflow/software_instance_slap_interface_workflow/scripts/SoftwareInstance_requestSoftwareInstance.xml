@@ -162,9 +162,9 @@ if not request_software_instance.getUid() in graph:\n
 # update graph to reflect requested operation\n
 graph[software_instance.getUid()] = software_instance.getPredecessorUidList() + [request_software_instance.getUid()]\n
 \n
-# check if all elements are still connected\n
-software_instance.checkNotCyclic(graph)\n
+# check if all elements are still connected and if there is no cycle\n
 software_instance.checkConnected(graph, root_software_instance.getUid())\n
+software_instance.checkNotCyclic(graph)\n
 \n
 software_instance.edit(\n
   predecessor_list=predecessor_list,\n
