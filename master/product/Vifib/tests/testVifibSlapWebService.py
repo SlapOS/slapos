@@ -7977,7 +7977,52 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_bug_destruction_with_cancelled_packing_list(self):
     """Proves that even if some packing lists are in cancelled state
     it is possible to destroy software instance"""
-    raise NotImplementedError
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_stopped_computer_partition_sequence_string + """
+      # Request destruction...
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # and cancel current destruction.
+      LoginDefaultUser
+      SelectCurrentlyUsedSalePackingListUid
+      CancelSalePackingList
+      Tic
+      CheckComputerPartitionInstanceCleanupSalePackingListCancelled
+      Logout
+
+      # So all packing lists are finished, but one is cancelled,
+      # time to request destruction...
+
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # ...and destroy it
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   def test_bug_destruction_with_unfinished_packing_list(self):
     """Proves that even if some packing lists are not fully delivered
