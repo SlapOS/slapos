@@ -60,7 +60,7 @@ software_release_url_string = state_change.kwargs[\'software_release\']\n
 requested_partition_reference = kwargs["partition_reference"]\n
 software_type = kwargs["software_type"]\n
 instance_xml = kwargs["instance_xml"]\n
-is_slave = kwargs.get("slave", False)\n
+is_slave = kwargs.get("shared", False)\n
 sla_xml = kwargs["sla_xml"]\n
 state = kwargs["state"]\n
 \n
