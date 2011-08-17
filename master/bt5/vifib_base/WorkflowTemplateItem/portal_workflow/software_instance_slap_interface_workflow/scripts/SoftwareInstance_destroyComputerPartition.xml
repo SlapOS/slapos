@@ -50,7 +50,10 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># deliver proper packing list\n
+            <value> <string>software_instance = state_change[\'object\']\n
+# mark destroy is requested\n
+software_instance.destroyRequested()\n
+# deliver proper packing list\n
 packing_list_line = context.SoftwareInstance_getInstanceDestroyPackingListLine(state_change)\n
 packing_list = packing_list_line.getParentValue()\n
 if packing_list.getPortalObject().portal_workflow.isTransitionPossible(packing_list, \'start\'):\n
@@ -59,7 +62,6 @@ if packing_list.getPortalObject().portal_workflow.isTransitionPossible(packing_l
   packing_list.deliver()\n
 \n
 # revoke certificate\n
-software_instance = state_change[\'object\']\n
 try:\n
   context.getPortalObject().portal_certificate_authority\\\n
     .revokeCertificate(software_instance.getDestinationReference())\n
