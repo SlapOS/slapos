@@ -7974,6 +7974,11 @@ class TestVifibSlapWebService(testVifibMixin):
     Software Instances deployed on many computers"""
     raise NotImplementedError
 
+  def test_bug_destruction_with_cancelled_packing_list(self):
+    """Proves that even if some packing lists are in cancelled state
+    it is possible to destroy software instance"""
+    raise NotImplementedError
+
   def test_bug_destruction_with_unfinished_packing_list(self):
     """Proves that even if some packing lists are not fully delivered
     it is possible to destroy software instance"""
