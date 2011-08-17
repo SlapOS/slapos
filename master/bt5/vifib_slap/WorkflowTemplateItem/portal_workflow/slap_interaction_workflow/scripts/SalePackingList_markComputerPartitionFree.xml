@@ -76,7 +76,7 @@ software_instance = current_delivery_line.getAggregateValue(portal_type="Softwar
 for sale_packing_list_line in portal.portal_catalog(\n
   portal_type="Sale Packing List Line", \n
   default_aggregate_uid=software_instance.getUid(),\n
-  simulation_state=NegatedQuery(Query(simulation_state="delivered")),\n
+  simulation_state=NegatedQuery(Query(simulation_state=["delivered", "cancelled"])),\n
   ):\n
   sale_packing_list = sale_packing_list_line.getParentValue()\n
   if sale_packing_list.getPortalObject().portal_workflow.isTransitionPossible(sale_packing_list, \'start\'):\n
