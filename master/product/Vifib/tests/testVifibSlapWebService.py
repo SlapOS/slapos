@@ -8403,7 +8403,21 @@ class TestVifibSlapWebService(testVifibMixin):
       DirectRequestComputerPartitionRaisesCyclicSoftwareTree
       """
     sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
+    import erp5.document.SoftwareInstance
+    def makeTrue(*args, **kwargs):
+      return True
+    # Disable temporialy checkConnected in order to have only
+    # checkCyclic called
+    erp5.document.SoftwareInstance.original_checkConnected = \
+      erp5.document.SoftwareInstance.checkConnected
+    erp5.document.SoftwareInstance.checkConnected = makeTrue
+    try:
+      sequence_list.play(self)
+    finally:
+      erp5.document.SoftwareInstance.checkConnected = \
+        erp5.document.SoftwareInstance.original_checkConnected
+      del(erp5.document.SoftwareInstance.original_checkConnected)
+      
 
   def stepDirectRequestComputerPartitionRaisesValueError(self,
     sequence, **kw):
