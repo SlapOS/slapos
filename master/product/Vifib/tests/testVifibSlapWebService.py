@@ -7974,6 +7974,47 @@ class TestVifibSlapWebService(testVifibMixin):
     Software Instances deployed on many computers"""
     raise NotImplementedError
 
+  def test_bug_destruction_confirmed_instance_setup(self):
+    """Proves that all is correctly handled in case of confirmed instance
+    setup packing list existence"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + \
+      """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # Now there are two packing lists in confirmed state:
+      #  * one for instance setup
+      #  * one for instance destruction
+      # Simulate typical scenario:
+      #  * stopped
+      #  * commit
+      #  * destroyed
+      #  * commit
+      #  * tic
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_bug_destruction_with_cancelled_packing_list(self):
     """Proves that even if some packing lists are in cancelled state
     it is possible to destroy software instance"""
