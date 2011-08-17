@@ -8417,7 +8417,6 @@ class TestVifibSlapWebService(testVifibMixin):
       erp5.document.SoftwareInstance.checkConnected = \
         erp5.document.SoftwareInstance.original_checkConnected
       del(erp5.document.SoftwareInstance.original_checkConnected)
-      
 
   def stepDirectRequestComputerPartitionRaisesValueError(self,
     sequence, **kw):
