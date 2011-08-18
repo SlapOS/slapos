@@ -63,6 +63,8 @@ if resource == preference_tool.getPreferredInstanceSetupResource():\n
     software_instance.requestStartComputerPartition()\n
   elif software_instance.getSlapState() == \'stop_requested\':\n
     software_instance.requestStopComputerPartition()\n
+  elif software_instance.getSlapState() == \'destroy_requested\':\n
+    software_instance.requestDestroyComputerPartition()\n
 </string> </value>
         </item>
         <item>

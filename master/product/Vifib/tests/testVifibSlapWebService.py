@@ -314,6 +314,17 @@ class TestVifibSlapWebService(testVifibMixin):
         self.portal.portal_preferences.getPreferredInstanceHostingResource(),
         sequence)
 
+  def stepCheckComputerPartitionNoInstanceHostingSalePackingList(self,
+      sequence, **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence['computer_partition_uid'])
+    delivery_line_list = [q for q in computer_partition
+        .getAggregateRelatedValueList(
+          portal_type=self.sale_packing_list_line_portal_type)
+        if q.getResource() == self.\
+          portal.portal_preferences.getPreferredInstanceHostingResource()]
+    self.assertEqual(0, len(delivery_line_list))
+
   def stepCheckComputerPartitionInstanceHostingSalePackingListDelivered(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('delivered',
@@ -9189,6 +9200,97 @@ class TestVifibSlapWebService(testVifibMixin):
     Software Instances deployed on many computers"""
     raise NotImplementedError
 
+  def test_bug_destruction_confirmed_instance_setup(self):
+    """Proves that all is correctly handled in case of confirmed instance
+    setup packing list existence"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + \
+      """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # Now there are two packing lists in confirmed state:
+      #  * one for instance setup
+      #  * one for instance destruction
+      # Simulate typical scenario:
+      #  * stopped
+      #  * commit
+      #  * destroyed
+      #  * commit
+      #  * tic
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      CheckComputerPartitionNoInstanceHostingSalePackingList
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_destruction_with_cancelled_packing_list(self):
+    """Proves that even if some packing lists are in cancelled state
+    it is possible to destroy software instance"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_stopped_computer_partition_sequence_string + """
+      # Request destruction...
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # and cancel current destruction.
+      LoginDefaultUser
+      SelectCurrentlyUsedSalePackingListUid
+      CancelSalePackingList
+      Tic
+      CheckComputerPartitionInstanceCleanupSalePackingListCancelled
+      Logout
+
+      # So all packing lists are finished, but one is cancelled,
+      # time to request destruction...
+
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # ...and destroy it
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_bug_destruction_with_unfinished_packing_list(self):
     """Proves that even if some packing lists are not fully delivered
     it is possible to destroy software instance"""
@@ -9568,7 +9670,20 @@ class TestVifibSlapWebService(testVifibMixin):
       DirectRequestComputerPartitionRaisesCyclicSoftwareTree
       """
     sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
+    import erp5.document.SoftwareInstance
+    def makeTrue(*args, **kwargs):
+      return True
+    # Disable temporialy checkConnected in order to have only
+    # checkCyclic called
+    erp5.document.SoftwareInstance.original_checkConnected = \
+      erp5.document.SoftwareInstance.checkConnected
+    erp5.document.SoftwareInstance.checkConnected = makeTrue
+    try:
+      sequence_list.play(self)
+    finally:
+      erp5.document.SoftwareInstance.checkConnected = \
+        erp5.document.SoftwareInstance.original_checkConnected
+      del(erp5.document.SoftwareInstance.original_checkConnected)
 
   def stepDirectRequestComputerPartitionRaisesValueError(self,
     sequence, **kw):

@@ -1,7 +1,10 @@
+Computer Partition | unfiltered_tracking_list
+Person | get_certificate
+Person | revoke_certificate
 Slave Instance | jump_to_software_instance
 Slave Instance | view
 Slave Instance | web_view
 Software Instance Module | view
 Software Instance | jump_to_software_instance
+Software Instance | unfiltered_tracking_list
 Software Instance | view
-Software Instance | web_view
