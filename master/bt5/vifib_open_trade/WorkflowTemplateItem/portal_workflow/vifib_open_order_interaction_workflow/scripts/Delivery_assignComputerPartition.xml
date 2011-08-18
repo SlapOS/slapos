@@ -50,23 +50,39 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>def checkSoftwareInstanceIsInstalledOnComputerPartition(software_release,\n
+            <value> <string>portal = context.getPortalObject()\n
+\n
+def checkSoftwareInstanceIsInstalledOnComputerPartition(software_release,\n
     computer_partition):\n
   from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
-  portal = context.getPortalObject()\n
+  resource_relative_url = (\n
+      portal.portal_preferences.getPreferredInstanceSetupResource(),\n
+      portal.portal_preferences.getPreferredInstanceHostingResource(),\n
+  )\n
   query = ComplexQuery(Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
                        Query(aggregate_relative_url=computer_partition.getRelativeUrl()),\n
                        operator="AND",\n
                       )\n
-  sale_packing_list_line = portal.portal_catalog.getResultValue(\n
-    portal_type=\'Sale Packing List Line\', aggregate_relative_url=query)\n
-  if sale_packing_list_line is not None:\n
-    return True\n
+  sale_packing_list_line_list = portal.portal_catalog(\n
+    portal_type=\'Sale Packing List Line\',\n
+    query=query,\n
+    resource_relative_url=resource_relative_url,\n
+    limit=1)\n
+  \n
+  if len(sale_packing_list_line_list) == 1:\n
+    resource_relative_url = (\n
+      portal.portal_preferences.getPreferredInstanceCleanupResource(),\n
+    )\n
+    sale_packing_list_line_list = portal.portal_catalog(\n
+      portal_type=\'Sale Packing List Line\',\n
+      query=query,\n
+      resource_relative_url=resource_relative_url,\n
+      limit=1)\n
+    if len(sale_packing_list_line_list) == 0:\n
+      return True\n
   return False\n
 \n
-\n
 order = state_change[\'object\']\n
-portal = order.getPortalObject()\n
 \n
 setup_service_relative_url = order.portal_preferences.getPreferredInstanceSetupResource()\n
 isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
@@ -96,7 +112,6 @@ for order_line in order.getMovementList():\n
 \n
       result_count = software_instance.portal_catalog.countResults(**query_kw)[0][0]\n
       offset = max(0, result_count-1)\n
-\n
       for computer_partition_candidate in portal.portal_catalog(\n
                                                limit=(random.randint(0, offset), 50), **query_kw):\n
         computer_partition_candidate = computer_partition_candidate.getObject()    \n
@@ -109,7 +124,8 @@ for order_line in order.getMovementList():\n
         elif software_instance_portal_type == "Slave Instance" and \\\n
             checkSoftwareInstanceIsInstalledOnComputerPartition(software_release, computer_partition_candidate):\n
           computer_partition = computer_partition_candidate\n
-          break    \n
+          break\n
+\n
       if computer_partition is None:\n
         raise ValueError(\'It was not possible to find free Computer Partition\')\n
 \n
