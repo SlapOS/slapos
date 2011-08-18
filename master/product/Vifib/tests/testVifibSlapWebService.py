@@ -4610,6 +4610,31 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_ComputerPartition_request_slave_after_destroy_SlaveInstance(self):
+    """
+      Check that a Slave Instance will not be allocated when a Software
+      Instance is destroyed
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_installed_computer_partition_sequence_string + """
+        LoginTestVifibCustomer
+        RequestSoftwareInstanceDestroy
+        Tic
+        SlapLogout
+        LoginDefaultUser
+        CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+        SlapLogout
+        SlapLoginCurrentSoftwareInstance
+        SelectEmptyRequestedParameterDict
+        SelectRequestedReference
+        RequestSlaveInstanceFromComputerPartitionNotFoundError
+        Tic
+        RequestSlaveInstanceFromComputerPartitionNotFoundError
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_ComputerPartition_request_slave_twice_different(self):
     """
      Check request 2 different slave instances on same Software 
@@ -4754,6 +4779,34 @@ class TestVifibSlapWebService(testVifibMixin):
     CheckComputerPartitionSaleOrderAggregatedList
     Logout
     """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_request_after_destroy_SlaveInstance(self):
+    """
+      Check that a Slave Instance will not be allocated when a Software
+      Instance is destroyed 
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_installed_computer_partition_sequence_string + """
+        LoginTestVifibCustomer
+        RequestSoftwareInstanceDestroy
+        Tic
+        SlapLogout
+        LoginDefaultUser
+        CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+        SlapLogout
+        LoginTestVifibCustomer
+        PersonRequestSlaveInstance
+        Tic
+        Logout
+        LoginDefaultUser
+        ConfirmOrderedSaleOrderActiveSense
+        Tic
+        CheckSlaveInstanceNotReady
+        Logout
+      """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
@@ -6370,7 +6423,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepSelectSlaveInstanceFromOneComputerPartition(self, sequence):
     slave_instance = self._getSlaveInstanceFromCurrentComputerPartition(sequence)
-    sequence['software_instance_uid'] = slave_instance.getUid()
+    sequence.edit(software_instance_uid=slave_instance.getUid())
 
   def stepCheckEmptySlaveInstanceListFromOneComputerPartition(self, sequence):
     computer_guid = sequence["computer_reference"]
