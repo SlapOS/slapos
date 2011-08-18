@@ -1,4 +1,5 @@
 <zodb_db %(storage_name)s>
+  cache-size %(cache_size)s
   mount-point %(mount_point)s
   <zeoclient>
     server %(address)s

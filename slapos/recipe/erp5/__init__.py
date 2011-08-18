@@ -161,6 +161,7 @@ class Recipe(BaseSlapRecipe):
 
     # XXX How to define good values for this?
     mount_point = '/'
+    cache_size = 5000
     check_path = '/erp5/account_module'
 
     known_tid_storage_identifier_dict = {}
@@ -172,7 +173,7 @@ class Recipe(BaseSlapRecipe):
         self.getTemplateFilename('zope-zeo-snippet.conf.in'), dict(
         storage_name=storage_dict['storage_name'],
         address='%s:%s' % (storage_dict['ip'], storage_dict['port']),
-        mount_point=mount_point
+        mount_point=mount_point, cache_size=cache_size
         ))
 
     zope_port = 12000
