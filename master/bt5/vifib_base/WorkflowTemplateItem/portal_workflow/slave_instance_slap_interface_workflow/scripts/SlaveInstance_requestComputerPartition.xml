@@ -57,14 +57,31 @@ portal = context.getPortalObject()\n
 def checkSoftwareInstanceIsInstalledOnComputerPartition(software_release,\n
     computer_partition):\n
   from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+  resource_relative_url = (\n
+      portal.portal_preferences.getPreferredInstanceSetupResource(),\n
+      portal.portal_preferences.getPreferredInstanceHostingResource(),\n
+  )\n
   query = ComplexQuery(Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
                        Query(aggregate_relative_url=computer_partition.getRelativeUrl()),\n
                        operator="AND",\n
                       )\n
-  sale_packing_list_line = portal.portal_catalog.getResultValue(\n
-    portal_type=\'Sale Packing List Line\', aggregate_relative_url=query)\n
-  if sale_packing_list_line is not None:\n
-    return True\n
+  sale_packing_list_line_list = portal.portal_catalog(\n
+    portal_type=\'Sale Packing List Line\',\n
+    query=query,\n
+    resource_relative_url=resource_relative_url,\n
+    limit=1)\n
+  \n
+  if len(sale_packing_list_line_list) == 1:\n
+    resource_relative_url = (\n
+      portal.portal_preferences.getPreferredInstanceCleanupResource(),\n
+    )\n
+    sale_packing_list_line_list = portal.portal_catalog(\n
+      portal_type=\'Sale Packing List Line\',\n
+      query=query,\n
+      resource_relative_url=resource_relative_url,\n
+      limit=1)\n
+    if len(sale_packing_list_line_list) == 0:\n
+      return True\n
   return False\n
 \n
 from DateTime import DateTime\n
@@ -95,7 +112,7 @@ computer_partition = None\n
 query_kw = {\n
   \'software_release_url\': software_release_url_string,\n
   \'portal_type\': \'Computer Partition\',\n
-  \'free_for_request\' : 0\n
+  \'free_for_request\' : 0,\n
 }\n
 # support SLA\n
 if "computer_guid" in filter_kw:\n
@@ -104,7 +121,6 @@ if "computer_guid" in filter_kw:\n
 # fetch at mot 50 random Computer Partitions, and check if they are ok\n
 portal = context.getPortalObject()\n
 isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
-\n
 \n
 result_count = slave_instance.portal_catalog.countResults(**query_kw)[0][0]\n
 offset = max(0, result_count-1)\n
