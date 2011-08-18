@@ -8928,6 +8928,20 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepRestoreComputerPartitionReferenceFromBufferB(self, sequence, **kw):
     sequence['computer_partition_reference'] = sequence['buffer_b_computer_partition_reference']
 
+  def stepCheckHostingSubscriptionMultipleComputerAuditor(self, sequence, **kw):
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'])
+    role_list = hosting_subscription.get_local_roles()
+    setup_packing_list_line_list = [q for q in
+      hosting_subscription.getAggregateRelatedValueList(
+        portal_type='Sale Packing List Line') if q.getResource() ==
+          self.portal.portal_preferences.getPreferredInstanceSetupResource()]
+    computer_list = [q.getAggregateValue(
+      portal_type='Computer Partition').getParentValue() for q in
+        setup_packing_list_line_list]
+    for computer in computer_list:
+      self.assertTrue((computer.getReference(), ('Auditor',))) in role_list
+
   def test_bug_destruction_of_partition_originated_from_another_computer(self):
     """Checks that computer is capable to destroy own Software Instance
 
@@ -9189,16 +9203,13 @@ class TestVifibSlapWebService(testVifibMixin):
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       CheckComputerPartitionIsFree
       Logout
+
+      LoginDefaultUser
+      CheckHostingSubscriptionMultipleComputerAuditor
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-
-  def test_bug_hosting_subscription_assignor_role_instability(self):
-    """Show instability issue of Assignor role on Hosting Subscription
-
-    Related to fact when Hosting Subscription is associated to
-    Software Instances deployed on many computers"""
-    raise NotImplementedError
 
   def test_bug_destruction_confirmed_instance_setup(self):
     """Proves that all is correctly handled in case of confirmed instance
