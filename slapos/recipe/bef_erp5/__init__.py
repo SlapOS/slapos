@@ -67,16 +67,16 @@ class Recipe(slapos.recipe.erp5.Recipe):
     r = self._requestZeoFileStorage
     s = lambda x: site_path + x
 
-    z1 = lambda x: r('Zeo Server 1', x), None
-    z2 = lambda x: r('Zeo Server 2', x), None
-    z3 = lambda x: r('Zeo Server 3', x), None
-    z4 = lambda x: r('Zeo Server 4', x), None
-    z5 = lambda x: r('Zeo Server 5', x), None
+    z1 = lambda x: r('Zeo Server 1', x), None, 5000, '20MB'
+    z2 = lambda x: r('Zeo Server 2', x), None, 5000, '20MB'
+    z3 = lambda x: r('Zeo Server 3', x), None, 5000, '20MB'
+    z4 = lambda x: r('Zeo Server 4', x), None, 5000, '20MB'
+    z5 = lambda x: r('Zeo Server 5', x), None, 5000, '20MB'
 
     return {
 
   # Zeo server 1
-  '/': r('Zeo Server 1', 'main'), s('account_module'),
+  '/': r('Zeo Server 1', 'main'), s('account_module'), 2000, '400MB'
   s('portal_activities'): z1('portal_activities'),
   s('task_report_module'): z1('task_report_module'),
   s('video_request_module'): z1('video_request_module'),
@@ -87,7 +87,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
   s('task_module'): z1('task_module'),
 
   # Zeo server 2
-  s('video_module'): z2('video_module'),
+  s('video_module'): r('Zeo Server 2', 'video_module'), None, 2000, '400MB'
 
   # Zeo server 3
   s('event_module'): z3('event_module'),
@@ -98,7 +98,8 @@ class Recipe(slapos.recipe.erp5.Recipe):
   s('organisation_module'): z4('organisation_module'),
 
   # Zeo server 5
-  s('scanned_document_module'): z5('scanned_document_module'), 
+  s('scanned_document_module'): r('Zeo Server 5', 'scanned_document_module'), 
+                                None, 2000, '400MB'
   s('item_module'): z5('item_module'),
   s('document_module'): z5('document_module'),
   s('image_module'): z5('image_module'),
@@ -132,7 +133,9 @@ class Recipe(slapos.recipe.erp5.Recipe):
     zeo_conf = self.installZeo(ip)
     zodb_configuration_list = []
     known_tid_storage_identifier_dict = {}
-    for mount_point, (storage_dict, check_path) in mount_point_zeo_dict.iteritems():
+    for mount_point, \
+        (storage_dict, check_path, zodb_cache_size, zeo_client_cache_size) in 
+                                                     mount_point_zeo_dict.iteritems():
       known_tid_storage_identifier_dict[
         (((storage_dict['ip'],storage_dict['port']),), storage_dict['storage_name'])
         ] = (zeo_conf[storage_dict['storage_name']]['path'], check_path or mount_point)
@@ -140,7 +143,8 @@ class Recipe(slapos.recipe.erp5.Recipe):
         self.getTemplateFilename('zope-zeo-snippet.conf.in'), dict(
         storage_name=storage_dict['storage_name'],
         address='%s:%s' % (storage_dict['ip'], storage_dict['port']),
-        mount_point=mount_point
+        mount_point=mount_point, zodb_cache_size=zodb_cache_size,
+        zeo_client_cache_size=zeo_client_cache_size,
         )))
     tidstorage_config = dict(host=self.getLocalIPv4Address(), port='6001')
     zodb_configuration_string = '\n'.join(zodb_configuration_list)
