@@ -54,10 +54,8 @@
   packing_list_line = context.SoftwareInstance_getInstanceHostingPackingListLine(state_change)\n
 except ValueError:\n
   return\n
-isTransitionPossible = context.portal_workflow.isTransitionPossible\n
 packing_list = packing_list_line.getParentValue()\n
-if isTransitionPossible(packing_list, "deliver"):\n
-  packing_list.deliver()\n
+packing_list.deliver()\n
 </string> </value>
         </item>
         <item>
