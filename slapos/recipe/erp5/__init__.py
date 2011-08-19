@@ -133,11 +133,15 @@ class Recipe(BaseSlapRecipe):
     thread_amount_per_zope = int(self.options.get(
                                  'single_zope_thread_amount', 4))
 
+    zodb_cache_size = int(self.options.get('zodb_cache_size', 5000))
+
     return self.installZope(ip=self.getLocalIPv4Address(),
           port=12000 + 1, name='zope_%s' % 1,
           zodb_configuration_string=self.substituteTemplate(
             self.getTemplateFilename('zope-zodb-snippet.conf.in'),
-            dict(zodb_root_path=zodb_root_path)), with_timerservice=True,
+            dict(zodb_root_path=zodb_root_path,
+                 zodb_cache_size=zodb_cache_size)),
+            with_timerservice=True,
             thread_amount=thread_amount_per_zope)
 
   def installZopeCluster(self):
@@ -161,7 +165,8 @@ class Recipe(BaseSlapRecipe):
 
     # XXX How to define good values for this?
     mount_point = '/'
-    cache_size = 5000
+    zodb_cache_size = 5000
+    zeo_client_cache_size = '20MB'
     check_path = '/erp5/account_module'
 
     known_tid_storage_identifier_dict = {}
@@ -173,7 +178,8 @@ class Recipe(BaseSlapRecipe):
         self.getTemplateFilename('zope-zeo-snippet.conf.in'), dict(
         storage_name=storage_dict['storage_name'],
         address='%s:%s' % (storage_dict['ip'], storage_dict['port']),
-        mount_point=mount_point, cache_size=cache_size
+        mount_point=mount_point, zodb_cache_size=zodb_cache_size,
+        zeo_client_cache_size=zeo_client_cache_size
         ))
 
     zope_port = 12000

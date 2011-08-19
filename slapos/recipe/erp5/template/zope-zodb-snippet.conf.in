@@ -1,4 +1,5 @@
 <zodb_db root>
+    %(zodb_cache_size)d
     <filestorage>
       path %(zodb_root_path)s
     </filestorage>
