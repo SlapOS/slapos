@@ -426,7 +426,7 @@ class Recipe(BaseSlapRecipe):
       }
 
   def installHaproxy(self, ip, port, name, server_check_path, url_list):
-    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 20s rise 2 fall 4"""
+    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 2 fall 4"""
     config = dict(name=name, ip=ip, port=port,
         server_check_path=server_check_path,)
     i = 1
