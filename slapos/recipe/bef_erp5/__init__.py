@@ -64,53 +64,46 @@ class Recipe(slapos.recipe.erp5.Recipe):
 
   def _getZeoClusterDict(self):
     site_path = '/erp5/'
+    r = self._requestZeoFileStorage
+    s = lambda x: site_path + x
+
+    z1 = lambda x: r('Zeo Server 1', x), None
+    z2 = lambda x: r('Zeo Server 2', x), None
+    z3 = lambda x: r('Zeo Server 3', x), None
+    z4 = lambda x: r('Zeo Server 4', x), None
+    z5 = lambda x: r('Zeo Server 5', x), None
+
     return {
-        '/': (self._requestZeoFileStorage('Zeo Server 1', 'main'),
-          site_path + 'account_module'),
-        site_path + 'portal_activities': (self._requestZeoFileStorage('Zeo Server 1',
-          'portal_activities'), None),
-        site_path + 'task_report_module': (self._requestZeoFileStorage('Zeo Server 1',
-          'task_report_module'), None),
-        site_path + 'video_request_module': (self._requestZeoFileStorage('Zeo Server 1',
-          'video_request_module'), None),
-        site_path + 'bug_module': (self._requestZeoFileStorage('Zeo Server 1',
-          'bug_module'), None),
-        site_path + 'portal_simulation': (self._requestZeoFileStorage('Zeo Server 1',
-          'portal_simulation'), None),
-        site_path + 'notice_transfer_request_module': (self._requestZeoFileStorage(
-          'Zeo Server 1', 'notice_transfer_request_module'), None),
-        site_path + 'accounting_module': (self._requestZeoFileStorage('Zeo Server 1',
-          'accounting_module'), None),
-        site_path + 'task_module': (self._requestZeoFileStorage('Zeo Server 1',
-          'task_module'), None),
 
-        site_path + 'video_module': (self._requestZeoFileStorage('Zeo Server 2',
-          'video_module'), None),
+  # Zeo server 1
+  '/': r('Zeo Server 1', 'main'), s('account_module'),
+  s('portal_activities'): z1('portal_activities'),
+  s('task_report_module'): z1('task_report_module'),
+  s('video_request_module'): z1('video_request_module'),
+  s('bug_module'): z1('bug_module'),
+  s('portal_simulation'): z1('portal_simulation'),
+  s('notice_transfer_request_module'): z1('notice_transfer_request_module'),
+  s('accounting_module'): z1('accounting_module'),
+  s('task_module'): z1('task_module'),
 
-        site_path + 'event_module': (self._requestZeoFileStorage('Zeo Server 3',
-          'event_module'), None),
-        site_path + 'support_request_module': (self._requestZeoFileStorage(
-          'Zeo Server 3', 'support_request_module'), None),
+  # Zeo server 2
+  s('video_module'): z2('video_module'),
 
-        site_path + 'person_module': (self._requestZeoFileStorage('Zeo Server 4',
-          'person_module'), None),
-        site_path + 'organisation_module': (self._requestZeoFileStorage('Zeo Server 4',
-          'organisation_module'), None),
-        # SyncML functionnality is not used anymore in this project.
-        # No need to keep compatibility with previous data
-#         site_path + 'portal_synchronizations': (self._requestZeoFileStorage(
-#           'Zeo Server 4', 'portal_synchronizations'), None),
+  # Zeo server 3
+  s('event_module'): z3('event_module'),
+  s('support_request_module'): z3('support_request_module'),
 
-        site_path + 'scanned_document_module': (self._requestZeoFileStorage(
-          'Zeo Server 5', 'scanned_document_module'), None),
-        site_path + 'item_module': (self._requestZeoFileStorage('Zeo Server 5',
-          'item_module'), None),
-        site_path + 'document_module': (self._requestZeoFileStorage('Zeo Server 5',
-          'document_module'), None),
-        site_path + 'image_module': (self._requestZeoFileStorage('Zeo Server 5',
-          'image_module'), None),
-        site_path + 'external_source_module': (self._requestZeoFileStorage(
-          'Zeo Server 5', 'external_source_module'), None),
+  # Zeo server 4
+  s('person_module'): z4('person_module'),
+  s('organisation_module'): z4('organisation_module'),
+
+  # Zeo server 5
+  s('scanned_document_module'): z5('scanned_document_module'), 
+  s('item_module'): z5('item_module'),
+  s('document_module'): z5('document_module'),
+  s('image_module'): z5('image_module'),
+  s('external_source_module'): z5('external_source_module'), 
+
     }
 
   def installProductionMysql(self):
