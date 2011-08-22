@@ -777,7 +777,7 @@ class SlapTool(BaseTool):
 
   def _getSalePackingListLineAsSoftwareInstance(self, sale_packing_list_line):
     merged_dict = sale_packing_list_line.\
-      SalePackingListLine_asSoftwareInstanceComputerPartitionMergedDict()
+      SalePackinListLine_asSoftwareInstnaceComputerPartitionMergedDict()
     if merged_dict is None:
       LOG('SlapTool._getSalePackingListLineAsSoftwareInstance', INFO,
         '%s returned no information' % sale_packing_list_line.getRelativeUrl())
