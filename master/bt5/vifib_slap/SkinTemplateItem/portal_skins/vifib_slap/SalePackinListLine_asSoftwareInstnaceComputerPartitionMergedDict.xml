@@ -75,7 +75,6 @@ if software_instance is not None and computer_partition is not None and software
   sale_packing_list_line_list = computer_partition.getAggregateRelatedValueList(\n
     portal_type="Sale Packing List Line",\n
     default_resource_uid=service_uid_list)\n
-\n
   for sale_packing_list_line in sale_packing_list_line_list:\n
     if sale_packing_list_line.getParent().getSimulationState() not in state_list:\n
       continue\n
@@ -113,7 +112,7 @@ return None\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SalePackingListLine_asSoftwareInstanceComputerPartitionMergedDict</string> </value>
+            <value> <string>SalePackinListLine_asSoftwareInstnaceComputerPartitionMergedDict</string> </value>
         </item>
       </dictionary>
     </pickle>
