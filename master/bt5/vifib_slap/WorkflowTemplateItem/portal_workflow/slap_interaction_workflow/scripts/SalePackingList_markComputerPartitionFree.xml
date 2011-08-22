@@ -68,7 +68,7 @@ if computer_partition is None:\n
   raise ValueError("Sale Packing List Line \'%s\' should have a computer partition aggregated" % current_delivery_line.getRelativeUrl())\n
 else:\n
   # Slave instance do not change state of computer partitions.\n
-  if current_delivery_line.getAggregate(portal_type=["Slave Instance"]) is None:\n
+  if current_delivery_line.getAggregateValue(portal_type=["Slave Instance"]) is None:\n
     # Mark computer partition as free\n
     # This method should be always callable in this step to prevent having 2 packing list related to the same computer partition\n
     computer_partition.markFree()\n

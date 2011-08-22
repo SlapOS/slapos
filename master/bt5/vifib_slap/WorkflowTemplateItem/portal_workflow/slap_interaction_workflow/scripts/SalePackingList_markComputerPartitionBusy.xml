@@ -64,7 +64,7 @@ if sale_order is None:\n
         raise ValueError("Sale Packing List Line \'%s\' should have a computer partition aggregated" % sale_packing_list_line.getRelativeUrl())\n
       else:\n
         # Slave instance do not change state of computer partitions.\n
-        if sale_packing_list_line.getAggregate(portal_type=["Slave Instance"]) is None:\n
+        if sale_packing_list_line.getAggregateValue(portal_type=["Slave Instance"]) is None:\n
           # Mark computer partition as busy\n
           # This method should be always callable in this step to prevent having 2 packing list related to the same computer partition\n
           computer_partition.markBusy()\n
