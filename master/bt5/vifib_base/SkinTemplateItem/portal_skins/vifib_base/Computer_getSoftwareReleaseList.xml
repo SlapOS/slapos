@@ -50,28 +50,26 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_packing_list = state_change[\'object\']\n
-preference_tool = sale_packing_list.getPortalObject().portal_preferences\n
+            <value> <string>"""Fetch computer to find witch software is installed"""\n
+portal = context.getPortalObject()\n
+portal_type = "Software Release"\n
 \n
-sale_packing_list_line_list = sale_packing_list.getMovementList()\n
-assert len(sale_packing_list_line_list) == 1\n
-sale_packing_list_line = sale_packing_list_line_list[0]\n
-resource = sale_packing_list_line.getResource()\n
-if resource == preference_tool.getPreferredInstanceSetupResource():\n
-  software_instance = sale_packing_list_line.getAggregateValue(portal_type=[\'Software Instance\', \'Slave Instance\'])\n
-  if software_instance.getSlapState() == \'start_requested\':\n
-    software_instance.requestStartComputerPartition()\n
-  elif software_instance.getSlapState() == \'stop_requested\':\n
-    software_instance.requestStopComputerPartition()\n
+url_string_list = context.Computer_getSoftwareReleaseUrlStringList([\'confirmed\', \'started\', \'stopped\', \'delivered\'])\n
+if url_string_list:\n
+  return context.portal_catalog(\n
+    portal_type=portal_type,\n
+    url_string=url_string_list)\n
+else:\n
+  return []\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string>**kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SalePackingList_requestStoredSoftwareInstanceState</string> </value>
+            <value> <string>Computer_getSoftwareReleaseList</string> </value>
         </item>
       </dictionary>
     </pickle>

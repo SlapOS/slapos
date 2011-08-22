@@ -1,4 +1,5 @@
 Computer Partition | unfiltered_tracking_list
+Computer | computer_usage
 Person | get_certificate
 Person | revoke_certificate
 Slave Instance | jump_to_software_instance
@@ -8,3 +9,4 @@ Software Instance Module | view
 Software Instance | jump_to_software_instance
 Software Instance | unfiltered_tracking_list
 Software Instance | view
+Software Release | usable_computer

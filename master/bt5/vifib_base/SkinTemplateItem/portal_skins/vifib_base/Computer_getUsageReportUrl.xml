@@ -50,28 +50,16 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_packing_list = state_change[\'object\']\n
-preference_tool = sale_packing_list.getPortalObject().portal_preferences\n
-\n
-sale_packing_list_line_list = sale_packing_list.getMovementList()\n
-assert len(sale_packing_list_line_list) == 1\n
-sale_packing_list_line = sale_packing_list_line_list[0]\n
-resource = sale_packing_list_line.getResource()\n
-if resource == preference_tool.getPreferredInstanceSetupResource():\n
-  software_instance = sale_packing_list_line.getAggregateValue(portal_type=[\'Software Instance\', \'Slave Instance\'])\n
-  if software_instance.getSlapState() == \'start_requested\':\n
-    software_instance.requestStartComputerPartition()\n
-  elif software_instance.getSlapState() == \'stop_requested\':\n
-    software_instance.requestStopComputerPartition()\n
+            <value> <string>return context.absolute_url() + \'/Computer_viewCurrentUsage\'\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string>**kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SalePackingList_requestStoredSoftwareInstanceState</string> </value>
+            <value> <string>Computer_getUsageReportUrl</string> </value>
         </item>
       </dictionary>
     </pickle>
