@@ -1,0 +1,26 @@
+commit c052380cf84e33b32268af97a7c1539c8a6771e5
+Author: Łukasz Nowak <luke@nexedi.com>
+Date:   Mon Jun 6 13:29:32 2011 +0200
+
+    Really use option_ibbackup_binary.
+
+diff --git a/innobackupex b/innobackupex
+index 67d0d44..ed06294 100755
+--- a/innobackupex
++++ b/innobackupex
+@@ -214,6 +214,7 @@ check_args();
+ print_version();
+ 
+ # initialize global variables and perform some checks
++if ( $option_ibbackup_binary eq "autodetect" ){
+ if ($option_copy_back) {
+     $option_ibbackup_binary = 'xtrabackup_51';
+ } elsif ($option_apply_log) {
+@@ -250,6 +251,7 @@ if ($option_copy_back) {
+ } else {
+     $option_ibbackup_binary = set_xtrabackup_version();
+ }
++}
+ init();
+ 
+ my $ibbackup_exit_code = 0;
