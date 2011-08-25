@@ -1,5 +1,5 @@
 from xml_marshaller import xml_marshaller
-import os, xmlrpclib, time, imp
+import os, xmlrpclib, time, imp, re
 from glob import glob
 import signal
 import slapos.slap
@@ -218,6 +218,28 @@ branch = %(branch)s
           process_group_pid_set.add(run_test_suite.pid)
           run_test_suite.wait()
           process_group_pid_set.remove(run_test_suite.pid)
+          while wait_serve:
+            try:
+              conf = open(cloudooo_conf).read()
+              host, port = re.findall('host=*.*.*.*\nport\ \=.*', conf)[0].split('\n')
+              serve = xmlrpclib.Server("http://%s:%s/RPC2" % 
+                        (host.split('=')[-1].lstrip(), 
+                        port.split('=')[-1].lstrip()))
+              serve.system.listMethods()
+              if len(serve.system.listMethods()) > 0:
+                wait_serve = False
+            except socket.error, e:
+              wait_serve = True
+              time.sleep(10)
+          for test in cloudooo_tests:
+            print time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.gmtime())
+            invocation_list = []
+            if line[:2] == '#!':
+              invocation_list = line[2:].split()
+            invocation_list.extend([run_test_suite_path,
+                                    '--paster_path', cloudooo_paster,
+                                    cloudooo_conf,
+                                    test.split('/')[-1]])
       except SubprocessError:
         time.sleep(120)
         continue

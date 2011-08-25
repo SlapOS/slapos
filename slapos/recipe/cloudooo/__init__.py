@@ -186,7 +186,8 @@ class Recipe(BaseSlapRecipe):
         email_address=ca_email,
     )
     self._writeFile(openssl_configuration,
-        self.getTemplateFilename('openssl.cnf.ca.in'))
+        self.substituteTemplate(self.getTemplateFilename('openssl.cnf.ca.in'),
+          config))
     self.path_list.extend(zc.buildout.easy_install.scripts([
       ('certificate_authority',
         'slapos.recipe.erp5.certificate_authority',
