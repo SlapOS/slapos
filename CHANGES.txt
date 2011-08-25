@@ -4,7 +4,11 @@ Changes
 0.13 (unreleased)
 -----------------
 
- * No changes registered yet.
+ * slapgrid: Implement software signing and shacache upload. [Lucas Carvalho]
+ * slap: Support slave instances [Gabriel Monnerat]
+ * slapformat: Generate always address for computer [Łukasz Nowak]
+ * slapgrid: Support promises scripts [Antoine Catton]
+ * general: slapos.core gets tests. [many contributors]
 
 0.12 (2011-07-15)
 -----------------
