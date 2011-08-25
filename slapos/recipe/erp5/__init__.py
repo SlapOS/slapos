@@ -671,9 +671,12 @@ class Recipe(BaseSlapRecipe):
     bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
       or getattr(self, 'bt5_repository_list', [])
 
+    erp5_update_directory = supervisor_controlled and self.wrapper_directory or \
+        self.bin_directory
+
     script = zc.buildout.easy_install.scripts([('erp5_update',
             __name__ + '.erp5', 'updateERP5')], self.ws,
-                  sys.executable, self.wrapper_directory,
+                  sys.executable, erp5_update_directory,
                   arguments=[erp5_site_id,
                              mysql_connection_string,
                              [user, password, zope_access],
@@ -683,8 +686,7 @@ class Recipe(BaseSlapRecipe):
                              bt5_list,
                              bt5_repository_list])
 
-    if supervisor_controlled:
-      self.path_list.extend(script)
+    self.path_list.extend(script)
 
     return []
 
