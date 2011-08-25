@@ -180,8 +180,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     mandatory_file_list.append(signature_private_key_file)
 
   for f in mandatory_file_list:
-    if not os.path.exists(f):
-      parser.error('File %r does not exists.' % f)
+    if f is not None:
+      if not os.path.exists(f):
+        parser.error('File %r does not exists.' % f)
 
   certificate_repository_path = option_dict.get('certificate_repository_path')
   if certificate_repository_path is not None:
