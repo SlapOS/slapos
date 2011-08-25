@@ -2,6 +2,12 @@
  <portal_type id="Sale Packing List Line">
   <item>VifibSalePackingListLineConstraint</item>
  </portal_type>
+ <portal_type id="Slave Instance">
+  <item>Reference</item>
+  <item>SlaveInstanceContraint</item>
+  <item>SoftwareInstance</item>
+  <item>TextDocument</item>
+ </portal_type>
  <portal_type id="Software Instance">
   <item>Reference</item>
   <item>SoftwareInstance</item>

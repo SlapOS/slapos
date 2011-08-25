@@ -54,7 +54,7 @@
 while (predecessor_software_instance is not None):\n
   root_software_instance = predecessor_software_instance\n
   predecessor_software_instance = predecessor_software_instance.getPredecessorRelatedValue(\n
-    portal_type="Software Instance")\n
+    portal_type=["Software Instance", "Slave Instance"])\n
 return root_software_instance.getUid()\n
 </string> </value>
         </item>

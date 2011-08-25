@@ -71,6 +71,7 @@
                 <string>Computer</string>
                 <string>Hosting Subscription</string>
                 <string>Person</string>
+                <string>Slave Instance</string>
                 <string>Software Instance</string>
               </list>
             </value>

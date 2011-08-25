@@ -50,28 +50,61 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>order = state_change[\'object\']\n
-portal = order.getPortalObject()\n
+            <value> <string>portal = context.getPortalObject()\n
+\n
+def checkSoftwareInstanceIsInstalledOnComputerPartition(software_release,\n
+    computer_partition):\n
+  from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+  resource_relative_url = (\n
+      portal.portal_preferences.getPreferredInstanceSetupResource(),\n
+      portal.portal_preferences.getPreferredInstanceHostingResource(),\n
+  )\n
+  query = ComplexQuery(Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
+                       Query(aggregate_relative_url=computer_partition.getRelativeUrl()),\n
+                       operator="AND",\n
+                      )\n
+  sale_packing_list_line_list = portal.portal_catalog(\n
+    portal_type=\'Sale Packing List Line\',\n
+    query=query,\n
+    resource_relative_url=resource_relative_url,\n
+    limit=1)\n
+  \n
+  if len(sale_packing_list_line_list) == 1:\n
+    resource_relative_url = (\n
+      portal.portal_preferences.getPreferredInstanceCleanupResource(),\n
+    )\n
+    sale_packing_list_line_list = portal.portal_catalog(\n
+      portal_type=\'Sale Packing List Line\',\n
+      query=query,\n
+      resource_relative_url=resource_relative_url,\n
+      limit=1)\n
+    if len(sale_packing_list_line_list) == 0:\n
+      return True\n
+  return False\n
+\n
+order = state_change[\'object\']\n
 \n
 setup_service_relative_url = order.portal_preferences.getPreferredInstanceSetupResource()\n
 isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
 \n
+instance_portal_type_list = ["Software Instance","Slave Instance"]\n
 for order_line in order.getMovementList():\n
   if order_line.getResource() == setup_service_relative_url:\n
     computer_partition = order_line.getAggregateValue(portal_type="Computer Partition")\n
     if computer_partition is None:\n
       software_release = order_line.getAggregateValue(portal_type="Software Release")\n
-      software_instance = order_line.getAggregateValue(portal_type="Software Instance")\n
+      software_instance = order_line.getAggregateValue(portal_type=instance_portal_type_list)\n
 \n
       computer_partition = None\n
-     \n
       # XXX Duplicated from request method...\n
       query_kw = {\n
         \'software_release_url\': software_release.getUrlString(),\n
         \'portal_type\': \'Computer Partition\',\n
-#         \'relative_url\': \'computer_module/20110126-E2AE/%\',\n
         \'free_for_request\': 1,\n
       }\n
+      if software_instance.getPortalType() == "Slave Instance":\n
+        query_kw[\'free_for_request\'] = 0\n
+       \n
       # support SLA\n
       filter_kw = software_instance.getSlaXmlAsDict()\n
       if "computer_guid" in filter_kw:\n
@@ -79,12 +112,17 @@ for order_line in order.getMovementList():\n
 \n
       result_count = software_instance.portal_catalog.countResults(**query_kw)[0][0]\n
       offset = max(0, result_count-1)\n
-\n
       for computer_partition_candidate in portal.portal_catalog(\n
                                                limit=(random.randint(0, offset), 50), **query_kw):\n
-        computer_partition_candidate = computer_partition_candidate.getObject()\n
+        computer_partition_candidate = computer_partition_candidate.getObject()    \n
         # Check if the computer partition can be marked as busy (done by an interaction workflow on sale packing list level)\n
-        if isTransitionPossible(computer_partition_candidate, \'mark_busy\'):\n
+        software_instance_portal_type = software_instance.getPortalType()\n
+        if isTransitionPossible(computer_partition_candidate, \'mark_busy\') and \\\n
+            software_instance_portal_type == "Software Instance":\n
+          computer_partition = computer_partition_candidate\n
+          break\n
+        elif software_instance_portal_type == "Slave Instance" and \\\n
+            checkSoftwareInstanceIsInstalledOnComputerPartition(software_release, computer_partition_candidate):\n
           computer_partition = computer_partition_candidate\n
           break\n
 \n
@@ -93,7 +131,8 @@ for order_line in order.getMovementList():\n
 \n
       # lock computer partition\n
       computer_partition.serialize()\n
-      computer_partition.markBusy()\n
+      if isTransitionPossible(computer_partition_candidate, \'mark_busy\'):\n
+        computer_partition.markBusy()\n
 \n
       order_line.edit(\n
         aggregate_list=order_line.getAggregateList()+[computer_partition.getRelativeUrl()])\n

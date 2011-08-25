@@ -17,7 +17,6 @@
             <value> <string>uid\r\n
 ComputerPartition_getAvailableSoftwareReleaseUrlStringList\r\n
 ComputerPartition_isFreeForRequest\r\n
-ComputerPartition_isSlaveAvailable\r\n
 ComputerPartition_getSoftwareType</string> </value>
         </item>
         <item>
@@ -71,17 +70,14 @@ WHERE\n
 <dtml-let row_list="[]">\n
   <dtml-in prefix="loop" expr="_.range(_.len(uid))">\n
     <dtml-let free_for_request="ComputerPartition_isFreeForRequest[loop_item]">\n
-    <dtml-let available_slave="ComputerPartition_isSlaveAvailable[loop_item]">\n
     <dtml-let software_type="ComputerPartition_getSoftwareType[loop_item]">\n
       <dtml-in prefix="url" expr="ComputerPartition_getAvailableSoftwareReleaseUrlStringList[loop_item]" no_push_item>\n
         <dtml-call expr="row_list.append([\n
                     uid[loop_item],\n
                     url_item,\n
                     free_for_request,\n
-                    available_slave,\n
                     software_type])">\n
       </dtml-in>\n
-    </dtml-let>\n
     </dtml-let>\n
     </dtml-let>\n
   </dtml-in>\n
@@ -95,8 +91,7 @@ VALUES\n
   <dtml-sqlvar expr="row_item[0]" type="int">,\n
   <dtml-sqlvar expr="row_item[1]" type="string">,\n
   <dtml-sqlvar expr="row_item[2]" type="int">,\n
-  <dtml-sqlvar expr="row_item[3]" type="int">,\n
-  <dtml-sqlvar expr="row_item[4]" type="string">\n
+  <dtml-sqlvar expr="row_item[3]" type="string">\n
 )\n
 <dtml-if sequence-end><dtml-else>,</dtml-if>\n
     </dtml-in>\n

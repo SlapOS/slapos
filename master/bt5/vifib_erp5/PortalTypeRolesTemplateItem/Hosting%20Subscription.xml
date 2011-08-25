@@ -9,4 +9,9 @@
    <property id='base_category_script'>ERP5Type_getSecurityCategoryFromSelf</property>
    <multi_property id='base_category'>aggregate</multi_property>
   </role>
+  <role id='Auditor'>
+   <property id='title'>Software Instance become Auditor of Hosting Subscription related by Slave Instance</property>
+   <property id='base_category_script'>ERP5Type_getCategorySecurityFromSoftwareInstanceByHostingSubscription</property>
+   <multi_property id='base_category'>source</multi_property>
+  </role>
 </type_roles>

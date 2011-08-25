@@ -66,7 +66,6 @@ CREATE TABLE `computer_partition` (\n
   `uid` BIGINT UNSIGNED NOT NULL,\n
   `software_release_url` varchar(255),\n
   `free_for_request` INT(1),\n
-  `available_slave` INT(1),\n
   `software_type` VARCHAR(255),\n
   PRIMARY KEY (`uid`, `software_release_url`)\n
 ) TYPE=InnoDB;\n

@@ -58,11 +58,16 @@ portal = software_instance.getPortalObject()\n
 kwargs = state_change.kwargs\n
 software_release_url_string = state_change.kwargs[\'software_release\']\n
 requested_partition_reference = kwargs["partition_reference"]\n
-shared = kwargs["shared"]\n
 software_type = kwargs["software_type"]\n
 instance_xml = kwargs["instance_xml"]\n
+is_slave = kwargs.get("shared", False)\n
 sla_xml = kwargs["sla_xml"]\n
 state = kwargs["state"]\n
+\n
+if is_slave == True:\n
+  software_instance_portal_type = "Slave Instance"\n
+else:\n
+  software_instance_portal_type = "Software Instance"\n
 \n
 # graph allows to "simulate" tree change after requested operation\n
 graph = {}\n
@@ -85,7 +90,7 @@ tag = "%s_%s_%s_inProgress" % (root_software_instance.getUid(), software_type,\n
 \n
 # Check if it already exists\n
 request_software_instance = software_instance.portal_catalog.getResultValue(\n
-  portal_type=\'Software Instance\',\n
+  portal_type=software_instance_portal_type,\n
   # XXX: User based property is used in non manual operation\n
   # XXX-2: Do we really need to use root_uid?\n
   title=requested_partition_reference,\n
@@ -108,7 +113,7 @@ if (request_software_instance is None):\n
     # Create a new one\n
     module = software_instance.getDefaultModule(portal_type="Software Instance")\n
     request_software_instance = module.newContent(\n
-      portal_type="Software Instance",\n
+      portal_type=software_instance_portal_type,\n
       title=requested_partition_reference,\n
       source_reference=software_type,\n
       text_content=instance_xml,\n
@@ -122,7 +127,6 @@ if (request_software_instance is None):\n
     request_software_instance.requestComputerPartition(\n
       software_release=software_release_url_string,\n
       hosting_subscription_uid=hosting_subscription_uid,\n
-      shared=shared,\n
       software_type=software_type,\n
       tag=tag)\n
 else:\n

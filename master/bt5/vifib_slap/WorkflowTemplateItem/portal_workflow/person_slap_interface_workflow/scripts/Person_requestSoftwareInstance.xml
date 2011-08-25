@@ -62,12 +62,17 @@ software_title = kwargs["software_title"]\n
 software_type = kwargs.get("software_type") or "RootSoftwareInstance"\n
 instance_xml = kwargs["instance_xml"]\n
 sla_xml = kwargs.get("sla_xml") or ""\n
+is_slave = kwargs.get("shared", False)\n
 state = kwargs.get(\'state\') or \'started\'\n
 \n
 sale_order_portal_type = "Sale Order"\n
 sale_order_line_portal_type = "Sale Order Line"\n
-software_instance_portal_type = "Software Instance"\n
 hosting_subscription_portal_type = "Hosting Subscription"\n
+\n
+if is_slave == True:\n
+  software_instance_portal_type = "Slave Instance"\n
+else:\n
+  software_instance_portal_type = "Software Instance"\n
 \n
 # XXX Hardcoded values\n
 seller = portal.restrictedTraverse("organisation_module/vifib_internet")\n

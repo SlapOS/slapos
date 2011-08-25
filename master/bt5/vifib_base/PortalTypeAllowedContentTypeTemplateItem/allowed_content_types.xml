@@ -1,5 +1,6 @@
 <allowed_content_type_list>
  <portal_type id="Software Instance Module">
+  <item>Slave Instance</item>
   <item>Software Instance</item>
  </portal_type>
 </allowed_content_type_list>

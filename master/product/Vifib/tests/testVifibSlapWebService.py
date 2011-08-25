@@ -28,10 +28,15 @@
 #
 ##############################################################################
 from DateTime import DateTime
+from AccessControl.SecurityManagement import newSecurityManager
 from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 from Products.ERP5Type.tests.Sequence import SequenceList
 from Products.ERP5Type.tests.backportUnittest import expectedFailure
 from Products.ERP5Type.tests.backportUnittest import skip
+from Products.ERP5Type.tests.SecurityTestCase import AssertNoPermissionMethod, \
+    AssertPermissionMethod
+from Products.ERP5Type import Permissions
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from VifibMixin import testVifibMixin
 from random import random
 from slapos import slap
@@ -54,7 +59,7 @@ DEFAULT_INSTANCE_DICT_PARAMETER_LIST = [
     'slap_server_url',
     'slap_software_release_url',
     'slap_software_type',
-    'slave_id_list',
+    "slave_instance_list"
 ]
 
 
@@ -92,7 +97,7 @@ class TestVifibSlapWebService(testVifibMixin):
   sale_order_line_portal_type = "Sale Order Line"
   sale_packing_list_portal_type = "Sale Packing List"
   service_portal_type = "Service"
-  slave_partition_portal_type = "Slave Partition"
+  slave_instance_portal_type = "Slave Instance"
   software_instance_portal_type = "Software Instance"
   software_release_portal_type = "Software Release"
   software_product_portal_type = "Software Product"
@@ -100,6 +105,14 @@ class TestVifibSlapWebService(testVifibMixin):
   minimal_correct_xml = '<?xml version="1.0" encoding="utf-8"?><instance/>'
 
   computer_partition_amount = 1
+  failIfUserCanViewDocument = AssertNoPermissionMethod(Permissions.View)
+  failIfUserCanAccessDocument = AssertNoPermissionMethod(
+      Permissions.AccessContentsInformation)
+  failIfUserCanModifyDocument = AssertNoPermissionMethod(
+                                     Permissions.ModifyPortalContent)
+  assertUserCanViewDocument = AssertPermissionMethod(Permissions.View)
+  assertUserCanAccessDocument =\
+      AssertPermissionMethod(Permissions.AccessContentsInformation)
 
   def afterSetUp(self):
     fakeSlapAuth()
@@ -109,6 +122,13 @@ class TestVifibSlapWebService(testVifibMixin):
   def beforeTearDown(self):
     unfakeSlapAuth()
     super(testVifibMixin, self).beforeTearDown()
+
+  def _loginAsUser(self, username):
+    """Login as a given username. The user must exist."""
+    uf = self.getPortal().acl_users
+    user = uf.getUserById(username)
+    self.assertNotEquals(user, None, 'No user %s' % username)
+    newSecurityManager(None, user.__of__(uf))
 
   ########################################
   # Assertions
@@ -197,6 +217,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def _checkComputerPartitionSalePackingListState(self, state,
       resource, sequence):
+    delivery_line_amount = sequence.get("delivery_line_amount", 1)
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=sequence['computer_partition_uid'])
     delivery_line_list = [q for q in computer_partition
@@ -204,7 +225,7 @@ class TestVifibSlapWebService(testVifibMixin):
           portal_type=self.sale_packing_list_line_portal_type)
         if q.getResource() == resource
         and q.getSimulationState() == state]
-    self.assertEqual(1, len(delivery_line_list))
+    self.assertEqual(delivery_line_amount, len(delivery_line_list))
 
   def _checkComputerPartitionNoSalePackingList(self, resource, sequence):
     computer_partition = self.portal.portal_catalog.getResultValue(
@@ -293,6 +314,17 @@ class TestVifibSlapWebService(testVifibMixin):
         self.portal.portal_preferences.getPreferredInstanceHostingResource(),
         sequence)
 
+  def stepCheckComputerPartitionNoInstanceHostingSalePackingList(self,
+      sequence, **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence['computer_partition_uid'])
+    delivery_line_list = [q for q in computer_partition
+        .getAggregateRelatedValueList(
+          portal_type=self.sale_packing_list_line_portal_type)
+        if q.getResource() == self.\
+          portal.portal_preferences.getPreferredInstanceHostingResource()]
+    self.assertEqual(0, len(delivery_line_list))
+
   def stepCheckComputerPartitionInstanceHostingSalePackingListDelivered(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('delivered',
@@ -340,6 +372,12 @@ class TestVifibSlapWebService(testVifibMixin):
           uid=sequence['service_uid']).getRelativeUrl(),
         sequence)
 
+  def stepPersonRequestSlaveInstance(self, sequence, **kw):
+    kw = dict(instance_portal_type=self.slave_instance_portal_type,
+              shared=True,
+              software_type="SlaveInstance")
+    self.stepPersonRequestSoftwareInstance(sequence, **kw)
+
   def stepPersonRequestSoftwareInstance(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
     software_release = self.portal.portal_catalog.getResultValue(
@@ -348,15 +386,18 @@ class TestVifibSlapWebService(testVifibMixin):
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
       software_title=software_title,
-      instance_xml=self.minimal_correct_xml)
+      instance_xml=self.minimal_correct_xml,
+      **kw)
     transaction.commit()
     self.tic()
     # Note: This is tricky part. Workflow methods does not return nothing
     # so the only way is to find again the computer partition.
     # But only title can be passed, that is why random is used to avoid
     # duplication
+    software_instance_portal_type = kw.get("instance_portal_type",
+                                  self.software_instance_portal_type)
     software_instance_list = self.portal.portal_catalog(
-        portal_type=self.software_instance_portal_type,
+        portal_type=software_instance_portal_type,
         title=software_title)
     self.assertEqual(1, len(software_instance_list))
     software_instance = software_instance_list[0]
@@ -369,7 +410,8 @@ class TestVifibSlapWebService(testVifibMixin):
             portal_type='Hosting Subscription').getUid())
 
   def stepSetSelectedComputerPartition(self, sequence, **kw):
-    """Sets in sequence computer partition parameters related to current software instance"""
+    """Sets in sequence computer partition parameters related to current
+    software instance"""
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
     delivery_line = [q for q in software_instance
@@ -442,6 +484,38 @@ class TestVifibSlapWebService(testVifibMixin):
 
     self.portal.portal_workflow.doActionFor(packing_list, "confirm_action")
 
+  def stepCheckComputerPartitionSaleOrderAggregatedList(self, sequence):
+    portal_catalog = self.portal.portal_catalog
+    sale_packing_list = portal_catalog.getResultValue(
+        uid=sequence['sale_packing_list_uid'])
+    sale_packing_list_line = sale_packing_list.objectValues()[0]
+    computer_partition = sale_packing_list_line.getAggregateValue(
+        portal_type=self.computer_partition_portal_type)
+    sale_order_line_list = computer_partition.getAggregateRelatedValueList(
+        portal_type="Sale Order Line")
+    sale_order_line_1, sale_order_line_2 = sale_order_line_list
+    self.assertEquals(sale_order_line_1.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type),
+                      sale_order_line_2.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type))
+    self.assertEquals(2, len(sale_order_line_list))
+    sale_packing_line_list = computer_partition.getAggregateRelatedValueList(
+        portal_type="Sale Packing List Line")
+    self.assertEquals(2, len(sale_packing_line_list))
+    sale_packing_list_line_1, sale_packing_list_line_2 = sale_packing_line_list
+    self.assertEquals(sale_packing_list_line_1.getAggregateValue(
+                        portal_type=self.software_release_portal_type),
+                      sale_packing_list_line_2.getAggregateValue(
+                        portal_type=self.software_release_portal_type))
+    self.assertEquals(sale_packing_list_line_1.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type),
+                      sale_packing_list_line_2.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type))
+    hosting_1, hosting_2 = [hosting.getAggregateValue(
+      portal_type=self.hosting_subscription_portal_type) \
+          for hosting in sale_packing_line_list]
+    self.assertNotEquals(hosting_1, hosting_2)
+
   def _createComputer(self):
     # Mimics WebSection_registerNewComputer
     computer_reference = "COMP-%s" % self.portal.portal_ids.generateNewId(
@@ -483,6 +557,10 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepSetRandomComputerReference(self, sequence, **kw):
     sequence['computer_reference'] = str(random())
+
+  def stepSetRandomComputerPartition(self, sequence, **kw):
+    sequence.edit(computer_partition_reference=\
+        sequence["computer_partition_reference_list"][0])
 
   def stepFormatComputer(self, sequence, **kw):
     computer_partition_reference_list = []
@@ -686,7 +764,6 @@ class TestVifibSlapWebService(testVifibMixin):
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
       Logout
-
       LoginDefaultUser
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
       Logout
@@ -698,7 +775,6 @@ class TestVifibSlapWebService(testVifibMixin):
       SoftwareInstanceBuilding \
       Tic \
       SlapLogout \
-      \
       LoginDefaultUser \
       CheckComputerPartitionInstanceSetupSalePackingListStarted \
       Logout \
@@ -710,7 +786,6 @@ class TestVifibSlapWebService(testVifibMixin):
       SoftwareInstanceAvailable
       Tic
       SlapLogout
-
       LoginDefaultUser
       SetSelectedComputerPartition
       CheckComputerPartitionInstanceSetupSalePackingListStopped
@@ -762,7 +837,6 @@ class TestVifibSlapWebService(testVifibMixin):
       RequestSoftwareInstanceStart \
       Tic \
       Logout \
-      \
       LoginDefaultUser \
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed \
       Logout \
@@ -938,25 +1012,6 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertRaises(slap.NotFoundError,
         self.slap.registerComputerPartition, computer_guid, partition_id)
 
-  def stepMarkSlavePartitionBusy(self, sequence, **kw):
-    slave_partition_uid = sequence['slave_partition_uid']
-    slave_partition = self.portal.portal_catalog.getResultValue(
-        uid=slave_partition_uid)
-    slave_partition.markBusy()
-
-  def stepCreateSlavePartition(self, sequence, **kw):
-    """
-    Create a Slave Partition document.
-    """
-    computer_partition_uid = sequence["computer_partition_uid"]
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=computer_partition_uid)
-    slave_partition = computer_partition.newContent(
-        portal_type=self.slave_partition_portal_type)
-    slave_partition.markFree()
-    # Mark newly created computer partition as free by default
-    sequence.edit(slave_partition_uid=slave_partition.getUid())
-
   def stepSelect0QuantityComputerPartition(self, sequence, **kw):
     sequence.edit(computer_partition_quantity=0)
 
@@ -1017,6 +1072,30 @@ class TestVifibSlapWebService(testVifibMixin):
       if not len(result_list):
         url = random_url
     sequence.edit(software_release_uri=url)
+
+  def stepSelectDifferentSoftwareReleaseUri(self, sequence, **kw):
+    """
+      Change the software release uri
+    """
+    software_release_uri_list = sequence.get("software_release_uri_list", [])
+    software_release_uri = sequence.get("software_release_uri")
+    old_software_release_uri = software_release_uri
+    for uri in software_release_uri_list:
+      if uri != software_release_uri:
+        sequence.edit(software_release_uri=uri)
+        break
+    self.assertNotEquals(sequence["software_release_uri"], 
+        old_software_release_uri)
+
+  def stepStoreSoftwareReleaseUri(self, sequence, **kw):
+    """
+      Store the current software release uri in one list
+    """
+    software_release_uri = sequence["software_release_uri"]
+    software_release_uri_list = sequence.get("software_release_uri_list", [])
+    if software_release_uri not in software_release_uri_list:
+      software_release_uri_list.append(software_release_uri)
+    sequence.edit(software_release_uri_list=software_release_uri_list)
 
   def stepCheckSuccessSlapRegisterSoftwareReleaseCall(self, sequence, **kw):
     """
@@ -1242,89 +1321,75 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEqual('value',
         slap_computer_partition.getConnectionParameter('parameter'))
 
-  def stepRequestSharedComputerPartition(self, sequence, **kw):
+  def stepRequestSlaveInstanceFromComputerPartition(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
     requested_reference = sequence['requested_reference']
     requested_parameter_dict = sequence['requested_parameter_dict']
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-
-    computer_partition = software_instance.getAggregateRelatedValue(
-        portal_type=self.sale_packing_list_line_portal_type).getAggregateValue(
-            portal_type=self.computer_partition_portal_type)
-    computer = computer_partition
-    while computer.getPortalType() != self.computer_portal_type:
-      computer = computer.getParentValue()
 
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
     slap_computer_partition = self.slap.registerComputerPartition(
-        computer.getReference(), computer_partition.getReference())
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
 
-    software_type = None
-    raise NotImplementedError('software_type not propagated')
     requested_slap_computer_partition = slap_computer_partition.request(
-        software_release=software_release_uri, software_type=software_type,
+        software_release=software_release_uri,
+        software_type="SlaveInstance",
         partition_reference=requested_reference,
-        partition_parameter_kw=requested_parameter_dict, shared=True)
+        partition_parameter_kw=requested_parameter_dict,
+        # XXX The follow API should be slave, but shared was kept for
+        # Backward compatibility with older versions of slap
+        shared=True,
+        filter_kw=sequence.get('requested_filter_dict', {}),
+        state=sequence.get('instance_state'))
 
     sequence.edit(
         requested_slap_computer_partition=requested_slap_computer_partition,
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
 
-  def stepRequestSharedComputerPartitionNotReadyResponse(self, sequence, **kw):
+  def stepRequestSlaveInstanceFromComputerPartitionNotReadyResponse(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
     requested_reference = sequence['requested_reference']
     requested_parameter_dict = sequence['requested_parameter_dict']
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    computer_partition = software_instance.getAggregateRelatedValue(
-        portal_type=self.sale_packing_list_line_portal_type).getAggregateValue(
-            portal_type=self.computer_partition_portal_type)
-    computer = computer_partition
-    while computer.getPortalType() != self.computer_portal_type:
-      computer = computer.getParentValue()
 
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
     slap_computer_partition = self.slap.registerComputerPartition(
-        computer.getReference(), computer_partition.getReference())
-    software_type = None
-    raise NotImplementedError('software_type not propagated')
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+
     # first try will raise slap.ResourceNotReady
-    self.assertRaises(slap.ResourceNotReady, slap_computer_partition.request,
-      software_release=software_release_uri, software_type=software_type,
+    self.assertRaises(slap.ResourceNotReady,
+      slap_computer_partition.request,
+      software_release=software_release_uri,
+      software_type="SlaveInstance",
       partition_reference=requested_reference,
-      partition_parameter_kw=requested_parameter_dict, shared=True)
+      partition_parameter_kw=requested_parameter_dict,
+      shared=True,
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
 
-  def stepRequestSharedComputerPartitionNotFoundResponse(self, sequence, **kw):
+  def stepRequestSlaveInstanceFromComputerPartitionNotFoundError(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
     requested_reference = sequence['requested_reference']
     requested_parameter_dict = sequence['requested_parameter_dict']
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-
-    computer_partition = software_instance.getAggregateRelatedValue(
-        portal_type=self.sale_packing_list_line_portal_type).getAggregateValue(
-            portal_type=self.computer_partition_portal_type)
-    computer = computer_partition
-    while computer.getPortalType() != self.computer_portal_type:
-      computer = computer.getParentValue()
 
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
     slap_computer_partition = self.slap.registerComputerPartition(
-        computer.getReference(), computer_partition.getReference())
-    software_type = None
-    raise NotImplementedError('software_type not propagated')
-    self.assertRaises(slap.NotFoundError, slap_computer_partition.request,
-      software_release=software_release_uri, sofware_type=software_type,
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+
+    self.assertRaises(slap.NotFoundError, 
+      slap_computer_partition.request,
+      software_release=software_release_uri,
+      software_type="SlaveInstance",
       partition_reference=requested_reference,
-      partition_parameter_kw=requested_parameter_dict, shared=True)
+      partition_parameter_kw=requested_parameter_dict,
+      shared=True, 
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
 
   def stepRequestTwoAndCheckDifferentResult(self, sequence, **kw):
     self.slap = slap.slap()
@@ -1366,6 +1431,11 @@ class TestVifibSlapWebService(testVifibMixin):
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
 
+  def stepDirectRequestComputerPartitionNotReadyResponseWithoutStateAndSharedTrue(
+      self, sequence, **kw):
+    kw["shared"] = True
+    self.stepDirectRequestComputerPartitionNotReadyResponseWithoutState(
+       sequence, **kw)
 
   def stepDirectRequestComputerPartitionNotReadyResponseWithoutState(self,
     sequence, **kw):
@@ -1374,15 +1444,16 @@ class TestVifibSlapWebService(testVifibMixin):
         'software_release': sequence['software_release_uri'],
         'software_type': sequence.get('requested_reference', 'requested_reference'),
         'partition_reference': sequence.get('requested_reference', 'requested_reference'),
-        'shared_xml': xml_marshaller.dumps(False),
+        'shared_xml': xml_marshaller.dumps(kw.get("shared", False)),
         'partition_parameter_xml': xml_marshaller.dumps({}),
         'filter_xml': xml_marshaller.dumps({}),
         #'state': Note: State is omitted
       }
     scheme, netloc, path, query, fragment = urlparse.urlsplit(self.server_url)
     connection = httplib.HTTPConnection(host=netloc)
-    connection.request("POST", path + '/requestComputerPartition', urllib.urlencode(request_dict), {'Content-type': "application/x-www-form-urlencoded"})
-
+    connection.request("POST", path + '/requestComputerPartition',
+        urllib.urlencode(request_dict),
+        {'Content-type': "application/x-www-form-urlencoded"})
     response = connection.getresponse()
     self.assertEqual(httplib.REQUEST_TIMEOUT, response.status)
 
@@ -1514,7 +1585,7 @@ class TestVifibSlapWebService(testVifibMixin):
                                             computer_guid,
                                             children_partition.getReference())
     self.assertRaises(slap.ResourceNotReady, slap_computer_partition.request,
-        sofware_release=software_release_uri, software_type=requested_reference,
+        software_release=software_release_uri, software_type=requested_reference,
         partition_reference=requested_reference,
         partition_parameter_kw=requested_parameter_dict)
 
@@ -2736,7 +2807,7 @@ class TestVifibSlapWebService(testVifibMixin):
         'slap_server_url': self.server_url,
         'slap_software_release_url': software_release_uri,
         'slap_software_type': 'RootSoftwareInstance',
-        'slave_id_list': [],
+        'slave_instance_list': [],
         'ip_list': [],
     }
     self.assertSameDict(expected, result)
@@ -2831,7 +2902,7 @@ class TestVifibSlapWebService(testVifibMixin):
         'slap_software_release_url': software_release_uri,
         'slap_software_type': 'RootSoftwareInstance',
         'test_parameter': 'lala',
-        'slave_id_list': [],
+        'slave_instance_list': [],
         'ip_list': [],
     }
     self.assertSameDict(expected, result)
@@ -3018,33 +3089,6 @@ class TestVifibSlapWebService(testVifibMixin):
         .getAggregateRelatedList(
             portal_type=self.sale_packing_list_line_portal_type)
     self.assertEqual(1, len(software_instance_sale_packing_list_line_list))
-
-  def stepCheckSoftwareInstanceAndRelatedSlavePartition(self,
-      sequence, **kw):
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    # There should be only one predecessor
-    self.assertEqual(1, len(software_instance.getPredecessorList()))
-
-    self._checkSoftwareInstanceAndRelatedPartition(software_instance,
-        self.computer_partition_portal_type)
-
-  def stepCheckRequestedSoftwareInstanceAndRelatedSlavePartition(self,
-      sequence, **kw):
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    # There should be only one predecessor
-    predecessor_list = software_instance.getPredecessorValueList()
-    self.assertEqual(1, len(predecessor_list))
-    predecessor = predecessor_list[0]
-
-    # This predecessor shall have only one related predecessor
-    self.assertEqual(1, len(predecessor.getPredecessorRelatedList()))
-
-    self._checkSoftwareInstanceAndRelatedPartition(predecessor,
-        self.slave_partition_portal_type)
 
   def _checkSoftwareInstanceAndRelatedPartition(self, software_instance,
       partition_portal_type=computer_partition_portal_type):
@@ -3537,7 +3581,6 @@ class TestVifibSlapWebService(testVifibMixin):
       ComputerSoftwareReleaseAvailable
       Tic
       SlapLogout
-      Logout
 
       LoginTestVifibCustomer
       PersonRequestSoftwareInstance
@@ -4425,24 +4468,436 @@ class TestVifibSlapWebService(testVifibMixin):
       RequestComputerPartitionNotFoundResponse \
       Tic \
       SlapLogout \
-      \
       '
+
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
   ########################################
-  # ComputerPartition.request - shared
+  # ComputerPartition.request - slave
   ########################################
+  def test_ComputerPartition_request_slave_firstNotReady(self):
+    """
+    Check that first call to request raises NotReadyResponse
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
+       SlapLoginCurrentSoftwareInstance \
+       SelectEmptyRequestedParameterDict \
+       SetRandomRequestedReference \
+       RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
+       SlapLogout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
-  computer_with_software_release = """
-      CreateComputer
+  def test_ComputerPartition_request_slave_simpleCase(self):
+    """
+    Check the most simple case of request. The behaviour should
+    keep the same as Software Instance.
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_install_requested_computer_partition_sequence_string +\
+      """
+       SlapLoginCurrentSoftwareInstance
+       SelectEmptyRequestedParameterDict \
+       SetRandomRequestedReference \
+       RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
+       Tic \
+       SlapLogout \
+       \
+       SlapLoginCurrentSoftwareInstance \
+       RequestSlaveInstanceFromComputerPartition \
+       Tic \
+       SlapLogout
+       LoginDefaultUser
+       ConfirmOrderedSaleOrderActiveSense
+       Tic
+       SlapLoginCurrentComputer
+       CheckSlaveInstanceListFromOneComputerPartition
+       SlapLogout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_slave_instantiate(self):
+    """
+      Check that one Slave Instance is instantiate correctly and the validate
+      the Sale Packing List states
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_install_requested_computer_partition_sequence_string +\
+      """
+       SlapLoginCurrentSoftwareInstance
+       SelectEmptyRequestedParameterDict
+       SetRandomRequestedReference
+       RequestSlaveInstanceFromComputerPartitionNotReadyResponse
+       Tic
+       SlapLogout
+
+       SlapLoginCurrentSoftwareInstance
+       RequestSlaveInstanceFromComputerPartition
+       Tic
+       SlapLogout
+       LoginDefaultUser
+       ConfirmOrderedSaleOrderActiveSense
+
+       Tic
+       SlapLoginCurrentSoftwareInstance
+       CheckSlaveInstanceListFromOneComputerPartition
+       SelectSlaveInstanceFromOneComputerPartition
+       SlapLogout
+
+       LoginDefaultUser
+       SetDeliveryLineAmountEqualTwo
+       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+       SlapLogout
+
+       SlapLoginCurrentComputer
+       SoftwareInstanceAvailable
+       Tic
+       SlapLogout
+
+       LoginDefaultUser \
+       CheckComputerPartitionInstanceSetupSalePackingListStopped
+       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+       Logout
+
+       SlapLoginCurrentComputer \
+       SoftwareInstanceStarted \
+       Tic \
+       SlapLogout \
+       \
+       LoginDefaultUser \
+       CheckComputerPartitionInstanceHostingSalePackingListStarted \
+       Logout \
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_slave_same_twice_SR(self):
+    """
+      Check that requesting the same slave instance twice, only one is created
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+        self.prepare_install_requested_computer_partition_sequence_string +\
+        """
+         SlapLoginCurrentSoftwareInstance
+         SelectEmptyRequestedParameterDict
+         SelectRequestedReference
+         RequestSlaveInstanceFromComputerPartitionNotReadyResponse
+         Tic
+         SlapLogout
+         
+         SlapLoginCurrentSoftwareInstance \
+         RequestSlaveInstanceFromComputerPartition \
+         Tic
+         SlapLogout
+         LoginDefaultUser
+         ConfirmOrderedSaleOrderActiveSense
+         Tic
+         SlapLoginCurrentComputer
+         CheckSlaveInstanceListFromOneComputerPartition
+         SlapLogout
+
+         SlapLoginCurrentSoftwareInstance \
+         RequestSlaveInstanceFromComputerPartition \
+         Tic
+         SlapLogout
+         LoginDefaultUser
+         ConfirmOrderedSaleOrderActiveSense
+         Tic
+         SlapLoginCurrentComputer
+         CheckSlaveInstanceListFromOneComputerPartition
+         SlapLogout
+        """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_slave_after_destroy_SlaveInstance(self):
+    """
+      Check that a Slave Instance will not be allocated when a Software
+      Instance is destroyed
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_installed_computer_partition_sequence_string + """
+        LoginTestVifibCustomer
+        RequestSoftwareInstanceDestroy
+        Tic
+        SlapLogout
+        LoginDefaultUser
+        CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+        SlapLogout
+        SlapLoginCurrentSoftwareInstance
+        SelectEmptyRequestedParameterDict
+        SelectRequestedReference
+        RequestSlaveInstanceFromComputerPartitionNotFoundError
+        Tic
+        RequestSlaveInstanceFromComputerPartitionNotFoundError
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_slave_twice_different(self):
+    """
+     Check request 2 different slave instances on same Software 
+     Instance.
+    """
+    simple_request_with_random = """
+         SlapLoginCurrentSoftwareInstance
+         SelectEmptyRequestedParameterDict \
+         SetRandomRequestedReference \
+         RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
+         Tic \
+         SlapLogout \
+         \
+         SlapLoginCurrentSoftwareInstance \
+         RequestSlaveInstanceFromComputerPartition \
+         Tic \
+         SlapLogout
+         LoginDefaultUser
+         ConfirmOrderedSaleOrderActiveSense
+         Tic
+         """
+
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+        self.prepare_install_requested_computer_partition_sequence_string +\
+        simple_request_with_random + """
+          SlapLoginCurrentComputer
+          CheckSlaveInstanceListFromOneComputerPartition
+          SlapLogout
+        """ + \
+        simple_request_with_random + \
+        """
+        SlapLoginCurrentComputer
+        CheckTwoSlaveInstanceListFromOneComputerPartition
+        SlapLogout
+        """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_slave_NotFound(self):
+    """
+    Check that requesting a Slave Instance works in system capable to fulfill
+    such request, when Software Instance is not installed yet.
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_formated_computer + """
+        LoginDefaultUser
+        SetRandomComputerPartition
+        SlapLoginCurrentComputer
+        SelectEmptyRequestedParameterDict
+        SetRandomRequestedReference
+        SelectNewSoftwareReleaseUri
+        RequestSlaveInstanceFromComputerPartitionNotFoundError
+        SlapLogout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_slave_state_is_optional(self):
+    """Checks that state is optional parameter on Slap Tool This ensures
+    backward compatibility with old libraries."""
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_install_requested_computer_partition_sequence_string + '\
+      SlapLoginCurrentSoftwareInstance \
+      DirectRequestComputerPartitionNotReadyResponseWithoutStateAndSharedTrue \
+      Tic \
+      SlapLogout \
+      '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepSetRequestedWrongFilterParameterDict(self, sequence):
+        sequence['requested_filter_dict'] = dict(
+          computer_guid="COMP-99999999999999999999999")
+
+  def test_ComputerPartition_request_filter_slave_computer_guid(self):
+    """Check that requesting with filter computer_guid key works as expected.
+
+    This include tests for slave instance case."""
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    # There are two partitions on another computer
+    # so request shall be processed twice correctly, 3rd time it shall
+    # fail
+    sequence_string = \
+    self.prepare_install_requested_computer_partition_sequence_string + \
+      self.prepare_another_computer_sequence_string + '\
+      SelectAnotherRequestedReference \
+      SelectEmptyRequestedParameterDict \
+      SlapLoginCurrentSoftwareInstance \
+      RequestSlaveInstanceFromComputerPartitionNotFoundError \
+      Tic \
+      SlapLogout \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      SetRequestedFilterParameterDict \
+      RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
+      Tic \
+      SlapLogout \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      RequestSlaveInstanceFromComputerPartition \
+      Tic \
+      SlapLogout \
+      \
+      SetRequestedWrongFilterParameterDict \
+      SelectYetAnotherRequestedReference \
+      SlapLoginCurrentSoftwareInstance \
+      RequestSlaveInstanceFromComputerPartitionNotFoundError \
+      Tic \
+      SlapLogout \
+      '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  #########################################
+  # SlaveInstance.request
+  #########################################
+
+  def stepLoginAsCustomerA(self, sequence):
+    global REMOTE_USER
+    REMOTE_USER = "test_vifib_customer_a"
+    self.login("test_vifib_customer_a")
+
+  def test_SlaveInstance_Person_request_with_Different_User(self):
+    """
+      Check that user B can declare a slot of slave instance in computer
+      partition used by user A
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+    SlapLogout
+    LoginAsCustomerA
+    PersonRequestSlaveInstance
+    Logout
+    LoginDefaultUser
+    ConfirmOrderedSaleOrderActiveSense
+    Tic
+    CheckComputerPartitionSaleOrderAggregatedList
+    Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_request_after_destroy_SlaveInstance(self):
+    """
+      Check that a Slave Instance will not be allocated when a Software
+      Instance is destroyed 
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_installed_computer_partition_sequence_string + """
+        LoginTestVifibCustomer
+        RequestSoftwareInstanceDestroy
+        Tic
+        SlapLogout
+        LoginDefaultUser
+        CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+        SlapLogout
+        LoginTestVifibCustomer
+        PersonRequestSlaveInstance
+        Tic
+        Logout
+        LoginDefaultUser
+        ConfirmOrderedSaleOrderActiveSense
+        Tic
+        CheckSlaveInstanceNotReady
+        Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_Person_request_SlaveInstance(self):
+    """
+      Check that one Slave Instance is created correctly
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+    Tic
+    LoginTestVifibCustomer
+    PersonRequestSlaveInstance
+    Tic
+    Logout
+
+    LoginDefaultUser
+    ConfirmOrderedSaleOrderActiveSense
+    Tic
+    
+    SetSelectedComputerPartition
+    SelectCurrentlyUsedSalePackingListUid
+    Logout
+
+    LoginDefaultUser
+    CheckComputerPartitionSaleOrderAggregatedList
+    Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_getInstanceParameterDict_with_SlaveInstance_stopped(self):
+    """
+      Check that the Slave Instance is ignored when the state of Sale Packing
+      List in stopped.
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
-      CreatePurchasePackingList
+      SlapLogout
+      LoginTestVifibCustomer
+      SlaveInstanceStopComputerPartitionInstallation
       Tic
-      CreatePurchasePackingListLine
+      SlaveInstanceStarted
       Tic
-      SelectNewSoftwareReleaseUri
-      CreateSoftwareRelease
+      SlaveInstanceStopped
+      Tic
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      SlapLoginCurrentComputer
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_getInstanceParameterDict_with_two_SlaveInstance(self):
+    """
+      Check that with two Slave Instance installed in different computers, the
+      method getInstanceParameterDict returns correctly the slave instance list
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """ 
+      Tic
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      ConfirmOrderedSaleOrderActiveSense
+      Tic 
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic """ + self.prepare_formated_computer + """
+      Tic
+      LoginTestVifibDeveloper \
+      SelectNewSoftwareReleaseUri \
+      CreateSoftwareRelease \
       Tic \
       SubmitSoftwareRelease \
       Tic \
@@ -4453,133 +4908,534 @@ class TestVifibSlapWebService(testVifibMixin):
       SetSoftwareProductToSoftwareRelease \
       PublishByActionSoftwareRelease \
       Tic
-      SetPurchasePackingListLineSetupResource
-      SetPurchasePackingListLineAggregate
-      ConfirmPurchasePackingList
-      StopPurchasePackingList
+      Logout \
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
       Tic
-  """
-  requesting_computer_partition_with_software_instance = """
-      SelectNewComputerPartitionReference
-      CreateComputerPartition
-      CreateSalePackingList
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
       Tic
-      CreateSalePackingListLine
+      SlapLogout
       Tic
-      SetSalePackingListLineSetupResource
-      SetSalePackingListLineAggregate
-      ConfirmSalePackingList
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      ConfirmOrderedSaleOrderActiveSense
       Tic
-  """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      CheckSlaveInstanceListFromOneComputerPartition
+      """
 
-  slave_owner_computer_partition_with_software_instance = """
-      SelectNewComputerPartitionReference
-      CreateComputerPartition
-      SetSoftwareInstanceTitle
-      CreateSalePackingList
-      Tic
-      CreateSalePackingListLine
-      Tic
-      SetSalePackingListLineSetupResource
-      SetSalePackingListLineAggregate
-      ConfirmSalePackingList
-      Tic
-      SetComputerPartitionQuantity
-      Tic
-      SelectCurrentComputerPartitionAsSlaveOwner
-  """
-
-  check_positive_request_shared = """
-      RequestSharedComputerPartitionNotReadyResponse
-      Tic
-      RequestSharedComputerPartition
-      CheckSoftwareInstanceAndRelatedSlavePartition
-      CheckRequestedSoftwareInstanceAndRelatedSlavePartition
-  """
-
-  @skip('Not implemented')
-  def test_ComputerPartition_request_shared_simpleCase(self):
-    """
-    Check that requesting shared partition works in system capable to fulfill
-    such request, with existing slave partition
-    """
-    sequence_list = SequenceList()
-    sequence_string = \
-        self.computer_with_software_release +\
-        self.slave_owner_computer_partition_with_software_instance +\
-        """
-      CreateSlavePartition
-      Tic
-        """ +\
-        self.requesting_computer_partition_with_software_instance +\
-        self.check_positive_request_shared
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  @skip('Not implemented')
-  def test_ComputerPartition_request_shared_simpleCase_noSlave(self):
+  def test_SlaveInstance_Person_request_without_SoftwareInstance(self):
     """
-    Check that requesting shared partition works in system capable to fulfill
-    such request, with Slave Partition does not exist yet.
+      Check that one Slave Instance will wait allocation correctly when no
+      exists Software Instance installed
     """
     sequence_list = SequenceList()
-    sequence_string = \
-        self.computer_with_software_release +\
-        self.slave_owner_computer_partition_with_software_instance +\
-        self.requesting_computer_partition_with_software_instance +\
-        self.check_positive_request_shared
+    sequence_string = self.prepare_formated_computer + \
+      self.prepare_published_software_release + """
+      Tic
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      Tic
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      CheckSlaveInstanceNotReady
+      Logout
+    """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  check_notfound_request_shared = """
-      RequestSharedComputerPartitionNotFoundResponse
-  """
-
-  @skip('Not implemented')
-  def test_ComputerPartition_request_shared_noAvailability(self):
+  def test_SlaveInstance_Person_request_with_Two_Different_ComputerPartition(self):
     """
-    Check that requesting shared partition raises in case if there is no
-    free Slave Partition, with Slave Partition existing.
+      Check that one Slave Instance is allocated correctly when exists two different
+      Software Instances and Computer Partition. The slave instance must be
+      allocated in Computer Partition that exists one Software Instance with
+      the same Software Release.
     """
     sequence_list = SequenceList()
-    sequence_string = \
-        self.computer_with_software_release +\
-        self.slave_owner_computer_partition_with_software_instance +\
-        """
-      CreateSlavePartition
-      Tic
-      MarkSlavePartitionBusy
-      Tic
-        """ +\
-        self.requesting_computer_partition_with_software_instance +\
-        self.check_notfound_request_shared
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+    Tic
+    StoreSoftwareReleaseUri
+    SetRandomComputerReference
+    """ + self.prepare_install_requested_computer_partition_sequence_string + """
+    Tic
+    LoginTestVifibCustomer
+    PersonRequestSlaveInstance
+    Tic
+    ConfirmOrderedSaleOrderActiveSense
+    Tic
+    CheckSlaveInstanceReady
+    CheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance
+    """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  @skip('Not implemented')
-  def test_ComputerPartition_request_shared_noAvailability_noSlave(self):
+  def test_SlaveInstance_Person_request_with_Two_Different_SoftwareInstance(self):
     """
-    Check that requesting shared partition raises in case if there is no
-    free Slave Partition, with Slave Partition does not exist yet.
+      Check that one Slave Instance is allocated correctly when exists two different
+      Software Instances. The slave instance must be allocated in the same
+      Computer Partition that exists one Software Instance installed.
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      StoreSoftwareReleaseUri
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      """ + self.prepare_published_software_release + """
+      Tic
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SelectDifferentSoftwareReleaseUri
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      CheckSlaveInstanceAssociationWithSoftwareInstance
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_Person_request_twice(self):
+    """
+      Check that request a Slave Instance twice, the instances are created
+      correctly
     """
     sequence_list = SequenceList()
-    sequence_string = \
-        self.computer_with_software_release +\
-        self.slave_owner_computer_partition_with_software_instance +\
-        """
-      Select0QuantityComputerPartition
-      SetComputerPartitionQuantity
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       Tic
-        """ +\
-        self.requesting_computer_partition_with_software_instance +\
-        self.check_notfound_request_shared
+      LoginAsCustomerA
+      PersonRequestSlaveInstance
+      SlapLogout
+
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      CheckTwoSlaveInstanceRequest
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  @skip("Not Implemented yet")
+  def test_request_SlaveInstance_without_enough_slots(self):
+    """
+     Check the behaviour when one Slave Instance is requested and not exist one
+     available slot
+    """
+    raise NotImplementedError
+
+  def test_SlaveInstance_request_start_when_SoftwareInstance_is_started(self):
+    """
+      Check that the Slave Instance will be started correctly
+      XXX - Review the sequence of steps to verify that the scenario is
+      validating the feature of  start a Instance Slave
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      SetDeliveryLineAmountEqualTwo
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_request_stop_from_SoftwareInstance(self):
+    """
+      Check that the Slave Instance will be stopped correctly when
+      a Software Instance is stopped
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginTestVifibCustomer
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      SoftwareInstanceStopped
+      Tic
+      SetDeliveryLineAmountEqualTwo
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_request_start_from_SoftwareInstance(self):
+    """
+      Check that the Slave Instance will be started correctly when
+      a Software Instance is started
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginTestVifibCustomer
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      SetDeliveryLineAmountEqualTwo
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      LoginTestVifibCustomer
+      RequestStopSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      RequestStopSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      SetDeliveryLineAmountEqualZero
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceStart
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SetDeliveryLineAmountEqualThree
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      RequestStopSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      Tic
+      LoginTestVifibCustomer
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  prepare_started_slave_instance_sequence_string = \
+      prepare_started_computer_partition_sequence_string + """
+        LoginTestVifibCustomer
+        PersonRequestSlaveInstance
+        SlapLogout
+        LoginDefaultUser
+        ConfirmOrderedSaleOrderActiveSense
+        Tic
+        SlapLogout
+        SlapLoginCurrentComputer
+        SoftwareInstanceAvailable
+        Tic
+        LoginTestVifibCustomer
+        RequestStopSoftwareInstanceFromCurrentComputerPartition
+        Tic
+        SoftwareInstanceStopped
+        Tic
+        StartSoftwareInstanceFromCurrentComputerPartition
+        Tic
+        SoftwareInstanceStarted
+        Tic
+        Logout
+        LoginDefaultUser
+        SetDeliveryLineAmountEqualTwo
+        CheckComputerPartitionInstanceHostingSalePackingListStarted
+        CheckComputerPartitionInstanceSetupSalePackingListStopped
+        Logout
+      """
+
+  def test_SlaveInstance_call_destroy_from_SoftwareInstance(self):
+    """
+      Check that the Slave Instance will be stopped correctly when
+      a Software Instance is destroyed
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_slave_instance_sequence_string + """
+      LoginTestVifibCustomer
+      RequestDestroySoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SetDeliveryLineAmountEqualOne
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
+      SoftwareInstanceDestroyed
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_request_stop(self):
+    """
+      Check that the Slave Instance will be stopped correctly
+      XXX - Review the sequence of steps to verify that the scenario is
+      validating the feature of stop a Instance Slave
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + """
+      SlapLoginCurrentComputer
+      CheckEmptyComputerGetComputerPartitionCall
+      SlapLogout
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      CheckSuccessComputerGetComputerPartitionCall
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+      LoginTestVifibCustomer
+      RequestSlaveInstanceStop
+      Tic
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      Logout
+      LoginTestVifibCustomer
+      RequestStopSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
+      Logout
+     """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_request_destroy(self):
+    """
+      Check that the Slave Instance will be destroyed correctly
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_check_permission_with_different_customer(self):
+    """
+      Check that one Customer A can not view the Slave Instance of a Customer B
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+      LoginAsCustomerA
+      CheckSlaveInstanceSecurityWithDifferentCustomer
+      PersonRequestSlaveInstance
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      SlapLogout
+      LoginTestVifibCustomer
+      CheckSlaveInstanceSecurityWithDifferentCustomer
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_Information_with_getInstanceParameterDict(self):
+    """
+      Check that Computer Partition of user A is reinstanciated with new
+      parameters provided by user B. User B and Aget the right connection
+      parameter
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      LoginAsCustomerA
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLoginCurrentComputer
+      CheckSlaveInstanceListFromOneComputerPartition
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_security_with_SoftwareInstance_user(self):
+    """
+      Check that the software instance user can access a Slave Instance
+      installed in the same computer partition than your software instance
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      LoginTestVifibCustomer
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      StoreSalePackingListLineFromSlaveInstance
+      StoreSaleOrderFromSlaveInstance
+      SlapLoginCurrentComputer
+      CheckSlaveInstanceListFromOneComputerPartition
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
+      CheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser
+      CheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser
+      CheckSaleOrderFromSlaveInstanceAccessUsingSoftwareInstanceUser
+      CheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SlaveInstance_update_connection_xml(self):
+    """
+      Check that the connection_xml will be update correctly using portal_slap
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      LoginAsCustomerA
+      PersonRequestSlaveInstance
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
+      SetConnectionXmlToSlaveInstance
+      CheckConnectionXmlFromSlaveInstance
+      CheckConnectionXmlFromSoftwareInstance
+    """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
   ########################################
   # Computer.getComputerPartitionList
   ########################################
-
   def test_Computer_getComputerPartitionList_validatedComputer(self):
     """
     Check that getComputerPartitionList returns an empty result if the
@@ -4835,6 +5691,97 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + '\
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetComputerPartitionCall \
+      SlapLogout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Computer_getComputerPartitionList_HostingResource_StartedState_with_slave(self):
+    """
+    Check that calling Computer.getComputerPartitionList works in 
+    started state with the hosting resource when a Slave Partition is present.
+
+    We validate checking more them one Slave Instance allocation.
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + '\
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetComputerPartitionCall \
+      SlapLogout \
+      \
+      LoginTestVifibCustomer \
+      PersonRequestSlaveInstance \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetComputerPartitionCall \
+      SoftwareInstanceAvailable \
+      Tic \
+      CheckSuccessComputerGetComputerPartitionCall \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      SetDeliveryLineAmountEqualTwo \
+      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetComputerPartitionCall \
+      SlapLogout \
+      \
+      LoginTestVifibCustomer \
+      PersonRequestSlaveInstance \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceAvailable \
+      Tic \
+      CheckSuccessComputerGetComputerPartitionCall \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      SetDeliveryLineAmountEqualThree \
+      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetComputerPartitionCall \
+      SlapLogout \
+      \
+      LoginTestVifibCustomer \
+      RequestSlaveInstanceStop \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetComputerPartitionCall \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginDefaultUser \
+      SetDeliveryLineAmountEqualTwo \
+      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      SetDeliveryLineAmountEqualOne \
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered \
+      Logout \
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetComputerPartitionCall \
       SlapLogout \
@@ -5397,6 +6344,303 @@ class TestVifibSlapWebService(testVifibMixin):
     self.assertEqual('stopped',
         self.portal.portal_catalog.getResultValue(uid=sequence[
           'purchase_packing_list_b_uid']).getSimulationState())
+
+  def stepCheckSlaveInstanceSecurityWithDifferentCustomer(self, sequence):
+    software_instance_uid = sequence["software_instance_uid"]
+    portal_membership = self.portal.portal_membership
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.login()
+    software_instance = self.portal.portal_catalog.getResultValue(
+        uid=software_instance_uid)
+    self.failIfUserCanViewDocument(username, software_instance)
+    self.failIfUserCanAccessDocument(username, software_instance)
+    self.login(username)
+
+  def stepCheckTwoSlaveInstanceRequest(self, sequence):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence["computer_partition_uid"])
+    sale_packing_list_line_list = computer_partition.getAggregateRelatedValueList(
+        portal_type=self.sale_packing_list_line_portal_type)
+    portal_type_list = [self.software_instance_portal_type,
+        self.slave_instance_portal_type]
+    instance_list = filter(None, [obj.getAggregateValue(portal_type=portal_type_list) \
+        for obj in sale_packing_list_line_list])
+    portal_type_list = [instance.getPortalType() for instance in instance_list]
+    expected_portal_type_list = [self.slave_instance_portal_type,
+        self.slave_instance_portal_type,
+        self.software_instance_portal_type]
+    self.assertEquals(expected_portal_type_list, sorted(portal_type_list))
+    computer_partition_list = [obj.getAggregateValue(
+      portal_type=self.computer_partition_portal_type) \
+          for obj in sale_packing_list_line_list]
+    uid_list = [computer_partition.getUid() \
+        for computer_partition in computer_partition_list]
+    self.assertEquals(1, len(set(uid_list)))
+
+  def stepCheckSlaveInstanceReady(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals(self.slave_instance_portal_type,
+        slave_instance.getPortalType())
+    sale_order_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_order_line_portal_type)
+    self.assertEquals("confirmed", sale_order_line.getSimulationState())
+    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_packing_list_line_portal_type)
+    self.assertNotEquals(sale_packing_list_line.getAggregateValue(
+      portal_type=self.computer_partition_portal_type), None)
+
+  def stepCheckSlaveInstanceAssociationWithSoftwareInstance(self, sequence):
+    portal_catalog = self.portal.portal_catalog
+    computer_partition_reference_list = \
+        sequence['computer_partition_reference_list']
+    for reference in computer_partition_reference_list:
+      computer_partition = portal_catalog.getResultValue(
+          portal_type="Computer Partition", reference=reference)
+      sale_packing_list_line_list = portal_catalog(
+          portal_type="Sale Packing List Line",
+          aggregate_relative_url=computer_partition.getRelativeUrl())
+      software_release_uri_list = []
+      for sale_packing_list_line in sale_packing_list_line_list:
+        software_release_uri = sale_packing_list_line.getResultValue(
+            portal_type="Software Release")
+        software_release_uri_list.append(software_release_uri.getUrlString())
+      self.assertEquals(1, len(set(software_release_uri_list)))
+
+  def stepCheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals(self.slave_instance_portal_type,
+        slave_instance.getPortalType())
+    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_packing_list_line_portal_type)
+    software_release = sale_packing_list_line.getAggregateValue(
+        portal_type=self.software_release_portal_type)
+    sale_packing_list_line_list = software_release.aggregateRelatedValues(
+        portal_type=self.sale_packing_list_line_portal_type)
+    computer_partition_list = [obj.getAggregateValue(
+      portal_type=self.computer_partition_portal_type)\
+          for obj in sale_packing_list_line_list]
+    self.assertEquals(computer_partition_list[0],
+        computer_partition_list[1])
+    self.assertEquals(computer_partition_list[0].getReference(),
+        computer_partition_list[1].getReference())
+    self.assertEquals(2, len(computer_partition_list))
+
+  def stepCheckSlaveInstanceNotReady(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals(self.slave_instance_portal_type,
+        slave_instance.getPortalType())
+    sale_order_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_order_line_portal_type)
+    self.assertEquals("ordered", sale_order_line.getSimulationState())
+    self.assertRaises(ValueError, sale_order_line.confirm)
+    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_packing_list_line_portal_type)
+    self.assertEquals(sale_packing_list_line, None)
+
+  def stepSelectSlaveInstanceFromOneComputerPartition(self, sequence):
+    slave_instance = self._getSlaveInstanceFromCurrentComputerPartition(sequence)
+    sequence.edit(software_instance_uid=slave_instance.getUid())
+
+  def stepCheckEmptySlaveInstanceListFromOneComputerPartition(self, sequence):
+    computer_guid = sequence["computer_reference"]
+    partition_id = sequence["computer_partition_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer_partition = self.slap.registerComputerPartition(computer_guid,
+        partition_id)
+    parameter_dict = computer_partition.getInstanceParameterDict()
+    slave_instance_list = parameter_dict["slave_instance_list"]
+    self.assertEquals([], slave_instance_list)
+
+  def stepCheckSlaveInstanceListFromOneComputerPartition(self, sequence,
+          expected_amount=1):
+    computer_guid = sequence["computer_reference"]
+    partition_id = sequence["computer_partition_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer_partition = self.slap.registerComputerPartition(computer_guid,
+        partition_id)
+    parameter_dict = computer_partition.getInstanceParameterDict()
+    self.assertEquals("RootSoftwareInstance",
+        parameter_dict["slap_software_type"])
+    slave_instance_list = parameter_dict["slave_instance_list"]
+    self.assertEquals(expected_amount, len(slave_instance_list))
+    for slave_instance in slave_instance_list:
+      self.assertEquals("SlaveInstance", slave_instance["slap_software_type"])
+
+  def stepCheckTwoSlaveInstanceListFromOneComputerPartition(self, sequence):
+    self.stepCheckSlaveInstanceListFromOneComputerPartition(sequence, 
+        expected_amount=2)
+
+  def stepCheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    portal_membership = self.portal.portal_membership
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, slave_instance)
+    self.assertUserCanAccessDocument(username, slave_instance)
+
+  def stepSlapLoginSoftwareInstanceFromCurrentSoftwareInstance(self, sequence):
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    self.assertNotEquals(None, software_instance)
+    self.stepSlapLogout()
+    global REMOTE_USER
+    REMOTE_USER = software_instance.getReference()
+    self.login(software_instance.getReference())
+
+  def _getSoftwareInstanceFromCurrentComputerPartition(self, sequence):
+    query = ComplexQuery(
+        Query(aggregate_uid=sequence['computer_partition_uid']),
+        Query(aggregate_portal_type=self.software_instance_portal_type),
+        operator="AND")
+    software_instance = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        sort_on=(('movement.start_date', 'DESC'),),
+        query=query).getAggregateValue(portal_type="Software Instance")
+    return software_instance
+
+  def _getSlaveInstanceFromCurrentComputerPartition(self, sequence):
+    query = ComplexQuery(
+        Query(aggregate_uid=sequence['computer_partition_uid']),
+        Query(aggregate_portal_type=self.slave_instance_portal_type),
+        operator="AND")
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        query=query).getAggregateValue(portal_type=self.slave_instance_portal_type)
+    return slave_instance
+
+  def stepRequestDestroySoftwareInstanceFromCurrentComputerPartition(self, sequence):
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    software_instance.requestDestroyComputerPartition()
+
+  def stepStartSoftwareInstanceFromCurrentComputerPartition(self, sequence):
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    software_instance.requestStartComputerPartition()
+
+  def stepRequestStopSoftwareInstanceFromCurrentComputerPartition(self,
+      sequence):
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    software_instance.requestStopComputerPartition()
+
+  def stepCheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        uid=sequence["sale_packing_list_line_uid"])
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, sale_packing_list_line)
+    self.failIfUserCanModifyDocument(username, sale_packing_list_line)
+
+  def stepCheckSaleOrderFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_order = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Order",
+        uid=sequence["sale_order_uid"])
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, sale_order)
+    self.failIfUserCanModifyDocument(username, sale_order)
+
+  def stepCheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        uid=sequence["sale_packing_list_line_uid"])
+    hosting_subscription = sale_packing_list_line.getAggregateValue(
+        portal_type="Hosting Subscription")
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, hosting_subscription)
+    self.failIfUserCanModifyDocument(username, hosting_subscription)
+
+  def stepStoreSaleOrderFromSlaveInstance(self, sequence):
+    sale_order_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Order Line",
+        aggregate_reference=sequence["software_instance_reference"])
+    sequence.edit(sale_order_line_uid=sale_order_line.getUid(),
+        sale_order_uid=sale_order_line.getParent().getUid())
+
+  def stepStoreSalePackingListLineFromSlaveInstance(self, sequence):
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        aggregate_uid=sequence["software_instance_uid"])
+    sequence.edit(sale_packing_list_line_uid=sale_packing_list_line.getUid(),
+        sale_packing_list_uid=sale_packing_list_line.getParent().getUid())
+
+  def stepSetConnectionXmlToSlaveInstance(self, sequence):
+    computer_reference = sequence["computer_reference"]
+    computer_partition_reference = sequence["computer_partition_reference"]
+    site_url = "https://www.example.com:8080/"
+    connection_dict = dict(site_url=site_url)
+    slave_reference = sequence["software_instance_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer_partition = self.slap.registerComputerPartition(
+        computer_reference, computer_partition_reference)
+    computer_partition.setConnectionDict(connection_dict)
+    sequence.edit(site_url=site_url)
+    connection_dict["site_url"] += "DeF45uef"
+    computer_partition.setConnectionDict(connection_dict,
+        slave_reference)
+    sequence.edit(slave_instance_site_url=site_url)
+
+  def stepCheckConnectionXmlFromSlaveInstance(self, sequence):
+    portal_catalog = self.portal.portal_catalog
+    slave_instance = portal_catalog.getResultValue(
+        reference=sequence["software_instance_reference"])
+    self.assertTrue(sequence["slave_instance_site_url"] in \
+        slave_instance.getConnectionXml())
+
+  def stepCheckConnectionXmlFromSoftwareInstance(self, sequence):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      portal_type="Software Instance")
+    self.assertTrue("%s</parameter>" % sequence["site_url"] in \
+        software_instance.getConnectionXml())
+
+  def stepSlaveInstanceStarted(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.startComputerPartition()
+
+  def stepRequestSlaveInstanceStart(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.requestStartComputerPartition()
+
+  def stepRequestSlaveInstanceStop(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.requestStopComputerPartition()
+
+  def stepSlaveInstanceStopped(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.stopComputerPartition()
+
+  def stepSlaveInstanceStopComputerPartitionInstallation(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.stopComputerPartitionInstallation()
+
+  def stepSetDeliveryLineAmountEqualZero(self, sequence):
+    sequence.edit(delivery_line_amount=0)
+
+  def stepSetDeliveryLineAmountEqualTwo(self, sequence):
+    sequence.edit(delivery_line_amount=2)
+
+  def stepSetDeliveryLineAmountEqualThree(self, sequence):
+    sequence.edit(delivery_line_amount=3)
+
+  def stepSetDeliveryLineAmountEqualOne(self, sequence):
+    sequence.edit(delivery_line_amount=1)
 
   prepare_two_purchase_packing_list = \
       prepare_software_release_purchase_packing_list + '\
@@ -7405,11 +8649,6 @@ class TestVifibSlapWebService(testVifibMixin):
       Tic
       SlapLogout
 
-      SlapLoginTestVifibCustomer
-      PersonRequestSlapSoftwareInstanceNotReadyResponse
-      Tic
-      SlapLogout
-
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
@@ -7486,11 +8725,6 @@ class TestVifibSlapWebService(testVifibMixin):
       Logout
 
       SetRandomRequestedReference
-      SlapLoginTestVifibCustomer
-      PersonRequestSlapSoftwareInstanceNotReadyResponse
-      Tic
-      SlapLogout
-
       SlapLoginTestVifibCustomer
       PersonRequestSlapSoftwareInstanceNotReadyResponse
       Tic
@@ -7701,6 +8935,20 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepRestoreComputerPartitionReferenceFromBufferB(self, sequence, **kw):
     sequence['computer_partition_reference'] = sequence['buffer_b_computer_partition_reference']
+
+  def stepCheckHostingSubscriptionMultipleComputerAuditor(self, sequence, **kw):
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'])
+    role_list = hosting_subscription.get_local_roles()
+    setup_packing_list_line_list = [q for q in
+      hosting_subscription.getAggregateRelatedValueList(
+        portal_type='Sale Packing List Line') if q.getResource() ==
+          self.portal.portal_preferences.getPreferredInstanceSetupResource()]
+    computer_list = [q.getAggregateValue(
+      portal_type='Computer Partition').getParentValue() for q in
+        setup_packing_list_line_list]
+    for computer in computer_list:
+      self.assertTrue((computer.getReference(), ('Auditor',))) in role_list
 
   def test_bug_destruction_of_partition_originated_from_another_computer(self):
     """Checks that computer is capable to destroy own Software Instance
@@ -7963,16 +9211,104 @@ class TestVifibSlapWebService(testVifibMixin):
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       CheckComputerPartitionIsFree
       Logout
+
+      LoginDefaultUser
+      CheckHostingSubscriptionMultipleComputerAuditor
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_bug_hosting_subscription_assignor_role_instability(self):
-    """Show instability issue of Assignor role on Hosting Subscription
+  def test_bug_destruction_confirmed_instance_setup(self):
+    """Proves that all is correctly handled in case of confirmed instance
+    setup packing list existence"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + \
+      """
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
 
-    Related to fact when Hosting Subscription is associated to
-    Software Instances deployed on many computers"""
-    raise NotImplementedError
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # Now there are two packing lists in confirmed state:
+      #  * one for instance setup
+      #  * one for instance destruction
+      # Simulate typical scenario:
+      #  * stopped
+      #  * commit
+      #  * destroyed
+      #  * commit
+      #  * tic
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceStopped
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      CheckComputerPartitionNoInstanceHostingSalePackingList
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_destruction_with_cancelled_packing_list(self):
+    """Proves that even if some packing lists are in cancelled state
+    it is possible to destroy software instance"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_stopped_computer_partition_sequence_string + """
+      # Request destruction...
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # and cancel current destruction.
+      LoginDefaultUser
+      SelectCurrentlyUsedSalePackingListUid
+      CancelSalePackingList
+      Tic
+      CheckComputerPartitionInstanceCleanupSalePackingListCancelled
+      Logout
+
+      # So all packing lists are finished, but one is cancelled,
+      # time to request destruction...
+
+      LoginDefaultUser
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      # ...and destroy it
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   def test_bug_destruction_with_unfinished_packing_list(self):
     """Proves that even if some packing lists are not fully delivered
@@ -8353,7 +9689,20 @@ class TestVifibSlapWebService(testVifibMixin):
       DirectRequestComputerPartitionRaisesCyclicSoftwareTree
       """
     sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
+    import erp5.document.SoftwareInstance
+    def makeTrue(*args, **kwargs):
+      return True
+    # Disable temporialy checkConnected in order to have only
+    # checkCyclic called
+    erp5.document.SoftwareInstance.original_checkConnected = \
+      erp5.document.SoftwareInstance.checkConnected
+    erp5.document.SoftwareInstance.checkConnected = makeTrue
+    try:
+      sequence_list.play(self)
+    finally:
+      erp5.document.SoftwareInstance.checkConnected = \
+        erp5.document.SoftwareInstance.original_checkConnected
+      del(erp5.document.SoftwareInstance.original_checkConnected)
 
   def stepDirectRequestComputerPartitionRaisesValueError(self,
     sequence, **kw):

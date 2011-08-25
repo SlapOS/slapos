@@ -150,7 +150,7 @@ class OpenOrder(SlapDocument):
 
   def request(self, software_release, partition_reference,
       partition_parameter_kw=None, software_type=None, filter_kw=None,
-      state=None):
+      state=None, shared=False):
     if partition_parameter_kw is None:
       partition_parameter_kw = {}
     if filter_kw is None:
@@ -161,6 +161,7 @@ class OpenOrder(SlapDocument):
         'partition_parameter_xml': xml_marshaller.dumps(partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
         'state': xml_marshaller.dumps(state),
+        'shared_xml': xml_marshaller.dumps(shared),
       }
     if software_type is not None:
       request_dict['software_type'] = software_type
@@ -376,11 +377,12 @@ class ComputerPartition(SlapDocument):
     else:
       return self._software_release_document
 
-  def setConnectionDict(self, connection_dict):
+  def setConnectionDict(self, connection_dict, slave_reference=None):
     self._connection_helper.POST('/setComputerPartitionConnectionXml', {
       'computer_id': self._computer_id,
       'computer_partition_id': self._partition_id,
-      'connection_xml': xml_marshaller.dumps(connection_dict)})
+      'connection_xml': xml_marshaller.dumps(connection_dict),
+      'slave_reference': slave_reference})
 
   @_syncComputerPartitionInformation
   def getConnectionParameter(self, key):

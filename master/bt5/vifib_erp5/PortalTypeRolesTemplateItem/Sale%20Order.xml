@@ -12,8 +12,14 @@
    <multi_property id='base_category'>destination_decision</multi_property>
   </role>
   <role id='Auditor'>
-   <property id='title'>Software Instance related by Hosting Subscription</property>
+   <property id='title'>Slave Instance related by Software Instance</property>
    <property id='description'>Monovalued role</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromMovementItemBySoftwareInstance</property>
+   <multi_property id='base_category'>source</multi_property>
+  </role>
+  <role id='Auditor'>
+   <property id='title'>Software Instance User become Auditor of Sale Order related to Slave Instance</property>
+   <property id='description'>The software instances become auditor of sale orders related to Slave Instances if  the Software Instance and Slave instance use the same software release and is installed in the same computer partition.</property>
    <property id='base_category_script'>ERP5Type_getSecurityCategoryFromMovementItemByHostingSubscription</property>
    <multi_property id='base_category'>aggregate</multi_property>
   </role>

@@ -34,6 +34,7 @@ from OFS.Traversable import NotFound
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type.Tool.BaseTool import BaseTool
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from Products.ERP5Type import Permissions
 from lxml import etree
 try:
@@ -91,6 +92,8 @@ def convertToREST(function):
   wrapper.__doc__ = function.__doc__
   return wrapper
 
+_MARKER = []
+
 class SlapTool(BaseTool):
   """SlapTool"""
 
@@ -144,11 +147,7 @@ class SlapTool(BaseTool):
     for computer_partition_document in computer_document.contentValues(
                                           portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
-        self._convertToSlapPartition(computer_partition_document, computer_id))
-      for slave_partition_document in computer_partition_document\
-        .contentValues(portal_type='Slave Partition'):
-        slap_computer._computer_partition_list.append(
-          self._convertToSlapPartition(slave_partition_document, computer_id))
+          self._getSlapPartitionByPackingList(computer_partition_document))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -172,13 +171,17 @@ class SlapTool(BaseTool):
     'setComputerPartitionConnectionXml')
   def setComputerPartitionConnectionXml(self, computer_id,
                                         computer_partition_id,
-                                        connection_xml):
+                                        connection_xml, slave_reference=None):
     """
     Set instance parameter informations on the slagrid server
     """
+    # When None is passed in POST, it is converted to string
+    if slave_reference is not None and slave_reference.lower() == "none":
+      slave_reference = None
     return self._setComputerPartitionConnectionXml(computer_id,
                                                    computer_partition_id,
-                                                   connection_xml)
+                                                   connection_xml,
+                                                   slave_reference)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'buildingSoftwareRelease')
@@ -258,8 +261,8 @@ class SlapTool(BaseTool):
     'requestComputerPartition')
   def requestComputerPartition(self, computer_id=None,
       computer_partition_id=None, software_release=None, software_type=None,
-      partition_reference=None, shared_xml=None, partition_parameter_xml=None,
-      filter_xml=None, state=None):
+      partition_reference=None, partition_parameter_xml=None,
+      filter_xml=None, state=None, shared_xml=_MARKER):
     """
     Asynchronously requests creation of computer partition for assigned
     parameters
@@ -356,15 +359,6 @@ class SlapTool(BaseTool):
         result_dict[key] = value
     return result_dict
 
-  def _getModificationStatusForSlave(self, computer_partition_document):
-    for slave in computer_partition_document.contentValues(
-      portal_type='Slave Partition'):
-      if slave.getSlapState() == 'busy':
-        slap_partition = self._getSlapPartitionByPackingList(slave)
-        if slap_partition._need_modification == 1:
-          return 1
-    return 0
-
   def _getSlapPartitionByPackingList(self, computer_partition_document):
     computer = computer_partition_document
     portal = self.getPortalObject()
@@ -387,15 +381,20 @@ class SlapTool(BaseTool):
       slap_partition._software_release_document =  SoftwareRelease(
             software_release=software_release_document.getUrlString(),
             computer_guid=computer_id)
-
       parameter_dict = self._getSalePackingListLineAsSoftwareInstance(
                                                        movement)
-
       # software instance has to define an xml parameter
       slap_partition._parameter_dict = self._instanceXmlToDict(
         parameter_dict.pop('xml'))
       slap_partition._connection_dict = self._instanceXmlToDict(
         parameter_dict.pop('connection_xml'))
+      for slave_instance_dict in parameter_dict.get("slave_instance_list", []):
+        if slave_instance_dict.has_key("connection_xml"):
+          slave_instance_dict.update(self._instanceXmlToDict(
+            slave_instance_dict.pop("connection_xml")))
+        if slave_instance_dict.has_key("xml"):
+          slave_instance_dict.update(self._instanceXmlToDict(
+            slave_instance_dict.pop("xml")))
       slap_partition._parameter_dict.update(parameter_dict)
 
       # Apply state and buildout run conditions
@@ -415,12 +414,13 @@ class SlapTool(BaseTool):
 
       elif movement.getResource() == \
               portal_preferences.getPreferredInstanceHostingResource():
-
         if movement.getSimulationState() == 'confirmed':
           slap_partition._requested_state = 'started'
           slap_partition._need_modification = 1
         elif movement.getSimulationState() == 'started':
           slap_partition._requested_state = 'started'
+          slap_partition._need_modification = \
+            self._hasSlaveInstanceNeedModification(computer_partition_document)
         elif movement.getSimulationState() == 'stopped':
           slap_partition._requested_state = 'stopped'
           slap_partition._need_modification = 1
@@ -442,17 +442,43 @@ class SlapTool(BaseTool):
                                    movement.getResource()
     return slap_partition
 
-  def _convertToSlapPartition(self, computer_partition_document, computer_id):
+  def _hasSlaveInstanceNeedModification(self, computer_partition_document):
+    """
+      Check if modification is needed for...
+    """
+    portal = self.getPortalObject()
+    portal_preferences = portal.portal_preferences
+       
+    hosting_service = portal.restrictedTraverse(
+       portal_preferences.getPreferredInstanceHostingResource())
 
-    slap_partition = self._getSlapPartitionByPackingList(
-      computer_partition_document)
-    if computer_partition_document.getPortalType() == 'Slave Partition':
-      slap_partition._need_modification = 0
-    elif computer_partition_document.getQuantity() > 0 and \
-        slap_partition._need_modification == 0:
-      slap_partition._need_modification = self._getModificationStatusForSlave(
-        computer_partition_document)
-    return slap_partition
+    setup_service = portal.restrictedTraverse(
+       portal_preferences.getPreferredInstanceSetupResource())
+
+    hosting_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
+      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+      # Search only for Confirmed and Stopped, the only one states that require
+      # buildout be re-updated.
+      Query(simulation_state=["confirmed", "stopped"]),
+      Query(default_resource_uid=hosting_service.getUid()),
+      operator="AND")
+
+    setup_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
+      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+      Query(simulation_state=["confirmed", "started"]),
+      Query(default_resource_uid=setup_service.getUid()),
+      operator="AND")
+
+    query = ComplexQuery(hosting_query, setup_query, operator="OR")
+
+    # Use getTrackingList
+    catalog_result = portal.portal_catalog(
+      portal_type='Sale Packing List Line',
+      sort_on=(('movement.start_date', 'DESC'),),
+      limit=1,
+      query=query)
+
+    return len(catalog_result)
 
   @convertToREST
   def _buildingSoftwareRelease(self, url, computer_id):
@@ -541,13 +567,15 @@ class SlapTool(BaseTool):
   @convertToREST
   def _setComputerPartitionConnectionXml(self, computer_id,
                                          computer_partition_id,
-                                         connection_xml):
+                                         connection_xml,
+                                         slave_reference=None):
     """
     Sets Computer Partition connection Xml
     """
     software_instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id)
+        computer_partition_id,
+        slave_reference)
     partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
                                               connection_xml)
     instance = etree.Element('instance')
@@ -582,7 +610,7 @@ class SlapTool(BaseTool):
       state = xml_marshaller.xml_marshaller.loads(state)
     if state is None:
       state = 'started'
-    if shared_xml:
+    if shared_xml is not _MARKER:
       shared = xml_marshaller.xml_marshaller.loads(shared_xml)
     else:
       shared = False
@@ -614,6 +642,11 @@ class SlapTool(BaseTool):
     sla_xml = etree.tostring(instance, pretty_print=True,
                                   xml_declaration=True, encoding='utf-8')
 
+    if shared:
+      instance_portal_type = "Slave Instance"
+    else:
+      instance_portal_type = "Software Instance"
+
     if computer_id and computer_partition_id:
       # requested by Software Instance, there is already top part of tree
       software_instance_document = self.\
@@ -623,15 +656,15 @@ class SlapTool(BaseTool):
               software_release=software_release,
               software_type=software_type,
               partition_reference=partition_reference,
-              shared=shared,
               instance_xml=instance_xml,
+              shared=shared,
               sla_xml=sla_xml,
               state=state)
 
       # Get requested software instance
       requested_software_instance = software_instance_document.portal_catalog.\
           getResultValue(
-                portal_type="Software Instance",
+                portal_type=instance_portal_type,
                 source_reference=software_type,
                 # predecessor_related_uid is inconsistent with
                 # SoftwareInstancae.requestSoftwareInstance but in this case it
@@ -652,7 +685,7 @@ class SlapTool(BaseTool):
               state=state)
       requested_software_instance = person.portal_catalog.\
           getResultValue(
-                portal_type="Software Instance",
+                portal_type=instance_portal_type,
                 # In order be in sync with defaults of person.
                 #   requestSoftwareInstance it is required to default here
                 # too
@@ -663,13 +696,17 @@ class SlapTool(BaseTool):
     if requested_software_instance is None:
       raise SoftwareInstanceNotReady
     else:
+      query_kw = {}
+      if shared:
+        # Provide precise reference when search for a slave.
+        query_kw['slave_reference'] = requested_software_instance.getReference()
+
       movement = self._getSalePackingListLineForComputerPartition(
-                                             requested_software_instance)
+                         requested_software_instance, **query_kw)
       if movement is None:
         raise SoftwareInstanceNotReady
       software_instance = SoftwareInstance(
-        **self._getSalePackingListLineAsSoftwareInstance(
-                                      movement))
+        **self._getSalePackingListLineAsSoftwareInstance(movement))
       return xml_marshaller.xml_marshaller.dumps(software_instance)
 
   ####################################################
@@ -702,14 +739,9 @@ class SlapTool(BaseTool):
     """
     # Related key might be nice
     computer = self._getComputerDocument(computer_reference)
-    try:
-      return self._getDocument(portal_type='Computer Partition',
+    return self._getDocument(portal_type='Computer Partition',
                              reference=computer_partition_reference,
                              parent_uid=computer.getUid())
-    except NotFound:
-      return self._getDocument(portal_type='Slave Partition',
-                             reference=computer_partition_reference,
-                             grand_parent_uid=computer.getUid())
 
   def _getUsageReportServiceDocument(self):
     service_document = self.Base_getUsageReportServiceDocument()
@@ -718,7 +750,7 @@ class SlapTool(BaseTool):
     raise Unauthorized
 
   def _getSoftwareInstanceForComputerPartition(self, computer_id,
-      computer_partition_id):
+      computer_partition_id, slave_reference=None):
     computer_partition_document = self._getComputerPartitionDocument(
       computer_id, computer_partition_id)
     if computer_partition_document.getSlapState() != 'busy':
@@ -728,13 +760,15 @@ class SlapTool(BaseTool):
       raise NotFound, "No software instance found for: %s - %s" % (computer_id,
           computer_partition_id)
     packing_list_line = self._getSalePackingListLineForComputerPartition(
-                                                computer_partition_document)
+                                                computer_partition_document,
+                                                slave_reference)
     if packing_list_line is None:
       raise NotFound, "No software instance found for: %s - %s" % (computer_id,
           computer_partition_id)
     else:
+      portal_type_list = ["Software Instance", "Slave Instance"]
       software_instance = packing_list_line.getAggregateValue(
-                                              portal_type="Software Instance")
+                                              portal_type=portal_type_list)
       if software_instance is None:
         raise NotFound, "No software instance found for: %s - %s" % (
           computer_id, computer_partition_id)
@@ -769,7 +803,8 @@ class SlapTool(BaseTool):
     return software_release_list
 
   def _getSalePackingListLineForComputerPartition(self,
-                                                  computer_partition_document):
+                                                  computer_partition_document,
+                                                  slave_reference=None):
     """
     Return latest meaningfull sale packing list related to a computer partition
     document
@@ -790,15 +825,23 @@ class SlapTool(BaseTool):
     state_list.extend(portal.getPortalCurrentInventoryStateList())
     state_list.extend(portal.getPortalReservedInventoryStateList())
     state_list.extend(portal.getPortalTransitInventoryStateList())
+    if slave_reference is not None:
+      query = ComplexQuery(Query(aggregate_reference=slave_reference),
+          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+          operator="AND")
+    else:
+      query = ComplexQuery(Query(aggregate_portal_type="Software Instance"),
+          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+          operator="AND")
 
     # Use getTrackingList
     catalog_result = portal.portal_catalog(
       portal_type='Sale Packing List Line',
       simulation_state=state_list,
-      aggregate_relative_url=computer_partition_document.getRelativeUrl(),
       default_resource_uid=service_uid_list,
       sort_on=(('movement.start_date', 'DESC'),),
       limit=1,
+      query=query
     )
     if len(catalog_result):
       return catalog_result[0].getObject()

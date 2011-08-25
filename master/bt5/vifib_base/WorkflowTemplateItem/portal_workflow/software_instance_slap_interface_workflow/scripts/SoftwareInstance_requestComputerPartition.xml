@@ -55,10 +55,40 @@
 from DateTime import DateTime\n
 import random\n
 \n
+def checkSoftwareInstanceIsInstalledOnComputerPartition(software_release,\n
+    computer_partition):\n
+  from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+  resource_relative_url = (\n
+      portal.portal_preferences.getPreferredInstanceSetupResource(),\n
+      portal.portal_preferences.getPreferredInstanceHostingResource(),\n
+  )\n
+  query = ComplexQuery(Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
+                       Query(aggregate_relative_url=computer_partition.getRelativeUrl()),\n
+                       operator="AND",\n
+                      )\n
+  sale_packing_list_line_list = portal.portal_catalog(\n
+    portal_type=\'Sale Packing List Line\',\n
+    query=query,\n
+    resource_relative_url=resource_relative_url,\n
+    limit=1)\n
+  \n
+  if len(sale_packing_list_line_list) == 1:\n
+    resource_relative_url = (\n
+      portal.portal_preferences.getPreferredInstanceCleanupResource(),\n
+    )\n
+    sale_packing_list_line_list = portal.portal_catalog(\n
+      portal_type=\'Sale Packing List Line\',\n
+      query=query,\n
+      resource_relative_url=resource_relative_url,\n
+      limit=1)\n
+    if len(sale_packing_list_line_list) == 0:\n
+      return True\n
+  return False\n
+\n
+portal = context.getPortalObject()\n
 software_instance = state_change[\'object\']\n
 software_release_url_string = state_change.kwargs[\'software_release\']\n
 hosting_subscription_uid = state_change.kwargs[\'hosting_subscription_uid\']\n
-shared = state_change.kwargs[\'shared\']\n
 software_type = state_change.kwargs["software_type"]\n
 tag = state_change.kwargs[\'tag\']\n
 filter_kw = software_instance.getSlaXmlAsDict()\n
@@ -76,73 +106,49 @@ SQL_WINDOW_SIZE = 50\n
 computer_partition = None\n
 query_kw = {\n
   \'software_release_url\': software_release_url_string,\n
-  \'portal_type\': \'Computer Partition\'\n
+  \'portal_type\': \'Computer Partition\',\n
+  \'free_for_request\': 1,\n
 }\n
+\n
+if software_instance.getPortalType() == "Slave Instance":\n
+  query_kw[\'free_for_request\'] = 0\n
+\n
 # support SLA\n
 if "computer_guid" in filter_kw:\n
   query_kw["parent_reference"] = filter_kw["computer_guid"]\n
 \n
 # fetch at mot 50 random Computer Partitions, and check if they are ok\n
 isTransitionPossible = software_instance.getPortalObject().portal_workflow.isTransitionPossible\n
-if shared:\n
-  query_kw.update(\n
-    software_type=software_type,\n
-    available_slave=1, # has slave\n
-    free_for_request=0, # is not available for normal request\n
-  )\n
-  result_count = software_instance.portal_catalog.countResults(**query_kw)[0][0]\n
-\n
-  offset = max(0, result_count-1)\n
-  if offset >= SQL_WINDOW_SIZE:\n
-    limit = (random.randint(0, offset), SQL_WINDOW_SIZE)\n
-  else:\n
-    limit = (0, SQL_WINDOW_SIZE)\n
-  for computer_partition_candidate in software_instance.portal_catalog(\n
-                                           limit=limit, **query_kw):\n
-    computer_partition_candidate = computer_partition_candidate.getObject()\n
-    # Check if the computer partition can be marked as busy (done by an interaction workflow on sale packing list level)\n
-    if computer_partition_candidate.getSlapState() == \'busy\' and computer_partition_candidate.ComputerPartition_isSlaveAvailable():\n
-      computer_partition = computer_partition_candidate\n
-      break\n
-\n
-  if computer_partition is None:\n
-    raise ValueError(\'It was not possible to find Computer Partition with free slave\')\n
-\n
-  # find free slave\n
-  slave_partition = None\n
-  for slave_partition_candidate in computer_partition.contentValues(portal_type=\'Slave Partition\'):\n
-    if isTransitionPossible(slave_partition_candidate, \'mark_busy\'):\n
-      slave_partition = slave_partition_candidate\n
-      slave_partition.serialize()\n
-      break\n
-\n
-  if slave_partition is None:\n
-    slave_partition = computer_partition.newContent(portal_type=\'Slave Partition\')\n
-    slave_partition.markFree()\n
-  computer_partition = slave_partition\n
+result_count = software_instance.portal_catalog.countResults(**query_kw)[0][0]\n
+offset = max(0, result_count-1)\n
+if offset >= SQL_WINDOW_SIZE:\n
+  limit = (random.randint(0, offset), SQL_WINDOW_SIZE)\n
 else:\n
-  query_kw.update(free_for_request=1) # is free\n
-  result_count = software_instance.portal_catalog.countResults(**query_kw)[0][0]\n
+  limit = (0, SQL_WINDOW_SIZE)\n
 \n
-  offset = max(0, result_count-1)\n
-  if offset >= SQL_WINDOW_SIZE:\n
-    limit = (random.randint(0, offset), SQL_WINDOW_SIZE)\n
-  else:\n
-    limit = (0, SQL_WINDOW_SIZE)\n
+software_release = context.portal_catalog.getResultValue(\n
+  portal_type=\'Software Release\',\n
+  url_string=software_release_url_string)\n
 \n
-  for computer_partition_candidate in software_instance.portal_catalog(\n
-                                           limit=limit, **query_kw):\n
-    computer_partition_candidate = computer_partition_candidate.getObject()\n
-    # Check if the computer partition can be marked as busy (done by an interaction workflow on sale packing list level)\n
-    if isTransitionPossible(computer_partition_candidate, \'mark_busy\'):\n
-      computer_partition = computer_partition_candidate\n
-      break\n
+for computer_partition_candidate in software_instance.portal_catalog(\n
+                                         limit=limit, **query_kw):\n
+  computer_partition_candidate = computer_partition_candidate.getObject()\n
+  # Check if the computer partition can be marked as busy (done by an interaction workflow on sale packing list level)\n
+  software_instance_portal_type = software_instance.getPortalType()\n
+  if isTransitionPossible(computer_partition_candidate, \'mark_busy\') and \\\n
+      software_instance_portal_type == "Software Instance":\n
+    computer_partition = computer_partition_candidate\n
+    break\n
+  elif software_instance_portal_type == "Slave Instance" and \\\n
+      checkSoftwareInstanceIsInstalledOnComputerPartition(software_release, computer_partition_candidate):\n
+    computer_partition = computer_partition_candidate\n
+    break\n
 \n
-  if computer_partition is None:\n
-    raise ValueError(\'It was not possible to find free Computer Partition\')\n
+if computer_partition is None:\n
+  raise ValueError(\'It was not possible to find free Computer Partition\')\n
 \n
-  # lock computer partition\n
-  computer_partition.serialize()\n
+# lock computer partition\n
+computer_partition.serialize()\n
 \n
 software_release_document = context.portal_catalog.getResultValue(\n
   portal_type=\'Software Release\',\n

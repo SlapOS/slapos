@@ -10,4 +10,5 @@ Sale Order | local_permission_vifib_interaction_workflow
 Sale Packing List Line | local_permission_vifib_interaction_workflow
 Sale Packing List | local_permission_vifib_interaction_workflow
 Sale Trade Condition | local_permission_vifib_interaction_workflow
+Slave Instance | local_permission_vifib_interaction_workflow
 Software Instance | local_permission_vifib_interaction_workflow

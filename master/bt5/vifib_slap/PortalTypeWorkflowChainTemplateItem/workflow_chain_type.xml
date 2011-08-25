@@ -28,8 +28,8 @@
   <workflow>slap_interaction_workflow</workflow>
  </chain>
  <chain>
-  <type>Slave Partition</type>
-  <workflow>computer_partition_slap_interface_workflow, edit_workflow, slap_interaction_workflow, validation_workflow</workflow>
+  <type>Slave Instance</type>
+  <workflow>slap_interaction_workflow</workflow>
  </chain>
  <chain>
   <type>Software Instance</type>

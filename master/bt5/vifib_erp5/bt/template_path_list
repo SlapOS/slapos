@@ -5,6 +5,8 @@ person_module/test_vifib_admin
 person_module/test_vifib_admin/**
 person_module/test_vifib_customer
 person_module/test_vifib_customer/**
+person_module/test_vifib_customer_a
+person_module/test_vifib_customer_a/**
 person_module/test_vifib_developer
 person_module/test_vifib_developer/**
 person_module/test_vifib_member
