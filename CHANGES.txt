@@ -4,7 +4,7 @@ Changes
 0.17 (unreleased)
 -----------------
 
- * No changes yet.
+ * Add XWiki software release [Cedric de Saint Martin]
 
 0.16 (2011-07-15)
 -----------------
