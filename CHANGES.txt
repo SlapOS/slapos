@@ -1,7 +1,12 @@
 Changes
 =======
 
-0.17 (unreleased)
+0.18 (Unreleased)
+-----------------
+
+ * No change yet.
+
+0.17 (2011-08-25)
 -----------------
 
  * Add XWiki software release [Cedric de Saint Martin]
