@@ -47,6 +47,15 @@ class Recipe(BaseSlapRecipe):
 
     key, certificate = self.requestCertificate('Cloudooo')
 
+    cloudooo_paster = os.path.join(self.bin_directory, 'cloudooo_paster')
+    ooo_paster = self.options['ooo_paster']
+    if os.path.lexists(cloudooo_paster):
+      if not os.readlink(cloudooo_paster) != ooo_paster:
+        os.unlink(cloudooo_paster)
+    if not os.path.lexists(cloudooo_paster):
+      os.symlink(ooo_paster, cloudooo_paster)
+    self.options['cloudooo_paster'] = cloudooo_paster
+
     conversion_server_conf = self.installConversionServer(
         self.getLocalIPv4Address(), 23000, 23060)
 
@@ -65,15 +74,6 @@ class Recipe(BaseSlapRecipe):
     if not os.path.lexists(runCloudoooUnitTest):
       os.symlink(runUnitTest, runCloudoooUnitTest)
     self.path_list.append(runCloudoooUnitTest)
-
-    cloudooo_paster = os.path.join(self.bin_directory, 'cloudooo_paster')
-    ooo_paster = self.options['ooo_paster']
-    if os.path.lexists(cloudooo_paster):
-      if not os.readlink(cloudooo_paster) != ooo_paster:
-        os.unlink(cloudooo_paster)
-    if not os.path.lexists(cloudooo_paster):
-      os.symlink(ooo_paster, cloudooo_paster)
-    self.path_list.append(cloudooo_paster)
 
     self.linkBinary()
     self.setConnectionDict(dict(
