@@ -119,8 +119,8 @@ SSLCARevocationPath %(ca_crl)s"""
         self.getTemplateFilename('zope-zeo-snippet.conf.in'), dict(
         storage_name=storage_dict['storage_name'],
         address='%s:%s' % (storage_dict['ip'], storage_dict['port']),
-        mount_point=mount_point
-        )))
+        mount_point=mount_point, zodb_cache_size=self.zodb_cache_size,
+        zeo_client_cache_size=self.zeo_client_cache_size)))
     tidstorage_config = dict(host=self.getLocalIPv4Address(), port='6001')
     zodb_configuration_string = '\n'.join(zodb_configuration_list)
     zope_port = 12000
@@ -225,7 +225,8 @@ SSLCARevocationPath %(ca_crl)s"""
     zope_access = self.installZope(ip, zope_port, 'zope_development',
         zodb_configuration_string=self.substituteTemplate(
           self.getTemplateFilename('zope-zodb-snippet.conf.in'),
-          dict(zodb_root_path=zodb_root_path)),
+          dict(zodb_root_path=zodb_root_path,
+            zodb_cache_size=self.zodb_cache_size)),
           thread_amount=8, with_timerservice=True)
     service_haproxy = self.installHaproxy(ip, 15000, 'service',
         self.site_check_path, [zope_access])
@@ -273,6 +274,9 @@ SSLCARevocationPath %(ca_crl)s"""
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
     # self.cron_d is a directory, where cron jobs can be registered
+    self.zodb_cache_size = int(self.options.get('zodb_cache_size', 5000))
+    self.zeo_client_cache_size = self.options.get('zeo_client_cache_size',
+      '20MB')
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     self.killpidfromfile = zc.buildout.easy_install.scripts(
