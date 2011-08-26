@@ -57,8 +57,8 @@ class Recipe(BaseSlapRecipe):
           shtuil.rmtree(dst)
           raise
 
-    shutil.copy(self.options['hsql_location'].strip(), os.path.join(tomcat_lib,
-      'hsqldb.jar'))
+    shutil.copy(self.options['jdbc_location'].strip(), os.path.join(tomcat_lib,
+      'jdbc.jar'))
     # headless mode
     self._writeFile(os.path.join(tomcat_home, 'bin', 'setenv.sh'), '''#!/bin/sh
 export JAVA_OPTS="${JAVA_OPTS} -Djava.awt.headless=true"
