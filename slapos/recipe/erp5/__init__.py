@@ -107,7 +107,7 @@ class Recipe(BaseSlapRecipe):
 
     self.installERP5Site(user, password, zope_access, mysql_conf,
              conversion_server_conf, memcached_conf, kumo_conf,
-             self.site_id, default_bt5_list)
+             self.site_id, default_bt5_list, ca_conf)
 
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
                            memcached_conf, kumo_conf)
@@ -649,7 +649,7 @@ class Recipe(BaseSlapRecipe):
   def installERP5Site(self, user, password, zope_access, mysql_conf,
                       conversion_server_conf=None, memcached_conf=None,
                       kumo_conf=None,
-                      erp5_site_id='erp5', default_bt5_list=[],
+                      erp5_site_id='erp5', default_bt5_list=[], ca_conf={},
                       supervisor_controlled=True):
     """
     Create  a script  to  automatically set  up  an erp5  site (controlled  by
@@ -684,7 +684,9 @@ class Recipe(BaseSlapRecipe):
                              conversion_server,
                              kumo_conf.get("kumo_address"),
                              bt5_list,
-                             bt5_repository_list])
+                             bt5_repository_list,
+                             ca_conf.get('certificate_authority_path'),
+                             self.options.get('openssl_binary')])
 
     self.path_list.extend(script)
 

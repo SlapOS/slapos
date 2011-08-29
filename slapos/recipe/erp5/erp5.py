@@ -43,7 +43,8 @@ class ERP5Updater(object):
   def __init__(self, user, password, host,
       site_id, mysql_url, memcached_address,
       conversion_server_address, persistent_cache_address,
-      bt5_list, bt5_repository_list):
+      bt5_list, bt5_repository_list, certificate_authority_path,
+      openssl_binary):
 
     authentication_string = '%s:%s' % (user, password)
     base64string = base64.encodestring(authentication_string).strip()
@@ -61,6 +62,10 @@ class ERP5Updater(object):
     host, port = conversion_server_address.split(":")
     self.conversion_server_address = host
     self.conversion_server_port = int(port)
+
+    # Certificate Authority Tool configuration
+    self.certificate_authority_path = certificate_authority_path
+    self.openssl_binary = openssl_binary
 
   def log(self, level, message):
     date = time.strftime("%a, %d %b %Y %H:%M:%S +0000")
@@ -225,6 +230,48 @@ class ERP5Updater(object):
 
     return is_updated
 
+  def updateCertificateAuthority(self):
+    """ Update the certificate authority only if is not configured yet """
+    if self.isCertificateAuthorityAvailable():
+      if self.isCertificateAuthorityConfigured():
+        return True
+
+      path = "/%s/portal_certificate_authority/" \
+             "manage_editCertificateAuthorityTool" % self.site_id
+      self.POST(path, {"certificate_authority_path": self.certificate_authority_path,
+                       "openssl_binary": self.openssl_binary})
+
+
+  def isCertificateAuthorityAvailable(self):
+    """ Check if certificate Authority is available. """
+    external_connection_dict = self.system_signature_dict[
+      'external_connection_dict']
+    if 'portal_certificate_authority/certificate_authority_path' in \
+      external_connection_dict:
+      return True
+    return False
+
+  def isCertificateAuthorityConfigured(self):
+    """ Check if certificate Authority is configured correctly. """
+    external_connection_dict = self.system_signature_dict[
+      'external_connection_dict']
+    if self.certificate_authority_path == external_connection_dict.get(
+          'portal_certificate_authority/certificate_authority_path') and \
+       self.openssl_binary == external_connection_dict.get(
+          'portal_certificate_authority/openssl_binary'):
+      return True
+    return False
+  def isCertificateAuthorityConfigured(self):
+    """ Check if certificate Authority is configured correctly. """
+    external_connection_dict = self.system_signature_dict[
+      'external_connection_dict']
+    if self.certificate_authority_path == external_connection_dict.get(
+          'portal_certificate_authority/certificate_authority_path') and \
+       self.openssl_binary == external_connection_dict.get(
+          'portal_certificate_authority/openssl_binary'):
+      return True
+    return False
+
   def updateMemcached(self):
     # Assert Memcached configuration
     self._assertAndUpdateDocument(
@@ -283,7 +330,7 @@ class ERP5Updater(object):
   def run(self):
     """ Keep running until kill"""
     while 1:
-      time.sleep(self.short_sleeping_time)
+      #time.sleep(self.short_sleeping_time)
       if not self.updateERP5Site():
         self.loadSystemSignatureDict()
         if self._hasFailureActivity():
@@ -299,7 +346,7 @@ class ERP5Updater(object):
         self.updateMemcached()
         if self.updateConversionServer():
           continue
-
+        self.updateCertificateAuthority()
         time.sleep(self.sleeping_time)
 
 def updateERP5(argument_list):
@@ -310,6 +357,8 @@ def updateERP5(argument_list):
   conversion_server_address = argument_list[4]
   persistent_cache_provider = argument_list[5]
   bt5_list = argument_list[6]
+  certificate_authority_path = argument_list[8]
+  openssl_binary = argument_list[9]
   bt5_repository_list = []
 
   if len(argument_list) > 7:
@@ -328,6 +377,8 @@ def updateERP5(argument_list):
     conversion_server_address=conversion_server_address,
     persistent_cache_address=persistent_cache_provider,
     bt5_list=bt5_list,
-    bt5_repository_list=bt5_repository_list)
+    bt5_repository_list=bt5_repository_list,
+    certificate_authority_path=certificate_authority_path,
+    openssl_binary=openssl_binary)
 
   erp5_upgrader.run()

@@ -185,7 +185,7 @@ SSLCARevocationPath %(ca_crl)s"""
     # Connect direct to Zope to create the instance.
     self.installERP5Site(user, password, service_url_list[-1], mysql_conf,
              conversion_server_conf, memcached_conf, kumo_conf,
-             self.site_id, self.default_bt5_list)
+             self.site_id, self.default_bt5_list, ca_conf)
 
     self.setConnectionDict(dict(
       front_end_url=apache_frontend_login,
@@ -245,7 +245,7 @@ SSLCARevocationPath %(ca_crl)s"""
     self.linkBinary()
     self.installERP5Site(user, password, zope_access, mysql_conf,
              conversion_server_conf, memcached_conf, kumo_conf,
-             self.site_id, self.default_bt5_list)
+             self.site_id, self.default_bt5_list, ca_conf)
 
     self.setConnectionDict(dict(
       development_zope='http://%s:%s/' % (ip, zope_port),
