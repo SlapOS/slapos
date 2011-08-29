@@ -48,6 +48,7 @@ mimetype_registry =
   application/x-shockwave-flash * ffmpeg
   application/ogg * ffmpeg
   application/ogv * ffmpeg
+  image/png image/jpeg imagemagick
   image/png * ooo
   image/* image/* imagemagick
   text/* * ooo

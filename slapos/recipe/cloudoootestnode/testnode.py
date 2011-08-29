@@ -1,5 +1,5 @@
 from xml_marshaller import xml_marshaller
-import os, xmlrpclib, time, imp
+import os, xmlrpclib, time, imp, re
 from glob import glob
 import signal
 import slapos.slap
@@ -55,6 +55,16 @@ def safeRpcCall(function, *args):
       time.sleep(retry)
       retry += retry >> 1
 
+def getInputOutputFileList(config, command_name):
+  stdout = open(os.path.join(
+                config['instance_root'],'.%s_out' % command_name),
+                'w+')
+  stdout.write("%s\n" % command_name)
+  stderr = open(os.path.join(
+                config['instance_root'],'.%s_err' % command_name),
+                'w+')
+  return (stdout, stderr)
+
 slapos_controler = None
 
 def run(args):
@@ -84,11 +94,9 @@ def run(args):
     if profile_content is None:
       profile_content = """
 [buildout]
-extends = /home/slap/config/cloudooo.cfg
-"""
-#extends = %(software_config_path)s
-#""" %  {'software_config_path': os.path.join(repository_path,
-#                                          config['profile_path'])}
+extends = %(software_config_path)s
+""" %  {'software_config_path': os.path.join(repository_path,
+                                          config['profile_path'])}
     if not(buildout_section_id is None):
       profile_content += """\n
 [%(buildout_section_id)s]
@@ -97,6 +105,7 @@ branch = %(branch)s
 """ %  {'buildout_section_id': buildout_section_id,
         'repository_path' : repository_path,
         'branch' : vcs_repository.get('branch','cloudooo')}
+
   custom_profile = open(custom_profile_path, 'w')
   custom_profile.write(profile_content)
   custom_profile.close()
@@ -139,8 +148,9 @@ branch = %(branch)s
             continue
         retry_software = False
         previous_revision = revision
-        # Require build connection for runnig tests
+
         print config
+        # Require build connection for runnig tests
         portal_url = config['test_suite_master_url']
         test_result_path = None
         test_result = (test_result_path, revision)
@@ -168,22 +178,25 @@ branch = %(branch)s
               updater = Updater(repository_path, git_binary=config['git_binary'],
                                 revision=repository_revision.split('-')[1])
               updater.checkout()
+
           # Now prepare the installation of SlapOS
           slapos_controler = SlapOSControler(config,
             process_group_pid_set=process_group_pid_set)
-          # this should be always true later, but it is too slow for now
-          status_dict = slapos_controler.runSoftwareRelease(config,
-            config['environment'],
-            process_group_pid_set,
-            )
+          for method_name in ("runSoftwareRelease", "runComputerPartition"):
+            stdout, stderr = getInputOutputFileList(config, method_name)
+            slapos_method = getattr(slapos_controler, method_name)
+            status_dict = slapos_method(config,
+              environment=config['environment'],
+              process_group_pid_set=process_group_pid_set,
+              stdout=stdout, stderr=stderr
+              )
+            if status_dict['status_code'] != 0:
+              break
           if status_dict['status_code'] != 0:
             safeRpcCall(master.reportTaskFailure,
               test_result_path, status_dict, config['test_node_title'])
             retry_software = True
             continue
-          # create instances, it should take some seconds only
-          slapos_controler.runComputerPartition(config,
-                  process_group_pid_set=process_group_pid_set)
 
           partition_path = os.path.join(config['instance_root'],
                                         config['partition_reference'])
@@ -203,21 +216,37 @@ branch = %(branch)s
           file_object = open(run_test_suite_path, 'r')
           line = file_object.readline()
           file_object.close()
-#          cloudooo_tests = glob(
-#                    '%s/*/src/cloudooo/cloudooo/handler/*/tests/test*.py' %
-#                    config['software_root'])
-#          for test in cloudooo_tests:
-          invocation_list = []
-          if line[:2] == '#!':
-            invocation_list = line[2:].split()
-          invocation_list.extend([run_test_suite_path,
-                                  '--paster_path', cloudooo_paster,
-                                  cloudooo_conf,
-                                  'testFfmpegServer'])
-          run_test_suite = subprocess.Popen(invocation_list)
-          process_group_pid_set.add(run_test_suite.pid)
-          run_test_suite.wait()
-          process_group_pid_set.remove(run_test_suite.pid)
+
+          wait_serve = True
+          while wait_serve:
+            try:
+              conf = open(cloudooo_conf).read()
+              host, port = re.findall('host=*.*.*.*\nport\ \=.*', conf)[0].split('\n')
+              serve = xmlrpclib.Server("http://%s:%s/RPC2" % 
+                        (host.split('=')[-1].lstrip(), 
+                        port.split('=')[-1].lstrip()))
+              serve.system.listMethods()
+              if len(serve.system.listMethods()) > 0:
+                wait_serve = False
+            except socket.error, e:
+              wait_serve = True
+              time.sleep(10)
+
+          cloudooo_tests = glob(
+                    '%s/*/src/cloudooo/cloudooo/handler/*/tests/test*.py' %
+                    config['software_root'])
+          for test in cloudooo_tests:
+            invocation_list = []
+            if line[:2] == '#!':
+              invocation_list = line[2:].split()
+            invocation_list.extend([run_test_suite_path,
+                                    '--paster_path', cloudooo_paster,
+                                    cloudooo_conf,
+                                    test.split('/')[-1]])
+            run_test_suite = subprocess.Popen(invocation_list)
+            process_group_pid_set.add(run_test_suite.pid)
+            run_test_suite.wait()
+            process_group_pid_set.remove(run_test_suite.pid)
       except SubprocessError:
         time.sleep(120)
         continue

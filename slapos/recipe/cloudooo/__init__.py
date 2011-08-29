@@ -42,14 +42,19 @@ class Recipe(BaseSlapRecipe):
   def _install(self):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
-    self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', __name__ + 'slapos.recipe.erp5.killpidfromfile',
-          'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-    self.path_list.append(self.killpidfromfile)
     self.cron_d = self.installCrond()
     ca_conf = self.installCertificateAuthority()
 
     key, certificate = self.requestCertificate('Cloudooo')
+
+    cloudooo_paster = os.path.join(self.bin_directory, 'cloudooo_paster')
+    ooo_paster = self.options['ooo_paster']
+    if os.path.lexists(cloudooo_paster):
+      if not os.readlink(cloudooo_paster) != ooo_paster:
+        os.unlink(cloudooo_paster)
+    if not os.path.lexists(cloudooo_paster):
+      os.symlink(ooo_paster, cloudooo_paster)
+    self.options['cloudooo_paster'] = cloudooo_paster
 
     conversion_server_conf = self.installConversionServer(
         self.getLocalIPv4Address(), 23000, 23060)
@@ -69,15 +74,6 @@ class Recipe(BaseSlapRecipe):
     if not os.path.lexists(runCloudoooUnitTest):
       os.symlink(runUnitTest, runCloudoooUnitTest)
     self.path_list.append(runCloudoooUnitTest)
-
-    cloudooo_paster = os.path.join(self.bin_directory, 'cloudooo_paster')
-    ooo_paster = self.options['ooo_paster']
-    if os.path.lexists(cloudooo_paster):
-      if not os.readlink(cloudooo_paster) != ooo_paster:
-        os.unlink(cloudooo_paster)
-    if not os.path.lexists(cloudooo_paster):
-      os.symlink(ooo_paster, cloudooo_paster)
-    self.path_list.append(cloudooo_paster)
 
     self.linkBinary()
     self.setConnectionDict(dict(
@@ -190,7 +186,8 @@ class Recipe(BaseSlapRecipe):
         email_address=ca_email,
     )
     self._writeFile(openssl_configuration,
-        self.getTemplateFilename('openssl.cnf.ca.in'))
+        self.substituteTemplate(self.getTemplateFilename('openssl.cnf.ca.in'),
+          config))
     self.path_list.extend(zc.buildout.easy_install.scripts([
       ('certificate_authority',
         'slapos.recipe.erp5.certificate_authority',
@@ -241,7 +238,7 @@ class Recipe(BaseSlapRecipe):
       port=port,
       openoffice_port=openoffice_port,
       openoffice_host=ip,
-      PATH="$PATH:%s" % self.bin_directory
+      PATH=self.bin_directory
     )
     for env_line in self.options['environment'].splitlines():
       env_line = env_line.strip()
@@ -261,7 +258,7 @@ class Recipe(BaseSlapRecipe):
       'slapos.recipe.librecipe.execute',
       'execute_with_signal_translation')], self.ws,
       sys.executable, self.wrapper_directory,
-      arguments=[self.options['ooo_paster'].strip(), 'serve', config_file]))
+      arguments=[self.options['cloudooo_paster'].strip(), 'serve', config_file]))
     return {
       name + '_conf': config_file,
       name + '_port': conversion_server_dict['port'],
