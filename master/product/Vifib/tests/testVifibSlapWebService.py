@@ -8502,6 +8502,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_person_request_new_certificate(self):
     """Checks that Person is capable to ask for new certificate"""
+    # XXX: Will be obsoleted by Products.ERP5.tests.testCertificateAuthority
     self.login()
     self.portal.portal_certificate_authority._checkCertificateAuthority()
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
@@ -8513,6 +8514,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def test_person_request_revoke_certificate(self):
     """Chekcs that Person is capable to ask for revocation of certificate"""
+    # XXX: Will be obsoleted by Products.ERP5.tests.testCertificateAuthority
     self.login()
     self.portal.portal_certificate_authority._checkCertificateAuthority()
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
@@ -8526,6 +8528,7 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_person_request_new_certificate_twice(self):
     """Checks that if Person asks twice for a certificate the next call
        fails"""
+    # XXX: Will be obsoleted by Products.ERP5.tests.testCertificateAuthority
     self.login()
     self.portal.portal_certificate_authority._checkCertificateAuthority()
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
@@ -8539,6 +8542,7 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_person_request_certificate_for_another_person(self):
     """Checks that if Person tries to request ceritifcate for someone else it
     will fail"""
+    # XXX: Will be obsoleted by Products.ERP5.tests.testCertificateAuthority
     from AccessControl import Unauthorized
     self.login()
     self.portal.portal_certificate_authority._checkCertificateAuthority()
@@ -8551,6 +8555,7 @@ class TestVifibSlapWebService(testVifibMixin):
   def test_person_request_revoke_certificate_for_another_person(self):
     """Checks that if Person tries to request ceritifcate for someone else it
     will fail"""
+    # XXX: Will be obsoleted by Products.ERP5.tests.testCertificateAuthority
     from AccessControl import Unauthorized
     self.login()
     self.portal.portal_certificate_authority._checkCertificateAuthority()
