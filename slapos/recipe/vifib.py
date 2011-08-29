@@ -34,58 +34,6 @@ class Recipe(slapos.recipe.erp5.Recipe):
 
   default_bt5_list = []
 
-  def installKeyAuthorisationApache(self, ip, port, backend, key, certificate,
-      ca_conf, key_auth_path='/erp5/portal_slap'):
-    ssl_template = """SSLEngine on
-SSLVerifyClient require
-RequestHeader set REMOTE_USER %%{SSL_CLIENT_S_DN_CN}s
-SSLCertificateFile %(key_auth_certificate)s
-SSLCertificateKeyFile %(key_auth_key)s
-SSLCACertificateFile %(ca_certificate)s
-SSLCARevocationPath %(ca_crl)s"""
-    apache_conf = self._getApacheConfigurationDict('key_auth_apache', ip, port)
-    apache_conf['ssl_snippet'] = ssl_template % dict(
-        key_auth_certificate=certificate,
-        key_auth_key=key,
-        ca_certificate=ca_conf['ca_certificate'],
-        ca_crl=ca_conf['ca_crl']
-        )
-    prefix = 'ssl_key_auth_apache'
-    rewrite_rule_template = \
-      "RewriteRule (.*) http://%(backend)s%(key_auth_path)s$1 [L,P]"
-    path_template = pkg_resources.resource_string('slapos.recipe.erp5',
-      'template/apache.zope.conf.path.in')
-    path = path_template % dict(path='/')
-    d = dict(
-          path=path,
-          backend=backend,
-          backend_path='/',
-          port=apache_conf['port'],
-          vhname=path.replace('/', ''),
-          key_auth_path=key_auth_path,
-    )
-    rewrite_rule = rewrite_rule_template % d
-    apache_conf.update(**dict(
-      path_enable=path,
-      rewrite_rule=rewrite_rule
-    ))
-    apache_config_file = self.createConfigurationFile(prefix + '.conf',
-        pkg_resources.resource_string('slapos.recipe.erp5',
-          'template/apache.zope.conf.in') % apache_conf)
-    self.path_list.append(apache_config_file)
-    self.path_list.extend(zc.buildout.easy_install.scripts([(
-      'key_auth_apache',
-        'slapos.recipe.erp5.apache', 'runApache')], self.ws,
-          sys.executable, self.wrapper_directory, arguments=[
-            dict(
-              required_path_list=[certificate, key, ca_conf['ca_certificate'],
-                ca_conf['ca_crl']],
-              binary=self.options['httpd_binary'],
-              config=apache_config_file
-            )
-          ]))
-    return 'https://%(ip)s:%(port)s' % apache_conf
-
   def _getZeoClusterDict(self):
     site_path = '/erp5/'
     return {
@@ -172,9 +120,9 @@ SSLCARevocationPath %(ca_crl)s"""
 
     key_auth_key, key_auth_certificate = self.requestCertificate(
         'Key Based Access')
-    apache_keyauth = self.installKeyAuthorisationApache(
-        self.getLocalIPv4Address(), 15500, service_haproxy, key_auth_key,
-        key_auth_certificate, ca_conf, key_auth_path=self.key_auth_path)
+    apache_keyauth = self.installKeyAuthorisationApache(False, 15500,
+        service_haproxy, key_auth_key, key_auth_certificate, ca_conf,
+        key_auth_path=self.key_auth_path)
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
     kumo_conf = self.installKumo(self.getLocalIPv4Address())

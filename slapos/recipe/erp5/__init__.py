@@ -74,10 +74,11 @@ class Recipe(BaseSlapRecipe):
 
     if self.parameter_dict.get("slap_software_type", "").lower() == "cluster":
       # Site access is done by HAProxy
-      zope_access, site_access = self.installZopeCluster()
+      zope_access, site_access, key_access = self.installZopeCluster(ca_conf)
     else:
       zope_access = self.installZopeStandalone()
       site_access = zope_access
+      key_access = None
 
     key, certificate = self.requestCertificate('Login Based Access')
     apache_conf = dict(
@@ -120,6 +121,8 @@ class Recipe(BaseSlapRecipe):
       memcached_url=memcached_conf['memcached_url'],
       kumo_url=kumo_conf['kumo_address']
     ))
+    if key_access is not None:
+      connection_dict['key_access'] = key_access
     self.setConnectionDict(connection_dict)
     return self.path_list
 
@@ -144,7 +147,66 @@ class Recipe(BaseSlapRecipe):
             with_timerservice=True,
             thread_amount=thread_amount_per_zope)
 
-  def installZopeCluster(self):
+  def installKeyAuthorisationApache(self, ipv6, port, backend, key, certificate,
+      ca_conf, key_auth_path='/'):
+    if ipv6:
+      ip = self.getGlobalIPv6Address()
+    else:
+      ip = self.getLocalIPv4Address()
+    ssl_template = """SSLEngine on
+SSLVerifyClient require
+RequestHeader set REMOTE_USER %%{SSL_CLIENT_S_DN_CN}s
+SSLCertificateFile %(key_auth_certificate)s
+SSLCertificateKeyFile %(key_auth_key)s
+SSLCACertificateFile %(ca_certificate)s
+SSLCARevocationPath %(ca_crl)s"""
+    apache_conf = self._getApacheConfigurationDict('key_auth_apache', ip, port)
+    apache_conf['ssl_snippet'] = ssl_template % dict(
+        key_auth_certificate=certificate,
+        key_auth_key=key,
+        ca_certificate=ca_conf['ca_certificate'],
+        ca_crl=ca_conf['ca_crl']
+        )
+    prefix = 'ssl_key_auth_apache'
+    rewrite_rule_template = \
+      "RewriteRule (.*) http://%(backend)s%(key_auth_path)s$1 [L,P]"
+    path_template = pkg_resources.resource_string('slapos.recipe.erp5',
+      'template/apache.zope.conf.path.in')
+    path = path_template % dict(path='/')
+    d = dict(
+          path=path,
+          backend=backend,
+          backend_path='/',
+          port=apache_conf['port'],
+          vhname=path.replace('/', ''),
+          key_auth_path=key_auth_path,
+    )
+    rewrite_rule = rewrite_rule_template % d
+    apache_conf.update(**dict(
+      path_enable=path,
+      rewrite_rule=rewrite_rule
+    ))
+    apache_config_file = self.createConfigurationFile(prefix + '.conf',
+        pkg_resources.resource_string('slapos.recipe.erp5',
+          'template/apache.zope.conf.in') % apache_conf)
+    self.path_list.append(apache_config_file)
+    self.path_list.extend(zc.buildout.easy_install.scripts([(
+      'key_auth_apache',
+        'slapos.recipe.erp5.apache', 'runApache')], self.ws,
+          sys.executable, self.wrapper_directory, arguments=[
+            dict(
+              required_path_list=[certificate, key, ca_conf['ca_certificate'],
+                ca_conf['ca_crl']],
+              binary=self.options['httpd_binary'],
+              config=apache_config_file
+            )
+          ]))
+    if ipv6:
+      return 'https://[%(ip)s:%(port)s]' % apache_conf
+    else:
+      return 'https://%(ip)s:%(port)s' % apache_conf
+
+  def installZopeCluster(self, ca_conf=None):
     """ Install ERP5 using ZEO Cluster
     """
     site_check_path = '/%s/getId' % self.site_id
@@ -156,6 +218,9 @@ class Recipe(BaseSlapRecipe):
 
     user_node_amount = int(self.options.get(
                    "cluster_user_node_amount", 2))
+
+    key_auth_node_amount = int(self.options.get(
+                   "key_auth_node_amount", 0))
 
     ip = self.getLocalIPv4Address()
     storage_dict = self._requestZeoFileStorage('Zeo Server 1', 'main')
@@ -210,11 +275,28 @@ class Recipe(BaseSlapRecipe):
     login_haproxy = self.installHaproxy(ip, 15001, 'login',
                                site_check_path, login_url_list)
 
+    key_access = None
+    if key_auth_node_amount > 0:
+      service_url_list = []
+      for i in range(key_auth_node_amount):
+        zope_port += 1
+        service_url_list.append(self.installZope(ip, zope_port,
+          'zope_service_%s' % i, with_timerservice=False,
+          zodb_configuration_string=zodb_configuration_string,
+          tidstorage_config=tidstorage_config))
+      service_haproxy = self.installHaproxy(ip, 15000, 'service',
+          site_check_path, service_url_list)
+
+      key_auth_key, key_auth_certificate = self.requestCertificate(
+          'Key Based Access')
+      key_access = self.installKeyAuthorisationApache(True, 15500,
+          service_haproxy, key_auth_key, key_auth_certificate, ca_conf)
+
     self.installTidStorage(tidstorage_config['host'],
                            tidstorage_config['port'],
             known_tid_storage_identifier_dict, 'http://' + login_haproxy)
 
-    return login_url_list[-1], login_haproxy
+    return login_url_list[-1], login_haproxy, key_access
 
   def _requestZeoFileStorage(self, server_name, storage_name):
     """Local, slap.request compatible, call to ask for filestorage on Zeo
