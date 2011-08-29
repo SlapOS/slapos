@@ -197,12 +197,6 @@ SSLCARevocationPath %(ca_crl)s"""
       kumo_url=kumo_conf['kumo_address'],
       conversion_server_url='%(conversion_server_ip)s:%(conversion_server_port)s' %
         conversion_server_conf,
-      # openssl binary might be removed, as soon as CP environment will be
-      # fully controlled
-      openssl_binary=self.options['openssl_binary'],
-      # As soon as there would be Vifib ERP5 configuration and possibility to
-      # call it over the network this can be removed
-      certificate_authority_path=ca_conf['certificate_authority_path'],
       # as installERP5Site is not trusted (yet) and this recipe is production
       # ready expose more information
       mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
@@ -256,12 +250,6 @@ SSLCARevocationPath %(ca_crl)s"""
       kumo_url=kumo_conf['kumo_address'],
       conversion_server_url='%(conversion_server_ip)s:%(conversion_server_port)s' %
         conversion_server_conf,
-      # openssl binary might be removed, as soon as CP environment will be
-      # fully controlled
-      openssl_binary=self.options['openssl_binary'],
-      # As soon as there would be Vifib ERP5 configuration and possibility to
-      # call it over the network this can be removed
-      certificate_authority_path=ca_conf['certificate_authority_path'],
       # as installERP5Site is not trusted (yet) and this recipe is production
       # ready expose more information
       mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
