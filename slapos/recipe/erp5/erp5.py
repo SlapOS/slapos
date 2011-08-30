@@ -330,7 +330,7 @@ class ERP5Updater(object):
   def run(self):
     """ Keep running until kill"""
     while 1:
-      #time.sleep(self.short_sleeping_time)
+      time.sleep(self.short_sleeping_time)
       if not self.updateERP5Site():
         self.loadSystemSignatureDict()
         if self._hasFailureActivity():
