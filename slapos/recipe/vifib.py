@@ -161,7 +161,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
     user, password = self.installERP5()
     zodb_dir = os.path.join(self.data_root_directory, 'zodb')
     self._createDirectory(zodb_dir)
-    zodb_root_path = os.path.join(zodb_dir, 'root.fs')
+    zodb_root_path = os.path.join(zodb_dir, 'main.fs')
     ip = self.getLocalIPv4Address()
     zope_port = '18080'
     zope_access = self.installZope(ip, zope_port, 'zope_development',

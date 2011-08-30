@@ -131,7 +131,7 @@ class Recipe(BaseSlapRecipe):
     """
     zodb_dir = os.path.join(self.data_root_directory, 'zodb')
     self._createDirectory(zodb_dir)
-    zodb_root_path = os.path.join(zodb_dir, 'root.fs')
+    zodb_root_path = os.path.join(zodb_dir, 'main.fs')
 
     thread_amount_per_zope = int(self.options.get(
                                  'single_zope_thread_amount', 4))
