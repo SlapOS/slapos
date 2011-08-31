@@ -1,10 +1,11 @@
 Changes
 =======
 
-0.14 (unreleased)
+0.14 (2011-08-31)
 -----------------
 
- * No changes yet.
+ * slapgrid: Implement SSL based authentication to shadir and shacache.
+   [Łukasz Nowak]
 
 0.13 (2011-08-25)
 -----------------
