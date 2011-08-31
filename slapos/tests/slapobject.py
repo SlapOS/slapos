@@ -3,8 +3,6 @@ from slapos.grid import utils
 from slapos.tests.slapgrid import BasicMixin
 import os
 import unittest
-import tempfile
-import sys
 
 
 class FakeCallAndRead:
@@ -31,6 +29,10 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     self.signature_private_key_file = '/signature/private/key_file'
     self.upload_cache_url = 'http://example.com/uploadcache'
     self.upload_dir_url = 'http://example.com/uploaddir'
+    self.shacache_cert_file = '/path/to/shacache/cert/file'
+    self.shacache_key_file = '/path/to/shacache/key/file'
+    self.shadir_cert_file = '/path/to/shadir/cert/file'
+    self.shadir_key_file = '/path/to/shadir/key/file'
 
   def tearDown(self):
     BasicMixin.tearDown(self)
@@ -48,7 +50,11 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
             buildout=self.buildout,
             signature_private_key_file='/signature/private/key_file',
             upload_cache_url='http://example.com/uploadcache',
-            upload_dir_url='http://example.com/uploaddir')
+            upload_dir_url='http://example.com/uploaddir',
+            shacache_cert_file=self.shacache_cert_file,
+            shacache_key_file=self.shacache_key_file,
+            shadir_cert_file=self.shadir_cert_file,
+            shadir_key_file=self.shadir_key_file)
 
     software.install()
 
@@ -60,6 +66,14 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     self.assertTrue('networkcache:upload-cache-url=%s' % self.upload_cache_url
                     in command_list)
     self.assertTrue('networkcache:upload-dir-url=%s' % self.upload_dir_url
+                    in command_list)
+    self.assertTrue('networkcache:shacache-cert-file=%s' % self.shacache_cert_file
+                    in command_list)
+    self.assertTrue('networkcache:shacache-key-file=%s' % self.shacache_key_file
+                    in command_list)
+    self.assertTrue('networkcache:shadir-cert-file=%s' % self.shadir_cert_file
+                    in command_list)
+    self.assertTrue('networkcache:shadir-key-file=%s' % self.shadir_key_file
                     in command_list)
 
   def test_software_install_without_networkcache(self):

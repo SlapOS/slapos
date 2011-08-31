@@ -29,7 +29,6 @@ import os
 import shutil
 import subprocess
 import pkg_resources
-import shutil
 import stat
 import tempfile
 from supervisor import xmlrpc
@@ -47,7 +46,8 @@ class Software(object):
   """This class is responsible of installing a software release"""
   def __init__(self, url, software_root, console, buildout,
       signature_private_key_file=None, upload_cache_url=None,
-      upload_dir_url=None):
+      upload_dir_url=None, shacache_cert_file=None, shacache_key_file=None,
+      shadir_cert_file=None, shadir_key_file=None):
     """Initialisation of class parameters
     """
     self.url = url
@@ -60,6 +60,10 @@ class Software(object):
     self.signature_private_key_file = signature_private_key_file
     self.upload_cache_url = upload_cache_url
     self.upload_dir_url = upload_dir_url
+    self.shacache_cert_file = shacache_cert_file
+    self.shacache_key_file = shacache_key_file
+    self.shadir_cert_file = shadir_cert_file
+    self.shadir_key_file = shadir_key_file
 
   def install(self):
     """ Fetches buildout configuration from the server, run buildout with
@@ -90,7 +94,12 @@ class Software(object):
       for  buildout_option, value in (
          ('%ssignature-private-key-file=%s', self.signature_private_key_file),
          ('%supload-cache-url=%s', self.upload_cache_url),
-         ('%supload-dir-url=%s', self.upload_dir_url)):
+         ('%supload-dir-url=%s', self.upload_dir_url),
+         ('%sshacache-cert-file=%s', self.shacache_cert_file),
+         ('%sshacache-key-file=%s', self.shacache_key_file),
+         ('%sshadir-cert-file=%s', self.shadir_cert_file),
+         ('%sshadir-key-file=%s', self.shadir_key_file),
+         ):
         if value:
           buildout_parameter_list.append( \
               buildout_option % ('networkcache:', value))

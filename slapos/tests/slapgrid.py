@@ -315,7 +315,7 @@ chmod 755 etc/run/wrapper
       if os.path.getsize(wrapper_log) > 0:
         break
       time.sleep(0.2)
-    last_size = os.path.getsize(wrapper_log)
+    os.path.getsize(wrapper_log)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])

@@ -180,6 +180,10 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   if signature_private_key_file:
     mandatory_file_list.append(signature_private_key_file)
 
+  for k in ['shacache-cert-file', 'shacache-key-file', 'shadir-cert-file',
+      'shadir-key-file']:
+    mandatory_file_list.append(option_dict.get(k, None))
+
   for f in mandatory_file_list:
     if f is not None:
       if not os.path.exists(f):
@@ -217,7 +221,12 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             upload_dir_url=option_dict.get('upload-dir-url', None),
             console=option_dict['console'],
             buildout=option_dict.get('buildout'),
-            promise_timeout=option_dict['promise_timeout']),
+            promise_timeout=option_dict['promise_timeout'],
+            shacache_cert_file=option_dict.get('shacache-cert-file', None),
+            shacache_key_file=option_dict.get('shacache-key-file', None),
+            shadir_cert_file=option_dict.get('shadir-cert-file', None),
+            shadir_key_file=option_dict.get('shadir-key-file', None),
+            ),
           option_dict])
 
 
@@ -290,7 +299,11 @@ class Slapgrid(object):
                master_ca_file=None,
                certificate_repository_path=None,
                console=False,
-               promise_timeout=3):
+               promise_timeout=3,
+               shacache_cert_file=None,
+               shacache_key_file=None,
+               shadir_cert_file=None,
+               shadir_key_file=None):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
     self.software_root = os.path.abspath(software_root)
@@ -307,6 +320,10 @@ class Slapgrid(object):
     self.signature_private_key_file = signature_private_key_file
     self.upload_cache_url = upload_cache_url
     self.upload_dir_url = upload_dir_url
+    self.shacache_cert_file = shacache_cert_file
+    self.shacache_key_file = shacache_key_file
+    self.shadir_cert_file = shadir_cert_file
+    self.shadir_key_file = shadir_key_file
     # Configures logger
     self.logger = logging.getLogger('Slapgrid')
     # Creates objects from slap module
@@ -382,7 +399,11 @@ class Slapgrid(object):
             console=self.console, buildout=self.buildout,
             signature_private_key_file=self.signature_private_key_file,
             upload_cache_url=self.upload_cache_url,
-            upload_dir_url=self.upload_dir_url).install()
+            upload_dir_url=self.upload_dir_url,
+            shacache_cert_file=self.shacache_cert_file,
+            shacache_key_file=self.shacache_key_file,
+            shadir_cert_file=self.shadir_cert_file,
+            shadir_key_file=self.shadir_key_file).install()
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         software_release.error(exception)
