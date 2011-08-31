@@ -3,5 +3,8 @@
   <role id='ERP5TypeTestCase'>
    <item>Owner</item>
   </role>
+  <role id='PROD-MAN'>
+   <item>Auditor</item>
+  </role>
  </local_roles>
 </local_roles_item>

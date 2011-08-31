@@ -1,3 +1,6 @@
+accounting_module
+business_process_module
+business_process_module/erp5_default_business_process
 computer_module
 computer_module/test_computer
 credential_update_module
@@ -13,7 +16,6 @@ person_module/test_hr_admin
 person_module/test_updated_vifib_user
 person_module/test_vifib_admin
 person_module/test_vifib_customer
-person_module/test_vifib_customer_a
 person_module/test_vifib_developer
 person_module/test_vifib_member
 person_module/test_vifib_user_admin

@@ -60,6 +60,8 @@ except ImportError:
 
 from zLOG import LOG, INFO
 import xml_marshaller
+import StringIO
+import pkg_resources
 from Products.Vifib.Conduit import VifibConduit
 class SoftwareInstanceNotReady(Exception):
   pass
@@ -282,23 +284,28 @@ class SlapTool(BaseTool):
     'useComputer')
   def useComputer(self, computer_id, use_string):
     """Entry point to reporting usage of a computer."""
-    #computer_document = self._getComputerDocument(computer_id)
-    # easy way to start to store usage messages sent by client in related Web
-    # Page text_content...
+    #We retrieve XSD model
+    try:
+      computer_consumption_model = \
+        pkg_resources.resource_string(
+          'slapos.slap',
+          'doc/computer_consumption.xsd')
+    except IOError:
+      computer_consumption_model = \
+        pkg_resources.resource_string(
+          __name__,
+          '../../../../slapos/slap/doc/computer_consumption.xsd')
 
-    #self._reportComputerUsage(computer_document, use_string)
-    #LOG("check-1", 0, "%s" % use_string)
-    unmarshalled_usage = xml_marshaller.xml_marshaller.loads(use_string)
-    #res = unmarshalled_usage.computer_partition_usage_list
+    if self._validateXML(use_string, computer_consumption_model):
+      vifib_conduit_instance = VifibConduit.VifibConduit()
 
-    #LOG("check-2", 0, "%s" % res[0].usage)
-    vifib_conduit_instance = VifibConduit.VifibConduit()
-    #sub_object = vifib_conduit_instance.addNode(object=self,
-    vifib_conduit_instance.addNode(object=self,
-                xml=unmarshalled_usage.computer_partition_usage_list[0].usage)
-
-    #sub_object = vifib_conduit_instance.addNode(object=self, xml=res[0].usage)
-    #self._reportComputerUsage(computer_document, use_string)
+      #We create the SPL
+      vifib_conduit_instance.addNode(
+        object=self, 
+        xml=use_string, 
+        computer_id=computer_id)
+    else:
+      raise NotImplementedError("XML file sent by the node is not valid !")
 
     return 'Content properly posted.'
 
@@ -344,6 +351,28 @@ class SlapTool(BaseTool):
   ####################################################
   # Internal methods
   ####################################################
+
+  def _validateXML(self, to_be_validated, xsd_model):
+    """Will validate the xml file"""
+    #We parse the XSD model
+    xsd_model = StringIO.StringIO(xsd_model)
+    xmlschema_doc = etree.parse(xsd_model)
+    xmlschema = etree.XMLSchema(xmlschema_doc)
+
+    string_to_validate = StringIO.StringIO(to_be_validated)
+
+    try:
+      document = etree.parse(string_to_validate)
+    except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
+      LOG('SlapTool::_validateXML', INFO, 
+        'Failed to parse this XML reports : %s\n%s' % \
+          (to_be_validated, _formatXMLError(e)))
+      return False
+
+    if xmlschema.validate(document):
+      return True
+
+    return False
 
   def _instanceXmlToDict(self, xml):
     result_dict = {}

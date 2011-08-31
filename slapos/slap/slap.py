@@ -212,15 +212,12 @@ class Computer(SlapDocument):
   def getComputerPartitionList(self):
     return [x for x in self._computer_partition_list if x._need_modification]
 
-  def reportUsage(self, computer_partition_list):
-    if computer_partition_list == []:
+  def reportUsage(self, computer_usage):
+    if computer_usage == "":
       return
-    computer = Computer(self._computer_id)
-    computer.computer_partition_usage_list = computer_partition_list
-    marshalled_slap_usage = xml_marshaller.dumps(computer)
     self._connection_helper.POST('/useComputer', {
       'computer_id': self._computer_id,
-      'use_string': marshalled_slap_usage})
+      'use_string': computer_usage})
 
   def updateConfiguration(self, xml):
     self._connection_helper.POST(

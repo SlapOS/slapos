@@ -110,6 +110,8 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data_category',
       'vifib_data_web',
       'vifib_erp5',
+      'vifib_test',
+      'vifib_invoicing',
     ]
     return result
 

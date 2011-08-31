@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+#We extract informations from SPL\n
+packing_list_dict = {\'packing_list_title\': context.getTitle()}\n
+\n
+#We extract informations from SPLL\n
+sale_packing_list_line_list = [line for line in context.objectValues(\n
+                                       portal_type=\'Sale Packing List Line\')\n
+]\n
+\n
+xml_head = ""\n
+xml_movements = ""\n
+xml_foot = ""\n
+\n
+xml_head = "<?xml version=\'1.0\' encoding=\'utf-8\'?>" \\\n
+           "<journal>" \\\n
+           "<transaction type=\\"Sale Packing List\\">" \\\n
+           "<title>%(packing_list_title)s</title>" \\\n
+           "<start_date></start_date>" \\\n
+           "<stop_date></stop_date>" \\\n
+           "<reference></reference>" \\\n
+           "<currency></currency>" \\\n
+           "<payment_mode></payment_mode>" \\\n
+           "<category></category>" \\\n
+           "<arrow type=\\"Administration\\">" \\\n
+           "<source></source>" \\\n
+           "<destination></destination>" \\\n
+           "</arrow>" \\\n
+           % packing_list_dict\n
+\n
+for sale_packing_list_line in sale_packing_list_line_list:\n
+\n
+    packing_list_line_dict = {\'packing_list_line_title\': sale_packing_list_line.getTitle(),\n
+                              \'packing_list_line_resource\': sale_packing_list_line.getResourceTitle(),\n
+                              \'packing_list_line_reference\': sale_packing_list_line.getAggregateValue().getTitle(),\n
+                              \'packing_list_line_quantity\': sale_packing_list_line.getQuantity(),\n
+                             }\n
+\n
+    xml_movements += "<movement>" \\\n
+                     "<resource>%(packing_list_line_resource)s</resource>" \\\n
+                     "<title>%(packing_list_line_title)s</title>" \\\n
+                     "<reference>%(packing_list_line_reference)s</reference>" \\\n
+                     "<quantity>%(packing_list_line_quantity)s</quantity>" \\\n
+                     "<price>0.00</price>" \\\n
+                     "<VAT>None</VAT>" \\\n
+                     "<category>None</category>" \\\n
+                     "</movement>" \\\n
+                     % packing_list_line_dict\n
+\n
+xml_foot = "</transaction>" \\\n
+           "</journal>"\n
+\n
+xml = xml_head + xml_movements + xml_foot\n
+return xml\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>PackingList_generateUsageReport</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

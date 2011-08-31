@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<!-- Define the XML Schema of a consumption of a partition -->
+  <xs:element name="consumption">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="movement" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="resource" type="xs:string"/>
+              <xs:element name="title" type="xs:string" minOccurs="0"/>
+              <xs:element name="reference" type="xs:string" minOccurs="0"/>
+              <xs:element name="quantity" type="xs:float"/>
+              <xs:element name="price" type="xs:float"/>
+              <xs:element name="VAT" type="xs:string"/>
+              <xs:element name="category" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema> 

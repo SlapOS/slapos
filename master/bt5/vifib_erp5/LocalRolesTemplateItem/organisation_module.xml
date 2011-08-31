@@ -10,6 +10,9 @@
   <role id='IS-SYSAD'>
    <item>Auditor</item>
   </role>
+  <role id='PROD-MAN'>
+   <item>Auditor</item>
+  </role>
   <role id='admin'>
    <item>Owner</item>
   </role>

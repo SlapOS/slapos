@@ -1,0 +1,6 @@
+portal_deliveries/vifib_sale_invoice_builder
+portal_deliveries/vifib_sale_invoice_builder/**
+portal_rules/new_invoice_simulation_rule
+portal_rules/new_invoice_simulation_rule/**
+portal_solvers/Consolidating Sale Invoice Line
+portal_solvers/Consolidating Sale Invoice Line/**

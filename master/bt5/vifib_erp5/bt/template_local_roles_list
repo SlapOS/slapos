@@ -1,5 +1,9 @@
+accounting_module
+business_process_module
+business_process_module/erp5_default_business_process
 computer_module
 computer_module/test_computer
+credential_update_module
 currency_module
 currency_module/EUR
 hosting_subscription_module
@@ -12,7 +16,6 @@ person_module/test_hr_admin
 person_module/test_updated_vifib_user
 person_module/test_vifib_admin
 person_module/test_vifib_customer
-person_module/test_vifib_customer_a
 person_module/test_vifib_developer
 person_module/test_vifib_member
 person_module/test_vifib_user_admin
@@ -29,4 +32,3 @@ software_product_module
 software_product_module/test_software_product
 software_release_module
 software_release_module/test_software_release
-credential_update_module

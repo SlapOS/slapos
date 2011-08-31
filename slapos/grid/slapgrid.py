@@ -53,6 +53,7 @@ from utils import dropPrivileges
 from utils import SlapPopen
 from svcbackend import launchSupervisord
 import tempfile
+from time import strftime
 import StringIO
 from lxml import etree
 
@@ -531,21 +532,84 @@ class Slapgrid(object):
     logger.info("Finished computer partitions...")
     return clean_run
 
-  def validateXML(self, to_be_validated):
-    """Will validate the xml file"""
+  def validateXML(self, to_be_validated, xsd_model):
+    """Validates a given xml file"""
 
-    #We get the xsd model
-    fed = open('choose_the_path', 'r')
-    model = StringIO.StringIO(fed.read())
-    xmlschema_doc = etree.parse(model)
+    logger = logging.getLogger('XMLValidating')
+
+    #We retrieve the xsd model
+    xsd_model = StringIO.StringIO(xsd_model)
+    xmlschema_doc = etree.parse(xsd_model)
     xmlschema = etree.XMLSchema(xmlschema_doc)
 
     string_to_validate = StringIO.StringIO(to_be_validated)
-    document = etree.parse(string_to_validate)
+
+    try:
+      document = etree.parse(string_to_validate)
+    except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
+      logger.info('Failed to parse this XML report :  %s\n%s' % \
+        (to_be_validated, _formatXMLError(e)))
+      logger.error(_formatXMLError(e))
+      return False
+
     if xmlschema.validate(document):
       return True
 
     return False
+
+  def asXML(self, computer_partition_usage_list):
+    """Generates a XML report from computer partition usage list
+    """
+    xml_head = ""
+    xml_movements = ""
+    xml_foot = ""
+
+    xml_head = "<?xml version='1.0' encoding='utf-8'?>" \
+               "<journal>" \
+               "<transaction type=\"Sale Packing List\">" \
+               "<title>Resource consumptions</title>" \
+               "<start_date></start_date>" \
+               "<stop_date>%s</stop_date>" \
+               "<reference>%s</reference>" \
+               "<currency></currency>" \
+               "<payment_mode></payment_mode>" \
+               "<category></category>" \
+               "<arrow type=\"Administration\">" \
+               "<source></source>" \
+               "<destination></destination>" \
+               "</arrow>" \
+               % (strftime("%Y-%m-%d at %H:%M:%S"), 
+                  self.computer_id)
+
+    for computer_partition_usage in computer_partition_usage_list:
+      try:
+        usage_string = StringIO.StringIO(computer_partition_usage.usage)
+        root = etree.parse(usage_string)
+      except UnicodeError:
+        logger.info("Failed to read %s." % (computer_partition_usage.usage))
+        logger.error(UnicodeError)
+        raise "Failed to read %s." % (computer_partition_usage.usage)
+      except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
+        logger.info("Failed to parse %s." % (usage_string))
+        logger.error(e)
+        raise _formatXMLError(e)
+      except Exception:
+        raise "Failed to generate XML report."
+
+      for movement in root.findall('movement'):
+        xml_movements += "<movement>"
+        for children in movement.getchildren():
+          if children.tag == "reference":
+            xml_movements += "<%s>%s</%s>" % (children.tag, computer_partition_usage.getId(), children.tag)
+          else:
+            xml_movements += "<%s>%s</%s>" % (children.tag, children.text, children.tag)
+        xml_movements += "</movement>"  
+
+    xml_foot = "</transaction>" \
+               "</journal>"
+
+    xml = xml_head + xml_movements + xml_foot
+    return xml
 
   def agregateAndSendUsage(self):
     """Will agregate usage from each Computer Partition.
@@ -554,6 +618,29 @@ class Slapgrid(object):
     computer_partition_usage_list = []
     logger = logging.getLogger('UsageReporting')
     logger.info("Aggregating and sending usage reports...")
+
+    #We retrieve XSD models
+    try:
+      computer_consumption_model = \
+        pkg_resources.resource_string(
+          'slapos.slap',
+          'doc/computer_consumption.xsd')
+    except IOError:
+      computer_consumption_model = \
+        pkg_resources.resource_string(
+          __name__, 
+          '../../../../slapos/slap/doc/computer_consumption.xsd')
+
+    try:
+      partition_consumption_model = \
+        pkg_resources.resource_string(
+          'slapos.slap',
+          'doc/partition_consumption.xsd')
+    except IOError:
+      partition_consumption_model = \
+        pkg_resources.resource_string(
+          __name__, 
+          '../../../../slapos/slap/doc/partition_consumption.xsd')
 
     clean_run = True
     #We loop on the different computer partitions
@@ -617,6 +704,7 @@ class Slapgrid(object):
     #Now we loop through the different computer partitions to ggetId()et reports
     report_usage_issue_cp_list = []
     for computer_partition in slap_computer_usage.getComputerPartitionList():
+      filename_delete_list = []
       computer_partition_id = computer_partition.getId()
       instance_path = os.path.join(self.instance_root, computer_partition_id)
       dir_reports = os.path.join(instance_path, 'var', 'xml_report')
@@ -634,27 +722,22 @@ class Slapgrid(object):
         file_path = os.path.join(dir_reports, filename)
         if os.path.exists(file_path):
           usage_file = open(file_path, 'r')
-          usage += usage_file.read()
+          usage = usage_file.read()
           usage_file.close()
 
-          computer_partition_usage = self.slap.registerComputerPartition(
-                  self.computer_id, computer_partition_id)
-          computer_partition_usage.setUsage(usage)
-          computer_partition_usage_list.append(computer_partition_usage)
+          #We check the validity of xml content of each reports
+          if not self.validateXML(usage, partition_consumption_model):
+            logger.info('WARNING: The XML file %s generated by slapreport is not valid - ' \
+                            'This report is left as is at %s where you can inspect what went wrong ' % (filename, dir_reports))
+            #Warn the SlapOS Master that a partition generates corrupted xml report
+          else:
+            computer_partition_usage = self.slap.registerComputerPartition(
+                    self.computer_id, computer_partition_id)
+            computer_partition_usage.setUsage(usage)
+            computer_partition_usage_list.append(computer_partition_usage)
+            filename_delete_list.append(filename)
         else:
           logger.debug("Usage report %r not found, ignored" % file_path)
-
-      #-XXX-Here we'll have a "validate_xml" function
-      #if not self.validateXML(usage):
-      ##  logger.debug("WARNING: The file xml %s is not valid " %
-      #       os.path.join(dir_reports, filename))
-      if filename_list:
-        logger.debug("Sending usage informations and terminating for "
-            "partition %s..." % os.path.basename(instance_path))
-        #logger.debug('file %s' % usage)
-      else:
-        logger.debug("No usage file created for partition %s..." \
-                      % os.path.basename(instance_path))
 
         #last_push_date = self.computer.getLastUsagePush()
         #periodicity_timedelta = datetime.timedelta(
@@ -662,8 +745,29 @@ class Slapgrid(object):
         #if periodicity_timedelta + last_push_date < datetime.datetime.today():
         # Pushes informations, if any
 
+      #After sending the aggregated file we remove all the valid xml reports
+      for filename in filename_delete_list:
+        os.remove(os.path.join(dir_reports, filename))
+
+    for computer_partition_usage in computer_partition_usage_list:
+      logger.info('computer_partition_usage_list : %s - %s' % \
+        (computer_partition_usage.usage, computer_partition_usage.getId()))
+
+    #If there is, at least, one report
+    if computer_partition_usage_list != []:
       try:
-        slap_computer_usage.reportUsage(computer_partition_usage_list)
+        #We generate the final XML report with asXML method
+        computer_consumption = self.asXML(computer_partition_usage_list)
+
+        logger.info('Final xml report : %s' % computer_consumption)
+
+        #We test the XML report before sending it
+        if self.validateXML(computer_consumption, computer_consumption_model):
+          logger.info('XML file generated by asXML is valid')
+          slap_computer_usage.reportUsage(computer_consumption)
+        else:
+          logger.info('XML file generated by asXML is not valid !')
+          raise 'XML file generated by asXML is not valid !'
       except Exception:
         computer_partition_id = computer_partition.getId()
         exception = traceback.format_exc()
@@ -672,10 +776,6 @@ class Slapgrid(object):
         logger.info(issue)
         computer_partition.error(issue)
         report_usage_issue_cp_list.append(computer_partition_id)
-
-      #After sending the aggregated file we remove everything in the folder
-      for filename in filename_list:
-        os.remove(os.path.join(dir_reports, filename))
 
     for computer_partition in slap_computer_usage.getComputerPartitionList():
       computer_partition_id = computer_partition.getId()

@@ -1,6 +1,8 @@
+currency_module/EUR
+service_module/cpu_consumption
+service_module/memory_consumption
 service_module/vifib_instance_cleanup
 service_module/vifib_instance_hosting
 service_module/vifib_instance_setup
 service_module/vifib_software_setup
 service_module/vifib_usage_report
-currency_module/EUR

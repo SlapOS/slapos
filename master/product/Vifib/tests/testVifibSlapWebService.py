@@ -84,7 +84,7 @@ def unfakeSlapAuth():
     delattr(HTTPConnection, '_original_request')
 
 
-class TestVifibSlapWebService(testVifibMixin):
+class TestVifibSlapWebServiceMixin(testVifibMixin):
   """
   Check the slap behaviour on ERP5 documents
   """
@@ -919,6 +919,177 @@ class TestVifibSlapWebService(testVifibMixin):
       CheckComputerPartitionAccoutingResourceSalePackingListDelivered \
       Logout \
       '
+
+  prepare_children_a_children_b_sequence_string = \
+      prepare_install_requested_computer_partition_sequence_string + \
+      """
+      LoginDefaultUser
+      SetRootSoftwareInstanceCurrentInstance
+      SelectRequestedReferenceChildrenA
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetChildrenAComputerPartition
+      SelectRequestedReferenceChildrenB
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartitionNotReadyResponse
+      Tic
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetChildrenBComputerPartition
+      Logout
+      """ 
+
+  computer_with_software_release = """
+      CreateComputer
+      Tic
+      CreatePurchasePackingList
+      Tic
+      CreatePurchasePackingListLine
+      Tic
+      SelectNewSoftwareReleaseUri
+      CreateSoftwareRelease
+      Tic \
+      SubmitSoftwareRelease \
+      Tic \
+      CreateSoftwareProduct \
+      Tic \
+      ValidateSoftwareProduct \
+      Tic \
+      SetSoftwareProductToSoftwareRelease \
+      PublishByActionSoftwareRelease \
+      Tic
+      SetPurchasePackingListLineSetupResource
+      SetPurchasePackingListLineAggregate
+      ConfirmPurchasePackingList
+      StopPurchasePackingList
+      Tic
+  """
+
+  requesting_computer_partition_with_software_instance = """
+      SelectNewComputerPartitionReference
+      CreateComputerPartition
+      CreateSalePackingList
+      Tic
+      CreateSalePackingListLine
+      Tic
+      SetSalePackingListLineSetupResource
+      SetSalePackingListLineAggregate
+      ConfirmSalePackingList
+      Tic
+  """
+
+  slave_owner_computer_partition_with_software_instance = """
+      SelectNewComputerPartitionReference
+      CreateComputerPartition
+      SetSoftwareInstanceTitle
+      CreateSalePackingList
+      Tic
+      CreateSalePackingListLine
+      Tic
+      SetSalePackingListLineSetupResource
+      SetSalePackingListLineAggregate
+      ConfirmSalePackingList
+      Tic
+      SetComputerPartitionQuantity
+      Tic
+      SelectCurrentComputerPartitionAsSlaveOwner
+  """
+
+  check_positive_request_shared = """
+      RequestSharedComputerPartitionNotReadyResponse
+      Tic
+      RequestSharedComputerPartition
+      CheckSoftwareInstanceAndRelatedSlavePartition
+      CheckRequestedSoftwareInstanceAndRelatedSlavePartition
+  """
+
+  prepare_two_purchase_packing_list = \
+                  prepare_software_release_purchase_packing_list + '\
+                  LoginDefaultUser \
+                  SetCurrentPurchasePackingListAsA \
+                  StartPurchasePackingList \
+                  StopPurchasePackingList \
+                  Tic \
+                  Logout \
+                  SlapLoginCurrentComputer \
+                  CheckEmptyComputerGetSoftwareReleaseListCall \
+                  SlapLogout ' + \
+                  prepare_software_release_confirmed_packing_list + '\
+                  LoginDefaultUser \
+                  SetCurrentPurchasePackingListAsB \
+                  CheckStoppedPurchasePackingListA \
+                  CheckConfirmedPurchasePackingListB \
+                  Logout'
+
+  prepare_another_computer_sequence_string = """
+    StoreComputerReference
+    LoginTestVifibAdmin
+    CreateComputer
+    Tic
+    Logout
+
+    SlapLoginCurrentComputer
+    FormatComputer
+    Tic
+    SlapLogout""" + prepare_software_release_confirmed_packing_list + """
+
+    LoginTestVifibAdmin
+    RequestSoftwareInstallation
+    Tic
+    Logout
+
+    SlapLoginCurrentComputer
+    ComputerSoftwareReleaseAvailable
+    Tic
+    SlapLogout
+
+    SetRequestedFilterParameterDict
+    RestoreComputerReference
+  """
+
+  prepare_started_slave_instance_sequence_string = \
+      prepare_started_computer_partition_sequence_string + """
+        LoginTestVifibCustomer
+        PersonRequestSlaveInstance
+        SlapLogout
+        LoginDefaultUser
+        ConfirmOrderedSaleOrderActiveSense
+        Tic
+        SlapLogout
+        SlapLoginCurrentComputer
+        SoftwareInstanceAvailable
+        Tic
+        LoginTestVifibCustomer
+        RequestStopSoftwareInstanceFromCurrentComputerPartition
+        Tic
+        SoftwareInstanceStopped
+        Tic
+        StartSoftwareInstanceFromCurrentComputerPartition
+        Tic
+        SoftwareInstanceStarted
+        Tic
+        Logout
+        LoginDefaultUser
+        SetDeliveryLineAmountEqualTwo
+        CheckComputerPartitionInstanceHostingSalePackingListStarted
+        CheckComputerPartitionInstanceSetupSalePackingListStopped
+        Logout
+      """
 
   ########################################
   # Steps
@@ -3193,6 +3364,7 @@ class TestVifibSlapWebService(testVifibMixin):
 
     self._checkSoftwareInstanceAndRelatedPartition(predecessor)
 
+class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
   # slap.initializeConnection
   ########################################
@@ -4085,40 +4257,6 @@ class TestVifibSlapWebService(testVifibMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  prepare_children_a_children_b_sequence_string = \
-      prepare_install_requested_computer_partition_sequence_string + \
-      """
-      LoginDefaultUser
-      SetRootSoftwareInstanceCurrentInstance
-      SelectRequestedReferenceChildrenA
-      SelectEmptyRequestedParameterDict
-      Logout
-
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
-      RequestComputerPartition
-      Tic
-      SlapLogout
-
-      LoginDefaultUser
-      SetChildrenAComputerPartition
-      SelectRequestedReferenceChildrenB
-      SelectEmptyRequestedParameterDict
-      Logout
-
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
-      RequestComputerPartition
-      Tic
-      SlapLogout
-
-      LoginDefaultUser
-      SetChildrenBComputerPartition
-      Logout
-      """
-
   def test_ComputerPartition_request_twiceDifferentParent(self):
     """
     Checks that requesting twice with same arguments from different Computer
@@ -4403,32 +4541,6 @@ class TestVifibSlapWebService(testVifibMixin):
   def stepSetRequestedFilterParameterDict(self, sequence):
     sequence['requested_filter_dict'] = dict(
       computer_guid=sequence['computer_reference'])
-
-  prepare_another_computer_sequence_string = """
-    StoreComputerReference
-    LoginTestVifibAdmin
-    CreateComputer
-    Tic
-    Logout
-
-    SlapLoginCurrentComputer
-    FormatComputer
-    Tic
-    SlapLogout""" + prepare_software_release_confirmed_packing_list + """
-
-    LoginTestVifibAdmin
-    RequestSoftwareInstallation
-    Tic
-    Logout
-
-    SlapLoginCurrentComputer
-    ComputerSoftwareReleaseAvailable
-    Tic
-    SlapLogout
-
-    SetRequestedFilterParameterDict
-    RestoreComputerReference
-  """
 
   def test_ComputerPartition_request_filter_computer_guid(self):
     """
@@ -5198,35 +5310,6 @@ class TestVifibSlapWebService(testVifibMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-
-  prepare_started_slave_instance_sequence_string = \
-      prepare_started_computer_partition_sequence_string + """
-        LoginTestVifibCustomer
-        PersonRequestSlaveInstance
-        SlapLogout
-        LoginDefaultUser
-        ConfirmOrderedSaleOrderActiveSense
-        Tic
-        SlapLogout
-        SlapLoginCurrentComputer
-        SoftwareInstanceAvailable
-        Tic
-        LoginTestVifibCustomer
-        RequestStopSoftwareInstanceFromCurrentComputerPartition
-        Tic
-        SoftwareInstanceStopped
-        Tic
-        StartSoftwareInstanceFromCurrentComputerPartition
-        Tic
-        SoftwareInstanceStarted
-        Tic
-        Logout
-        LoginDefaultUser
-        SetDeliveryLineAmountEqualTwo
-        CheckComputerPartitionInstanceHostingSalePackingListStarted
-        CheckComputerPartitionInstanceSetupSalePackingListStopped
-        Logout
-      """
 
   def test_SlaveInstance_call_destroy_from_SoftwareInstance(self):
     """
@@ -6641,24 +6724,6 @@ class TestVifibSlapWebService(testVifibMixin):
 
   def stepSetDeliveryLineAmountEqualOne(self, sequence):
     sequence.edit(delivery_line_amount=1)
-
-  prepare_two_purchase_packing_list = \
-      prepare_software_release_purchase_packing_list + '\
-      LoginDefaultUser \
-      SetCurrentPurchasePackingListAsA \
-      StartPurchasePackingList \
-      StopPurchasePackingList \
-      Tic \
-      Logout \
-      SlapLoginCurrentComputer \
-      CheckEmptyComputerGetSoftwareReleaseListCall \
-      SlapLogout ' + \
-      prepare_software_release_confirmed_packing_list + '\
-      LoginDefaultUser \
-      SetCurrentPurchasePackingListAsB \
-      CheckStoppedPurchasePackingListA \
-      CheckConfirmedPurchasePackingListB \
-      Logout'
 
   def test_Computer_getSoftwareReleaseList_twoPurchasePackingList(self):
     """
