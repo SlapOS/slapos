@@ -67,11 +67,11 @@ class Recipe(slapos.recipe.erp5.Recipe):
     r = self._requestZeoFileStorage
     s = lambda x: site_path + x
 
-    z1 = lambda x: r('Zeo Server 1', x), None, 5000, '20MB'
-    z2 = lambda x: r('Zeo Server 2', x), None, 5000, '20MB'
-    z3 = lambda x: r('Zeo Server 3', x), None, 5000, '20MB'
-    z4 = lambda x: r('Zeo Server 4', x), None, 5000, '20MB'
-    z5 = lambda x: r('Zeo Server 5', x), None, 5000, '20MB'
+    z1 = lambda x: (r('Zeo Server 1', x), None, 5000, '20MB')
+    z2 = lambda x: (r('Zeo Server 2', x), None, 5000, '20MB')
+    z3 = lambda x: (r('Zeo Server 3', x), None, 5000, '20MB')
+    z4 = lambda x: (r('Zeo Server 4', x), None, 5000, '20MB')
+    z5 = lambda x: (r('Zeo Server 5', x), None, 5000, '20MB')
 
     return {
 
