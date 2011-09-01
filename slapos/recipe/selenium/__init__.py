@@ -45,7 +45,9 @@ class Recipe(BaseSlapRecipe):
 
       self.path_list = []
 
-      xvfb_conf       = self.instaciateXvfb()
+      self.requirements, self.ws = self.egg.working_set()
+      
+      xvfb_conf                  = self.instaciateXvfb()
 
       self.instanciateTestRunner(xvfb_conf['display'])
 
@@ -79,8 +81,8 @@ class Recipe(BaseSlapRecipe):
                                              'template', 'xvfb_run.in'))     
     
       xvfb_runner_path = self.createRunningWrapper("Xvfb",
-                               self.substituteTemplate(xvfb_template_location,
-                                  xvfb_conf))
+                               self.substituteTemplate(xvfb_template_location, 
+                                                       xvfb_conf))
    
       self.path_list.append(xvfb_runner_path)
 
