@@ -11,6 +11,7 @@ Changes
 
  * slapgrid: Implement SSL based authentication to shadir and shacache.
    [Łukasz Nowak]
+ * slapgrid, slap: Fix usage report packing list generation. [Nicolas Godbert]
 
 0.13 (2011-08-25)
 -----------------
