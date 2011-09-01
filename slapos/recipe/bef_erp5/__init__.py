@@ -76,7 +76,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
     return {
 
   # Zeo server 1
-  '/': r('Zeo Server 1', 'main'), s('account_module'), 2000, '400MB'
+  '/': (r('Zeo Server 1', 'main'), s('account_module'), 2000, '400MB'),
   s('portal_activities'): z1('portal_activities'),
   s('task_report_module'): z1('task_report_module'),
   s('video_request_module'): z1('video_request_module'),
@@ -87,7 +87,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
   s('task_module'): z1('task_module'),
 
   # Zeo server 2
-  s('video_module'): r('Zeo Server 2', 'video_module'), None, 2000, '400MB'
+  s('video_module'): (r('Zeo Server 2', 'video_module'), None, 2000, '400MB'),
 
   # Zeo server 3
   s('event_module'): z3('event_module'),
@@ -98,8 +98,8 @@ class Recipe(slapos.recipe.erp5.Recipe):
   s('organisation_module'): z4('organisation_module'),
 
   # Zeo server 5
-  s('scanned_document_module'): r('Zeo Server 5', 'scanned_document_module'), 
-                                None, 2000, '400MB'
+  s('scanned_document_module'): (r('Zeo Server 5', 'scanned_document_module'), 
+                                None, 2000, '400MB'),
   s('item_module'): z5('item_module'),
   s('document_module'): z5('document_module'),
   s('image_module'): z5('image_module'),
