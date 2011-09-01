@@ -134,7 +134,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
     zodb_configuration_list = []
     known_tid_storage_identifier_dict = {}
     for mount_point, \
-        (storage_dict, check_path, zodb_cache_size, zeo_client_cache_size) in 
+        (storage_dict, check_path, zodb_cache_size, zeo_client_cache_size) in \
                                                      mount_point_zeo_dict.iteritems():
       known_tid_storage_identifier_dict[
         (((storage_dict['ip'],storage_dict['port']),), storage_dict['storage_name'])
