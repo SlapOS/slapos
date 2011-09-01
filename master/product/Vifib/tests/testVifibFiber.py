@@ -158,6 +158,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     self.modifyFiberRequestState("accept_action",sequence,fiber_request)
     self.assertEquals(fiber_request.getValidationState(), 'accepted') 
 
+  @skip('Not maintained')
   def test_01_AnonymousCanCreateFiberRequest(self):
     """Anonymous Fiber Request creation"""
     sequence_list = SequenceList()
@@ -170,6 +171,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Not maintained')
   def test_02_ManagerFindPendingFiberRequest(self):
     """Search request in pending list"""
     sequence_list = SequenceList()
@@ -183,6 +185,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Not maintained')
   def test_03_StaffCanConfirmPendingRequest(self):
     """Check confirmation of pending request"""   
     sequence_list = SequenceList()
@@ -198,6 +201,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     sequence_list.play(self)
 
 
+  @skip('Not maintained')
   def test_04_StaffCanRefusePendingRequest(self):
     """Check we can refuse instead of confirm a request"""   
     sequence_list = SequenceList()
@@ -212,6 +216,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Not maintained')
   def test_05_StaffCanContactConfirmedRequest(self):
     """Next the confirmation, we cantact the person"""
     sequence_list = SequenceList()
@@ -228,6 +233,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     sequence_list.play(self)
 
 
+  @skip('Not maintained')
   def test_06_StaffCanRetractConfirmedRequest(self):
     """Instead of contact a person, we can retract the request"""
     sequence_list = SequenceList()
@@ -244,6 +250,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Not maintained')
   def test_07_StaffCanAcceptContactedRequest(self):
     """Contact was successfull, we accept the request"""
     sequence_list = SequenceList()
@@ -261,6 +268,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Not maintained')
   def test_08_StaffCanRetractContactedRequest(self):
     """Cantact was unsuccessfull, we retract the request"""
     sequence_list = SequenceList()
@@ -278,6 +286,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Not maintained')
   def test_09_StaffCanRetractAcceptedRequest(self):
     """After accept a request, we are able to retract us."""
     sequence_list = SequenceList()
