@@ -25,35 +25,44 @@
 #
 #############################################################################
 
-from slapos.recipe.testnode.erp5testreporthandler import ERP5TestReportHandler
+from erp5functionaltestreporthandler import ERP5TestReportHandler
 from time import sleep
-from os import environ
+import os
 from subprocess import Popen, PIPE
+from re import search
 import urllib2
 
 def run(args):
   config = args[0]
 
-  environ['DISPLAY'] = config['display']
   test_url = assembleTestUrl(config['base_url'], config['user'], config['password'])
 
   while True:
     erp5_report = ERP5TestReportHandler(test_url, config['suite_name'])   
 
-    try:
-      chromium = Popen([config['browser_binary'], config['option'], config['test_url']], stdout=PIPE)
-      erp5_report.reportStart()
-            
-      while getStatus(config['base_url']) is None:
-        sleep(10)
+    xvfb = Popen([config['xvfb_binary'], config['display']], stdout=PIPE)
+    os.environ['DISPLAY'] = config['display']
+    sleep(10)
 
-      erp5_report.reportFinished()
+    command = []
+    command.append(config['browser_binary'])
+    command.append(config['option_ssl'])
+    command.append(config['option_translate'])
+    command.append(config['option_security'])
+    command.append(test_url)
+
+    chromium = Popen(command, stdout=PIPE)
+    erp5_report.reportStart()
+    sleep(10)
+            
+    #while getStatus(config['base_url']) is None:
+    #  sleep(10)
     
-    except Exception:
-      pass  
-        
-    chromium.terminate()
-    sleep(600)
+   #erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8", "replace"))
+            
+    chromium.kill()
+    terminateXvfb(xvfb, config['display'])
+    sleep(10)
 
 def openUrl(url):
     # Send Accept-Charset headers to activate the UnicodeConflictResolver
@@ -85,6 +94,13 @@ def assembleTestUrl(base_url, user, password):
       Create the full url to the testrunner
       """
            
-      test_url = "%s/core/TestRunner.html?test=../test_suite_html&auto=on&resultsUrl=%s/postResults&__ac_name=%s&__ac_password=%s" % (base_url, base_url, user, password)
+      test_url = "%s/core/TestRunner.html?test=../test_suite_html&resultsUrl=%s/postResults&auto=on&__ac_name=%s&__ac_password=%s" % (base_url, base_url, user, password)
 
       return test_url
+
+def terminateXvfb(process, display):
+  process.kill()
+  lock_filepath = '/tmp/.X%s-lock' % display.replace(":", "")                                                                                       
+  if os.path.exists(lock_filepath):                                                                                                                 
+    os.system('rm %s' % lock_filepath)
+  
