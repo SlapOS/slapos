@@ -95,17 +95,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepSetCurrentSoftwareInstanceRequested(self, sequence):
-    sequence.edit(
-      requester_software_instance_uid=sequence['software_instance_uid'],
-      software_instance_uid=sequence['requested_software_instance_uid'],
-    )
-
-  def stepSetCurrentSoftwareInstanceRequester(self, sequence):
-    sequence.edit(
-      software_instance_uid=sequence['requester_software_instance_uid']
-    )
-
   def test_ComputerPartition_request_instantiate(self):
     """
     Check that after computer partition is requested it is possible to
@@ -785,16 +774,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
   ########################################
   # ComputerPartition.request - filter - computer_guid
   ########################################
-  def stepStoreComputerReference(self, sequence):
-    sequence['original_computer_reference'] = sequence['computer_reference']
-
-  def stepRestoreComputerReference(self, sequence):
-    sequence['computer_reference'] = sequence['original_computer_reference']
-
-  def stepSetRequestedFilterParameterDict(self, sequence):
-    sequence['requested_filter_dict'] = dict(
-      computer_guid=sequence['computer_reference'])
-
   def test_ComputerPartition_request_filter_computer_guid(self):
     """
     Check that requesting with filter computer_guid key works as expected

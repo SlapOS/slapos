@@ -3364,6 +3364,369 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     self._checkSoftwareInstanceAndRelatedPartition(predecessor)
 
+  def stepStoreComputerReference(self, sequence):
+    sequence['original_computer_reference'] = sequence['computer_reference']
+
+  def stepRestoreComputerReference(self, sequence):
+    sequence['computer_reference'] = sequence['original_computer_reference']
+
+  def stepSetRequestedFilterParameterDict(self, sequence):
+    sequence['requested_filter_dict'] = dict(
+      computer_guid=sequence['computer_reference'])
+
+  def stepSetCurrentSoftwareInstanceRequested(self, sequence):
+    sequence.edit(
+      requester_software_instance_uid=sequence['software_instance_uid'],
+      software_instance_uid=sequence['requested_software_instance_uid'],
+    )
+
+  def stepSetCurrentSoftwareInstanceRequester(self, sequence):
+    sequence.edit(
+      software_instance_uid=sequence['requester_software_instance_uid']
+    )
+
+  def stepSetCurrentPurchasePackingListAsA(self, sequence):
+    sequence.edit(purchase_packing_list_a_uid=sequence[
+      'purchase_packing_list_uid'])
+
+  def stepSetCurrentPurchasePackingListAsB(self, sequence):
+    sequence.edit(purchase_packing_list_b_uid=sequence[
+      'purchase_packing_list_uid'])
+
+  def stepStepPurchasePackingListBStartDateAfterPurchasePackingListA(self,
+      sequence):
+    a = self.portal.portal_catalog.getResultValue(uid=sequence[
+      'purchase_packing_list_a_uid'])
+    b = self.portal.portal_catalog.getResultValue(uid=sequence[
+      'purchase_packing_list_b_uid'])
+    b.setStartDate(a.getStartDate() + 2)
+
+  def stepStepPurchasePackingListBStartDateBeforePurchasePackingListA(self,
+      sequence):
+    a = self.portal.portal_catalog.getResultValue(uid=sequence[
+      'purchase_packing_list_a_uid'])
+    b = self.portal.portal_catalog.getResultValue(uid=sequence[
+      'purchase_packing_list_b_uid'])
+    b.setStartDate(a.getStartDate() - 2)
+
+  def stepCheckStoppedPurchasePackingListA(self, sequence):
+    self.assertEqual('stopped',
+        self.portal.portal_catalog.getResultValue(uid=sequence[
+          'purchase_packing_list_a_uid']).getSimulationState())
+
+  def stepCheckConfirmedPurchasePackingListB(self, sequence):
+    self.assertEqual('confirmed',
+        self.portal.portal_catalog.getResultValue(uid=sequence[
+          'purchase_packing_list_b_uid']).getSimulationState())
+
+  def stepCheckStartedPurchasePackingListB(self, sequence):
+    self.assertEqual('started',
+        self.portal.portal_catalog.getResultValue(uid=sequence[
+          'purchase_packing_list_b_uid']).getSimulationState())
+
+  def stepCheckStoppedPurchasePackingListB(self, sequence):
+    self.assertEqual('stopped',
+        self.portal.portal_catalog.getResultValue(uid=sequence[
+          'purchase_packing_list_b_uid']).getSimulationState())
+
+  def stepCheckSlaveInstanceSecurityWithDifferentCustomer(self, sequence):
+    software_instance_uid = sequence["software_instance_uid"]
+    portal_membership = self.portal.portal_membership
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.login()
+    software_instance = self.portal.portal_catalog.getResultValue(
+        uid=software_instance_uid)
+    self.failIfUserCanViewDocument(username, software_instance)
+    self.failIfUserCanAccessDocument(username, software_instance)
+    self.login(username)
+
+  def stepCheckTwoSlaveInstanceRequest(self, sequence):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence["computer_partition_uid"])
+    sale_packing_list_line_list = computer_partition.getAggregateRelatedValueList(
+        portal_type=self.sale_packing_list_line_portal_type)
+    portal_type_list = [self.software_instance_portal_type,
+        self.slave_instance_portal_type]
+    instance_list = filter(None, [obj.getAggregateValue(portal_type=portal_type_list) \
+        for obj in sale_packing_list_line_list])
+    portal_type_list = [instance.getPortalType() for instance in instance_list]
+    expected_portal_type_list = [self.slave_instance_portal_type,
+        self.slave_instance_portal_type,
+        self.software_instance_portal_type]
+    self.assertEquals(expected_portal_type_list, sorted(portal_type_list))
+    computer_partition_list = [obj.getAggregateValue(
+      portal_type=self.computer_partition_portal_type) \
+          for obj in sale_packing_list_line_list]
+    uid_list = [computer_partition.getUid() \
+        for computer_partition in computer_partition_list]
+    self.assertEquals(1, len(set(uid_list)))
+
+  def stepCheckSlaveInstanceReady(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals(self.slave_instance_portal_type,
+        slave_instance.getPortalType())
+    sale_order_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_order_line_portal_type)
+    self.assertEquals("confirmed", sale_order_line.getSimulationState())
+    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_packing_list_line_portal_type)
+    self.assertNotEquals(sale_packing_list_line.getAggregateValue(
+      portal_type=self.computer_partition_portal_type), None)
+
+  def stepCheckSlaveInstanceAssociationWithSoftwareInstance(self, sequence):
+    portal_catalog = self.portal.portal_catalog
+    computer_partition_reference_list = \
+        sequence['computer_partition_reference_list']
+    for reference in computer_partition_reference_list:
+      computer_partition = portal_catalog.getResultValue(
+          portal_type="Computer Partition", reference=reference)
+      sale_packing_list_line_list = portal_catalog(
+          portal_type="Sale Packing List Line",
+          aggregate_relative_url=computer_partition.getRelativeUrl())
+      software_release_uri_list = []
+      for sale_packing_list_line in sale_packing_list_line_list:
+        software_release_uri = sale_packing_list_line.getResultValue(
+            portal_type="Software Release")
+        software_release_uri_list.append(software_release_uri.getUrlString())
+      self.assertEquals(1, len(set(software_release_uri_list)))
+
+  def stepCheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals(self.slave_instance_portal_type,
+        slave_instance.getPortalType())
+    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_packing_list_line_portal_type)
+    software_release = sale_packing_list_line.getAggregateValue(
+        portal_type=self.software_release_portal_type)
+    sale_packing_list_line_list = software_release.aggregateRelatedValues(
+        portal_type=self.sale_packing_list_line_portal_type)
+    computer_partition_list = [obj.getAggregateValue(
+      portal_type=self.computer_partition_portal_type)\
+          for obj in sale_packing_list_line_list]
+    self.assertEquals(computer_partition_list[0],
+        computer_partition_list[1])
+    self.assertEquals(computer_partition_list[0].getReference(),
+        computer_partition_list[1].getReference())
+    self.assertEquals(2, len(computer_partition_list))
+
+  def stepCheckSlaveInstanceNotReady(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    self.assertEquals(self.slave_instance_portal_type,
+        slave_instance.getPortalType())
+    sale_order_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_order_line_portal_type)
+    self.assertEquals("ordered", sale_order_line.getSimulationState())
+    self.assertRaises(ValueError, sale_order_line.confirm)
+    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
+        portal_type=self.sale_packing_list_line_portal_type)
+    self.assertEquals(sale_packing_list_line, None)
+
+  def stepSelectSlaveInstanceFromOneComputerPartition(self, sequence):
+    slave_instance = self._getSlaveInstanceFromCurrentComputerPartition(sequence)
+    sequence.edit(software_instance_uid=slave_instance.getUid())
+
+  def stepCheckEmptySlaveInstanceListFromOneComputerPartition(self, sequence):
+    computer_guid = sequence["computer_reference"]
+    partition_id = sequence["computer_partition_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer_partition = self.slap.registerComputerPartition(computer_guid,
+        partition_id)
+    parameter_dict = computer_partition.getInstanceParameterDict()
+    slave_instance_list = parameter_dict["slave_instance_list"]
+    self.assertEquals([], slave_instance_list)
+
+  def stepCheckSlaveInstanceListFromOneComputerPartition(self, sequence,
+          expected_amount=1):
+    computer_guid = sequence["computer_reference"]
+    partition_id = sequence["computer_partition_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer_partition = self.slap.registerComputerPartition(computer_guid,
+        partition_id)
+    parameter_dict = computer_partition.getInstanceParameterDict()
+    self.assertEquals("RootSoftwareInstance",
+        parameter_dict["slap_software_type"])
+    slave_instance_list = parameter_dict["slave_instance_list"]
+    self.assertEquals(expected_amount, len(slave_instance_list))
+    for slave_instance in slave_instance_list:
+      self.assertEquals("SlaveInstance", slave_instance["slap_software_type"])
+
+  def stepCheckTwoSlaveInstanceListFromOneComputerPartition(self, sequence):
+    self.stepCheckSlaveInstanceListFromOneComputerPartition(sequence, 
+        expected_amount=2)
+
+  def stepCheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    portal_membership = self.portal.portal_membership
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, slave_instance)
+    self.assertUserCanAccessDocument(username, slave_instance)
+
+  def stepSlapLoginSoftwareInstanceFromCurrentSoftwareInstance(self, sequence):
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    self.assertNotEquals(None, software_instance)
+    self.stepSlapLogout()
+    global REMOTE_USER
+    REMOTE_USER = software_instance.getReference()
+    self.login(software_instance.getReference())
+
+  def _getSoftwareInstanceFromCurrentComputerPartition(self, sequence):
+    query = ComplexQuery(
+        Query(aggregate_uid=sequence['computer_partition_uid']),
+        Query(aggregate_portal_type=self.software_instance_portal_type),
+        operator="AND")
+    software_instance = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        sort_on=(('movement.start_date', 'DESC'),),
+        query=query).getAggregateValue(portal_type="Software Instance")
+    return software_instance
+
+  def _getSlaveInstanceFromCurrentComputerPartition(self, sequence):
+    query = ComplexQuery(
+        Query(aggregate_uid=sequence['computer_partition_uid']),
+        Query(aggregate_portal_type=self.slave_instance_portal_type),
+        operator="AND")
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        query=query).getAggregateValue(portal_type=self.slave_instance_portal_type)
+    return slave_instance
+
+  def stepRequestDestroySoftwareInstanceFromCurrentComputerPartition(self, sequence):
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    software_instance.requestDestroyComputerPartition()
+
+  def stepStartSoftwareInstanceFromCurrentComputerPartition(self, sequence):
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    software_instance.requestStartComputerPartition()
+
+  def stepRequestStopSoftwareInstanceFromCurrentComputerPartition(self,
+      sequence):
+    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+        sequence)
+    software_instance.requestStopComputerPartition()
+
+  def stepCheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        uid=sequence["sale_packing_list_line_uid"])
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, sale_packing_list_line)
+    self.failIfUserCanModifyDocument(username, sale_packing_list_line)
+
+  def stepCheckSaleOrderFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_order = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Order",
+        uid=sequence["sale_order_uid"])
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, sale_order)
+    self.failIfUserCanModifyDocument(username, sale_order)
+
+  def stepCheckHostingSubscriptionFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
+      sequence):
+    portal_membership = self.portal.portal_membership
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        uid=sequence["sale_packing_list_line_uid"])
+    hosting_subscription = sale_packing_list_line.getAggregateValue(
+        portal_type="Hosting Subscription")
+    username = portal_membership.getAuthenticatedMember().getUserName()
+    self.assertUserCanViewDocument(username, hosting_subscription)
+    self.failIfUserCanModifyDocument(username, hosting_subscription)
+
+  def stepStoreSaleOrderFromSlaveInstance(self, sequence):
+    sale_order_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Order Line",
+        aggregate_reference=sequence["software_instance_reference"])
+    sequence.edit(sale_order_line_uid=sale_order_line.getUid(),
+        sale_order_uid=sale_order_line.getParent().getUid())
+
+  def stepStoreSalePackingListLineFromSlaveInstance(self, sequence):
+    sale_packing_list_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        aggregate_uid=sequence["software_instance_uid"])
+    sequence.edit(sale_packing_list_line_uid=sale_packing_list_line.getUid(),
+        sale_packing_list_uid=sale_packing_list_line.getParent().getUid())
+
+  def stepSetConnectionXmlToSlaveInstance(self, sequence):
+    computer_reference = sequence["computer_reference"]
+    computer_partition_reference = sequence["computer_partition_reference"]
+    site_url = "https://www.example.com:8080/"
+    connection_dict = dict(site_url=site_url)
+    slave_reference = sequence["software_instance_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    computer_partition = self.slap.registerComputerPartition(
+        computer_reference, computer_partition_reference)
+    computer_partition.setConnectionDict(connection_dict)
+    sequence.edit(site_url=site_url)
+    connection_dict["site_url"] += "DeF45uef"
+    computer_partition.setConnectionDict(connection_dict,
+        slave_reference)
+    sequence.edit(slave_instance_site_url=site_url)
+
+  def stepCheckConnectionXmlFromSlaveInstance(self, sequence):
+    portal_catalog = self.portal.portal_catalog
+    slave_instance = portal_catalog.getResultValue(
+        reference=sequence["software_instance_reference"])
+    self.assertTrue(sequence["slave_instance_site_url"] in \
+        slave_instance.getConnectionXml())
+
+  def stepCheckConnectionXmlFromSoftwareInstance(self, sequence):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      portal_type="Software Instance")
+    self.assertTrue("%s</parameter>" % sequence["site_url"] in \
+        software_instance.getConnectionXml())
+
+  def stepSlaveInstanceStarted(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.startComputerPartition()
+
+  def stepRequestSlaveInstanceStart(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.requestStartComputerPartition()
+
+  def stepRequestSlaveInstanceStop(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.requestStopComputerPartition()
+
+  def stepSlaveInstanceStopped(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.stopComputerPartition()
+
+  def stepSlaveInstanceStopComputerPartitionInstallation(self, sequence):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence["software_instance_uid"])
+    slave_instance.stopComputerPartitionInstallation()
+
+  def stepSetDeliveryLineAmountEqualZero(self, sequence):
+    sequence.edit(delivery_line_amount=0)
+
+  def stepSetDeliveryLineAmountEqualTwo(self, sequence):
+    sequence.edit(delivery_line_amount=2)
+
+  def stepSetDeliveryLineAmountEqualThree(self, sequence):
+    sequence.edit(delivery_line_amount=3)
+
+  def stepSetDeliveryLineAmountEqualOne(self, sequence):
+    sequence.edit(delivery_line_amount=1)
+
+
 class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
   # slap.initializeConnection
