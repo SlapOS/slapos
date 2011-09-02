@@ -30,9 +30,6 @@ query_cache_size = 32M
 # Try number of CPU's*2 for thread_concurrency
 thread_concurrency = 8
 
-# Disable Federated by default
-skip-federated
-
 # Replication Master Server (default)
 # binary logging is required for replication
 log-bin=mysql-bin
