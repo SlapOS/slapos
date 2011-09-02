@@ -46,47 +46,31 @@ class Recipe(BaseSlapRecipe):
       self.path_list = []
 
       self.requirements, self.ws = self.egg.working_set()
-      
-      xvfb_conf                  = self.instaciateXvfb()
 
-      self.instanciateTestRunner(xvfb_conf['display'])
+      self.instanciateTestRunner(self.getDisplay())
 
       self.linkBinary()
-      self.computer_partition_setConnectionDict()
+      
 
       return self.path_list
 
-    def instanciateXvfb(self):
+    def getDisplay(self):
       """
-      Create Xvfb configuration dictionnary and instanciate a wrapper for it
+      Choose a display for the instance
 
       Parameters : None
 
-      Returns    : Dictionnary xvfb_conf
+      Returns    : display
       """
-      xvfb_conf={}
-
-      xvfb_conf['xvfb_binary'] = self.options['xvfb_binary']
-
       display_list = [":%s" % i for i in range(123,144)]
       
       for display_try in display_list:
         lock_filepath = '/tmp/.X%s-lock' % display_try.replace(":", "")
         if not os.path.exists(lock_filepath):
-          xvfb_conf['display'] = display_try
+          display = display_try
           break
       
-      xvfb_template_location = pkg_resources.resource_filename(          
-                                             __name__, os.path.join(         
-                                             'template', 'xvfb_run.in'))     
-    
-      xvfb_runner_path = self.createRunningWrapper("Xvfb",
-                               self.substituteTemplate(xvfb_template_location, 
-                                                       xvfb_conf))
-   
-      self.path_list.append(xvfb_runner_path)
-
-      return xvfb_conf
+      return display
 
     def instanciateTestRunner(self, display):
       """
@@ -97,17 +81,21 @@ class Recipe(BaseSlapRecipe):
       Returns    : None
       """
 
-      self.path_list.extend(zc.buildout.easy_install.scripts([(
-                      'selenium',__name__+'.testrunner', 'run')], self.ws,
+      if self.parameter_dict['browser'] == 'chrome' or self.parameter_dict['browser'] == 'chromium':  
+          self.path_list.extend(zc.buildout.easy_install.scripts([(
+                      'testrunner',__name__+'.testrunner', 'run')], self.ws,
                       sys.executable, self.wrapper_directory, arguments=[
                   dict(
-                      browser_binary  = self.options['chromium_binary'],
-                      display         = display,
-                      option          = "--ignore-certificate-errors --disable-translate --disable-web-security",
-                      suite_name      = self.parameter_dict['suite_name'],
-                      base_url        = self.parameter_dict['url'],
-                      user            = self.parameter_dict['user'],
-                      password        = self.paramer_dict['password']
+                      browser_binary      = self.options['chromium_binary'],
+                      xvfb_binary         = self.options['xvfb_binary'],
+                      display             = display,
+                      option_ssl          = '--ignore-certificate-errors', 
+                      option_translate    = '--disable-translate', 
+                      option_security     = '--disable-web-security',
+                      suite_name          = self.parameter_dict['suite_name'],
+                      base_url            = self.parameter_dict['url'],
+                      user                = self.parameter_dict['user'],
+                      password            = self.parameter_dict['password']
                       )]))
 
     def linkBinary(self):
