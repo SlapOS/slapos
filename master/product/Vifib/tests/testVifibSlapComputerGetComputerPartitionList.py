@@ -17,6 +17,7 @@ import httplib
 from xml_marshaller import xml_marshaller
 import transaction
 import unittest
+from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
 class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin):
   ########################################
