@@ -208,6 +208,8 @@ branch = %(branch)s
                                             'cloudooo_paster')
           cloudooo_conf = os.path.join(partition_path, 'etc',
                                             'conversion_server.cfg')
+          env_ld_library_path = re.findall("env-LD_LIBRARY_PATH\ \=\ .*",
+              open(cloudooo_conf).read())[0].split('=')[-1].lstrip()
 
           run_test_suite_revision = revision
           if isinstance(revision, tuple):
@@ -243,7 +245,8 @@ branch = %(branch)s
                                     '--paster_path', cloudooo_paster,
                                     cloudooo_conf,
                                     test.split('/')[-1]])
-            run_test_suite = subprocess.Popen(invocation_list)
+            run_test_suite = subprocess.Popen(invocation_list,
+                env=dict(LD_LIBRARY_PATH=env_ld_library_path))
             process_group_pid_set.add(run_test_suite.pid)
             run_test_suite.wait()
             process_group_pid_set.remove(run_test_suite.pid)
