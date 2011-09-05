@@ -238,7 +238,7 @@ class Recipe(BaseSlapRecipe):
       port=port,
       openoffice_port=openoffice_port,
       openoffice_host=ip,
-      PATH=self.bin_directory
+      PATH=':'.join([os.environ['PATH'], self.bin_directory])
     )
     for env_line in self.options['environment'].splitlines():
       env_line = env_line.strip()
