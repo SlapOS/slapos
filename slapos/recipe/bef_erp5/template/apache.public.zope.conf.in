@@ -48,7 +48,7 @@ CustomLog "%(access_log)s" common
 </Directory>
 
 # in order to follow default configuration
-CacheDisable /
+## CacheDisable / # no need, as no mod_cache is used
 
 %(path_enable)s
 
