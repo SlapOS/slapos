@@ -187,6 +187,10 @@ class Recipe(slapos.recipe.erp5.Recipe):
     apache_web = self.installBackendApache(self.getGlobalIPv6Address(), 15001,
         web_haproxy, backend_key, backend_certificate, suffix='_web',
         access_control_string=access_control_string)
+    apache_public_web = self.installPublicBackendApache(
+        self.getGlobalIPv6Address(), 15080,
+        web_haproxy, suffix='_public_web',
+        access_control_string=access_control_string)
 
     # One Admin Node
     zope_port += 1
@@ -212,6 +216,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     self.setConnectionDict(dict(
       site_web_url=apache_web,
+      public_site_web_url=apache_public_web,
       site_admin_url=apache_admin,
       site_user_url=apache_login,
       site_user=user,
@@ -341,6 +346,54 @@ class Recipe(slapos.recipe.erp5.Recipe):
       os.symlink(target, link)
       self.logger.debug('Created link %r -> %r' % (link, target))
     self.path_list.append(repo_path)
+
+  def installPublicBackendApache(self, ip, port, backend,
+      suffix='', access_control_string=None):
+    apache_conf = self._getApacheConfigurationDict(
+        'public_backend_apache'+suffix, ip, port)
+    apache_conf['server_name'] = '%s' % apache_conf['ip']
+    # no ssl needed
+    prefix = 'public_backend_apache'+suffix
+    rewrite_rule_template = \
+        "RewriteRule (.*) http://%(backend)s$1 [L,P]"
+    if access_control_string is None:
+      path_template = pkg_resources.resource_string('slapos.recipe.erp5',
+        'template/apache.zope.conf.path.in')
+      path = path_template % dict(path='/')
+    else:
+      path_template = pkg_resources.resource_string('slapos.recipe.erp5',
+        'template/apache.zope.conf.path-protected.in')
+      path = path_template % dict(path='/',
+          access_control_string=access_control_string)
+    d = dict(
+          path=path,
+          backend=backend,
+          backend_path='/',
+          port=apache_conf['port'],
+          vhname=path.replace('/', ''),
+    )
+    rewrite_rule = rewrite_rule_template % d
+    apache_conf.update(**dict(
+      path_enable=path,
+      rewrite_rule=rewrite_rule
+    ))
+    apache_conf_string = pkg_resources.resource_string('slapos.recipe.bef_erp5',
+          'template/apache.public.zope.conf.in') % apache_conf
+    apache_config_file = self.createConfigurationFile(prefix + '.conf',
+      apache_conf_string)
+    self.path_list.append(apache_config_file)
+    self.path_list.extend(zc.buildout.easy_install.scripts([(
+      'public_backend_apache'+suffix,
+        'slapos.recipe.erp5' + '.apache', 'runApache')], self.ws,
+          sys.executable, self.wrapper_directory, arguments=[
+            dict(
+              required_path_list=[],
+              binary=self.options['httpd_binary'],
+              config=apache_config_file
+            )
+          ]))
+    # Note: IPv6 is assumed always
+    return 'https://[%(ip)s]:%(port)s' % apache_conf
 
   def _install(self):
     self.path_list = []
