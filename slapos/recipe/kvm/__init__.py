@@ -61,8 +61,7 @@ class Recipe(BaseSlapRecipe):
     noVNC_conf = self.installNoVnc(source_ip   = self.getGlobalIPv6Address(),
                                    source_port = 6080,
                                    target_ip   = kvm_conf['vnc_ip'],
-                                   target_port = vnc_port,
-                                   python_path = kvm_conf['python_path'])
+                                   target_port = vnc_port)
     
     self.linkBinary()
     self.computer_partition.setConnectionDict(dict(
@@ -167,8 +166,7 @@ class Recipe(BaseSlapRecipe):
     
     return kvm_conf
 
-  def installNoVnc(self, source_ip, source_port, target_ip, target_port, 
-                   python_path):
+  def installNoVnc(self, source_ip, source_port, target_ip, target_port):
     """
     Create noVNC configuration dictionnary and instanciate Websockify proxy
 
@@ -181,14 +179,20 @@ class Recipe(BaseSlapRecipe):
 
     noVNC_conf = {}
    
-    noVNC_conf['source_ip']   = source_ip                                          
+    noVNC_conf['source_ip']   = source_ip
     noVNC_conf['source_port'] = source_port
+    
+    # Install numpy.
+    # XXX-Cedric : this looks like a hack. Do we have better solution, knowing
+    # That websockify is not an egg?
+    numpy = zc.buildout.easy_install.install(['numpy'], self.options['eggs-directory'])
+    environment = dict(PYTHONPATH='%s' % numpy.entries[0])
     
     # Instanciate Websockify
     websockify_runner_path = zc.buildout.easy_install.scripts([('websockify',
-      'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
+      'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
       sys.executable, self.wrapper_directory, arguments=[
-        [python_path.strip(),
+        [sys.executable.strip(),
          self.options['websockify_path'],
          '--web',
          self.options['noVNC_location'],
@@ -197,7 +201,8 @@ class Recipe(BaseSlapRecipe):
          '--ssl-only',
          '%s:%s' % (source_ip, source_port),
          '%s:%s' % (target_ip, target_port)],
-        [self.certificate_path, self.key_path]]
+        [self.certificate_path, self.key_path],
+        environment]
        )[0]
     
     self.path_list.append(websockify_runner_path)
