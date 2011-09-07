@@ -1,7 +1,6 @@
 %(file_list)s {
-  daily
+  monthly
   dateext
-  rotate 30
   compress
   notifempty
   sharedscripts
