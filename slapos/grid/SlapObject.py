@@ -70,12 +70,13 @@ class Software(object):
     it. If it fails, we notify the server.
     """
     self.logger.info("Installing software release %s..." % self.url)
+    root_stat_info = os.stat(self.software_root)
+    os.environ = getCleanEnvironment(pwd.getpwuid(root_stat_info.st_uid).pw_dir)
     if not os.path.isdir(self.software_path):
       os.mkdir(self.software_path)
     extends_cache = tempfile.mkdtemp()
     if os.getuid() == 0:
       # In case when running as root copy ownership, to simplify logic
-      root_stat_info = os.stat(self.software_root)
       for path in [self.software_path, extends_cache]:
         path_stat_info = os.stat(path)
         if root_stat_info.st_uid != path_stat_info.st_uid or\
@@ -200,13 +201,15 @@ class Partition(object):
     if not os.path.isdir(self.instance_path):
       raise PathDoesNotExistError('Please create partition directory %s'
                                            % self.instance_path)
-    permission = oct(stat.S_IMODE(os.stat(self.instance_path).st_mode))
+    instance_stat_info = os.stat(self.instance_path)
+    permission = oct(stat.S_IMODE(instance_stat_info.st_mode))
     if permission != REQUIRED_COMPUTER_PARTITION_PERMISSION:
       raise WrongPermissionError('Wrong permissions in %s : actual ' \
                                           'permissions are : %s, wanted ' \
                                           'are %s' %
                                           (self.instance_path, permission,
                                             REQUIRED_COMPUTER_PARTITION_PERMISSION))
+    os.environ = getCleanEnvironment(pwd.getpwuid(instance_stat_info.st_uid).pw_dir)
     # Generates buildout part from template
     # TODO how to fetch the good template? Naming conventions?
     template_location = os.path.join(self.software_path, 'template.cfg')

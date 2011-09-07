@@ -259,9 +259,7 @@ def bootstrapBuildout(path, buildout=None,
       kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
             preexec_fn=lambda: dropPrivileges(uid, gid),
-            cwd=path, env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
-            **kw
-            )
+            cwd=path, **kw)
     result = process_handler.communicate()[0]
     if console:
       result = 'Please consult messages above'
