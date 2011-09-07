@@ -1,20 +1,22 @@
 Changes
 =======
 
-0.20 (unreleased)
+0.20 (2011-09-07)
 -----------------
 
- * No change yet.
+ * Update and fix KVM/noVNC installation to be compatible with new WebSocket
+   protocol (HyBi-10) required by Chrome >= 14 and Firefox >= 7.
+   [Cedric de Saint Martin]
 
 0.19 (2011-09-06)
 -----------------
 
- * Update PHP configuration to disable debug logging.
+ * Update PHP configuration to disable debug logging. [Cedric de Saint Martin]
 
 0.18 (2011-08-25)
 -----------------
 
- * Repackage egg to include needed .bin files.
+ * Repackage egg to include needed .bin files. [Cedric de Saint Martin]
 
 0.17 (2011-08-25)
 -----------------
