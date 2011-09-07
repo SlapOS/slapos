@@ -1,5 +1,5 @@
 %(file_list)s {
-  daily
+  monthly
   dateext
   compress
   notifempty
