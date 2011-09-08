@@ -7,10 +7,8 @@ instancehome $INSTANCE
 # Used products
 %(products)s
 
-# Environment override
-<environment>
-%(environment)s
-</environment>
+# Environment is setup in running wrapper script
+# Reason: zope.conf is read too late for some componets
 
 # No need to debug
 debug-mode off
