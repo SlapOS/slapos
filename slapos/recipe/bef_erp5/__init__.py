@@ -31,7 +31,10 @@ import zc.buildout
 import sys
 import netaddr
 
-BEF_TIMEZONE = 'BST'
+# BST and Europe/Dublin timezones suffer from bug when conversion to self
+# zone adds one hour
+#BEF_TIMEZONE = 'BST'
+BEF_TIMEZONE = 'Europe/London'
 
 def validLoopBackAddress(ip):
   if netaddr.IPAddress(ip).is_loopback():
