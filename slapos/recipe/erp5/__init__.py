@@ -926,10 +926,6 @@ SSLCARevocationPath %(ca_crl)s"""
                              self.erp5_directory, 'Products'))
     zope_config['products'] = '\n'.join(prefixed_products)
     zope_config['address'] = '%s:%s' % (ip, port)
-    zope_environment_list = []
-    for envk, envv in zope_environment.iteritems():
-      zope_environment_list.append('%s %s' % (envk, envv))
-    zope_config['environment'] = "\n".join(zope_environment_list)
 
     zope_wrapper_template_location = self.getTemplateFilename('zope.conf.in')
     zope_conf_content = self.substituteTemplate(
@@ -952,10 +948,11 @@ SSLCARevocationPath %(ca_crl)s"""
     self.path_list.append(zope_conf_path)
     # Create init script
     wrapper = zc.buildout.easy_install.scripts([(name,
-     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
+     'slapos.recipe.librecipe.execute', 'executee')], self.ws, sys.executable,
       self.wrapper_directory, arguments=[
-        self.options['runzope_binary'].strip(), '-C', zope_conf_path]
-      )[0]
+        [self.options['runzope_binary'].strip(), '-C', zope_conf_path],
+        zope_environment
+      ])[0]
     self.path_list.append(wrapper)
     return zope_config['address']
 
