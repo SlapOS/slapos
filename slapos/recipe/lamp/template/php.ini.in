@@ -9,3 +9,6 @@ log_errors = On
 log_errors_max_len = 1024
 ignore_repeated_errors = Off
 ignore_repeated_source = Off
+session.save_path = "%(tmp_directory)s"
+session.auto_start = 1
+date.timezone = Europe/Paris
