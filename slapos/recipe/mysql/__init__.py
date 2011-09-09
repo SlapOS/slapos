@@ -267,16 +267,12 @@ class Recipe(BaseSlapRecipe):
           mysql_conf))
 
     mysql_script_list = []
-    for x_database, x_user, x_password in \
-          [(mysql_conf['mysql_database'],
-            mysql_conf['mysql_user'],
-            mysql_conf['mysql_password']),
-          ]:
-      mysql_script_list.append(pkg_resources.resource_string(__name__,
-                     'template/initmysql.sql.in') % {
-                        'mysql_database': x_database,
-                        'mysql_user': x_user,
-                        'mysql_password': x_password})
+    
+    mysql_script_list.append(pkg_resources.resource_string(__name__,
+                   'template/initmysql.sql.in') % {
+                      'mysql_database': mysql_conf['mysql_database'],
+                      'mysql_user': mysql_conf['mysql_user'],
+                      'mysql_password': mysql_conf['mysql_password']})
     mysql_script_list.append('EXIT')
     mysql_script = '\n'.join(mysql_script_list)
     self.path_list.extend(zc.buildout.easy_install.scripts([('mysql_update',
