@@ -39,6 +39,25 @@ def executee(args):
     env[k] = v
   os.execve(exec_list[0], exec_list + sys.argv[1:], env)
 
+def executee_wait(args):
+  """Portable execution with process replacement and environment manipulation"""
+  exec_list = list(args[0])
+  file_list = list(args[1])
+  environment = args[2]
+  env = os.environ.copy()
+  for k,v in environment.iteritems():
+    env[k] = v
+  sleep = 60
+  while True:
+    ready = True
+    for f in file_list:
+      if not os.path.exists(f):
+        print 'File %r does not exists, sleeping for %s' % (f, sleep)
+        ready = False
+    if ready:
+      break
+    time.sleep(sleep)
+  os.execve(exec_list[0], exec_list + sys.argv[1:], env)
 
 def sig_handler(signal, frame):
   print 'Received signal %r, killing children and exiting' % signal
