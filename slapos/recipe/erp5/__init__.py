@@ -555,9 +555,8 @@ class Recipe(BaseSlapRecipe):
     # maxconn should be set as the maximum thread we have per zope, like this
     #      haproxy will manage the queue of request with the possibility to
     #      move a request to another node if the initially selected one is dead
-    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxconn %(cluster_zope_thread_amount)s""" %
+    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxconn %(cluster_zope_thread_amount)s"""
     config = dict(name=name, ip=ip, port=port,
-        cluster_zope_thread_amount=self.options.get('cluster_zope_thread_amount', 1),
         server_check_path=server_check_path,)
     i = 1
     server_list = []
