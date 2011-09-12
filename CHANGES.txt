@@ -1,7 +1,13 @@
 Changes
 =======
 
-0.21 (unreleased)
+0.22 (unreleased)
+-----------------
+
+ * No change yet.
+
+
+0.21 (2011-09-12)
 -----------------
 
  * Update PHP configuration to set session and date options.
