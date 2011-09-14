@@ -4,7 +4,7 @@ Changes
 0.23 (unreleased)
 -----------------
 
- * No change yet.
+ * Clean code in mysql recipe [Cedric de Saint Martin]
 
 
 0.22 (2011-09-12)
