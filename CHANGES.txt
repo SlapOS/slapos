@@ -1,11 +1,25 @@
 Changes
 =======
 
-0.21 (unreleased)
+0.23 (unreleased)
+-----------------
+
+ * No change yet.
+
+
+0.22 (2011-09-12)
+-----------------
+
+ * Fix haproxy setup for erp5 [Sebastien Robin]
+
+
+0.21 (2011-09-12)
 -----------------
 
  * Update PHP configuration to set session and date options.
    [Alain Takoudjou Kamdem]
+ * Improve logrotate policy and haproxy config for erp5
+   [Sebastien Robin]
 
 0.20 (2011-09-07)
 -----------------
