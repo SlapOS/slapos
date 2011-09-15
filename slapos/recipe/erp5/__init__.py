@@ -824,6 +824,34 @@ SSLCARevocationPath %(ca_crl)s"""
       self.path_list.append(wrapper)
     return zeo_configuration_dict
 
+  def installRepozo(self, zodb_root_path):
+    """
+    Add only repozo to cron (e.g. without tidstorage) allowing full
+    and incremental backups.
+    """
+    backup_base_path = self.createBackupDirectory('zodb')
+
+    full_backup_path = os.path.join(backup_base_path, 'full')
+    self._createDirectory(full_backup_path)
+
+    incremental_backup_path = os.path.join(backup_base_path, 'incremental')
+    self._createDirectory(incremental_backup_path)
+
+    repozo_cron_path = os.path.join(self.cron_d, 'repozo')
+    repozo_cron_file = open(repozo_cron_path, 'w')
+    try:
+      repozo_cron_file.write('''
+0 0 * * 0 %(repozo_binary)s -F -f "%(zodb_root_path)s" -r "%(full_backup_path)s"
+0 * * * * %(repozo_binary)s -f "%(zodb_root_path)s" -r "%(incremental_backup_path)s"
+''' % dict(repozo_binary=self.options['repozo_binary'],
+           zodb_root_path=zodb_root_path,
+           full_backup_path=full_backup_path,
+           incremental_backup_path=incremental_backup_path))
+    finally:
+      repozo_cron_file.close()
+
+    self.path_list.append(repozo_cron_path)
+
   def installTidStorage(self, ip, port, known_tid_storage_identifier_dict,
       access_url):
     """Install TidStorage with all required backup tools
