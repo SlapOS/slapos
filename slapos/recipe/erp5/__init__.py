@@ -644,15 +644,15 @@ SSLCARevocationPath %(ca_crl)s"""
     # maxconn should be set as the maximum thread we have per zope, like this
     #      haproxy will manage the queue of request with the possibility to
     #      move a request to another node if the initially selected one is dead
-    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxconn %(cluster_zope_thread_amount)s""" %
+    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxconn %(cluster_zope_thread_amount)s"""
     config = dict(name=name, ip=ip, port=port,
-        cluster_zope_thread_amount=self.options.get('cluster_zope_thread_amount', 1),
         server_check_path=server_check_path,)
     i = 1
     server_list = []
+    cluster_zope_thread_amount = self.options.get('cluster_zope_thread_amount', 1)
     for url in url_list:
       server_list.append(server_template % dict(name='%s_%s' % (name, i),
-        address=url))
+        address=url, cluster_zope_thread_amount=cluster_zope_thread_amount))
       i += 1
     config['server_text'] = '\n'.join(server_list)
     haproxy_conf_path = self.createConfigurationFile('haproxy_%s.cfg' % name,
