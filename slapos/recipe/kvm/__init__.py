@@ -37,6 +37,9 @@ import hashlib
 
 class Recipe(BaseSlapRecipe):
 
+  # To avoid magic numbers
+  VNC_BASE_PORT = 5900
+
   def _install(self):
     """
     Set the connection dictionnary for the computer partition and create a list
@@ -54,9 +57,25 @@ class Recipe(BaseSlapRecipe):
     self.ca_conf                         = self.installCertificateAuthority()
     self.key_path, self.certificate_path = self.requestCertificate('noVNC')
 
+    # Install the socket_connection_attempt script
+    catcher = zc.buildout.easy_install.scripts(
+      [('check_port_listening', __name__ + 'socket_connection_attempt', 'connection_attempt')],
+      self.ws,
+      sys.executable,
+      self.bin_directory,
+    )
+    # Save the check_port_listening script path
+    check_port_listening_script = catcher[0]
+    # Get the port_listening_promise template path, and save it
+    self.port_listening_promise_path = pkg_resources.resource_filename(
+      __name__, 'template/port_listening_promise.in')
+    self.port_listening_promise_conf = dict(
+     check_port_listening_script=check_port_listening_script,
+    )
+
     kvm_conf = self.installKvm(vnc_ip = self.getLocalIPv4Address())
 
-    vnc_port = 5900 + kvm_conf['vnc_display']
+    vnc_port = Recipe.VNC_BASE_PORT + kvm_conf['vnc_display']
 
     noVNC_conf = self.installNoVnc(source_ip   = self.getGlobalIPv6Address(),
                                    source_port = 6080,
@@ -164,6 +183,17 @@ class Recipe(BaseSlapRecipe):
     ##slapreport_runner_path = self.instanciate_wrapper("slapreport",
     #    [database_path, python_path])
 
+    # Add VNC promise
+    self.port_listening_promise_conf.update(
+      hostname=kvm_conf['vnc_ip'],
+      port=Recipe.VNC_BASE_PORT + kvm_conf['vnc_display'],
+    )
+    self.createPromiseWrapper("vnc_promise",
+        self.substituteTemplate(self.port_listening_promise_path,
+                                self.port_listening_promise_conf,
+                               )
+                             )
+
     return kvm_conf
 
   def installNoVnc(self, source_ip, source_port, target_ip, target_port):
@@ -206,6 +236,16 @@ class Recipe(BaseSlapRecipe):
        )[0]
 
     self.path_list.append(websockify_runner_path)
+
+    # Add noVNC promise
+    self.port_listening_promise_conf.update(hostname=noVNC_conf['source_ip'],
+                                            port=noVNC_conf['source_port'],
+                                           )
+    self.createPromiseWrapper("novnc_promise",
+        self.substituteTemplate(self.port_listening_promise_path,
+                                self.port_listening_promise_conf,
+                               )
+                             )
 
     return noVNC_conf
 
