@@ -93,6 +93,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_legacy_tax_system',
       'erp5_commerce',
       'erp5_project',
+      'erp5_xhtml_jquery_style',
       'erp5_credential',
       'erp5_km',
       'erp5_web_download_theme',
