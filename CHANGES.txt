@@ -5,6 +5,8 @@ Changes
 -----------------
 
  * Clean code in mysql recipe [Cedric de Saint Martin]
+ * librecipe: Provide createPromiseWrapper method. [Antoine Catton]
+ * kvm: Expose promisee checks to slapgrid. [Antoine Catton]
 
 
 0.22 (2011-09-12)
