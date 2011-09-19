@@ -31,6 +31,8 @@ import pkg_resources
 import sys
 import zc.buildout
 import ConfigParser
+import re
+import urlparse
 
 class Recipe(BaseSlapRecipe):
   def getTemplateFilename(self, template_name):
@@ -44,17 +46,18 @@ class Recipe(BaseSlapRecipe):
     # self.cron_d is a directory, where cron jobs can be registered
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
-    
+
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
-      
+    self.mysql_backup_directory = mysql_conf['backup_directory']
+
     ca_conf = self.installCertificateAuthority()
     key, certificate = self.requestCertificate('MySQL')
-    
+
     stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(),
         self.getLocalIPv4Address(), 12345, mysql_conf['tcp_port'],
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
-    
+
     self.linkBinary()
     self.setConnectionDict(dict(
       stunnel_ip = stunnel_conf['public_ip'],
@@ -107,7 +110,7 @@ class Recipe(BaseSlapRecipe):
       )[0]
     self.path_list.append(wrapper)
     return cron_d
-  
+
   def installLogrotate(self):
     """Installs logortate main configuration file and registers its to cron"""
     logrotate_d = os.path.abspath(os.path.join(self.etc_directory,
@@ -232,7 +235,7 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(wrapper)
     return stunnel_conf
 
-    
+
   def installMysqlServer(self, ip, port, database='db', user='user',
       template_filename=None, mysql_conf=None):
     if mysql_conf is None:
@@ -267,7 +270,6 @@ class Recipe(BaseSlapRecipe):
           mysql_conf))
 
     mysql_script_list = []
-    
     mysql_script_list.append(pkg_resources.resource_string(__name__,
                    'template/initmysql.sql.in') % {
                       'mysql_database': mysql_conf['mysql_database'],
@@ -325,7 +327,32 @@ class Recipe(BaseSlapRecipe):
         incremental_backup])[0]
     self.path_list.append(backup_controller)
     mysql_backup_cron = os.path.join(self.cron_d, 'mysql_backup')
-    open(mysql_backup_cron, 'w').write('0 0 * * * ' + backup_controller)
+    open(mysql_backup_cron, 'w').write('0 0 * * * %r' % str(backup_controller))
     self.path_list.append(mysql_backup_cron)
+    mysql_conf.update(backup_directory=incremental_backup)
     # The return could be more explicit database, user ...
+    remote_url = self.installWebDAVBackup()
+    remote_backup_cron = os.path.join(self.cron_d, 'remote_backup')
+    with open(remote_backup_cron, 'w') as file_:
+      file_.write('1 0 * * * %s' % ' '.join([
+        '%r' % str(self.options['duplicity_binary']),
+        '--no-encryption',
+        '%r' % str(backup_directory), '%r' % str(remote_url),
+      ]))
     return mysql_conf
+
+  def installWebDAVBackup(self):
+    computer_partition = self.request(
+      # XXX: Hardcoded url
+      'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/webdav:/software/davstorage/software.cfg'
+      'davstorage',
+      'mysql_backup',
+    )
+    url = re.sub('^http', 'webdav', computer_partition.getConnectionParameter('url'))
+    url = list(urlparse.urlparse(url))
+    url[1] = '%(user)s:%(password)s@%(netloc)s' % {
+      'user': computer_partition.getConnectionParameter('user'),
+      'password': computer_partition.getConnectionParameter('password'),
+      'netloc': url[1],
+    }
+    return urlparse.urlunparse(url)
