@@ -343,8 +343,7 @@ class Recipe(BaseSlapRecipe):
 
   def installWebDAVBackup(self):
     computer_partition = self.request(
-      # XXX: Hardcoded url
-      'http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/webdav:/software/davstorage/software.cfg'
+      self.options['davstorage-sr-url'],
       'davstorage',
       'mysql_backup',
     )
