@@ -166,6 +166,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -253,6 +254,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -340,6 +342,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -421,6 +424,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_xhtml_jquery_style
 external_method
 Images
 activity
@@ -501,6 +505,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_xhtml_jquery_style
 external_method
 Images
 activity
@@ -584,6 +589,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -668,6 +674,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
@@ -749,6 +756,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_xhtml_jquery_style
 external_method
 Images
 activity
@@ -829,6 +837,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
 Images
