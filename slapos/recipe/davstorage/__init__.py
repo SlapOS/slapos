@@ -110,17 +110,21 @@ class Recipe(BaseSlapRecipe):
 
   def createCertificate(self, size=1024, subject='/C=FR/L=Marcq-en-Baroeul/O=Nexedi'):
     key_file = os.path.join(self.etc_directory, 'httpd.key')
-    self.path_list.append(key_file)
-
     certificate_file = os.path.join(self.etc_directory, 'httpd.crt')
-    self.path_list.append(certificate_file)
 
-    subprocess.check_call([self.options['openssl_binary'],
-                           'req', '-x509', '-nodes',
-                           '-newkey', 'rsa:%s' % size,
-                           '-subj', str(subject),
-                           '-out', certificate_file,
-                           '-keyout', key_file
-                          ])
+    files = [key_file, certificate_file, ]
+    if not all([os.path.exists(f) for f in files]):
+      for f in files:
+        if os.path.exists(f):
+          os.unlink(f)
+
+      subprocess.check_call([self.options['openssl_binary'],
+                             'req', '-x509', '-nodes',
+                             '-newkey', 'rsa:%s' % size,
+                             '-subj', str(subject),
+                             '-out', certificate_file,
+                             '-keyout', key_file
+                            ])
+
     return dict(key=key_file,
                 certificate=certificate_file)
