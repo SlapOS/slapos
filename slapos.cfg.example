@@ -44,5 +44,5 @@ alias =
   slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.17:/software/slaprunner/software.cfg
   testnode http://git.erp5.org/gitweb/slapos.git/blob_plain/testnode:/software/testnode/software.cfg
   vifib http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.30:/software/vifib/software.cfg
-  xwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.45:/software/xwiki/software.cfg
+  xwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.46:/software/xwiki/software.cfg
   zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.5:/software/zabbix-agent/software.cfg
