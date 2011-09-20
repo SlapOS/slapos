@@ -36,13 +36,13 @@ alias =
   kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.43:/software/kvm/software.cfg
   lightforum https://svn.erp5.org/repos/public/slapos/trunk/software_release.contribution/lightforum.Christophe.Lefloch/software.cfg
   mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/mariadb/software.cfg
-  memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/memcached/software.cfg
-  mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.41:/software/mysql-5.1/software.cfg
+  memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.43:/software/memcached/software.cfg
+  mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.43:/software/mysql-5.1/software.cfg
   nbd http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.35:/software/nbd/software.cfg
   nosqltester http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/nosqltestbed:/software/nosqltestbed/software.cfg
   respest https://www.tiolive.com/vifib/P-OSOE.Respest.BENHAMED/Base_download
   slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.17:/software/slaprunner/software.cfg
   testnode http://git.erp5.org/gitweb/slapos.git/blob_plain/testnode:/software/testnode/software.cfg
   vifib http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.30:/software/vifib/software.cfg
-  xwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.39:/software/xwiki/software.cfg
+  xwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.45:/software/xwiki/software.cfg
   zabbixagent http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.5:/software/zabbix-agent/software.cfg
