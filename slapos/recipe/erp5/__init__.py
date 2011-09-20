@@ -829,24 +829,16 @@ SSLCARevocationPath %(ca_crl)s"""
     Add only repozo to cron (e.g. without tidstorage) allowing full
     and incremental backups.
     """
-    backup_base_path = self.createBackupDirectory('zodb')
-
-    full_backup_path = os.path.join(backup_base_path, 'full')
-    self._createDirectory(full_backup_path)
-
-    incremental_backup_path = os.path.join(backup_base_path, 'incremental')
-    self._createDirectory(incremental_backup_path)
-
+    backup_path = self.createBackupDirectory('zodb')
     repozo_cron_path = os.path.join(self.cron_d, 'repozo')
     repozo_cron_file = open(repozo_cron_path, 'w')
     try:
       repozo_cron_file.write('''
-0 0 * * 0 %(repozo_binary)s -F -f "%(zodb_root_path)s" -r "%(full_backup_path)s"
-0 * * * * %(repozo_binary)s -f "%(zodb_root_path)s" -r "%(incremental_backup_path)s"
+0 0 * * 0 %(repozo_binary)s --backup --full --file="%(zodb_root_path)s" --repository="%(backup_path)s"
+0 * * * * %(repozo_binary)s --backup --file="%(zodb_root_path)s" --repository="%(backup_path)s"
 ''' % dict(repozo_binary=self.options['repozo_binary'],
            zodb_root_path=zodb_root_path,
-           full_backup_path=full_backup_path,
-           incremental_backup_path=incremental_backup_path))
+           backup_path=backup_path))
     finally:
       repozo_cron_file.close()
 
