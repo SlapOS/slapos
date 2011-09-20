@@ -100,12 +100,10 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(htpasswd)
     password = self.generatePassword()
     user = 'user'
-    returncode = subprocess.call([self.options['apache_htpasswd'],
-                                  '-bc', htpasswd,
-                                  user, password
-                                 ])
-    if returncode != 0:
-      raise OSError('htpasswd command failed.')
+    subprocess.check_call([self.options['apache_htpasswd'],
+                           '-bc', htpasswd,
+                           user, password
+                          ])
     return dict(htpasswd_file=htpasswd,
                 user=user,
                 password=password)
@@ -117,14 +115,12 @@ class Recipe(BaseSlapRecipe):
     certificate_file = os.path.join(self.etc_directory, 'httpd.crt')
     self.path_list.append(certificate_file)
 
-    returncode = subprocess.call([self.options['openssl_binary'],
-                                  'req', '-x509', '-nodes',
-                                  '-newkey', 'rsa:%s' % size,
-                                  '-subj', str(subject),
-                                  '-out', certificate_file,
-                                  '-keyout', key_file
-                                 ])
-    if returncode != 0:
-      raise OSError('Error during the certificate and key generation.')
+    subprocess.check_call([self.options['openssl_binary'],
+                           'req', '-x509', '-nodes',
+                           '-newkey', 'rsa:%s' % size,
+                           '-subj', str(subject),
+                           '-out', certificate_file,
+                           '-keyout', key_file
+                          ])
     return dict(key=key_file,
                 certificate=certificate_file)
