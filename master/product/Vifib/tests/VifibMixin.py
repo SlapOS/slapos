@@ -134,8 +134,15 @@ class testVifibMixin(ERP5TypeTestCase):
     user = uf.getUserById('default_user').__of__(uf)
     newSecurityManager(None, user)
 
+  def isLiveTest(self):
+    return 'ERP5TypeLiveTestCase' in [q.__name__ for q in self.__class__.mro()]
+
   def setupPortalCertificateAuthority(self):
     """Sets up portal_certificate_authority"""
+    if self.isLiveTest():
+      # nothing to do in case of being called as live test
+      return
+
     if not self.portal.hasObject('portal_certificate_authority'):
       self.portal.manage_addProduct['Vifib'].manage_addTool(
         'ERP5 Certificate Authority Tool', None)
@@ -256,6 +263,9 @@ class testVifibMixin(ERP5TypeTestCase):
     """
     Manager has to create an administrator user first.
     """
+    if self.isLiveTest():
+      # nothing to do in Live Test
+      return
     portal = self.getPortal()
     if 'MailHost' in portal.objectIds():
       portal.manage_delObjects(['MailHost'])
