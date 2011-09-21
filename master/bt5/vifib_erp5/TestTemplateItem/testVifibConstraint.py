@@ -376,3 +376,90 @@ class TestVifibPurchasePackingListConstraint(testVifibMixin):
     ppl.newContent(portal_type='Purchase Packing List Line')
 
     self.assertFalse(consistency_message in getMessageList(ppl))
+
+class TestVifibPurchasePackingListLineConstraint(testVifibMixin):
+  def getTitle(self):
+    return "Vifib Purchase Packing List Line Constraint checks"
+
+  def test_aggregate_computer(self):
+    consistency_message_existence = 'There should be exactly one Computer '\
+      'present in Items'
+    consistency_message_state = 'Computer must be validated'
+
+    line = self.portal.purchase_packing_list_module.newContent(
+      portal_type='Purchase Packing List').newContent(
+        portal_type='Purchase Packing List Line',
+        resource=self.portal.portal_preferences\
+          .getPreferredSoftwareSetupResource())
+
+    self.assertTrue(consistency_message_existence in getMessageList(line))
+
+    computer = self.portal.computer_module.newContent(portal_type='Computer')
+
+    line.setAggregate(computer.getRelativeUrl())
+
+    self.assertFalse(consistency_message_existence in getMessageList(line))
+    self.assertTrue(consistency_message_state in getMessageList(line))
+
+    computer.validate()
+    self.assertFalse(consistency_message_state in getMessageList(line))
+
+  def test_aggregate_software_release(self):
+    consistency_message_existence = 'There should be exactly one Software '\
+      'Release present in Items'
+    consistency_message_state = 'Software Release must be validated'
+
+    line = self.portal.purchase_packing_list_module.newContent(
+      portal_type='Purchase Packing List').newContent(
+        portal_type='Purchase Packing List Line',
+        resource=self.portal.portal_preferences\
+          .getPreferredSoftwareSetupResource())
+
+    self.assertTrue(consistency_message_existence in getMessageList(line))
+
+    software_release = self.portal.software_release_module.newContent(
+      portal_type='Software Release')
+
+    line.setAggregate(software_release.getRelativeUrl())
+
+    self.assertFalse(consistency_message_existence in getMessageList(line))
+    self.assertTrue(consistency_message_state in getMessageList(line))
+
+    software_release.publish()
+    self.assertFalse(consistency_message_state in getMessageList(line))
+
+  def test_resource(self):
+    consistency_message_existence = 'Resource must be defined'
+    consistency_message_state = 'Resource must be validated'
+
+    line = self.portal.purchase_packing_list_module.newContent(
+      portal_type='Purchase Packing List').newContent(
+        portal_type='Purchase Packing List Line')
+
+    self.assertTrue(consistency_message_existence in getMessageList(line))
+
+    resource = self.portal.service_module.newContent(portal_type='Service')
+
+    line.setResource(resource.getRelativeUrl())
+
+    self.assertFalse(consistency_message_existence in getMessageList(line))
+    self.assertTrue(consistency_message_state in getMessageList(line))
+
+    resource.validate()
+    self.assertFalse(consistency_message_state in getMessageList(line))
+
+  def test_quantity(self):
+    consistency_message = 'Property quantity must be defined'
+
+    ppl = self.portal.purchase_packing_list_module.newContent(
+      portal_type='Purchase Packing List')
+    ppl.confirm()
+
+    line = ppl.newContent(
+        portal_type='Purchase Packing List Line')
+
+    self.assertTrue(consistency_message in getMessageList(line))
+
+    line.setQuantity(1.0)
+
+    self.assertFalse(consistency_message in getMessageList(line))

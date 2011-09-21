@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Category Membership Arity Constraint" module="erp5.portal_type"/>
+      <global name="Category Membership State Constraint" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -19,16 +19,8 @@
             </value>
         </item>
         <item>
-            <key> <string>constraint_base_category</string> </key>
-            <value>
-              <tuple>
-                <string>resource</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>constraint_portal_type</string> </key>
-            <value> <string>python: (\'Service\',)</string> </value>
+            <key> <string>base_category</string> </key>
+            <value> <string>aggregate</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -38,39 +30,27 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>resource_constraint</string> </value>
+            <value> <string>computer_state_constraint</string> </value>
         </item>
         <item>
-            <key> <string>max_arity</string> </key>
-            <value> <int>1</int> </value>
+            <key> <string>membership_portal_type_list</string> </key>
+            <value> <string>python: (\'Computer\',)</string> </value>
         </item>
         <item>
-            <key> <string>message_arity_not_in_range</string> </key>
-            <value> <string>Resource must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>message_arity_too_small</string> </key>
-            <value> <string>Resource must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>message_arity_with_portal_type_not_in_range</string> </key>
-            <value> <string>Resource must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>message_arity_with_portal_type_too_small</string> </key>
-            <value> <string>Resource must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>min_arity</string> </key>
-            <value> <int>1</int> </value>
+            <key> <string>message_different_state</string> </key>
+            <value> <string>Computer must be validated</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Category Membership Arity Constraint</string> </value>
+            <value> <string>Category Membership State Constraint</string> </value>
         </item>
         <item>
-            <key> <string>use_acquisition</string> </key>
-            <value> <int>0</int> </value>
+            <key> <string>workflow_state_list</string> </key>
+            <value> <string>python: \'validated\'</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_variable</string> </key>
+            <value> <string>validation_state</string> </value>
         </item>
       </dictionary>
     </pickle>
