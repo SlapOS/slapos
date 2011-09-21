@@ -285,7 +285,7 @@ class TestVifibInternalPackingListLineConstraint(testVifibMixin):
 
     self.assertFalse(consistency_message in getMessageList(line))
 
-class testVifibPersonConstraint(testVifibMixin):
+class TestVifibPersonConstraint(testVifibMixin):
   def getTitle(self):
     return "Vifib Person Constraint checks"
 
@@ -336,3 +336,43 @@ class testVifibPersonConstraint(testVifibMixin):
     person.newContent(portal_type='Email')
 
     self.assertFalse(consistency_message in getMessageList(person))
+
+class TestVifibPurchasePackingListConstraint(testVifibMixin):
+  def getTitle(self):
+    return "Vifib Purchase Packing List Constraint checks"
+
+  def test_reference_not_empty(self):
+    ppl = self.portal.purchase_packing_list_module.newContent(
+      portal_type='Purchase Packing List')
+    consistency_message = 'Reference must be defined'
+
+    # reset reference, as set during object creation
+    ppl.setReference(None)
+
+    self.assertTrue(consistency_message in getMessageList(ppl))
+
+    ppl.setReference(rndstr())
+
+    self.assertFalse(consistency_message in getMessageList(ppl))
+
+  def test_start_date_existence(self):
+    ppl = self.portal.purchase_packing_list_module.newContent(
+      portal_type='Purchase Packing List')
+    consistency_message = 'Property start_date must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(ppl))
+
+    ppl.setStartDate('2011/01/01')
+
+    self.assertFalse(consistency_message in getMessageList(ppl))
+
+  def test_lines(self):
+    ppl = self.portal.purchase_packing_list_module.newContent(
+      portal_type='Purchase Packing List')
+    consistency_message = 'Purchase Packing List Line is not defined'
+
+    self.assertTrue(consistency_message in getMessageList(ppl))
+
+    ppl.newContent(portal_type='Purchase Packing List Line')
+
+    self.assertFalse(consistency_message in getMessageList(ppl))
