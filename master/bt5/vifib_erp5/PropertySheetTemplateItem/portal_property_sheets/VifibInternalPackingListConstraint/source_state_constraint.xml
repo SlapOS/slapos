@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Property Existence Constraint" module="erp5.portal_type"/>
+      <global name="Category Membership State Constraint" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -13,55 +13,44 @@
             </value>
         </item>
         <item>
-            <key> <string>_local_properties</string> </key>
-            <value>
-              <tuple>
-                <dictionary>
-                  <item>
-                      <key> <string>id</string> </key>
-                      <value> <string>message_property_not_set</string> </value>
-                  </item>
-                  <item>
-                      <key> <string>type</string> </key>
-                      <value> <string>string</string> </value>
-                  </item>
-                </dictionary>
-              </tuple>
-            </value>
-        </item>
-        <item>
             <key> <string>_range_criterion</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
             </value>
         </item>
         <item>
-            <key> <string>constraint_property</string> </key>
-            <value>
-              <tuple>
-                <string>start_date</string>
-              </tuple>
-            </value>
+            <key> <string>base_category</string> </key>
+            <value> <string>source</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Property start_date must be defined</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>start_date_existence_constraint</string> </value>
+            <value> <string>source_state_constraint</string> </value>
         </item>
         <item>
-            <key> <string>message_no_such_property</string> </key>
-            <value> <string>Property start_date must be defined</string> </value>
+            <key> <string>membership_portal_type_list</string> </key>
+            <value> <string>python: portal.getPortalNodeTypeList()</string> </value>
         </item>
         <item>
-            <key> <string>message_property_not_set</string> </key>
-            <value> <string>Property start_date must be defined</string> </value>
+            <key> <string>message_different_state</string> </key>
+            <value> <string>Source must be validated</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Property Existence Constraint</string> </value>
+            <value> <string>Category Membership State Constraint</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_state_list</string> </key>
+            <value> <string>python: \'validated\'</string> </value>
+        </item>
+        <item>
+            <key> <string>workflow_variable</string> </key>
+            <value> <string>validation_state</string> </value>
         </item>
       </dictionary>
     </pickle>

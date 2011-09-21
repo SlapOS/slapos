@@ -161,3 +161,78 @@ class TestVifibEmailConstraint(testVifibMixin):
     self.stepTic()
     self.assertFalse(consistency_message in getMessageList(email))
     self.assertFalse(consistency_message in getMessageList(email_2))
+
+class TestVifibInternalPackingListConstraint(testVifibMixin):
+  def getTitle(self):
+    return "Vifib Internal Packing List Constraint checks"
+
+  def test_reference_not_empty(self):
+    ipl = self.portal.internal_packing_list_module.newContent(
+      portal_type='Internal Packing List')
+    # reference is set during object creation, set reset it
+    ipl.setReference(None)
+    consistency_message = 'Reference must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(ipl))
+
+    ipl.setReference(rndstr())
+
+    self.assertFalse(consistency_message in getMessageList(ipl))
+
+  def test_start_date_not_empty(self):
+    ipl = self.portal.internal_packing_list_module.newContent(
+      portal_type='Internal Packing List')
+    consistency_message = 'Property start_date must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(ipl))
+
+    ipl.setStartDate('2011/01/01')
+
+    self.assertFalse(consistency_message in getMessageList(ipl))
+
+  def test_destination_not_empty(self):
+    ipl = self.portal.internal_packing_list_module.newContent(
+      portal_type='Internal Packing List')
+    destination = self.portal.organisation_module.newContent(
+      portal_type='Organisation')
+    consistency_message = 'Destination must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(ipl))
+
+    ipl.setDestination(destination.getRelativeUrl())
+
+    self.assertFalse(consistency_message in getMessageList(ipl))
+
+  def test_destination_validated(self):
+    destination = self.portal.organisation_module.newContent(
+      portal_type='Organisation')
+    ipl = self.portal.internal_packing_list_module.newContent(
+      portal_type='Internal Packing List',
+      destination=destination.getRelativeUrl())
+    consistency_message = 'Destination must be validated'
+
+    self.assertTrue(consistency_message in getMessageList(ipl))
+    destination.validate()
+    self.assertFalse(consistency_message in getMessageList(ipl))
+
+  def test_source_validated(self):
+    source = self.portal.organisation_module.newContent(
+      portal_type='Organisation')
+    ipl = self.portal.internal_packing_list_module.newContent(
+      portal_type='Internal Packing List',
+      source=source.getRelativeUrl())
+    consistency_message = 'Source must be validated'
+
+    self.assertTrue(consistency_message in getMessageList(ipl))
+    source.validate()
+    self.assertFalse(consistency_message in getMessageList(ipl))
+
+  def test_lines_existance(self):
+    ipl = self.portal.internal_packing_list_module.newContent(
+      portal_type='Internal Packing List')
+    ipl.confirm()
+    consistency_message = 'Internal Packing List Line is not defined'
+
+    self.assertTrue(consistency_message in getMessageList(ipl))
+    ipl.newContent(portal_type='Internal Packing List Line')
+    self.assertFalse(consistency_message in getMessageList(ipl))
