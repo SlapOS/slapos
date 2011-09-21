@@ -284,3 +284,55 @@ class TestVifibInternalPackingListLineConstraint(testVifibMixin):
     line.setAggregate(aggregate.getRelativeUrl())
 
     self.assertFalse(consistency_message in getMessageList(line))
+
+class testVifibPersonConstraint(testVifibMixin):
+  def getTitle(self):
+    return "Vifib Person Constraint checks"
+
+  def test_last_name_existence(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    consistency_message = 'Property last_name must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(person))
+
+    person.setLastName(rndstr())
+
+    self.assertFalse(consistency_message in getMessageList(person))
+
+  def test_role(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    consistency_message = 'One role should be defined'
+    self.assertTrue(consistency_message in getMessageList(person))
+
+    role_id_list = list(self.portal.portal_categories.role.objectIds())
+    self.assertTrue(len(role_id_list) >= 2)
+    person.setRole(role_id_list[0])
+    self.assertFalse(consistency_message in getMessageList(person))
+
+    person.setRoleList(role_id_list)
+    self.assertTrue(consistency_message in getMessageList(person))
+    person.setRole(role_id_list[0])
+    self.assertFalse(consistency_message in getMessageList(person))
+
+  def test_subordination_state(self):
+    organisation = self.portal.organisation_module.newContent(
+      portal_type='Organisation')
+    person = self.portal.person_module.newContent(portal_type='Person',
+      subordination=organisation.getRelativeUrl())
+    consistency_message = 'The Organisation is not validated'
+
+    self.assertTrue(consistency_message in getMessageList(person))
+
+    organisation.validate()
+
+    self.assertFalse(consistency_message in getMessageList(person))
+
+  def test_email(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    consistency_message = 'Person have to contain an Email'
+
+    self.assertTrue(consistency_message in getMessageList(person))
+
+    person.newContent(portal_type='Email')
+
+    self.assertFalse(consistency_message in getMessageList(person))
