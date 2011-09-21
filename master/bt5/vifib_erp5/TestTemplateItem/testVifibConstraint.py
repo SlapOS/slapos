@@ -246,7 +246,7 @@ class TestVifibInternalPackingListLineConstraint(testVifibMixin):
       portal_type='Internal Packing List')
     ipl.confirm()
     line = ipl.newContent(portal_type='Internal Packing List Line')
-    
+
     consistency_message = 'Property quantity must be defined'
 
     self.assertTrue(consistency_message in getMessageList(line))
@@ -260,7 +260,7 @@ class TestVifibInternalPackingListLineConstraint(testVifibMixin):
       portal_type='Internal Packing List')
     ipl.confirm()
     line = ipl.newContent(portal_type='Internal Packing List Line')
-    
+
     consistency_message = 'Resource must be defined'
 
     self.assertTrue(consistency_message in getMessageList(line))
@@ -275,7 +275,7 @@ class TestVifibInternalPackingListLineConstraint(testVifibMixin):
       portal_type='Internal Packing List')
     ipl.confirm()
     line = ipl.newContent(portal_type='Internal Packing List Line')
-    
+
     consistency_message = 'There should be exactly one Computer present in Items'
 
     self.assertTrue(consistency_message in getMessageList(line))
@@ -463,3 +463,148 @@ class TestVifibPurchasePackingListLineConstraint(testVifibMixin):
     line.setQuantity(1.0)
 
     self.assertFalse(consistency_message in getMessageList(line))
+
+class TestVifibSoftwareReleaseConstraint(testVifibMixin):
+  def test_aggregate(self):
+    consistency_message_existence = 'One Software Product must be defined'
+    consistency_message_state = 'Software Product must be validated'
+
+    software_release = self.portal.software_release_module.newContent(
+      portal_type='Software Release')
+    software_release.publish()
+
+    self.assertTrue(consistency_message_existence in getMessageList(
+      software_release))
+
+    software_product = self.portal.software_product_module.newContent(
+      portal_type='Software Product')
+
+    software_release.setAggregate(software_product.getRelativeUrl())
+
+    self.assertFalse(consistency_message_existence in getMessageList(
+      software_release))
+
+    software_product_2 = self.portal.software_product_module.newContent(
+      portal_type='Software Product')
+
+    software_release.setAggregateList([software_product.getRelativeUrl(),
+      software_product_2.getRelativeUrl()])
+
+    self.assertTrue(consistency_message_existence in getMessageList(
+      software_release))
+
+    software_release.setAggregate(software_product.getRelativeUrl())
+
+    self.assertTrue(consistency_message_state in getMessageList(
+      software_release))
+
+    software_product.validate()
+
+    self.assertFalse(consistency_message_state in getMessageList(
+      software_release))
+
+  def test_contributor(self):
+    consistency_message_existence = 'One Contributor must be defined'
+    consistency_message_state = 'Contributor must be validated'
+
+    software_release = self.portal.software_release_module.newContent(
+      portal_type='Software Release')
+
+    self.assertTrue(consistency_message_existence in getMessageList(
+      software_release))
+
+    person = self.portal.person_module.newContent(
+      portal_type='Person')
+
+    #XXX: Conflict: contributor is category and dublin core property
+    #software_release.setContributor(person.getRelativeUrl())
+    software_release.setContributorValue(person)
+
+    self.assertFalse(consistency_message_existence in getMessageList(
+      software_release))
+
+    person_2 = self.portal.person_module.newContent(
+      portal_type='Person')
+
+    #XXX: Conflict: contributor is category and dublin core property
+    #software_release.setContributorList([person.getRelativeUrl(),
+    #  person_2.getRelativeUrl()])
+    software_release.setContributorValueList([person, person_2])
+
+    self.assertTrue(consistency_message_existence in getMessageList(
+      software_release))
+
+    #XXX: Conflict: contributor is category and dublin core property
+    #software_release.setContributor(person.getRelativeUrl())
+    software_release.setContributorValue(person)
+
+    self.assertTrue(consistency_message_state in getMessageList(
+      software_release))
+
+    person.validate()
+
+    self.assertFalse(consistency_message_state in getMessageList(
+      software_release))
+
+  def test_reference(self):
+    consistency_message = 'Reference must be defined'
+
+    software_release = self.portal.software_release_module.newContent(
+      portal_type='Software Release')
+
+    self.assertTrue(consistency_message in getMessageList(software_release))
+
+    software_release.setReference(rndstr())
+
+    self.assertFalse(consistency_message in getMessageList(software_release))
+
+  def test_language(self):
+    consistency_message = 'Language should be defined'
+
+    software_release = self.portal.software_release_module.newContent(
+      portal_type='Software Release')
+
+    self.assertTrue(consistency_message in getMessageList(software_release))
+
+    software_release.setLanguage(rndstr())
+
+    self.assertFalse(consistency_message in getMessageList(software_release))
+
+  def test_version(self):
+    consistency_message_existence = 'Version should be defined'
+    consistency_message_unicity = 'Version already exists'
+    reference = rndstr()
+
+    software_release = self.portal.software_release_module.newContent(
+      portal_type='Software Release', reference=reference)
+
+    self.assertTrue(consistency_message_existence in getMessageList(
+      software_release))
+
+    version = rndstr()
+
+    software_release.setVersion(version)
+
+    self.assertFalse(consistency_message_existence in getMessageList(
+      software_release))
+
+    software_release_2 = self.portal.software_release_module.newContent(
+      portal_type='Software Release', version=version, reference=reference)
+
+    software_release.publish()
+    software_release_2.publish()
+    self.stepTic()
+
+    self.assertTrue(consistency_message_unicity in getMessageList(
+      software_release))
+    self.assertTrue(consistency_message_unicity in getMessageList(
+      software_release_2))
+
+    software_release_2.setVersion(rndstr())
+
+    self.stepTic()
+
+    self.assertFalse(consistency_message_unicity in getMessageList(
+      software_release))
+    self.assertFalse(consistency_message_unicity in getMessageList(
+      software_release_2))

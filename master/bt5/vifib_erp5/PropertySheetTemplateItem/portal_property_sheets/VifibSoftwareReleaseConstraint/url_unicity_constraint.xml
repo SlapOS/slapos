@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Category Membership Arity Constraint" module="erp5.portal_type"/>
+      <global name="Attribute Unicity Constraint" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -19,56 +19,62 @@
             </value>
         </item>
         <item>
-            <key> <string>constraint_base_category</string> </key>
+            <key> <string>constraint_property</string> </key>
             <value>
               <tuple>
-                <string>contributor</string>
+                <string>url_string</string>
               </tuple>
             </value>
         </item>
         <item>
-            <key> <string>constraint_portal_type</string> </key>
-            <value> <string>python: (\'Person\',)</string> </value>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
-            <key> <string>description</string> </key>
-            <value> <string>There must be one and one only Contributor</string> </value>
+            <key> <string>filter_parameter</string> </key>
+            <value> <string>python: {\'portal_type\': object.getPortalType(), \'url_string\': object.getUrlString()}</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>contributor_category_membership_arity_constraint</string> </value>
+            <value> <string>url_unicity_constraint</string> </value>
         </item>
         <item>
-            <key> <string>max_arity</string> </key>
-            <value> <int>1</int> </value>
+            <key> <string>int_index</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
-            <key> <string>message_arity_not_in_range</string> </key>
-            <value> <string>One Contributor must be defined</string> </value>
+            <key> <string>membership_criterion_category</string> </key>
+            <value>
+              <tuple/>
+            </value>
         </item>
         <item>
-            <key> <string>message_arity_too_small</string> </key>
-            <value> <string>One Contributor must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>message_arity_with_portal_type_not_in_range</string> </key>
-            <value> <string>One Contributor must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>message_arity_with_portal_type_too_small</string> </key>
-            <value> <string>One Contributor must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>min_arity</string> </key>
-            <value> <int>1</int> </value>
+            <key> <string>message_invalid_attribute_unicity</string> </key>
+            <value> <string>URL must be unique</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Category Membership Arity Constraint</string> </value>
+            <value> <string>Attribute Unicity Constraint</string> </value>
         </item>
         <item>
-            <key> <string>use_acquisition</string> </key>
-            <value> <int>0</int> </value>
+            <key> <string>string_index</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>test_method_id</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>test_tales_expression</string> </key>
+            <value> <string>python: object.getUrlString("") != ""</string> </value>
         </item>
       </dictionary>
     </pickle>

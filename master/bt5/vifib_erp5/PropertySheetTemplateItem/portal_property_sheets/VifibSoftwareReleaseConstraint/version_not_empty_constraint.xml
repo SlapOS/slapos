@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Category Membership Arity Constraint" module="erp5.portal_type"/>
+      <global name="String Attribute Match Constraint" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -13,62 +13,61 @@
             </value>
         </item>
         <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>message_property_not_set</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>_range_criterion</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
             </value>
         </item>
         <item>
-            <key> <string>constraint_base_category</string> </key>
+            <key> <string>constraint_property</string> </key>
             <value>
               <tuple>
-                <string>contributor</string>
+                <string>version</string>
               </tuple>
             </value>
         </item>
         <item>
-            <key> <string>constraint_portal_type</string> </key>
-            <value> <string>python: (\'Person\',)</string> </value>
-        </item>
-        <item>
             <key> <string>description</string> </key>
-            <value> <string>There must be one and one only Contributor</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>contributor_category_membership_arity_constraint</string> </value>
+            <value> <string>version_not_empty_constraint</string> </value>
         </item>
         <item>
-            <key> <string>max_arity</string> </key>
-            <value> <int>1</int> </value>
+            <key> <string>message_attribute_match</string> </key>
+            <value> <string>Version should be defined</string> </value>
         </item>
         <item>
-            <key> <string>message_arity_not_in_range</string> </key>
-            <value> <string>One Contributor must be defined</string> </value>
+            <key> <string>message_no_such_property</string> </key>
+            <value> <string>Version should be defined</string> </value>
         </item>
         <item>
-            <key> <string>message_arity_too_small</string> </key>
-            <value> <string>One Contributor must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>message_arity_with_portal_type_not_in_range</string> </key>
-            <value> <string>One Contributor must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>message_arity_with_portal_type_too_small</string> </key>
-            <value> <string>One Contributor must be defined</string> </value>
-        </item>
-        <item>
-            <key> <string>min_arity</string> </key>
-            <value> <int>1</int> </value>
+            <key> <string>message_property_not_set</string> </key>
+            <value> <string>Version should be defined</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Category Membership Arity Constraint</string> </value>
-        </item>
-        <item>
-            <key> <string>use_acquisition</string> </key>
-            <value> <int>0</int> </value>
+            <value> <string>String Attribute Match Constraint</string> </value>
         </item>
       </dictionary>
     </pickle>
