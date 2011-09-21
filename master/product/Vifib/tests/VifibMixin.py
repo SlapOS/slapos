@@ -231,17 +231,22 @@ class testVifibMixin(ERP5TypeTestCase):
       if isTransitionPossible(rule, 'validate'):
         rule.validate()
 
-  def openAssignments(self):
+  def prepareTestUsers(self):
     """
-    Change workflow state of test data imported by the bt5
+    Prepare test users.
     """
+    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
     for person in self.portal.portal_catalog(
                                   portal_type="Person",
                                   id="test_%",
                                   ):
+
       person = person.getObject()
+      if isTransitionPossible(person, 'validate'):
+        person.validate()
       for assignment in person.contentValues(portal_type='Assignment'):
-        assignment.open()
+        if isTransitionPossible(assignment, 'open'):
+          assignment.open()
 
   def setupVifibMachineAuthenticationPlugin(self):
     """Sets up Vifib Authentication plugin"""
@@ -289,7 +294,7 @@ class testVifibMixin(ERP5TypeTestCase):
     self.setSystemPreference()
     self.setupRuleTool()
     self.setupNotificationModule()
-    self.openAssignments()
+    self.prepareTestUsers()
     transaction.commit()
     self.tic()
     self.logout()
