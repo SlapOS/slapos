@@ -51,11 +51,11 @@ class Recipe(BaseSlapRecipe):
     CONFIG['test_node_title'] = self.parameter_dict.get('test_node_title')
     CONFIG['test_suite'] = self.parameter_dict.get('test_suite')
     CONFIG['node_quantity'] = self.parameter_dict.get('node_quantity', '1')
-    CONFIG['project_title'] = self.parameter_dict.get('project_title'),
+    CONFIG['project_title'] = self.parameter_dict.get('project_title')
     CONFIG['ipv4_address'] = self.getLocalIPv4Address()
     CONFIG['ipv6_address'] = self.getGlobalIPv6Address()
     CONFIG['test_suite_master_url'] = self.parameter_dict.get(
-                                'test_suite_master_url', None),
+                                'test_suite_master_url', None)
     CONFIG['git_binary'] = self.options['git_binary']
     CONFIG['slapgrid_partition_binary'] = self.options[
       'slapgrid_partition_binary']
