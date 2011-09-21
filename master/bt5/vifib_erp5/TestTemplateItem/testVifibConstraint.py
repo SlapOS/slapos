@@ -128,3 +128,36 @@ class TestVifibComputerConstraint(testVifibMixin):
 
     self.assertFalse(consistency_message in getMessageList(computer))
     self.assertFalse(consistency_message in getMessageList(computer_2))
+
+class TestVifibEmailConstraint(testVifibMixin):
+  def getTitle(self):
+    return "Vifib Email Constraint checks"
+
+  def test_url_string_not_empty(self):
+    email = self.portal.person_module.newContent(portal_type='Person'
+      ).newContent(portal_type='Email')
+    consistency_message = 'Email must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(email))
+
+    email.setUrlString(rndstr())
+
+    self.assertFalse(consistency_message in getMessageList(email))
+
+  def test_url_string_unique(self):
+    url_string = rndstr()
+    url_string_2 = rndstr()
+    email = self.portal.person_module.newContent(portal_type='Person'
+      ).newContent(portal_type='Email', url_string=url_string)
+    email_2 = self.portal.person_module.newContent(portal_type='Person'
+      ).newContent(portal_type='Email', url_string=url_string)
+    consistency_message = 'Email must be unique'
+
+    self.stepTic()
+    self.assertTrue(consistency_message in getMessageList(email))
+    self.assertTrue(consistency_message in getMessageList(email_2))
+
+    email_2.setUrlString(url_string_2)
+    self.stepTic()
+    self.assertFalse(consistency_message in getMessageList(email))
+    self.assertFalse(consistency_message in getMessageList(email_2))
