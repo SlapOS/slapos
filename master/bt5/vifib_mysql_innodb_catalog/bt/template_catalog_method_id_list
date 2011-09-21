@@ -7,3 +7,4 @@ erp5_mysql_innodb/z_catalog_email_list
 erp5_mysql_innodb/z_catalog_software_instance_list
 erp5_mysql_innodb/z_create_computer_partition
 erp5_mysql_innodb/z_create_software_instance_tree
+erp5_mysql_innodb/z_create_versioning
