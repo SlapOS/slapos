@@ -36,7 +36,7 @@ def getMessageList(o):
 
 class TestVifibSoftwareProductConstraint(testVifibMixin):
   def getTitle(self):
-    return "Vifib Constraint checks"
+    return "Vifib Software Product Constraint checks"
 
   def test_title_not_empty(self):
     software_product = self.portal.software_product_module.newContent(
@@ -68,3 +68,19 @@ class TestVifibSoftwareProductConstraint(testVifibMixin):
 
     self.assertFalse(consistency_message in getMessageList(software_product))
     self.assertFalse(consistency_message in getMessageList(software_product_2))
+
+class TestVifibAssignmentConstraint(testVifibMixin):
+  def getTitle(self):
+    return "Vifib Assignment Constraint checks"
+
+  def test_parent_person_validated(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    assignment = person.newContent(portal_type='Assignment')
+
+    consistency_message = 'The person document has to be validated to start '\
+      'assignment'
+    self.assertTrue(consistency_message in getMessageList(assignment))
+
+    person.validate()
+
+    self.assertFalse(consistency_message in getMessageList(assignment))
