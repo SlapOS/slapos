@@ -84,3 +84,47 @@ class TestVifibAssignmentConstraint(testVifibMixin):
     person.validate()
 
     self.assertFalse(consistency_message in getMessageList(assignment))
+
+class TestVifibComputerConstraint(testVifibMixin):
+  def getTitle(self):
+    return "Vifib Computer Constraint checks"
+
+  def test_title_not_empty(self):
+    computer = self.portal.computer_module.newContent(portal_type='Computer')
+    consistency_message = 'Title must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(computer))
+
+    computer.setTitle(rndstr())
+
+    self.assertFalse(consistency_message in getMessageList(computer))
+
+  def test_reference_not_empty(self):
+    computer = self.portal.computer_module.newContent(portal_type='Computer')
+    consistency_message = 'Reference must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(computer))
+
+    computer.setReference(rndstr())
+
+    self.assertFalse(consistency_message in getMessageList(computer))
+
+  def test_reference_unique(self):
+    reference = rndstr()
+    reference_2 = rndstr()
+    computer = self.portal.computer_module.newContent(portal_type='Computer',
+      reference=reference)
+    computer_2 = self.portal.computer_module.newContent(portal_type='Computer',
+      reference=reference)
+    consistency_message = 'Reference must be unique'
+
+    self.stepTic()
+
+    self.assertTrue(consistency_message in getMessageList(computer))
+    self.assertTrue(consistency_message in getMessageList(computer_2))
+
+    computer_2.setReference(reference_2)
+    self.stepTic()
+
+    self.assertFalse(consistency_message in getMessageList(computer))
+    self.assertFalse(consistency_message in getMessageList(computer_2))
