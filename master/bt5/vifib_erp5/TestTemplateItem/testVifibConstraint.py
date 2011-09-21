@@ -236,3 +236,51 @@ class TestVifibInternalPackingListConstraint(testVifibMixin):
     self.assertTrue(consistency_message in getMessageList(ipl))
     ipl.newContent(portal_type='Internal Packing List Line')
     self.assertFalse(consistency_message in getMessageList(ipl))
+
+class TestVifibInternalPackingListLineConstraint(testVifibMixin):
+  def getTitle(self):
+    return "Vifib Internal Packing List Line Constraint checks"
+
+  def test_quantity_existence(self):
+    ipl = self.portal.internal_packing_list_module.newContent(
+      portal_type='Internal Packing List')
+    ipl.confirm()
+    line = ipl.newContent(portal_type='Internal Packing List Line')
+    
+    consistency_message = 'Property quantity must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(line))
+
+    line.setQuantity(1.0)
+
+    self.assertFalse(consistency_message in getMessageList(line))
+
+  def test_resource(self):
+    ipl = self.portal.internal_packing_list_module.newContent(
+      portal_type='Internal Packing List')
+    ipl.confirm()
+    line = ipl.newContent(portal_type='Internal Packing List Line')
+    
+    consistency_message = 'Resource must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(line))
+
+    resource = self.portal.service_module.newContent(portal_type='Service')
+    line.setResource(resource.getRelativeUrl())
+
+    self.assertFalse(consistency_message in getMessageList(line))
+
+  def test_aggregate_computer(self):
+    ipl = self.portal.internal_packing_list_module.newContent(
+      portal_type='Internal Packing List')
+    ipl.confirm()
+    line = ipl.newContent(portal_type='Internal Packing List Line')
+    
+    consistency_message = 'There should be exactly one Computer present in Items'
+
+    self.assertTrue(consistency_message in getMessageList(line))
+
+    aggregate = self.portal.computer_module.newContent(portal_type='Computer')
+    line.setAggregate(aggregate.getRelativeUrl())
+
+    self.assertFalse(consistency_message in getMessageList(line))
