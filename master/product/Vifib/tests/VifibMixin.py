@@ -252,7 +252,7 @@ class testVifibMixin(ERP5TypeTestCase):
     isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
     for service in self.portal.portal_catalog(
                                   portal_type="Service",
-                                  id="service_%",
+                                  id="vifib_%",
                                   ):
 
       service = service.getObject()
