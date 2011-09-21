@@ -116,7 +116,7 @@ class IComputerPartition(IBuildoutController):
     filter_kw -- dictionary of filtering parameter to select the requested
                  computer partition.
 
-      computer_reference - computer of the requested partition
+      computer_guid - computer of the requested partition
       partition_type - virtio, slave, full, limited
       port - port provided by the requested partition
 
