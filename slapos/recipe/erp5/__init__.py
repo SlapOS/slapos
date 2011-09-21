@@ -546,13 +546,23 @@ class Recipe(BaseSlapRecipe):
       }
 
   def installHaproxy(self, ip, port, name, server_check_path, url_list):
-    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 20s rise 2 fall 4"""
+    # inter must be quite short in order to detect quickly an unresponsive node
+    #      and to detect quickly a node which is back
+    # rise must be minimal possible : 1, indeed, a node which is back don't need
+    #      to sleep more time and we can give him work immediately
+    # fall should be quite sort. with inter at 3, and fall at 2, a node will be
+    #      considered as dead after 6 seconds.
+    # maxconn should be set as the maximum thread we have per zope, like this
+    #      haproxy will manage the queue of request with the possibility to
+    #      move a request to another node if the initially selected one is dead
+    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxconn %(cluster_zope_thread_amount)s"""
     config = dict(name=name, ip=ip, port=port,
         server_check_path=server_check_path,)
     i = 1
     server_list = []
     for url in url_list:
       server_list.append(server_template % dict(name='%s_%s' % (name, i),
+        cluster_zope_thread_amount=self.options.get('cluster_zope_thread_amount', 1),
         address=url))
       i += 1
     config['server_text'] = '\n'.join(server_list)
