@@ -22,7 +22,7 @@ defaults
   timeout connect 5s
   # As requested in haproxy doc, make this "at least equal to timeout server".
   timeout client 305s
-  # Use "option httpclose" to preserve client & server persistent connections
+  # Use "option httpclose" to not preserve client & server persistent connections
   # while handling every incoming request individually, dispatching them one after
   # another to servers, in HTTP close mode. This is really needed when haproxy
   # is configured with maxconn to 1, without this options browser are unable
