@@ -314,17 +314,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         self.portal.portal_preferences.getPreferredInstanceHostingResource(),
         sequence)
 
-  def stepCheckComputerPartitionNoInstanceHostingSalePackingList(self,
-      sequence, **kw):
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=sequence['computer_partition_uid'])
-    delivery_line_list = [q for q in computer_partition
-        .getAggregateRelatedValueList(
-          portal_type=self.sale_packing_list_line_portal_type)
-        if q.getResource() == self.\
-          portal.portal_preferences.getPreferredInstanceHostingResource()]
-    self.assertEqual(0, len(delivery_line_list))
-
   def stepCheckComputerPartitionInstanceHostingSalePackingListDelivered(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('delivered',
