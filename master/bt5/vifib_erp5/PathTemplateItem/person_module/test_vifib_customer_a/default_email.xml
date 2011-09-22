@@ -7,6 +7,10 @@
     <pickle>
       <dictionary>
         <item>
+            <key> <string>coordinate_text</string> </key>
+            <value> <string>test_customer_a@example.org</string> </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>default_email</string> </value>
         </item>
