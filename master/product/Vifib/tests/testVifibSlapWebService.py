@@ -6077,7 +6077,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
 
   def stepRequestCredentialFromWebSite(self, sequence, **kw):
-    sequence['web_useremail'] = '%s@example.com' % random()
+    sequence['web_user_email'] = '%s@example.com' % random()
     sequence['web_user'] = '%s.%s' % (self.id(), random())
     self.portal.ERP5Site_newCredentialRequest(\
         first_name='Homer',
