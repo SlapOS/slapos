@@ -24,7 +24,9 @@ defaults
   timeout client 305s
   # Use "option httpclose" to preserve client & server persistent connections
   # while handling every incoming request individually, dispatching them one after
-  # another to servers, in HTTP close mode
+  # another to servers, in HTTP close mode. This is really needed when haproxy
+  # is configured with maxconn to 1, without this options browser are unable
+  # to render a page
   option httpclose
 
 listen %(name)s %(ip)s:%(port)s
