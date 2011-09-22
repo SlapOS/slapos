@@ -6088,13 +6088,14 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
 
   def stepRequestCredentialFromWebSite(self, sequence, **kw):
+    sequence['web_useremail'] = '%s@example.com' % random()
     sequence['web_user'] = '%s.%s' % (self.id(), random())
     self.portal.ERP5Site_newCredentialRequest(\
         first_name='Homer',
         last_name='Simpson',
         reference=sequence['web_user'],
         password='secret',
-        default_email_text='homer.simpson@fox.com',
+        default_email_text=sequence['web_user_email'],
         )
 
   def stepSubmitCredentialRequest(self, sequence, **kw):
@@ -6160,7 +6161,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
         last_name=sequence['updated_last_name'],
         reference=sequence['web_user'],
         password='secret',
-        default_email_text='homer.simpson@fox.com',
+        default_email_text=sequence['web_user_email'],
     )
     self.assertTrue('Credential%20Update%20Created' in result)
 
