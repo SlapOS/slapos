@@ -7,6 +7,16 @@
     <pickle>
       <dictionary>
         <item>
+            <key> <string>coordinate_text</string> </key>
+            <value> <string>test_developer@example.org</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>default_email</string> </value>
         </item>
@@ -34,7 +44,7 @@
         </item>
         <item>
             <key> <string>url_string</string> </key>
-            <value> <string>test_developper@example.org</string> </value>
+            <value> <string>test_developer@example.org</string> </value>
         </item>
       </dictionary>
     </pickle>
