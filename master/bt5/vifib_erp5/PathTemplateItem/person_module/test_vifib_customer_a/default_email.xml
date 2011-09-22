@@ -11,6 +11,12 @@
             <value> <string>test_customer_a@example.org</string> </value>
         </item>
         <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>default_email</string> </value>
         </item>
@@ -26,7 +32,7 @@
         </item>
         <item>
             <key> <string>url_string</string> </key>
-            <value> <string>test_customer@example.org</string> </value>
+            <value> <string>test_customer_a@example.org</string> </value>
         </item>
       </dictionary>
     </pickle>
