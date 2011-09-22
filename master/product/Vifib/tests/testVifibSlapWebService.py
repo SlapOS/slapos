@@ -3726,6 +3726,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepSetDeliveryLineAmountEqualOne(self, sequence):
     sequence.edit(delivery_line_amount=1)
 
+  def stepSetRandomRequestedReference(self, sequence, **kw):
+    sequence['requested_reference'] = self.id() + str(random())
 
 class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
@@ -4633,9 +4635,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
        partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
        filter_kw=sequence.get('requested_filter_dict', {})
        )
-
-  def stepSetRandomRequestedReference(self, sequence, **kw):
-    sequence['requested_reference'] = self.id() + str(random())
 
   def stepSetCurrentPersonSlapRequestedSoftwareInstance(self, sequence, **kw):
     software_instance_list = self.portal.portal_catalog(
