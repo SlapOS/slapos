@@ -92,8 +92,8 @@ class Recipe(BaseSlapRecipe):
     testnode_log = os.path.join(self.log_directory, 'erp5testnode.log')
     wrapper = zc.buildout.easy_install.scripts([('erp5testnode',
      'slapos.recipe.librecipe.execute', 'executee')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[self.options['testnode'], '-l',
-      testnode_log, testnode_config], {'GIT_SSL_NO_VERIFY': '1'})[0]
+      self.wrapper_directory, arguments=[[self.options['testnode'], '-l',
+      testnode_log, testnode_config], {'GIT_SSL_NO_VERIFY': '1'}])[0]
     path_list.append(testnode_config)
     path_list.append(wrapper)
     return path_list
