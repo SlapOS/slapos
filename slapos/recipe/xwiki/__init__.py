@@ -35,11 +35,12 @@ import zc.buildout
 class Recipe(BaseSlapRecipe):
 
   def _install(self):
+    self.requirements, self.ws = self.egg.working_set()
     parameter_dict = self.computer_partition.getInstanceParameterDict()
-    ipv4 = self.getLocalIPv4Address(parameter_dict)
-    ipv6 = self.getGlobalIPv6Address(parameter_dict)
+    ipv4 = self.getLocalIPv4Address()
+    ipv6 = self.getGlobalIPv6Address()
 
-    self.install_mysql_server_configuration(self.getLocalIPv4Address(parameter_dict))
+    self.install_mysql_server_configuration(ipv4)
 
     port = '8900'
     tomcat_home = os.path.join(self.data_root_directory, 'tomcat')
@@ -56,8 +57,8 @@ class Recipe(BaseSlapRecipe):
           shtuil.rmtree(dst)
           raise
 
-    shutil.copy(self.options['hsql_location'].strip(), os.path.join(tomcat_lib,
-      'hsqldb.jar'))
+    shutil.copy(self.options['jdbc_location'].strip(), os.path.join(tomcat_lib,
+      'jdbc.jar'))
     # headless mode
     self._writeFile(os.path.join(tomcat_home, 'bin', 'setenv.sh'), '''#!/bin/sh
 export JAVA_OPTS="${JAVA_OPTS} -Djava.awt.headless=true"

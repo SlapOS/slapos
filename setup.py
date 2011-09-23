@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.17-dev'
+version = '0.26-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -40,6 +40,7 @@ setup(name=name,
       entry_points={
         'zc.buildout': [
           'download = slapos.recipe.download:Recipe',
+          'davstorage = slapos.recipe.davstorage:Recipe',
           'erp5 = slapos.recipe.erp5:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
           'helloworld = slapos.recipe.helloworld:Recipe',
@@ -52,10 +53,10 @@ setup(name=name,
           'mysql = slapos.recipe.mysql:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'nosqltestbed = slapos.recipe.nosqltestbed:NoSQLTestBed',
-          'osoeslaptraining = slapos.recipe.osoeslaptraining:Request',
-          'osoeslaptraining.request = slapos.recipe.osoeslaptraining:Request',
-          'osoeslaptraining.static = slapos.recipe.osoeslaptraining:Static',
-          'osoeslaptraining.simple = slapos.recipe.osoeslaptraining:Simple',
+          'lamp = slapos.recipe.lamp:Request',
+          'lamp.request = slapos.recipe.lamp:Request',
+          'lamp.static = slapos.recipe.lamp:Static',
+          'lamp.simple = slapos.recipe.lamp:Simple',
           'proactive = slapos.recipe.proactive:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
           'siptester = slapos.recipe.siptester:SipTesterRecipe',

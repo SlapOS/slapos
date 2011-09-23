@@ -60,6 +60,7 @@ class BaseSlapRecipe:
         'xml_report')
     self.destroy_script_location = os.path.join(self, self.work_directory,
         'sbin', 'destroy')
+    self.promise_directory = os.path.join(self.etc_directory, 'promise')
 
     # default directory structure information
     self.default_directory_list = [
@@ -71,6 +72,7 @@ class BaseSlapRecipe:
       self.etc_directory, # CP/etc - configuration container
       self.wrapper_directory, # CP/etc/run - for wrappers
       self.wrapper_report_directory, # CP/etc/report - for report wrappers
+      self.promise_directory, # CP/etc/promise - for promise checking scripts
       self.var_directory, # CP/var - partition "internal" container for logs,
                           # and another metadata
       self.wrapper_xml_report_directory, # CP/var/xml_report - for xml_report wrappers
@@ -243,3 +245,14 @@ class BaseSlapRecipe:
   def _install(self):
     """Hook which shall be implemented in children class"""
     raise NotImplementedError('Shall be implemented by subclass')
+
+  def createPromiseWrapper(self, promise_name, file_content):
+    """Create a promise wrapper.
+
+    This wrapper aim to check if the software release is doing its job.
+
+    Return the promise file path.
+    """
+    promise_path = os.path.join(self.promise_directory, promise_name)
+    self._writeExecutable(promise_path, file_content)
+    return promise_path

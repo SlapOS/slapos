@@ -124,7 +124,7 @@ class BaseRecipe(BaseSlapRecipe):
     self.path_list.append(config_file)
     self.path_list.append(self.createConfigurationFile('php.ini',
         self.substituteTemplate(pkg_resources.resource_filename(__name__,
-          'template/php.ini.in'), {})))
+          'template/php.ini.in'), dict(tmp_directory=self.tmp_directory))))
     self.path_list.extend(zc.buildout.easy_install.scripts([(
       'httpd',
         __name__ + '.apache', 'runApache')], self.ws,
