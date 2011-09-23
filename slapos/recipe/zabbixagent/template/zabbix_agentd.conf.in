@@ -229,3 +229,5 @@ ListenIP=%(ip)s
 # Mandatory: no
 # Default:
 # UserParameter=
+
+%(user_parameter_string)s
