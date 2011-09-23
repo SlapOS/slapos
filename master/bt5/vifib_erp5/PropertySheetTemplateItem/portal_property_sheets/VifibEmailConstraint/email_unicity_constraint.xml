@@ -34,7 +34,7 @@
         </item>
         <item>
             <key> <string>filter_parameter</string> </key>
-            <value> <string>python: {\'portal_type\': object.getPortalType(), \'url_string\': object.getUrlString()}</string> </value>
+            <value> <string>python: {\'portal_type\': object.getPortalType(), \'url_string\': object.getUrlString(), \'parent_portal_type\': object.getParentValue().getPortalType()}</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

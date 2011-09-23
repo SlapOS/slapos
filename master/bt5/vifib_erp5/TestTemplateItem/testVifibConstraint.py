@@ -162,6 +162,21 @@ class TestVifibEmailConstraint(testVifibMixin):
     self.assertFalse(consistency_message in getMessageList(email))
     self.assertFalse(consistency_message in getMessageList(email_2))
 
+  def test_url_string_does_not_conflict_with_credential(self):
+    url_string = rndstr()
+
+    person_email = self.portal.person_module.newContent(portal_type='Person'
+      ).newContent(portal_type='Email', url_string=url_string)
+
+    credential_email = self.portal.credential_update_module.newContent(
+      portal_type='Credential Update').newContent(portal_type='Email',
+      url_string=url_string)
+
+    self.stepTic()
+
+    self.assertFalse('Email must be unique' in getMessageList(person_email))
+    self.assertFalse('Email must be unique' in getMessageList(credential_email))
+
 class TestVifibInternalPackingListConstraint(testVifibMixin):
   def getTitle(self):
     return "Vifib Internal Packing List Constraint checks"
