@@ -1,1 +1,1 @@
-Vifib 5.4.7
+Vifib 0.2
