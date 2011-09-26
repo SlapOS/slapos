@@ -668,7 +668,15 @@ SSLCARevocationPath %(ca_crl)s"""
     # maxconn should be set as the maximum thread we have per zope, like this
     #      haproxy will manage the queue of request with the possibility to
     #      move a request to another node if the initially selected one is dead
-    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxconn %(cluster_zope_thread_amount)s"""
+    # maxqueue is the number of waiting request in the queue of every zope client.
+    #      It allows to make sure that there is not a zope client handling all
+    #      the work while other clients are doing nothing. This was happening
+    #      even thoug we have round robin distribution because when a node dies
+    #      some seconds, all request are dispatched to other nodes, and then users
+    #      stick in other nodes and are not coming back. Please note this option
+    #      is not an issue if you have more than (maxqueue * node_quantity) requests
+    #      because haproxy will handle a top-level queue
+    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxqueue 5 maxconn %(cluster_zope_thread_amount)s"""
     config = dict(name=name, ip=ip, port=port,
         server_check_path=server_check_path,)
     i = 1
