@@ -309,7 +309,7 @@ class Recipe(BaseSlapRecipe):
     mysql_backup_cron = os.path.join(self.cron_d, 'mysql_backup')
     with open(mysql_backup_cron, 'w') as file_:
       file_.write('0 0 * * * %(mysqldump)s | %(gzip)s > %(tmpdump)s' \
-                  '&& mv %(tmpdump)s %(dumpfile)s' % {
+                  '&& mv -f %(tmpdump)s %(dumpfile)s' % {
                     'mysqldump': mysqldump_cmdline_str,
                     'gzip': self.options['gzip_binary'],
                     'tmpdump': self.parseCmdArgument(tmpdump_file),
