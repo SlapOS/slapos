@@ -4,7 +4,10 @@ Changes
 0.15 (unreleased)
 -----------------
 
- * No changes yet.
+ * slapgrid: Sanitize environment variables as early as possible. [Arnaud
+   Fontaine]
+ * slap: Docstring bugfix. [Sebastien Robin]
+ * slap: Make request asynchronous call. [Łukasz Nowak]
 
 0.14 (2011-08-31)
 -----------------
