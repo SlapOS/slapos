@@ -33,6 +33,8 @@ from hashlib import md5
 import stat
 import netaddr
 import time
+import re
+import urlparse
 
 class BaseSlapRecipe:
   """Base class for all slap.recipe.*"""
@@ -256,3 +258,34 @@ class BaseSlapRecipe:
     promise_path = os.path.join(self.promise_directory, promise_name)
     self._writeExecutable(promise_path, file_content)
     return promise_path
+
+  def setConnectionUrl(self, scheme, host, path='', params='', query='',
+                       fragment='', port=None, auth=None):
+    """Set the ConnectionDict to a dict with only one Universal Resource
+    Locator.
+
+    auth can be either a login string or a tuple (login, password).
+
+    """
+    # XXX-Antoine: I didn't find any standard module to join an url with
+    # login, password, ipv6 host and port.
+    # So instead of copy and past in every recipe I factorized it right here.
+    netloc = ''
+    if auth is not None:
+      auth = tuple(auth)
+      netloc = str(auth[0]) # Login
+      if len(auth) > 1:
+        netloc += ':%s' % auth[1] # Password
+      netloc += '@'
+
+    # host is an ipv6 address whithout brackets
+    if ':' in host and not re.match(r'^\[.*\]$', host):
+      netloc += '[%s]' % host
+    else:
+      netloc += str(host)
+
+    if port is not None:
+      netloc += ':%s' % port
+
+    url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
+    self.setConnectionDict(dict(url=url))
