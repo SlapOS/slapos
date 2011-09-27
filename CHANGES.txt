@@ -1,10 +1,11 @@
 Changes
 =======
 
-0.26 (unreleased)
+0.26 (2011-09-27)
 -----------------
 
- * No changes yet.
+ * Davstorage: returning more explicit url (using webdav scheme). [Antoine Catton]
+ * Other mysql minor fixes. [Antoine Catton]
 
 0.25 (2011-09-21)
 -----------------
