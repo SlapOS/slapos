@@ -165,13 +165,16 @@ class OpenOrder(SlapDocument):
       }
     if software_type is not None:
       request_dict['software_type'] = software_type
-    self._connection_helper.POST('/requestComputerPartition', request_dict)
-    xml = self._connection_helper.response.read()
-    software_instance = xml_marshaller.loads(xml)
-    computer_partition = ComputerPartition(
-      software_instance.slap_computer_id.encode('UTF-8'),
-      software_instance.slap_computer_partition_id.encode('UTF-8'))
-    return computer_partition
+    try:
+      self._connection_helper.POST('/requestComputerPartition', request_dict)
+    except ResourceNotReady:
+      return ComputerPartition(request_dict=request_dict)
+    else:
+      xml = self._connection_helper.response.read()
+      software_instance = xml_marshaller.loads(xml)
+      return ComputerPartition(
+        software_instance.slap_computer_id.encode('UTF-8'),
+        software_instance.slap_computer_partition_id.encode('UTF-8'))
 
 def _syncComputerInformation(func):
   """
@@ -267,14 +270,41 @@ def _syncComputerPartitionInformation(func):
     return func(self, *args, **kw)
   return decorated
 
+
+def _requestIfNeeded(func):
+  """Request computer partition if required"""
+  def decorated(self, *args, **kw):
+    request_dict = getattr(self, '_request_dict', None)
+    if request_dict is None:
+      # no need to request self
+      return func(self, *args, **kw)
+    self._connection_helper.POST('/requestComputerPartition', request_dict)
+    xml = self._connection_helper.response.read()
+    software_instance = xml_marshaller.loads(xml)
+    self._computer_id = software_instance.slap_computer_id.encode('UTF-8')
+    self._partition_id = software_instance.slap_computer_partition_id.encode('UTF-8')
+    self._request_dict = None
+    return func(self, *args, **kw)
+  return decorated
+
+
 class ComputerPartition(SlapDocument):
 
   zope.interface.implements(interface.IComputerPartition)
 
-  def __init__(self, computer_id, partition_id):
+  def __init__(self, computer_id=None, partition_id=None, request_dict=None):
+    if request_dict is not None and (computer_id is not None or
+        partition_id is not None):
+      raise TypeError('request_dict conflicts with computer_id and '
+        'partition_id')
+    if request_dict is None and (computer_id is None or partition_id is None):
+      raise TypeError('computer_id and partition_id or request_dict are '
+        'required')
     self._computer_id = computer_id
     self._partition_id = partition_id
+    self._request_dict = request_dict
 
+  @_requestIfNeeded
   def __getinitargs__(self):
     return (self._computer_id, self._partition_id, )
 
@@ -283,6 +313,7 @@ class ComputerPartition(SlapDocument):
   #      and not when try to access to real partition is required.
   #      To have later raising (like in case of calling methods), the way how
   #      Computer Partition data are fetch from server shall be delayed
+  @_requestIfNeeded
   @_syncComputerPartitionInformation
   def request(self, software_release, software_type, partition_reference,
               shared=False, partition_parameter_kw=None, filter_kw=None,
@@ -310,59 +341,72 @@ class ComputerPartition(SlapDocument):
         'filter_xml': xml_marshaller.dumps(filter_kw),
         'state': xml_marshaller.dumps(state),
       }
-    self._connection_helper.POST('/requestComputerPartition', request_dict)
-    xml = self._connection_helper.response.read()
-    software_instance = xml_marshaller.loads(xml)
-    computer_partition = ComputerPartition(
-      software_instance.slap_computer_id.encode('UTF-8'),
-      software_instance.slap_computer_partition_id.encode('UTF-8'))
-    return computer_partition
+    try:
+      self._connection_helper.POST('/requestComputerPartition', request_dict)
+    except ResourceNotReady:
+      return ComputerPartition(request_dict=request_dict)
+    else:
+      xml = self._connection_helper.response.read()
+      software_instance = xml_marshaller.loads(xml)
+      return ComputerPartition(
+        software_instance.slap_computer_id.encode('UTF-8'),
+        software_instance.slap_computer_partition_id.encode('UTF-8'))
 
+  @_requestIfNeeded
   def building(self):
     self._connection_helper.POST('/buildingComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self._partition_id})
 
+  @_requestIfNeeded
   def available(self):
     self._connection_helper.POST('/availableComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self._partition_id})
 
+  @_requestIfNeeded
   def destroyed(self):
     self._connection_helper.POST('/destroyedComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self._partition_id,
       })
 
+  @_requestIfNeeded
   def started(self):
     self._connection_helper.POST('/startedComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self._partition_id,
       })
 
+  @_requestIfNeeded
   def stopped(self):
     self._connection_helper.POST('/stoppedComputerPartition', {
       'computer_id': self._computer_id,
       'computer_partition_id': self._partition_id,
       })
 
+  @_requestIfNeeded
   def error(self, error_log):
     self._connection_helper.POST('/softwareInstanceError', {
       'computer_id': self._computer_id,
       'computer_partition_id': self._partition_id,
       'error_log': error_log})
 
+  @_requestIfNeeded
   def getId(self):
     return self._partition_id
 
+  @_requestIfNeeded
   @_syncComputerPartitionInformation
   def getState(self):
     return self._requested_state
 
+  @_requestIfNeeded
   @_syncComputerPartitionInformation
   def getInstanceParameterDict(self):
     return getattr(self, '_parameter_dict', None) or {}
 
+  @_requestIfNeeded
   @_syncComputerPartitionInformation
   def getSoftwareRelease(self):
     """
@@ -374,6 +418,7 @@ class ComputerPartition(SlapDocument):
     else:
       return self._software_release_document
 
+  @_requestIfNeeded
   def setConnectionDict(self, connection_dict, slave_reference=None):
     self._connection_helper.POST('/setComputerPartitionConnectionXml', {
       'computer_id': self._computer_id,
@@ -381,6 +426,7 @@ class ComputerPartition(SlapDocument):
       'connection_xml': xml_marshaller.dumps(connection_dict),
       'slave_reference': slave_reference})
 
+  @_requestIfNeeded
   @_syncComputerPartitionInformation
   def getConnectionParameter(self, key):
     connection_dict = getattr(self, '_connection_dict', None) or {}
@@ -393,6 +439,7 @@ class ComputerPartition(SlapDocument):
     # XXX: this implementation has not been reviewed
     self.usage = usage_log
 
+  @_requestIfNeeded
   def getCertificate(self):
     self._connection_helper.GET(
         '/getComputerPartitionCertificate?computer_id=%s&'

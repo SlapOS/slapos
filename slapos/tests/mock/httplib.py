@@ -41,7 +41,7 @@ class HTTPConnection(object):
 
   def request(self, method, url, body=None, headers=None):
     status, headers, body = self._callback(url, method, body, headers)
-    self.__response = HTTPResponse('HTTP/1.1', 200, 'OK', body, headers)
+    self.__response = HTTPResponse('HTTP/1.1', status, 'OK', body, headers)
 
 
   def getresponse(self):

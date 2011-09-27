@@ -26,26 +26,12 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
 
   def test_ComputerPartition_request_noFreePartition(self):
     """
-    Check that first call to request raises NotReady response
+    Check that first call to request raises NotFound response
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartitionNotFoundResponse \
-      SlapLogout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_ComputerPartition_request_firstNotReady(self):
-    """
-    Check that first call to request raises NotReady response
-    """
-    self.computer_partition_amount = 2
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-      SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
       SlapLogout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -64,11 +50,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-      SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
-      Tic \
-      SlapLogout \
-      \
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
@@ -103,11 +84,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-      SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
-      Tic \
-      SlapLogout \
-      \
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
@@ -172,11 +148,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
       SetInstanceStateStopped \
       SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
-      Tic \
-      SlapLogout \
-      \
-      SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
       SlapLogout \
@@ -235,11 +206,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-      SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
-      Tic \
-      SlapLogout \
-      \
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
@@ -321,6 +287,26 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepDirectRequestComputerPartitionHttpRequestTimeoutResponseWithoutState(self,
+    sequence, **kw):
+    request_dict = { 'computer_id': sequence['computer_reference'] ,
+        'computer_partition_id': sequence['computer_partition_reference'],
+        'software_release': sequence['software_release_uri'],
+        'software_type': sequence.get('requested_reference', 'requested_reference'),
+        'partition_reference': sequence.get('requested_reference', 'requested_reference'),
+        'shared_xml': xml_marshaller.dumps(kw.get("shared", False)),
+        'partition_parameter_xml': xml_marshaller.dumps({}),
+        'filter_xml': xml_marshaller.dumps({}),
+        #'state': Note: State is omitted
+      }
+    scheme, netloc, path, query, fragment = urlparse.urlsplit(self.server_url)
+    connection = httplib.HTTPConnection(host=netloc)
+    connection.request("POST", path + '/requestComputerPartition',
+        urllib.urlencode(request_dict),
+        {'Content-type': "application/x-www-form-urlencoded"})
+    response = connection.getresponse()
+    self.assertEqual(httplib.REQUEST_TIMEOUT, response.status)
+
   def test_ComputerPartition_request_state_is_optional(self):
     """Checks that state is optional parameter on Slap Tool
     
@@ -330,7 +316,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_string = \
       self.prepare_install_requested_computer_partition_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
-      DirectRequestComputerPartitionNotReadyResponseWithoutState \
+      DirectRequestComputerPartitionHttpRequestTimeoutResponseWithoutState \
       Tic \
       SlapLogout \
       \
@@ -350,11 +336,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-      SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
-      Tic \
-      SlapLogout \
-      \
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
@@ -438,8 +419,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SelectRequestedParameterDictRequestedParameter \
       \
       SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
-      Tic \
       RequestComputerPartition \
       Tic \
       SlapLogout \
@@ -467,8 +446,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SelectEmptyRequestedParameterDict \
       \
       SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
-      Tic \
       RequestComputerPartition \
       Tic \
       SlapLogout \
@@ -537,8 +514,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -565,8 +540,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -612,14 +585,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SelectEmptyRequestedParameterDict
 
       SetSoftwareInstanceChildrenA
-      RequestComputerPartitionNotReadyResponse
-
-      SetSoftwareInstanceChildrenB
-      RequestComputerPartitionNotReadyResponse
-
-      Tic
-
-      SetSoftwareInstanceChildrenA
       RequestComputerPartition
       Tic
 
@@ -658,8 +623,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -674,8 +637,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -720,7 +681,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
       RequestComputerPartition
       Tic
       SlapLogout
@@ -734,7 +694,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
       RequestComputerPartition
       Tic
       SlapLogout
@@ -787,20 +746,11 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     self.prepare_install_requested_computer_partition_sequence_string + \
       self.prepare_another_computer_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
-      Tic \
-      SlapLogout \
-      \
-      SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
       SlapLogout \
       \
       SelectAnotherRequestedReference \
-      SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotReadyResponse \
-      Tic \
-      SlapLogout \
       \
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
@@ -820,22 +770,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
   ########################################
   # ComputerPartition.request - slave
   ########################################
-  def test_ComputerPartition_request_slave_firstNotReady(self):
-    """
-    Check that first call to request raises NotReadyResponse
-    """
-    self.computer_partition_amount = 2
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-       SlapLoginCurrentSoftwareInstance \
-       SelectEmptyRequestedParameterDict \
-       SetRandomRequestedReference \
-       RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
-       SlapLogout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
   def test_ComputerPartition_request_slave_simpleCase(self):
     """
     Check the most simple case of request. The behaviour should
@@ -849,11 +783,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
        SlapLoginCurrentSoftwareInstance
        SelectEmptyRequestedParameterDict \
        SetRandomRequestedReference \
-       RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
-       Tic \
-       SlapLogout \
-       \
-       SlapLoginCurrentSoftwareInstance \
        RequestSlaveInstanceFromComputerPartition \
        Tic \
        SlapLogout
@@ -880,11 +809,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
        SlapLoginCurrentSoftwareInstance
        SelectEmptyRequestedParameterDict
        SetRandomRequestedReference
-       RequestSlaveInstanceFromComputerPartitionNotReadyResponse
-       Tic
-       SlapLogout
-
-       SlapLoginCurrentSoftwareInstance
        RequestSlaveInstanceFromComputerPartition
        Tic
        SlapLogout
@@ -936,11 +860,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
          SlapLoginCurrentSoftwareInstance
          SelectEmptyRequestedParameterDict
          SelectRequestedReference
-         RequestSlaveInstanceFromComputerPartitionNotReadyResponse
-         Tic
-         SlapLogout
-         
-         SlapLoginCurrentSoftwareInstance \
          RequestSlaveInstanceFromComputerPartition \
          Tic
          SlapLogout
@@ -999,11 +918,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
          SlapLoginCurrentSoftwareInstance
          SelectEmptyRequestedParameterDict \
          SetRandomRequestedReference \
-         RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
-         Tic \
-         SlapLogout \
-         \
-         SlapLoginCurrentSoftwareInstance \
          RequestSlaveInstanceFromComputerPartition \
          Tic \
          SlapLogout
@@ -1049,6 +963,12 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepDirectRequestComputerPartitionHttpRequestTimeoutResponseWithoutStateAndSharedTrue(
+      self, sequence, **kw):
+    kw["shared"] = True
+    self.stepDirectRequestComputerPartitionHttpRequestTimeoutResponseWithoutState(
+       sequence, **kw)
+
   def test_ComputerPartition_request_slave_state_is_optional(self):
     """Checks that state is optional parameter on Slap Tool This ensures
     backward compatibility with old libraries."""
@@ -1057,7 +977,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_string = \
       self.prepare_install_requested_computer_partition_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
-      DirectRequestComputerPartitionNotReadyResponseWithoutStateAndSharedTrue \
+      DirectRequestComputerPartitionHttpRequestTimeoutResponseWithoutStateAndSharedTrue \
       Tic \
       SlapLogout \
       '
@@ -1089,11 +1009,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       \
       SlapLoginCurrentSoftwareInstance \
       SetRequestedFilterParameterDict \
-      RequestSlaveInstanceFromComputerPartitionNotReadyResponse \
-      Tic \
-      SlapLogout \
-      \
-      SlapLoginCurrentSoftwareInstance \
       RequestSlaveInstanceFromComputerPartition \
       Tic \
       SlapLogout \

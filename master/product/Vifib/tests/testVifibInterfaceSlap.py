@@ -30,7 +30,7 @@
 import unittest
 from VifibMixin import testVifibMixin
 from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
-from slapos.slap.tests import testinterface
+from slapos.tests import interface
 # from slapos.slap.tests import testslap
 
 """Test to check slap in ERP5 test runner
@@ -46,7 +46,7 @@ class VifibServerMixin(testVifibMixin):
     testVifibMixin.afterSetUp(self)
     self.server_url = self.portal.portal_slap.absolute_url()
 
-class TestSlapInterface(ERP5TypeTestCase, testinterface.TestInterface):
+class TestSlapInterface(ERP5TypeTestCase, interface.TestInterface):
   """Wrapper class for TestInterface
 
   Note: This is here because there is no test runner for eggs."""

@@ -919,8 +919,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -932,8 +930,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -997,14 +993,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SetComputerPartitionQuantity
       Tic
       SelectCurrentComputerPartitionAsSlaveOwner
-  """
-
-  check_positive_request_shared = """
-      RequestSharedComputerPartitionNotReadyResponse
-      Tic
-      RequestSharedComputerPartition
-      CheckSoftwareInstanceAndRelatedSlavePartition
-      CheckRequestedSoftwareInstanceAndRelatedSlavePartition
   """
 
   prepare_two_purchase_packing_list = \
@@ -1503,32 +1491,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         filter_kw=sequence.get('requested_filter_dict', {}),
         state=sequence.get('instance_state'))
 
+    # tic as request is done on slap level library
+    self.stepTic()
+
     sequence.edit(
         requested_slap_computer_partition=requested_slap_computer_partition,
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
-
-  def stepRequestSlaveInstanceFromComputerPartitionNotReadyResponse(self, sequence, **kw):
-    software_release_uri = sequence['software_release_uri']
-    requested_reference = sequence['requested_reference']
-    requested_parameter_dict = sequence['requested_parameter_dict']
-
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
-    slap_computer_partition = self.slap.registerComputerPartition(
-        sequence['computer_reference'],
-        sequence['computer_partition_reference'])
-
-    # first try will raise slap.ResourceNotReady
-    self.assertRaises(slap.ResourceNotReady,
-      slap_computer_partition.request,
-      software_release=software_release_uri,
-      software_type="SlaveInstance",
-      partition_reference=requested_reference,
-      partition_parameter_kw=requested_parameter_dict,
-      shared=True,
-      filter_kw=sequence.get('requested_filter_dict', {}),
-      state=sequence.get('instance_state'))
 
   def stepRequestSlaveInstanceFromComputerPartitionNotFoundError(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
@@ -1559,16 +1528,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         sequence['computer_partition_reference'])
     software_release = sequence['software_release_uri']
     software_type = sequence.get('requested_reference', 'requested_reference')
-    self.assertRaises(slap.ResourceNotReady, slap_computer_partition.request,
-        software_release, software_type, software_type + str(1))
-    self.assertRaises(slap.ResourceNotReady, slap_computer_partition.request,
-        software_release, software_type, software_type + str(2))
-    transaction.commit()
-    self.tic()
     first = slap_computer_partition.request(software_release,
         software_type, software_type + str(1))
     second = slap_computer_partition.request(software_release,
         software_type, software_type + str(2))
+    transaction.commit()
+    self.tic()
     self.assertNotEqual(first.getId(), second.getId())
 
   def stepRequestComputerPartition(self, sequence, **kw):
@@ -1577,60 +1542,21 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     slap_computer_partition = self.slap.registerComputerPartition(
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
-    requested_slap_computer_partition = slap_computer_partition.request(
-      software_release=sequence['software_release_uri'],
+    kw = dict(software_release=sequence['software_release_uri'],
       software_type=sequence.get('requested_reference', 'requested_reference'),
       partition_reference=sequence.get('requested_reference',
         'requested_reference'),
       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
       filter_kw=sequence.get('requested_filter_dict', {}),
       state=sequence.get('instance_state'))
+
+    requested_slap_computer_partition = slap_computer_partition.request(**kw)
+    self.stepTic()
 
     sequence.edit(
         requested_slap_computer_partition=requested_slap_computer_partition,
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
-
-  def stepDirectRequestComputerPartitionNotReadyResponseWithoutStateAndSharedTrue(
-      self, sequence, **kw):
-    kw["shared"] = True
-    self.stepDirectRequestComputerPartitionNotReadyResponseWithoutState(
-       sequence, **kw)
-
-  def stepDirectRequestComputerPartitionNotReadyResponseWithoutState(self,
-    sequence, **kw):
-    request_dict = { 'computer_id': sequence['computer_reference'] ,
-        'computer_partition_id': sequence['computer_partition_reference'],
-        'software_release': sequence['software_release_uri'],
-        'software_type': sequence.get('requested_reference', 'requested_reference'),
-        'partition_reference': sequence.get('requested_reference', 'requested_reference'),
-        'shared_xml': xml_marshaller.dumps(kw.get("shared", False)),
-        'partition_parameter_xml': xml_marshaller.dumps({}),
-        'filter_xml': xml_marshaller.dumps({}),
-        #'state': Note: State is omitted
-      }
-    scheme, netloc, path, query, fragment = urlparse.urlsplit(self.server_url)
-    connection = httplib.HTTPConnection(host=netloc)
-    connection.request("POST", path + '/requestComputerPartition',
-        urllib.urlencode(request_dict),
-        {'Content-type': "application/x-www-form-urlencoded"})
-    response = connection.getresponse()
-    self.assertEqual(httplib.REQUEST_TIMEOUT, response.status)
-
-  def stepRequestComputerPartitionNotReadyResponse(self, sequence, **kw):
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
-    slap_computer_partition = self.slap.registerComputerPartition(
-        sequence['computer_reference'],
-        sequence['computer_partition_reference'])
-    self.assertRaises(slap.ResourceNotReady, slap_computer_partition.request,
-      software_release=sequence['software_release_uri'],
-      software_type=sequence.get('requested_reference', 'requested_reference'),
-      partition_reference=sequence.get('requested_reference',
-        'requested_reference'),
-      partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
-      filter_kw=sequence.get('requested_filter_dict', {}),
-      state=sequence.get('instance_state'))
 
   def stepRequestComputerPartitionNotFoundResponse(self, sequence, **kw):
     self.slap = slap.slap()
@@ -1744,7 +1670,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     slap_computer_partition = self.slap.registerComputerPartition(
                                             computer_guid,
                                             children_partition.getReference())
-    self.assertRaises(slap.ResourceNotReady, slap_computer_partition.request,
+    slap_computer_partition.request(
         software_release=software_release_uri, software_type=requested_reference,
         partition_reference=requested_reference,
         partition_parameter_kw=requested_parameter_dict)
@@ -1760,7 +1686,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     slap_computer_partition = self.slap.registerComputerPartition(
                                             computer_guid,
                                             children_partition.getReference())
-    self.assertRaises(slap.ResourceNotReady, slap_computer_partition.request,
+    slap_computer_partition.request(
         software_release=software_release_uri,
         software_type=requested_reference,
         partition_reference=requested_reference,
@@ -4610,13 +4536,13 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
        filter_kw=sequence.get('requested_filter_dict', {})
        )
 
-  def stepPersonRequestSlapSoftwareInstanceNotReadyResponse(self, sequence,
+  def stepPersonRequestSlapSoftwareInstancePrepare(self, sequence,
       **kw):
     software_release = sequence['software_release_uri']
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url)
     open_order = self.slap.registerOpenOrder()
-    self.assertRaises(slap.ResourceNotReady, open_order.request,
+    open_order.request(
        software_release=software_release,
        software_type=sequence.get('software_type', 'software_type'),
        partition_reference=sequence.get('requested_reference',
@@ -4674,7 +4600,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
 
       SetRandomRequestedReference
       SlapLoginTestVifibCustomer
-      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      PersonRequestSlapSoftwareInstancePrepare
       Tic
       SlapLogout
 
@@ -4755,7 +4681,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
 
       SetRandomRequestedReference
       SlapLoginTestVifibCustomer
-      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      PersonRequestSlapSoftwareInstancePrepare
       Tic
       SlapLogout
 
@@ -4776,7 +4702,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
 
       SelectYetAnotherRequestedReference
       SlapLoginTestVifibCustomer
-      PersonRequestSlapSoftwareInstanceNotReadyResponse
+      PersonRequestSlapSoftwareInstancePrepare
       Tic
       SlapLogout
 
@@ -5127,11 +5053,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       RestoreComputerReferenceFromBufferA
       RestoreComputerUidFromBufferA
       RestoreSoftwareInstanceUidFromBufferA
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
-      SlapLogout
-
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
@@ -5510,10 +5431,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
 
       # From root request B
       SelectRequestedReferenceB
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
-      SlapLogout
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
@@ -5537,11 +5454,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
 
       # From B request C
       SelectRequestedReferenceC
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
-      SlapLogout
-
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
@@ -5660,11 +5572,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       # From root request B
       SelectRequestedReferenceB
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
-      SlapLogout
-
-      SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
       SlapLogout
@@ -5686,11 +5593,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
 
       # From B request C
       SelectRequestedReferenceC
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
-      SlapLogout
-
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
@@ -5818,11 +5720,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
 
       # From root request B
       SelectRequestedReferenceB
-      SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotReadyResponse
-      Tic
-      SlapLogout
-
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
