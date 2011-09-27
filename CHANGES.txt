@@ -1,12 +1,14 @@
 Changes
 =======
 
-0.27 (unreleased)
+0.28 (2011-09-27)
 -----------------
 
- * No changes yet
+ * lamp.request: requesting the mariadb software release instead of itself.
+ * lamp.request: adding support of remote backup repo (using a different
+   software type). The default remote backup is a davstorage.
 
-0.27 (2011-09-07)
+0.27 (2011-09-27)
 -----------------
 
  * mysql: add backup and backup recovering using different software type. [Antoine Catton]
