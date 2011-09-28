@@ -1,21 +1,4 @@
-from DateTime import DateTime
-from AccessControl.SecurityManagement import newSecurityManager
-from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
-from Products.ERP5Type.tests.backportUnittest import skip
-from Products.ERP5Type.tests.SecurityTestCase import AssertNoPermissionMethod, \
-    AssertPermissionMethod
-from Products.ERP5Type import Permissions
-from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
-from VifibMixin import testVifibMixin
-from random import random
-from slapos import slap
-import urllib
-import urlparse
-import httplib
-from xml_marshaller import xml_marshaller
-import transaction
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 

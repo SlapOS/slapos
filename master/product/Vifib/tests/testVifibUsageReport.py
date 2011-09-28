@@ -27,15 +27,12 @@
 #
 #############################################################################
 import unittest
-import time
-import transaction
 
 from DateTime import DateTime
 from lxml import etree
 from slapos import slap
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Testing.ZopeTestCase.PortalTestCase import PortalTestCase
 
 def test_suite():
   suite = unittest.TestSuite()
