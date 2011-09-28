@@ -2,7 +2,7 @@ from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
-class TestVifibSlapBugs(TestVifibSlapWebServiceMixin):
+class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def test_bug_Person_request_more_then_one_instance(self):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
@@ -1036,5 +1036,5 @@ class TestVifibSlapBugs(TestVifibSlapWebServiceMixin):
 
 def test_suite():
   suite = unittest.TestSuite()
-  suite.addTest(unittest.makeSuite(TestVifibSlapBugs))
+  suite.addTest(unittest.makeSuite(TestVifibSlapBug))
   return suite
