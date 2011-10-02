@@ -1,0 +1,11 @@
+#!/bin/sh
+
+export CUBRID=%(cubrid_home)s
+export JAVA_HOME=%(java_home)s
+
+if [ ! -f mdr.lol ];
+then
+  exec %(cubrid_binary)s createdb %(cubrid_database)s
+fi
+
+exec %(cubrid_binary)s server start %(cubrid_database)s
