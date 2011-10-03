@@ -203,6 +203,59 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepCheckUpdateSalePackingListErrorText(self, sequence, **kw):
+    """
+    Check that the sale packing list has an error log
+    """
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence['computer_partition_uid'])
+    packing_list_line = [q for q in computer_partition
+        .getAggregateRelatedValueList(
+          portal_type=self.sale_packing_list_line_portal_type)
+        if q.getResource() == \
+          self.portal.portal_preferences.getPreferredInstanceUpdateResource()][0]
+    packing_list = packing_list_line.getParentValue()
+    self.assertFalse(packing_list.getComment('').endswith("ErrorLog"))
+
+  def test_update_support_error(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_stopped_computer_partition_sequence_string \
+      + """
+        SlapLoginCurrentComputer
+        CheckEmptyComputerGetComputerPartitionCall
+        SlapLogout
+
+        LoginTestVifibCustomer
+        RequestSoftwareInstanceUpdate
+        Tic
+        Logout
+
+        LoginDefaultUser
+        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        Logout
+
+        SlapLoginCurrentComputer
+        CheckSuccessComputerGetComputerPartitionCall
+        SlapLogout
+
+        SlapLoginCurrentComputer
+        CheckStoppedComputerPartitionGetStateCall
+        SlapLogout
+
+        SlapLoginCurrentComputer
+        CheckSuccessComputerPartitionErrorCall
+        Tic
+        SlapLogout
+
+        LoginDefaultUser
+        CheckComputerPartitionInstanceHostingSalePackingListDelivered
+        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckUpdateSalePackingListErrorText
+        Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   # ignored scenarios
   def test_update_not_created_confirmed_instance_setup(self):
     sequence_list = SequenceList()
