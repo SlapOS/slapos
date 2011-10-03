@@ -57,8 +57,10 @@ hosting_service = context.restrictedTraverse(\n
   context.portal_preferences.getPreferredInstanceHostingResource())\n
 setup_service = context.restrictedTraverse(\n
   context.portal_preferences.getPreferredInstanceSetupResource())\n
+update_service = context.restrictedTraverse(\n
+  context.portal_preferences.getPreferredInstanceUpdateResource())\n
 \n
-service_uid_list = [hosting_service.getUid(), setup_service.getUid()]\n
+service_uid_list = [hosting_service.getUid(), setup_service.getUid(), update_service.getUid()]\n
 \n
 state_list = ("confirmed", "started")\n
 \n

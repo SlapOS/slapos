@@ -52,6 +52,9 @@
             <key> <string>_body</string> </key>
             <value> <string>from Products.ERP5Type.Log import log\n
 packing_list_line = context.SoftwareInstance_getInstanceHostingPackingListLine(state_change)\n
+if packing_list_line.getSimulationState() == "started":\n
+  if context.SoftwareInstance_deliverActiveInstanceUpdatePackingListLine(state_change):\n
+    return\n
 if packing_list_line.getSimulationState() != "started":\n
   packing_list_line.getParentValue().start()\n
 else:\n

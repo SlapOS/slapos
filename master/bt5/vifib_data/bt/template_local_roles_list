@@ -6,3 +6,4 @@ service_module/vifib_instance_hosting
 service_module/vifib_instance_setup
 service_module/vifib_software_setup
 service_module/vifib_usage_report
+service_module/vifib_instance_update

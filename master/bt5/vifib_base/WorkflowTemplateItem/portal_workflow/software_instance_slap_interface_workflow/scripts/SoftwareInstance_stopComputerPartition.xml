@@ -53,8 +53,20 @@
             <value> <string>try:\n
   packing_list_line = context.SoftwareInstance_getInstanceHostingPackingListLine(state_change)\n
 except ValueError:\n
+  try:\n
+    instance_setup_packing_list_line = context.SoftwareInstance_getInstanceSetupPackingListLine(state_change)\n
+  except ValueError:\n
+    return\n
+  else:\n
+    if instance_setup_packing_list_line.getSimulationState() == \'stopped\':\n
+      # in case if instance was requested in stopped state, then update was done\n
+      # update shall be processed\n
+      context.SoftwareInstance_deliverActiveInstanceUpdatePackingListLine(state_change)\n
   return\n
 packing_list = packing_list_line.getParentValue()\n
+if packing_list.getSimulationState() == \'delivered\':\n
+  if context.SoftwareInstance_deliverActiveInstanceUpdatePackingListLine(state_change):\n
+    return\n
 packing_list.deliver()\n
 </string> </value>
         </item>

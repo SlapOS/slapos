@@ -50,48 +50,54 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
-instance_setup_sale_packing_list_line = \\\n
-  context.SoftwareInstance_getInstancePackingListLine(\n
-                  state_change, \n
-                  service_relative_url=software_instance.portal_preferences.\\\n
-                          getPreferredInstanceSetupResource())\n
-instance_setup_sale_packing_list = instance_setup_sale_packing_list_line.getParentValue()\n
-portal = context.getPortalObject()\n
-sale_packing_list_module = portal.getDefaultModule(portal_type=\'Sale Packing List\')\n
-if tag is not None:\n
-  activate_kw = {\'tag\': tag}\n
-else:\n
-  activate_kw = None\n
-sale_packing_list = sale_packing_list_module.newContent(\n
-  portal_type=\'Sale Packing List\',\n
-  specialise=instance_setup_sale_packing_list.getSpecialise() or instance_setup_sale_packing_list.getCausalityValue().getSpecialise(),\n
-  destination=instance_setup_sale_packing_list.getDestination(),\n
-  destination_section=instance_setup_sale_packing_list.getDestinationSection(),\n
-  destination_decision_=instance_setup_sale_packing_list.getDestinationDecision(),\n
-  source=instance_setup_sale_packing_list.getSource(),\n
-  source_section=instance_setup_sale_packing_list.getSourceSection(),\n
-  price_currency=instance_setup_sale_packing_list.getPriceCurrency(),\n
-  start_date=DateTime(),\n
-  activate_kw=activate_kw)\n
+            <value> <string encoding="cdata"><![CDATA[
+
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
 \n
-instance_hosting_sale_packing_list_line = sale_packing_list.newContent(\n
-  portal_type=\'Sale Packing List Line\',\n
-  resource=service_relative_url,\n
-  quantity=instance_setup_sale_packing_list_line.getQuantity(),\n
-  aggregate_list=instance_setup_sale_packing_list_line.getAggregateList(),\n
-  activate_kw=activate_kw\n
-)\n
-return sale_packing_list\n
-</string> </value>
+software_instance = state_change[\'object\']\n
+portal = software_instance.getPortalObject()\n
+\n
+# avoid conflicting with "in progress" update tasks\n
+tag_list = ["%s_destroyInProgress" % software_instance.getUid(), "%s_startInProgress" % software_instance.getUid()]\n
+for tag in tag_list:\n
+  if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+    # do nothing if something is progress\n
+    return\n
+portal_preferences = portal.portal_preferences\n
+\n
+update_resource_relative_url = portal.restrictedTraverse(portal_preferences.getPreferredInstanceUpdateResource()).getUid()\n
+setup_resource_uid = portal.restrictedTraverse(portal_preferences.getPreferredInstanceSetupResource()).getUid()\n
+hosting_resource_uid = portal.restrictedTraverse(portal_preferences.getPreferredInstanceHostingResource()).getUid()\n
+\n
+service_uid_state_mapping = {\n
+  setup_resource_uid: [\'stopped\'],\n
+  hosting_resource_uid: [\'started\', \'delivered\']\n
+}\n
+previous_packing_list_line = context.SoftwareInstance_getInstancePackingListLine(state_change)\n
+\n
+if previous_packing_list_line.getResourceUid() == hosting_resource_uid:\n
+  if previous_packing_list_line.getSimulationState() not in service_uid_state_mapping[hosting_resource_uid]:\n
+    return\n
+elif previous_packing_list_line.getResourceUid() == setup_resource_uid:\n
+  if previous_packing_list_line.getSimulationState() not in service_uid_state_mapping[setup_resource_uid]:\n
+    return\n
+else:\n
+  # not "supported" resource, eg. cleanup\n
+  return\n
+\n
+# time to create packing list\n
+context.SoftwareInstance_createSalePackingList(state_change, portal_preferences.getPreferredInstanceUpdateResource()).confirm()\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change, service_relative_url, tag=None</string> </value>
+            <value> <string>state_change</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_createSalePackingList</string> </value>
+            <value> <string>SoftwareInstance_requestUpdate</string> </value>
         </item>
       </dictionary>
     </pickle>

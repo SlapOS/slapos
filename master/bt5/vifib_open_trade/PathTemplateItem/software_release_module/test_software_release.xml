@@ -85,9 +85,7 @@
         </item>
         <item>
             <key> <string>language</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>en</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -327,7 +325,7 @@
                 <value>
                   <object>
                     <klass>
-                      <global name="DateTime" module="DateTime.DateTime"/>
+                      <global id="4.1" name="DateTime" module="DateTime.DateTime"/>
                     </klass>
                     <tuple>
                       <none/>
@@ -335,6 +333,51 @@
                     <state>
                       <tuple>
                         <float>1305720389.86</float>
+                        <string>GMT+2</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>ERP5TypeTestCase</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>913.21451.21198.26589</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass> <reference id="4.1"/> </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1317140179.01</float>
                         <string>GMT+2</string>
                       </tuple>
                     </state>

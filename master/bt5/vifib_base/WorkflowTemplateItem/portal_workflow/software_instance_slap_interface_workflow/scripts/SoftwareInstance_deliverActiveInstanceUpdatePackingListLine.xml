@@ -51,47 +51,30 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>software_instance = state_change[\'object\']\n
-instance_setup_sale_packing_list_line = \\\n
-  context.SoftwareInstance_getInstancePackingListLine(\n
-                  state_change, \n
-                  service_relative_url=software_instance.portal_preferences.\\\n
-                          getPreferredInstanceSetupResource())\n
-instance_setup_sale_packing_list = instance_setup_sale_packing_list_line.getParentValue()\n
-portal = context.getPortalObject()\n
-sale_packing_list_module = portal.getDefaultModule(portal_type=\'Sale Packing List\')\n
-if tag is not None:\n
-  activate_kw = {\'tag\': tag}\n
+service_relative_url = software_instance.portal_preferences.\\\n
+                            getPreferredInstanceUpdateResource()\n
+try:\n
+  line = context.SoftwareInstance_getInstancePackingListLine(\n
+                    state_change, \n
+                    service_relative_url=service_relative_url,\n
+                    state_list=[\'confirmed\'])\n
+except ValueError:\n
+  return False\n
 else:\n
-  activate_kw = None\n
-sale_packing_list = sale_packing_list_module.newContent(\n
-  portal_type=\'Sale Packing List\',\n
-  specialise=instance_setup_sale_packing_list.getSpecialise() or instance_setup_sale_packing_list.getCausalityValue().getSpecialise(),\n
-  destination=instance_setup_sale_packing_list.getDestination(),\n
-  destination_section=instance_setup_sale_packing_list.getDestinationSection(),\n
-  destination_decision_=instance_setup_sale_packing_list.getDestinationDecision(),\n
-  source=instance_setup_sale_packing_list.getSource(),\n
-  source_section=instance_setup_sale_packing_list.getSourceSection(),\n
-  price_currency=instance_setup_sale_packing_list.getPriceCurrency(),\n
-  start_date=DateTime(),\n
-  activate_kw=activate_kw)\n
-\n
-instance_hosting_sale_packing_list_line = sale_packing_list.newContent(\n
-  portal_type=\'Sale Packing List Line\',\n
-  resource=service_relative_url,\n
-  quantity=instance_setup_sale_packing_list_line.getQuantity(),\n
-  aggregate_list=instance_setup_sale_packing_list_line.getAggregateList(),\n
-  activate_kw=activate_kw\n
-)\n
-return sale_packing_list\n
+  delivery = line.getParentValue()\n
+  delivery.start()\n
+  delivery.stop()\n
+  delivery.deliver()\n
+  return True\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change, service_relative_url, tag=None</string> </value>
+            <value> <string>state_change</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_createSalePackingList</string> </value>
+            <value> <string>SoftwareInstance_deliverActiveInstanceUpdatePackingListLine</string> </value>
         </item>
       </dictionary>
     </pickle>

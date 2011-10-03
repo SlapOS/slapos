@@ -97,6 +97,7 @@
                         <string>my_preferred_instance_hosting_resource</string>
                         <string>my_preferred_instance_cleanup_resource</string>
                         <string>my_preferred_software_setup_resource</string>
+                        <string>my_preferred_instance_update_resource</string>
                       </list>
                     </value>
                 </item>

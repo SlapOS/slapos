@@ -402,6 +402,12 @@ class SlapTool(BaseTool):
     slap_partition._requested_state = 'destroyed'
     slap_partition._need_modification = 0
 
+    update_movement = self._getSalePackingListLineForComputerPartition(
+      computer_partition_document, service_uid_list=[portal.restrictedTraverse(portal_preferences.getPreferredInstanceUpdateResource()).getUid()])
+    if update_movement is not None:
+      if update_movement.getSimulationState() != 'confirmed':
+        # only confirmed update movements are interesting
+        update_movement = None
     movement = self._getSalePackingListLineForComputerPartition(
                                            computer_partition_document)
     if movement is not None:
@@ -435,6 +441,8 @@ class SlapTool(BaseTool):
           slap_partition._need_modification = 1
         elif movement.getSimulationState() == 'stopped':
           slap_partition._requested_state = 'stopped'
+          if update_movement is not None:
+            slap_partition._need_modification = 1
         elif movement.getSimulationState() == 'delivered':
           slap_partition._requested_state = 'destroyed'
         else:
@@ -450,11 +458,15 @@ class SlapTool(BaseTool):
           slap_partition._requested_state = 'started'
           slap_partition._need_modification = \
             self._hasSlaveInstanceNeedModification(computer_partition_document)
+          if update_movement is not None:
+            slap_partition._need_modification = 1
         elif movement.getSimulationState() == 'stopped':
           slap_partition._requested_state = 'stopped'
           slap_partition._need_modification = 1
         elif movement.getSimulationState() == 'delivered':
           slap_partition._requested_state = 'stopped'
+          if update_movement is not None:
+            slap_partition._need_modification = 1
         else:
           raise NotImplementedError, "Unexpected state %s" % \
                                      movement.getSimulationState()
@@ -833,21 +845,23 @@ class SlapTool(BaseTool):
 
   def _getSalePackingListLineForComputerPartition(self,
                                                   computer_partition_document,
-                                                  slave_reference=None):
+                                                  slave_reference=None,
+                                                  service_uid_list=None):
     """
     Return latest meaningfull sale packing list related to a computer partition
     document
     """
     portal = self.getPortalObject()
     portal_preferences = portal.portal_preferences
-    service_uid_list = []
-    for service_relative_url in \
-      (portal_preferences.getPreferredInstanceSetupResource(),
-       portal_preferences.getPreferredInstanceHostingResource(),
-       portal_preferences.getPreferredInstanceCleanupResource(),
-       ):
-      service = portal.restrictedTraverse(service_relative_url)
-      service_uid_list.append(service.getUid())
+    if service_uid_list is None:
+      service_uid_list = []
+      for service_relative_url in \
+        (portal_preferences.getPreferredInstanceSetupResource(),
+         portal_preferences.getPreferredInstanceHostingResource(),
+         portal_preferences.getPreferredInstanceCleanupResource(),
+         ):
+        service = portal.restrictedTraverse(service_relative_url)
+        service_uid_list.append(service.getUid())
 
     # Get associated software release
     state_list = []

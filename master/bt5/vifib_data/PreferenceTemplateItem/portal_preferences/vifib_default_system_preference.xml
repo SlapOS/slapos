@@ -106,8 +106,12 @@
             <value> <string>service_module/vifib_instance_setup</string> </value>
         </item>
         <item>
+            <key> <string>preferred_instance_update_resource</string> </key>
+            <value> <string>service_module/vifib_instance_update</string> </value>
+        </item>
+        <item>
             <key> <string>preferred_ooodoc_server_address</string> </key>
-            <value> <string>10.0.0.1</string> </value>
+            <value> <string>10.0.1.228</string> </value>
         </item>
         <item>
             <key> <string>preferred_ooodoc_server_port_number</string> </key>
