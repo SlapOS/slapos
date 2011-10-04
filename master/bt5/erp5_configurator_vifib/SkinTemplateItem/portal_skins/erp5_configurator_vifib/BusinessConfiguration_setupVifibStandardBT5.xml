@@ -85,6 +85,7 @@ bt5_installation_list = (      \n
       \'erp5_legacy_tax_system\', \n
       \'erp5_commerce\', \n
       \'erp5_project\', \n
+      \'erp5_xhtml_jquery_style\', \n
       \'erp5_credential\', \n
       \'erp5_km\', \n
       \'erp5_web_download_theme\', \n
