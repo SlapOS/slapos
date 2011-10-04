@@ -39,7 +39,7 @@
             <key> <string>constraint_property</string> </key>
             <value>
               <tuple>
-                <string>url_string</string>
+                <string>coordinate_text</string>
               </tuple>
             </value>
         </item>
