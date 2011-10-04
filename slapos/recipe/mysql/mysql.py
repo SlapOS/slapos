@@ -16,8 +16,8 @@ def runMysql(args):
       # XXX: Protect with proper root password
       # XXX: Follow http://dev.mysql.com/doc/refman/5.0/en/default-privileges.html
       popen = subprocess.Popen([conf['mysql_install_binary'],
-        '--skip-name-resolve', '--no-defaults', '--datadir=%s' %
-        conf['data_directory']],
+        '--skip-name-resolve', '--skip-host-cache', '--no-defaults',
+        '--datadir=%s' % conf['data_directory']],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
       result = popen.communicate()[0]
       if popen.returncode is None or popen.returncode != 0:
