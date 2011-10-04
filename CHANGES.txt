@@ -6,6 +6,8 @@ Changes
 
  * slap: ComputerPartition.bang provided. It allows to update all instances
    in tree. [Łukasz Nowak]
+ * slap: Computer.bang provided. It allows to bang all instances on computer.
+   [Łukasz Nowak]
 
 0.16 (2011-10-03)
 -----------------
