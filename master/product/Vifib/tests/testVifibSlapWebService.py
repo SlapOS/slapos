@@ -645,6 +645,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     REMOTE_USER = str(random())
     self.login('ERP5TypeTestCase')
 
+  def stepSlapLoginTestVifibAdmin(self, sequence, **kw):
+    global REMOTE_USER
+    REMOTE_USER = 'test_vifib_admin'
+
   def stepSlapLoginCurrentComputer(self, sequence, **kw):
     global REMOTE_USER
     REMOTE_USER = sequence['computer_reference']

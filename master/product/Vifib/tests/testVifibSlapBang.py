@@ -4,7 +4,7 @@ from slapos import slap
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from random import random
 
-class TestVifibSlapComputerPartitionBang(TestVifibSlapWebServiceMixin):
+class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
   bang_message = 'Bang message'
 
@@ -100,19 +100,27 @@ class TestVifibSlapComputerPartitionBang(TestVifibSlapWebServiceMixin):
     self.assertEqual(1, len(bang_list))
     self.assertEqual(self.bang_message, bang_list[0].comment)
 
-  def stepStepCheckS0BangMessage(self, sequence, **kw):
+  def stepCheckS0BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
       self.portal.portal_catalog.getResultValue(uid=sequence['S0_uid']))
 
-  def stepStepCheckS1BangMessage(self, sequence, **kw):
+  def stepCheckS1BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
       self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid']))
 
-  def stepStepCheckS3BangMessage(self, sequence, **kw):
+  def stepCheckS2BangMessage(self, sequence, **kw):
+    self.checkSoftwareInstanceBangMessage(
+      self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid']))
+
+  def stepCheckS3BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
       self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid']))
 
-  def test_bang_complex_tree(self):
+  def stepCheckS4BangMessage(self, sequence, **kw):
+    self.checkSoftwareInstanceBangMessage(
+      self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid']))
+
+  def test_bang_computer_partition_complex_tree(self):
     """Checks that bangs works on complex tree
 
     For tree like:
@@ -143,7 +151,7 @@ class TestVifibSlapComputerPartitionBang(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      StepCheckS0BangMessage
+      CheckS0BangMessage
       Logout
 
       SlapLoginCurrentComputer
@@ -166,7 +174,7 @@ class TestVifibSlapComputerPartitionBang(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      StepCheckS1BangMessage
+      CheckS1BangMessage
       Logout
 
       SlapLoginCurrentComputer
@@ -189,7 +197,111 @@ class TestVifibSlapComputerPartitionBang(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      StepCheckS3BangMessage
+      CheckS3BangMessage
+      Logout
+
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      SlapLogout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepComputerBang(self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    slap_computer = self.slap.registerComputer(
+      sequence['computer_reference'])
+    slap_computer.bang(self.bang_message)
+
+  def stepCheckComputerBangMessage(self, sequence, **kw):
+    computer = self.portal.portal_catalog.getResultValue(
+      uid=sequence['computer_uid'])
+    bang_list = [q for q in computer.Base_getWorkflowHistoryItemList(
+      'computer_slap_interface_workflow') if q.action == 'report_computer_bang']
+    self.assertEqual(1, len(bang_list))
+    self.assertEqual(self.bang_message, bang_list[0].comment)
+
+  def test_bang_computer_complex_tree(self):
+    """Checks that bangs works on complex tree
+
+    For tree like:
+
+          S0
+         /   \
+       S4     S1
+             /  \
+            S2  S3
+
+    Invoking bang on Computer will made whole tree updatable.
+    """
+    self.computer_partition_amount = 5
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + \
+      """
+      LoginDefaultUser
+      FinishSoftwareInstanceTree
+      Logout
+
+      SlapLoginCurrentComputer
+      CheckEmptyComputerGetComputerPartitionCall
+      ComputerBang
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerBangMessage
+      CheckS0BangMessage
+      CheckS1BangMessage
+      CheckS2BangMessage
+      CheckS3BangMessage
+      CheckS4BangMessage
+      Logout
+
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      SlapLogout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_admin_bang_computer_complex_tree(self):
+    """Checks that bangs works on complex tree
+
+    For tree like:
+
+          S0
+         /   \
+       S4     S1
+             /  \
+            S2  S3
+
+    Invoking bang on Computer will made whole tree updatable.
+    """
+    self.computer_partition_amount = 5
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + \
+      """
+      LoginDefaultUser
+      FinishSoftwareInstanceTree
+      Logout
+
+      SlapLoginCurrentComputer
+      CheckEmptyComputerGetComputerPartitionCall
+      SlapLogout
+
+      SlapLoginTestVifibCustomer
+      ComputerBang
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerBangMessage
+      CheckS0BangMessage
+      CheckS1BangMessage
+      CheckS2BangMessage
+      CheckS3BangMessage
+      CheckS4BangMessage
       Logout
 
       SlapLoginCurrentComputer
@@ -201,5 +313,5 @@ class TestVifibSlapComputerPartitionBang(TestVifibSlapWebServiceMixin):
 
 def test_suite():
   suite = unittest.TestSuite()
-  suite.addTest(unittest.makeSuite(TestVifibSlapComputerPartitionBang))
+  suite.addTest(unittest.makeSuite(TestVifibSlapBang))
   return suite

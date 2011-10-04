@@ -227,6 +227,11 @@ class Computer(SlapDocument):
         '/loadComputerConfigurationFromXML', { 'xml' : xml })
     return self._connection_helper.response.read()
 
+  def bang(self, message):
+    self._connection_helper.POST('/computerBang', {
+      'computer_id': self._computer_id,
+      'message': message})
+
 def _syncComputerPartitionInformation(func):
   """
   Synchronize computer partition object with server information

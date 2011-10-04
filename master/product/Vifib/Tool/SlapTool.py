@@ -319,6 +319,22 @@ class SlapTool(BaseTool):
 
     return 'Content properly posted.'
 
+  @convertToREST
+  def _computerBang(self, computer_id, message):
+    """
+    Fire up bung on Computer
+    """
+    return self._getComputerDocument(computer_id).reportComputerBang(
+                                     comment=message)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'computerBang')
+  def computerBang(self, computer_id, message):
+    """
+    Fire up bang on this Software Instance
+    """
+    return self._computerBang(computer_id, message)
+
   security.declareProtected(Permissions.AccessContentsInformation,
     'loadComputerConfigurationFromXML')
   def loadComputerConfigurationFromXML(self, xml):

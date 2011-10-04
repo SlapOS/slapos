@@ -50,19 +50,12 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
-portal = context.getPortalObject()\n
-\n
-root_software_instance = software_instance\n
-while (software_instance is not None):\n
-  root_software_instance = software_instance\n
-  software_instance = software_instance.getPredecessorRelatedValue()\n
-\n
-for software_instance in context.portal_catalog(\n
-  portal_type=\'Software Instance\',\n
-  root_uid=root_software_instance.getUid()):\n
-  software_instance = software_instance.getObject()\n
-  software_instance.activate().requestUpdateComputerPartition()\n
+            <value> <string>computer = state_change[\'object\']\n
+for computer_partition in [x for x in computer.contentValues(portal_type=\'Computer Partition\') if x.getSlapState() == \'busy\']:\n
+  # raises ValueError in case of no packing list found, left as is\n
+  packing_list_line = computer_partition.Item_getInstancePackingListLine()\n
+  software_instance = packing_list_line.getAggregateValue(portal_type=\'Software Instance\')\n
+  software_instance.activate().reportComputerPartitionBang(comment=state_change.kwargs.get(\'comment\', \'\'))\n
 </string> </value>
         </item>
         <item>
@@ -71,7 +64,7 @@ for software_instance in context.portal_catalog(\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_bangSoftwareInstanceTree</string> </value>
+            <value> <string>Computer_reportBang</string> </value>
         </item>
       </dictionary>
     </pickle>
