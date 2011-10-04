@@ -393,6 +393,13 @@ class ComputerPartition(SlapDocument):
       'error_log': error_log})
 
   @_requestIfNeeded
+  def bang(self, message):
+    self._connection_helper.POST('/softwareInstanceBang', {
+      'computer_id': self._computer_id,
+      'computer_partition_id': self._partition_id,
+      'message': message})
+
+  @_requestIfNeeded
   def getId(self):
     return self._partition_id
 

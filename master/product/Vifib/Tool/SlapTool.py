@@ -236,6 +236,16 @@ class SlapTool(BaseTool):
                                        error_log)
 
   security.declareProtected(Permissions.AccessContentsInformation,
+    'softwareInstanceBang')
+  def softwareInstanceBang(self, computer_id,
+                            computer_partition_id, message):
+    """
+    Fire up bang on this Software Instance
+    """
+    return self._softwareInstanceBang(computer_id, computer_partition_id,
+                                       message)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
     'startedComputerPartition')
   def startedComputerPartition(self, computer_id, computer_partition_id):
     """
@@ -576,6 +586,18 @@ class SlapTool(BaseTool):
         computer_id,
         computer_partition_id).reportComputerPartitionError(
                                      comment=error_log)
+
+  @convertToREST
+  def _softwareInstanceBang(self, computer_id,
+                            computer_partition_id, message):
+    """
+    Fire up bang on Software Instance
+    Add an error for the software Instance Workflow
+    """
+    return self._getSoftwareInstanceForComputerPartition(
+        computer_id,
+        computer_partition_id).reportComputerPartitionBang(
+                                     comment=message)
 
   @convertToREST
   def _startedComputerPartition(self, computer_id, computer_partition_id):
