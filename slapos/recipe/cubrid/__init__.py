@@ -26,39 +26,53 @@
 ##############################################################################
 
 from slapos.recipe.librecipe import BaseSlapRecipe
+import hashlib
+import os
+import pkg_resources
+import sys
+import zc.buildout
+import ConfigParser
 
 class Recipe(BaseSlapRecipe):
   def _install(self):
-    self.parameter_dict = self.computer_partition.getInstanceParameterDict()
-    software_type = self.parameter_dict.get('slap_software_type', 'default')
-    if software_type is None or software_type == 'RootSoftwareInstance':
-      software_type = 'default'
-    if "run_%s" % software_type in dir(self) and \
-       callable(getattr(self, "run_%s" % software_type)):
-      return getattr(self, "run_%s" % software_type)()
-    else:
-      raise NotImplementedError("Do not support %s" % software_type)
+    self.path_list = []
+    self.requirements, self.ws = self.egg.working_set()
+          
+    self.cron_d = self.installCrond()
+    cubrid_conf = self.installCubrid(self.getLocalIPv4Address(), 1523)
+    
+    ca_conf = self.installCertificateAuthority()
+    key, certificate = self.requestCertificate('Cubrid')
+    
+    stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(),
+        cubrid_conf['cubrid_ip'], 12345, cubrid_conf['cubrid_port'],
+        certificate, key, ca_conf['ca_crl'],
+        ca_conf['certificate_authority_path'])
+    
+    self.linkBinary()
+    self.setConnectionUrl(scheme='mysqls',
+                          host=stunnel_conf['public_ip'],
+                          port=stunnel_conf['public_port'],
+                          auth=(cubrid_conf['cubrid_user'],
+                                cubrid_conf['cubrid_password']),
+                          path=cubrid_conf['cubrid_database'])
+    return self.path_list
 
-  def run_default(self):
-    return self.run_cubrid()
-
-  def run_cubrid(self):
-    """ Run cubrid. """
+  def installCubrid(self, ip, port, database='db', user='user',
+      template_filename=None, cubrid_conf=None):
+    # XXX-Cedric : use work from Antoine to have backuped cubrid
     config_dict = {}
     config_dict.update(self.options)
     config_dict.update(self.parameter_dict)
 
     config_dict['cubrid_home'] = self.work_directory
 
-    config_dict['cubrid_ip_address'] = "[%s]" % self.getGlobalIPv6Address()
-    config_dict['cubrid_port_id'] = 1523
+    config_dict['cubrid_ip'] = ip
+    config_dict['cubrid_port'] = port
 
     config_dict['cubrid_database'] = os.path.join(self.var_directory,"cubrid.db")
 
-    connection_dict = {}
-    connection_dict['address'] = config_dict['cubrid_ip_address']
-    connection_dict['port'] = config_dict['cubrid_port_id']
-    self.computer_partition.setConnectionDict(connection_dict)
+
 
     cubrid_wrapper_template_location = pkg_resources.resource_filename(
                                              __name__, os.path.join(
@@ -66,5 +80,152 @@ class Recipe(BaseSlapRecipe):
     cubrid_runner_path = self.createRunningWrapper("cubrid",
           self.substituteTemplate(cubrid_wrapper_template_location, config_dict))
 
-    return [cubrid_runner_path]
+    self.path_list.append(cubrid_runner_path)
+    return config_dict
 
+  def installCrond(self):
+    timestamps = self.createDataDirectory('cronstamps')
+    cron_output = os.path.join(self.log_directory, 'cron-output')
+    self._createDirectory(cron_output)
+    catcher = zc.buildout.easy_install.scripts([('catchcron',
+      __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
+      self.bin_directory, arguments=[cron_output])[0]
+    self.path_list.append(catcher)
+    cron_d = os.path.join(self.etc_directory, 'cron.d')
+    crontabs = os.path.join(self.etc_directory, 'crontabs')
+    self._createDirectory(cron_d)
+    self._createDirectory(crontabs)
+    # Use execute from erp5.
+    wrapper = zc.buildout.easy_install.scripts([('crond',
+      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=[
+        self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
+        '-t', timestamps, '-f', '-l', '5', '-M', catcher]
+      )[0]
+    self.path_list.append(wrapper)
+    return cron_d
+  
+  def installLogrotate(self):
+    """Installs logortate main configuration file and registers its to cron"""
+    logrotate_d = os.path.abspath(os.path.join(self.etc_directory,
+      'logrotate.d'))
+    self._createDirectory(logrotate_d)
+    logrotate_backup = self.createBackupDirectory('logrotate')
+    logrotate_conf = self.createConfigurationFile("logrotate.conf",
+        "include %s" % logrotate_d)
+    logrotate_cron = os.path.join(self.cron_d, 'logrotate')
+    state_file = os.path.join(self.data_root_directory, 'logrotate.status')
+    open(logrotate_cron, 'w').write('0 0 * * * %s -s %s %s' %
+        (self.options['logrotate_binary'], state_file, logrotate_conf))
+    self.path_list.extend([logrotate_d, logrotate_conf, logrotate_cron])
+    return logrotate_d, logrotate_backup
+
+  def registerLogRotation(self, name, log_file_list, postrotate_script):
+    """Register new log rotation requirement"""
+    open(os.path.join(self.logrotate_d, name), 'w').write(
+        self.substituteTemplate(self.getTemplateFilename(
+          'logrotate_entry.in'),
+          dict(file_list=' '.join(['"'+q+'"' for q in log_file_list]),
+            postrotate=postrotate_script, olddir=self.logrotate_backup)))
+
+  def installCertificateAuthority(self, ca_country_code='XX',
+      ca_email='xx@example.com', ca_state='State', ca_city='City',
+      ca_company='Company'):
+    backup_path = self.createBackupDirectory('ca')
+    self.ca_dir = os.path.join(self.data_root_directory, 'ca')
+    self._createDirectory(self.ca_dir)
+    self.ca_request_dir = os.path.join(self.ca_dir, 'requests')
+    self._createDirectory(self.ca_request_dir)
+    config = dict(ca_dir=self.ca_dir, request_dir=self.ca_request_dir)
+    self.ca_private = os.path.join(self.ca_dir, 'private')
+    self.ca_certs = os.path.join(self.ca_dir, 'certs')
+    self.ca_crl = os.path.join(self.ca_dir, 'crl')
+    self.ca_newcerts = os.path.join(self.ca_dir, 'newcerts')
+    self.ca_key_ext = '.key'
+    self.ca_crt_ext = '.crt'
+    for d in [self.ca_private, self.ca_crl, self.ca_newcerts, self.ca_certs]:
+      self._createDirectory(d)
+    for f in ['crlnumber', 'serial']:
+      if not os.path.exists(os.path.join(self.ca_dir, f)):
+        open(os.path.join(self.ca_dir, f), 'w').write('01')
+    if not os.path.exists(os.path.join(self.ca_dir, 'index.txt')):
+      open(os.path.join(self.ca_dir, 'index.txt'), 'w').write('')
+    openssl_configuration = os.path.join(self.ca_dir, 'openssl.cnf')
+    config.update(
+        working_directory=self.ca_dir,
+        country_code=ca_country_code,
+        state=ca_state,
+        city=ca_city,
+        company=ca_company,
+        email_address=ca_email,
+    )
+    self._writeFile(openssl_configuration, pkg_resources.resource_string(
+      __name__, 'template/openssl.cnf.ca.in') % config)
+    self.path_list.extend(zc.buildout.easy_install.scripts([
+      ('certificate_authority',
+        __name__ + '.certificate_authority', 'runCertificateAuthority')],
+        self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
+          openssl_configuration=openssl_configuration,
+          openssl_binary=self.options['openssl_binary'],
+          certificate=os.path.join(self.ca_dir, 'cacert.pem'),
+          key=os.path.join(self.ca_private, 'cakey.pem'),
+          crl=os.path.join(self.ca_crl),
+          request_dir=self.ca_request_dir
+          )]))
+    # configure backup
+    backup_cron = os.path.join(self.cron_d, 'ca_rdiff_backup')
+    open(backup_cron, 'w').write(
+        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
+          rdiff_backup=self.options['rdiff_backup_binary'],
+          source=self.ca_dir,
+          destination=backup_path))
+    self.path_list.append(backup_cron)
+
+    return dict(
+      ca_certificate=os.path.join(config['ca_dir'], 'cacert.pem'),
+      ca_crl=os.path.join(config['ca_dir'], 'crl'),
+      certificate_authority_path=config['ca_dir']
+    )
+
+  def requestCertificate(self, name):
+    hash = hashlib.sha512(name).hexdigest()
+    key = os.path.join(self.ca_private, hash + self.ca_key_ext)
+    certificate = os.path.join(self.ca_certs, hash + self.ca_crt_ext)
+    parser = ConfigParser.RawConfigParser()
+    parser.add_section('certificate')
+    parser.set('certificate', 'name', name)
+    parser.set('certificate', 'key_file', key)
+    parser.set('certificate', 'certificate_file', certificate)
+    parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
+    return key, certificate
+
+  def installStunnel(self, public_ip, private_ip, public_port, private_port,
+      ca_certificate, key, ca_crl, ca_path):
+    """Installs stunnel"""
+    template_filename = self.getTemplateFilename('stunnel.conf.in')
+    log = os.path.join(self.log_directory, 'stunnel.log')
+    pid_file = os.path.join(self.run_directory, 'stunnel.pid')
+    stunnel_conf = dict(
+        public_ip=public_ip,
+        private_ip=private_ip,
+        public_port=public_port,
+        pid_file=pid_file,
+        log=log,
+        cert = ca_certificate,
+        key = key,
+        ca_crl = ca_crl,
+        ca_path = ca_path,
+        private_port = private_port,
+    )
+    stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
+        self.substituteTemplate(template_filename,
+          stunnel_conf))
+    wrapper = zc.buildout.easy_install.scripts([('stunnel',
+      'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
+      sys.executable, self.wrapper_directory, arguments=[
+        [self.options['stunnel_binary'].strip(), stunnel_conf_path],
+        [ca_certificate, key]]
+      )[0]
+    self.path_list.append(wrapper)
+
+    return stunnel_conf
