@@ -39,12 +39,40 @@
             <value> <string>title_unicity_constraint</string> </value>
         </item>
         <item>
+            <key> <string>int_index</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>membership_criterion_category</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
             <key> <string>message_invalid_attribute_unicity</string> </key>
             <value> <string>Title already exists</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
             <value> <string>Attribute Unicity Constraint</string> </value>
+        </item>
+        <item>
+            <key> <string>string_index</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>test_method_id</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>test_tales_expression</string> </key>
+            <value> <string>python: object.getTitle("") != ""</string> </value>
         </item>
       </dictionary>
     </pickle>
