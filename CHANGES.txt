@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.30 (unreleased)
+0.30 (2011-10-06)
 -----------------
 
  * LAMP : Update apache and php configuration files to work with a lot of different
