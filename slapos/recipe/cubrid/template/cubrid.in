@@ -3,7 +3,7 @@
 export CUBRID=%(cubrid_home)s
 export JAVA_HOME=%(java_home)s
 
-if [ ! -f %(cubrid_databse)s ];
+if [ ! -f %(cubrid_database)s ];
 then
   exec %(cubrid_binary)s createdb %(cubrid_database)s
 fi
