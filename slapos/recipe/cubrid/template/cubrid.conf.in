@@ -1,0 +1,13 @@
+[service]
+service=server,broker,manager
+[common]
+data_buffer_size=512M
+log_buffer_size=4M
+sort_buffer_size=2M
+max_clients=100
+cubrid_port_id=1523
+
+db_volume_size=512M
+
+log_volume_size=64M
+
