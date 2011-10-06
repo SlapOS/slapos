@@ -5,7 +5,7 @@ data_buffer_size=512M
 log_buffer_size=4M
 sort_buffer_size=2M
 max_clients=100
-cubrid_port_id=1523
+cubrid_port_id=%(cubrid_port)s
 
 db_volume_size=512M
 
