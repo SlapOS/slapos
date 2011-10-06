@@ -34,6 +34,10 @@ import zc.buildout
 import ConfigParser
 
 class Recipe(BaseSlapRecipe):
+  def getTemplateFilename(self, template_name):
+    return pkg_resources.resource_filename(__name__,
+        'template/%s' % template_name)
+        
   def _install(self):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
