@@ -53,36 +53,48 @@ class Recipe(BaseSlapRecipe):
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
     
-    self.linkBinary()
     self.setConnectionUrl(scheme='mysqls',
                           host=stunnel_conf['public_ip'],
                           port=stunnel_conf['public_port'],
-                          auth=(cubrid_conf['cubrid_user'],
-                                cubrid_conf['cubrid_password']),
+                          #auth=(cubrid_conf['cubrid_user'],
+                          #      cubrid_conf['cubrid_password']),
                           path=cubrid_conf['cubrid_database'])
     return self.path_list
 
   def installCubrid(self, ip, port, database='db', user='user',
       template_filename=None, cubrid_conf=None):
-    # XXX-Cedric : use work from Antoine to have backuped cubrid
+    # XXX-Cedric : use work from Antoine to have backuped + generic cubrid
+
     config_dict = {}
     config_dict.update(self.options)
     config_dict.update(self.parameter_dict)
 
     config_dict['cubrid_home'] = self.work_directory
-
     config_dict['cubrid_ip'] = ip
     config_dict['cubrid_port'] = port
+    config_dict['cubrid_database'] = os.path.join(self.var_directory,
+        'cubrid.db')
 
-    config_dict['cubrid_database'] = os.path.join(self.var_directory,"cubrid.db")
+    # Create configuration
+    cubrid_configuration_path = self.createConfigurationFile("cubrid.conf",
+        self.substituteTemplate('template', 'cubrid.conf.in'))
 
-
-
+    # Create wrapper
     cubrid_wrapper_template_location = pkg_resources.resource_filename(
-                                             __name__, os.path.join(
-                                             'template', 'cubrid.in'))
+        __name__, os.path.join('template', 'cubrid.in'))
     cubrid_runner_path = self.createRunningWrapper("cubrid",
-          self.substituteTemplate(cubrid_wrapper_template_location, config_dict))
+        self.substituteTemplate(cubrid_wrapper_template_location, config_dict))
+
+    # Create cubrid configuration directory and link config file here.
+    cubrid_conf_directory = os.path.join(self.work_directory, 'conf')
+    self._createDirectory(cubrid_conf_directory)
+    os.symlink(cubrid_configuration_path, 
+        os.path.join(cubrid_conf_directory, 'cubrid.conf'))
+    # Create links to cubrid files, otherzise it will whine.
+    os.symlink(os.path.join(self.options['cubrid_location'], 'bin'),
+        os.path.join(self.work_directory, 'bin'))
+    os.symlink(os.path.join(self.options['cubrid_location'], 'msg'),
+        os.path.join(self.work_directory, 'msg'))
 
     self.path_list.append(cubrid_runner_path)
     return config_dict
@@ -108,7 +120,7 @@ class Recipe(BaseSlapRecipe):
       )[0]
     self.path_list.append(wrapper)
     return cron_d
-  
+
   def installLogrotate(self):
     """Installs logortate main configuration file and registers its to cron"""
     logrotate_d = os.path.abspath(os.path.join(self.etc_directory,
