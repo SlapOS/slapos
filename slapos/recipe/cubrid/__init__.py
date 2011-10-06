@@ -37,6 +37,15 @@ class Recipe(BaseSlapRecipe):
   def getTemplateFilename(self, template_name):
     return pkg_resources.resource_filename(__name__,
         'template/%s' % template_name)
+
+  def _createSimlink(self, source, destination):
+    if os.path.exists(destination):
+      if os.path.islink(destination):
+        os.remove(destination)
+      else:
+         raise OSError("Trying to create a simlink, but real file " \
+             "already exists at destination %s" % destination)
+    os.symlink(source, destination)
         
   def _install(self):
     self.path_list = []
@@ -69,15 +78,17 @@ class Recipe(BaseSlapRecipe):
     config_dict.update(self.options)
     config_dict.update(self.parameter_dict)
 
-    config_dict['cubrid_home'] = self.work_directory
+    cubrid_home_path = os.path.join(self.data_root_directory, "cubrid")
+
+    config_dict['cubrid_home'] = cubrid_home_path
     config_dict['cubrid_ip'] = ip
     config_dict['cubrid_port'] = port
-    config_dict['cubrid_database'] = os.path.join(self.var_directory,
-        'cubrid.db')
+    config_dict['cubrid_database'] = os.path.join('cubrid')
 
     # Create configuration
+    cubrid_configuration_template_path = self.getTemplateFilename('cubrid.conf.in')
     cubrid_configuration_path = self.createConfigurationFile("cubrid.conf",
-        self.substituteTemplate('template', 'cubrid.conf.in'))
+        self.substituteTemplate(cubrid_configuration_template_path, config_dict))
 
     # Create wrapper
     cubrid_wrapper_template_location = pkg_resources.resource_filename(
@@ -86,17 +97,18 @@ class Recipe(BaseSlapRecipe):
         self.substituteTemplate(cubrid_wrapper_template_location, config_dict))
 
     # Create cubrid configuration directory and link config file here.
-    cubrid_conf_directory = os.path.join(self.work_directory, 'conf')
+    self._createDirectory(cubrid_home_path)
+    cubrid_conf_directory = os.path.join(cubrid_home_path, 'conf')
     self._createDirectory(cubrid_conf_directory)
-    os.symlink(cubrid_configuration_path, 
+    self._createSimlink(cubrid_configuration_path, 
         os.path.join(cubrid_conf_directory, 'cubrid.conf'))
     # Create links to cubrid files, otherzise it will whine.
-    os.symlink(os.path.join(self.options['cubrid_location'], 'bin'),
-        os.path.join(self.work_directory, 'bin'))
-    os.symlink(os.path.join(self.options['cubrid_location'], 'msg'),
-        os.path.join(self.work_directory, 'msg'))
+    self._createSimlink(os.path.join(self.options['cubrid_location'], 'bin'),
+        os.path.join(cubrid_home_path, 'bin'))
+    self._createSimlink(os.path.join(self.options['cubrid_location'], 'msg'),
+        os.path.join(cubrid_home_path, 'msg'))
 
-    self.path_list.append(cubrid_runner_path)
+    self.path_list.extend([cubrid_runner_path, cubrid_configuration_path])
     return config_dict
 
   def installCrond(self):
