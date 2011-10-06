@@ -1,10 +1,38 @@
 Changes
 =======
 
-0.16 (unreleased)
+0.21 (unreleased)
+-----------------
+
+ * No change yet.
+
+0.20 (2011-09-07)
+-----------------
+
+ * Update and fix KVM/noVNC installation to be compatible with new WebSocket
+   protocol (HyBi-10) required by Chrome >= 14 and Firefox >= 7.
+   [Cedric de Saint Martin]
+
+0.19 (2011-09-06)
+-----------------
+
+ * Update PHP configuration to disable debug logging. [Cedric de Saint Martin]
+
+0.18 (2011-08-25)
+-----------------
+
+ * Repackage egg to include needed .bin files. [Cedric de Saint Martin]
+
+0.17 (unreleased)
 -----------------
 
  * No changes yet.
+
+0.16 (2011-07-15)
+-----------------
+
+ * Improve Vifib and pure ERP5 instantiation [Rafael Monnerat]
+ * Use configurator for Vifib [Rafael Monnerat]
 
 0.15 (2011-07-13)
 -----------------
