@@ -44,9 +44,9 @@ def getComputerSecurityCategory(self, base_category_list, user_name,
 
   if len(computer_list) == 1:
     for base_category in base_category_list:
-      if base_category == "function":
+      if base_category == "role":
         category_list.append(
-         {base_category: ['production', 'production/manager']})
+         {base_category: ['role', 'role/computer']})
   elif len(computer_list) > 1:
     raise ConsistencyError, "Error: There is more than one Computer " \
                             "with reference '%s'" % user_name
@@ -71,8 +71,8 @@ def getSoftwareInstanceSecurityCategory(self, base_category_list, user_name,
   if len(software_instance_list) == 1:
     category_dict = {}
     for base_category in base_category_list:
-      if base_category == "function":
-        category_dict.setdefault(base_category, []).extend(['production', 'production/agent'])
+      if base_category == "role":
+        category_dict.setdefault(base_category, []).extend(['role', 'role/instance'])
       if base_category == "aggregate":
         software_instance = software_instance_list[0]
         current_delivery_line = self.portal_catalog.unrestrictedGetResultValue(

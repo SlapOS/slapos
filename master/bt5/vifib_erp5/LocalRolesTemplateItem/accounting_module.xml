@@ -1,8 +1,5 @@
 <local_roles_item>
  <local_roles>
-  <role id='PROD-MAN'>
-   <item>Auditor</item>
-  </role>
   <role id='zope'>
    <item>Owner</item>
   </role>

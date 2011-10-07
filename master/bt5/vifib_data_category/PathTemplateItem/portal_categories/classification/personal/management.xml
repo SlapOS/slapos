@@ -61,6 +61,10 @@
             </value>
         </item>
         <item>
+            <key> <string>description</string> </key>
+            <value> <string>Management personal classification is intended for documents which are prepared in secret then shared with management</string> </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>management</string> </value>
         </item>
@@ -75,6 +79,10 @@
         <item>
             <key> <string>short_title</string> </key>
             <value> <string>Management</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Management Personal</string> </value>
         </item>
       </dictionary>
     </pickle>

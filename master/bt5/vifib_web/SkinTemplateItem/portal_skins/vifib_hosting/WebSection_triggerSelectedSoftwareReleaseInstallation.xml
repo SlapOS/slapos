@@ -75,37 +75,8 @@ computer = portal.portal_catalog.getResultValue(\n
   portal_type="Computer",\n
 )\n
 \n
-# XXX Hardcoded values\n
-seller = portal.restrictedTraverse("organisation_module/vifib_internet")\n
-currency = portal.restrictedTraverse("currency_module/EUR")\n
-person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
+computer.requestSoftwareReleaseInstallation(software_release_url=item.getUrlString())\n
 \n
-packing_list_portal_type = "Purchase Packing List"\n
-module = portal.getDefaultModule(portal_type=packing_list_portal_type)\n
-packing_list = module.newContent(\n
-  portal_type=packing_list_portal_type,\n
-  start_date=DateTime(),\n
-  destination_section_value=person,\n
-  destination_decision_value=person,\n
-  source_administration_value=person,\n
-  # XXX Hardcoded values\n
-  source_value=seller,\n
-  source_section_value=seller,\n
-  price_currency_value=currency,\n
-)\n
-packing_list.newContent(\n
-  portal_type="Purchase Packing List Line",\n
-  resource_value=service,\n
-  aggregate_value_list=[item, computer],\n
-  quantity=1\n
-)\n
-\n
-portal.portal_workflow.doActionFor(packing_list, "confirm_action")\n
-# packing_list.confirm()\n
-\n
-# session[\'instance_software_product_uid\'] = ""\n
-# session[\'instance_software_release_uid\'] = ""\n
-# session[\'computer_uid\'] = ""\n
 params[\'instance_software_product_uid\'] = None\n
 params[\'instance_software_release_uid\'] = None\n
 params[\'computer_uid\'] = None\n

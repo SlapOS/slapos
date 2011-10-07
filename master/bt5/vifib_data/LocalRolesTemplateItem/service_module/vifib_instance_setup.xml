@@ -1,12 +1,12 @@
 <local_roles_item>
  <local_roles>
-  <role id='IS-SYSAD'>
+  <role id='R-COMPUTER'>
    <item>Auditor</item>
   </role>
-  <role id='PROD'>
+  <role id='R-INSTANCE'>
    <item>Auditor</item>
   </role>
-  <role id='customer'>
+  <role id='R-MEMBER'>
    <item>Auditor</item>
   </role>
   <role id='devel'>

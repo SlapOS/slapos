@@ -83,6 +83,10 @@
             <value> <string>I18N</string> </value>
         </item>
         <item>
+            <key> <string>description</string> </key>
+            <value> <string>Ability to work in a given language</string> </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>lang</string> </value>
         </item>
@@ -100,7 +104,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Foreign Languages</string> </value>
+            <value> <string>Language</string> </value>
         </item>
       </dictionary>
     </pickle>

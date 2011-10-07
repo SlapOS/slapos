@@ -1,6 +1,6 @@
 <local_roles_item>
  <local_roles>
-  <role id='PROD-MAN'>
+  <role id='R-COMPUTER'>
    <item>Auditor</item>
   </role>
   <role id='zope'>

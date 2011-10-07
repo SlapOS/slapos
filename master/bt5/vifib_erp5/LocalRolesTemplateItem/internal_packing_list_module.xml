@@ -1,6 +1,6 @@
 <local_roles_item>
  <local_roles>
-  <role id='IS-SYSAD'>
+  <role id='R-MEMBER'>
    <item>Auditor</item>
    <item>Author</item>
   </role>

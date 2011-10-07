@@ -86,9 +86,7 @@
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>Team collaborative classification is intended for documents which are prepared and shared with colleagues of the same business unit or division</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
@@ -108,7 +106,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Team</string> </value>
+            <value> <string>Team Collaborative</string> </value>
         </item>
       </dictionary>
     </pickle>

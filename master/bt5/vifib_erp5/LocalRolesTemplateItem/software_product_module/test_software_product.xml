@@ -3,16 +3,10 @@
   <role id='ERP5TypeTestCase'>
    <item>Owner</item>
   </role>
-  <role id='IS-DEV_my_group'>
+  <role id='F-SOFTDEV_G-COMPANY'>
    <item>Assignor</item>
   </role>
-  <role id='IS-SYSAD'>
-   <item>Auditor</item>
-  </role>
-  <role id='PROD'>
-   <item>Auditor</item>
-  </role>
-  <role id='customer'>
+  <role id='R-MEMBER'>
    <item>Auditor</item>
   </role>
  </local_roles>

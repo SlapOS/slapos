@@ -1,4 +1,10 @@
 <type_roles>
+  <role id='Auditor'>
+   <property id='title'>Computer</property>
+   <property id='condition'>python: context.getReference("") != ""</property>
+   <multi_property id='category'>role/computer</multi_property>
+   <multi_property id='base_category'>role</multi_property>
+  </role>
   <role id='Assignee'>
    <property id='title'>Computer Agent</property>
    <property id='description'>Monovalued role</property>
@@ -6,14 +12,16 @@
    <multi_property id='base_category'>source_administration</multi_property>
   </role>
   <role id='Auditor'>
-   <property id='title'>Computer and Software Instance</property>
-   <multi_property id='category'>function/production</multi_property>
-   <multi_property id='base_category'>function</multi_property>
+   <property id='title'>Instance</property>
+   <property id='condition'>python: context.getReference("") != ""</property>
+   <multi_property id='category'>role/instance</multi_property>
+   <multi_property id='base_category'>role</multi_property>
   </role>
   <role id='Auditor'>
-   <property id='title'>Customer</property>
-   <multi_property id='category'>function/customer</multi_property>
-   <multi_property id='base_category'>function</multi_property>
+   <property id='title'>Member</property>
+   <property id='condition'>python: context.getReference("") != ""</property>
+   <multi_property id='category'>role/member</multi_property>
+   <multi_property id='base_category'>role</multi_property>
   </role>
   <role id='Assignor'>
    <property id='title'>Self Computer</property>

@@ -74,10 +74,6 @@ if is_slave == True:\n
 else:\n
   software_instance_portal_type = "Software Instance"\n
 \n
-# XXX Hardcoded values\n
-seller = portal.restrictedTraverse("organisation_module/vifib_internet")\n
-currency = portal.restrictedTraverse("currency_module/EUR")\n
-\n
 tag = "%s_%s_%s_inProgress" % (person.getUid(), software_type, \n
                                software_title)\n
 \n
@@ -131,9 +127,9 @@ if (request_software_instance is None):\n
       start_date=DateTime(),\n
       received_date=DateTime(),\n
       # XXX Hardcoded values\n
-      source_value=seller,\n
-      source_section_value=seller,\n
-      price_currency_value=currency,\n
+      source="organisation_module/vifib_internet",\n
+      source_section="organisation_module/vifib_internet",\n
+      price_currency="currency_module/EUR",\n
       activate_kw={\'tag\': tag},\n
     )\n
     sale_order_line = sale_order.newContent(\n

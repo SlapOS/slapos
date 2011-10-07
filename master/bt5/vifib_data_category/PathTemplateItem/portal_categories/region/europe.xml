@@ -49,6 +49,7 @@
                 <string>Assignee</string>
                 <string>Assignor</string>
                 <string>Manager</string>
+                <string>Owner</string>
               </tuple>
             </value>
         </item>
@@ -57,10 +58,6 @@
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
             </value>
-        </item>
-        <item>
-            <key> <string>_folder_handler</string> </key>
-            <value> <string>CMFBTreeFolderHandler</string> </value>
         </item>
         <item>
             <key> <string>_mt_index</string> </key>
@@ -75,12 +72,14 @@
             </value>
         </item>
         <item>
-            <key> <string>id</string> </key>
-            <value> <string>europe</string> </value>
+            <key> <string>effective_date</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
-            <key> <string>int_index</string> </key>
-            <value> <int>0</int> </value>
+            <key> <string>id</string> </key>
+            <value> <string>europe</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -88,6 +87,10 @@
         </item>
         <item>
             <key> <string>short_title</string> </key>
+            <value> <string>Europe</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
             <value> <string>Europe</string> </value>
         </item>
       </dictionary>

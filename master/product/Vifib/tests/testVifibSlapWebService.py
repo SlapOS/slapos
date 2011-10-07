@@ -432,43 +432,14 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         uid=sequence['software_instance_uid']).requestStopComputerPartition()
 
   def stepRequestSoftwareInstallation(self, sequence, **kw):
-    # based on WebSection_triggerSelectedSoftwareReleaseInstallation
-    # XXX: Hardcoded values
-    seller = self.portal.restrictedTraverse(
-        "organisation_module/vifib_internet")
-    currency = self.portal.restrictedTraverse("currency_module/EUR")
-    # select a person
-    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
-
-    service = self.portal.restrictedTraverse(
-        self.portal.portal_preferences.getPreferredSoftwareSetupResource())
-
     computer = self.portal.portal_catalog.getResultValue(
         uid=sequence['computer_uid'])
 
     software_release = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_release_uid'])
 
-    module = self.portal.getDefaultModule(
-        portal_type=self.purchase_packing_list_portal_type)
-    packing_list = module.newContent(
-        portal_type=self.purchase_packing_list_portal_type,
-        start_date=DateTime(),
-        destination_section_value=person,
-        destination_decision_value=person,
-        source_administration_value=person,
-        source_value=seller,
-        source_section_value=seller,
-        price_currency_value=currency,
-    )
-    packing_list.newContent(
-      portal_type=self.purchase_packing_list_line_portal_type,
-      resource_value=service,
-      aggregate_value_list=[software_release, computer],
-      quantity=1
-    )
-
-    self.portal.portal_workflow.doActionFor(packing_list, "confirm_action")
+    computer.requestSoftwareReleaseInstallation(
+        software_release_url=software_release.getUrlString())
 
   def stepCheckComputerPartitionSaleOrderAggregatedList(self, sequence):
     portal_catalog = self.portal.portal_catalog

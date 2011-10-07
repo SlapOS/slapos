@@ -75,9 +75,14 @@
             <value>
               <tuple>
                 <string>price_currency/currency_module/EUR</string>
-                <string>group/my_group</string>
-                <string>site/main</string>
+                <string>group/company</string>
               </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
             </value>
         </item>
         <item>

@@ -1,15 +1,19 @@
 <local_roles_item>
  <local_roles>
-  <role id='PROD'>
+  <role id='R-COMPUTER'>
+   <item>Auditor</item>
+   <item>Author</item>
+  </role>
+  <role id='R-INSTANCE'>
+   <item>Auditor</item>
+   <item>Author</item>
+  </role>
+  <role id='R-MEMBER'>
    <item>Auditor</item>
    <item>Author</item>
   </role>
   <role id='admin'>
    <item>Owner</item>
-  </role>
-  <role id='customer'>
-   <item>Auditor</item>
-   <item>Author</item>
   </role>
  </local_roles>
 </local_roles_item>

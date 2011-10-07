@@ -57,7 +57,7 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>function/customer</string>
+                <string>role/member</string>
               </tuple>
             </value>
         </item>

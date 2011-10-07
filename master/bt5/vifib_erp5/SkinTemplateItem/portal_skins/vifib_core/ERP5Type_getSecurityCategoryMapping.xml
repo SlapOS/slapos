@@ -59,12 +59,17 @@ deprecated ERP5Type_asSecurityGroupIdList\n
 """\n
 \n
 return (\n
+  # Person security\n
   (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'function\', \'group\']),\n
-  (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'function\']),\n
-  (\'ERP5Type_getComputerSecurityCategory\', [\'function\']),\n
-  (\'ERP5Type_getSoftwareInstanceSecurityCategory\', [\'function\']),\n
-  (\'ERP5Type_getSoftwareInstanceSecurityCategory\', [\'aggregate\']),\n
+  (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'role\']),\n
   (\'ERP5Type_getPersonSecurityFromHostingSubscription\', [\'aggregate\']),\n
+\n
+  # Computer security\n
+  (\'ERP5Type_getComputerSecurityCategory\', [\'role\']),\n
+\n
+  # Instance security\n
+  (\'ERP5Type_getSoftwareInstanceSecurityCategory\', [\'role\']),\n
+  (\'ERP5Type_getSoftwareInstanceSecurityCategory\', [\'aggregate\']),\n
 )\n
 </string> </value>
         </item>

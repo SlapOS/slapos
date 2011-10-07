@@ -61,6 +61,10 @@
             </value>
         </item>
         <item>
+            <key> <string>description</string> </key>
+            <value> <string>Private classification is intended for documents which are not shared with anybody</string> </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>private</string> </value>
         </item>
@@ -74,6 +78,10 @@
         </item>
         <item>
             <key> <string>short_title</string> </key>
+            <value> <string>Private</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
             <value> <string>Private</string> </value>
         </item>
       </dictionary>

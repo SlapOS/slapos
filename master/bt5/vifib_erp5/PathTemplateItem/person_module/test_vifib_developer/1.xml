@@ -52,8 +52,8 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>group/my_group</string>
-                <string>function/is/developer</string>
+                <string>function/software/developer</string>
+                <string>group/company</string>
               </tuple>
             </value>
         </item>

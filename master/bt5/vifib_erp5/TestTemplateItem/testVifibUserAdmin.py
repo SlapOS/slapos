@@ -182,6 +182,7 @@ class TestVifibUserAdmin(testVifibMixin):
 
     self.logout()
     self.login(user_name=login_id)
+    computer.portal_workflow.doActionFor(computer, 'validate_action')
 
     # Access software release to install
     software_release_module_id = self.portal.getDefaultModuleId(portal_type='Software Release')

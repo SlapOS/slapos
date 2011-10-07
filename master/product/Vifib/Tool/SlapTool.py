@@ -186,6 +186,14 @@ class SlapTool(BaseTool):
                                                    slave_reference)
 
   security.declareProtected(Permissions.AccessContentsInformation,
+    'supplySupply')
+  def supplySupply(self, url, computer_id):
+    """
+    Request Software Release installation
+    """
+    return self._supplySupply(url, computer_id)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
     'buildingSoftwareRelease')
   def buildingSoftwareRelease(self, url, computer_id):
     """
@@ -546,6 +554,15 @@ class SlapTool(BaseTool):
       query=query)
 
     return len(catalog_result)
+
+  @convertToREST
+  def _supplySupply(self, url, computer_id):
+    """
+    Request Software Release installation
+    """
+    computer_document = self._getComputerDocument(computer_id)
+    computer_document.requestSoftwareReleaseInstallation(
+      software_release_url=url)
 
   @convertToREST
   def _buildingSoftwareRelease(self, url, computer_id):

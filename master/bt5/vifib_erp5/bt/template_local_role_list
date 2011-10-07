@@ -16,6 +16,7 @@ person_module/test_hr_admin
 person_module/test_updated_vifib_user
 person_module/test_vifib_admin
 person_module/test_vifib_customer
+person_module/test_vifib_customer_a
 person_module/test_vifib_developer
 person_module/test_vifib_member
 person_module/test_vifib_user_admin

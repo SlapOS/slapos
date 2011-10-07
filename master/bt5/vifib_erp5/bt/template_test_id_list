@@ -3,6 +3,5 @@ testVifibModuleSecurity
 testVifibUserAdmin
 testVifibUserCustomer
 testVifibUserDeveloper
-testVifibSlapgrid2
 ViFiBOrderTest
 testVifibConstraint

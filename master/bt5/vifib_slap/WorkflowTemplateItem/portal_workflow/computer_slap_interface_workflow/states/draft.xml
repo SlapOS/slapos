@@ -27,6 +27,7 @@
                 <string>report_computer_bang</string>
                 <string>report_software_release_installation_error</string>
                 <string>request_computer_registration</string>
+                <string>request_software_release_installation</string>
                 <string>start_software_release_installation</string>
                 <string>stop_software_release_installation</string>
               </tuple>

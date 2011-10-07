@@ -75,6 +75,10 @@
             </value>
         </item>
         <item>
+            <key> <string>description</string> </key>
+            <value> <string>Pan-asian nationalities</string> </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>asia</string> </value>
         </item>
@@ -88,6 +92,10 @@
         </item>
         <item>
             <key> <string>short_title</string> </key>
+            <value> <string>Asia</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
             <value> <string>Asia</string> </value>
         </item>
       </dictionary>

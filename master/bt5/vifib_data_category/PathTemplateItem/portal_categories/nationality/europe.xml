@@ -75,6 +75,10 @@
             </value>
         </item>
         <item>
+            <key> <string>description</string> </key>
+            <value> <string>Pan-european nationalities</string> </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>europe</string> </value>
         </item>
@@ -88,6 +92,10 @@
         </item>
         <item>
             <key> <string>short_title</string> </key>
+            <value> <string>Europe</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
             <value> <string>Europe</string> </value>
         </item>
       </dictionary>

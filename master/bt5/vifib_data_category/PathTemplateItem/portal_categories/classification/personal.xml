@@ -83,6 +83,10 @@
             </value>
         </item>
         <item>
+            <key> <string>description</string> </key>
+            <value> <string>Personal classifications allow a given user to prepare alone (in secret) a document then submit it for review before it is shared, released or published.</string> </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>personal</string> </value>
         </item>
@@ -96,6 +100,10 @@
         </item>
         <item>
             <key> <string>short_title</string> </key>
+            <value> <string>Personal</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
             <value> <string>Personal</string> </value>
         </item>
       </dictionary>

@@ -1,8 +1,7 @@
 <local_roles_item>
  <local_roles>
-  <role id='HR-AGNT_my_group'>
+  <role id='F-PRODUCTION_G-COMPANY'>
    <item>Assignor</item>
-   <item>Auditor</item>
   </role>
   <role id='romain'>
    <item>Owner</item>

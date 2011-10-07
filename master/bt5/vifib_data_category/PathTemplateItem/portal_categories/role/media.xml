@@ -49,36 +49,31 @@
                 <string>Assignee</string>
                 <string>Assignor</string>
                 <string>Manager</string>
+                <string>Owner</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>codification</string> </key>
-            <value> <string>MEDIA</string> </value>
-        </item>
-        <item>
-            <key> <string>default_reference</string> </key>
-            <value> <string>MEDIA</string> </value>
+            <value> <string>R-MEDIA</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>A person or an organisation that could publish information in relation with our activities</string> </value>
+            <value> <string>Media people or companies</string> </value>
+        </item>
+        <item>
+            <key> <string>effective_date</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
             <value> <string>media</string> </value>
         </item>
         <item>
-            <key> <string>int_index</string> </key>
-            <value> <int>0</int> </value>
-        </item>
-        <item>
             <key> <string>portal_type</string> </key>
             <value> <string>Category</string> </value>
-        </item>
-        <item>
-            <key> <string>short_title</string> </key>
-            <value> <string>Media</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>

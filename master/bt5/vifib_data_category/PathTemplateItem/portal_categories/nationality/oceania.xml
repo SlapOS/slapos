@@ -90,6 +90,10 @@
             <key> <string>short_title</string> </key>
             <value> <string>Oceania</string> </value>
         </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Oceania</string> </value>
+        </item>
       </dictionary>
     </pickle>
   </record>
