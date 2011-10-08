@@ -61,18 +61,19 @@ class Recipe(BaseSlapRecipe):
         cubrid_conf['cubrid_ip'], 12345, cubrid_conf['cubrid_port'],
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
-    
-    self.setConnectionUrl(scheme='mysqls',
-                          host=stunnel_conf['public_ip'],
-                          port=stunnel_conf['public_port'],
-                          #auth=(cubrid_conf['cubrid_user'],
-                          #      cubrid_conf['cubrid_password']),
-                          path=cubrid_conf['cubrid_database'])
+
+    self.setConnectionDict(dict(
+      stunnel_ip = stunnel_conf['public_ip'],
+      stunnel_port = stunnel_conf['public_port'],
+      database = cubrid_conf['cubrid_database']
+    ))
+
     return self.path_list
 
   def installCubrid(self, ip, port, database='db', user='user',
       template_filename=None, cubrid_conf=None):
     # XXX-Cedric : use work from Antoine to have backuped + generic cubrid
+    # XXX-Cedric : Check that running this recipe does not erase database
 
     config_dict = {}
     config_dict.update(self.options)
