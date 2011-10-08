@@ -8,4 +8,4 @@ then
   %(cubrid_binary)s createdb %(cubrid_database)s
 fi
 
-%(cubrid_server_binary)s server start %(cubrid_database)s
+%(cubrid_server_binary)s %(cubrid_database)s
