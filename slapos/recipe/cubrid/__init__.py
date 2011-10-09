@@ -52,13 +52,13 @@ class Recipe(BaseSlapRecipe):
     self.requirements, self.ws = self.egg.working_set()
           
     self.cron_d = self.installCrond()
-    cubrid_conf = self.installCubrid(self.getLocalIPv4Address(), 1523)
+    cubrid_conf = self.installCubrid(self.getLocalIPv4Address(), 30000)
     
     ca_conf = self.installCertificateAuthority()
     key, certificate = self.requestCertificate('Cubrid')
     
     stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(),
-        cubrid_conf['cubrid_ip'], 12345, cubrid_conf['cubrid_port'],
+        cubrid_conf['cubrid_ip'], 12345, cubrid_conf['cubrid_broker_port'],
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
 
@@ -70,11 +70,12 @@ class Recipe(BaseSlapRecipe):
 
     return self.path_list
 
-  def installCubrid(self, ip, port, database='db', user='user',
-      template_filename=None, cubrid_conf=None):
+  def installCubrid(self, ip, port, database='cubrid_slapos_db'):
+    #, user='user',
+    #  template_filename=None, cubrid_conf=None):
     # XXX-Cedric : use work from Antoine to have backuped + generic cubrid
     # XXX-Cedric : Check that running this recipe does not erase database
-
+    # XXX-Cedric : add access to cubrid manager and cubrid master
     config_dict = {}
     config_dict.update(self.options)
     config_dict.update(self.parameter_dict)
@@ -83,13 +84,16 @@ class Recipe(BaseSlapRecipe):
 
     config_dict['cubrid_home'] = cubrid_home_path
     config_dict['cubrid_ip'] = ip
-    config_dict['cubrid_port'] = port
-    config_dict['cubrid_database'] = os.path.join('cubrid')
+    config_dict['cubrid_broker_port'] = port
+    config_dict['cubrid_database'] = database
 
     # Create configuration
     cubrid_configuration_template_path = self.getTemplateFilename('cubrid.conf.in')
     cubrid_configuration_path = self.createConfigurationFile("cubrid.conf",
         self.substituteTemplate(cubrid_configuration_template_path, config_dict))
+    cubrid_broker_configuration_template_path = self.getTemplateFilename('cubrid_broker.conf.in')
+    cubrid_broker_configuration_path = self.createConfigurationFile("cubrid_broker.conf",
+        self.substituteTemplate(cubrid_broker_configuration_template_path, config_dict))
 
     # Create wrapper
     cubrid_wrapper_template_location = pkg_resources.resource_filename(
@@ -103,6 +107,18 @@ class Recipe(BaseSlapRecipe):
     self._createDirectory(cubrid_conf_directory)
     self._createSimlink(cubrid_configuration_path, 
         os.path.join(cubrid_conf_directory, 'cubrid.conf'))
+    self._createSimlink(cubrid_broker_configuration_path,
+        os.path.join(cubrid_conf_directory, 'cubrid_broker.conf'))
+
+    # Files needed to fill database for demo
+    demodb_schema_template_path = self.getTemplateFilename('demodb_schema')
+    demodb_schema_path = self._writeFile(os.path.join(cubrid_home_path, 'demodb_schema'),
+        self.substituteTemplate(demodb_schema_template_path, config_dict))
+    demodb_objects_template_path = self.getTemplateFilename('demodb_objects')
+    demodb_objects_path = self._writeFile(os.path.join(cubrid_home_path, 'demodb_objects'),
+        open(demodb_objects_template_path, 'r').read())
+
+
     # Create links to cubrid files, otherzise it will whine.
     self._createSimlink(os.path.join(self.options['cubrid_location'], 'bin'),
         os.path.join(cubrid_home_path, 'bin'))

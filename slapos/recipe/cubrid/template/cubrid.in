@@ -1,11 +1,14 @@
 #!/bin/sh
 
 export CUBRID=%(cubrid_home)s
+export CUBRID_DATABASES=%(cubrid_home)s
 export JAVA_HOME=%(java_home)s
 
 if [ ! -f %(cubrid_database)s ];
 then
-  %(cubrid_binary)s createdb %(cubrid_database)s
+  $CUBRID/bin/cubrid createdb %(cubrid_database)s
+  $CUBRID/bin/cubrid loaddb -u dba -s $CUBRID/demodb_schema -d $CUBRID/demodb_objects %(cubrid_database)s
 fi
 
-%(cubrid_server_binary)s %(cubrid_database)s
+%(cubrid_binary)s service start
+%(cubrid_binary)s server start %(cubrid_database)s
