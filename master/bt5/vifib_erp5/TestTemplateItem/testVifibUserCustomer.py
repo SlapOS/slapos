@@ -108,5 +108,3 @@ class TestVifibUserCustomer(testVifibMixin):
     # Access computer module
     computer_module_id = self.portal.getDefaultModuleId(portal_type='Computer')
     computer_module = self.portal.restrictedTraverse(computer_module_id)
-
-    raise NotImplementedError
