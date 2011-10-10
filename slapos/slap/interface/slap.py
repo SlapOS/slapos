@@ -136,6 +136,12 @@ class IComputerPartition(IBuildoutController):
     available and started.
     """
 
+  def destroyed():
+    """
+    Notify (to the slapgrid server) that the software instance has
+    been correctly destroyed.
+    """
+
   def getId():
     """
     Returns a string representing the identifier of the computer partition
