@@ -7,6 +7,14 @@ key = %(key)s
 CRLpath = %(ca_crl)s
 cert = %(cert)s
 
-[service]
-accept = %(public_ip)s:%(public_port)s
-connect = %(private_ip)s:%(private_port)s
+[broker]
+accept = %(public_ip)s:%(broker_public_port)s
+connect = %(private_ip)s:%(broker_private_port)s
+
+[manager]
+accept = %(public_ip)s:%(manager_public_port)s
+connect = %(private_ip)s:%(manager_private_port)s
+
+[master]
+accept = %(public_ip)s:%(master_public_port)s
+connect = %(private_ip)s:%(master_private_port)s

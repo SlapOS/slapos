@@ -52,30 +52,33 @@ class Recipe(BaseSlapRecipe):
     self.requirements, self.ws = self.egg.working_set()
           
     self.cron_d = self.installCrond()
-    cubrid_conf = self.installCubrid(self.getLocalIPv4Address(), 30000)
+    cubrid_conf = self.installCubrid(self.getLocalIPv4Address())
     
     ca_conf = self.installCertificateAuthority()
     key, certificate = self.requestCertificate('Cubrid')
     
     stunnel_conf = self.installStunnel(self.getGlobalIPv6Address(),
-        cubrid_conf['cubrid_ip'], 12345, cubrid_conf['cubrid_broker_port'],
+        cubrid_conf['cubrid_ip'],
+        40000, cubrid_conf['cubrid_broker_port'],
+        18801, cubrid_conf['cubrid_manager_port'],
+        11523, cubrid_conf['cubrid_master_port'],
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
 
     self.setConnectionDict(dict(
       stunnel_ip = stunnel_conf['public_ip'],
-      stunnel_port = stunnel_conf['public_port'],
+      stunnel_broker_port = stunnel_conf['broker_public_port'],
+      stunnel_manager_port = stunnel_conf['manager_public_port'],
+      stunnel_master_port = stunnel_conf['master_public_port'],
       database = cubrid_conf['cubrid_database']
     ))
 
     return self.path_list
 
-  def installCubrid(self, ip, port, database='cubrid_slapos_db'):
-    #, user='user',
-    #  template_filename=None, cubrid_conf=None):
+  def installCubrid(self, ip, broker_port=30000, master_port=8001,
+      manager_port=1523, database='cubrid_slapos_db'):
     # XXX-Cedric : use work from Antoine to have backuped + generic cubrid
     # XXX-Cedric : Check that running this recipe does not erase database
-    # XXX-Cedric : add access to cubrid manager and cubrid master
     config_dict = {}
     config_dict.update(self.options)
     config_dict.update(self.parameter_dict)
@@ -84,7 +87,9 @@ class Recipe(BaseSlapRecipe):
 
     config_dict['cubrid_home'] = cubrid_home_path
     config_dict['cubrid_ip'] = ip
-    config_dict['cubrid_broker_port'] = port
+    config_dict['cubrid_broker_port'] = broker_port
+    config_dict['cubrid_manager_port'] = manager_port
+    config_dict['cubrid_master_port'] = master_port
     config_dict['cubrid_database'] = database
 
     # Create configuration
@@ -112,10 +117,10 @@ class Recipe(BaseSlapRecipe):
 
     # Files needed to fill database for demo
     demodb_schema_template_path = self.getTemplateFilename('demodb_schema')
-    demodb_schema_path = self._writeFile(os.path.join(cubrid_home_path, 'demodb_schema'),
+    self._writeFile(os.path.join(cubrid_home_path, 'demodb_schema'),
         self.substituteTemplate(demodb_schema_template_path, config_dict))
     demodb_objects_template_path = self.getTemplateFilename('demodb_objects')
-    demodb_objects_path = self._writeFile(os.path.join(cubrid_home_path, 'demodb_objects'),
+    self._writeFile(os.path.join(cubrid_home_path, 'demodb_objects'),
         open(demodb_objects_template_path, 'r').read())
 
 
@@ -244,7 +249,10 @@ class Recipe(BaseSlapRecipe):
     parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
     return key, certificate
 
-  def installStunnel(self, public_ip, private_ip, public_port, private_port,
+  def installStunnel(self, public_ip, private_ip,
+      broker_public_port, broker_private_port,
+      manager_public_port, manager_private_port,
+      master_public_port, master_private_port,
       ca_certificate, key, ca_crl, ca_path):
     """Installs stunnel"""
     template_filename = self.getTemplateFilename('stunnel.conf.in')
@@ -253,14 +261,18 @@ class Recipe(BaseSlapRecipe):
     stunnel_conf = dict(
         public_ip=public_ip,
         private_ip=private_ip,
-        public_port=public_port,
+        broker_public_port=broker_public_port,
+        broker_private_port=broker_private_port,
+        manager_public_port=manager_public_port,
+        manager_private_port=manager_private_port,
+        master_public_port=master_public_port,
+        master_private_port=master_private_port,
         pid_file=pid_file,
         log=log,
         cert = ca_certificate,
         key = key,
         ca_crl = ca_crl,
         ca_path = ca_path,
-        private_port = private_port,
     )
     stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
         self.substituteTemplate(template_filename,
