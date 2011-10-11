@@ -74,13 +74,12 @@ if is_slave == True:\n
 else:\n
   software_instance_portal_type = "Software Instance"\n
 \n
-tag = "%s_%s_%s_inProgress" % (person.getUid(), software_type, \n
+tag = "%s_%s_inProgress" % (person.getUid(), \n
                                software_title)\n
 \n
 # Check if it already exists\n
 request_software_instance = portal.portal_catalog.getResultValue(\n
   portal_type=software_instance_portal_type,\n
-  source_reference=software_type,\n
   title=software_title,\n
 )\n
 if (request_software_instance is None):\n
@@ -176,6 +175,7 @@ else:\n
   # Update existing software instance\n
   request_software_instance.edit(\n
     text_content=instance_xml,\n
+    source_reference=software_type,\n
     sla_xml=sla_xml,\n
     activate_kw={\'tag\': tag},\n
   )\n
