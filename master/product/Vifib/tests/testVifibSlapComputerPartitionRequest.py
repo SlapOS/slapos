@@ -6,6 +6,7 @@ import httplib
 from xml_marshaller import xml_marshaller
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
+from slapos import slap
 
 class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
   ########################################
@@ -1008,6 +1009,78 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  ##################################################
+  # ComputerPartition.request - change software type
+  ##################################################
+
+  def stepSetFirstSoftwareType(self, sequence,
+      **kw):
+    sequence.edit(requested_software_type="FirstSoftwareType")
+
+  def stepRequestComputerPartitionWithAnotherSoftwareType(self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    slap_computer_partition = self.slap.registerComputerPartition(
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+    kw = dict(software_release=sequence['software_release_uri'],
+      software_type="SecondSoftwareType",
+      partition_reference=sequence.get('requested_reference',
+        'requested_reference'),
+      partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
+
+    requested_slap_computer_partition = slap_computer_partition.request(**kw)
+
+  def stepCheckRequestComputerPartitionWithAnotherSoftwareType(
+                                     self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    slap_computer_partition = self.slap.registerComputerPartition(
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+    kw = dict(software_release=sequence['software_release_uri'],
+      software_type="SecondSoftwareType",
+      partition_reference=sequence.get('requested_reference',
+        'requested_reference'),
+      partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
+
+    requested_slap_computer_partition = slap_computer_partition.request(**kw)
+
+    self.assertEquals(sequence.get('requested_computer_partition_reference'),
+                      requested_slap_computer_partition.getId())
+    self.assertEquals("SecondSoftwareType",
+                      requested_slap_computer_partition.getInstanceParameterDict()['slap_software_type'])
+    self.assertEquals(1,
+                      requested_slap_computer_partition._need_modification)
+
+  def test_ComputerPartition_request_changeSoftwareType(self):
+    """
+    Check that requesting the same instance with a different software type
+    does not create a new instance
+    """
+    self.computer_partition_amount = 3
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
+      SelectRequestedReference \
+      SelectEmptyRequestedParameterDict \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      SetFirstSoftwareType \
+      RequestComputerPartition \
+      Tic \
+      RequestComputerPartitionWithAnotherSoftwareType \
+      Tic \
+      CheckRequestComputerPartitionWithAnotherSoftwareType \
+      Tic \
+      SlapLogout \
+    '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 

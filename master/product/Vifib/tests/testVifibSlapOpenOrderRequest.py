@@ -260,6 +260,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       PersonRequestSlapSoftwareInstanceWithAnotherSoftwareType
       Tic
       CheckPersonRequestSlapSoftwareInstanceWithAnotherSoftwareType
+      Tic
       SlapLogout
     """
     sequence_list.addSequenceString(sequence_string)

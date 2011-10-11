@@ -1515,7 +1515,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
     kw = dict(software_release=sequence['software_release_uri'],
-      software_type=sequence.get('requested_reference', 'requested_reference'),
+      software_type=sequence.get('requested_software_type',
+                                 'requested_software_type'),
       partition_reference=sequence.get('requested_reference',
         'requested_reference'),
       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),

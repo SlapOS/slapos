@@ -85,7 +85,7 @@ while (predecessor_software_instance is not None):\n
   predecessor_software_instance = predecessor_software_instance.getPredecessorRelatedValue(\n
       portal_type="Software Instance")\n
 \n
-tag = "%s_%s_%s_inProgress" % (root_software_instance.getUid(), software_type,\n
+tag = "%s_%s_inProgress" % (root_software_instance.getUid(),\n
                                requested_partition_reference)\n
 \n
 # Check if it already exists\n
@@ -94,7 +94,6 @@ request_software_instance = software_instance.portal_catalog.getResultValue(\n
   # XXX: User based property is used in non manual operation\n
   # XXX-2: Do we really need to use root_uid?\n
   title=requested_partition_reference,\n
-  source_reference=software_type,\n
   root_uid=root_software_instance.getUid(),\n
 )\n
 \n
@@ -134,6 +133,7 @@ else:\n
   # Sale Packing List interaction has to be requested automatically with an interaction workflow\n
   request_software_instance.edit(\n
     text_content=instance_xml,\n
+    source_reference=software_type,\n
     sla_xml=sla_xml,\n
     activate_kw={\'tag\': tag},\n
   )\n
