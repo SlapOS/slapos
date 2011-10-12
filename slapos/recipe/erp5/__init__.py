@@ -789,7 +789,12 @@ SSLCARevocationPath %(ca_crl)s"""
       kumo_conf = {}
     # XXX Conversion server and memcache server coordinates are not relevant
     # for pure site creation.
-    mysql_connection_string = "%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s" % mysql_conf
+    assert mysql_conf['mysql_user'] and mysql_conf['mysql_password'], \
+        "ZMySQLDA requires a user and a password for socket connections"
+    # XXX Use socket access to prevent unwanted connections to original MySQL
+    #     server when cloning an existing ERP5 instance.
+    #     TCP will be required if MySQL is in a different partition/server.
+    mysql_connection_string = "%(mysql_database)s %(mysql_user)s %(mysql_password)s %(socket)s" % mysql_conf
 
     bt5_list = self.parameter_dict.get("bt5_list", "").split() or default_bt5_list
     bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
