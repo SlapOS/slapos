@@ -1368,34 +1368,44 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def stepSelectYetAnotherRequestedReference(self, sequence, **kw):
     sequence.edit(requested_reference='yet_another_requested_reference')
+    sequence.edit(requested_software_type='yet_another_requested_software_type')
 
   def stepSelectAnotherRequestedReference(self, sequence, **kw):
     sequence.edit(requested_reference='another_requested_reference')
+    sequence.edit(requested_software_type='another_requested_software_type')
 
   def stepSelectRequestedReference(self, sequence, **kw):
     sequence.edit(requested_reference='requested_reference')
+    sequence.edit(requested_software_type='requested_software_type')
 
   def stepSelectRequestedReferenceChildrenA(self, sequence, **kw):
     sequence.edit(requested_reference='children_a')
+    sequence.edit(requested_software_type='children_a')
 
   def stepSelectRequestedReferenceChildrenB(self, sequence, **kw):
     sequence.edit(requested_reference='children_b')
+    sequence.edit(requested_software_type='children_b')
 
   def stepSelectRequestedReferenceChildrenAChild(self, sequence, **kw):
     sequence.edit(requested_reference='children_a_child')
+    sequence.edit(requested_software_type='children_a_child')
 
   def stepSelectRequestedReferenceChildrenBChild(self, sequence, **kw):
     sequence.edit(requested_reference='children_b_child')
+    sequence.edit(requested_software_type='children_b_child')
 
   def stepSelectRequestedReferenceRootSoftwareInstanceTitle(self, sequence,
       **kw):
     sequence.edit(requested_reference=sequence['root_software_instance_title'])
+    sequence.edit(requested_software_type=sequence['root_software_instance_title'])
 
   def stepSelectRequestedReferenceB(self, sequence, **kw):
     sequence.edit(requested_reference='b')
+    sequence.edit(requested_software_type='b')
 
   def stepSelectRequestedReferenceC(self, sequence, **kw):
     sequence.edit(requested_reference='c')
+    sequence.edit(requested_software_type='c')
 
   def stepSelectEmptyRequestedParameterDict(self, sequence, **kw):
     sequence.edit(requested_parameter_dict=None)
@@ -1799,7 +1809,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     predecessor_list = software_instance.getPredecessorValueList()
     self.assertEqual(1, len(predecessor_list))
     predecessor = predecessor_list[0]
-    self.assertEqual('requested_reference', predecessor.getSourceReference())
+    self.assertEqual('requested_software_type', predecessor.getSourceReference())
     self.assertEqual(1, len(software_instance.getPredecessorRelatedValueList()))
 
   def stepCheckComputerPartitionChildrenAWithOwnChildren(self, sequence, **kw):
@@ -1829,7 +1839,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     predecessor_list = software_instance.getPredecessorValueList()
     self.assertEqual(1, len(predecessor_list))
     predecessor = predecessor_list[0]
-    self.assertEqual('requested_reference', predecessor.getSourceReference())
+    self.assertEqual('requested_software_type', predecessor.getSourceReference())
     self.assertEqual(1, len(software_instance.getPredecessorRelatedValueList()))
 
   def stepCheckComputerPartitionChildrenBWithOwnChildren(self, sequence, **kw):
