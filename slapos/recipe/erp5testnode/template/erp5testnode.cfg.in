@@ -14,6 +14,7 @@ project_title= %(project_title)s
 ipv4_address = %(ipv4_address)s
 ipv6_address = %(ipv6_address)s
 test_suite_master_url = %(test_suite_master_url)s
+bt5_path = %(bt5_path)s
 
 # Binaries
 git_binary = %(git_binary)s

@@ -64,7 +64,17 @@ class Recipe(BaseSlapRecipe):
     CONFIG['slapproxy_binary'] = self.options['slapproxy_binary']
     CONFIG['zip_binary'] = self.options['zip_binary']
     CONFIG['PATH'] = os.environ['PATH']
+    additional_bt5_repository_id = \
+        self.parameter_dict.get('additional_bt5_repository_id')
 
+    CONFIG['bt5_path'] = None
+    if additional_bt5_repository_id is not None:
+      CONFIG['bt5_path'] = ""
+      additional_bt5_repository_id_list = additional_bt5_repository_id.split(",")
+      for id in additional_bt5_repository_id_list:
+        id_path = os.path.join(CONFIG['slapos_directory'], id)
+        bt_path = os.path.join(id_path, "bt5")
+        CONFIG['bt5_path'] += "%s,%s," % (id_path, bt_path)
     CONFIG['instance_dict'] = ''
     if 'instance_dict' in self.parameter_dict:
       CONFIG['instance_dict'] = '[instance_dict]\n'
