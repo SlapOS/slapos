@@ -506,8 +506,8 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     software_instance_uid = sequence['software_instance_uid']
     software_type = sequence.get('software_type', 'requested_reference')
     requested_partition_reference = sequence.get('software_type', 'requested_reference')
-    tag = "%s_%s_%s_inProgress" % (software_instance_uid,
-        software_type, requested_partition_reference)
+    tag = "%s_%s_inProgress" % (software_instance_uid,
+        requested_partition_reference)
 
     self.assertNotEqual(0, self.portal.portal_activities.
       countMessageWithTag(tag))
@@ -542,7 +542,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       'test_vifib_customer').getUid()
     software_type = sequence.get('software_type', 'RootSoftwareInstance')
     software_title = sequence['root_software_instance_title']
-    tag = "%s_%s_%s_inProgress" % (person_uid, software_type,
+    tag = "%s_%s_inProgress" % (person_uid,
                                    software_title)
 
     self.assertNotEqual(0, self.portal.portal_activities.
