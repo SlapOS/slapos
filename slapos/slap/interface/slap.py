@@ -46,6 +46,44 @@ class IUnauthorized(IException):
   permissions on the slap server.
   """
 
+class IRequester(Interface):
+  """
+  Classes which implement IRequester can request software instance to the
+  slapgrid server.
+  """
+
+  def request(software_release, software_type, partition_reference, 
+              shared=False, partition_parameter_kw=None, filter_kw=None):
+    """
+    Request software release instanciation to slapgrid server.
+
+    Returns a new computer partition document, where this sofware release will
+    be installed.
+
+    software_release -- uri of the software release
+                        which has to be instanciated
+
+    software_type -- type of component provided by software_release
+
+    partition_reference -- local reference of the instance used by the recipe
+                           to identify the instances.
+
+    shared -- boolean to use a shared service
+
+    partition_parameter_kw -- dictionary of parameter used to fill the
+                              parameter dict of newly created partition.
+
+    filter_kw -- dictionary of filtering parameter to select the requested
+                 computer partition.
+
+      computer_guid - computer of the requested partition
+      partition_type - virtio, slave, full, limited
+      port - port provided by the requested partition
+
+    Example:
+       request('http://example.com/toto/titi', 'typeA', 'mysql_1')
+    """
+
 class IBuildoutController(Interface):
   """
   Classes which implement IBuildoutController can report the buildout run
@@ -83,7 +121,7 @@ class ISoftwareRelease(IBuildoutController):
     Returns a string representing the uri of the software release.
     """
 
-class IComputerPartition(IBuildoutController):
+class IComputerPartition(IBuildoutController, IRequester):
   """
   Computer Partition interface specification
 
@@ -91,38 +129,6 @@ class IComputerPartition(IBuildoutController):
   partition state to the SLAPGRID server and request new computer partition
   creation.
   """
-
-  def request(software_release, software_type, partition_reference, 
-              shared=False, partition_parameter_kw=None, filter_kw=None):
-    """
-    Request software release instanciation to slapgrid server.
-
-    Returns a new computer partition document, where this sofware release will
-    be installed.
-
-    software_release -- uri of the software release
-                        which has to be instanciated
-
-    software_type -- type of component provided by software_release
-
-    partition_reference -- local reference of the instance used by the recipe
-                           to identify the instances.
-
-    shared -- boolean to use a shared service
-
-    partition_parameter_kw -- dictionary of parameter used to fill the
-                              parameter dict of newly created partition.
-
-    filter_kw -- dictionary of filtering parameter to select the requested
-                 computer partition.
-
-      computer_guid - computer of the requested partition
-      partition_type - virtio, slave, full, limited
-      port - port provided by the requested partition
-
-    Example:
-       request('http://example.com/toto/titi', 'mysql_1')
-    """
 
   def stopped():
     """
@@ -232,25 +238,13 @@ class IComputer(Interface):
     log -- a text explaining why the method was called
     """
 
-class IOpenOrder(Interface):
+class IOpenOrder(IRequester):
   """
   Open Order interface specification
 
   Classes which implement Open Order describe which kind of software instances
   is requested by a given client.
   """
-
-  def request(software_release):
-    """
-    Request the instanciation of a given software release to the slapgrid
-    server.
-
-    Returns a new computer partition document, where this software release will
-    be installed.
-
-    software_release -- uri of the software release
-                        which has to be instanciated
-    """
 
 class ISupply(Interface):
   """
