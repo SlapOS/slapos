@@ -14,6 +14,8 @@ SQL_LOG                 =ON
 TIME_TO_KILL            =120
 SESSION_TIMEOUT         =300
 KEEP_CONNECTION         =AUTO
+ACCESS_ CONTROL         =ON
+ACCESS_CONTROL_FILE     =%(cubrid_home)s/access_file.txt
 
 [%%BROKER1]
 SERVICE                 =ON
@@ -27,4 +29,5 @@ SQL_LOG                 =ON
 TIME_TO_KILL            =120
 SESSION_TIMEOUT         =300
 KEEP_CONNECTION         =AUTO
-
+ACCESS_ CONTROL         =ON
+ACCESS_CONTROL_FILE     =%(cubrid_home)s/access_file.txt

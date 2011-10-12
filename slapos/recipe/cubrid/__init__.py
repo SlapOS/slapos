@@ -79,6 +79,10 @@ class Recipe(BaseSlapRecipe):
       manager_port=1523, database='cubrid_slapos_db'):
     # XXX-Cedric : use work from Antoine to have backuped + generic cubrid
     # XXX-Cedric : Check that running this recipe does not erase database
+    # XXX-Cedric : Check manager status
+    # XXX-Cedric : Check master status
+    # XXX-Cedric : restrict everything by user/password
+    # XXX-Cedric : IPv6?
     config_dict = {}
     config_dict.update(self.options)
     config_dict.update(self.parameter_dict)
@@ -114,6 +118,9 @@ class Recipe(BaseSlapRecipe):
         os.path.join(cubrid_conf_directory, 'cubrid.conf'))
     self._createSimlink(cubrid_broker_configuration_path,
         os.path.join(cubrid_conf_directory, 'cubrid_broker.conf'))
+
+    # XXX-Cedric : Finish IP binding http://www.cubrid.org/manual/840/en/Broker%20Server%20Access%20Limitation
+    #              Add access_file.txt.in, iplist.txt.in
 
     # Files needed to fill database for demo
     demodb_schema_template_path = self.getTemplateFilename('demodb_schema')

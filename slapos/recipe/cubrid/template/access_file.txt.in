@@ -1,0 +1,5 @@
+[%%QUERY_EDITOR]
+*:*:iplist.txt
+ 
+[%%BROKER1]
+*:*:iplist.txt
