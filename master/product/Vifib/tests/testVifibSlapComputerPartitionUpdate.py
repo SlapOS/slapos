@@ -590,6 +590,145 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  # update triggers
+  def stepSoftwareInstanceEditTitle(self, sequence,
+    **kw):
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    instance.edit(
+      title = instance.getTitle() + 'edited'
+    )
+
+  def stepSoftwareInstanceEditSourceReference(self, sequence,
+    **kw):
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    instance.edit(
+      source_reference = instance.getSourceReference() + 'edited'
+    )
+
+  def stepSoftwareInstanceEditTextContent(self, sequence,
+    **kw):
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    text_content = instance.getTextContent()
+    modified_xml = """<?xml version="1.0" encoding="utf-8"?>
+      <instance><parameter id="ignore">value</parameter></instance>"""
+    self.assertNotEqual(modified_xml, text_content)
+    instance.edit(
+      text_content = modified_xml
+    )
+
+  def stepSoftwareInstanceEditConnectionXml(self, sequence,
+    **kw):
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    connection_xml = instance.getConnectionXml()
+    self.assertNotEqual(connection_xml, self.minimal_correct_xml)
+    instance.edit(
+      connection_xml = self.minimal_correct_xml
+    )
+
+  def test_update_on_title_change(self):
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_started_computer_partition_sequence_string + """
+        SlapLoginCurrentComputer
+        CheckEmptyComputerGetComputerPartitionCall
+        SlapLogout
+
+        LoginTestVifibCustomer
+        SoftwareInstanceEditTitle
+        Tic
+        Logout
+
+        LoginDefaultUser
+        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        Logout
+
+        SlapLoginCurrentComputer
+        CheckSuccessComputerGetComputerPartitionCall
+        SlapLogout
+
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_update_on_source_reference_change(self):
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_started_computer_partition_sequence_string + """
+        SlapLoginCurrentComputer
+        CheckEmptyComputerGetComputerPartitionCall
+        SlapLogout
+
+        LoginTestVifibCustomer
+        SoftwareInstanceEditSourceReference
+        Tic
+        Logout
+
+        LoginDefaultUser
+        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        Logout
+
+        SlapLoginCurrentComputer
+        CheckSuccessComputerGetComputerPartitionCall
+        SlapLogout
+
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_update_on_text_content_change(self):
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_started_computer_partition_sequence_string + """
+        SlapLoginCurrentComputer
+        CheckEmptyComputerGetComputerPartitionCall
+        SlapLogout
+
+        LoginTestVifibCustomer
+        SoftwareInstanceEditTextContent
+        Tic
+        Logout
+
+        LoginDefaultUser
+        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        Logout
+
+        SlapLoginCurrentComputer
+        CheckSuccessComputerGetComputerPartitionCall
+        SlapLogout
+
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_no_update_on_connection_xml_change(self):
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_started_computer_partition_sequence_string + """
+        SlapLoginCurrentComputer
+        CheckEmptyComputerGetComputerPartitionCall
+        SlapLogout
+
+        LoginTestVifibCustomer
+        SoftwareInstanceEditConnectionXml
+        Tic
+        Logout
+
+        LoginDefaultUser
+        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        Logout
+
+        SlapLoginCurrentComputer
+        CheckEmptyComputerGetComputerPartitionCall
+        SlapLogout
+
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
 def test_suite():
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(TestVifibSlapComputerPartitionUpdate))
