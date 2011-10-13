@@ -65,11 +65,11 @@ class Recipe(BaseSlapRecipe):
 
     self.linkBinary()
     self.computer_partition.setConnectionDict(dict(
-        url = "https://[%s]:%s/vnc.html?host=[%s]&port=%s&encrypt=1" % (noVNC_conf['source_ip'],
-                                                     noVNC_conf['source_port'],
-                                                     noVNC_conf['source_ip'],
-                                                     noVNC_conf['source_port']
-                                                     ),
+        url = "https://[%s]:%s/vnc_auto.html?host=[%s]&port=%s&encrypt=1" % (
+            noVNC_conf['source_ip'],
+            noVNC_conf['source_port'],
+            noVNC_conf['source_ip'],
+            noVNC_conf['source_port']),
         password = kvm_conf['vnc_passwd']))
 
     return self.path_list
