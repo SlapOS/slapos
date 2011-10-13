@@ -211,31 +211,21 @@ class Recipe(BaseSlapRecipe):
 
     noVNC_conf['source_ip']   = source_ip
     noVNC_conf['source_port'] = source_port
+    
+    execute_arguments = [[
+        self.options['websockify'].strip(),
+        '--web',
+        self.options['noVNC_location'],
+        '--key=%s' % (self.key_path),
+        '--cert=%s' % (self.certificate_path),
+        '--ssl-only',
+        '%s:%s' % (source_ip, source_port),
+        '%s:%s' % (target_ip, target_port)],
+        [self.certificate_path, self.key_path]]
 
-    # Install numpy.
-    # XXX-Cedric : this looks like a hack. Do we have better solution, knowing
-    # That websockify is not an egg?
-    numpy = zc.buildout.easy_install.install(['numpy'], self.options['eggs-directory'])
-    environment = dict(PYTHONPATH='%s' % numpy.entries[0])
-
-    # Instanciate Websockify
-    websockify_runner_path = zc.buildout.easy_install.scripts([('websockify',
-      'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
-      sys.executable, self.wrapper_directory, arguments=[
-        [sys.executable.strip(),
-         self.options['websockify_path'],
-         '--web',
-         self.options['noVNC_location'],
-         '--key=%s' % (self.key_path),
-         '--cert=%s' % (self.certificate_path),
-         '--ssl-only',
-         '%s:%s' % (source_ip, source_port),
-         '%s:%s' % (target_ip, target_port)],
-        [self.certificate_path, self.key_path],
-        environment]
-       )[0]
-
-    self.path_list.append(websockify_runner_path)
+    self.path_list.extend(zc.buildout.easy_install.scripts([('websockify',
+      'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=execute_arguments))
 
     # Add noVNC promise
     self.port_listening_promise_conf.update(hostname=noVNC_conf['source_ip'],
