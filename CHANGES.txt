@@ -1,17 +1,64 @@
 Changes
 =======
 
-0.23 (unreleased)
+0.30 (Unreleased)
 -----------------
 
  * No change yet.
 
+0.30 (2011-10-06)
+-----------------
+
+ * LAMP : Update apache and php configuration files to work with a lot of different
+   PHP software. [Alain Takoudjou Kamdem]
+
+0.29 (2011-09-28)
+-----------------
+
+ * mysql: bug fix on database recovering (avoid importing dump two times). [Antoine Catton]
+
+0.28 (2011-09-27)
+-----------------
+
+ * lamp.request: requesting the mariadb software release instead of itself. [Antoine Catton]
+ * lamp.request: adding support of remote backup repo (using a different
+   software type). The default remote backup is a davstorage. [Antoine Catton]
+
+0.27 (2011-09-27)
+-----------------
+
+ * mysql: add backup and backup recovering using different software type. [Antoine Catton]
+
+0.26 (2011-09-27)
+-----------------
+
+ * Davstorage: returning more explicit url (using webdav scheme). [Antoine Catton]
+ * Other mysql minor fixes. [Antoine Catton]
+
+0.25 (2011-09-21)
+-----------------
+
+ * mysql: Restore to default behaviour. [Antoine Catton]
+ * mysql: Use mysqldump instead of non trustable backup system. [Antoine Catton]
+
+0.24 (2011-09-19)
+-----------------
+
+ * mysql: Unhardcode the requested url. [Antoine Catton]
+
+0.23 (2011-09-19)
+-----------------
+
+ * Clean code in mysql recipe [Cedric de Saint Martin]
+ * librecipe: Provide createPromiseWrapper method. [Antoine Catton]
+ * kvm: Expose promisee checks to slapgrid. [Antoine Catton]
+ * davstorage: Initial version. [Antoine Catton]
+ * mysql: Support DAV backup. [Antoine Catton]
 
 0.22 (2011-09-12)
 -----------------
 
  * Fix haproxy setup for erp5 [Sebastien Robin]
-
 
 0.21 (2011-09-12)
 -----------------

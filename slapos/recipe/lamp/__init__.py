@@ -31,8 +31,13 @@ import pkg_resources
 import zc.buildout
 import sys
 import zc.recipe.egg
+import urlparse
 
 class BaseRecipe(BaseSlapRecipe):
+  def getTemplateFilename(self, template_name):
+    return pkg_resources.resource_filename(__name__,
+        'template/%s' % template_name)
+
   def installMysqlServer(self, ip=None, port=None):
     if ip is None:
       ip = self.getLocalIPv4Address()
@@ -179,28 +184,60 @@ class Request(BaseRecipe):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
     software_type = self.parameter_dict['slap_software_type']
-    if software_type == 'RootSoftwareInstance':
-      document_root = self.createDataDirectory('htdocs')
-      self.createHtdocs(self.options['source'].strip(), document_root)
-      mysql = self.request(self.software_release_url, 'MySQL Server', 'mysql')
-      mysql_conf = dict(
-        mysql_host=mysql.getConnectionParameter('mysql_host'),
-        mysql_port=mysql.getConnectionParameter('mysql_port'),
-        mysql_user=mysql.getConnectionParameter('mysql_user'),
-        mysql_password=mysql.getConnectionParameter('mysql_password'),
-        mysql_database=mysql.getConnectionParameter('mysql_database'),
-      )
-      url = self.installApache(document_root)
-      self.setConnectionDict(dict(
-        url=url,
-      ))
-      self.createConfiguration(self.options['template'], document_root,
-          self.options['configuration'], mysql_conf)
-    elif software_type == 'MySQL Server':
-      mysql_conf = self.installMysqlServer()
-      self.setConnectionDict(dict(
-        **mysql_conf
-      ))
+
+    document_root = self.createDataDirectory('htdocs')
+    self.createHtdocs(self.options['source'].strip(), document_root)
+
+    if software_type == 'Backuped':
+      davstorage = self.request(self.options['davstorage-software-url'],
+        software_type, 'Backup Server').getConnectionParameter('url')
+
+      parameters = {'remote_backup': davstorage}
+    elif software_type == 'PersonnalBackup':
+      parameters = {'remote_backup': self.parameter_dict['remote_backup']}
     else:
-      raise zc.buildout.UserError('Uknown software type %r' % software_type)
+      parameters = {}
+
+    mysql = self.request(self.options['mariadb-software-url'],
+      software_type, 'MariaDB Server', partition_parameter_kw=parameters
+    ).getConnectionParameter('url')
+    mysql_parsed = urlparse.urlparse(mysql)
+
+    mysql_host, mysql_port = mysql_parsed.hostname, mysql_parsed.port
+    if mysql_parsed.scheme == 'mysqls': # Listen over stunnel
+      mysql_host, mysql_port = self.installStunnelClient(mysql_host,
+                                                         mysql_port)
+
+    mysql_conf = dict(mysql_database=mysql_parsed.path.strip('/'),
+                      mysql_user=mysql_parsed.username,
+                      mysql_password=mysql_parsed.password,
+                      mysql_host='%s:%s' % (mysql_host,mysql_port))
+
+    url = self.installApache(document_root)
+
+    self.setConnectionDict(dict(
+      url=url,
+    ))
+
+    self.createConfiguration(self.options['template'], document_root,
+        self.options['configuration'], mysql_conf)
     return self.path_list
+
+  def installStunnelClient(self, remote_host, remote_port):
+    local_host = self.getLocalIPv4Address()
+    local_port = 8888
+    stunnel_conf_path = self.createConfigurationFile('stunnel.conf',
+      self.substituteTemplate(
+      self.getTemplateFilename('stunnel.conf.in'), {
+        'log': os.path.join(self.log_directory, 'stunnel.log'),
+        'pid_file': os.path.join(self.run_directory, 'stunnel.pid'),
+        'remote_host': remote_host, 'remote_port': remote_port,
+        'local_host': local_host, 'local_port': local_port,
+      }))
+    wrapper = zc.buildout.easy_install.scripts([('stunnel',
+      'slapos.recipe.librecipe.execute', 'execute')], self.ws,
+      sys.executable, self.wrapper_directory, arguments=[
+        self.options['stunnel_binary'].strip(), stunnel_conf_path]
+      )[0]
+    self.path_list.append(wrapper)
+    return (local_host, local_port,)

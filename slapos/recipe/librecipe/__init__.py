@@ -33,6 +33,8 @@ from hashlib import md5
 import stat
 import netaddr
 import time
+import re
+import urlparse
 
 class BaseSlapRecipe:
   """Base class for all slap.recipe.*"""
@@ -60,6 +62,7 @@ class BaseSlapRecipe:
         'xml_report')
     self.destroy_script_location = os.path.join(self, self.work_directory,
         'sbin', 'destroy')
+    self.promise_directory = os.path.join(self.etc_directory, 'promise')
 
     # default directory structure information
     self.default_directory_list = [
@@ -71,6 +74,7 @@ class BaseSlapRecipe:
       self.etc_directory, # CP/etc - configuration container
       self.wrapper_directory, # CP/etc/run - for wrappers
       self.wrapper_report_directory, # CP/etc/report - for report wrappers
+      self.promise_directory, # CP/etc/promise - for promise checking scripts
       self.var_directory, # CP/var - partition "internal" container for logs,
                           # and another metadata
       self.wrapper_xml_report_directory, # CP/var/xml_report - for xml_report wrappers
@@ -81,12 +85,12 @@ class BaseSlapRecipe:
 
     # SLAP related information
     slap_connection = buildout['slap_connection']
-    self.computer_id=slap_connection['computer_id']
-    self.computer_partition_id=slap_connection['partition_id']
-    self.server_url=slap_connection['server_url']
-    self.software_release_url=slap_connection['software_release_url']
-    self.key_file=slap_connection.get('key_file')
-    self.cert_file=slap_connection.get('cert_file')
+    self.computer_id = slap_connection['computer_id']
+    self.computer_partition_id = slap_connection['partition_id']
+    self.server_url = slap_connection['server_url']
+    self.software_release_url = slap_connection['software_release_url']
+    self.key_file = slap_connection.get('key_file')
+    self.cert_file = slap_connection.get('cert_file')
 
     # setup egg to give possibility to generate scripts
     self.egg = zc.recipe.egg.Egg(buildout, options['recipe'], options)
@@ -243,3 +247,45 @@ class BaseSlapRecipe:
   def _install(self):
     """Hook which shall be implemented in children class"""
     raise NotImplementedError('Shall be implemented by subclass')
+
+  def createPromiseWrapper(self, promise_name, file_content):
+    """Create a promise wrapper.
+
+    This wrapper aim to check if the software release is doing its job.
+
+    Return the promise file path.
+    """
+    promise_path = os.path.join(self.promise_directory, promise_name)
+    self._writeExecutable(promise_path, file_content)
+    return promise_path
+
+  def setConnectionUrl(self, scheme, host, path='', params='', query='',
+                       fragment='', port=None, auth=None):
+    """Set the ConnectionDict to a dict with only one Universal Resource
+    Locator.
+
+    auth can be either a login string or a tuple (login, password).
+
+    """
+    # XXX-Antoine: I didn't find any standard module to join an url with
+    # login, password, ipv6 host and port.
+    # So instead of copy and past in every recipe I factorized it right here.
+    netloc = ''
+    if auth is not None:
+      auth = tuple(auth)
+      netloc = str(auth[0]) # Login
+      if len(auth) > 1:
+        netloc += ':%s' % auth[1] # Password
+      netloc += '@'
+
+    # host is an ipv6 address whithout brackets
+    if ':' in host and not re.match(r'^\[.*\]$', host):
+      netloc += '[%s]' % host
+    else:
+      netloc += str(host)
+
+    if port is not None:
+      netloc += ':%s' % port
+
+    url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
+    self.setConnectionDict(dict(url=url))
