@@ -53,3 +53,4 @@ LoadModule rewrite_module modules/mod_rewrite.so
 LoadModule headers_module modules/mod_headers.so
 LoadModule dir_module modules/mod_dir.so
 LoadModule php5_module modules/libphp5.so
+LoadModule alias_module modules/mod_alias.so

@@ -1,10 +1,39 @@
 Changes
 =======
 
-0.26 (unreleased)
+0.30 (Unreleased)
 -----------------
 
- * No changes yet.
+ * No change yet.
+
+0.30 (2011-10-06)
+-----------------
+
+ * LAMP : Update apache and php configuration files to work with a lot of different
+   PHP software. [Alain Takoudjou Kamdem]
+
+0.29 (2011-09-28)
+-----------------
+
+ * mysql: bug fix on database recovering (avoid importing dump two times). [Antoine Catton]
+
+0.28 (2011-09-27)
+-----------------
+
+ * lamp.request: requesting the mariadb software release instead of itself. [Antoine Catton]
+ * lamp.request: adding support of remote backup repo (using a different
+   software type). The default remote backup is a davstorage. [Antoine Catton]
+
+0.27 (2011-09-27)
+-----------------
+
+ * mysql: add backup and backup recovering using different software type. [Antoine Catton]
+
+0.26 (2011-09-27)
+-----------------
+
+ * Davstorage: returning more explicit url (using webdav scheme). [Antoine Catton]
+ * Other mysql minor fixes. [Antoine Catton]
 
 0.25 (2011-09-21)
 -----------------

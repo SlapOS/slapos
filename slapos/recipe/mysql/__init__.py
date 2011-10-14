@@ -44,6 +44,7 @@ class Recipe(BaseSlapRecipe):
     return arg
 
   def _install(self):
+    self.software_type = self.parameter_dict['slap_software_type']
     self.path_list = []
 
     self.requirements, self.ws = self.egg.working_set()
@@ -63,13 +64,12 @@ class Recipe(BaseSlapRecipe):
         ca_conf['certificate_authority_path'])
 
     self.linkBinary()
-    self.setConnectionDict(dict(
-      stunnel_ip = stunnel_conf['public_ip'],
-      stunnel_port = stunnel_conf['public_port'],
-      mysql_database = mysql_conf['mysql_database'],
-      mysql_user = mysql_conf['mysql_user'],
-      mysql_password = mysql_conf['mysql_password'],
-    ))
+    self.setConnectionUrl(scheme='mysqls',
+                          host=stunnel_conf['public_ip'],
+                          port=stunnel_conf['public_port'],
+                          auth=(mysql_conf['mysql_user'],
+                                mysql_conf['mysql_password']),
+                          path=mysql_conf['mysql_database'])
     return self.path_list
 
   def linkBinary(self):
@@ -141,7 +141,6 @@ class Recipe(BaseSlapRecipe):
   def installCertificateAuthority(self, ca_country_code='XX',
       ca_email='xx@example.com', ca_state='State', ca_city='City',
       ca_company='Company'):
-    backup_path = self.createBackupDirectory('ca')
     self.ca_dir = os.path.join(self.data_root_directory, 'ca')
     self._createDirectory(self.ca_dir)
     self.ca_request_dir = os.path.join(self.ca_dir, 'requests')
@@ -182,15 +181,6 @@ class Recipe(BaseSlapRecipe):
           crl=os.path.join(self.ca_crl),
           request_dir=self.ca_request_dir
           )]))
-    # configure backup
-    backup_cron = os.path.join(self.cron_d, 'ca_rdiff_backup')
-    open(backup_cron, 'w').write(
-        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
-          rdiff_backup=self.options['rdiff_backup_binary'],
-          source=self.ca_dir,
-          destination=backup_path))
-    self.path_list.append(backup_cron)
-
     return dict(
       ca_certificate=os.path.join(config['ca_dir'], 'cacert.pem'),
       ca_crl=os.path.join(config['ca_dir'], 'crl'),
@@ -230,6 +220,7 @@ class Recipe(BaseSlapRecipe):
     stunnel_conf_path = self.createConfigurationFile("stunnel.conf",
         self.substituteTemplate(template_filename,
           stunnel_conf))
+    self.path_list.append(stunnel_conf_path)
     wrapper = zc.buildout.easy_install.scripts([('stunnel',
       'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
       sys.executable, self.wrapper_directory, arguments=[
@@ -319,7 +310,7 @@ class Recipe(BaseSlapRecipe):
     mysql_backup_cron = os.path.join(self.cron_d, 'mysql_backup')
     with open(mysql_backup_cron, 'w') as file_:
       file_.write('0 0 * * * %(mysqldump)s | %(gzip)s > %(tmpdump)s' \
-                  '&& mv %(tmpdump)s %(dumpfile)s' % {
+                  '&& mv -f %(tmpdump)s %(dumpfile)s' % {
                     'mysqldump': mysqldump_cmdline_str,
                     'gzip': self.options['gzip_binary'],
                     'tmpdump': self.parseCmdArgument(tmpdump_file),
@@ -328,5 +319,35 @@ class Recipe(BaseSlapRecipe):
                  )
     self.path_list.append(mysql_backup_cron)
     mysql_conf.update(backup_directory=backup_directory)
+    # Remote backup
+    if self.software_type in ['Backuped', 'Recover']:
+      remote_url = self.parameter_dict['remote_backup']
+      remote_backup_bin = zc.buildout.easy_install.scripts([('remote_backup',
+        'slapos.recipe.librecipe.execute', 'execute')], self.ws,
+        sys.executable, self.bin_directory, arguments=[
+          self.options['duplicity_binary'], '--no-encryption',
+          backup_directory, remote_url]
+        )[0]
+      self.path_list.append(remote_backup_bin)
+      remote_backup_cron = os.path.join(self.cron_d, 'remote_backup')
+      self.path_list.append(remote_backup_cron)
+      with open(remote_backup_cron, 'w') as file_:
+        file_.write('1 0 * * * %s' % self.parseCmdArgument(
+          remote_backup_bin))
+    if self.software_type == 'Recover':
+      zc.buildout.easy_install.scripts([('import_backup',
+        __name__+'.recover', 'import_remote_dump')], self.ws,
+        sys.executable, self.wrapper_directory, arguments={
+          'lock_file': os.path.join(self.work_directory,
+                                    'import_done'),
+          'database': mysql_conf['mysql_database'],
+          'mysql_binary': self.options['mysql_binary'],
+          'mysql_socket': mysql_conf['socket'],
+          'duplicity_binary': self.options['duplicity_binary'],
+          'remote_backup': remote_url,
+          'local_directory': backup_directory,
+          'dump_name': dump_filename,
+          'zcat_binary': self.options['zcat_binary'],
+        })
     # The return could be more explicit database, user ...
     return mysql_conf
