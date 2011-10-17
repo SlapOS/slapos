@@ -27,6 +27,9 @@
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
+  def _options(self, options):
+    options['deadlock-password'] = self.generatePassword()
+
   def install(self):
     """ Install a single Zope instance without ZEO Server.
     """
@@ -63,7 +66,6 @@ class Recipe(GenericBaseRecipe):
     zope_config['address'] = '%s:%s' % (self.options['ip'], self.options['port'])
 
     zope_wrapper_template_location = self.getTemplateFilename('zope.conf.in')
-    self.options['deadlock-password'] = self.generatePassword()
     zope_conf_content = self.substituteTemplate(zope_wrapper_template_location,
       zope_config, dump_url=self.options['deadlock-path'],
       secret=self.options['deadlock-password'])
