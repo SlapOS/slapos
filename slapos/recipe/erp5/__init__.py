@@ -129,27 +129,6 @@ class Recipe(BaseSlapRecipe):
     self.setConnectionDict(connection_dict)
     return self.path_list
 
-  def installZopeStandalone(self):
-    """ Install a single Zope instance without ZEO Server.
-    """
-    zodb_dir = os.path.join(self.data_root_directory, 'zodb')
-    self._createDirectory(zodb_dir)
-    zodb_root_path = os.path.join(zodb_dir, 'main.fs')
-
-    thread_amount_per_zope = int(self.options.get(
-                                 'single_zope_thread_amount', 4))
-
-    zodb_cache_size = int(self.options.get('zodb_cache_size', 5000))
-
-    return self.installZope(ip=self.getLocalIPv4Address(),
-          port=12000 + 1, name='zope_%s' % 1,
-          zodb_configuration_string=self.substituteTemplate(
-            self.getTemplateFilename('zope-zodb-snippet.conf.in'),
-            dict(zodb_root_path=zodb_root_path,
-                 zodb_cache_size=zodb_cache_size)),
-            with_timerservice=True,
-            thread_amount=thread_amount_per_zope)
-
   def installKeyAuthorisationApache(self, ipv6, port, backend, key, certificate,
       ca_conf, key_auth_path='/'):
     if ipv6:
@@ -857,82 +836,6 @@ SSLCARevocationPath %(ca_crl)s"""
       tidstorage_tid_backup=os.path.join(backup_base_path, 'tidstorage.tid')))
     self.path_list.append(tidstorage_repozo_cron)
     return dict(host=ip, port=port)
-
-  def installZope(self, ip, port, name, zodb_configuration_string,
-      with_timerservice=False, tidstorage_config=None, thread_amount=1,
-      with_deadlockdebugger=True, zope_environment=None):
-    default_zope_environment = dict(
-      TMP=self.tmp_directory,
-      TMPDIR=self.tmp_directory,
-      HOME=self.tmp_directory,
-      PATH=self.bin_directory
-    )
-    if zope_environment is None:
-      zope_environment = default_zope_environment.copy()
-    else:
-      for envk, envv in default_zope_environment.iteritems():
-        if envk not in zope_environment:
-          zope_environment[envk] = envv
-    # Create zope configuration file
-    zope_config = dict(
-        products=self.options['products'],
-        thread_amount=thread_amount
-    )
-    # configure default Zope2 zcml
-    open(os.path.join(self.erp5_directory, 'etc', 'site.zcml'), 'w').write(
-        pkg_resources.resource_string(__name__, 'template/site.zcml'))
-    zope_config['zodb_configuration_string'] = zodb_configuration_string
-    zope_config['instance'] = self.erp5_directory
-    zope_config['event_log'] = os.path.join(self.log_directory,
-        '%s-event.log' % name)
-    zope_config['z2_log'] = os.path.join(self.log_directory,
-        '%s-Z2.log' % name)
-    zope_config['pid-filename'] = os.path.join(self.run_directory,
-        '%s.pid' % name)
-    zope_config['lock-filename'] = os.path.join(self.run_directory,
-        '%s.lock' % name)
-    self.registerLogRotation(name, [zope_config['event_log'],
-      zope_config['z2_log']], self.killpidfromfile + ' ' +
-      zope_config['pid-filename'] + ' SIGUSR2')
-
-    prefixed_products = []
-    for product in reversed(zope_config['products'].split()):
-      product = product.strip()
-      if product:
-        prefixed_products.append('products %s' % product)
-    prefixed_products.insert(0, 'products %s' % os.path.join(
-                             self.erp5_directory, 'Products'))
-    zope_config['products'] = '\n'.join(prefixed_products)
-    zope_config['address'] = '%s:%s' % (ip, port)
-
-    zope_wrapper_template_location = self.getTemplateFilename('zope.conf.in')
-    zope_conf_content = self.substituteTemplate(
-        zope_wrapper_template_location, zope_config)
-    if with_timerservice:
-      zope_conf_content += self.substituteTemplate(
-          self.getTemplateFilename('zope.conf.timerservice.in'), zope_config)
-    if tidstorage_config is not None:
-      zope_conf_content += self.substituteTemplate(
-          self.getTemplateFilename('zope-tidstorage-snippet.conf.in'),
-          tidstorage_config)
-    if with_deadlockdebugger:
-      zope_conf_content += self.substituteTemplate(
-          self.getTemplateFilename('zope-deadlockdebugger-snippet.conf.in'),
-          dict(dump_url='/manage_debug_threads',
-            secret=self.generatePassword()))
-
-    zope_conf_path = self.createConfigurationFile("%s.conf" % name,
-        zope_conf_content)
-    self.path_list.append(zope_conf_path)
-    # Create init script
-    wrapper = zc.buildout.easy_install.scripts([(name,
-     'slapos.recipe.librecipe.execute', 'executee')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[
-        [self.options['runzope_binary'].strip(), '-C', zope_conf_path],
-        zope_environment
-      ])[0]
-    self.path_list.append(wrapper)
-    return zope_config['address']
 
   def _getApacheConfigurationDict(self, prefix, ip, port):
     apache_conf = dict()

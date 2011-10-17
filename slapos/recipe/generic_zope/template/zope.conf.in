@@ -49,7 +49,25 @@ lock-filename %(lock-filename)s
 </http-server>
 
 # ZODB configuration
-%(zodb_configuration_string)s
+<zodb_db root>
+    cache-size %(zodb_cache_size)d
+    <filestorage>
+      path %(zodb_root_path)s
+    </filestorage>
+    mount-point /
+</zodb_db>
 <zoperunner>
     program $INSTANCE/bin/runzope
 </zoperunner>
+
+# DeadlockDebugger configuration
+<product-config DeadlockDebugger>
+  dump_url %(dump_url)s
+  secret %(secret)s
+</product-config>
+
+# ERP5 Timer Service
+%%import timerserver
+<timer-server>
+  interval 5
+</timer-server>
