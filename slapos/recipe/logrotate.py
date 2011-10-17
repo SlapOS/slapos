@@ -51,7 +51,7 @@ class Recipe(GenericBaseRecipe):
       frequency = self.options['frequency']
     logrotate_conf.append(frequency)
 
-    num_rotate = 30
+    num_rotate = 3650
     if 'num-rotate' in self.options:
       num_rotate = self.options['num-rotate']
     logrotate_conf.append("rotate %s" % num_rotate)
