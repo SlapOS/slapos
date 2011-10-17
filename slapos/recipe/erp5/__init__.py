@@ -544,47 +544,6 @@ SSLCARevocationPath %(ca_crl)s"""
       certificate_authority_path=config['ca_dir']
     )
 
-  def installHaproxy(self, ip, port, name, server_check_path, url_list):
-    # inter must be quite short in order to detect quickly an unresponsive node
-    #      and to detect quickly a node which is back
-    # rise must be minimal possible : 1, indeed, a node which is back don't need
-    #      to sleep more time and we can give him work immediately
-    # fall should be quite sort. with inter at 3, and fall at 2, a node will be
-    #      considered as dead after 6 seconds.
-    # maxconn should be set as the maximum thread we have per zope, like this
-    #      haproxy will manage the queue of request with the possibility to
-    #      move a request to another node if the initially selected one is dead
-    # maxqueue is the number of waiting request in the queue of every zope client.
-    #      It allows to make sure that there is not a zope client handling all
-    #      the work while other clients are doing nothing. This was happening
-    #      even thoug we have round robin distribution because when a node dies
-    #      some seconds, all request are dispatched to other nodes, and then users
-    #      stick in other nodes and are not coming back. Please note this option
-    #      is not an issue if you have more than (maxqueue * node_quantity) requests
-    #      because haproxy will handle a top-level queue
-    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxqueue 5 maxconn %(cluster_zope_thread_amount)s"""
-    config = dict(name=name, ip=ip, port=port,
-        server_check_path=server_check_path,)
-    i = 1
-    server_list = []
-    cluster_zope_thread_amount = self.options.get('cluster_zope_thread_amount', 1)
-    for url in url_list:
-      server_list.append(server_template % dict(name='%s_%s' % (name, i),
-        address=url, cluster_zope_thread_amount=cluster_zope_thread_amount))
-      i += 1
-    config['server_text'] = '\n'.join(server_list)
-    haproxy_conf_path = self.createConfigurationFile('haproxy_%s.cfg' % name,
-      self.substituteTemplate(self.getTemplateFilename('haproxy.cfg.in'),
-        config))
-    self.path_list.append(haproxy_conf_path)
-    wrapper = zc.buildout.easy_install.scripts([('haproxy_%s' % name,
-     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[
-        self.options['haproxy_binary'].strip(), '-f', haproxy_conf_path]
-      )[0]
-    self.path_list.append(wrapper)
-    return '%s:%s' % (ip, port)
-
   def installERP5(self):
     """
     All zope have to share file created by portal_classes
