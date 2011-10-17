@@ -52,17 +52,6 @@ class Recipe(GenericBaseRecipe):
     zope_config['z2_log'] = self.options['z2-log']
     zope_config['pid-filename'] = self.options['pid-file']
     zope_config['lock-filename'] = self.options['lock-file']
-    # XXX: !!killpidfromfile shall be binary provided by software!!
-    killpidfromfile = self.createPythonScript('killpidfromfile',
-        __name__ + '.killpidfromfile')
-    path_list.append(killpidfromfile)
-
-    post_rotate = self.createPythonScript(
-      self.options['logrotate-post'],
-      __name__ + '.killpidfromfile',
-      [zope_config['pid-filename'], 'SIGUSR2']
-    )
-    path_list.append(post_rotate)
     prefixed_products = []
     for product in reversed(zope_config['products'].split()):
       product = product.strip()
