@@ -25,15 +25,75 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+import binascii
+import hashlib
+import os
+import re
+import zc.buildout
+
+_isurl = re.compile('([a-zA-Z0-9+.-]+)://').match
+
+# based on Zope2.utilities.mkzopeinstance.write_inituser
+def Zope2InitUser(path, username, password):
+  open(path, 'w').write('')
+  os.chmod(path, 0600)
+  open(path, "w").write('%s:{SHA}%s\n' % (
+    username,binascii.b2a_base64(hashlib.sha1(password).digest())[:-1]))
 
 class Recipe(GenericBaseRecipe):
   def _options(self, options):
+    options['password'] = self.generatePassword()
     options['deadlock-password'] = self.generatePassword()
 
   def install(self):
-    """ Install a single Zope instance without ZEO Server.
+    """
+    All zope have to share file created by portal_classes
+    (until everything is integrated into the ZODB).
+    So, do not request zope instance and create multiple in the same partition.
     """
     path_list = []
+    Zope2InitUser(
+        os.path.join(self.erp5_directory, "inituser"), self.options['user'],
+        self.options['password'])
+
+    # Symlink to BT5 repositories defined in instance config.
+    # Those paths will eventually end up in the ZODB, and having symlinks
+    # inside the XXX makes it possible to reuse such ZODB with another software
+    # release[ version].
+    # Note: this path cannot be used for development, it's really just a
+    # read-only repository.
+    repository_path = os.path.join(self.var_directory, "bt5_repository")
+    if not os.path.isdir(repository_path):
+      os.mkdir(repository_path)
+    path_list.append(repository_path)
+    self.bt5_repository_list = []
+    append = self.bt5_repository_list.append
+    for repository in self.options.get('bt5_repository_list', '').split():
+      repository = repository.strip()
+      if not repository:
+        continue
+
+      if _isurl(repository) and not repository.startswith("file://"):
+        # XXX: assume it's a valid URL
+        append(repository)
+        continue
+
+      if repository.startswith('file://'):
+        repository = repository.replace('file://', '', '')
+
+      if os.path.isabs(repository):
+        repo_id = hashlib.sha1(repository).hexdigest()
+        link = os.path.join(repository_path, repo_id)
+        if os.path.lexists(link):
+          if not os.path.islink(link):
+            raise zc.buildout.UserError(
+              'Target link already %r exists but it is not link' % link)
+          os.unlink(link)
+        os.symlink(repository, link)
+        self.logger.debug('Created link %r -> %r' % (link, repository_path))
+        # Always provide a URL-Type
+        append("file://" + link)
+
     # Create zope configuration file
     zope_config = dict(
         products=self.options['products'],
