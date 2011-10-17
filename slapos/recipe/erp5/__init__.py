@@ -66,7 +66,7 @@ class Recipe(BaseSlapRecipe):
 
 #     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
 #         port=11000)
-    kumo_conf = self.installKumo(self.getLocalIPv4Address())
+#     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     conversion_server_conf = self.installConversionServer(
         self.getLocalIPv4Address(), 23000, 23060)
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
@@ -379,6 +379,7 @@ SSLCARevocationPath %(ca_crl)s"""
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
 
+<<<<<<< HEAD
   def installKumo(self, ip, kumo_manager_port=13101, kumo_server_port=13201,
       kumo_server_listen_port=13202, kumo_gateway_port=13301):
     # XXX: kumo is not storing pid in file, unless it is not running as daemon
