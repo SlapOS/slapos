@@ -36,8 +36,13 @@ import time
 import re
 import urlparse
 
+# Use to do from slapos.recipe.librecipe import GenericBaseRecipe
+from generic import GenericBaseRecipe
+from genericslap import GenericSlapRecipe
+
 class BaseSlapRecipe:
   """Base class for all slap.recipe.*"""
+
   def __init__(self, buildout, name, options):
     """Default initialisation"""
     self.name = name
@@ -94,6 +99,9 @@ class BaseSlapRecipe:
 
     # setup egg to give possibility to generate scripts
     self.egg = zc.recipe.egg.Egg(buildout, options['recipe'], options)
+
+    # Hook options
+    self._options(options)
 
     # setup auto uninstall/install
     self._setupAutoInstallUninstall()
@@ -248,6 +256,10 @@ class BaseSlapRecipe:
     """Hook which shall be implemented in children class"""
     raise NotImplementedError('Shall be implemented by subclass')
 
+  def _options(self, options):
+    """Hook which can be implemented in children class"""
+    pass
+
   def createPromiseWrapper(self, promise_name, file_content):
     """Create a promise wrapper.
 
@@ -259,12 +271,16 @@ class BaseSlapRecipe:
     self._writeExecutable(promise_path, file_content)
     return promise_path
 
-  def setConnectionUrl(self, scheme, host, path='', params='', query='',
-                       fragment='', port=None, auth=None):
-    """Set the ConnectionDict to a dict with only one Universal Resource
-    Locator.
+  def setConnectionUrl(self, *args, **kwargs):
+    url = self._unparseUrl(*args, **kwargs)
+    self.setConnectionDict(dict(url=url))
 
-    auth can be either a login string or a tuple (login, password).
+  def _unparseUrl(self, scheme, host, path='', params='', query='',
+                  fragment='', port=None, auth=None):
+    """Join a url with auth, host, and port.
+
+    * auth can be either a login string or a tuple (login, password).
+    * if the host is an ipv6 address, brackets will be added to surround it.
 
     """
     # XXX-Antoine: I didn't find any standard module to join an url with
@@ -288,4 +304,6 @@ class BaseSlapRecipe:
       netloc += ':%s' % port
 
     url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
-    self.setConnectionDict(dict(url=url))
+
+    return url
+

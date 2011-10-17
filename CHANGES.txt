@@ -1,10 +1,12 @@
 Changes
 =======
 
-0.30 (Unreleased)
+0.31 (Unreleased)
 -----------------
 
- * No change yet.
+ * Split big redundant recipes into small ones. In order to factorize the code
+   and have everything in the buildout file. [Antoine Catton, Romain Courteaud,
+   Łukasz Nowak]
 
 0.30 (2011-10-06)
 -----------------
