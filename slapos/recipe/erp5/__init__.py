@@ -205,9 +205,9 @@ SSLCARevocationPath %(ca_crl)s"""
                    "key_auth_node_amount", 0))
 
     ip = self.getLocalIPv4Address()
-    storage_dict = self._requestZeoFileStorage('Zeo Server 1', 'main')
+#     storage_dict = self._requestZeoFileStorage('Zeo Server 1', 'main')
 
-    zeo_conf = self.installZeo(ip)
+#     zeo_conf = self.installZeo(ip)
     tidstorage_config = dict(host=ip, port='6001')
 
     # XXX How to define good values for this?
@@ -712,43 +712,47 @@ SSLCARevocationPath %(ca_crl)s"""
     return []
 
   def installZeo(self, ip):
-    zodb_dir = os.path.join(self.data_root_directory, 'zodb')
-    self._createDirectory(zodb_dir)
+#     zodb_dir = os.path.join(self.data_root_directory, 'zodb')
+#     self._createDirectory(zodb_dir)
     zeo_configuration_dict = {}
     zeo_number = 0
     for zeo_server in sorted(self._zeo_storage_dict.iterkeys()):
       zeo_number += 1
-      zeo_event_log = os.path.join(self.log_directory, 'zeo-%s.log'% zeo_number)
-      zeo_pid = os.path.join(self.run_directory, 'zeo-%s.pid'% zeo_number)
-      self.registerLogRotation('zeo-%s' % zeo_number, [zeo_event_log],
-          self.killpidfromfile + ' ' + zeo_pid + ' SIGUSR2')
-      config = dict(
-        zeo_ip=ip,
-        zeo_port=self._zeo_storage_port_dict[zeo_server],
-        zeo_event_log=zeo_event_log,
-        zeo_pid=zeo_pid,
-      )
-      storage_definition_list = []
-      for storage_name in sorted(self._zeo_storage_dict[zeo_server]):
-        path = os.path.join(zodb_dir, '%s.fs' % storage_name)
-        storage_definition_list.append("""<filestorage %(storage_name)s>
-  path %(path)s
-</filestorage>"""% dict(storage_name=storage_name, path=path))
-        zeo_configuration_dict[storage_name] = dict(
-          ip=ip,
-          port=config['zeo_port'],
-          path=path
-          )
-      config['zeo_filestorage_snippet'] = '\n'.join(storage_definition_list)
-      zeo_conf_path = self.createConfigurationFile('zeo-%s.conf' % zeo_number,
-        self.substituteTemplate(self.getTemplateFilename('zeo.conf.in'), config))
-      self.path_list.append(zeo_conf_path)
-      wrapper = zc.buildout.easy_install.scripts([('zeo_%s' % zeo_number,
-       'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-        self.wrapper_directory, arguments=[
-          self.options['runzeo_binary'].strip(), '-C', zeo_conf_path]
-        )[0]
-      self.path_list.append(wrapper)
+#       zeo_event_log = os.path.join(self.log_directory, 'zeo-%s.log'% zeo_number)
+#       zeo_pid = os.path.join(self.run_directory, 'zeo-%s.pid'% zeo_number)
+
+#       self.registerLogRotation('zeo-%s' % zeo_number, [zeo_event_log],
+#           self.killpidfromfile + ' ' + zeo_pid + ' SIGUSR2')
+
+#       config = dict(
+#         zeo_ip=ip,
+#         zeo_port=self._zeo_storage_port_dict[zeo_server],
+#         zeo_event_log=zeo_event_log,
+#         zeo_pid=zeo_pid,
+#       )
+#       storage_definition_list = []
+#       for storage_name in sorted(self._zeo_storage_dict[zeo_server]):
+#         path = os.path.join(zodb_dir, '%s.fs' % storage_name)
+#         storage_definition_list.append("""<filestorage %(storage_name)s>
+#   path %(path)s
+# </filestorage>"""% dict(storage_name=storage_name, path=path))
+#         zeo_configuration_dict[storage_name] = dict(
+#           ip=ip,
+#           port=config['zeo_port'],
+#           path=path
+#           )
+#       config['zeo_filestorage_snippet'] = '\n'.join(storage_definition_list)
+#       zeo_conf_path = self.createConfigurationFile('zeo-%s.conf' % zeo_number,
+#         self.substituteTemplate(self.getTemplateFilename('zeo.conf.in'), config))
+#       self.path_list.append(zeo_conf_path)
+
+
+#       wrapper = zc.buildout.easy_install.scripts([('zeo_%s' % zeo_number,
+#        'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
+#         self.wrapper_directory, arguments=[
+#           self.options['runzeo_binary'].strip(), '-C', zeo_conf_path]
+#         )[0]
+#       self.path_list.append(wrapper)
     return zeo_configuration_dict
 
   def installRepozo(self, zodb_root_path):
