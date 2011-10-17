@@ -31,9 +31,9 @@ class Recipe(GenericBaseRecipe):
 
   def _options(self, options):
     options['password'] = self.generatePassword()
-    options['test_password'] = self.generatePassword()
+    options['test-password'] = self.generatePassword()
     for x in xrange(0, int(options['parallel-test-database-amount'])):
-      options['test_password_%s' % x] = self.generatePassword()
+      options['test-password-%s' % x] = self.generatePassword()
 
   def install(self):
     path_list = []
