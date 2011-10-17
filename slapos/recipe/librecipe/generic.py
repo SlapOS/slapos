@@ -120,4 +120,6 @@ class GenericBaseRecipe(object):
     return str(value).lower() in GenericBaseRecipe.TRUE_VALUES
 
   def optionIsTrue(self, optionname, default=None):
+    if default is not None and optionname not in self.options:
+      return default
     return self.isTrueValue(self.options[optionname])
