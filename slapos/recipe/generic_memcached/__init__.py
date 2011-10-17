@@ -25,7 +25,6 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
-import os
 
 class Recipe(GenericBaseRecipe):
 
