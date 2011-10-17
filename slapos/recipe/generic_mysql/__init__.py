@@ -31,6 +31,9 @@ class Recipe(GenericBaseRecipe):
 
   def _options(self, options):
     options['password'] = self.generatePassword()
+    options['test_password'] = self.generatePassword()
+    for x in xrange(0, int(options['parallel-test-database-amount'])):
+      options['test_password_%s' % x] = self.generatePassword()
 
   def install(self):
     path_list = []
@@ -48,6 +51,9 @@ class Recipe(GenericBaseRecipe):
         mysql_database=self.options['database'],
         mysql_user=self.options['user'],
         mysql_password=self.options['password'],
+        mysql_test_database=self.options['test-database'],
+        mysql_test_user=self.options['test-user'],
+        mysql_test_password=self.options['test-password'],
     )
 
     mysql_binary = self.options['mysql-binary']
@@ -68,15 +74,34 @@ class Recipe(GenericBaseRecipe):
 
     mysql_script_list = []
 
-    init_script = self.substituteTemplate(
+    # real database
+    mysql_script_list.append(self.substituteTemplate(
       self.getTemplateFilename('initmysql.sql.in'),
       {
         'mysql_database': mysql_conf['mysql_database'],
         'mysql_user': mysql_conf['mysql_user'],
         'mysql_password': mysql_conf['mysql_password']
       }
-    )
-    mysql_script_list.append(init_script)
+    ))
+    # default test database
+    mysql_script_list.append(self.substituteTemplate(
+      self.getTemplateFilename('initmysql.sql.in'),
+      {
+        'mysql_database': mysql_conf['mysql_test_database'],
+        'mysql_user': mysql_conf['mysql_test_user'],
+        'mysql_password': mysql_conf['mysql_test_password']
+      }
+    ))
+    # parallel test databases
+    for x in xrange(0, int(self.options['parallel-test-database-amount'])):
+      mysql_script_list.append(self.substituteTemplate(
+        self.getTemplateFilename('initmysql.sql.in'),
+        {
+          'mysql_database': self.options['mysql-test-database-base'] + '_%s' % x,
+          'mysql_user': self.options['mysql-test-user-base'] + '_%s' % x,
+          'mysql_password': self.options['test-password-%s' % x]
+        }
+      ))
     mysql_script_list.append('EXIT')
     mysql_script = '\n'.join(mysql_script_list)
 
@@ -107,5 +132,39 @@ class Recipe(GenericBaseRecipe):
        )
     )
     path_list.append(mysqld)
+    # backup configuration
+    full_backup = self.options['full-backup-path']
+    incremental_backup = self.options['incremental-backup-path']
+    innobackupex_argument_list = [self.options['perl-binary'],
+        self.options['innobackupex-binary'],
+        '--defaults-file=%s' % mysql_conf_file,
+        '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+        '--ibbackup=%s'% self.options['xtrabackup-binary']]
+    environment = dict(PATH='%s' % self.bin_directory)
+    innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
+    path_list.append(innobackupex_incremental)
+    innobackupex_full = self.createPythonScript(self.options['innobackupex-full'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list, environment])
+    path_list.append(innobackupex_full)
+    backup_controller = self.createPythonScript(self.options['innobackupex-controller'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
+    path_list.append(backup_controller)
+    # maatkit installation
+    for mk_script_name in (
+        'mk-variable-advisor',
+        'mk-table-usage',
+        'mk-visual-explain',
+        'mk-config-diff',
+        'mk-deadlock-logger',
+        'mk-error-log',
+        'mk-index-usage',
+        'mk-query-advisor',
+        ):
+      mk_argument_list = [self.options['perl_binary'],
+          self.options['%s_binary' % mk_script_name],
+          '--defaults-file=%s' % mysql_conf_file,
+          '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+          ]
+      environment = dict(PATH='%s' % self.bin_directory)
+      mk_exe = self.createPythonScript(os.path.join(self.bin_directory, 'mk_script_name,'), 'slapos.recipe.librecipe.execute.executee', [mk_argument_list, environment])
+      path_list.append(mk_exe)
 
     return path_list
