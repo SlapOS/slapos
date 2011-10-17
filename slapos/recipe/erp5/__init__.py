@@ -67,8 +67,8 @@ class Recipe(BaseSlapRecipe):
 #     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
 #         port=11000)
 #     kumo_conf = self.installKumo(self.getLocalIPv4Address())
-    conversion_server_conf = self.installConversionServer(
-        self.getLocalIPv4Address(), 23000, 23060)
+#    conversion_server_conf = self.installConversionServer(
+#        self.getLocalIPv4Address(), 23000, 23060)
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
     user, password = self.installERP5()
 
@@ -568,40 +568,6 @@ SSLCARevocationPath %(ca_crl)s"""
       ca_crl=os.path.join(config['ca_dir'], 'crl'),
       certificate_authority_path=config['ca_dir']
     )
-
-  def installConversionServer(self, ip, port, openoffice_port):
-    name = 'conversion_server'
-    working_directory = self.createDataDirectory(name)
-    conversion_server_dict = dict(
-      working_path=working_directory,
-      uno_path=self.options['ooo_uno_path'],
-      office_binary_path=self.options['ooo_binary_path'],
-      ip=ip,
-      port=port,
-      openoffice_port=openoffice_port,
-    )
-    for env_line in self.options['environment'].splitlines():
-      env_line = env_line.strip()
-      if not env_line:
-        continue
-      if '=' in env_line:
-        env_key, env_value = env_line.split('=')
-        conversion_server_dict[env_key.strip()] = env_value.strip()
-      else:
-        raise zc.buildout.UserError('Line %r in environment parameter is '
-            'incorrect' % env_line)
-    config_file = self.createConfigurationFile(name + '.cfg',
-        self.substituteTemplate(self.getTemplateFilename('cloudooo.cfg.in'),
-          conversion_server_dict))
-    self.path_list.append(config_file)
-    self.path_list.extend(zc.buildout.easy_install.scripts([(name,
-     'slapos.recipe.librecipe.execute', 'execute_with_signal_translation')], self.ws,
-      sys.executable, self.wrapper_directory,
-      arguments=[self.options['ooo_paster'].strip(), 'serve', config_file]))
-    return {
-      name + '_port': conversion_server_dict['port'],
-      name + '_ip': conversion_server_dict['ip']
-      }
 
   def installHaproxy(self, ip, port, name, server_check_path, url_list):
     # inter must be quite short in order to detect quickly an unresponsive node
