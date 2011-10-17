@@ -379,48 +379,6 @@ SSLCARevocationPath %(ca_crl)s"""
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
 
-<<<<<<< HEAD
-  def installKumo(self, ip, kumo_manager_port=13101, kumo_server_port=13201,
-      kumo_server_listen_port=13202, kumo_gateway_port=13301):
-    # XXX: kumo is not storing pid in file, unless it is not running as daemon
-    #      but running daemons is incompatible with SlapOS, so there is currently
-    #      no way to have Kumo's pid files to rotate logs and send signals to them
-    config = dict(
-      kumo_gateway_binary=self.options['kumo_gateway_binary'],
-      kumo_gateway_ip=ip,
-      kumo_gateway_log=os.path.join(self.log_directory, "kumo-gateway.log"),
-      kumo_manager_binary=self.options['kumo_manager_binary'],
-      kumo_manager_ip=ip,
-      kumo_manager_log=os.path.join(self.log_directory, "kumo-manager.log"),
-      kumo_server_binary=self.options['kumo_server_binary'],
-      kumo_server_ip=ip,
-      kumo_server_log=os.path.join(self.log_directory, "kumo-server.log"),
-      kumo_server_storage=os.path.join(self.data_root_directory, "kumodb.tch"),
-      kumo_manager_port=kumo_manager_port,
-      kumo_server_port=kumo_server_port,
-      kumo_server_listen_port=kumo_server_listen_port,
-      kumo_gateway_port=kumo_gateway_port
-    )
-
-    self.path_list.append(self.createRunningWrapper('kumo_gateway',
-      self.substituteTemplate(self.getTemplateFilename('kumo_gateway.in'),
-        config)))
-
-    self.path_list.append(self.createRunningWrapper('kumo_manager',
-      self.substituteTemplate(self.getTemplateFilename('kumo_manager.in'),
-        config)))
-
-    self.path_list.append(self.createRunningWrapper('kumo_server',
-      self.substituteTemplate(self.getTemplateFilename('kumo_server.in'),
-        config)))
-
-    return dict(
-      kumo_address = '%s:%s' % (config['kumo_gateway_ip'],
-        config['kumo_gateway_port']),
-      kumo_gateway_ip=config['kumo_gateway_ip'],
-      kumo_gateway_port=config['kumo_gateway_port'],
-    )
-
   def installSphinxSearchd(self, ip, port=9312, sql_port=9306):
     data_directory = self.createDataDirectory('sphinx')
     sphinx_conf_path = self.createConfigurationFile('sphinx.conf',
