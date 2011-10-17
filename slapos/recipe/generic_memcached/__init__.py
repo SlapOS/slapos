@@ -27,6 +27,17 @@
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
+  """
+  memcached instance configuration.
+
+  wrapper-path -- location of the init script to generate
+
+  binary-path -- location of the memcached command
+
+  ip -- ip of the memcached server
+
+  port -- port of the memcached server
+  """
 
   def install(self):
     template_filename = self.getTemplateFilename('memcached.in')
