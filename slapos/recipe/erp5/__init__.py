@@ -64,8 +64,8 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(self.killpidfromfile)
     ca_conf = self.installCertificateAuthority()
 
-    memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
-        port=11000)
+#     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
+#         port=11000)
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     conversion_server_conf = self.installConversionServer(
         self.getLocalIPv4Address(), 23000, 23060)
@@ -419,20 +419,6 @@ SSLCARevocationPath %(ca_crl)s"""
       kumo_gateway_ip=config['kumo_gateway_ip'],
       kumo_gateway_port=config['kumo_gateway_port'],
     )
-
-  def installMemcached(self, ip, port):
-    config = dict(
-        memcached_binary=self.options['memcached_binary'],
-        memcached_ip=ip,
-        memcached_port=port,
-    )
-    self.path_list.append(self.createRunningWrapper('memcached',
-      self.substituteTemplate(self.getTemplateFilename('memcached.in'),
-        config)))
-    return dict(memcached_url='%s:%s' %
-        (config['memcached_ip'], config['memcached_port']),
-        memcached_ip=config['memcached_ip'],
-        memcached_port=config['memcached_port'])
 
   def installSphinxSearchd(self, ip, port=9312, sql_port=9306):
     data_directory = self.createDataDirectory('sphinx')
