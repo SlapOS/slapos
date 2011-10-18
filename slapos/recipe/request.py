@@ -56,7 +56,7 @@ class Recipe(object):
     self.return_parameters = []
     if 'return' in options:
       self.return_parameters = [str(parameter).strip()
-                               for parameter in options['return'].splitlines()]
+                               for parameter in options['return'].split()]
     else:
       self.logger.warning("No parameter to return to main instance."
                           "Be careful about that...")
