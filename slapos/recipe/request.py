@@ -40,20 +40,15 @@ class Recipe(object):
 
     slap = slapmodule.slap()
 
-    slap_connection = buildout['slap_connection']
-    self.software_release_url = slap_connection['software_release_url']
+    self.software_release_url = options['software-url']
 
-    # XXX: Dirty network interation stuff
-    slap.initializeConnection(slap_connection['server_url'],
-                              slap_connection.get('key_file'),
-                              slap_connection.get('cert_file'),
+    slap.initializeConnection(options['server-url'],
+                              options.get('key-file'),
+                              options.get('cert-file'),
                              )
     computer_partition = slap.registerComputerPartition(
-      slap_connection['computer_id'], slap_connection['partition_id'])
+      options['computer-id'], options['partition-id'])
     self.request = computer_partition.request
-
-    if 'software-url' not in options:
-      options['software-url'] = self.software_release_url
 
     if 'name' not in options:
       options['name'] = name
