@@ -68,9 +68,9 @@ class Recipe(BaseSlapRecipe):
       key_access = None
 
     key, certificate = self.requestCertificate('Login Based Access')
-    apache_conf = dict(
-         apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
-         port=13000, backend=site_access, key=key, certificate=certificate))
+#    apache_conf = dict(
+#         apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
+#         port=13000, backend=site_access, key=key, certificate=certificate))
 
     connection_dict = dict(site_url=apache_conf['apache_login'])
 
@@ -824,27 +824,3 @@ SSLCARevocationPath %(ca_crl)s"""
           ]))
     # Note: IPv6 is assumed always
     return 'https://%(server_name)s:%(port)s%(frontend_path)s' % (apache_conf)
-
-  def installBackendApache(self, ip, port, backend, key, certificate,
-      suffix='', access_control_string=None):
-    apache_conf = self._getApacheConfigurationDict('backend_apache'+suffix, ip,
-        port)
-    apache_conf['server_name'] = '%s' % apache_conf['ip']
-    apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
-        'template/apache.ssl-snippet.conf.in') % dict(
-        login_certificate=certificate, login_key=key)
-    apache_config_file = self._writeApacheConfiguration('backend_apache'+suffix,
-        apache_conf, backend, access_control_string)
-    self.path_list.append(apache_config_file)
-    self.path_list.extend(zc.buildout.easy_install.scripts([(
-      'backend_apache'+suffix,
-        __name__ + '.apache', 'runApache')], self.ws,
-          sys.executable, self.wrapper_directory, arguments=[
-            dict(
-              required_path_list=[key, certificate],
-              binary=self.options['httpd_binary'],
-              config=apache_config_file
-            )
-          ]))
-    # Note: IPv6 is assumed always
-    return 'https://[%(ip)s]:%(port)s' % apache_conf

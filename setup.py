@@ -39,6 +39,7 @@ setup(name=name,
       zip_safe=True,
       entry_points={
         'zc.buildout': [
+          'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
           'cron = slapos.recipe.dcron:Recipe',
