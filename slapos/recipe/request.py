@@ -77,16 +77,11 @@ class Recipe(object):
       options['name'], partition_parameter_kw=partition_parameter_kw,
         filter_kw=filter_kw)
 
-    result = {}
     for param in self.return_parameters:
       try:
-        result[param] = instance.getConnectionParameter(param)
+        options['connection-%s' % param] = instance.getConnectionParameter(param)
       except slapmodule.NotFoundError:
-        result[param] = None
-
-    # Return the connections parameters in options dict
-    for key, value in result.items():
-      options['connection-%s' % key] = value
+        options['connection-%s' % param] = ''
 
   def install(self):
     return []
