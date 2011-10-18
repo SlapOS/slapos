@@ -52,9 +52,8 @@ class Recipe(GenericBaseRecipe):
     So, do not request zope instance and create multiple in the same partition.
     """
     path_list = []
-    Zope2InitUser(
-        os.path.join(self.erp5_directory, "inituser"), self.options['user'],
-        self.options['password'])
+    Zope2InitUser(self.options['inituser'], self.options['user'],
+      self.options['password'])
 
     # Symlink to BT5 repositories defined in instance config.
     # Those paths will eventually end up in the ZODB, and having symlinks
