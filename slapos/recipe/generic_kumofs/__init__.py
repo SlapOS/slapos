@@ -48,7 +48,7 @@ class Recipe(GenericBaseRecipe):
       kumo_server_binary=self.options['kumo-server-binary'],
       kumo_server_ip=ip,
       kumo_server_log=self.options['kumo-server-log'],
-      kumo_server_storage=os.path.join(self.options['data_directory'], "kumodb.tch"),
+      kumo_server_storage=os.path.join(self.options['data-directory'], "kumodb.tch"),
       kumo_manager_port=kumo_manager_port,
       kumo_server_port=kumo_server_port,
       kumo_server_listen_port=kumo_server_listen_port,
