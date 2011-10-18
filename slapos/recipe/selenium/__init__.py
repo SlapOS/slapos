@@ -29,94 +29,77 @@ import os
 import sys
 import zc.buildout
 from slapos.recipe.librecipe import BaseSlapRecipe
-import pkg_resources
 
 class Recipe(BaseSlapRecipe):
+  def _install(self):
+    """Set the connection dictionnary for the computer partition and create a list
+    of paths to the different wrappers."""
+    self.path_list = []
+    self.requirements, self.ws = self.egg.working_set()
 
-    def _install(self):
-      """
-      Set the connection dictionnary for the computer partition and create a list
-      of paths to the different wrappers
+    self.installtestrunner(self.getDisplay())
+    self.linkBinary()
 
-      Parameters : none
+    return self.path_list
 
-      Returns    : List path_list
-      """
+  def getDisplay(self):
+    """Generate display id for the instance."""
+    display_list = [":%s" % i for i in range(123,144)]
+    for display_try in display_list:
+      lock_filepath = '/tmp/.X%s-lock' % display_try.replace(":", "")
+      if not os.path.exists(lock_filepath):
+        display = display_try
+        break
+    return display
 
-      self.path_list = []
+  def installTestrunner(self, display):
+    """Instanciate a wrapper for the browser and the test reports."""
+    arguments = dict(
+        xvfb_binary    = self.options['xvfb_binary'],
+        display        = display,
+        suite_name     = self.parameter_dict['suite_name'],
+        base_url       = self.parameter_dict['url'],
+        browser_argument_list = [],
+        # XXX-Cedric : No need for user/pass
+        user           = self.parameter_dict['user'],
+        password       = self.parameter_dict['password'])
 
-      self.requirements, self.ws = self.egg.working_set()
+    # Check wanted browser XXX-Cedric not yet used but can be useful
+    #if self.parameter_dict.get('browser', None) is None:
+    arguments['browser_binary'] = self.options['firefox_binary']
+    #elif self.parameter_dict['browser'].strip().lowercase() == 'chrome' or
+    #    self.parameter_dict['browser'].strip().lowercase() == 'chromium':
+    #  arguments['browser_binary'] = self.options['chromium_binary']
+    #  arguments['browser_argument_list'].extend['--ignore-certificate-errors', 
+    #      option_translate = '--disable-translate', 
+    #      option_security = '--disable-web-security']
+    #elif self.parameter_dict['browser'].strip().lowercase() == 'firefox':
+    #  arguments['browser_binary'] = self.options['firefox_binary']
 
-      self.instanciateTestRunner(self.getDisplay())
-
-      self.linkBinary()
-      
-
-      return self.path_list
-
-    def getDisplay(self):
-      """
-      Choose a display for the instance
-
-      Parameters : None
-
-      Returns    : display
-      """
-      display_list = [":%s" % i for i in range(123,144)]
-      
-      for display_try in display_list:
-        lock_filepath = '/tmp/.X%s-lock' % display_try.replace(":", "")
-        if not os.path.exists(lock_filepath):
-          display = display_try
-          break
-      
-      return display
-
-    def instanciateTestRunner(self, display):
-      """
-      Instanciate a wrapper for the browser and the test report's
-
-      Parameters : display on which the browser will run
-
-      Returns    : None
-      """
-
-      if self.parameter_dict['browser'] == 'chrome' or self.parameter_dict['browser'] == 'chromium':  
-          self.path_list.extend(zc.buildout.easy_install.scripts([(
-                      'testrunner',__name__+'.testrunner', 'run')], self.ws,
-                      sys.executable, self.wrapper_directory, arguments=[
-                  dict(
-                      browser_binary      = self.options['chromium_binary'],
-                      xvfb_binary         = self.options['xvfb_binary'],
-                      display             = display,
-                      option_ssl          = '--ignore-certificate-errors', 
-                      option_translate    = '--disable-translate', 
-                      option_security     = '--disable-web-security',
-                      suite_name          = self.parameter_dict['suite_name'],
-                      base_url            = self.parameter_dict['url'],
-                      user                = self.parameter_dict['user'],
-                      password            = self.parameter_dict['password']
-                      )]))
-
-    def linkBinary(self):
-      """Links binaries to instance's bin directory for easier exposal"""
-      for linkline in self.options.get('link_binary_list', '').splitlines():
-        if not linkline:
-          continue
-        target = linkline.split()
-        if len(target) == 1:
-          target = target[0]
-          path, linkname = os.path.split(target)
-        else:
-          linkname = target[1]
-          target = target[0]
-        link = os.path.join(self.bin_directory, linkname)
-        if os.path.lexists(link):
-          if not os.path.islink(link):
-            raise zc.buildout.UserError(
-              'Target link already %r exists but it is not link' % link)
-          os.unlink(link)
-        os.symlink(target, link)
-        self.logger.debug('Created link %r -> %r' % (link, target))
-        self.path_list.append(link)
-      
+    self.path_list.extend(zc.buildout.easy_install.scripts([(
+        'testrunner',__name__+'.testrunner', 'run')], self.ws,
+        sys.executable, self.wrapper_directory,
+        arguments=[arguments]))
+   
+  def linkBinary(self):
+    """Links binaries to instance's bin directory for easier exposal"""
+    for linkline in self.options.get('link_binary_list', '').splitlines():
+      if not linkline:
+        continue
+      target = linkline.split()
+      if len(target) == 1:
+        target = target[0]
+        path, linkname = os.path.split(target)
+      else:
+        linkname = target[1]
+        target = target[0]
+      link = os.path.join(self.bin_directory, linkname)
+      if os.path.lexists(link):
+        if not os.path.islink(link):
+          raise zc.buildout.UserError(
+            'Target link already %r exists but it is not link' % link)
+        os.unlink(link)
+      os.symlink(target, link)
+      self.logger.debug('Created link %r -> %r' % (link, target))
+      self.path_list.append(link)
+    

@@ -29,16 +29,23 @@ from erp5functionaltestreporthandler import ERP5TestReportHandler
 from time import sleep
 import os
 from subprocess import Popen, PIPE
-from re import search
 import urllib2
 
 def run(args):
   config = args[0]
 
-  test_url = assembleTestUrl(config['base_url'], config['user'], config['password'])
+  test_url = assembleTestUrl(config['base_url'], config['suite_name'],
+      config['user'], config['password'])
 
   while True:
     erp5_report = ERP5TestReportHandler(test_url, config['suite_name'])   
+    import pdb; pdb.set_trace()
+    # Clean old test results
+    #TODO how to clean results / post results without password?
+    openUrl('%s/TestTool_cleanUpTestResults' % (config['base_url']))
+    # TODO assert getresult is None
+
+    #XXX-Cedric : clean firefox data (so that it does not load previous session)
 
     xvfb = Popen([config['xvfb_binary'], config['display']], stdout=PIPE)
     os.environ['DISPLAY'] = config['display']
@@ -46,23 +53,21 @@ def run(args):
 
     command = []
     command.append(config['browser_binary'])
-    command.append(config['option_ssl'])
-    command.append(config['option_translate'])
-    command.append(config['option_security'])
+    for browser_argument in config['browser_argument_list']:
+      command.append(browser_argument)
     command.append(test_url)
+    browser = Popen(command, stdout=PIPE)
 
-    chromium = Popen(command, stdout=PIPE)
     erp5_report.reportStart()
-    sleep(10)
-            
-    #while getStatus(config['base_url']) is None:
-    #  sleep(10)
-    
-   #erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8", "replace"))
-            
-    chromium.kill()
+
+    # Wait for test to be finished
+    while getStatus(config['base_url']) is '':
+      sleep(10)
+    erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",
+        "replace"))
+    browser.kill()
     terminateXvfb(xvfb, config['display'])
-    sleep(10)
+    sleep(3600)
 
 def openUrl(url):
     # Send Accept-Charset headers to activate the UnicodeConflictResolver
@@ -83,24 +88,23 @@ def getStatus(url):
     try:
       status = openUrl('%s/portal_tests/TestTool_getResults' % (url))
     except urllib2.HTTPError, e:
-      if e.msg == "No Content" :
+      if e.msg == "No Content":
         status = ""
       else:
         raise
     return status
 
-def assembleTestUrl(base_url, user, password):
+def assembleTestUrl(base_url, suite_name, user, password):
       """
       Create the full url to the testrunner
       """
-           
-      test_url = "%s/core/TestRunner.html?test=../test_suite_html&resultsUrl=%s/postResults&auto=on&__ac_name=%s&__ac_password=%s" % (base_url, base_url, user, password)
-
+      test_url = "%s/%s/core/TestRunner.html?test=../test_suite_html&"\
+          "resultsUrl=%s/postResults&auto=on&__ac_name=%s&__ac_password=%s" % (
+          base_url, suite_name, base_url, user, password)
       return test_url
 
 def terminateXvfb(process, display):
   process.kill()
-  lock_filepath = '/tmp/.X%s-lock' % display.replace(":", "")                                                                                       
-  if os.path.exists(lock_filepath):                                                                                                                 
+  lock_filepath = '/tmp/.X%s-lock' % display.replace(":", "")
+  if os.path.exists(lock_filepath):
     os.system('rm %s' % lock_filepath)
-  
