@@ -70,8 +70,8 @@ class Recipe(BaseSlapRecipe):
     #elif self.parameter_dict['browser'].strip().lowercase() == 'chrome' or
     #    self.parameter_dict['browser'].strip().lowercase() == 'chromium':
     #  arguments['browser_binary'] = self.options['chromium_binary']
-    #  arguments['browser_argument_list'].extend['--ignore-certificate-errors', 
-    #      option_translate = '--disable-translate', 
+    #  arguments['browser_argument_list'].extend['--ignore-certificate-errors',
+    #      option_translate = '--disable-translate',
     #      option_security = '--disable-web-security']
     #elif self.parameter_dict['browser'].strip().lowercase() == 'firefox':
     #  arguments['browser_binary'] = self.options['firefox_binary']
@@ -80,7 +80,7 @@ class Recipe(BaseSlapRecipe):
         'testrunner',__name__+'.testrunner', 'run')], self.ws,
         sys.executable, self.wrapper_directory,
         arguments=[arguments]))
-   
+
   def linkBinary(self):
     """Links binaries to instance's bin directory for easier exposal"""
     for linkline in self.options.get('link_binary_list', '').splitlines():
@@ -102,4 +102,3 @@ class Recipe(BaseSlapRecipe):
       os.symlink(target, link)
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
-    
