@@ -65,7 +65,7 @@ class Recipe(GenericBaseRecipe):
 
     self.bt5_repository_list = []
     append = self.bt5_repository_list.append
-    for repository in self.options.get('bt5_repository_list', '').split():
+    for repository in self.options.get('bt5-repository-list', '').split():
       repository = repository.strip()
       if not repository:
         continue
