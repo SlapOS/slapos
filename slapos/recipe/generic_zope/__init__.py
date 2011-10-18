@@ -121,11 +121,12 @@ class Recipe(GenericBaseRecipe):
       'instance-products'])
     zope_config['products'] = '\n'.join(prefixed_products)
     zope_config['address'] = '%s:%s' % (self.options['ip'], self.options['port'])
+    zope_config.update(dump_url=self.options['deadlock-path'],
+      secret=self.options['deadlock-password'])
 
     zope_wrapper_template_location = self.getTemplateFilename('zope.conf.in')
     zope_conf_content = self.substituteTemplate(zope_wrapper_template_location,
-      zope_config, dump_url=self.options['deadlock-path'],
-      secret=self.options['deadlock-password'])
+      zope_config)
 
     zope_conf_path = self.createFile(self.options['configuration-file'], zope_conf_content)
     path_list.append(zope_conf_path)
