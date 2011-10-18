@@ -96,7 +96,7 @@ class Recipe(GenericBaseRecipe):
         products=self.options['products'],
         thread_amount=self.options['thread-amount'],
         zodb_root_path=self.options['zodb-path'],
-        zodb_cache_size=self.options['zodb-cache-size'],
+        zodb_cache_size=int(self.options['zodb-cache-size']),
     )
     zope_environment = dict(
       TMP=self.options['tmp-path'],
