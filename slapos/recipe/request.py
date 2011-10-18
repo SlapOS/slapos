@@ -79,7 +79,10 @@ class Recipe(object):
 
     result = {}
     for param in self.return_parameters:
-      result[param] = instance.getConnectionParameter(param)
+      try:
+        result[param] = instance.getConnectionParameter(param)
+      except slapmodule.NotFoundError:
+        result[param] = None
 
     # Return the connections parameters in options dict
     for key, value in result.items():
