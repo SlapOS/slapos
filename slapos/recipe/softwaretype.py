@@ -88,8 +88,8 @@ class Recipe:
     instance_file_path = self.options[software_type]
 
     if not os.path.exists(instance_file_path):
-      raise zc.buildout.UserError("The specified buildout config file does not"
-                                  "exist.")
+      raise zc.buildout.UserError("The specified buildout config file %r does "
+                                  "not exist." % instance_file_path)
 
     buildout = ConfigParser()
     with open(instance_file_path) as instance_path:
