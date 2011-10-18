@@ -27,7 +27,6 @@
 from slapos.recipe.librecipe import GenericSlapRecipe
 import os
 import json
-import pkg_resources
 
 ZOPE_PORT_BASE = 12000
 ZEO_PORT_BASE = 15000
@@ -52,8 +51,7 @@ class Recipe(GenericSlapRecipe):
     part_list = []
     for zeo_id, zeo_configuration in json_data['zeo'].iteritems():
       current_zeo_port += 1
-      output += pkg_resources.resource_string(__name__,
-        'template/snippet-zeo.cfg') % dict(
+      output += open(self.options['snippet-zeo']).read() % dict(
         zeo_id=zeo_id,
         zeo_port=current_zeo_port,
         storage_list=' '.join([str(q['zodb']) for q in zeo_configuration])
@@ -62,12 +60,11 @@ class Recipe(GenericSlapRecipe):
         "zeo-instance-%s" % zeo_id,
         "logrotate-entry-zeo-%s" % zeo_id
       ])
-    prepend = pkg_resources.resource_string(__name__,
-        'template/instance.cfg') % dict(
+    prepend = open(self.options['snippet-zope']).read() % dict(
         part_list='  \n'.join(['  '+q for q in part_list]))
     output = prepend + output
-    print output
-    raise NotImplementedError
+    with open(self.options['output'], 'w') as f:
+      f.write(output)
 
   def _install(self):
     if not os.path.exists(self.dirname):
