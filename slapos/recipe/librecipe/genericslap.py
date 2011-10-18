@@ -40,6 +40,7 @@ class GenericSlapRecipe(object):
     self.name = name
     options['eggs'] = 'slapos.cookbook'
     self.options = options
+    self.buildout = buildout
     self.logger = logging.getLogger(self.name)
     self.slap = slap.slap()
 
