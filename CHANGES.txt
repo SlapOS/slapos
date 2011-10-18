@@ -1,9 +1,10 @@
 Changes
 =======
 
-0.17 (unreleased)
+0.17 (2011-10-18)
 -----------------
 
+ * slap: Avoid request under the hood. [Łukasz Nowak]
  * slap: ComputerPartition.bang provided. It allows to update all instances
    in tree. [Łukasz Nowak]
  * slap: Computer.bang provided. It allows to bang all instances on computer.
