@@ -61,10 +61,8 @@ class Recipe(GenericBaseRecipe):
     # release[ version].
     # Note: this path cannot be used for development, it's really just a
     # read-only repository.
-    repository_path = os.path.join(self.var_directory, "bt5_repository")
-    if not os.path.isdir(repository_path):
-      os.mkdir(repository_path)
-    path_list.append(repository_path)
+    repository_path = self.options['bt5-repository']
+
     self.bt5_repository_list = []
     append = self.bt5_repository_list.append
     for repository in self.options.get('bt5_repository_list', '').split():
