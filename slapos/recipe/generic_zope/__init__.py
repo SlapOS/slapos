@@ -121,7 +121,7 @@ class Recipe(GenericBaseRecipe):
       if product:
         prefixed_products.append('products %s' % product)
     prefixed_products.insert(0, 'products %s' % self.options[
-      'instance-Products'])
+      'instance-products'])
     zope_config['products'] = '\n'.join(prefixed_products)
     zope_config['address'] = '%s:%s' % (self.options['ip'], self.options['port'])
 
