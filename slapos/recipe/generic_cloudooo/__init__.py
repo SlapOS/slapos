@@ -31,12 +31,12 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     path_list = []
     conversion_server_dict = dict(
-      working_path=self.options['cloudooo-data'],
+      working_path=self.options['data-directory'],
       uno_path=self.options['ooo-uno-path'],
       office_binary_path=self.options['ooo-binary-path'],
       ip=self.options['ip'],
       port=int(self.options['port']),
-      openoffice_port=int(self.options['openoffice_port']),
+      openoffice_port=int(self.options['openoffice-port']),
     )
     for env_line in self.options['environment'].splitlines():
       env_line = env_line.strip()
