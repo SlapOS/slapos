@@ -82,5 +82,6 @@ setup(name=name,
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
+          'generic.zope = slapos.recipe.generic_zope:Recipe',
       ]},
     )
