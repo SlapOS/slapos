@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.18 (unreleased)
+0.18 (2011-10-18)
 -----------------
 
- * No changes yet.
+ * Fix 0.17 release: missing change for slap library. [Łukasz Nowak]
 
 0.17 (2011-10-18)
 -----------------
