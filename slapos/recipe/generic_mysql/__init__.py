@@ -102,12 +102,12 @@ class Recipe(GenericBaseRecipe):
     mysql_update = self.createPythonScript(
       self.options['update-wrapper'],
       '%s.mysql.updateMysql' % __name__,
-      dict(
+      [dict(
         mysql_script=mysql_script,
         mysql_binary=mysql_binary,
         mysql_upgrade_binary=mysql_upgrade_binary,
         socket=socket,
-      )
+      )]
     )
     path_list.append(mysql_update)
 
@@ -115,14 +115,14 @@ class Recipe(GenericBaseRecipe):
     mysqld = self.createPythonScript(
       self.options['wrapper'],
       '%s.mysql.runMysql' % __name__,
-      dict(
+      [dict(
         mysql_install_binary=self.options['mysql-install-binary'],
         mysqld_binary=mysqld_binary,
         data_directory=mysql_conf['data_directory'],
         mysql_binary=mysql_binary,
         socket=socket,
         configuration_file=mysql_conf_file,
-       )
+       )]
     )
     path_list.append(mysqld)
     # backup configuration
