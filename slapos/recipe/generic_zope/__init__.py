@@ -106,7 +106,7 @@ class Recipe(GenericBaseRecipe):
     )
     # configure default Zope2 zcml
     open(self.options['site-zcml'], 'w').write(open(self.getTemplateFilename(
-        'site.zcml')))
+        'site.zcml')).read())
     zope_config['instance'] = self.options['instance-path']
     zope_config['event_log'] = self.options['event-log']
     zope_config['z2_log'] = self.options['z2-log']
