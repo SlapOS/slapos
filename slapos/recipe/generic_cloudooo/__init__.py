@@ -31,7 +31,7 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     path_list = []
     conversion_server_dict = dict(
-      working_path=self.optios['cloudooo-data'],
+      working_path=self.options['cloudooo-data'],
       uno_path=self.options['ooo-uno-path'],
       office_binary_path=self.options['ooo-binary-path'],
       ip=self.options['ip'],
