@@ -85,5 +85,6 @@ setup(name=name,
           'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'generic.zope = slapos.recipe.generic_zope:Recipe',
+          'generate.erp5.tidstorage = slapos.recipe.generate_erp5_tidstorage:Recipe',
       ]},
     )
