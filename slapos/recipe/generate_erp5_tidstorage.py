@@ -71,8 +71,14 @@ class Recipe(GenericSlapRecipe):
           'server': '${zeo-instance-%(zeo-id)s:ip}:${zeo-instance-%(zeo-id)s:port}' % {'zeo-id': zeo_id}
       }
 
+    zeo_connection_list = []
+    a = zeo_connection_list.append
+    for k, v in zope_connection_dict.iteritems():
+      a('  zeo-cache-size=%(zeo-cache-size)s zope-cache-size=%(zope-cache-size)s server=%(server)s mount-point=%(mount-point)s ' % v)
+    zeo_connection_string = '\n'.join(zeo_connection_list)
     zope_dict.update(
-      timezone=json_data['timezone']
+      timezone=json_data['timezone'],
+      zeo_connection_string=zeo_connection_string
     )
     # always one distribution node
     current_zope_port += 1
