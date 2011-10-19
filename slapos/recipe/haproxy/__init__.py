@@ -72,7 +72,8 @@ class Recipe(GenericBaseRecipe):
     # Prepare all filestorages
     server_snippet = ""
     i = 0
-    for address in self.options['address'].split():
+    name = self.options['name']
+    for address in self.options['backend-list'].split():
       i += 1
       server_snippet += self.substituteTemplate(
           snippet_filename, dict(
@@ -85,7 +86,7 @@ class Recipe(GenericBaseRecipe):
         ip=self.options['ip'], 
         port=self.options['port'],
         server_text=server_snippet,
-        server_check_path=server_check_path,)
+        server_check_path=self.options['server-check-path'],)
     template_filename = self.getTemplateFilename('haproxy.cfg.in')
     configuration_path = self.createFile(
         self.options['conf-path'],
