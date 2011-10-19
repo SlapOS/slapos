@@ -99,12 +99,14 @@ class Recipe(GenericSlapRecipe):
     snippet_zope = open(self.options['snippet-zope']).read()
     zope_id = 'zope-distribution'
     part_list.append(zope_id)
+    part_list.append('logrotate-entry-%s' % zope_id)
     output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id, zope_port=current_zope_port,
       **zope_dict)
     # always one admin node
     current_zope_port += 1
     zope_id = 'zope-admin'
     part_list.append(zope_id)
+    part_list.append('logrotate-entry-%s' % zope_id)
     output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id, zope_port=current_zope_port,
       **zope_dict)
     # handle activity key
@@ -112,6 +114,7 @@ class Recipe(GenericSlapRecipe):
       current_zope_port += 1
       part_name = 'zope-activity-%s' % q
       part_list.append(part_name)
+      part_list.append('logrotate-entry-%s' % part_name)
       output += snippet_zope % dict(zope_thread_amount=1, zope_id=part_name, zope_port=current_zope_port,
         **zope_dict)
     # handle backend key
@@ -123,6 +126,7 @@ class Recipe(GenericSlapRecipe):
         current_zope_port += 1
         part_name = 'zope-%s-%s' % (backend_name, q)
         part_list.append(part_name)
+        part_list.append('logrotate-entry-%s' % part_name)
         output += snippet_zope % dict(zope_thread_amount=backend_configuration['thread-amount'], zope_id=part_name, zope_port=current_zope_port, **zope_dict)
         haproxy_backend_list.append('${%(part_name)s:ip}:${%(part_name)s:port}' % dict(part_name=part_name))
       # now generate backend access
