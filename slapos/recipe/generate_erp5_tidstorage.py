@@ -47,6 +47,7 @@ class Recipe(GenericSlapRecipe):
     # prepare zeo
     output = ''
     part_list = []
+    zope_dict = {}
     zope_connection_dict = {}
     snippet_zeo = open(self.options['snippet-zeo']).read()
     for zeo_id, zeo_configuration in json_data['zeo'].iteritems():
@@ -70,24 +71,36 @@ class Recipe(GenericSlapRecipe):
           'server': '${zeo-instance-%(zeo-id)s:ip}:${zeo-instance-%(zeo-id)s:port}' % {'zeo-id': zeo_id}
       }
 
+    zope_dict.update(
+      timezone=json_data['timezone']
+    )
     # always one distribution node
+    current_zope_port += 1
     snippet_zope = open(self.options['snippet-zope']).read()
-    part_list.append('zope-distribution')
-    output += snippet_zope % zope_connection_dict
+    zope_id = 'zope-distribution'
+    part_list.append(zope_id)
+    output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id, zope_port=current_zope_port,
+      **zope_dict)
     # always one admin node
-    part_list.append('zope-admin')
-    output += snippet_zope % zope_connection_dict
+    current_zope_port += 1
+    zope_id = 'zope-admin'
+    part_list.append(zope_id)
+    output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id, zope_port=current_zope_port,
+      **zope_dict)
     # handle activity key
     for q in range(1, json_data['activity']['zopecount'] + 1):
+      current_zope_port += 1
       part_name = 'zope-activity-%s' % q
       part_list.append(part_name)
-      output += snippet_zope % zope_connection_dict
+      output += snippet_zope % dict(zope_thread_amount=1, zope_id=part_name, zope_port=current_zope_port,
+        **zope_dict)
     # handle backend key
     for backend_type, backend_configuration in json_data['backend'].iteritems():
       for q in range(1, backend_configuration['zopecount'] + 1):
+        current_zope_port += 1
         part_name = 'zope-%s-%s' % (backend_type, q)
         part_list.append(part_name)
-        output += snippet_zope % zope_connection_dict
+        output += snippet_zope % dict(zope_thread_amount=backend_configuration['thread-amount'], zope_id=part_name, zope_port=current_zope_port, **zope_dict)
     prepend = open(self.options['snippet-master']).read() % dict(
         part_list='  \n'.join(['  '+q for q in part_list]))
     output = prepend + output
