@@ -42,6 +42,12 @@ class Recipe(GenericSlapRecipe):
   def _generateRealTemplate(self):
     current_zeo_port = ZEO_PORT_BASE
     current_zope_port = ZOPE_PORT_BASE
+    current_apache_port = APACHE_PORT_BASE
+    current_haproxy_port = HAPROXY_PORT_BASE
+    num = 1
+    for l in self.parameter_dict['json'].splitlines():
+      print '%3s %s' % (num, l)
+      num +=1
     json_data = json.loads(self.parameter_dict['json'])
     site_id = str(json_data['site-id'])
     # prepare zeo
@@ -102,15 +108,23 @@ class Recipe(GenericSlapRecipe):
         **zope_dict)
     # handle backend key
     snippet_backend = open(self.options['snippet-backend']).read()
-    for backend_type, backend_configuration in json_data['backend'].iteritems():
+    for backend_name, backend_configuration in json_data['backend'].iteritems():
       for q in range(1, backend_configuration['zopecount'] + 1):
         current_zope_port += 1
-        part_name = 'zope-%s-%s' % (backend_type, q)
+        part_name = 'zope-%s-%s' % (backend_name, q)
         part_list.append(part_name)
         output += snippet_zope % dict(zope_thread_amount=backend_configuration['thread-amount'], zope_id=part_name, zope_port=current_zope_port, **zope_dict)
       # now generate backend access
-      part_list.append('apache-%(backend_name)s ca-apache-%(backend_name)s logrotate-entry-apache-%(backend_name)s haproxy-%(backend_name)s' % dict(backend_name=backend_type))
+      current_apache_port += 1
+      current_haproxy_port += 1
+      part_list.append('apache-%(backend_name)s ca-apache-%(backend_name)s logrotate-entry-apache-%(backend_name)s haproxy-%(backend_name)s' % dict(backend_name=backend_name))
       backend_dict = dict(
+        backend_name=backend_name,
+        apache_port=current_apache_port,
+        haproxy_port=current_haproxy_port,
+        access_control_string=backend_configuration['access-control-string'],
+        maxconn=backend_configuration['maxconn'],
+        server_check_path='/%s/getId' % site_id
       )
       output += snippet_backend % backend_dict
     prepend = open(self.options['snippet-master']).read() % dict(
