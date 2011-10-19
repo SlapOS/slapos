@@ -65,11 +65,10 @@ class Recipe(GenericBaseRecipe):
       for q in storage_definition.split():
         if 'storage-name' in q:
           storage_name = q.split('=')[1].strip()
-        if 'zodb-name' in q:
-          zodb_name = q.split('=')[1].strip()
-      storage_path = os.path.join(zodb_directory_path, '%s.fs' % zodb_name)
+        if 'zodb-path' in q:
+          zodb_path = q.split('=')[1].strip()
       filestorage_snippet += self.substituteTemplate(
-          snippet_filename, dict(storage_name=storage_name, path=storage_path))
+          snippet_filename, dict(storage_name=storage_name, path=zodb_path))
 
     config = dict(
       zeo_ip=self.options['ip'],

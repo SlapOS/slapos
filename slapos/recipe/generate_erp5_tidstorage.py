@@ -54,6 +54,7 @@ class Recipe(GenericSlapRecipe):
     part_list = []
     zope_dict = {}
     zope_connection_dict = {}
+    known_tid_storage_identifier_dict = {}
     snippet_zeo = open(self.options['snippet-zeo']).read()
     for zeo_id, zeo_configuration_list in json_data['zeo'].iteritems():
       storage_list = []
@@ -66,7 +67,13 @@ class Recipe(GenericSlapRecipe):
           'storage-name': zeo_slave['storage-name'],
           'server': '${zeo-instance-%(zeo-id)s:ip}:${zeo-instance-%(zeo-id)s:port}' % {'zeo-id': zeo_id}
         }
-        a('  storage-name=%(storage-name)s zodb-name=%(zodb-name)s' % zeo_slave)
+        zodb_path = os.path.join('${directory:zodb}', zeo_slave['storage-name'] + '.fs')
+        a('  storage-name=%(storage-name)s zodb-path=%(zodb-path)s' % {'zodb-path': zodb_path, 'storage-name': zeo_slave['storage-name']})
+        known_tid_storage_identifier_dict[
+          "((('%(ip)s', %(port)s),), '%(storage_name)s')" % dict(
+            ip='${zeo-instance-%(zeo-id)s:ip}',
+            port='${zeo-instance-%(zeo-id)s:port}',
+            storage_name=zeo_slave['storage-name'])] = (zodb_path, '${directory:zodb-backup}/%s/' % zeo_slave['storage-name'], zeo_slave['serialize-path'] % {'site-id': site_id})
       current_zeo_port += 1
       output += snippet_zeo % dict(
         zeo_id=zeo_id,
