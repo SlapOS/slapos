@@ -147,7 +147,6 @@ class Recipe(GenericSlapRecipe):
     prepend = open(self.options['snippet-master']).read() % dict(
         part_list='  \n'.join(['  '+q for q in part_list]),
         known_tid_storage_identifier_dict=known_tid_storage_identifier_dict,
-        site_id=site_id,
         haproxy_section="haproxy-%s" % backend_name,
         )
     output = prepend + output

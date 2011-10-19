@@ -89,5 +89,6 @@ setup(name=name,
           'generic.zope.zeo.client = slapos.recipe.generic_zope_zeo_client:Recipe',
           'generate.erp5.tidstorage = slapos.recipe.generate_erp5_tidstorage:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
+          'tidstorage = slapos.recipe.tidstorage:Recipe'
       ]},
     )
