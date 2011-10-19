@@ -101,12 +101,18 @@ class Recipe(GenericSlapRecipe):
       output += snippet_zope % dict(zope_thread_amount=1, zope_id=part_name, zope_port=current_zope_port,
         **zope_dict)
     # handle backend key
+    snippet_backend = open(self.options['snippet-backend']).read()
     for backend_type, backend_configuration in json_data['backend'].iteritems():
       for q in range(1, backend_configuration['zopecount'] + 1):
         current_zope_port += 1
         part_name = 'zope-%s-%s' % (backend_type, q)
         part_list.append(part_name)
         output += snippet_zope % dict(zope_thread_amount=backend_configuration['thread-amount'], zope_id=part_name, zope_port=current_zope_port, **zope_dict)
+      # now generate backend access
+      part_list.append('apache-%(backend_name)s ca-apache-%(backend_name)s logrotate-entry-apache-%(backend_name)s haproxy-%(backend_name)s' % dict(backend_name=backend_type))
+      backend_dict = dict(
+      )
+      output += snippet_backend % backend_dict
     prepend = open(self.options['snippet-master']).read() % dict(
         part_list='  \n'.join(['  '+q for q in part_list]))
     output = prepend + output
