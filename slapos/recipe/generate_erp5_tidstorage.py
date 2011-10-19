@@ -27,7 +27,6 @@
 from slapos.recipe.librecipe import GenericSlapRecipe
 import os
 import json
-#url-%(backend_name)s = https://$${zope-instance:user}:$${zope-instance:password}@[$${apache-zope-backend-instance:ip}]:$${apache-zope-backend-instance:port}
 
 SECTION_BACKEND_PUBLISHER = """[publish-apache-backend-list]
 recipe = slapos.cookbook:publish"""
