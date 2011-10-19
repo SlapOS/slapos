@@ -60,7 +60,7 @@ class Recipe(GenericSlapRecipe):
         "zeo-instance-%s" % zeo_id,
         "logrotate-entry-zeo-%s" % zeo_id
       ])
-    prepend = open(self.options['snippet-zope']).read() % dict(
+    prepend = open(self.options['snippet-master']).read() % dict(
         part_list='  \n'.join(['  '+q for q in part_list]))
     output = prepend + output
     with open(self.options['output'], 'w') as f:
