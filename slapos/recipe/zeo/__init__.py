@@ -25,6 +25,7 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+import os
 
 class Recipe(GenericBaseRecipe):
   """
@@ -57,9 +58,16 @@ class Recipe(GenericBaseRecipe):
 
     # Prepare all filestorages
     filestorage_snippet = ""
-    for storage_name in self.options['storage'].split():
-      storage_path = os.path.join(zodb_directory_path, '%s.fs' % storage_name)
-
+    for storage_definition in self.options['storage'].splitlines():
+      storage_definition = storage_definition.strip()
+      if not storage_definition:
+        continue
+      for q in storage_definition.split():
+        if 'storage-name' in q:
+          storage_name = q.split('=')[1].strip()
+        if 'zodb-name' in q:
+          zodb_name = q.split('=')[1].strip()
+      storage_path = os.path.join(zodb_directory_path, '%s.fs' % zodb_name)
       filestorage_snippet += self.substituteTemplate(
           snippet_filename, dict(storage_name=storage_name, path=storage_path))
 
@@ -81,6 +89,7 @@ class Recipe(GenericBaseRecipe):
     wrapper_path = self.createPythonScript(
       self.options['wrapper-path'],
       'slapos.recipe.librecipe.execute.execute',
-      arguments=[self.options['binary-path'].strip(), '-C', zeo_conf_path],
+      arguments=[self.options['binary-path'].strip(), '-C',
+        self.options['conf-path']],)
 
     return [configuration_path, wrapper_path]
