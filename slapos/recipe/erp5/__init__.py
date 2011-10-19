@@ -535,57 +535,6 @@ SSLCARevocationPath %(ca_crl)s"""
       certificate_authority_path=config['ca_dir']
     )
 
-  def installERP5Site(self, user, password, zope_access, mysql_conf,
-                      conversion_server_conf=None, memcached_conf=None,
-                      kumo_conf=None,
-                      erp5_site_id='erp5', default_bt5_list=[], ca_conf={},
-                      supervisor_controlled=True):
-    """
-    Create  a script  to  automatically set  up  an erp5  site (controlled  by
-    supervisor by default) on available zope and mysql environments.
-    """
-    conversion_server = None
-    if conversion_server_conf is not None:
-      conversion_server = "%s:%s" % (conversion_server_conf['conversion_server_ip'],
-             conversion_server_conf['conversion_server_port'])
-    if memcached_conf is None:
-      memcached_conf = {}
-    if kumo_conf is None:
-      kumo_conf = {}
-    # XXX Conversion server and memcache server coordinates are not relevant
-    # for pure site creation.
-    assert mysql_conf['mysql_user'] and mysql_conf['mysql_password'], \
-        "ZMySQLDA requires a user and a password for socket connections"
-    # XXX Use socket access to prevent unwanted connections to original MySQL
-    #     server when cloning an existing ERP5 instance.
-    #     TCP will be required if MySQL is in a different partition/server.
-    mysql_connection_string = "%(mysql_database)s %(mysql_user)s %(mysql_password)s %(socket)s" % mysql_conf
-
-    bt5_list = self.parameter_dict.get("bt5_list", "").split() or default_bt5_list
-    bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
-      or getattr(self, 'bt5_repository_list', [])
-
-    erp5_update_directory = supervisor_controlled and self.wrapper_directory or \
-        self.bin_directory
-
-    script = zc.buildout.easy_install.scripts([('erp5_update',
-            __name__ + '.erp5', 'updateERP5')], self.ws,
-                  sys.executable, erp5_update_directory,
-                  arguments=[erp5_site_id,
-                             mysql_connection_string,
-                             [user, password, zope_access],
-                             memcached_conf.get('memcached_url'),
-                             conversion_server,
-                             kumo_conf.get("kumo_address"),
-                             bt5_list,
-                             bt5_repository_list,
-                             ca_conf.get('certificate_authority_path'),
-                             self.options.get('openssl_binary')])
-
-    self.path_list.extend(script)
-
-    return []
-
   def installZeo(self, ip):
 #     zodb_dir = os.path.join(self.data_root_directory, 'zodb')
 #     self._createDirectory(zodb_dir)
