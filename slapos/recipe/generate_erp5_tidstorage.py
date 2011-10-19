@@ -37,7 +37,7 @@ class Recipe(GenericSlapRecipe):
   def _options(self, options):
     self.dirname = os.path.join(self.buildout['buildout']['parts-directory'],
       self.name)
-    options['output'] = os.path.join(self.dirname, self.name)
+    options['output'] = os.path.join(self.dirname, self.name + '.cfg')
 
   def _generateRealTemplate(self):
     current_zeo_port = ZEO_PORT_BASE
