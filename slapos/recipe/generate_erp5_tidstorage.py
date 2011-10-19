@@ -71,7 +71,7 @@ class Recipe(GenericSlapRecipe):
       os.mkdir(self.dirname)
     if not "json" in self.parameter_dict:
       # no json transimtted, nothing to do
-      with open(options['output'], 'w') as f:
+      with open(self.options['output'], 'w') as f:
         f.write("[buildout]\nparts =\n")
     else:
       self._generateRealTemplate()
