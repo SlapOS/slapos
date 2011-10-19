@@ -54,8 +54,6 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     snippet_filename = self.getTemplateFilename(
                                     'zeo-filestorage-snippet.conf.in')
-    zodb_directory_path = self.options['zodb-path']
-
     # Prepare all filestorages
     filestorage_snippet = ""
     for storage_definition in self.options['storage'].splitlines():
