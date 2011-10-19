@@ -52,31 +52,33 @@ class Recipe(GenericSlapRecipe):
     zope_dict = {}
     zope_connection_dict = {}
     snippet_zeo = open(self.options['snippet-zeo']).read()
-    for zeo_id, zeo_configuration in json_data['zeo'].iteritems():
+    for zeo_id, zeo_configuration_list in json_data['zeo'].iteritems():
+      storage_list = []
+      a = storage_list.append
+      for zeo_slave in zeo_configuration_list:
+        zope_connection_dict[zeo_slave['storage-name']] = {
+          'zope-cache-size': zeo_slave['zope-cache-size'],
+          'zeo-cache-size': zeo_slave['zeo-cache-size'],
+          'mount-point': zeo_slave['mount-point'] % {'site-id': site_id},
+          'storage-name': zeo_slave['storage-name'],
+          'server': '${zeo-instance-%(zeo-id)s:ip}:${zeo-instance-%(zeo-id)s:port}' % {'zeo-id': zeo_id}
+        }
+        a('  storage-name=%(storage-name)s zodb-name=%(zodb-name)s' % zeo_slave)
       current_zeo_port += 1
       output += snippet_zeo % dict(
         zeo_id=zeo_id,
         zeo_port=current_zeo_port,
-        storage_list=' '.join([str(q['zodb']) for q in zeo_configuration])
-      ) + '\n'
+        storage_list='\n'.join(storage_list)
+      )
       part_list.extend([
         "zeo-instance-%s" % zeo_id,
         "logrotate-entry-zeo-%s" % zeo_id
       ])
-      for zeo_slave in zeo_configuration:
-        zope_connection_dict[zeo_slave['zodb']] = {
-          'zope-cache-size': zeo_slave['zope-cache-size'],
-          'zeo-cache-size': zeo_slave['zeo-cache-size'],
-          'mount-point': zeo_slave['mount-point'] % {'site-id': site_id},
-          'storage': zeo_slave['zodb'],
-          'name': zeo_slave['zodb'],
-          'server': '${zeo-instance-%(zeo-id)s:ip}:${zeo-instance-%(zeo-id)s:port}' % {'zeo-id': zeo_id}
-      }
 
     zeo_connection_list = []
     a = zeo_connection_list.append
     for k, v in zope_connection_dict.iteritems():
-      a('  zeo-cache-size=%(zeo-cache-size)s zope-cache-size=%(zope-cache-size)s server=%(server)s mount-point=%(mount-point)s ' % v)
+      a('  zeo-cache-size=%(zeo-cache-size)s zope-cache-size=%(zope-cache-size)s server=%(server)s mount-point=%(mount-point)s storage-name=%(storage-name)s' % v)
     zeo_connection_string = '\n'.join(zeo_connection_list)
     zope_dict.update(
       timezone=json_data['timezone'],
