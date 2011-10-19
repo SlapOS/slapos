@@ -151,6 +151,9 @@ class Recipe(GenericSlapRecipe):
         part_list='  \n'.join(['  '+q for q in part_list]),
         known_tid_storage_identifier_dict=known_tid_storage_identifier_dict,
         haproxy_section="haproxy-%s" % backend_name,
+        zope_section=zope_id,
+        site_id=site_id,
+        **self.parameter_dict
         )
     output = prepend + output
     with open(self.options['output'], 'w') as f:
