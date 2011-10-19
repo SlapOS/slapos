@@ -71,8 +71,8 @@ class Recipe(GenericSlapRecipe):
         a('  storage-name=%(storage-name)s zodb-path=%(zodb-path)s' % {'zodb-path': zodb_path, 'storage-name': zeo_slave['storage-name']})
         known_tid_storage_identifier_dict[
           "((('%(ip)s', %(port)s),), '%(storage_name)s')" % dict(
-            ip='${zeo-instance-%(zeo-id)s:ip}',
-            port='${zeo-instance-%(zeo-id)s:port}',
+            ip='${zeo-instance-%s:ip}' % zeo_id,
+            port='${zeo-instance-%s:port}' % zeo_id,
             storage_name=zeo_slave['storage-name'])] = (zodb_path, '${directory:zodb-backup}/%s/' % zeo_slave['storage-name'], zeo_slave['serialize-path'] % {'site-id': site_id})
       current_zeo_port += 1
       output += snippet_zeo % dict(
@@ -145,7 +145,11 @@ class Recipe(GenericSlapRecipe):
     output += '\n'.join(publish_url_list)
     part_list.append('publish-apache-backend-list')
     prepend = open(self.options['snippet-master']).read() % dict(
-        part_list='  \n'.join(['  '+q for q in part_list]))
+        part_list='  \n'.join(['  '+q for q in part_list]),
+        known_tid_storage_identifier_dict=known_tid_storage_identifier_dict,
+        site_id=site_id,
+        haproxy_section="haproxy-%s" % backend_name,
+        )
     output = prepend + output
     with open(self.options['output'], 'w') as f:
       f.write(output)
