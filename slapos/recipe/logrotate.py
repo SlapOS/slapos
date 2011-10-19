@@ -30,39 +30,28 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
 
-  def _options(self, options):
-    if 'name' not in options:
-      options['name'] = self.name
-
   def install(self):
-    path_list = []
-
     logrotate_backup = self.options['backup']
     logrotate_d = self.options['logrotate-entries']
     logrotate_conf_file = self.options['conf']
 
-    logrotate_conf = []
-    logrotate_conf.append("include %s" % logrotate_d)
-    logrotate_conf.append("olddir %s" % logrotate_backup)
-    logrotate_conf.append("dateext")
+    logrotate_conf = [
+      'daily',
+      'dateext',
+      'rotate 3650',
+      'compress',
+      'compresscmd %s' % self.options['gzip-binary'],
+      'compressoptions -9',
+      'uncompresscmd %s' % self.options['gunzip-binary'],
+      'notifempty',
+      'sharedscripts',
+      'create',
+      'include %s' % logrotate_d,
+      'olddir %s' % logrotate_backup,
+    ]
 
-    frequency = 'daily'
-    if 'frequency' in self.options:
-      frequency = self.options['frequency']
-    logrotate_conf.append(frequency)
-
-    num_rotate = 3650
-    if 'num-rotate' in self.options:
-      num_rotate = self.options['num-rotate']
-    logrotate_conf.append("rotate %s" % num_rotate)
-
-    logrotate_conf.append("compress")
-    logrotate_conf.append("compresscmd %s" % self.options['gzip-binary'])
-    logrotate_conf.append("compressoptions -9")
-    logrotate_conf.append("uncompresscmd %s" % self.options['gunzip-binary'])
-
-    logrotate_conf_file = self.createFile(logrotate_conf_file, '\n'.join(logrotate_conf))
-    logrotate_conf.append(logrotate_conf_file)
+    logrotate_conf_file = self.createFile(logrotate_conf_file, 
+        '\n'.join(logrotate_conf))
 
     state_file = self.options['state-file']
 
@@ -71,46 +60,25 @@ class Recipe(GenericBaseRecipe):
       'slapos.recipe.librecipe.exceute.execute',
       [self.options['logrotate-binary'], '-s', state_file, logrotate_conf_file, ]
     )
-    path_list.append(logrotate)
 
-    return path_list
+    return [logrotate, logrotate_conf_file]
 
 class Part(GenericBaseRecipe):
-
-  def _options(self, options):
-    if 'name' not in options:
-      options['name'] = self.name
 
   def install(self):
 
     logrotate_d = self.options['logrotate-entries']
 
-    part_path = os.path.join(logrotate_d, self.options['name'])
-
     conf = []
-
-    if 'frequency' in self.options:
-      conf.append(self.options['frequency'])
-    if 'num-rotate' in self.options:
-      conf.append('rotate %s' % self.options['num-rotate'])
 
     if 'post' in self.options:
       conf.append("postrotate\n%s\nendscript" % self.options['post'])
     if 'pre' in self.options:
       conf.append("prerotate\n%s\nendscript" % self.options['pre'])
 
-    if self.optionIsTrue('sharedscripts', False):
-      conf.append("sharedscripts")
-
-    if self.optionIsTrue('notifempty', False):
-      conf.append('notifempty')
-
-    if self.optionIsTrue('create', True):
-      conf.append('create')
-
     log = self.options['log']
 
-    self.createFile(os.path.join(logrotate_d, self.options['name']),
+    part_path = self.createFile(os.path.join(logrotate_d, self.options['name']),
                     "%(logfiles)s {\n%(conf)s\n}" % {
                       'logfiles': log,
                       'conf': '\n'.join(conf),
