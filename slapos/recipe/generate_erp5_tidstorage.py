@@ -27,7 +27,10 @@
 from slapos.recipe.librecipe import GenericSlapRecipe
 import os
 import json
+#url-%(backend_name)s = https://$${zope-instance:user}:$${zope-instance:password}@[$${apache-zope-backend-instance:ip}]:$${apache-zope-backend-instance:port}
 
+SECTION_BACKEND_PUBLISHER = """[publish-apache-backend-list]
+recipe = slapos.cookbook:publish"""
 ZOPE_PORT_BASE = 12000
 ZEO_PORT_BASE = 15000
 HAPROXY_PORT_BASE = 11000
@@ -106,6 +109,7 @@ class Recipe(GenericSlapRecipe):
         **zope_dict)
     # handle backend key
     snippet_backend = open(self.options['snippet-backend']).read()
+    publish_url_list = []
     for backend_name, backend_configuration in json_data['backend'].iteritems():
       haproxy_backend_list = []
       for q in range(1, backend_configuration['zopecount'] + 1):
@@ -127,7 +131,12 @@ class Recipe(GenericSlapRecipe):
         server_check_path='/%s/getId' % site_id,
         haproxy_backend_list=' '.join(haproxy_backend_list)
       )
+      publish_url_list.append('url-%(backend_name)s = https://[${apache-%(backend_name)s:ip}]:${apache-%(backend_name)s:port}' % dict(
+        backend_name=backend_name))
       output += snippet_backend % backend_dict
+    output += SECTION_BACKEND_PUBLISHER + '\n'
+    output += '\n'.join(publish_url_list)
+    part_list.append('publish-apache-backend-list')
     prepend = open(self.options['snippet-master']).read() % dict(
         part_list='  \n'.join(['  '+q for q in part_list]))
     output = prepend + output
