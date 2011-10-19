@@ -40,8 +40,6 @@ class Recipe(GenericSlapRecipe):
     options['output'] = os.path.join(self.dirname, self.name)
 
   def _generateRealTemplate(self):
-    # always one distribution node
-    # always one admin node
     current_zeo_port = ZEO_PORT_BASE
     current_zope_port = ZOPE_PORT_BASE
     json_data = json.loads(self.parameter_dict['json'])
@@ -49,9 +47,11 @@ class Recipe(GenericSlapRecipe):
     # prepare zeo
     output = ''
     part_list = []
+    zope_connection_dict = {}
+    snippet_zeo = open(self.options['snippet-zeo']).read()
     for zeo_id, zeo_configuration in json_data['zeo'].iteritems():
       current_zeo_port += 1
-      output += open(self.options['snippet-zeo']).read() % dict(
+      output += snippet_zeo % dict(
         zeo_id=zeo_id,
         zeo_port=current_zeo_port,
         storage_list=' '.join([str(q['zodb']) for q in zeo_configuration])
@@ -60,6 +60,34 @@ class Recipe(GenericSlapRecipe):
         "zeo-instance-%s" % zeo_id,
         "logrotate-entry-zeo-%s" % zeo_id
       ])
+      for zeo_slave in zeo_configuration:
+        zope_connection_dict[zeo_slave['zodb']] = {
+          'zope-cache-size': zeo_slave['zope-cache-size'],
+          'zeo-cache-size': zeo_slave['zeo-cache-size'],
+          'mount-point': zeo_slave['mount-point'] % {'site-id': site_id},
+          'storage': zeo_slave['zodb'],
+          'name': zeo_slave['zodb'],
+          'server': '${zeo-instance-%(zeo-id)s:ip}:${zeo-instance-%(zeo-id)s:port}' % {'zeo-id': zeo_id}
+      }
+
+    # always one distribution node
+    snippet_zope = open(self.options['snippet-zope']).read()
+    part_list.append('zope-distribution')
+    output += snippet_zope % zope_connection_dict
+    # always one admin node
+    part_list.append('zope-admin')
+    output += snippet_zope % zope_connection_dict
+    # handle activity key
+    for q in range(1, json_data['activity']['zopecount'] + 1):
+      part_name = 'zope-activity-%s' % q
+      part_list.append(part_name)
+      output += snippet_zope % zope_connection_dict
+    # handle backend key
+    for backend_type, backend_configuration in json_data['backend'].iteritems():
+      for q in range(1, backend_configuration['zopecount'] + 1):
+        part_name = 'zope-%s-%s' % (backend_type, q)
+        part_list.append(part_name)
+        output += snippet_zope % zope_connection_dict
     prepend = open(self.options['snippet-master']).read() % dict(
         part_list='  \n'.join(['  '+q for q in part_list]))
     output = prepend + output
