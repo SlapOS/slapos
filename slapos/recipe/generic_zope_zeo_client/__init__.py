@@ -114,7 +114,8 @@ class Recipe(GenericBaseRecipe):
       TMP=self.options['tmp-path'],
       TMPDIR=self.options['tmp-path'],
       HOME=self.options['tmp-path'],
-      PATH=self.options['bin-path']
+      PATH=self.options['bin-path'],
+      TIMEZONE=self.options['timezone'],
     )
     # configure default Zope2 zcml
     open(self.options['site-zcml'], 'w').write(open(self.getTemplateFilename(
