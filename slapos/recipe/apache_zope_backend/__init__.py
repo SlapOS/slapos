@@ -51,7 +51,7 @@ class Recipe(GenericBaseRecipe):
     apache_conf['key'] = key
     apache_conf['path'] = '/'
     apache_conf['access_control_string'] = access_control_string
-    apache_conf['rewrite_rule'] = "RewriteRule (.*) http://%s$1 [L,P]" % backend
+    apache_conf['rewrite_rule'] = "RewriteRule (.*) %s$1 [L,P]" % backend
     apache_conf_string = pkg_resources.resource_string(__name__,
           'template/apache.zope.conf.in') % apache_conf
     apache_config_file = self.createFile(self.options['configuration-file'],
