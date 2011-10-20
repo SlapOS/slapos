@@ -98,7 +98,8 @@ class Recipe:
     buildout.set('buildout', 'installed',
                  '.installed-%s.cfg' % software_type)
 
-    buildout.add_section('slap-parameter')
+    if not buildout.has_section('slap-parameter'):
+      buildout.add_section('slap-parameter')
     for parameter, value in self.parameter_dict.items():
       buildout.set('slap-parameter', parameter, value)
 
