@@ -34,6 +34,112 @@ class Recipe(BaseSlapRecipe):
   def _install(self):
     raise NotImplementedError('Outdated.')
 
+  def installKeyAuthorisationApache(self, ipv6, port, backend, key, certificate,
+      ca_conf, key_auth_path='/'):
+    if ipv6:
+      ip = self.getGlobalIPv6Address()
+    else:
+      ip = self.getLocalIPv4Address()
+    ssl_template = """SSLEngine on
+SSLVerifyClient require
+RequestHeader set REMOTE_USER %%{SSL_CLIENT_S_DN_CN}s
+SSLCertificateFile %(key_auth_certificate)s
+SSLCertificateKeyFile %(key_auth_key)s
+SSLCACertificateFile %(ca_certificate)s
+SSLCARevocationPath %(ca_crl)s"""
+    apache_conf = self._getApacheConfigurationDict('key_auth_apache', ip, port)
+    apache_conf['ssl_snippet'] = ssl_template % dict(
+        key_auth_certificate=certificate,
+        key_auth_key=key,
+        ca_certificate=ca_conf['ca_certificate'],
+        ca_crl=ca_conf['ca_crl']
+        )
+    prefix = 'ssl_key_auth_apache'
+    rewrite_rule_template = \
+      "RewriteRule (.*) http://%(backend)s%(key_auth_path)s$1 [L,P]"
+    path_template = pkg_resources.resource_string('slapos.recipe.erp5',
+      'template/apache.zope.conf.path.in')
+    path = path_template % dict(path='/')
+    d = dict(
+          path=path,
+          backend=backend,
+          backend_path='/',
+          port=apache_conf['port'],
+          vhname=path.replace('/', ''),
+          key_auth_path=key_auth_path,
+    )
+    rewrite_rule = rewrite_rule_template % d
+    apache_conf.update(**dict(
+      path_enable=path,
+      rewrite_rule=rewrite_rule
+    ))
+    apache_config_file = self.createConfigurationFile(prefix + '.conf',
+        pkg_resources.resource_string('slapos.recipe.erp5',
+          'template/apache.zope.conf.in') % apache_conf)
+    self.path_list.append(apache_config_file)
+    self.path_list.extend(zc.buildout.easy_install.scripts([(
+      'key_auth_apache',
+        'slapos.recipe.erp5.apache', 'runApache')], self.ws,
+          sys.executable, self.wrapper_directory, arguments=[
+            dict(
+              required_path_list=[certificate, key, ca_conf['ca_certificate'],
+                ca_conf['ca_crl']],
+              binary=self.options['httpd_binary'],
+              config=apache_config_file
+            )
+          ]))
+    if ipv6:
+      return 'https://[%(ip)s:%(port)s]' % apache_conf
+    else:
+      return 'https://%(ip)s:%(port)s' % apache_conf
+
+  def _getApacheConfigurationDict(self, prefix, ip, port):
+    apache_conf = dict()
+    apache_conf['pid_file'] = os.path.join(self.run_directory,
+        prefix + '.pid')
+    apache_conf['lock_file'] = os.path.join(self.run_directory,
+        prefix + '.lock')
+    apache_conf['ip'] = ip
+    apache_conf['port'] = port
+    apache_conf['server_admin'] = 'admin@'
+    apache_conf['error_log'] = os.path.join(self.log_directory,
+        prefix + '-error.log')
+    apache_conf['access_log'] = os.path.join(self.log_directory,
+        prefix + '-access.log')
+    self.registerLogRotation(prefix, [apache_conf['error_log'],
+      apache_conf['access_log']], self.killpidfromfile + ' ' +
+      apache_conf['pid_file'] + ' SIGUSR1')
+    return apache_conf
+
+  def _writeApacheConfiguration(self, prefix, apache_conf, backend,
+      access_control_string=None):
+    rewrite_rule_template = \
+        "RewriteRule (.*) http://%(backend)s$1 [L,P]"
+    if access_control_string is None:
+      path_template = pkg_resources.resource_string(__name__,
+        'template/apache.zope.conf.path.in')
+      path = path_template % dict(path='/')
+    else:
+      path_template = pkg_resources.resource_string(__name__,
+        'template/apache.zope.conf.path-protected.in')
+      path = path_template % dict(path='/',
+          access_control_string=access_control_string)
+    d = dict(
+          path=path,
+          backend=backend,
+          backend_path='/',
+          port=apache_conf['port'],
+          vhname=path.replace('/', ''),
+    )
+    rewrite_rule = rewrite_rule_template % d
+    apache_conf.update(**dict(
+      path_enable=path,
+      rewrite_rule=rewrite_rule
+    ))
+    apache_conf_string = pkg_resources.resource_string(__name__,
+          'template/apache.zope.conf.in') % apache_conf
+    return self.createConfigurationFile(prefix + '.conf', apache_conf_string)
+
   def installFrontendZopeApache(self, ip, port, name, frontend_path, backend_url,
       backend_path, key, certificate, access_control_string=None):
     ident = 'frontend_' + name
