@@ -31,10 +31,6 @@ from slapos import slap as slapmodule
 
 class Recipe(object):
 
-  def parseMultiValues(self, string):
-    return dict([ [str(column).strip() for column in line.split('=', 1)]
-                 for line in str(string).splitlines() if '=' in line])
-
   def __init__(self, buildout, name, options):
     self.logger = logging.getLogger(name)
 
@@ -67,11 +63,14 @@ class Recipe(object):
 
     filter_kw = {}
     if 'sla' in options:
-      filter_kw = self.parseMultiValues(options['sla'])
+      for sla_parameter in options['sla'].split():
+        filter_kw[sla_parameter] = options['sla-%s' % sla_parameter]
 
     partition_parameter_kw = {}
     if 'config' in options:
-      partition_parameter_kw = self.parseMultiValues(options['config'])
+      for config_parameter in options['config'].split():
+        partition_parameter_kw[config_parameter] = \
+            options['config-%s' % config_parameter]
 
     instance = self.request(options['software-url'], software_type,
       options['name'], partition_parameter_kw=partition_parameter_kw,
