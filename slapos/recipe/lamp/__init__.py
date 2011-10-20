@@ -154,6 +154,9 @@ class BaseRecipe(BaseSlapRecipe):
     open(destination, 'w').write(open(template, 'r').read() % d)
 
   def configureInstallation(self, document_root, mysql_conf, url):
+    """Start process which can launch python scripts, move or remove files or 
+    directories when installing software.
+    """
     if not self.options.has_key('delete') and not \
         self.options.has_key('rename') and not self.options.has_key('script'):
       return
