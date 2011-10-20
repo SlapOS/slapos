@@ -25,7 +25,7 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
-
+import json
 import pkg_resources
 
 class Recipe(GenericBaseRecipe):
@@ -36,7 +36,8 @@ class Recipe(GenericBaseRecipe):
     backend = self.options['backend']
     key = self.options['key-file']
     certificate = self.options['cert-file']
-    access_control_string = self.options['access-control-string']
+    access_control_string = json.loads(self.options['json'])[
+        'access-control-string']
     apache_conf = dict()
     apache_conf['pid_file'] = self.options['pid-file']
     apache_conf['lock_file'] = self.options['lock-file']
