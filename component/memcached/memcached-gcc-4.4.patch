@@ -10,14 +10,3 @@
      CFLAGS="$CFLAGS -fno-strict-aliasing"
      ;;
    esac
---- memcached-1.4.8/configure.orig
-+++ memcached-1.4.8/configure
-@@ -6185,7 +6185,7 @@
-   GCC_VERSION=`$CC -dumpversion`
-   CFLAGS="$CFLAGS -Wall -Werror -pedantic -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls"
-   case $GCC_VERSION in
--    4.4.*)
-+    4.4 | 4.4.*)
-     CFLAGS="$CFLAGS -fno-strict-aliasing"
-     ;;
-   esac
