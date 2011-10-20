@@ -33,12 +33,12 @@ class Recipe(GenericBaseRecipe):
     mysql_connection_string_list = []
     path_list = []
     # XXX: assume existence of 100 test databases, because slaves are not
-    # functional yet in slapos: test_0...test_100, with same user name
+    # functional yet in slapos: testdb_0...testdb_100, with testuser_N
     mysql_template = "%s@%s:%s %s %s"
     mysql_parsed = urlparse.urlparse(self.options['mysql-url'])
     for i in range(0, 100):
-      mysql_connection_string_list.append(mysql_template % ('test_%s'% i,
-        mysql_parsed.hostname, mysql_parsed.port, 'test_%s'% i, mysql_parsed.password))
+      mysql_connection_string_list.append(mysql_template % ('testdb_%s'% i,
+        mysql_parsed.hostname, mysql_parsed.port, 'testuser_%s'% i, mysql_parsed.password))
     mysql_connection_string = mysql_template % ('erp5_test', mysql_parsed.hostname,
       mysql_parsed.port, 'erp5_test', mysql_parsed.password)
     cloudooo_parsed = urlparse.urlparse(self.options['cloudooo-url'])
