@@ -261,16 +261,6 @@ class ERP5Updater(object):
           'portal_certificate_authority/openssl_binary'):
       return True
     return False
-  def isCertificateAuthorityConfigured(self):
-    """ Check if certificate Authority is configured correctly. """
-    external_connection_dict = self.system_signature_dict[
-      'external_connection_dict']
-    if self.certificate_authority_path == external_connection_dict.get(
-          'portal_certificate_authority/certificate_authority_path') and \
-       self.openssl_binary == external_connection_dict.get(
-          'portal_certificate_authority/openssl_binary'):
-      return True
-    return False
 
   def updateMemcached(self):
     # Assert Memcached configuration
