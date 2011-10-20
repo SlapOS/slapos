@@ -57,7 +57,7 @@ class Recipe(GenericBaseRecipe):
 
     logrotate = self.createPythonScript(
       self.options['wrapper'],
-      'slapos.recipe.librecipe.exceute.execute',
+      'slapos.recipe.librecipe.execute.execute',
       [self.options['logrotate-binary'], '-s', state_file, logrotate_conf_file, ]
     )
 
