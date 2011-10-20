@@ -140,6 +140,9 @@ class Recipe(GenericBaseRecipe):
     zope_wrapper_template_location = self.getTemplateFilename('zope.conf.in')
     zope_conf_content = self.substituteTemplate(zope_wrapper_template_location,
       zope_config)
+    if self.isTrueValue(self.options['timeserver']):
+      zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
+          'zope.conf.timeserver.in'), {})
 
     zope_conf_path = self.createFile(self.options['configuration-file'], zope_conf_content)
     path_list.append(zope_conf_path)

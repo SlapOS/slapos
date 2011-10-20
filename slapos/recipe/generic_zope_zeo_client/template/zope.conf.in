@@ -60,9 +60,3 @@ lock-filename %(lock-filename)s
   dump_url %(dump_url)s
   secret %(secret)s
 </product-config>
-
-# ERP5 Timer Service
-%%import timerserver
-<timer-server>
-  interval 5
-</timer-server>

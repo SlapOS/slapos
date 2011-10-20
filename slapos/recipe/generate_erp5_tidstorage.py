@@ -100,23 +100,23 @@ class Recipe(GenericSlapRecipe):
     zope_id = 'zope-distribution'
     part_list.append(zope_id)
     part_list.append('logrotate-entry-%s' % zope_id)
-    output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id, zope_port=current_zope_port,
-      **zope_dict)
+    output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id,
+      zope_port=current_zope_port, zope_timeserver=True, **zope_dict)
     # always one admin node
     current_zope_port += 1
     zope_id = 'zope-admin'
     part_list.append(zope_id)
     part_list.append('logrotate-entry-%s' % zope_id)
-    output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id, zope_port=current_zope_port,
-      **zope_dict)
+    output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id,
+      zope_port=current_zope_port, zope_timeserver=False, **zope_dict)
     # handle activity key
     for q in range(1, json_data['activity']['zopecount'] + 1):
       current_zope_port += 1
       part_name = 'zope-activity-%s' % q
       part_list.append(part_name)
       part_list.append('logrotate-entry-%s' % part_name)
-      output += snippet_zope % dict(zope_thread_amount=1, zope_id=part_name, zope_port=current_zope_port,
-        **zope_dict)
+      output += snippet_zope % dict(zope_thread_amount=1, zope_id=part_name,
+        zope_port=current_zope_port, zope_timeserver=True, **zope_dict)
     # handle backend key
     snippet_backend = open(self.options['snippet-backend']).read()
     publish_url_list = []
@@ -127,7 +127,10 @@ class Recipe(GenericSlapRecipe):
         part_name = 'zope-%s-%s' % (backend_name, q)
         part_list.append(part_name)
         part_list.append('logrotate-entry-%s' % part_name)
-        output += snippet_zope % dict(zope_thread_amount=backend_configuration['thread-amount'], zope_id=part_name, zope_port=current_zope_port, **zope_dict)
+        output += snippet_zope % dict(
+          zope_thread_amount=backend_configuration['thread-amount'],
+          zope_id=part_name, zope_port=current_zope_port, zope_timeserver=False,
+          **zope_dict)
         haproxy_backend_list.append('${%(part_name)s:ip}:${%(part_name)s:port}' % dict(part_name=part_name))
       # now generate backend access
       current_apache_port += 1
