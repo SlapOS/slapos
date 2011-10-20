@@ -303,6 +303,7 @@ class ERP5Updater(object):
 
   def updateERP5Site(self):
     if not self.isERP5Present():
+      self.log('No site present, adding new with id %r' % self.site_id)
       self.POST('/manage_addProduct/ERP5/manage_addERP5Site', {
           "id": self.site_id,
           "erp5_catalog_storage": self.erp5_catalog_storage,
@@ -330,6 +331,7 @@ class ERP5Updater(object):
   def run(self):
     """ Keep running until kill"""
     while 1:
+      self.log('Sleeping for %s' % self.short_sleeping_time)
       time.sleep(self.short_sleeping_time)
       if not self.updateERP5Site():
         self.loadSystemSignatureDict()
