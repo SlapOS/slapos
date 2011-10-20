@@ -27,6 +27,7 @@
 from slapos.recipe.librecipe import GenericSlapRecipe
 import os
 import json
+import traceback
 
 SECTION_BACKEND_PUBLISHER = """[publish-apache-backend-list]
 recipe = slapos.cookbook:publish"""
@@ -167,5 +168,9 @@ class Recipe(GenericSlapRecipe):
       with open(self.options['output'], 'w') as f:
         f.write("[buildout]\nparts =\n")
     else:
-      self._generateRealTemplate()
+      try:
+        self._generateRealTemplate()
+      except Exception:
+        print 'Ignored issue during template generation:\n%s' % \
+          traceback.format_exc()
     return [self.dirname]
