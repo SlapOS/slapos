@@ -60,7 +60,6 @@ class Recipe(BaseSlapRecipe):
         suite_name     = self.parameter_dict['suite_name'],
         base_url       = self.parameter_dict['url'],
         browser_argument_list = [],
-        # XXX-Cedric : No need for user/pass
         user           = self.parameter_dict['user'],
         password       = self.parameter_dict['password'])
 

@@ -41,7 +41,6 @@ def run(args):
     erp5_report = ERP5TestReportHandler(test_url, config['suite_name'])   
     import pdb; pdb.set_trace()
     # Clean old test results
-    #TODO how to clean results / post results without password?
     openUrl('%s/TestTool_cleanUpTestResults' % (config['base_url']))
     # TODO assert getresult is None
 
