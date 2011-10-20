@@ -44,37 +44,31 @@ class Recipe(GenericBaseRecipe):
     cloudooo_parsed = urlparse.urlparse(self.options['cloudooo-url'])
     memcached_parsed = urlparse.urlparse(self.options['memcached-url'])
     kumofs_parsed = urlparse.urlparse(self.options['kumofs-url'])
-    path_list.append(self.createPythonScript(self.options['run-unit-test'],
-        __name__ + '.test.runUnitTest', [dict(
+    common_dict = dict(
         instance_home=testinstance,
         prepend_path=self.options['prepend-path'],
         openssl_binary=self.options['openssl-binary'],
         test_ca_path=self.options['certificate-authority-path'],
+    )
+    common_list = [
+      '--conversion_server_hostname=%s' % cloudooo_parsed.hostname,
+      '--conversion_server_port=%s' % cloudooo_parsed.port,
+      '--volatile_memcached_server_hostname=%s' % memcached_parsed.hostname,
+      '--volatile_memcached_server_port=%s' % memcached_parsed.port,
+      '--persistent_memcached_server_hostname=%s' % kumofs_parsed.hostname,
+      '--persistent_memcached_server_port=%s' % kumofs_parsed.port,
+    ]
+    path_list.append(self.createPythonScript(self.options['run-unit-test'],
+        __name__ + '.test.runUnitTest', [dict(
         call_list=[self.options['run-unit-test-binary'],
           '--erp5_sql_connection_string', mysql_connection_string,
           '--extra_sql_connection_string_list', ','.join(
             mysql_connection_string_list),
-          '--conversion_server_hostname=%s' % cloudooo_parsed.hostname,
-          '--conversion_server_port=%s' % cloudooo_parsed.port,
-          '--volatile_memcached_server_hostname=%s' % memcached_parsed.hostname,
-          '--volatile_memcached_server_port=%s' % memcached_parsed.port,
-          '--persistent_memcached_server_hostname=%s' % kumofs_parsed.hostname,
-          '--persistent_memcached_server_port=%s' % kumofs_parsed.port,
-      ])]))
+          ] + common_list, **common_dict)]))
     path_list.append(self.createPythonScript(self.options['run-test-suite'],
         __name__ + '.test.runUnitTest', [dict(
-        instance_home=testinstance,
-        prepend_path=self.options['prepend-path'],
-        openssl_binary=self.options['openssl-binary'],
-        test_ca_path=self.options['certificate-authority-path'],
         call_list=[self.options['run-test-suite-binary'],
           '--db_list', ','.join(mysql_connection_string_list),
-          '--conversion_server_hostname=%s' % cloudooo_parsed.hostname,
-          '--conversion_server_port=%s' % cloudooo_parsed.port,
-          '--volatile_memcached_server_hostname=%s' % memcached_parsed.hostname,
-          '--volatile_memcached_server_port=%s' % memcached_parsed.port,
-          '--persistent_memcached_server_hostname=%s' % kumofs_parsed.hostname,
-          '--persistent_memcached_server_port=%s' % kumofs_parsed.port,
-      ])]))
+          ] + common_list, **common_dict)]))
 
     return path_list
