@@ -103,32 +103,8 @@ class Recipe(BaseSlapRecipe):
     ))
     if key_access is not None:
       connection_dict['key_access'] = key_access
-    if self.options.get('fulltext_search', None) == 'sphinx':
-      sphinx_searchd = self.installSphinxSearchd(ip=self.getLocalIPv4Address())
-      connection_dict.update(**sphinx_searchd)
     self.setConnectionDict(connection_dict)
     return self.path_list
-
-  def installSphinxSearchd(self, ip, port=9312, sql_port=9306):
-    data_directory = self.createDataDirectory('sphinx')
-    sphinx_conf_path = self.createConfigurationFile('sphinx.conf',
-      self.substituteTemplate(self.getTemplateFilename('sphinx.conf.in'), dict(
-          ip_address=ip,
-          port=port,
-          sql_port=sql_port,
-          data_directory=data_directory,
-          log_directory=self.log_directory,
-          )))
-    self.path_list.append(sphinx_conf_path)
-    wrapper = zc.buildout.easy_install.scripts([('sphinx_searchd',
-     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[
-        self.options['sphinx_searchd_binary'].strip(), '-c', sphinx_conf_path, '--nodetach']
-      )[0]
-    self.path_list.append(wrapper)
-    return dict(sphinx_searchd_ip=ip,
-                sphinx_searchd_port=port,
-                sphinx_searchd_sql_port=sql_port)
 
   def installFrontendZopeApache(self, ip, port, name, frontend_path, backend_url,
       backend_path, key, certificate, access_control_string=None):

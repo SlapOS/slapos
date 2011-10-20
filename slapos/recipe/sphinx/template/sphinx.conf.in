@@ -389,7 +389,7 @@ index erp5
 	#
 	# ondisk_dict		= 1
 
-	# whether to enable in-place inversion (2x less disk, 90-95% speed)
+	# whether to enable in-place inversion (2x less disk, 90-95%% speed)
 	# optional, default is 0 (use separate temporary files), indexer-only
 	#
 	# inplace_enable		= 1
@@ -460,11 +460,11 @@ searchd
 
 	# log file, searchd run info is logged here
 	# optional, default is 'searchd.log'
-	log			= %(log_directory)s/sphinx-searchd.log
+	log			= %(searchd_log)s
 
 	# query log file, all search queries are logged here
 	# optional, default is empty (do not log queries)
-	query_log		= %(log_directory)s/sphinx-query.log
+	query_log		= %(query_log)s
 
 	# client read timeout, seconds
 	# optional, default is 5
@@ -480,7 +480,7 @@ searchd
 
 	# PID file, searchd process ID file name
 	# mandatory
-	pid_file		= %(data_directory)s/sphinx-searchd.pid
+	pid_file		= %(pid)s
 
 	# max amount of matches the daemon ever keeps in RAM, per-index
 	# WARNING, THERE'S ALSO PER-QUERY LIMIT, SEE SetLimits() API CALL
@@ -524,7 +524,7 @@ searchd
 	# searchd will (try to) log crashed query to 'crash_log_path.PID' file
 	# optional, default is empty (do not create crash logs)
 	#
-	# crash_log_path		= %(log_directory)s
+	# crash_log_path		= (log_directory)
 
 	# max allowed per-query filter count
 	# optional, default is 256
