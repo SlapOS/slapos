@@ -90,10 +90,10 @@ class Recipe(BaseSlapRecipe):
         certificate=frontend_certificate)
 
 
-    self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
-                           memcached_conf, kumo_conf)
-    self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
-                           memcached_conf, kumo_conf)
+#    self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
+#                           memcached_conf, kumo_conf)
+#    self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
+#                           memcached_conf, kumo_conf)
     self.linkBinary()
     connection_dict.update(**dict(
       site_user=user,
@@ -129,83 +129,6 @@ class Recipe(BaseSlapRecipe):
     return dict(sphinx_searchd_ip=ip,
                 sphinx_searchd_port=port,
                 sphinx_searchd_sql_port=sql_port)
-
-  def installTestRunner(self, ca_conf, mysql_conf, conversion_server_conf,
-                        memcached_conf, kumo_conf):
-    """Installs bin/runUnitTest executable to run all tests using
-       bin/runUnitTest"""
-    testinstance = self.createDataDirectory('testinstance')
-    # workaround wrong assumptions of ERP5Type.tests.runUnitTest about
-    # directory existence
-    unit_test = os.path.join(testinstance, 'unit_test')
-    connection_string_list = []
-    for test_database, test_user, test_password in \
-          mysql_conf['mysql_parallel_test_dict'][-4:]:
-      connection_string_list.append(
-          '%s@%s:%s %s %s' % (test_database, mysql_conf['ip'],
-                            mysql_conf['tcp_port'], test_user, test_password))
-    if not os.path.isdir(unit_test):
-      os.mkdir(unit_test)
-    runUnitTest = zc.buildout.easy_install.scripts([
-      ('runUnitTest', __name__ + '.testrunner', 'runUnitTest')],
-      self.ws, sys.executable, self.bin_directory, arguments=[dict(
-        instance_home=testinstance,
-        prepend_path=self.bin_directory,
-        openssl_binary=self.options['openssl_binary'],
-        test_ca_path=ca_conf['certificate_authority_path'],
-        call_list=[self.options['runUnitTest_binary'],
-          '--erp5_sql_connection_string', '%(mysql_test_database)s@%'
-          '(ip)s:%(tcp_port)s %(mysql_test_user)s '
-          '%(mysql_test_password)s' % mysql_conf,
-          '--extra_sql_connection_string_list',','.join(connection_string_list),
-          '--conversion_server_hostname=%(conversion_server_ip)s' % \
-                                                         conversion_server_conf,
-          '--conversion_server_port=%(conversion_server_port)s' % \
-                                                         conversion_server_conf,
-          '--volatile_memcached_server_hostname=%(memcached_ip)s' % memcached_conf,
-          '--volatile_memcached_server_port=%(memcached_port)s' % memcached_conf,
-          '--persistent_memcached_server_hostname=%(kumo_gateway_ip)s' % kumo_conf,
-          '--persistent_memcached_server_port=%(kumo_gateway_port)s' % kumo_conf,
-      ]
-        )])[0]
-    self.path_list.append(runUnitTest)
-
-  def installTestSuiteRunner(self, ca_conf, mysql_conf, conversion_server_conf,
-                        memcached_conf, kumo_conf):
-    """Installs bin/runTestSuite executable to run all tests using
-       bin/runUnitTest"""
-    testinstance = self.createDataDirectory('test_suite_instance')
-    # workaround wrong assumptions of ERP5Type.tests.runUnitTest about
-    # directory existence
-    unit_test = os.path.join(testinstance, 'unit_test')
-    if not os.path.isdir(unit_test):
-      os.mkdir(unit_test)
-    connection_string_list = []
-    for test_database, test_user, test_password in \
-        mysql_conf['mysql_parallel_test_dict']:
-      connection_string_list.append(
-          '%s@%s:%s %s %s' % (test_database, mysql_conf['ip'],
-                              mysql_conf['tcp_port'], test_user, test_password))
-    command = zc.buildout.easy_install.scripts([
-      ('runTestSuite', __name__ + '.test_suite_runner', 'runTestSuite')],
-      self.ws, sys.executable, self.bin_directory, arguments=[dict(
-        instance_home=testinstance,
-        prepend_path=self.bin_directory,
-        openssl_binary=self.options['openssl_binary'],
-        test_ca_path=ca_conf['certificate_authority_path'],
-        call_list=[self.options['runTestSuite_binary'],
-          '--db_list', ','.join(connection_string_list),
-          '--conversion_server_hostname=%(conversion_server_ip)s' % \
-                                                         conversion_server_conf,
-          '--conversion_server_port=%(conversion_server_port)s' % \
-                                                         conversion_server_conf,
-          '--volatile_memcached_server_hostname=%(memcached_ip)s' % memcached_conf,
-          '--volatile_memcached_server_port=%(memcached_port)s' % memcached_conf,
-          '--persistent_memcached_server_hostname=%(kumo_gateway_ip)s' % kumo_conf,
-          '--persistent_memcached_server_port=%(kumo_gateway_port)s' % kumo_conf,
-      ]
-        )])[0]
-    self.path_list.append(command)
 
   def installFrontendZopeApache(self, ip, port, name, frontend_path, backend_url,
       backend_path, key, certificate, access_control_string=None):
