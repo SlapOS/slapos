@@ -43,7 +43,7 @@ class Recipe(GenericSlapRecipe):
       kumofs = "%s:%s" % (parsed.hostname, parsed.port)
 
     parsed = urlparse.urlparse(self.options['mysql-url'])
-    mysql_connection_string = "%(database)s %(hostname)s@%(port)s "\
+    mysql_connection_string = "%(database)s@%(hostname)s:%(port)s "\
         "%(username)s %(password)s" % dict(
       database=parsed.path.split('/')[1],
       hostname=parsed.hostname,
