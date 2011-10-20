@@ -89,13 +89,13 @@ class Recipe(BaseSlapRecipe):
         backend_url=apache_conf['apache_login'], key=frontend_key,
         certificate=frontend_certificate)
 
-    default_bt5_list = []
-    if self.parameter_dict.get("flavour", "default") == 'configurator':
-      default_bt5_list = self.options.get("configurator_bt5_list", '').split()
-
-    self.installERP5Site(user, password, zope_access, mysql_conf,
-             conversion_server_conf, memcached_conf, kumo_conf,
-             self.site_id, default_bt5_list, ca_conf)
+#    default_bt5_list = []
+#    if self.parameter_dict.get("flavour", "default") == 'configurator':
+#      default_bt5_list = self.options.get("configurator_bt5_list", '').split()
+#
+#    self.installERP5Site(user, password, zope_access, mysql_conf,
+#             conversion_server_conf, memcached_conf, kumo_conf,
+#             self.site_id, default_bt5_list, ca_conf)
 
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
                            memcached_conf, kumo_conf)

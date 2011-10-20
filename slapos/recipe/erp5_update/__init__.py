@@ -24,21 +24,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import os
 import urlparse
-from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.recipe.librecipe import GenericSlapRecipe
 
-class Recipe(GenericBaseRecipe):
-  def install(self):
-#  def installERP5Site(self, user, password, zope_access, mysql_conf,
-#                      conversion_server_conf=None, memcached_conf=None,
-#                      kumo_conf=None,
-#                      erp5_site_id='erp5', default_bt5_list=[], ca_conf={},
-#                      supervisor_controlled=True):
-#    """
-#    Create  a script  to  automatically set  up  an erp5  site (controlled  by
-#    supervisor by default) on available zope and mysql environments.
-#    """
+class Recipe(GenericSlapRecipe):
+  def _install(self):
     conversion_server = None
     if 'cloudooo-url' in self.options and self.options['cloudooo-url']:
       parsed = urlparse.urlparse(self.options['cloudooo-url'])
@@ -53,38 +43,31 @@ class Recipe(GenericBaseRecipe):
       kumofs = "%s:%s" % (parsed.hostname, parsed.port)
 
     parsed = urlparse.urlparse(self.options['mysql-url'])
-    mysql_connection_string = "%(database)s %(hostname)s@%(port)s %(username)s %(password)s" % dict(
+    mysql_connection_string = "%(database)s %(hostname)s@%(port)s "\
+        "%(username)s %(password)s" % dict(
       database=parsed.path.split('/')[1],
       hostname=parsed.hostname,
       port=parsed.port,
       username=parsed.username,
       password=parsed.password
     )
-    raise NotImplementedError
 
-    bt5_list = self.parameter_dict.get("bt5_list", "").split() or default_bt5_list
-    bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
-      or getattr(self, 'bt5_repository_list', [])
+    parsed = urlparse.urlparse(self.options['url'])
+    zope_user = parsed.username
+    zope_password = parsed.password
+    zope_host = '%s:%s' % (parsed.hostname, parsed.port)
+    bt5_list = []
+    if len(self.parameter_dict.get("bt5_list", "").strip()):
+      bt5_list = self.parameter_dict["bt5_list"].split()
+    elif self.parameter_dict.get("flavour", "default") == 'configurator':
+      bt5_list = self.options['configurator-bt5-list'].split()
+    bt5_repository_list = self.parameter_dict.get("bt5_repository_list",
+      "").split() or self.options['bt5-repository-list'].split()
 
-    erp5_update_directory = supervisor_controlled and self.wrapper_directory or \
-        self.bin_directory
-
-    script = zc.buildout.easy_install.scripts([('erp5_update',
-            __name__ + '.erp5', 'updateERP5')], self.ws,
-                  sys.executable, erp5_update_directory,
-                  arguments=[erp5_site_id,
-                             mysql_connection_string,
-                             [user, password, zope_access],
-                             memcached,
-                             conversion_server,
-                             kumofs,
-                             bt5_list,
-                             bt5_repository_list,
-                             ca_conf.get('certificate_authority_path'),
-                             self.options.get('openssl_binary')])
-
-    self.path_list.extend(script)
-
-    return []
-
-
+    script = self.createPythonScript(self.options['update-wrapper'],
+      __name__+'.erp5.updateERP5', [
+        self.options['site-id'], mysql_connection_string,
+        [zope_user, zope_password, zope_host],
+        memcached, conversion_server, kumofs, bt5_list, bt5_repository_list,
+        self.options['cadir-path'], self.options['openssl-binary']])
+    return [script]
