@@ -30,6 +30,7 @@ setup(name=name,
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
+        'inotifyx', # to watch filesystem changes (used in pidwrapper)
         'slapos.core', # uses internally
 #        'slapos.toolbox', # needed for libcloud, cloudmgr, disabled for now
         'xml_marshaller', # need to communication with slapgrid
@@ -54,6 +55,7 @@ setup(name=name,
           'kvm = slapos.recipe.kvm:Recipe',
           'libcloud = slapos.recipe.libcloud:Recipe',
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
+          'lockfile = slapos.recipe.lockfile:Recipe',
           'memcached = slapos.recipe.memcached:Recipe',
           'mysql = slapos.recipe.mysql:Recipe',
           'mkdirectory = slapos.recipe.mkdirectory:Recipe',
