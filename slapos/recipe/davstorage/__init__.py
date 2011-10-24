@@ -25,6 +25,8 @@
 #
 ##############################################################################
 import subprocess
+import httplib
+import base64
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -82,4 +84,28 @@ class Recipe(GenericBaseRecipe):
       [self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'])
     path_list.append(wrapper)
 
+    promise = self.createPythonScript(self.options['promise'],
+      __name__ + '.promise',
+      dict(host=self.options['ip'], port=int(self.options['port']),
+           user=self.options['user'], password=self.options['password'])
+                                     )
+    path_list.append(promise)
+
     return path_list
+
+def promise(args):
+  host = args['host']
+  port = args['port']
+  user = args['user']
+  password = args['password']
+
+  connection = httplib.HTTPSConnection(host, port)
+  auth = base64.b64encode('%s:%s' % (user, password))
+  connection.request('OPTIONS', '/',
+                     headers=dict(
+                       Authorization='Basic %s' % auth,
+                     )
+                    )
+  connection.getresponse()
+
+  return 0
