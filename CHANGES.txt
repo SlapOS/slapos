@@ -1,7 +1,25 @@
 Changes
 =======
 
-0.30 (unreleased)
+0.32 (Unreleased)
+-----------------
+
+  * No change yet.
+
+0.31 (2011-10-06)
+-----------------
+
+ * Split big redundant recipes into small ones. In order to factorize the code
+   and have everything in the buildout file. [Antoine Catton, Romain Courteaud,
+   Łukasz Nowak]
+ * LAMP : Update apache and php configuration files to work with a lot of different
+   PHP software. [Alain Takoudjou Kamdem]
+ * LAMP : Recipe can launch scripts, move or remove files or directories
+   when a given condition is filled. Useful when PHP apps require you to
+   remove "admin" directory after configuration for example.
+   [Alain Takoudjou Kamdem]
+
+0.30 (2011-10-06)
 -----------------
 
  * LAMP : Update apache and php configuration files to work with a lot of different

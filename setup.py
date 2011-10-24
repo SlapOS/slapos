@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.30-dev'
+version = '0.32-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -39,8 +39,13 @@ setup(name=name,
       zip_safe=True,
       entry_points={
         'zc.buildout': [
+          'certificate_authority = slapos.recipe.certificate_authority:Recipe',
+          'certificate_authority.request = slapos.recipe.certificate_authority:Request',
+          'cron = slapos.recipe.dcron:Recipe',
+          'cron.d = slapos.recipe.dcron:Part',
           'download = slapos.recipe.download:Recipe',
           'davstorage = slapos.recipe.davstorage:Recipe',
+          'duplicity = slapos.recipe.duplicity:Recipe',
           'erp5 = slapos.recipe.erp5:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
           'helloworld = slapos.recipe.helloworld:Recipe',
@@ -51,16 +56,24 @@ setup(name=name,
           'libcloudrequest = slapos.recipe.libcloudrequest:Recipe',
           'memcached = slapos.recipe.memcached:Recipe',
           'mysql = slapos.recipe.mysql:Recipe',
+          'mkdirectory = slapos.recipe.mkdirectory:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'nosqltestbed = slapos.recipe.nosqltestbed:NoSQLTestBed',
           'lamp = slapos.recipe.lamp:Request',
           'lamp.request = slapos.recipe.lamp:Request',
           'lamp.static = slapos.recipe.lamp:Static',
           'lamp.simple = slapos.recipe.lamp:Simple',
+          'logrotate = slapos.recipe.logrotate:Recipe',
+          'logrotate.d = slapos.recipe.logrotate:Part',
+          'publishurl = slapos.recipe.publishurl:Recipe',
           'proactive = slapos.recipe.proactive:Recipe',
+          'request = slapos.recipe.request:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
+          'softwaretype = slapos.recipe.softwaretype:Recipe',
           'siptester = slapos.recipe.siptester:SipTesterRecipe',
+          'simplelogger = slapos.recipe.simplelogger:Recipe',
           'slaprunner = slapos.recipe.slaprunner:Recipe',
+          'stunnel = slapos.recipe.stunnel:Recipe',
           'testnode = slapos.recipe.testnode:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',

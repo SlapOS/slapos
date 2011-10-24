@@ -4,9 +4,8 @@ import time
 import sys
 
 
-def runMysql(args):
+def runMysql(conf):
   sleep = 60
-  conf = args[0]
   mysqld_wrapper_list = [conf['mysqld_binary'], '--defaults-file=%s' %
       conf['configuration_file']]
   # we trust mysql_install that if mysql directory is available mysql was
@@ -35,8 +34,7 @@ def runMysql(args):
   os.execl(mysqld_wrapper_list[0], *mysqld_wrapper_list)
 
 
-def updateMysql(args):
-  conf = args[0]
+def updateMysql(conf):
   sleep = 30
   is_succeed = False
   while True:
