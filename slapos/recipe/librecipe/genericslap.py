@@ -28,6 +28,7 @@ from slapos import slap
 import time
 import re
 import urlparse
+import urllib
 
 from generic import GenericBaseRecipe
 
@@ -97,9 +98,9 @@ class GenericSlapRecipe(GenericBaseRecipe):
     netloc = ''
     if auth is not None:
       auth = tuple(auth)
-      netloc = str(auth[0]) # Login
+      netloc = urllib.quote(str(auth[0])) # Login
       if len(auth) > 1:
-        netloc += ':%s' % auth[1] # Password
+        netloc += ':%s' % urllib.quote(auth[1]) # Password
       netloc += '@'
 
     # host is an ipv6 address whithout brackets
