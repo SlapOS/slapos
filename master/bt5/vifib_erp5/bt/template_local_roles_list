@@ -1,6 +1,10 @@
 accounting_module
+event_module
+notification_message_module
+support_request_module
 business_process_module
 business_process_module/erp5_default_business_process
+campaign_module
 computer_module
 computer_module/test_computer
 credential_update_module

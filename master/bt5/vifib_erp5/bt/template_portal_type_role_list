@@ -3,21 +3,31 @@ Accounting Transaction Module
 Assignment
 Business Process
 Business Process Module
+Campaign
+Campaign Module
 Computer
 Computer Module
 Credential Update Module
 Currency
 Currency Module
+Event Module
+Fax Message
 Hosting Subscription
 Hosting Subscription Module
 Internal Packing List
 Internal Packing List Module
+Letter
+Mail Message
+Note
+Notification Message
+Notification Message Module
 Open Sale Order
 Open Sale Order Module
 Organisation
 Organisation Module
 Person
 Person Module
+Phone Call
 Purchase Packing List
 Purchase Packing List Module
 Sale Order
@@ -35,3 +45,6 @@ Software Product
 Software Product Module
 Software Release
 Software Release Module
+Support Request
+Support Request Module
+Visit
