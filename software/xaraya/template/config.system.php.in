@@ -1,0 +1,104 @@
+<?php
+// Database Configuration
+// Database Username: the username that will be used to connect to the database.
+$systemConfiguration['DB.UserName'] = '%(mysql_user)s';
+// Database Password: the password that will be used to connect to the database.
+$systemConfiguration['DB.Password'] = '%(mysql_password)s';
+// Database Host: the host name where the database server is located.
+// A different port can also be specified, e.g. 'localhost:12345'
+$systemConfiguration['DB.Host'] = '%(mysql_host)s';
+// Database Name: the name of the database to connect to.
+$systemConfiguration['DB.Name'] = '%(mysql_database)s';
+// Database Type: the type of the database server.
+$systemConfiguration['DB.Type'] = 'mysql';
+// Database TablePrefix: a string that will be prefixed to every database tables that are part of the core.
+//                       Those tables are shared across multi-sites.
+$systemConfiguration['DB.TablePrefix'] = 'xar_';
+// Database username and password encoding
+// 0 = not encoded
+// 1 = encoded
+// TODO: check if this works, havent heard from anyone using it.
+$systemConfiguration['DB.Encoded'] = '0';
+// Persistent database connections - do NOT use this on shared servers, and
+// do NOT use it on your own servers unless your sysadmin + dba teams agree !
+$systemConfiguration['DB.Persistent'] = false;
+
+/* For Logging:
+ * Logging will be done automatically if you create a webserver writable
+ * file in var/logs/log.txt
+ * For more advanced logging options use the logconfig module
+ */
+
+/*
+ * if you set this to true the core will be able to
+ * trap every message that comes from PHP and if
+ * possible to show a gracefully error page.
+ * This is an advanced option, leave it to false if unsure.
+ * TODO: move this out of here
+ * TODO: review this in code, it is known to hide some errors
+ * TODO: it also is known to break a PHP5 installation due to the introduction
+ *       of E_STRICT error level (see xarException phpErrorHandler function)
+ *       If so set this to false
+ */
+$systemConfiguration['Exception.EnablePHPErrorHandler'] = true;
+
+ /*
+  * Useful when debugging to show errors in-situ.
+  * Don't underestimate the power of seeing the errors when all you otherwise
+  * get is a white screen.
+  * Some hosts will have this on by default anyway, so you may want to ensure
+  * it is turned off here for production.
+  * When showing errors, turn the error level up to E_ERROR so the application
+  * does not halt on every little warning. Logging by the error handler will
+  * not be affected by this setting.
+  */
+
+/* ini_set('show_errors', 'On'); */
+
+/*
+ * Global error level, optional
+ *
+ * If set it is passed directly into the error_reporting() function of PHP
+ * Normally you want this to be set to E_ALL during development and something a bit lower
+ * for a production system.
+ * NOTE: Also set this option if you suffer from the changes wrt references
+ *       in php4.4 and php5.x versions or the bug in the zend optimizer eg: E_ALL ^ E_NOTICE
+ */
+ $systemConfiguration['Exception.ErrorLevel'] = E_ALL;
+
+/* This value determines if the reported error is logged. 28672 is for the constants 
+ * E_RECOVERABLE_ERROR, E_DEPRECATED and E_USER_DEPRECATED in PHP since 5.2
+ */
+ $systemConfiguration['Exception.ErrorLogLevel'] = E_ALL + 28672;
+
+/*
+ * This value determines to use the ADODB cache for SQL queries
+ * In some cases performance will be reduced by setting this value to
+ * true (on).
+ *
+ * Rule of thumb: If your db server is slower than your webserver and/or
+ *                your db does no query caching (mysql 3.x for example)
+ *                this might speed things up a little
+ * TODO: Move this out of here
+ */
+$systemConfiguration['DB.UseADODBCache'] = false;
+
+/*
+ * This value is used to change the default behavior of the
+ * xarServerGetBaseURL() and xarModURL() functions to allow you
+ * to use things like Apache's mod_rewrite to shorten your
+ * URLs even further then Short URL's allows, for example
+ * completely removing the "index.php" from your site's URLs
+ *
+ * Comment them out to use Xaraya's built-in/auto values
+ * TODO: move this out of here
+ */
+// 1. When you want to use some alternate URI path to your site
+//$systemConfiguration['BaseURI'] = '/test';
+// 2. When you want to use some alternate script file for your site
+//$systemConfiguration['BaseModURL'] = 'index2.php';
+// 3. When you want to use URLs like http://mysite.com/news/123
+//$systemConfiguration['BaseURI'] = '';
+//$systemConfiguration['BaseModURL'] = '';
+?>
+
