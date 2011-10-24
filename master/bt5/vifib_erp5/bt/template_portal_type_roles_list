@@ -1,16 +1,6 @@
 Accounting Transaction
-Fax Message
-Letter
-Mail Message
-Note
-Notification Message
-Phone Call
-Support Request
-Visit
-Event Module
-Notification Message Module
-Support Request Module
 Accounting Transaction Module
+Acknowledgement
 Assignment
 Business Process
 Business Process Module
@@ -21,16 +11,24 @@ Computer Module
 Credential Update Module
 Currency
 Currency Module
+Event Module
+Fax Message
 Hosting Subscription
 Hosting Subscription Module
 Internal Packing List
 Internal Packing List Module
+Letter
+Mail Message
+Note
+Notification Message
+Notification Message Module
 Open Sale Order
 Open Sale Order Module
 Organisation
 Organisation Module
 Person
 Person Module
+Phone Call
 Purchase Packing List
 Purchase Packing List Module
 Sale Order
@@ -41,6 +39,8 @@ Sale Trade Condition
 Sale Trade Condition Module
 Service
 Service Module
+Short Message
+Site Message
 Slave Instance
 Software Instance
 Software Instance Module
@@ -48,3 +48,7 @@ Software Product
 Software Product Module
 Software Release
 Software Release Module
+Support Request
+Support Request Module
+Visit
+Web Message

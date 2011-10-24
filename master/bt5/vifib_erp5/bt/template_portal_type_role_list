@@ -1,5 +1,6 @@
 Accounting Transaction
 Accounting Transaction Module
+Acknowledgement
 Assignment
 Business Process
 Business Process Module
@@ -38,6 +39,8 @@ Sale Trade Condition
 Sale Trade Condition Module
 Service
 Service Module
+Short Message
+Site Message
 Slave Instance
 Software Instance
 Software Instance Module
@@ -48,3 +51,4 @@ Software Release Module
 Support Request
 Support Request Module
 Visit
+Web Message
