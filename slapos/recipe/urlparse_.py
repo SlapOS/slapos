@@ -43,7 +43,7 @@ class Recipe(GenericBaseRecipe):
                    password=to_str(url.password),
                    host=to_str(url.hostname),
                    port=to_str(url.port),
-                   path=url.path,
+                   path=url.path.strip('/'),
                    params=url.params,
                    query=url.query,
                    fragment=url.fragment)
