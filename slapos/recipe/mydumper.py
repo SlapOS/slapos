@@ -29,19 +29,52 @@ import subprocess
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 def dump(args):
-  mydumper_binary = args['mydumper']
-  database = args['database']
-  socket = args['socket']
-  directory = args['directory']
+  mydumper_cmd = [args['mydumper']]
+  mydumper_cmd.extend(['-B', args['database']])
 
-  mydumper_cmd = [mydumper_binary,
-                  '-B', database,
-                  '-u', 'root',
-                  '-S', socket,
-                  '-o', directory,
-                 ]
+  if args['socket'] is not None:
+    mydumper_cmd.extend(['-S', args['socket']])
+  else:
+    mydumper_cmd.extend(['-h', args['host']])
+    mydumper_cmd.etxned(['-P', args['port']])
+
+  mydumper_cmd.extend(['-u', args['user']])
+  if args['password'] is not None:
+    mydumper_cmd.extend(['-p', args['password']])
+
+  if args['compression']:
+    mydumper_cmd.append('--compress')
+
+  if args['rows'] is not None:
+    mydumper_cmd.extend(['-r', args['rows']])
+
+  mydumper_cmd.extend(['-o', args['directory']])
 
   subprocess.check_call(mydumper_cmd)
+
+
+
+def do_import(args):
+  mydumper_cmd = [args['mydumper']]
+  mydumper_cmd.extend(['-B', args['database']])
+
+  if args['socket'] is not None:
+    mydumper_cmd.extend(['-S', args['socket']])
+  else:
+    mydumper_cmd.extend(['-h', args['host']])
+    mydumper_cmd.etxned(['-P', args['port']])
+
+  mydumper_cmd.extend(['-u', args['user']])
+  if args['password'] is not None:
+    mydumper_cmd.extend(['-p', args['password']])
+
+  mydumper_cmd.append('--overwrite-tables')
+
+  mydumper_cmd.extend(['-d', args['directory']])
+
+  subprocess.check_call(mydumper_cmd)
+
+
 
 class Recipe(GenericBaseRecipe):
 
@@ -59,7 +92,6 @@ class Recipe(GenericBaseRecipe):
                   directory=self.options['backup-directory'],
                   user=self.options['user'],
                   password=self.options.get('password'),
-                  compression=self.optionIsTrue('compression', default=False)
                  )
 
     name = __name__
@@ -67,7 +99,10 @@ class Recipe(GenericBaseRecipe):
       config.update(mydumper=self.options['myloader-binary'])
       name += '.do_import'
     else:
-      config.update(mydumper=self.options['mydumper-binary'])
+      config.update(mydumper=self.options['mydumper-binary'],
+                    compression=self.optionIsTrue('compression', default=False),
+                    rows=self.options.get('rows'),
+                   )
       name += '.dump'
 
     wrapper = self.createPythonScript(self.options['wrapper'],
