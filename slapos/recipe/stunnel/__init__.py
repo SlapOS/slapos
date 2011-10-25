@@ -24,44 +24,25 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import itertools
-
-import zc.buildout
-
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
 
   def _options(self, options):
-    self.types = ['local', 'remote']
-    self.datas = ['address', 'port']
-    for type_ in self.types:
-      for data in self.datas:
-        opt = '%s-%s' % (type_, data)
-        if opt not in options:
-          raise zc.buildout.UserError("No %s for %s connections." % (data, type_))
-
     self.isClient = self.optionIsTrue('client', default=False)
     if self.isClient:
       self.logger.info("Client mode")
     else:
       self.logger.info("Server mode")
 
-    if 'name' not in options:
-      options['name'] = self.name
-
-
   def install(self):
     path_list = []
     conf = {}
 
-    gathered_options = ['%s-%s' % option
-                       for option in itertools.product(self.types,
-                                                        self.datas)]
-    for option in gathered_options:
-      # XXX: Because the options are using dash and the template uses
-      # underscore
-      conf[option.replace('-', '_')] = self.options[option]
+    for type_ in ['remote', 'local']:
+      for data in ['host', 'port']:
+        confkey, opt = ['%s%s%s' % (type_, i, data) for i in ['_', '-']]
+        conf[confkey] = self.options[opt]
 
     pid_file = self.options['pid-file']
     conf.update(pid_file=pid_file)
