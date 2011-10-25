@@ -24,8 +24,12 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.recipe.librecipe import GenericBaseRecipe
 import os
+import sys
+import subprocess
+
+from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.recipe.librecipe import filehash
 
 class Recipe(GenericBaseRecipe):
 
@@ -109,36 +113,24 @@ class Recipe(GenericBaseRecipe):
     path_list.append(mysqld)
 
     # backup configuration
-    mysqldump_binary = self.options['mysqldump-binary']
-    backup_directory = self.options['backup-directory']
-    pending_backup_dir = self.options['backup-pending-directory']
-    dump_filename = self.options['dumpname']
-
-    mysqldump_cmd = [mysqldump_binary,
-                     mysql_conf['mysql_database'],
-                     '-u', 'root',
-                     '-S', mysql_conf['socket'].strip(),
-                     '--single-transaction', '--opt',
-                    ]
-    dump_file = os.path.join(backup_directory, dump_filename)
-    tmpdump_file = os.path.join(pending_backup_dir, dump_filename)
-    backup_script = self.createPythonScript(
-      self.options['backup-script'],
-      '%s.backup.do_backup' % __name__,
-      {
-        'mysqldump': mysqldump_cmd,
-        'gzip': self.options['gzip-binary'],
-        'tmpdump': tmpdump_file,
-        'dumpfile': dump_file,
-      },
-    )
-    path_list.append(backup_script)
+    if self.optionIsTrue('backup', default=False):
+      backup_script = self.createPythonScript(
+        self.options['backup-script'],
+        '%s.do_backup' % __name__,
+        dict(
+          mydumper_binary=self.options['mydumper-binary'],
+          database=mysql_conf['mysql_database'],
+          socket=mysql_conf['socket'],
+          backup_directory=self.options['backup-directory']
+        ),
+      )
+      path_list.append(backup_script)
 
     # Recovering backup
     if self.optionIsTrue('recovering', default=False):
       recovering_script = self.createPythonScript(
         self.options['recovering-wrapper'],
-        '%s.recover.import_remote_dump' % __name__,
+        '%s.import_dump' % __name__,
         {
           'lock_file': os.path.join(self.work_directory,
                                     'import_done'),
@@ -156,3 +148,47 @@ class Recipe(GenericBaseRecipe):
 
 
     return path_list
+
+# Replace zcat dump.sql.gz | mysql
+def import_dump(args):
+  # Get data from kwargs
+  cache_file = args['cache_file']
+  database = args['database']
+  mysql_binary = args['mysql_binary']
+  mysql_socket = args['mysql_socket']
+  dump_file = args['dump_file']
+  zcat_binary = args['zcat_binary']
+
+  sha512sum = filehash(dump_file)
+  with open(cache_file, 'r') as cache_fileobj:
+    last_sha512sum = cache_fileobj.read().strip()
+
+  if sha512sum != last_sha512sum:
+    zcat = subprocess.Popen([zcat_binary, dump_file], stdout=subprocess.PIPE)
+    mysql = subprocess.Popen([mysql_binary, '--socket=%s' % mysql_socket, '-D',
+                              database, '-u', 'root'], stdin=zcat.stdout)
+    zcat.stdout.close()
+
+    returncode = mysql.wait()
+
+    if returncode == 0:
+      with open(cache_file, 'w') as cache_fileobj:
+        cache_fileobj.write(sha512sum)
+
+    sys.exit(returncode)
+
+def promise(args):
+  # This is not a dependency of slapos.cookbook, because it shall be runned
+  # in a python environment having mysql-python
+  import MySQLdb
+
+  user = args['user']
+  password = args['password']
+  db = args['db']
+  host = args['host']
+  port = args['port']
+
+  db = MySQLdb.connect(host=host, port=port, user=user, passwd=password,
+                       db=db)
+  cursor = db.cursor()
+  cursor.close()
