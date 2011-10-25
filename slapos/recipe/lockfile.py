@@ -53,7 +53,7 @@ class LockFile(object):
     inotify_fd = inotifyx.init()
     try:
       inotifyx.add_watch(inotify_fd, self.filename, inotifyx.IN_DELETE)
-      inotifyx.get_events()
+      inotifyx.get_events(inotify_fd)
     except IOError: # add_watch failed
       pass
     finally:
