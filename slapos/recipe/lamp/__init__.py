@@ -224,8 +224,9 @@ class Simple(BaseRecipe):
       rename=renamed,
       **mysql_conf
     ))
-    self.createConfiguration(self.options['template'], document_root,
-        self.options['configuration'], mysql_conf)
+    if self.options.has_key('template') and self.options.has_key('configuration'):
+      self.createConfiguration(self.options['template'], document_root,
+          self.options['configuration'], mysql_conf)
     return self.path_list
 
 class Request(BaseRecipe):
