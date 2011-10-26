@@ -48,7 +48,6 @@ class Recipe(GenericBaseRecipe):
         pid_file=self.options['pid-file'],
         socket=self.options['socket'],
         error_log=self.options['error-log'],
-        slow_query_log=self.options['slow-query-log'],
         mysql_database=self.options['database'],
         mysql_user=self.options['user'],
         mysql_password=self.options['password'],
