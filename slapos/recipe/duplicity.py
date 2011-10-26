@@ -37,8 +37,8 @@ class Recipe(GenericBaseRecipe):
     options = ['--no-encryption', '--archive-dir', self.options['cache']]
 
     if self.optionIsTrue('recover', False):
-      # duplicity restore [options] remote backup
-      cmd.append('restore')
+      options.append('--force')
+      # duplicity [options] remote backup
       cmd.extend(options)
       cmd.extend([remote_url, backup_directory])
     else:
