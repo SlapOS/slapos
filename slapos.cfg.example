@@ -35,7 +35,7 @@ alias =
   kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.21:/software/kumofs/software.cfg
   kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.43:/software/kvm/software.cfg
   lightforum https://svn.erp5.org/repos/public/slapos/trunk/software_release.contribution/lightforum.Christophe.Lefloch/software.cfg
-  mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16:/software/mariadb/software.cfg
+  mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16-hotfix:/software/mariadb/software.cfg
   memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.43:/software/memcached/software.cfg
   mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.47:/software/mysql-5.1/software.cfg
   nbd http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.35:/software/nbd/software.cfg
