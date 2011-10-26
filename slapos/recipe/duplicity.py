@@ -34,7 +34,7 @@ class Recipe(GenericBaseRecipe):
     backup_directory = self.options['local-directory']
 
     cmd = [self.options['duplicity-binary'],]
-    options = ['--no-encryption']
+    options = ['--no-encryption', '--archive-dir', self.options['cache']]
 
     if self.optionIsTrue('recover', False):
       # duplicity restore [options] remote backup
