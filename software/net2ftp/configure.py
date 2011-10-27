@@ -3,7 +3,7 @@ import os
 import MySQLdb
 
 def setup(args):
-    base_url, htdocs, renamed, mysql_user, mysql_password, mysql_database, mysql_host = args
+    mysql_port, mysql_host, mysql_user, mysql_password, mysql_database, base_url, htdocs = args
     
     sql_file = os.path.join(htdocs, "create_tables.sql")
     try:
