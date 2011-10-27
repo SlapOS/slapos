@@ -157,16 +157,29 @@ class BaseRecipe(BaseSlapRecipe):
     """Start process which can launch python scripts, move or remove files or 
     directories when installing software.
     """
-    if not self.options.has_key('delete') and not \
-        self.options.has_key('rename') and not self.options.has_key('script'):
+    if not self.options.has_key('delete') and not self.options.has_key('rename') and not\
+        self.options.has_key('chmod') and not self.options.has_key('script'):
       return
     delete = []
+    chmod = []
+    data = []
     rename = []
     rename_list = ""
-    data = {}
-    if self.options.has_key('delete'):
+    argument = [self.options['lampconfigure_directory'].strip()]
+    if not self.options.has_key('file_token'):
+      argument = argument + ["-d", mysql_conf['mysql_database'], 
+                             "-H", mysql_conf['mysql_host'], "-P", mysql_conf['mysql_port'], 
+                             "-p", mysql_conf['mysql_password'], "-u", mysql_conf['mysql_user'], 
+                             "--table", self.options['table_name'].strip(), "--cond", 
+                             self.options['constraint'].strip()]
+    else:
+      argument = argument + ["-f", self.options['file_token'].strip()]
+    argument += ["-t", document_root]
+    
+    if self.options.has_key('delete'):      
+      delete = ["delete"]
       for fname in self.options['delete'].split(','):
-        delete.append(os.path.join(document_root, fname.strip()))
+        delete.append(fname.strip())
     if self.options.has_key('rename'):
       for fname in self.options['rename'].split(','):
         if fname.find("=>") < 0:
@@ -176,28 +189,22 @@ class BaseRecipe(BaseSlapRecipe):
           fname.append(old_name + '-' + mysql_conf['mysql_user'])
         else:
           fname = fname.split("=>")
-        rename.append(dict(old = os.path.join(document_root, fname[0].strip()),
-                           new = os.path.join(document_root, fname[1].strip())
-                           ))
-        rename_list += fname[0] + "=> " + fname[1] + ", "
-    if not self.options.has_key('file_token'):
-      token = dict(
-        table = self.options['table_name'].strip(),
-        constraint=self.options['constraint'].strip()
-      )
-    else:
-      token = os.path.join(document_root, self.options['file_token'].strip())
+        cmd = ["rename"]
+        if self.options.has_key('rename_chmod'):
+          cmd += ["--chmod", self.options['rename_chmod'].strip()]
+        rename.append(cmd + [fname[0].strip(), fname[1].strip()])
+        rename_list += fname[0] + "=>" + fname[1] + " "
+    if self.options.has_key('chmod'):      
+      chmod = ["chmod ", self.options['mode'].strip()]
+      for fname in self.options['chmod'].split(','):
+        chmod.append(fname.strip())
     if self.options.has_key('script') and \
         self.options['script'].strip().endswith(".py"):
-      data = dict(htdocs = document_root,
-                  base_url = url,
-                  script = self.options['script'].strip(),
-                  renamed = rename_list
-                  )
+      data = ["run", self.options['script'].strip(), "-v", base_url]
     self.path_list.extend(zc.buildout.easy_install.scripts(
         [('configureInstall', __name__ + '.runner', 'executeRunner')], self.ws,
-        sys.executable, self.wrapper_directory, arguments=[delete, rename,
-            token, mysql_conf,data]))
+        sys.executable, self.wrapper_directory, arguments=[argument, delete, rename,
+            chmod, data]))
     return rename_list
 
 class Static(BaseRecipe):
