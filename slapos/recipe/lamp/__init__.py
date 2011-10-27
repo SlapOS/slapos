@@ -200,7 +200,7 @@ class BaseRecipe(BaseSlapRecipe):
         chmod.append(fname.strip())
     if self.options.has_key('script') and \
         self.options['script'].strip().endswith(".py"):
-      data = ["run", self.options['script'].strip(), "-v", base_url]
+      data = ["run", self.options['script'].strip(), "-v", mysql_conf['mysql_database'], url, document_root]
     self.path_list.extend(zc.buildout.easy_install.scripts(
         [('configureInstall', __name__ + '.runner', 'executeRunner')], self.ws,
         sys.executable, self.wrapper_directory, arguments=[argument, delete, rename,
