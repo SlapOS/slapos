@@ -99,10 +99,10 @@ class ConnectionHelper:
         body += f.read()
         f.close()
         body += '\r\n'
-
     self.connection.request("POST", self.conn.path + '/' + path,
           body, header_dict)
     self.response = self.connection.getresponse()
+
 
 class ERP5TestReportHandler:
   def __init__(self, url, suite_name):
@@ -113,6 +113,7 @@ class ERP5TestReportHandler:
      )
     self.connection_helper = ConnectionHelper(url)
     self.suite_name = suite_name
+    self.test_id = "20111026-18C84076DE29E8"
 
   def reportStart(self):
     # report that test is running
@@ -124,27 +125,62 @@ class ERP5TestReportHandler:
 
   def reportFinished(self, out_file):
     # make file parsable by erp5_test_results
-    detail, success, failure, error_title_list = self.processResult(out_file)
-    log = """Title:%s
-Success: %d
-Failure: %d
-Info: %s""" % (error_title_list, success, failure, detail)
-    templog = tempfile.mkstemp()[1]
-    tl = open(templog, 'w')
-    tl.write(log)
-    tl.close()
+    out_file, success, failure, duration, error_title_list = self.processResult(
+        out_file)
+
+    #tempout = tempfile.mkstemp()[1]
+    #templog = tempfile.mkstemp()[1]
+    #log_lines = open(out_file, 'r').readlines()
+    #tl = open(templog, 'w')
+    #tl.write(TB_SEP + '\n')
+    #for log_line in log_lines:
+    #  starts = log_line.startswith
+    #  if starts('Ran') or starts('FAILED') or starts('OK') or starts(TB_SEP):
+    #    continue
+    #  if starts('ERROR: ') or starts('FAIL: '):
+    #    tl.write('internal-test: ' + log_line)
+    #    continue
+    #  tl.write(log_line)
+    #
+    #tl.write("----------------------------------------------------------------------\n")
+    #tl.write('Ran %s test in %.2fs\n' % (test_count, duration))
+    #if success:
+    #  tl.write('OK\n')
+    #else:
+    #  tl.write('FAILED (failures=%s)\n' % failure)
+    #tl.write(TB_SEP + '\n')
+
     # create nice zip archive
     tempzip = tempfile.mkstemp()[1]
     zip = zipfile.ZipFile(tempzip, 'w')
-    zip.write(templog, '%s/002/stderr' % self.suite_name)
+
+    # temperr is dummy
+    temperr = tempfile.mkstemp()[1]
+    open(temperr, 'w')
+    i = 1
+    test_case_list = [dict(name="first", log="OK\n"), dict(name="second", log="FAILED (failures=1)\n")]
+    for test_case in test_case_list:
+      tempcmd = tempfile.mkstemp()[1]
+      tempout = tempfile.mkstemp()[1]
+      open(tempcmd, 'w').write(test_case['name'])
+      open(tempout, 'w').write(test_case['log'])
+      #XXX-Cedric : support cases for more than 9 test cases
+      zip.write(tempcmd, '%s/00%s/cmdline' % (self.suite_name, i))
+      zip.write(tempout, '%s/00%s/stderr' % (self.suite_name, i))
+      zip.write(temperr, '%s/00%s/stdout' % (self.suite_name, i))
+      os.unlink(tempcmd)
+      os.unlink(tempout)
+      i = i + 1
+
     zip.close()
-    os.unlink(templog)
+    os.unlink(temperr)
 
     # post it to ERP5
     self.connection_helper.POST('TestResultModule_reportCompleted', dict(
       test_report_id=self.test_id),
       file_list=[('filepath', tempzip)]
       )
+    import pdb; pdb.set_trace()
     os.unlink(tempzip)
 
   def processResult(self, out_file):
@@ -153,6 +189,8 @@ Info: %s""" % (error_title_list, success, failure, detail)
     failure_amount = TEST_FAILURE_RE.search(file_content).group(1)
     error_title_list = [re.compile('\s+').sub(' ', x).strip()
                     for x in TEST_ERROR_TITLE_RE.findall(file_content)]
+    # XXX-Cedric : duration
+    duration = 0
 
     detail = ''
     for test_result in TEST_RESULT_RE.findall(file_content):
@@ -169,4 +207,5 @@ Info: %s""" % (error_title_list, success, failure, detail)
 <body>%s</body>
 </html>''' % detail
 
-    return detail, int(sucess_amount), int(failure_amount), error_title_list
+    return detail, int(sucess_amount), int(failure_amount), duration, \
+        error_title_list

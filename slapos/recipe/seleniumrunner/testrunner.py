@@ -38,17 +38,18 @@ def run(args):
       config['user'], config['password'])
 
   while True:
-    erp5_report = ERP5TestReportHandler(test_url, config['suite_name'])   
-    import pdb; pdb.set_trace()
+    erp5_report = ERP5TestReportHandler(config['test_suite_master_url'],
+        config['project'] + '@' + config['suite_name'])
     # Clean old test results
-    openUrl('%s/TestTool_cleanUpTestResults' % (config['base_url']))
+    openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (
+        config['base_url'], config['user'], config['password']))
     # TODO assert getresult is None
 
     #XXX-Cedric : clean firefox data (so that it does not load previous session)
 
-    xvfb = Popen([config['xvfb_binary'], config['display']], stdout=PIPE)
-    os.environ['DISPLAY'] = config['display']
-    sleep(10)
+    #xvfb = Popen([config['xvfb_binary'], config['display']], stdout=PIPE)
+    #os.environ['DISPLAY'] = config['display']
+    #sleep(10)
 
     command = []
     command.append(config['browser_binary'])
@@ -61,11 +62,16 @@ def run(args):
 
     # Wait for test to be finished
     while getStatus(config['base_url']) is '':
-      sleep(10)
+      sleep(1) #10
+
+    import pdb; pdb.set_trace()
+
     erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",
         "replace"))
+
     browser.kill()
-    terminateXvfb(xvfb, config['display'])
+    #terminateXvfb(xvfb, config['display'])
+    print("Test finished and report sent, sleeping.")
     sleep(3600)
 
 def openUrl(url):
