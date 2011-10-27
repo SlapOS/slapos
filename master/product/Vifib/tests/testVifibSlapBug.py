@@ -341,6 +341,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
       SlapLogout
 
       LoginDefaultUser
@@ -720,6 +724,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
       SlapLogout
 
       LoginDefaultUser
@@ -740,6 +748,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       # From B request C
       SelectRequestedReferenceC
       SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -859,6 +871,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
       SlapLogout
 
       LoginDefaultUser
@@ -879,6 +895,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       # From B request C
       SelectRequestedReferenceC
       SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -1006,6 +1026,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       # From root request B
       SelectRequestedReferenceB
       SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
       RequestComputerPartition
       Tic
       SlapLogout

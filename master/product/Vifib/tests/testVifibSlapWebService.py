@@ -893,6 +893,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict \
+      Tic \
+      RequestComputerPartition \
+      Tic \
       SlapLogout
 
       LoginDefaultUser
@@ -902,6 +906,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -1510,6 +1518,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         sequence['computer_partition_reference'])
     software_release = sequence['software_release_uri']
     software_type = sequence.get('requested_reference', 'requested_reference')
+    first = slap_computer_partition.request(software_release,
+        software_type, software_type + str(1))
+    second = slap_computer_partition.request(software_release,
+        software_type, software_type + str(2))
+    transaction.commit()
+    self.tic()
     first = slap_computer_partition.request(software_release,
         software_type, software_type + str(1))
     second = slap_computer_partition.request(software_release,
@@ -2924,6 +2938,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.assertEqual([],
         [q for q in instance_parameter_dict.keys() \
             if q not in DEFAULT_INSTANCE_DICT_PARAMETER_LIST])
+
+  def stepCheckRaisesNotFoundComputerPartitionParameterDict(self, sequence, **kw):
+    requested_slap_computer_partition = sequence['requested_slap_computer_partition']
+    self.assertRaises(slap.NotFoundError,
+      requested_slap_computer_partition.getInstanceParameterDict)
 
   def stepCheckRequestedComputerPartitionTestParameter(self, sequence, **kw):
     requested_slap_computer_partition = sequence['requested_slap_computer_partition']

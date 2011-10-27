@@ -76,6 +76,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
+      CheckRaisesNotFoundComputerPartitionParameterDict \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \
@@ -84,6 +86,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout \
       \
       SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartition \
+      Tic \
       CheckRequestedComputerPartitionCleanParameterList \
       Logout \
       \
@@ -139,6 +143,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
+      CheckRaisesNotFoundComputerPartitionParameterDict \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \
@@ -147,6 +153,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout \
       \
       SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartition \
+      Tic \
       CheckRequestedComputerPartitionCleanParameterList \
       Logout \
       \
@@ -198,6 +206,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
+      CheckRaisesNotFoundComputerPartitionParameterDict \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \
@@ -206,6 +216,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout \
       \
       SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartition \
+      Tic \
       CheckRequestedComputerPartitionCleanParameterList \
       Logout \
       \
@@ -410,6 +422,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
+      CheckRaisesNotFoundComputerPartitionParameterDict \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \
@@ -418,6 +432,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout \
       \
       SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartition \
+      Tic \
       CheckRequestedComputerPartitionRequestedParameter \
       SlapLogout \
     '
@@ -437,6 +453,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
+      CheckRaisesNotFoundComputerPartitionParameterDict \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \
@@ -445,6 +463,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout \
       \
       SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartition \
+      Tic \
       CheckRequestedComputerPartitionCleanParameterList \
       SlapLogout \
       \
@@ -505,6 +525,10 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
       SlapLogout
 
       LoginDefaultUser
@@ -529,6 +553,10 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -614,6 +642,10 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
       SlapLogout
 
       LoginDefaultUser
@@ -626,6 +658,10 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
       RequestComputerPartition
       Tic
       SlapLogout
@@ -798,6 +834,10 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
        SlapLoginCurrentSoftwareInstance
        SelectEmptyRequestedParameterDict
        SetRandomRequestedReference
+       RequestSlaveInstanceFromComputerPartition
+       Tic
+       CheckRaisesNotFoundComputerPartitionParameterDict
+       Tic
        RequestSlaveInstanceFromComputerPartition
        Tic
        SlapLogout
@@ -1074,6 +1114,10 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance \
       SetFirstSoftwareType \
       RequestComputerPartition \
+      Tic \
+      RequestComputerPartition \
+      Tic \
+      RequestComputerPartitionWithAnotherSoftwareType \
       Tic \
       RequestComputerPartitionWithAnotherSoftwareType \
       Tic \

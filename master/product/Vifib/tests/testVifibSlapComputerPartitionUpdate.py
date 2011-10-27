@@ -3,6 +3,7 @@ import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from random import random
+from slapos import slap
 
 class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
   def stepRequestSoftwareInstanceUpdate(self, sequence, **kw):
@@ -502,9 +503,25 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepRequestComputerPartitionNoTic(self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url)
+    slap_computer_partition = self.slap.registerComputerPartition(
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+    kw = dict(software_release=sequence['software_release_uri'],
+      software_type=sequence.get('requested_software_type',
+                                 'requested_software_type'),
+      partition_reference=sequence.get('requested_reference',
+        'requested_reference'),
+      partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
+
+    slap_computer_partition.request(**kw)
+
   def stepCheckActivityRequestInProgress(self, sequence, **kw):
     software_instance_uid = sequence['software_instance_uid']
-    software_type = sequence.get('software_type', 'requested_reference')
     requested_partition_reference = sequence.get('software_type', 'requested_reference')
     tag = "%s_%s_inProgress" % (software_instance_uid,
         requested_partition_reference)
@@ -518,7 +535,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = self\
         .prepare_install_requested_computer_partition_sequence_string + """
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartition
+      RequestComputerPartitionNoTic
       SlapLogout
 
       LoginDefaultUser
@@ -540,7 +557,6 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
   def stepCheckActivityPersonRequestInProgress(self, sequence, **kw):
     person_uid = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(
       'test_vifib_customer').getUid()
-    software_type = sequence.get('software_type', 'RootSoftwareInstance')
     software_title = sequence['root_software_instance_title']
     tag = "%s_%s_inProgress" % (person_uid,
                                    software_title)
