@@ -4,7 +4,8 @@ Changes
 0.32 (Unreleased)
 -----------------
 
-  * No change yet.
+  * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will 
+   configure PHP application instance when needed.
 
 0.31 (2011-10-06)
 -----------------
