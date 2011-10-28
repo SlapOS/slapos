@@ -1,0 +1,32 @@
+--- old/Makefile	2011-09-22 13:19:53.000000000 +0100
++++ new/Makefile	2011-09-23 11:29:12.405271442 +0100
+@@ -580,7 +580,6 @@
+ 	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 	@echo
+ 	@echo Do you want to continue this build anyway?  Type y or n please:
+-	@$(SH) -c 'read x; case "$$x" in y) exit 0;; *) (make nounenc;exit 1);; esac'
+ 
+ nounenc:
+ 	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+@@ -639,7 +638,7 @@
+ 	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 	@echo
+ 	@echo Do you want to build with IPv6 anyway?  Type y or n please:
+-	@$(SH) -c 'read x; case "$$x" in y) exit 0;; *) (make noip6;exit 1);; esac'
++	#@$(SH) -c 'read x; case "$$x" in y) exit 0;; *) (make noip6;exit 1);; esac'
+ 	@echo OK, I will remember that you really want to build with IPv6.
+ 	@echo You will not see this message again.
+ 	@$(TOUCH) ip6
+@@ -731,6 +730,12 @@
+ 	$(SH) -c '$(RM) an ua OSTYPE SPECIALS c-client mtest imapd ipopd mailutil mlock dmail tmail || true'
+ 	$(CD) tools;$(MAKE) clean
+ 
++install:
++	install -v -d $(CCLIENT)/cclient/include
++	ln -svf $(CCLIENT)/cclient__compile__/imap-2007f/c-client $(CCLIENT)/cclient/include
++	install -v -d $(CCLIENT)/cclient/lib
++	ln -svf $(CCLIENT)/cclient__compile__/imap-2007f/c-client/c-client.a $(CCLIENT)/cclient/lib/libc-client.a
++
+ 
+ # A monument to a hack of long ago and far away...
+ love:

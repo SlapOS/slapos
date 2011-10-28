@@ -101,12 +101,17 @@ class CertificateAuthority:
             'certificate_file')):
         print 'Created certificate %r' % parser.get('certificate', 'name')
 
-def runCertificateAuthority(args):
-  ca_conf = args[0]
+def runCertificateAuthority(ca_conf):
   ca = CertificateAuthority(ca_conf['key'], ca_conf['certificate'],
       ca_conf['openssl_binary'], ca_conf['openssl_configuration'],
       ca_conf['request_dir'])
   while True:
     ca.checkAuthority()
     ca.checkRequestDir()
+    # XXX
+    # Antoine: I really don't like that at all. It wastes useful CPU time.
+    #          I think it would be a greater idea to use pyinotify
+    #          <http://pyinotify.sourceforge.net/>
+    #          Or we could use select() with socket as well.
     time.sleep(60)
+    # end XXX

@@ -23,6 +23,8 @@ def execute_wait(args):
         ready = False
     if ready:
       break
+    # XXX: It's the same as ../ca/certificate_authoritiy.py
+    #      We should use pyinotify as well. Or select() on socket.
     time.sleep(sleep)
   os.execv(exec_list[0], exec_list + sys.argv[1:])
 
