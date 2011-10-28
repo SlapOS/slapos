@@ -62,6 +62,7 @@ class Recipe(BaseSlapRecipe):
         browser_argument_list = [],
         user           = self.parameter_dict['user'],
         password       = self.parameter_dict['password'],
+        project       = self.parameter_dict['project'],
         test_report_instance_url = \
             self.parameter_dict['test_report_instance_url'],
         etc_directory  = self.etc_directory)
