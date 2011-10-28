@@ -48,6 +48,7 @@ IMAGE_RE = re.compile('<img[^>]*?>')
 TEST_ERROR_TITLE_RE = re.compile('(?:error.gif.*?>|title status_failed"><td[^>]*>)([^>]*?)</td></tr>', re.S)
 TEST_RESULT_RE = re.compile('<div style="padding-top: 10px;">\s*<p>\s*'
                           '<img.*?</div>\s.*?</div>\s*', re.S)
+DURATION_RE = re.compile('<th[^>]*>Elapsed time \(sec\)</th>\n\s*<td[^>]*>([^<]*)')
 
 TEST_ERROR_RESULT_RE = re.compile('.*(?:error.gif|title status_failed).*', re.S)
 
@@ -113,7 +114,7 @@ class ERP5TestReportHandler:
      )
     self.connection_helper = ConnectionHelper(url)
     self.suite_name = suite_name
-    self.test_id = "20111026-18C84076DE29E8"
+    self.test_id = "20111025-1F0BF8263511D4"
 
   def reportStart(self):
     # report that test is running
@@ -125,62 +126,41 @@ class ERP5TestReportHandler:
 
   def reportFinished(self, out_file):
     # make file parsable by erp5_test_results
-    out_file, success, failure, duration, error_title_list = self.processResult(
-        out_file)
+    out_file, success, failure, duration = self.processResult(out_file)
 
-    #tempout = tempfile.mkstemp()[1]
-    #templog = tempfile.mkstemp()[1]
-    #log_lines = open(out_file, 'r').readlines()
-    #tl = open(templog, 'w')
-    #tl.write(TB_SEP + '\n')
-    #for log_line in log_lines:
-    #  starts = log_line.startswith
-    #  if starts('Ran') or starts('FAILED') or starts('OK') or starts(TB_SEP):
-    #    continue
-    #  if starts('ERROR: ') or starts('FAIL: '):
-    #    tl.write('internal-test: ' + log_line)
-    #    continue
-    #  tl.write(log_line)
-    #
-    #tl.write("----------------------------------------------------------------------\n")
-    #tl.write('Ran %s test in %.2fs\n' % (test_count, duration))
-    #if success:
-    #  tl.write('OK\n')
-    #else:
-    #  tl.write('FAILED (failures=%s)\n' % failure)
-    #tl.write(TB_SEP + '\n')
+    # XXX-Cedric : make correct display in test_result_module
+    tempcmd = tempfile.mkstemp()[1]
+    tempcmd2 = tempfile.mkstemp()[1]
+    tempout = tempfile.mkstemp()[1]
+    templog = tempfile.mkstemp()[1]
+    tl = open(templog, 'w')
+    tl.write(TB_SEP + '\n')
+    tl.write(out_file)
 
+    tl.write("----------------------------------------------------------------------\n")
+    tl.write('Ran 1 test in %.2fs\n' % duration)
+    if success:
+      tl.write('OK\n')
+    else:
+      tl.write('FAILED (failures=1)\n')
+    tl.write(TB_SEP + '\n')
+    tl.close()
+    open(tempcmd, 'w').write(""" %s""" % self.suite_name)
     # create nice zip archive
     tempzip = tempfile.mkstemp()[1]
     zip = zipfile.ZipFile(tempzip, 'w')
-
-    # temperr is dummy
-    temperr = tempfile.mkstemp()[1]
-    open(temperr, 'w')
-    i = 1
-    test_case_list = [dict(name="first", log="OK\n"), dict(name="second", log="FAILED (failures=1)\n")]
-    for test_case in test_case_list:
-      tempcmd = tempfile.mkstemp()[1]
-      tempout = tempfile.mkstemp()[1]
-      open(tempcmd, 'w').write(test_case['name'])
-      open(tempout, 'w').write(test_case['log'])
-      #XXX-Cedric : support cases for more than 9 test cases
-      zip.write(tempcmd, '%s/00%s/cmdline' % (self.suite_name, i))
-      zip.write(tempout, '%s/00%s/stderr' % (self.suite_name, i))
-      zip.write(temperr, '%s/00%s/stdout' % (self.suite_name, i))
-      os.unlink(tempcmd)
-      os.unlink(tempout)
-      i = i + 1
-
+    zip.write(tempout, '%s/001/stdout' % self.suite_name)
+    zip.write(templog, '%s/001/stderr' % self.suite_name)
+    zip.write(tempcmd, '%s/001/cmdline' % self.suite_name)
     zip.close()
-    os.unlink(temperr)
+    os.unlink(templog)
+    os.unlink(tempcmd)
+    os.unlink(tempout)
+    os.unlink(tempcmd2)
 
     # post it to ERP5
-    self.connection_helper.POST('TestResultModule_reportCompleted', dict(
-      test_report_id=self.test_id),
-      file_list=[('filepath', tempzip)]
-      )
-    import pdb; pdb.set_trace()
+    self.connection_helper.POST('TestResultModule_reportCompleted',
+        dict(test_report_id=self.test_id), file_list=[('filepath', tempzip)])
     os.unlink(tempzip)
 
   def processResult(self, out_file):
@@ -189,9 +169,7 @@ class ERP5TestReportHandler:
     failure_amount = TEST_FAILURE_RE.search(file_content).group(1)
     error_title_list = [re.compile('\s+').sub(' ', x).strip()
                     for x in TEST_ERROR_TITLE_RE.findall(file_content)]
-    # XXX-Cedric : duration
-    duration = 0
-
+    duration = DURATION_RE.search(file_content).group(1)
     detail = ''
     for test_result in TEST_RESULT_RE.findall(file_content):
       if  TEST_ERROR_RESULT_RE.match(test_result):
@@ -206,6 +184,4 @@ class ERP5TestReportHandler:
 </head>
 <body>%s</body>
 </html>''' % detail
-
-    return detail, int(sucess_amount), int(failure_amount), duration, \
-        error_title_list
+    return detail, int(sucess_amount), int(failure_amount), float(duration)

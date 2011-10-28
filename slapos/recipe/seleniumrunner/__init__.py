@@ -61,7 +61,8 @@ class Recipe(BaseSlapRecipe):
         base_url       = self.parameter_dict['url'],
         browser_argument_list = [],
         user           = self.parameter_dict['user'],
-        password       = self.parameter_dict['password'])
+        password       = self.parameter_dict['password'],
+        etc_directory  = self.etc_directory)
 
     # Check wanted browser XXX-Cedric not yet used but can be useful
     #if self.parameter_dict.get('browser', None) is None:

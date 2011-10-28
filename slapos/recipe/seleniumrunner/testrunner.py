@@ -26,9 +26,10 @@
 #############################################################################
 
 from erp5functionaltestreporthandler import ERP5TestReportHandler
+from ERP5TypeFunctionalTestCase import Xvfb, Firefox, TimeoutError
 from time import sleep
+import time
 import os
-from subprocess import Popen, PIPE
 import urllib2
 
 def run(args):
@@ -37,6 +38,9 @@ def run(args):
   test_url = assembleTestUrl(config['base_url'], config['suite_name'],
       config['user'], config['password'])
 
+  # There is no test that can take more them 24 hours
+  timeout = 2.0 * 60 * 60
+  
   while True:
     erp5_report = ERP5TestReportHandler(config['test_suite_master_url'],
         config['project'] + '@' + config['suite_name'])
@@ -45,32 +49,46 @@ def run(args):
         config['base_url'], config['user'], config['password']))
     # TODO assert getresult is None
 
-    #XXX-Cedric : clean firefox data (so that it does not load previous session)
-
     #xvfb = Popen([config['xvfb_binary'], config['display']], stdout=PIPE)
     #os.environ['DISPLAY'] = config['display']
     #sleep(10)
+    #
+    #command = []
+    #command.append(config['browser_binary'])
+    #for browser_argument in config['browser_argument_list']:
+    #  command.append(browser_argument)
+    #command.append(test_url)
+    #browser = Popen(command, stdout=PIPE)
+    #
+    #erp5_report.reportStart()
+    #
+    ## Wait for test to be finished
+    #while getStatus(config['base_url']) is '':
+    #  sleep(10)
 
-    command = []
-    command.append(config['browser_binary'])
-    for browser_argument in config['browser_argument_list']:
-      command.append(browser_argument)
-    command.append(test_url)
-    browser = Popen(command, stdout=PIPE)
-
-    erp5_report.reportStart()
-
-    # Wait for test to be finished
-    while getStatus(config['base_url']) is '':
-      sleep(1) #10
-
-    import pdb; pdb.set_trace()
+    os.environ['DISPLAY'] = config['display']
+    xvfb = Xvfb(config['xvfb_binary'], config['etc_directory'])
+    profile_dir = os.path.join(config['etc_directory'], 'profile')
+    browser = Firefox(config['browser_binary'], profile_dir, config['base_url'])
+    try:
+      start = time.time()
+      xvfb.run()
+      profile_dir = os.path.join(config['etc_directory'], 'profile')
+      browser.run(test_url , xvfb.display)
+      erp5_report.reportStart()
+      while getStatus(config['base_url']) is '':
+        time.sleep(10)
+        if (time.time() - start) > float(timeout):
+          raise TimeoutError("Test took more them %s seconds" % timeout)
+    except TimeoutError:
+      continue
+    finally:
+      browser.quit()
+      xvfb.quit()
 
     erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",
         "replace"))
 
-    browser.kill()
-    #terminateXvfb(xvfb, config['display'])
     print("Test finished and report sent, sleeping.")
     sleep(3600)
 
@@ -108,8 +126,8 @@ def assembleTestUrl(base_url, suite_name, user, password):
           base_url, suite_name, base_url, user, password)
       return test_url
 
-def terminateXvfb(process, display):
-  process.kill()
-  lock_filepath = '/tmp/.X%s-lock' % display.replace(":", "")
-  if os.path.exists(lock_filepath):
-    os.system('rm %s' % lock_filepath)
+#def terminateXvfb(process, display):
+#  process.kill()
+#  lock_filepath = '/tmp/.X%s-lock' % display.replace(":", "")
+#  if os.path.exists(lock_filepath):
+#    os.system('rm %s' % lock_filepath)
