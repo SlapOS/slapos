@@ -147,6 +147,7 @@ class ERP5TestReportHandler:
     open(tempcmd, 'w').write(""" %s""" % self.suite_name)
     # create nice zip archive
     tempzip = tempfile.mkstemp()[1]
+    # XXX-Cedric : support multiple tests
     zip = zipfile.ZipFile(tempzip, 'w')
     zip.write(tempout, '%s/001/stdout' % self.suite_name)
     zip.write(templog, '%s/001/stderr' % self.suite_name)
