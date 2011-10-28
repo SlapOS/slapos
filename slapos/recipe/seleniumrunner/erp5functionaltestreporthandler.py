@@ -114,7 +114,6 @@ class ERP5TestReportHandler:
      )
     self.connection_helper = ConnectionHelper(url)
     self.suite_name = suite_name
-    self.test_id = "20111025-1F0BF8263511D4"
 
   def reportStart(self):
     # report that test is running
