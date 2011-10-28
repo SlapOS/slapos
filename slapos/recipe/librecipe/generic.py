@@ -100,7 +100,7 @@ class GenericBaseRecipe(object):
 
   def substituteTemplate(self, template_location, mapping_dict):
     """Read from file template_location an substitute content with
-       mapping_dict douing a dummy python format."""
+       mapping_dict doing a dummy python format."""
     with open(template_location, 'r') as template:
       return template.read() % mapping_dict
 
