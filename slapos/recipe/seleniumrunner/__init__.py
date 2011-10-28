@@ -37,7 +37,7 @@ class Recipe(BaseSlapRecipe):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
 
-    self.installtestrunner(self.getDisplay())
+    self.installTestrunner(self.getDisplay())
     self.linkBinary()
 
     return self.path_list
