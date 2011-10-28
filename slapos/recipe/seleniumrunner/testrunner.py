@@ -42,7 +42,7 @@ def run(args):
   timeout = 2.0 * 60 * 60
   
   while True:
-    erp5_report = ERP5TestReportHandler(config['test_suite_master_url'],
+    erp5_report = ERP5TestReportHandler(config['test_report_instance_url'],
         config['project'] + '@' + config['suite_name'])
     # Clean old test results
     openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (

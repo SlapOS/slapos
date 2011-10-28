@@ -62,6 +62,8 @@ class Recipe(BaseSlapRecipe):
         browser_argument_list = [],
         user           = self.parameter_dict['user'],
         password       = self.parameter_dict['password'],
+        test_report_instance_url = \
+            self.parameter_dict['test_report_instance_url'],
         etc_directory  = self.etc_directory)
 
     # Check wanted browser XXX-Cedric not yet used but can be useful
