@@ -1,13 +1,13 @@
 Changes
 =======
 
-0.32 (Unreleased)
+0.32 (2011-10-28)
 -----------------
 
   * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will 
-   configure PHP application instance when needed.
+   configure PHP application instance when needed. [Alain Takoudjou Kamdem]
 
-0.31 (2011-10-06)
+0.31 (2011-10-16)
 -----------------
 
  * Split big redundant recipes into small ones. In order to factorize the code
