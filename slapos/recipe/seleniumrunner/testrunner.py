@@ -67,9 +67,9 @@ def run(args):
     #  sleep(10)
 
     os.environ['DISPLAY'] = config['display']
-    xvfb = Xvfb(config['xvfb_binary'], config['etc_directory'])
+    xvfb = Xvfb(config['etc_directory'], config['xvfb_binary'])
     profile_dir = os.path.join(config['etc_directory'], 'profile')
-    browser = Firefox(config['browser_binary'], profile_dir, config['base_url'])
+    browser = Firefox(profile_dir, config['base_url'], config['browser_binary'])
     try:
       start = time.time()
       xvfb.run()

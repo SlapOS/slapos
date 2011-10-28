@@ -69,7 +69,7 @@ class TimeoutError(Exception):
   pass
 
 class Xvfb:
-  def __init__(self, xvfb_location, fbdir):
+  def __init__(self, fbdir, xvfb_location="Xvfb"):
     self.display_list = [":%s" % i for i in range(123, 144)]
     self.display = None
     self.fbdir = fbdir
@@ -115,7 +115,7 @@ class Xvfb:
 class Browser:
 
   use_xvfb = 1
-  def __init__(self, bin_location, profile_dir, host):
+  def __init__(self, profile_dir, host, bin_location=None):
     self.bin_location = bin_location
     self.profile_dir = profile_dir
     self.host = host
@@ -175,6 +175,8 @@ class Firefox(Browser):
 
   def _run(self, url):
     # Prepare to run
+    if not self.bin_location:
+      self.bin_location = "firefox"
     self._createFile('prefs.js', self.getPrefJs())
     self._runCommand((self.bin_location, "firefox", "-no-remote",
                      "-profile", self.profile_dir, url))
