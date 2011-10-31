@@ -165,11 +165,11 @@ class BaseRecipe(BaseSlapRecipe):
     data = []
     rename = []
     rename_list = ""
-    argument = [self.options['lampconfigure_directory'].strip()]
+    argument = [self.options['lampconfigure_directory'].strip(),
+                             "-H", mysql_conf['mysql_host'], "-P", mysql_conf['mysql_port'],
+                             "-p", mysql_conf['mysql_password'], "-u", mysql_conf['mysql_user']]
     if not self.options.has_key('file_token'):
       argument = argument + ["-d", mysql_conf['mysql_database'],
-                             "-H", mysql_conf['mysql_host'], "-P", mysql_conf['mysql_port'],
-                             "-p", mysql_conf['mysql_password'], "-u", mysql_conf['mysql_user'],
                              "--table", self.options['table_name'].strip(), "--cond",
                              self.options['constraint'].strip()]
     else:
@@ -195,7 +195,7 @@ class BaseRecipe(BaseSlapRecipe):
         rename.append(cmd + [fname[0].strip(), fname[1].strip()])
         rename_list += fname[0] + "=>" + fname[1] + " "
     if self.options.has_key('chmod'):
-      chmod = ["chmod ", self.options['mode'].strip()]
+      chmod = ["chmod", self.options['mode'].strip()]
       for fname in self.options['chmod'].split(','):
         chmod.append(fname.strip())
     if self.options.has_key('script') and \
