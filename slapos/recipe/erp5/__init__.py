@@ -1159,7 +1159,7 @@ SSLCARevocationPath %(ca_crl)s"""
   def installMysqlServer(self, ip, port, database='erp5', user='user',
       test_database='test_erp5', test_user='test_user', template_filename=None,
       parallel_test_database_amount=100, mysql_conf=None, with_backup=True,
-      with_maatkit=True):
+      with_percona_toolkit=True):
     if mysql_conf is None:
       mysql_conf = {}
     backup_directory = self.createBackupDirectory('mysql')
@@ -1268,29 +1268,46 @@ SSLCARevocationPath %(ca_crl)s"""
       open(mysql_backup_cron, 'w').write('0 0 * * * ' + backup_controller)
       self.path_list.append(mysql_backup_cron)
 
-    if with_maatkit:
+    if with_percona_toolkit:
       # maatkit installation
-      for mk_script_name in (
-          'mk-variable-advisor',
-          'mk-table-usage',
-          'mk-visual-explain',
-          'mk-config-diff',
-          'mk-deadlock-logger',
-          'mk-error-log',
-          'mk-index-usage',
-          'mk-query-advisor',
+      for pt_script_name in (
+          'pt-archiver',
+          'pt-config-diff',
+          'pt-deadlock-logger',
+          'pt-duplicate-key-checker',
+          'pt-fifo-split',
+          'pt-find',
+          'pt-fk-error-logger',
+          'pt-heartbeat',
+          'pt-index-usage',
+          'pt-kill',
+          'pt-log-player',
+          'pt-online-schema-change',
+          'pt-query-advisor',
+          'pt-query-digest',
+          'pt-show-grants',
+          'pt-slave-delay',
+          'pt-slave-find',
+          'pt-slave-restart',
+          'pt-table-checksum',
+          'pt-table-sync',
+          'pt-tcp-model',
+          'pt-trend',
+          'pt-upgrade',
+          'pt-variable-advisor',
+          'pt-visual-explain',
           ):
-        mk_argument_list = [self.options['perl_binary'],
-            self.options['%s_binary' % mk_script_name],
+        pt_argument_list = [self.options['perl_binary'],
+            self.options['%s_binary' % pt_script_name],
             '--defaults-file=%s' % mysql_conf_path,
             '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
             ]
         environment = dict(PATH='%s' % self.bin_directory)
-        mk_exe = zc.buildout.easy_install.scripts([(
-          mk_script_name,'slapos.recipe.librecipe.execute', 'executee')],
+        pt_exe = zc.buildout.easy_install.scripts([(
+          pt_script_name,'slapos.recipe.librecipe.execute', 'executee')],
           self.ws, sys.executable, self.bin_directory, arguments=[
-            mk_argument_list, environment])[0]
-        self.path_list.append(mk_exe)
+            pt_argument_list, environment])[0]
+        self.path_list.append(pt_exe)
 
     # The return could be more explicit database, user ...
     return mysql_conf
