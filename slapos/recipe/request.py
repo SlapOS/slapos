@@ -25,7 +25,6 @@
 #
 ##############################################################################
 import logging
-import os
 
 from slapos import slap as slapmodule
 
