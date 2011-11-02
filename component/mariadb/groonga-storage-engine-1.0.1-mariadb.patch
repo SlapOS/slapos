@@ -1,7 +1,75 @@
-diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroonga-3345884//ha_mroonga.cc
 --- groonga-storage-engine-1.0.1/ha_mroonga.cc	2011-10-28 07:19:15.506715507 +0200
-+++ groonga-storage-engine-1.0.1/ha_mroonga.cc	2011-10-31 16:37:35.000000000 +0100
-@@ -4442,7 +4443,11 @@
++++ groonga-storage-engine-1.0.1/ha_mroonga.cc	2011-11-02 11:37:03.095096227 +0100
+@@ -77,6 +77,9 @@
+ extern "C" {
+ #endif
+ 
++/* groonga's internal functions */
++const char *grn_obj_get_value_(grn_ctx *ctx, grn_obj *obj, grn_id id, uint32 *size);
++
+ /* global variables */
+ pthread_mutex_t mrn_db_mutex;
+ pthread_mutex_t mrn_log_mutex;
+@@ -109,7 +112,6 @@
+ static bool mrn_logfile_opened = false;
+ grn_log_level mrn_log_level_default = GRN_LOG_DEFAULT_LEVEL;
+ ulong mrn_log_level = (ulong) mrn_log_level_default;
+-char mrn_default_parser_name[MRN_MAX_KEY_SIZE];
+ char *mrn_default_parser;
+ 
+ static void mrn_logger_func(int level, const char *time, const char *title,
+@@ -228,13 +230,12 @@
+           "default parser changed from '%s' to '%s'",
+           old_value, new_value);
+   grn_ctx_fin(&ctx);
+-  strcpy(mrn_default_parser_name, new_value);
+-  mrn_default_parser = mrn_default_parser_name;
++  strncpy(mrn_default_parser, new_value, MRN_MAX_KEY_SIZE - 1);
+   DBUG_VOID_RETURN;
+ }
+ 
+ static MYSQL_SYSVAR_STR(default_parser, mrn_default_parser,
+-                        PLUGIN_VAR_RQCMDARG,
++                        PLUGIN_VAR_RQCMDARG | PLUGIN_VAR_MEMALLOC,
+                         "default fulltext parser",
+                         NULL,
+                         mrn_default_parser_update,
+@@ -908,6 +909,15 @@
+                    field->charset());
+       break;
+     }
++  case MYSQL_TYPE_BLOB:
++    {
++      GRN_VOID_INIT(&buf);
++      uint32 len;
++      const char *val = grn_obj_get_value_(ctx, col, id, &len);
++      Field_blob *blob = (Field_blob *)field;
++      blob->set_ptr((uchar *)&len, (uchar *)val);
++      break;
++    }
+   default: //strings etc..
+     {
+       GRN_TEXT_INIT(&buf,0);
+@@ -1010,6 +1020,9 @@
+     goto error_allocated_open_tables_hash_init;
+   }
+ 
++  mrn_default_parser = (char *)my_malloc(MRN_MAX_KEY_SIZE, MYF(MY_WME));
++  strncpy(mrn_default_parser, MRN_PARSER_DEFAULT, MRN_MAX_KEY_SIZE - 1);
++
+   return 0;
+ 
+ error_allocated_open_tables_hash_init:
+@@ -4422,7 +4435,7 @@
+   DBUG_RETURN(error);
+ }
+ 
+-int ha_mroonga::wrapper_index_read_map(uchar * buf, const uchar * key,
++int ha_mroonga::wrapper_index_read_map(uchar *buf, const uchar *key,
+                                        key_part_map keypart_map,
+                                        enum ha_rkey_function find_flag)
+ {
+@@ -4442,7 +4455,11 @@
      MRN_SET_WRAP_TABLE_KEY(this, table);
      if (fulltext_searching)
        set_pk_bitmap();
@@ -13,7 +81,16 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroo
      MRN_SET_BASE_SHARE_KEY(share, table->s);
      MRN_SET_BASE_TABLE_KEY(this, table);
    }
-@@ -4572,6 +4577,7 @@
+@@ -4557,7 +4574,7 @@
+   DBUG_RETURN(error);
+ }
+ 
+-int ha_mroonga::index_read_map(uchar * buf, const uchar * key,
++int ha_mroonga::index_read_map(uchar *buf, const uchar *key,
+                                key_part_map keypart_map,
+                                enum ha_rkey_function find_flag)
+ {
+@@ -4572,6 +4589,7 @@
    DBUG_RETURN(error);
  }
  
@@ -21,7 +98,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroo
  int ha_mroonga::wrapper_index_read_last_map(uchar *buf, const uchar *key,
                                              key_part_map keypart_map)
  {
-@@ -4658,6 +4664,7 @@
+@@ -4658,6 +4676,7 @@
    }
    DBUG_RETURN(error);
  }
@@ -29,7 +106,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroo
  
  int ha_mroonga::wrapper_index_next(uchar *buf)
  {
-@@ -6226,7 +6233,11 @@
+@@ -6226,7 +6245,11 @@
  }
  
  ha_rows ha_mroonga::wrapper_multi_range_read_info(uint keyno, uint n_ranges,
@@ -42,7 +119,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroo
                                                    uint *flags, COST_VECT *cost)
  {
    MRN_DBUG_ENTER_METHOD();
-@@ -6236,6 +6247,9 @@
+@@ -6236,6 +6259,9 @@
    if (fulltext_searching)
      set_pk_bitmap();
    rows = wrap_handler->multi_range_read_info(keyno, n_ranges, keys,
@@ -52,7 +129,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroo
                                               bufsz, flags, cost);
    MRN_SET_BASE_SHARE_KEY(share, table->s);
    MRN_SET_BASE_TABLE_KEY(this, table);
-@@ -6243,16 +6257,26 @@
+@@ -6243,16 +6269,26 @@
  }
  
  ha_rows ha_mroonga::storage_multi_range_read_info(uint keyno, uint n_ranges,
@@ -80,7 +157,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroo
                                            uint *bufsz, uint *flags,
                                            COST_VECT *cost)
  {
-@@ -6261,9 +6285,15 @@
+@@ -6261,9 +6297,15 @@
    if (share->wrapper_mode)
    {
      rows = wrapper_multi_range_read_info(keyno, n_ranges, keys,
@@ -96,7 +173,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroo
                                           bufsz, flags, cost);
    }
    DBUG_RETURN(rows);
-@@ -6315,7 +6345,7 @@
+@@ -6315,7 +6357,7 @@
    DBUG_RETURN(error);
  }
  
@@ -105,7 +182,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroo
  {
    MRN_DBUG_ENTER_METHOD();
    int error = 0;
-@@ -6329,14 +6359,14 @@
+@@ -6329,14 +6371,14 @@
    DBUG_RETURN(error);
  }
  
@@ -122,24 +199,35 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.cc mroonga-mroo
  {
    MRN_DBUG_ENTER_METHOD();
    int error = 0;
-diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.h groonga-storage-engine-1.0.1/ha_mroonga.h
 --- groonga-storage-engine-1.0.1/ha_mroonga.h	2011-10-27 12:31:36.859277054 +0200
-+++ groonga-storage-engine-1.0.1/ha_mroonga.h	2011-10-31 16:37:35.000000000 +0100
-@@ -47,11 +47,12 @@
++++ groonga-storage-engine-1.0.1/ha_mroonga.h	2011-11-02 11:37:03.095096227 +0100
+@@ -47,18 +47,22 @@
  #  define MRN_HANDLER_HAVE_ADD_INDEX 1
  #endif
  
 -#if (MYSQL_VERSION_ID >= 50600) || \
+-    (defined(MRN_MARIADB_P) && MYSQL_VERSION_ID >= 50302)
+-#  define MRN_HANDLER_HAVE_HA_CLOSE 1
 +#if (MYSQL_VERSION_ID >= 50603) || \
-     (defined(MRN_MARIADB_P) && MYSQL_VERSION_ID >= 50302)
- #  define MRN_HANDLER_HAVE_HA_CLOSE 1
++    (defined(MRN_MARIADB_P) && MYSQL_VERSION_ID >= 50209)
  #  define MRN_HANDLER_HAVE_HA_RND_NEXT 1
  #  define MRN_HANDLER_HAVE_HA_RND_POS 1
 +#  define MRN_HANDLER_HAVE_HA_INDEX_READ_MAP 1
  #  define MRN_HANDLER_HAVE_HA_INDEX_READ_IDX_MAP 1
  #  define MRN_HANDLER_HAVE_HA_INDEX_NEXT 1
  #  define MRN_HANDLER_HAVE_HA_INDEX_PREV 1
-@@ -66,6 +67,14 @@
+ #  define MRN_HANDLER_HAVE_HA_INDEX_FIRST 1
+ #  define MRN_HANDLER_HAVE_HA_INDEX_LAST 1
+ #  define MRN_HANDLER_HAVE_HA_INDEX_NEXT_SAME 1
++#endif
+ 
++#if (MYSQL_VERSION_ID >= 50603) || \
++    (defined(MRN_MARIADB_P) && MYSQL_VERSION_ID >= 50302)
++#  define MRN_HANDLER_HAVE_HA_CLOSE 1
+ #  define MRN_HANDLER_HAVE_MULTI_RANGE_READ 1
+ #endif
+ 
+@@ -66,6 +70,14 @@
  #  define MRN_HANDLER_HAVE_HA_INPLACE_INDEX_CHANGE
  #endif
  
@@ -154,7 +242,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.h groonga-stora
  #if MYSQL_VERSION_ID < 50600
    typedef Item COND;
  #endif
-@@ -74,6 +83,10 @@
+@@ -74,6 +86,10 @@
    typedef MYSQL_ERROR Sql_condition;
  #endif
  
@@ -165,7 +253,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.h groonga-stora
  class ha_mroonga;
  
  /* structs */
-@@ -213,11 +226,15 @@
+@@ -213,11 +229,15 @@
    ha_rows records_in_range(uint inx, key_range *min_key, key_range *max_key);
    int index_init(uint idx, bool sorted);
    int index_end();
@@ -181,7 +269,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.h groonga-stora
  #ifndef MRN_HANDLER_HAVE_HA_INDEX_NEXT
    int index_next(uchar *buf);
  #endif
-@@ -261,11 +278,14 @@
+@@ -261,11 +281,14 @@
                                        uint n_ranges, uint *bufsz,
                                        uint *flags, COST_VECT *cost);
    ha_rows multi_range_read_info(uint keyno, uint n_ranges, uint keys,
@@ -197,7 +285,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.h groonga-stora
  #else // MRN_HANDLER_HAVE_MULTI_RANGE_READ
    int read_multi_range_first(KEY_MULTI_RANGE **found_range_p,
                               KEY_MULTI_RANGE *ranges,
-@@ -321,6 +341,11 @@
+@@ -321,6 +344,11 @@
  #ifdef MRN_HANDLER_HAVE_HA_RND_POS
    int rnd_pos(uchar *buf, uchar *pos);
  #endif
@@ -209,7 +297,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.h groonga-stora
  #ifdef MRN_HANDLER_HAVE_HA_INDEX_NEXT
    int index_next(uchar *buf);
  #endif
-@@ -469,10 +494,12 @@
+@@ -469,10 +497,12 @@
    int storage_index_read_map(uchar *buf, const uchar *key,
                               key_part_map keypart_map,
                               enum ha_rkey_function find_flag);
@@ -222,7 +310,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.h groonga-stora
    int wrapper_index_next(uchar *buf);
    int storage_index_next(uchar *buf);
    int wrapper_index_prev(uchar *buf);
-@@ -533,9 +560,15 @@
+@@ -533,9 +563,15 @@
                                                uint *flags,
                                                COST_VECT *cost);
    ha_rows wrapper_multi_range_read_info(uint keyno, uint n_ranges, uint keys,
@@ -238,7 +326,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.h groonga-stora
                                          uint *bufsz, uint *flags,
                                          COST_VECT *cost);
    int wrapper_multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
-@@ -544,8 +577,8 @@
+@@ -544,8 +580,8 @@
    int storage_multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
                                      uint n_ranges, uint mode,
                                      HANDLER_BUFFER *buf);
@@ -249,9 +337,8 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/ha_mroonga.h groonga-stora
  #else // MRN_HANDLER_HAVE_MULTI_RANGE_READ
    int wrapper_read_multi_range_first(KEY_MULTI_RANGE **found_range_p,
                                       KEY_MULTI_RANGE *ranges,
-diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/test/run-sql-test.sh groonga-storage-engine-1.0.1/test/run-sql-test.sh
 --- groonga-storage-engine-1.0.1/test/run-sql-test.sh	2011-09-27 10:43:29.093290682 +0200
-+++ groonga-storage-engine-1.0.1/test/run-sql-test.sh	2011-10-31 16:37:35.000000000 +0100
++++ groonga-storage-engine-1.0.1/test/run-sql-test.sh	2011-11-02 11:37:03.099096256 +0100
 @@ -24,12 +24,20 @@
  source_test_suites_dir="${source_mysql_test_dir}/suite"
  build_test_suites_dir="${build_mysql_test_dir}/suite"
@@ -263,7 +350,7 @@ diff -ur '--exclude=doc' groonga-storage-engine-1.0.1/test/run-sql-test.sh groon
  	    mkdir -p "${build_test_suites_dir}"
  	fi
  	;;
-+    5.3.*-MariaDB*)
++    *-MariaDB*)
 +	if ! test -d "${build_test_suites_dir}"; then
 +	    ln -s "${source_test_suites_dir}" "${build_test_suites_dir}"
 +	fi
