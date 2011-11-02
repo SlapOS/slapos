@@ -258,7 +258,8 @@ class Recipe(BaseSlapRecipe):
       'slapos.recipe.librecipe.execute',
       'execute_with_signal_translation')], self.ws,
       sys.executable, self.wrapper_directory,
-      arguments=[self.options['cloudooo_paster'].strip(), 'serve', config_file]))
+      arguments=[self.options['cloudooo_paster'].strip(), 'serve', '--log-file',
+      '%s/%s'%(self.log_directory, 'cloudooo.log'),config_file]))
     return {
       name + '_conf': config_file,
       name + '_port': conversion_server_dict['port'],
