@@ -75,13 +75,18 @@ class Recipe(object):
       options['name'], partition_parameter_kw=partition_parameter_kw,
         filter_kw=filter_kw)
 
+    self.failed = None
     for param in self.return_parameters:
       try:
-        options['connection-%s' % param] = instance.getConnectionParameter(param)
+        options['connection-%s' % param] = str(instance.getConnectionParameter(param))
       except slapmodule.NotFoundError:
         options['connection-%s' % param] = ''
+        if self.failed is None:
+          self.failed = param
 
   def install(self):
+    if self.failed is not None:
+      raise KeyError("Connection parameter %r not found." % self.failed)
     return []
 
   update = install
