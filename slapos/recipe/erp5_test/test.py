@@ -53,7 +53,7 @@ def runUnitTest(args):
   d = args[0]
   env['OPENSSL_BINARY'] = d['openssl_binary']
   env['TEST_CA_PATH'] = d['test_ca_path']
-  env['PATH'] = ':'.join([d['prepend_path']] + os.environ['PATH'].split(':'))
+  env['PATH'] = ':'.join([d['prepend_path']] + os.environ.get('PATH', '').split(':'))
   env['INSTANCE_HOME'] = d['instance_home']
   env['REAL_INSTANCE_HOME'] = d['instance_home']
   # Deal with Shebang size limitation
