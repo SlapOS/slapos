@@ -49,23 +49,6 @@ def run(args):
         config['base_url'], config['user'], config['password']))
     # TODO assert getresult is None
 
-    #xvfb = Popen([config['xvfb_binary'], config['display']], stdout=PIPE)
-    #os.environ['DISPLAY'] = config['display']
-    #sleep(10)
-    #
-    #command = []
-    #command.append(config['browser_binary'])
-    #for browser_argument in config['browser_argument_list']:
-    #  command.append(browser_argument)
-    #command.append(test_url)
-    #browser = Popen(command, stdout=PIPE)
-    #
-    #erp5_report.reportStart()
-    #
-    ## Wait for test to be finished
-    #while getStatus(config['base_url']) is '':
-    #  sleep(10)
-
     os.environ['DISPLAY'] = config['display']
     xvfb = Xvfb(config['etc_directory'], config['xvfb_binary'])
     profile_dir = os.path.join(config['etc_directory'], 'profile')
@@ -125,9 +108,3 @@ def assembleTestUrl(base_url, suite_name, user, password):
           "resultsUrl=%s/postResults&auto=on&__ac_name=%s&__ac_password=%s" % (
           base_url, suite_name, base_url, user, password)
       return test_url
-
-#def terminateXvfb(process, display):
-#  process.kill()
-#  lock_filepath = '/tmp/.X%s-lock' % display.replace(":", "")
-#  if os.path.exists(lock_filepath):
-#    os.system('rm %s' % lock_filepath)
