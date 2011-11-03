@@ -1,0 +1,88 @@
+diff -crB phpbms/install/createtables.sql phpbms_timestamp/install/createtables.sql
+*** phpbms/install/createtables.sql	2009-12-31 20:36:45.000000000 +0000
+--- phpbms_timestamp/install/createtables.sql	2011-11-03 12:47:29.000000000 +0000
+***************
+*** 36,42 ****
+    createdby int(11) NOT NULL default '0',
+    modifiedby int(11) default '0',
+    creationdate datetime NOT NULL default '0000-00-00 00:00:00',
+!   modifieddate timestamp(14) NOT NULL,
+    `roleid` VARCHAR(64),
+    PRIMARY KEY  (id),
+    UNIQUE KEY (`uuid`)
+--- 36,42 ----
+    createdby int(11) NOT NULL default '0',
+    modifiedby int(11) default '0',
+    creationdate datetime NOT NULL default '0000-00-00 00:00:00',
+!   modifieddate timestamp NOT NULL,
+    `roleid` VARCHAR(64),
+    PRIMARY KEY  (id),
+    UNIQUE KEY (`uuid`)
+***************
+*** 116,122 ****
+    createdby int(11) NOT NULL default '0',
+    creationdate datetime NOT NULL default '0000-00-00 00:00:00',
+    modifiedby int(11) default '0',
+!   modifieddate timestamp(14) NOT NULL,
+    inherint tinyint(1) NOT NULL default '0',
+    PRIMARY KEY  (id),
+    UNIQUE KEY (`uuid`),
+--- 116,122 ----
+    createdby int(11) NOT NULL default '0',
+    creationdate datetime NOT NULL default '0000-00-00 00:00:00',
+    modifiedby int(11) default '0',
+!   modifieddate timestamp NOT NULL,
+    inherint tinyint(1) NOT NULL default '0',
+    PRIMARY KEY  (id),
+    UNIQUE KEY (`uuid`),
+***************
+*** 267,273 ****
+    createdby int(11) NOT NULL default '0',
+    modifiedby int(11) default '0',
+    lastlogin datetime default NULL,
+!   modifieddate timestamp(14) NOT NULL,
+    email varchar(128) default '',
+    phone varchar(32) default '',
+    department varchar(128) default '',
+--- 267,273 ----
+    createdby int(11) NOT NULL default '0',
+    modifiedby int(11) default '0',
+    lastlogin datetime default NULL,
+!   modifieddate timestamp NOT NULL,
+    email varchar(128) default '',
+    phone varchar(32) default '',
+    department varchar(128) default '',
+***************
+*** 318,324 ****
+    `createdby` int(11) default '0',
+    `creationdate` datetime default '0000-00-00 00:00:00',
+    `modifiedby` int(11) default '0',
+!   `modifieddate` timestamp(14) NOT NULL,
+    `roleid` VARCHAR(64),
+    `custom1` DOUBLE,
+    `custom2` DOUBLE,
+--- 318,324 ----
+    `createdby` int(11) default '0',
+    `creationdate` datetime default '0000-00-00 00:00:00',
+    `modifiedby` int(11) default '0',
+!   `modifieddate` timestamp NOT NULL,
+    `roleid` VARCHAR(64),
+    `custom1` DOUBLE,
+    `custom2` DOUBLE,
+***************
+*** 340,346 ****
+    `createdby` int(11) default '0',
+    `creationdate` datetime default '0000-00-00 00:00:00',
+    `modifiedby` int(11) default '0',
+!   `modifieddate` timestamp(14) NOT NULL,
+    PRIMARY KEY  (`id`),
+    KEY `therecord` (`recordid`),
+    KEY `thetable` (`tabledefid`),
+--- 340,346 ----
+    `createdby` int(11) default '0',
+    `creationdate` datetime default '0000-00-00 00:00:00',
+    `modifiedby` int(11) default '0',
+!   `modifieddate` timestamp NOT NULL,
+    PRIMARY KEY  (`id`),
+    KEY `therecord` (`recordid`),
+    KEY `thetable` (`tabledefid`),
