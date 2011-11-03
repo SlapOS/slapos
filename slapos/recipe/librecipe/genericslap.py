@@ -26,9 +26,6 @@
 ##############################################################################
 from slapos import slap
 import time
-import re
-import urlparse
-import urllib
 
 from generic import GenericBaseRecipe
 
@@ -37,8 +34,8 @@ class GenericSlapRecipe(GenericBaseRecipe):
 
   def __init__(self, buildout, name, options):
     """Default initialisation"""
-    options['eggs'] = 'slapos.cookbook'
     GenericBaseRecipe.__init__(self, buildout, name, options)
+    options['eggs'] = 'slapos.cookbook'
     self.slap = slap.slap()
 
     # SLAP related information
@@ -81,37 +78,5 @@ class GenericSlapRecipe(GenericBaseRecipe):
     raise NotImplementedError('Shall be implemented by subclass')
 
   def setConnectionUrl(self, *args, **kwargs):
-    url = self._unparseUrl(*args, **kwargs)
+    url = self.unparseUrl(*args, **kwargs)
     self.setConnectionDict(dict(url=url))
-
-  def _unparseUrl(self, scheme, host, path='', params='', query='',
-                  fragment='', port=None, auth=None):
-    """Join a url with auth, host, and port.
-
-    * auth can be either a login string or a tuple (login, password).
-    * if the host is an ipv6 address, brackets will be added to surround it.
-
-    """
-    # XXX-Antoine: I didn't find any standard module to join an url with
-    # login, password, ipv6 host and port.
-    # So instead of copy and past in every recipe I factorized it right here.
-    netloc = ''
-    if auth is not None:
-      auth = tuple(auth)
-      netloc = urllib.quote(str(auth[0])) # Login
-      if len(auth) > 1:
-        netloc += ':%s' % urllib.quote(auth[1]) # Password
-      netloc += '@'
-
-    # host is an ipv6 address whithout brackets
-    if ':' in host and not re.match(r'^\[.*\]$', host):
-      netloc += '[%s]' % host
-    else:
-      netloc += str(host)
-
-    if port is not None:
-      netloc += ':%s' % port
-
-    url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
-
-    return url
