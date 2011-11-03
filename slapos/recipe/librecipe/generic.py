@@ -42,11 +42,12 @@ class GenericBaseRecipe(object):
   def __init__(self, buildout, name, options):
     """Recipe initialisation"""
     self.name = name
-    self.options = options
     self.buildout = buildout
     self.logger = logging.getLogger(name)
 
+    self.options = options.copy() # If _options use self.optionIsTrue
     self._options(options) # Options Hook
+    self.options = options.copy() # Updated options dict
 
     self._ws = self.getWorkingSet()
 
