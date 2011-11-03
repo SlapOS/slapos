@@ -77,10 +77,11 @@ if custom_trade_condition is None:\n
   custom_trade_condition = portal.sale_trade_condition_module.newContent(specialise_value=trade_condition,\n
                                                                     destination_section_uid=order.getDestinationSectionUid(),\n
                                                                     title="ViFiB Custom Conditions")\n
-  custom_trade_condition.validate()\n
 \n
 if order.getSpecialise() != custom_trade_condition.getRelativeUrl():\n
   order.setSpecialiseValue(custom_trade_condition, portal_type="Sale Trade Condition")\n
+if portal.portal_workflow.isTransitionPossible(custom_trade_condition, \'validate\'):\n
+  custom_trade_condition.validate()\n
 </string> </value>
         </item>
         <item>

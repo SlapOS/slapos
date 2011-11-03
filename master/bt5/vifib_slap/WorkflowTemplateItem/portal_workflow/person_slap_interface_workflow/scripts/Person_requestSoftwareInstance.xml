@@ -154,14 +154,8 @@ if (request_software_instance is None):\n
           wf_id=\'person_slap_interface_workflow\')\n
         open_order = portal.restrictedTraverse(open_order_url)\n
       else:\n
-        open_order = portal.open_sale_order_module.newContent(\n
-              destination_section_uid=person.getUid(),\n
-              destination_decision_uid=person.getUid(),\n
-              title="ViFiB Open Order")\n
-        person.createOpenOrder(open_order_url=open_order.getRelativeUrl())\n
-        open_order.order()\n
-        open_order.validate()\n
-\n
+        raise ValueError(\'Person has no open order created\')\n
+  \n
     open_order.newContent(\n
       portal_type="Open Sale Order Line",\n
       title=software_title,\n

@@ -6,11 +6,11 @@
   <role id='F-SALE_G-COMPANY'>
    <item>Assignor</item>
   </role>
-  <role id='romain'>
-   <item>Owner</item>
-  </role>
   <role id='test_hr_admin'>
    <item>Associate</item>
+  </role>
+  <role id='zope'>
+   <item>Owner</item>
   </role>
  </local_roles>
 </local_roles_item>

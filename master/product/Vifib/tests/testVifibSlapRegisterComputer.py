@@ -55,7 +55,10 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = '\
       LoginTestVifibAdmin \
-      CreateComputer \
+      CustomerRegisterNewComputer \
+      Tic \
+      SetComputerCoordinatesFromComputerTitle \
+      ComputerSetAllocationScopeOpenPublic \
       Tic \
       Logout \
       \
@@ -73,12 +76,18 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = '\
       LoginTestVifibAdmin \
-      CreateComputer \
+      CustomerRegisterNewComputer \
+      Tic \
+      SetComputerCoordinatesFromComputerTitle \
+      ComputerSetAllocationScopeOpenPublic \
       Tic \
       Logout \
       \
       LoginTestVifibAdmin \
-      CreateComputer \
+      CustomerRegisterNewComputer \
+      Tic \
+      SetComputerCoordinatesFromComputerTitle \
+      ComputerSetAllocationScopeOpenPublic \
       Tic \
       Logout \
       \

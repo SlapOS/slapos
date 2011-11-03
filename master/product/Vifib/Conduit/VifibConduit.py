@@ -4,6 +4,7 @@ from zLOG import LOG, INFO
 from OFS.Traversable import NotFound
 from lxml import etree
 from DateTime import DateTime
+from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
 parser = etree.XMLParser(remove_blank_text=True)
 
 class ReportParser:
@@ -102,6 +103,10 @@ class VifibConduit:
   def __init__(self):
     pass
 
+  @UnrestrictedMethod
+  def _applyTradeCondition(self, delivery_line):
+    delivery_line.SaleOrder_applySaleTradeCondition(batch_mode=1)
+
   def addNode(self, object=None, xml=None, computer_id=None):
     """
     Creates a Sale Packing List from a XML report sent by a node
@@ -170,8 +175,7 @@ class VifibConduit:
           quantity = movement['quantity'],
           aggregate_list = instance_setup_packing_list_line.getAggregateList())
 
-        usage_report_sale_packing_list_document_line.SaleOrder_applySaleTradeCondition(
-          batch_mode=1)
+        self._applyTradeCondition(usage_report_sale_packing_list_document_line)
 
       usage_report_sale_packing_list_document.confirm()
       usage_report_sale_packing_list_document.start()

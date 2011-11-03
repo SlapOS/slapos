@@ -49,10 +49,6 @@
             <value> <string>test_vifib_admin</string> </value>
         </item>
         <item>
-            <key> <string>last_id</string> </key>
-            <value> <string>2</string> </value>
-        </item>
-        <item>
             <key> <string>last_name</string> </key>
             <value> <string>Admin</string> </value>
         </item>

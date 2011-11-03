@@ -1,12 +1,12 @@
 <type_roles>
-  <role id='Auditor'>
-   <property id='title'>Computer</property>
-   <multi_property id='category'>role/computer</multi_property>
-   <multi_property id='base_category'>role</multi_property>
-  </role>
   <role id='Auditor; Author'>
    <property id='title'>Member</property>
    <multi_property id='category'>role/member</multi_property>
+   <multi_property id='base_category'>role</multi_property>
+  </role>
+  <role id='Auditor'>
+   <property id='title'>Member</property>
+   <multi_property id='category'>role/instance</multi_property>
    <multi_property id='base_category'>role</multi_property>
   </role>
 </type_roles>

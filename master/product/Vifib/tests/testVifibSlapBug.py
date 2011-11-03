@@ -219,7 +219,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create first computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -313,7 +316,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       # Now prepare second computer
 
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -571,7 +577,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create first computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -682,7 +691,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create the computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -830,7 +842,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create the computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -987,7 +1002,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create the computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer

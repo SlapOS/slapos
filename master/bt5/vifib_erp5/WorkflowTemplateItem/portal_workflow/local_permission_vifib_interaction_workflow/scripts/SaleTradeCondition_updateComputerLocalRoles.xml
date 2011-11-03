@@ -50,24 +50,21 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_packing_list = state_change[\'object\']\n
+            <value> <string>sale_trade_condition = state_change[\'object\']\n
 \n
-sale_order = sale_packing_list.getCausalityValue(portal_type="Sale Order")\n
-if sale_order is None:\n
-  setup_service_relative_url = sale_packing_list.portal_preferences.getPreferredInstanceSetupResource()\n
-\n
-  for sale_packing_list_line in sale_packing_list.contentValues(\n
-                                  portal_type="Sale Packing List Line"):\n
-    if sale_packing_list_line.getResource() == setup_service_relative_url:\n
-      computer_partition = sale_packing_list_line.getAggregateValue(portal_type=["Computer Partition"])\n
-      if computer_partition is None:\n
-        raise ValueError("Sale Packing List Line \'%s\' should have a computer partition aggregated" % sale_packing_list_line.getRelativeUrl())\n
-      else:\n
-        # Slave instance do not change state of computer partitions.\n
-        if sale_packing_list_line.getAggregateValue(portal_type=["Slave Instance"]) is None:\n
-          # Mark computer partition as busy\n
-          # This method should be always callable in this step to prevent having 2 packing list related to the same computer partition\n
-          computer_partition.markBusy()\n
+for sale_supply_line in sale_trade_condition.contentValues(portal_type="Sale Supply Line"):\n
+  for computer in sale_supply_line.getAggregateValueList(portal_type="Computer"):\n
+    tag = \'%s_related_document_reindex\' % computer.getPath()\n
+    computer.activate(activity=\'SQLQueue\', tag=tag, after_path_and_method_id=(sale_trade_condition.getPath(),\n
+      (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))\n
+    ).serialize()\n
+    computer.activate(activity=\'SQLQueue\', tag=tag, after_path_and_method_id=(sale_supply_line.getPath(),\n
+      (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))\n
+    ).serialize()\n
+    computer.activate(activity=\'SQLQueue\', tag=tag, after_path_and_method_id=(computer.getPath(),\n
+      (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))\n
+    ).serialize()\n
+    computer.activate(after_tag=tag).updateLocalRolesOnSecurityGroups()\n
 </string> </value>
         </item>
         <item>
@@ -75,8 +72,16 @@ if sale_order is None:\n
             <value> <string>state_change</string> </value>
         </item>
         <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
-            <value> <string>SalePackingList_markComputerPartitionBusy</string> </value>
+            <value> <string>SaleTradeCondition_updateComputerLocalRoles</string> </value>
         </item>
       </dictionary>
     </pickle>

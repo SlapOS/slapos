@@ -13,7 +13,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       **kw):
     software_release = sequence['software_release_uri']
     self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
+    self.slap.initializeConnection(self.server_url, timeout=None)
     open_order = self.slap.registerOpenOrder()
     open_order.request(
        software_release=software_release,
@@ -27,7 +27,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
   def stepPersonRequestSlapSoftwareInstance(self, sequence, **kw):
     software_release = sequence['software_release_uri']
     self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
+    self.slap.initializeConnection(self.server_url, timeout=None)
     open_order = self.slap.registerOpenOrder()
     requested_slap_computer_partition = open_order.request(
        software_release=software_release,
@@ -194,7 +194,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
                                                     self, sequence, **kw):
     software_release = sequence['software_release_uri']
     self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
+    self.slap.initializeConnection(self.server_url, timeout=None)
     open_order = self.slap.registerOpenOrder()
     requested_slap_computer_partition = open_order.request(
        software_release=software_release,
@@ -207,7 +207,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
                                                     self, sequence, **kw):
     software_release = sequence['software_release_uri']
     self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
+    self.slap.initializeConnection(self.server_url, timeout=None)
     open_order = self.slap.registerOpenOrder()
     requested_slap_computer_partition = open_order.request(
        software_release=software_release,

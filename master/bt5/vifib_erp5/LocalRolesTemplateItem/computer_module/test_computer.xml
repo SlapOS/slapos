@@ -3,15 +3,6 @@
   <role id='ERP5TypeTestCase'>
    <item>Owner</item>
   </role>
-  <role id='R-COMPUTER'>
-   <item>Auditor</item>
-  </role>
-  <role id='R-INSTANCE'>
-   <item>Auditor</item>
-  </role>
-  <role id='R-MEMBER'>
-   <item>Auditor</item>
-  </role>
   <role id='test_computer'>
    <item>Assignor</item>
   </role>

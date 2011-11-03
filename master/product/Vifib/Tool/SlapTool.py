@@ -30,6 +30,8 @@
 
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
+from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
+from Products.ERP5Security.ERP5UserManager import SUPER_USER
 from OFS.Traversable import NotFound
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
@@ -138,18 +140,18 @@ class SlapTool(BaseTool):
 
     Reuses slap library for easy marshalling.
     """
-    computer_document = self._getComputerDocument(computer_id)
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
-
     slap_computer = Computer(computer_id)
-    slap_computer._software_release_list = \
-           self._getSoftwareReleaseValueListForComputer(computer_document)
+    parent_uid = self._getComputerUidByReference(computer_id)
 
     slap_computer._computer_partition_list = []
-    for computer_partition_document in computer_document.contentValues(
-                                          portal_type="Computer Partition"):
+    slap_computer._software_release_list = \
+         self._getSoftwareReleaseValueListForComputer(computer_id)
+    for computer_partition in self.getPortalObject().portal_catalog(
+                    parent_uid=parent_uid,
+                    portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
-          self._getSlapPartitionByPackingList(computer_partition_document))
+          self._getSlapPartitionByPackingList(computer_partition.getObject()))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -828,16 +830,20 @@ class SlapTool(BaseTool):
         validation_state="validated",
         reference=computer_reference)
 
+  @UnrestrictedMethod
+  def _getComputerUidByReference(self, computer_reference):
+    return self._getComputerDocument(computer_reference).getUid()
+
   def _getComputerPartitionDocument(self, computer_reference,
                                     computer_partition_reference):
     """
     Get the computer partition defined in an available computer
     """
     # Related key might be nice
-    computer = self._getComputerDocument(computer_reference)
     return self._getDocument(portal_type='Computer Partition',
                              reference=computer_partition_reference,
-                             parent_uid=computer.getUid())
+                             parent_uid=self._getComputerUidByReference(
+                                computer_reference))
 
   def _getUsageReportServiceDocument(self):
     service_document = self.Base_getUsageReportServiceDocument()
@@ -871,17 +877,20 @@ class SlapTool(BaseTool):
       else:
         return software_instance
 
+  @UnrestrictedMethod
   def _getSalePackingListLineAsSoftwareInstance(self, sale_packing_list_line):
     merged_dict = sale_packing_list_line.\
-      SalePackinListLine_asSoftwareInstnaceComputerPartitionMergedDict()
+        SalePackinListLine_asSoftwareInstnaceComputerPartitionMergedDict()
     if merged_dict is None:
       LOG('SlapTool._getSalePackingListLineAsSoftwareInstance', INFO,
         '%s returned no information' % sale_packing_list_line.getRelativeUrl())
       raise Unauthorized
     return merged_dict
 
-  def _getSoftwareReleaseValueListForComputer(self, computer_document):
+  @UnrestrictedMethod
+  def _getSoftwareReleaseValueListForComputer(self, computer_reference):
     """Returns list of Software Releases documentsfor computer"""
+    computer_document = self._getComputerDocument(computer_reference)
     portal = self.getPortalObject()
 
     state_list = []
@@ -889,7 +898,6 @@ class SlapTool(BaseTool):
     state_list.extend(portal.getPortalTransitInventoryStateList())
 
     software_release_list = []
-    computer_reference = computer_document.getReference()
     for software_release_url_string in computer_document\
       .Computer_getSoftwareReleaseUrlStringList(state_list):
       software_release_response = SoftwareRelease(

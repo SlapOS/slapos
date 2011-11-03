@@ -62,7 +62,7 @@ return (\n
   # Person security\n
   (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'function\', \'group\']),\n
   (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'role\']),\n
-  (\'ERP5Type_getPersonSecurityFromHostingSubscription\', [\'aggregate\']),\n
+  # (\'ERP5Type_getPersonSecurityFromHostingSubscription\', [\'aggregate\']),\n
 \n
   # Computer security\n
   (\'ERP5Type_getComputerSecurityCategory\', [\'role\']),\n
@@ -70,6 +70,11 @@ return (\n
   # Instance security\n
   (\'ERP5Type_getSoftwareInstanceSecurityCategory\', [\'role\']),\n
   (\'ERP5Type_getSoftwareInstanceSecurityCategory\', [\'aggregate\']),\n
+\n
+  # Person + Instance additional secutity\n
+  (\'ERP5Type_getSecurityCategoryForPersonSoftwareInstance\', [\'role\']),\n
+  (\'ERP5Type_getSecurityCategoryFromRelatedOpenOrder\', [\'aggregate\']),\n
+\n
 )\n
 </string> </value>
         </item>

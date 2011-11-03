@@ -51,6 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>computer = state_change[\'object\']\n
+computer.edit(allocation_scope=\'open/personal\')\n
 portal = computer.getPortalObject()\n
 \n
 internal_packing_list_url = context.portal_workflow.getInfoFor(\n
@@ -62,6 +63,23 @@ internal_packing_list = portal.restrictedTraverse(internal_packing_list_url)\n
 # portal.portal_workflow.doActionFor(internal_packing_list, \'deliver_action\')\n
 internal_packing_list.deliver()\n
 portal.portal_workflow.doActionFor(computer, \'validate_action\')\n
+\n
+# Create a sale packing to restrict the computer usage by default to only its administrator\n
+trade_condition_portal_type = "Sale Trade Condition"\n
+person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
+sale_trade_condition_module = portal.getDefaultModule(trade_condition_portal_type)\n
+sale_trade_condition = sale_trade_condition_module.newContent(\n
+  portal_type=trade_condition_portal_type,\n
+  destination_section_value=person,\n
+  source_section_value=person,\n
+  title="%s (%s) supply condition" % (computer.getTitle(), computer.getReference()),\n
+)\n
+sale_trade_condition.newContent(\n
+  portal_type="Sale Supply Line",\n
+  aggregate_value=computer,\n
+  resource=portal.portal_preferences.getPreferredInstanceSetupResource(),\n
+)\n
+sale_trade_condition.validate()\n
 </string> </value>
         </item>
         <item>

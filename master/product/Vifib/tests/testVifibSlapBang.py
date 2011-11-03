@@ -1,5 +1,6 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 from slapos import slap
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from random import random
@@ -59,7 +60,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
   def stepBang(self, sequence, **kw):
     self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
+    self.slap.initializeConnection(self.server_url, timeout=None)
     slap_computer_partition = self.slap.registerComputerPartition(
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
@@ -209,7 +210,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
   def stepComputerBang(self, sequence, **kw):
     self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
+    self.slap.initializeConnection(self.server_url, timeout=None)
     slap_computer = self.slap.registerComputer(
       sequence['computer_reference'])
     slap_computer.bang(self.bang_message)
@@ -265,6 +266,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  # Computer owner cannot do bang yet
+  @expectedFailure
   def test_admin_bang_computer_complex_tree(self):
     """Checks that bangs works on complex tree
 

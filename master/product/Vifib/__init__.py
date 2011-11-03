@@ -42,6 +42,7 @@ portal_tools = ( SlapTool.SlapTool, CertificateAuthorityTool.CertificateAuthorit
 from Products.PluggableAuthService.PluggableAuthService import registerMultiPlugin
 
 import VifibMachineAuthenticationPlugin
+import VifibShadowAuthenticationPlugin
 
 def initialize(context):
   import Document
@@ -59,5 +60,15 @@ def initialize(context):
                          , icon='www/portal.gif'
                          )
 
+  context.registerClass( VifibShadowAuthenticationPlugin.VifibShadowAuthenticationPlugin
+                         , permission=ManageUsers
+                         , constructors=(
+                            VifibShadowAuthenticationPlugin.manage_addVifibShadowAuthenticationPluginForm,
+                            VifibShadowAuthenticationPlugin.addVifibShadowAuthenticationPlugin, )
+                         , visibility=None
+                         , icon='www/portal.gif'
+                         )
+
 
 registerMultiPlugin(VifibMachineAuthenticationPlugin.VifibMachineAuthenticationPlugin.meta_type)
+registerMultiPlugin(VifibShadowAuthenticationPlugin.VifibShadowAuthenticationPlugin.meta_type)

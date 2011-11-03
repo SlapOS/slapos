@@ -66,8 +66,11 @@ if obj is None:\n
   return []\n
 \n
 item_portal_type = "Hosting Subscription"\n
-\n
-for movement in obj.getMovementList():\n
+if obj.getPortalType() == \'Open Sale Order\':\n
+  movement_list = obj.contentValues(portal_type=\'Open Sale Order Line\')\n
+else:\n
+  movement_list = obj.getMovementList()\n
+for movement in movement_list:\n
   item = movement.getAggregateValue(portal_type=item_portal_type)\n
   if item is not None:\n
     category_list.append({"aggregate": [item.getRelativeUrl()]})\n
