@@ -28,15 +28,15 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
 
-  def _options(self, options):
+  def install(self):
+    path_list = []
+
     self.isClient = self.optionIsTrue('client', default=False)
     if self.isClient:
       self.logger.info("Client mode")
     else:
       self.logger.info("Server mode")
 
-  def install(self):
-    path_list = []
     conf = {}
 
     for type_ in ['remote', 'local']:
