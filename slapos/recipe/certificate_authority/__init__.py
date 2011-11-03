@@ -117,7 +117,7 @@ class Request(Recipe):
       if os.path.islink(link):
         os.unlink(link)
       elif os.path.exists(link):
-        raise OSError("%r file should be a symbolic link.")
+        raise OSError("%r file should be a symbolic link." % link)
 
     os.symlink(key, key_file)
     os.symlink(certificate, cert_file)
