@@ -35,7 +35,8 @@ import urllib2
 def run(args):
   config = args[0]
 
-  test_url = assembleTestUrl(config['base_url'], config['suite_name'])
+  test_url = assembleTestUrl(config['base_url'], config['suite_name'],
+      config['user'], config['password'])
 
   # There is no test that can take more them 24 hours
   timeout = 2.0 * 60 * 60
@@ -44,7 +45,6 @@ def run(args):
     erp5_report = ERP5TestReportHandler(config['test_report_instance_url'],
         config['project'] + '@' + config['suite_name'])
     # Clean old test results
-    # TODO send user/pass in POST
     openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (
         config['base_url'], config['user'], config['password']))
     # TODO assert getresult is None
@@ -100,11 +100,11 @@ def getStatus(url):
         raise
     return status
 
-def assembleTestUrl(base_url, suite_name):
+def assembleTestUrl(base_url, suite_name, user, password):
       """
       Create the full url to the testrunner
       """
       test_url = "%s/%s/core/TestRunner.html?test=../test_suite_html&"\
-          "resultsUrl=%s/postResults&auto=on" % (
-          base_url, suite_name, base_url)
+          "resultsUrl=%s/postResults&auto=on&__ac_name=%s&__ac_password=%s" % (
+          base_url, suite_name, base_url, user, password)
       return test_url
