@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="ZopePageTemplate" module="Products.PageTemplates.ZopePageTemplate"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <unicode encoding="cdata"><![CDATA[
+
+<tal:block metal:define-macro="init_environment">\n
+  <!-- Initialize test environment -->\n
+  <tr>\n
+    <td>setTimeout</td>\n
+    <td>120000</td>\n
+    <td></td>\n
+  </tr>\n
+  <tr>\n
+    <td>store</td>\n
+    <td tal:content="python:\n
+        context.REQUEST.get(\'URL\')[0:here.REQUEST.get(\'URL\').find(\'/portal_tests/\')]">erp5</td>\n
+    <td>base_url</td>\n
+  </tr>\n
+  <tr>\n
+    <td>openAndWait</td>\n
+    <td>${base_url}/web_site_module/hosting</td>\n
+    <td></td>\n
+  </tr>\n
+</tal:block>\n
+\n
+<tal:block metal:define-macro="finished_processing_activities">\n
+  <!-- We wait for zope to finish his activities processing -->\n
+  <tr>\n
+     <td>storeAttribute</td>\n
+     <td>//head/base@href</td>\n
+     <td>address</td>\n
+  </tr>\n
+  <tr>\n
+    <td>waitForCondition</td>\n
+    <td>new Ajax.Request(\'ERP5Site_hasFinishedProcessingActivity\',\n
+  {asynchronous: false}).transport.responseText === "True."; var i;\n
+  for (i = 0; i < 10000000; i++){};</td>\n
+    <td>120000</td>\n
+  </tr>\n
+  <tr>\n
+    <td>openAndWait</td>\n
+    <td>${address}</td>\n
+    <td></td>\n
+  </tr>\n
+</tal:block>\n
+\n
+<tal:block metal:define-macro="check_for_started_instance">\n
+  <!-- Wait until the instance is Started -->\n
+  <tr>\n
+    <td>storeAttribute</td>\n
+    <td>//head/base@href</td>\n
+    <td>address</td>\n
+  </tr>\n
+  <tr>\n
+    <td>openAndWait</td>\n
+    <td>${address}/getReference</td>\n
+    <td></td>\n
+  </tr>\n
+  <tr> \n
+    <td>storeText</td>\n
+    <td>//body/pre</td>\n
+    <td>instance_reference</td>\n
+  </tr>\n
+  <tr>\n
+    <td>waitForCondition</td>\n
+    <td>new\n
+  Ajax.Request(\'ERP5Site_getInstanceStatus?instance_reference=${instance_reference}\',\n
+  {asynchronous: false}).transport.responseText === "Started"; var i;\n
+  for (i = 0; i < 10000000; i++){};</td>\n
+    <td>600000</td>\n
+  </tr>\n
+  <tr>\n
+    <td>openAndWait</td>\n
+    <td>${address}</td>\n
+    <td></td>\n
+  </tr>\n
+</tal:block>\n
+\n
+<tal:block metal:define-macro="destroy_instance">\n
+  <!-- Order the destruction of the instance and check for it -->\n
+  <tr>\n
+    <td>assertElementPresent</td>\n
+    <td>name=SoftwareInstance_requestDestroy:method</td>\n
+    <td></td>\n
+  </tr>\n
+  <tr>\n
+    <td>clickAndWait</td>\n
+    <td>name=SoftwareInstance_requestDestroy:method</td>\n
+    <td></td>\n
+  </tr>\n
+  <tr>\n
+    <td>storeAttribute</td>\n
+    <td>//head/base@href</td>\n
+    <td>address</td>\n
+  </tr>\n
+  <tr>\n
+    <td>openAndWait</td>\n
+    <td>${address}/getReference</td>\n
+    <td></td>\n
+  </tr>\n
+  <tr> \n
+    <td>storeText</td>\n
+    <td>//body/pre</td>\n
+    <td>instance_reference</td>\n
+  </tr>\n
+  <tr>\n
+    <td>waitForCondition</td>\n
+    <td>new\n
+  Ajax.Request(\'ERP5Site_getInstanceStatus?instance_reference=${instance_reference}\',\n
+  {asynchronous: false}).transport.responseText === "Destroyed"; var\n
+  i; for (i = 0; i < 10000000; i++){};</td>\n
+    <td>600000</td>\n
+  </tr>\n
+  <tr>\n
+    <td>openAndWait</td>\n
+    <td>${address}</td>\n
+    <td></td>\n
+  </tr>\n
+</tal:block>
+
+]]></unicode> </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>expand</string> </key>
+            <value> <int>0</int> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Zuite_vifib_instanciation_macro_library</string> </value>
+        </item>
+        <item>
+            <key> <string>output_encoding</string> </key>
+            <value> <string>iso-8859-15</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <unicode></unicode> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
