@@ -1,0 +1,10 @@
+foreground = yes
+output = %(log)s
+pid = %(pid_file)s
+syslog = no
+key = %(key)s
+cert = %(cert)s
+
+[service]
+accept = %(remote_address)s:%(remote_port)s
+connect = %(local_address)s:%(local_port)s
