@@ -44,7 +44,7 @@ def run(args):
   while True:
     erp5_report = ERP5TestReportHandler(config['test_report_instance_url'],
         config['project'] + '@' + config['suite_name'])
-    # Clean old test results
+    # Clean old test results if any
     openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (
         config['base_url'], config['user'], config['password']))
     # TODO assert getresult is None
@@ -71,6 +71,10 @@ def run(args):
 
     erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",
         "replace"))
+
+    # Clean test results for next test
+    openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (
+        config['base_url'], config['user'], config['password']))
 
     print("Test finished and report sent, sleeping.")
     sleep(3600)
