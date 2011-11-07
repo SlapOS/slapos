@@ -235,7 +235,7 @@ branch = %(branch)s
               time.sleep(10)
 
           cloudooo_tests = glob(
-                    '%s/*/src/cloudooo/cloudooo/handler/*/tests/test*.py' %
+                    '%s/*/parts/cloudooo/cloudooo/handler/*/tests/test*.py' %
                     config['software_root'])
           for test in cloudooo_tests:
             invocation_list = []
