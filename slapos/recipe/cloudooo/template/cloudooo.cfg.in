@@ -1,5 +1,5 @@
 [app:main]
-use = egg:cloudooo
+use = call:cloudooo.paster_application:application
 #
 ## System config
 #
