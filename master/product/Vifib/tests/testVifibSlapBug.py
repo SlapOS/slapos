@@ -1,6 +1,8 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
+from slapos import slap
+import random
 
 class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def test_bug_Person_request_more_then_one_instance(self):
@@ -1072,6 +1074,53 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser # login as superuser in order to work in erp5
       DirectRequestComputerPartitionRaisesValueError
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepSetRequestedStateStarted(self, sequence, **kw):
+    sequence['state'] = 'started'
+
+  def stepSetRequestedReferenceRandom(self, sequence, **kw):
+    sequence['requested_reference'] = str(random.random())
+
+  def test_request_start_non_instantiated_partition(self):
+    """Prove that requesting start of non instantiated partition will not
+    result in any error"""
+    self.computer_partition_amount = 0
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SlapLoginTestVifibCustomer
+      SetRequestedStateStarted
+      SetRequestedReferenceRandom
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      SoftwareInstanceSaleOrderConfirmRaisesValueError
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SoftwareInstanceSaleOrderConfirmRaisesValueError
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
