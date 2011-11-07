@@ -178,6 +178,22 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps -- scenarios
   ########################################
+  def stepPersonRequestSlapSoftwareInstancePrepare(self, sequence,
+      **kw):
+    software_release = sequence['software_release_uri']
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    open_order = self.slap.registerOpenOrder()
+    open_order.request(
+       software_release=software_release,
+       software_type=sequence.get('software_type', 'software_type'),
+       partition_reference=sequence.get('requested_reference',
+          'requested_reference'),
+       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+       filter_kw=sequence.get('requested_filter_dict', {}),
+       state=sequence.get('requested_state')
+       )
+
   def stepPersonRequestSlapSoftwareInstance(self, sequence, **kw):
     software_release = sequence['software_release_uri']
     self.slap = slap.slap()

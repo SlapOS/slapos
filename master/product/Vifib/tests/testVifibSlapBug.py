@@ -1125,6 +1125,60 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_request_new_with_destroyed_reference(self):
+    """Prove that having destroyed SI allows to request new one with same
+      reference"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SetRandomRequestedReference
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstancePrepare
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      SetSelectedComputerPartition
+      SetRequestedComputerPartition
+      CheckComputerPartitionNoInstanceHostingSalePackingList
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+    raise NotImplementedError
+
+  def test_request_new_with_destroyed_reference_web_ui(self):
+    """Prove that having destroyed SI allows to request new one with same
+      reference
+
+      Supports web UI case.
+      """
+    raise NotImplementedError
+
 def test_suite():
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(TestVifibSlapBug))
