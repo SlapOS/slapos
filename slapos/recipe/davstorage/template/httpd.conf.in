@@ -1,0 +1,82 @@
+ServerRoot "%(server_root)s"
+
+Listen [%(ip)s]:%(port)s
+
+# Needed modules
+LoadModule authn_file_module "%(modules_dir)s/mod_authn_file.so"
+LoadModule authz_host_module "%(modules_dir)s/mod_authz_host.so"
+LoadModule authz_user_module "%(modules_dir)s/mod_authz_user.so"
+LoadModule auth_basic_module "%(modules_dir)s/mod_auth_basic.so"
+LoadModule auth_digest_module "%(modules_dir)s/mod_auth_digest.so"
+LoadModule log_config_module "%(modules_dir)s/mod_log_config.so"
+LoadModule headers_module "%(modules_dir)s/mod_headers.so"
+LoadModule setenvif_module "%(modules_dir)s/mod_setenvif.so"
+LoadModule ssl_module "%(modules_dir)s/mod_ssl.so"
+LoadModule mime_module "%(modules_dir)s/mod_mime.so"
+LoadModule dav_module "%(modules_dir)s/mod_dav.so"
+LoadModule dav_fs_module "%(modules_dir)s/mod_dav_fs.so"
+LoadModule dir_module "%(modules_dir)s/mod_dir.so"
+
+ServerAdmin %(email_address)s
+
+# Quiet Server header (if not, Apache give its life history)
+# It's safer
+ServerTokens ProductOnly
+
+DocumentRoot "%(document_root)s"
+PidFile "%(pid_file)s"
+LockFile "%(lock_file)s"
+DavLockDB "%(davlock_db)s"
+
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+</Directory>
+
+<Directory %(document_root)s>
+    Options Indexes MultiViews
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+
+    Dav On
+    # Security Rules to avoid DDoS Attacks
+    DavDepthInfinity Off
+    LimitXMLRequestBody 0
+
+    # Cross-Origin Resources Sharing
+    Header always set Access-Control-Max-Age "0"
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "OPTIONS, GET, HEAD, POST, PUT, DELETE, PROPFIND"
+    Header always set Access-Control-Allow-Headers "Content-Type, X-Requested-With, X-HTTP-Method-Override, Accept, Authorization, Depth"
+    SetEnvIf Origin "(.+)" ORIGIN=$1
+    Header always set Access-Control-Allow-Origin %%{ORIGIN}e
+
+    AuthType Basic
+    AuthName "WebDAV Storage"
+    AuthUserFile "%(htpasswd_file)s"
+    <LimitExcept OPTIONS>
+        Require valid-user
+    </LimitExcept>
+
+</Directory>
+
+ErrorLog "%(error_log)s"
+LogLevel warn
+
+LogFormat "%%h %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
+LogFormat "%%h %%l %%u %%t \"%%r\" %%>s %%b" common
+CustomLog "%(access_log)s" common
+
+DefaultType text/plain
+TypesConfig "%(mime_types)s"
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLEngine on
+SSLCertificateFile "%(ssl_certificate)s"
+SSLCertificateKeyFile "%(ssl_key)s"

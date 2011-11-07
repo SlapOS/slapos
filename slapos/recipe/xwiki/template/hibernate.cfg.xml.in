@@ -49,7 +49,7 @@
          Uncomment if you want to use MySQL and comment out other database configurations.
          We need to set the sql_mode to a less strict value, see XWIKI-1945
     -->
-    <property name="connection.url">jdbc:mysql://%(mysql_ip)s:%(mysql_port)s/xwiki?useServerPrepStmts=false&amp;useUnicode=true&amp;characterEncoding=UTF-8&amp;sessionVariables=sql_mode=''</property>
+    <property name="connection.url">jdbc:mysql://%(mysql_ip)s:%(mysql_port)s/xwiki?useServerPrepStmts=false&amp;useUnicode=true&amp;characterEncoding=UTF-8&amp;sessionVariables=&amp;sql_mode=''</property>
     <property name="connection.username">xwiki</property>
     <property name="connection.password">xwiki</property>
     <property name="connection.driver_class">com.mysql.jdbc.Driver</property>

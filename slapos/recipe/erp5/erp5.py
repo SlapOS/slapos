@@ -37,12 +37,14 @@ class ERP5Updater(object):
   erp5_catalog_storage = "erp5_mysql_innodb_catalog"
   header_dict = {}
 
-  sleeping_time = 120
+  sleeping_time = 300
+  short_sleeping_time = 60
 
   def __init__(self, user, password, host,
       site_id, mysql_url, memcached_address,
       conversion_server_address, persistent_cache_address,
-      bt5_list, bt5_repository_list):
+      bt5_list, bt5_repository_list, certificate_authority_path,
+      openssl_binary):
 
     authentication_string = '%s:%s' % (user, password)
     base64string = base64.encodestring(authentication_string).strip()
@@ -54,12 +56,16 @@ class ERP5Updater(object):
     self.business_template_repository_list = bt5_repository_list
     self.business_template_list = bt5_list
     self.memcached_address = memcached_address
-    self.persintent_cached_address = persistent_cache_address
+    self.persistent_cached_address = persistent_cache_address
     self.mysql_url = mysql_url
 
     host, port = conversion_server_address.split(":")
     self.conversion_server_address = host
     self.conversion_server_port = int(port)
+
+    # Certificate Authority Tool configuration
+    self.certificate_authority_path = certificate_authority_path
+    self.openssl_binary = openssl_binary
 
   def log(self, level, message):
     date = time.strftime("%a, %d %b %Y %H:%M:%S +0000")
@@ -147,34 +153,25 @@ class ERP5Updater(object):
     return [i for i in self.business_template_repository_list
                     if i not in found_list]
 
-  def getMissingBusinessTemplateList(self):
-    bt5_dict = self.getSystemSignatureDict("business_template_dict", [])
-    found_bt5_list = bt5_dict.keys()
-    return [bt for bt in self.business_template_list\
-                          if bt not in found_bt5_list]
-
-  def isBusinessTemplateUpdated(self):
-    return len(self.getMissingBusinessTemplateList()) == 0
-
-  def isBusinessTemplateRepositoryUpdated(self):
-    return len(self.getMissingBusinessTemplateRepositoryList()) == 0
+  def getMissingBusinessTemplateSet(self):
+    found_dict = self.getSystemSignatureDict("business_template_dict", {})
+    return set(self.business_template_list).difference(found_dict)
 
   def updateBusinessTemplateList(self):
     """ Update Business Template Configuration, including the repositories
     """
-    if not self.isBusinessTemplateUpdated():
-      # Before update the business templates, it is required to make
-      # sure the repositories are updated.
-      if not self.isBusinessTemplateRepositoryUpdated():
-        # Require to update Business template Repository
-        repository_list = self.getSystemSignatureDict(
-           "business_template_repository_list", [])
-        repository_list.extend(self.getMissingBusinessTemplateRepositoryList())
-        self._setRepositoryList(repository_list)
+    missing_business_template_set = self.getMissingBusinessTemplateSet()
+    if missing_business_template_set:
+      # Before updating  the business templates,  it is required to  make sure
+      # the  repositories are  updated,  thus  update them  even  if they  are
+      # already present because there may be new business templates...
+      repository_list = self.getSystemSignatureDict(
+        "business_template_repository_list", [])
+      repository_list.extend(self.getMissingBusinessTemplateRepositoryList())
+      self._setRepositoryList(repository_list)
 
       # Require to update Business template
-      for bt in self.getMissingBusinessTemplateList():
-        self._installBusinessTemplateList([bt])
+      self._installBusinessTemplateList(list(missing_business_template_set))
       return True
 
     return False
@@ -186,18 +183,20 @@ class ERP5Updater(object):
 
   def _installBusinessTemplateList(self, name_list, update_catalog=False):
     """ Install a Business Template on Remote ERP5 setup """
-    set_path = "/%s/portal_templates/installBusinessTemplatesFromRepositories" % self.site_id
+    set_path = "/%s/portal_templates/installBusinessTemplateListFromRepository" % self.site_id
     self.POST(set_path, {"template_list": name_list,
                          "only_newer": 1,
-                         "update_catalog": int(update_catalog)})
+                         "update_catalog": int(update_catalog),
+                         "activate": 1,
+                         "install_dependency": 1})
 
-  def _createActiveSystemPreference(self):
+  def _createActiveSystemPreference(self, edit_kw={}):
     """ Assert that at least one enabled System Preference is present on
         the erp5 instance.
     """
     self.log("INFO", "Try to create New System Preference into ERP5!")
     path = "/%s/portal_preferences/createActiveSystemPreference" % self.site_id
-    status, data = self.POST(path, {})
+    status, data = self.POST(path, edit_kw)
     if status != 200:
       self.log("ERROR", "Unable to create System Preference, an error ocurred %s." % data)
 
@@ -217,17 +216,61 @@ class ERP5Updater(object):
 
     if None in [host_key, port_key]:
       self.log("ERROR", "Unable to find the Active System Preference to Update!")
-      self._createActiveSystemPreference()
+      self._createActiveSystemPreference(
+          {"preferred_ooodoc_server_address" : self.conversion_server_address,
+           "preferred_ooodoc_server_port_number": self.conversion_server_port })
       return True
 
     is_updated = self._assertAndUpdateDocument(host_key, self.conversion_server_address,
          "setPreferredOoodocServerAddress")
 
-    is_updated = is_updated or self._assertAndUpdateDocument(port_key,
+    is_updated = self._assertAndUpdateDocument(port_key,
          self.conversion_server_port,
-         "setPreferredOoodocServerPortNumber")
+         "setPreferredOoodocServerPortNumber") or is_updated
 
     return is_updated
+
+  def updateCertificateAuthority(self):
+    """ Update the certificate authority only if is not configured yet """
+    if self.isCertificateAuthorityAvailable():
+      if self.isCertificateAuthorityConfigured():
+        return True
+
+      path = "/%s/portal_certificate_authority/" \
+             "manage_editCertificateAuthorityTool" % self.site_id
+      self.POST(path, {"certificate_authority_path": self.certificate_authority_path,
+                       "openssl_binary": self.openssl_binary})
+
+
+  def isCertificateAuthorityAvailable(self):
+    """ Check if certificate Authority is available. """
+    external_connection_dict = self.system_signature_dict[
+      'external_connection_dict']
+    if 'portal_certificate_authority/certificate_authority_path' in \
+      external_connection_dict:
+      return True
+    return False
+
+  def isCertificateAuthorityConfigured(self):
+    """ Check if certificate Authority is configured correctly. """
+    external_connection_dict = self.system_signature_dict[
+      'external_connection_dict']
+    if self.certificate_authority_path == external_connection_dict.get(
+          'portal_certificate_authority/certificate_authority_path') and \
+       self.openssl_binary == external_connection_dict.get(
+          'portal_certificate_authority/openssl_binary'):
+      return True
+    return False
+  def isCertificateAuthorityConfigured(self):
+    """ Check if certificate Authority is configured correctly. """
+    external_connection_dict = self.system_signature_dict[
+      'external_connection_dict']
+    if self.certificate_authority_path == external_connection_dict.get(
+          'portal_certificate_authority/certificate_authority_path') and \
+       self.openssl_binary == external_connection_dict.get(
+          'portal_certificate_authority/openssl_binary'):
+      return True
+    return False
 
   def updateMemcached(self):
     # Assert Memcached configuration
@@ -239,7 +282,7 @@ class ERP5Updater(object):
     # Assert Persistent cache configuration (Kumofs)
     self._assertAndUpdateDocument(
       "portal_memcached/persistent_memcached_plugin/getUrlString",
-      self.persintent_cached_address,
+      self.persistent_cached_address,
       "setUrlString")
 
   def _assertAndUpdateDocument(self, key, expected_value, update_method):
@@ -258,24 +301,9 @@ class ERP5Updater(object):
       return True
     return False
 
-  def updateMysql(self):
-    """ This API is not implemented yet, because it is not needed to
-    update Mysql Connection on ERP5 Sites.
-    """
-    pass
-
-  def updatePortalActivities(self):
-    """ This API is not implemented yet, because it is not needed for
-        a single instance configuration. This method should define which
-        instances will handle activities, which one will distribute
-        activities
-    """
-    pass
-
   def updateERP5Site(self):
     if not self.isERP5Present():
-      url = '/manage_addProduct/ERP5/manage_addERP5Site'
-      self.POST(url, {
+      self.POST('/manage_addProduct/ERP5/manage_addERP5Site', {
           "id": self.site_id,
           "erp5_catalog_storage": self.erp5_catalog_storage,
           "erp5_sql_connection_string": self.mysql_url,
@@ -286,54 +314,30 @@ class ERP5Updater(object):
   def _hasActivityPresent(self):
     activity_dict = self.getSystemSignatureDict("activity_dict")
     if activity_dict["total"] > 0:
+      self.log("DEBUG", "Waiting for activities on ERP5...")
       return True
+    return False
 
   def _hasFailureActivity(self):
     activity_dict = self.getSystemSignatureDict("activity_dict")
     if activity_dict["failure"] > 0:
+       self.log("ERROR", "Update progress found Failure activities" +\
+                         "and it will not be able to progress until" +\
+                         " activites issue be solved")
        return True
-
-  def _updatePreRequiredBusinessTemplateList(self):
-    """ Update only the first part of bt5."""
-
-    # This list contains the minimal set of bt5 required to install
-    # portal_introspections. Move portal_introspection to erp5_core
-    # can remove this set.
-    pre_required_business_template_list = [i for i in self.business_template_list\
-                if i.startswith("erp5_full_text") or i == "erp5_base"]
-
-    if len(self.business_template_repository_list) > 0 and \
-         len(pre_required_business_template_list):
-      pre_required_business_template_list.insert(0, "erp5_core_proxy_field_legacy")
-      self._setRepositoryList(self.business_template_repository_list)
-      time.sleep(30)
-      for bt in pre_required_business_template_list:
-        update_catalog = bt.endswith("_catalog")
-        self._installBusinessTemplateList([bt], update_catalog)
-    else:
-      self.log("ERROR", "Unable to install erp5_base, it is not on your " +\
-               "requested business templates list. Once it is installed " +\
-               "setup will continue")
+    return False
 
   def run(self):
     """ Keep running until kill"""
     while 1:
-      time.sleep(30)
+      time.sleep(self.short_sleeping_time)
       if not self.updateERP5Site():
         self.loadSystemSignatureDict()
-        if self.getSystemSignatureDict() is None:
-          self.log("INFO", "The erp5_base is not installed yet, trying to " +\
-                           "install it before continue.")
-          self._updatePreRequiredBusinessTemplateList()
-          time.sleep(60)
+        if self._hasFailureActivity():
+          time.sleep(self.sleeping_time)
           continue
-
+          
         if self._hasActivityPresent():
-          self.log("DEBUG", "Waiting for activities on ERP5...")
-          if self._hasFailureActivity():
-            self.log("ERROR", "Update progress found " +\
-                     "Failure activities and it will not progress until " +\
-                     " activites issue be solved")
           continue
 
         if self.updateBusinessTemplateList():
@@ -341,11 +345,8 @@ class ERP5Updater(object):
 
         self.updateMemcached()
         if self.updateConversionServer():
-          # If update Conversion Server adds a bit more delay to continue
-          # To wait for activiies.
-          time.sleep(60)
           continue
-
+        self.updateCertificateAuthority()
         time.sleep(self.sleeping_time)
 
 def updateERP5(argument_list):
@@ -356,6 +357,8 @@ def updateERP5(argument_list):
   conversion_server_address = argument_list[4]
   persistent_cache_provider = argument_list[5]
   bt5_list = argument_list[6]
+  certificate_authority_path = argument_list[8]
+  openssl_binary = argument_list[9]
   bt5_repository_list = []
 
   if len(argument_list) > 7:
@@ -374,6 +377,8 @@ def updateERP5(argument_list):
     conversion_server_address=conversion_server_address,
     persistent_cache_address=persistent_cache_provider,
     bt5_list=bt5_list,
-    bt5_repository_list=bt5_repository_list)
+    bt5_repository_list=bt5_repository_list,
+    certificate_authority_path=certificate_authority_path,
+    openssl_binary=openssl_binary)
 
   erp5_upgrader.run()
