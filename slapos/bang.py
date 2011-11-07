@@ -31,7 +31,7 @@ import ConfigParser
 
 def main(*args):
   parser = argparse.ArgumentParser()
-  parser.add_argument("-m", "--message", help="Message for bang.")
+  parser.add_argument("-m", "--message", default='', help="Message for bang.")
   parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
       help="SlapOS configuration file.")
   if len(args) == 0:
