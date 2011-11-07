@@ -314,6 +314,26 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_computer_bang_tree_with_other_computer(self):
+    """Check that bang works on complex tree spanned on many computers
+
+    For tree like this:
+
+    S0
+      \
+       S1
+         \
+          S2
+
+    Where S0 and S2 are on C0 and S1 is on C1 and both are non public it shall
+    work.
+    """
+    raise NotImplementedError
+
+  def test_computer_bang_not_called_on_destroyed_ones(self):
+    """Check that bang is ignoring destroyed computer partitions"""
+    raise NotImplementedError
+
 def test_suite():
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(TestVifibSlapBang))
