@@ -56,4 +56,6 @@ def main(*args):
   slap = slapos.slap.slap()
   slap.initializeConnection(master_url, key_file=key_file, cert_file=cert_file)
   computer = slap.registerComputer(computer_id)
+  print 'Banging to %r' % master_url
   computer.bang(message)
+  print 'Bang with message %r' % message
