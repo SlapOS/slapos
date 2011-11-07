@@ -202,10 +202,12 @@ branch = %(branch)s
                                         config['partition_reference'])
           run_test_suite_path = os.path.join(partition_path, 'bin',
                                             'runCloudoooUnitTest')
-          if not os.path.exists(run_test_suite_path):
-            raise ValueError('No %r provided' % run_test_suite_path)
           cloudooo_paster = os.path.join(partition_path, 'bin',
                                             'cloudooo_paster')
+          if not os.path.exists(run_test_suite_path) or not \
+            os.path.exists(cloudooo_paster):
+            raise ValueError('No %r or %r provided' % (run_test_suite_path,
+                cloudooo_paster))
           cloudooo_conf = os.path.join(partition_path, 'etc',
                                             'conversion_server.cfg')
           env_ld_library_path = re.findall("env-LD_LIBRARY_PATH\ \=\ .*",
