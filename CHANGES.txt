@@ -4,7 +4,7 @@ Changes
 0.19 (unreleased)
 -----------------
 
- * No changes yet.
+ * bang: Executable to be called by being banged computer. [Łukasz Nowak]
 
 0.18 (2011-10-18)
 -----------------
