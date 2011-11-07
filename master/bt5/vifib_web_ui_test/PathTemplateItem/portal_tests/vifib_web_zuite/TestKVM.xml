@@ -277,7 +277,7 @@
 </tr>\n
 <tr>\n
   <td>pause</td>\n
-  <td>10000</td>\n
+  <td>30000</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
@@ -308,9 +308,9 @@
 </tr>\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/check_for_started_instance" />\n
 <!-- This part only work with chromium for now -->\n
-<!--<tr>\n
+<!----><tr>\n
   <td>pause</td>\n
-  <td>120000</td>\n
+  <td>90000</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
@@ -336,28 +336,43 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-  <td>assertElementPresent</td>\n
-  <td>//input[@id="VNC_password"]</td>\n
+  <td>pause</td>\n
+  <td>2000</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
-  <td>//input[@value="Connect"]</td>\n
+  <td>id=password_input</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>type</td>\n
-  <td>//input[@id="VNC_password"]</td>\n
+  <td>id=password_input</td>\n
   <td>${password}</td>\n
 </tr>\n
 <tr>\n
-  <td>click</td>\n
-  <td>//input[@value="Connect"]</td>\n
-  <td></td>\n
+  <td>keyPress</td>\n
+  <td>id=password_input</td>\n
+  <td>13</td>\n
+</tr>\n
+<tr>\n
+\t<td>pause</td>\n
+\t<td>1000</td>\n
+\t<td></td>\n
+</tr>\n
+<tr>\n
+\t<td>submit</td>\n
+\t<td>//input[@id=&quot;password_input&quot;]/..</td>\n
+\t<td>\\13</td>\n
 </tr>\n
 <tr>\n
   <td>pause</td>\n
   <td>10000</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertTextPresent</td>\n
+  <td>Connected (encrypted) to</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
@@ -366,20 +381,10 @@
     <td></td>\n
 </tr>\n
 <tr>\n
-  <td>assertElementPresent</td>\n
-  <td>//input[@value="Disconnect"]</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>click</td>\n
-  <td>//input[@value="Disconnect"]</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
   <td>openAndWait</td>\n
   <td>${address}</td>\n
   <td></td>\n
-</tr>-->\n
+</tr><!---->\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/destroy_instance" />\n
 </tbody>\n
 </table>\n
