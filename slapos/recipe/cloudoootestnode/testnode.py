@@ -191,6 +191,7 @@ branch = %(branch)s
               stdout=stdout, stderr=stderr
               )
             if status_dict['status_code'] != 0:
+              print status_dict['stderr']
               break
           if status_dict['status_code'] != 0:
             safeRpcCall(master.reportTaskFailure,
