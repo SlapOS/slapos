@@ -1,0 +1,6 @@
+portal_integrations/vifib_payzen_integration
+portal_integrations/vifib_payzen_integration/Causality
+portal_integrations/vifib_payzen_integration/Resource
+portal_integrations/vifib_payzen_integration/Resource/**
+portal_secure_payments
+sale_trade_condition_module/payzen_sale_trade_condition

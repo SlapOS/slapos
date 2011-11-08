@@ -80,7 +80,9 @@
                 <item>
                     <key> <string>center</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>my_text_content</string>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -93,19 +95,17 @@
                     <key> <string>left</string> </key>
                     <value>
                       <list>
-                        <string>my_preferred_instance_setup_resource</string>
-                        <string>my_preferred_instance_hosting_resource</string>
-                        <string>my_preferred_instance_cleanup_resource</string>
-                        <string>my_preferred_software_setup_resource</string>
-                        <string>my_preferred_instance_update_resource</string>
-                        <string>my_preferred_payzen_integration_site</string>
+                        <string>my_title</string>
                       </list>
                     </value>
                 </item>
                 <item>
                     <key> <string>right</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>my_creation_date</string>
+                        <string>my_predecessor_title</string>
+                      </list>
                     </value>
                 </item>
               </dictionary>
@@ -113,7 +113,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SystemPreference_viewVifib</string> </value>
+            <value> <string>PayzenEventMessage_view</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -121,7 +121,7 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>SystemPreference_viewVifib</string> </value>
+            <value> <string>AuthenticationEvent_view</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
@@ -137,7 +137,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Vifib</string> </value>
+            <value> <string>Payzen Event Message</string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>

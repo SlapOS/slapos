@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>"""Registers current transaction in payment\n
+\n
+In order to not transmit sensitive information the registration is done by looking the newest\n
+payzen related transaction for destination_section and doing its duplicate"""\n
+\n
+from DateTime import DateTime\n
+payzen_event = state_change[\'object\']\n
+transaction = payzen_event.getDestinationValue()\n
+portal = transaction.getPortalObject()\n
+integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
+sale_trade_condition = integration_site.getSourceTrade()\n
+state_list = portal.getPortalCurrentInventoryStateList() + portal.getPortalTransitInventoryStateList()\n
+service = portal.portal_secure_payments.find()\n
+previous_transaction = portal.portal_catalog.getResultValue(\n
+  destination_section_uid = transaction.getDestinationSectionUid(),\n
+  portal_type=transaction.getPortalType(),\n
+  simulation_state=state_list,\n
+  specialise_relative_url=sale_trade_condition,\n
+  sort_on=((\'delivery.start_date\', \'DESC\'),),\n
+  limit=1,\n
+)\n
+\n
+if previous_transaction is None:\n
+  raise ValueError(\'It was not possible to find any previous transaction\')\n
+\n
+previous_id = None\n
+possible_previous_id =  integration_site.getMappingFromCategory(\'causality/%s\' % previous_transaction.getRelativeUrl())\n
+if possible_previous_id != \'Causality/%s\' % transaction.getRelativeUrl():\n
+  previous_id = possible_previous_id.split(\'/\')[1]\n
+\n
+if previous_id is None: \n
+  raise ValueError(\'Transaction %s had not defined payzen integration\' % previous_transaction.getRelativeUrl())\n
+\n
+previous_date, previous_id = previous_id.split(\'_\')\n
+now_utc = DateTime().toZone(\'UTC\').asdatetime()\n
+today = now_utc.strftime(\'%Y%m%d\')\n
+transaction_id = str(portal.portal_ids.generateNewId(\n
+    id_group=\'%s_%s\' % (service.getRelativeUrl(), today),\n
+    id_generator=\'uid\')).zfill(6)\n
+\n
+mapping_id = \'%s_%s\' % (today, transaction_id)\n
+\n
+if not integration_site.getMappingFromCategory(\'causality/%s\' % transaction.getRelativeUrl()) == \'Causality/%s\' % transaction.getRelativeUrl():\n
+  raise ValueError(\'Transaction already mapped in integration tool.\')\n
+\n
+try:\n
+  integration_site.getCategoryFromMapping(\'Causality/%s\' % mapping_id, create_mapping_line=True, create_mapping=True)\n
+except ValueError:\n
+  mapping = integration_site.Causality[mapping_id]\n
+  mapping.setDestinationReference(\'causality/%s\' % transaction.getRelativeUrl())\n
+else:\n
+  raise ValueError(comment=\'Key %s already found!\' % mapping_id)\n
+\n
+# do causality mapping in integration_site between transaction.getRelativeUrl and today + transaction_id\n
+payzen_dict = {}\n
+payzen_dict.update(\n
+  devise=integration_site.getMappingFromCategory(\'resource/currency_module/%s\' % transaction.getResourceReference()).split(\'/\')[-1],\n
+  amount=str(int(round((transaction.PaymentTransaction_getTotalPayablePrice() * 100), 0))),\n
+  presentationDate=transaction.getStartDate().toZone(\'UTC\').asdatetime(),\n
+  newTransactionId=transaction_id,\n
+  transmissionDate=DateTime(previous_date).toZone(\'UTC\').asdatetime(),\n
+  transactionId=previous_id\n
+)\n
+\n
+data_kw, signature, sent_text, received_text = service.soap_duplicate(**payzen_dict)\n
+\n
+sent = payzen_event.newContent(title=\'Sent SOAP\', portal_type=\'Payzen Event Message\', text_content=sent_text)\n
+received = payzen_event.newContent(title=\'Received SOAP\', text_content=received_text, predecessor_value=sent, portal_type=\'Payzen Event Message\')\n
+transaction.activate().PaymentTransaction_confirm()\n
+context.PayzenEvent_processUpdate(state_change, data_kw, signature)\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>state_change</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>PayzenEvent_registerPayzen</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

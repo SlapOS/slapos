@@ -98,6 +98,10 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_credential',
       'erp5_km',
       'erp5_web_download_theme',
+      'erp5_tiosafe_core',
+      'erp5_system_event',
+      'erp5_secure_payment',
+      'erp5_payzen_secure_payment',
       'vifib_mysql_innodb_catalog',
       'vifib_core',
       'vifib_base',
@@ -114,6 +118,8 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_erp5',
       'vifib_test',
       'vifib_invoicing',
+      'vifib_payzen',
+      'vifib_data_payzen',
     ]
     return result
 

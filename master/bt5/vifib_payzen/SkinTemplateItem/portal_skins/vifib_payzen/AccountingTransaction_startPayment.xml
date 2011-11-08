@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string># TODO: Return configured web page in case of system issues.\n
+from DateTime import DateTime\n
+portal = context.getPortalObject()\n
+service = portal.portal_secure_payments.find()\n
+integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
+system_event_kw = {\n
+  \'portal_type\': \'Payzen Event\',\n
+  \'source_value\': service,\n
+  \'destination_value\': context,\n
+}\n
+system_event = portal.system_event_module.newContent(title=\'User navigation script\', **system_event_kw)\n
+\n
+now_utc = DateTime().toZone(\'UTC\').asdatetime()\n
+today = now_utc.strftime(\'%Y%m%d\')\n
+transaction_id = str(portal.portal_ids.generateNewId(\n
+    id_group=\'%s_%s\' % (service.getRelativeUrl(), today),\n
+    id_generator=\'uid\')).zfill(6)\n
+\n
+mapping_id = \'%s_%s\' % (today, transaction_id)\n
+if not integration_site.getMappingFromCategory(\'causality/%s\' % context.getRelativeUrl()) == \'Causality/%s\' % context.getRelativeUrl():\n
+  system_event.confirm(comment=\'Transaction already mapped in integration tool.\')\n
+  return \'There was system issue\'\n
+try:\n
+  integration_site.getCategoryFromMapping(\'Causality/%s\' % mapping_id, create_mapping_line=True, create_mapping=True)\n
+except ValueError:\n
+  mapping = integration_site.Causality[mapping_id]\n
+  mapping.setDestinationReference(\'causality/%s\' % context.getRelativeUrl())\n
+else:\n
+  system_event.confirm(comment=\'Key %s already found!\' % mapping_id)\n
+  return \'There was system issue\'\n
+\n
+context.activate().PaymentTransaction_setStartDateConfirm(date=now_utc)\n
+\n
+payzen_dict = {}\n
+payzen_dict.update(\n
+  vads_currency=integration_site.getMappingFromCategory(\'resource/currency_module/%s\' % context.getResourceReference()).split(\'/\')[-1],\n
+  vads_amount=str(int(round((context.PaymentTransaction_getTotalPayablePrice() * 100), 0))),\n
+  vads_trans_date=now_utc.strftime(\'%Y%m%d%H%M%S\'),\n
+  vads_trans_id=transaction_id,\n
+  vads_language=\'en\',\n
+)\n
+system_event.confirm()\n
+system_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
+return service.navigate(page_template=\'payzen_payment\', pay=\'Click to pay\', payzen_dict=payzen_dict)\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>AccountingTransaction_startPayment</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
