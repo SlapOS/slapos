@@ -1249,6 +1249,74 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepCheckComputerPartitionInTable(self, sequence, **kw):
+    self.assertEqual(
+      1,
+      self.portal.erp5_sql_connection.manage_test(
+        'select count(*) from computer_partition where uid=%s' %
+          sequence['computer_partition_uid'])[0][0]
+    )
+
+  def stepCheckComputerPartitionNotInTable(self, sequence, **kw):
+    self.assertEqual(
+      0,
+      self.portal.erp5_sql_connection.manage_test(
+        'select count(*) from computer_partition where uid=%s' %
+          sequence['computer_partition_uid'])[0][0]
+    )
+
+  def test_catalog_after_destruction(self):
+    """Test that computer partition if correctly catalogged after destruction"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_installed_computer_partition_sequence_string + \
+      """
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      Logout
+
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionNotInTable
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
 def test_suite():
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(TestVifibSlapBug))
