@@ -745,6 +745,8 @@ class SlapTool(BaseTool):
     else:
       instance_portal_type = "Software Instance"
 
+    cleanup_resource = self.getPortalObject().portal_preferences\
+      .getPreferredInstanceCleanupResource()
     if computer_id and computer_partition_id:
       # requested by Software Instance, there is already top part of tree
       software_instance_document = self.\
@@ -781,15 +783,25 @@ class SlapTool(BaseTool):
               instance_xml=instance_xml,
               sla_xml=sla_xml,
               state=state)
-      requested_software_instance = person.portal_catalog.\
-          getResultValue(
+      requested_software_instance = None
+      for software_instance in person.portal_catalog(
                 portal_type=instance_portal_type,
                 # In order be in sync with defaults of person.
                 #   requestSoftwareInstance it is required to default here
                 # too
                 source_reference=software_type or 'RootSoftwareInstance',
                 title=partition_reference,
-          )
+          ):
+        try:
+          cleanup_delivery_line = software_instance\
+            .Item_getInstancePackingListLine(cleanup_resource)
+        except ValueError:
+          requested_software_instance = software_instance
+          break
+        else:
+          if cleanup_delivery_line.getSimulationState() != 'delivered':
+            requested_software_instance = software_instance
+            break
 
     if requested_software_instance is None:
       raise SoftwareInstanceNotReady

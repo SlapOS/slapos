@@ -78,10 +78,22 @@ tag = "%s_%s_inProgress" % (person.getUid(), \n
                                software_title)\n
 \n
 # Check if it already exists\n
-request_software_instance = portal.portal_catalog.getResultValue(\n
+cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
+request_software_instance = None\n
+for si in portal.portal_catalog(\n
   portal_type=software_instance_portal_type,\n
   title=software_title,\n
-)\n
+  ):\n
+  try:\n
+    cleanup_delivery_line = si.Item_getInstancePackingListLine(cleanup_resource)\n
+  except ValueError:\n
+    request_software_instance = si\n
+    break\n
+  else:\n
+    if cleanup_delivery_line.getSimulationState() != \'destroyed\':\n
+      request_software_instance = si\n
+      break\n
+\n
 if (request_software_instance is None):\n
   hosting_subscription_reference = "HOSTSUBS-%s" % context.getPortalObject().portal_ids\\\n
       .generateNewId(id_group=\'slap_hosting_subscription_reference\', id_generator=\'uid\')\n
