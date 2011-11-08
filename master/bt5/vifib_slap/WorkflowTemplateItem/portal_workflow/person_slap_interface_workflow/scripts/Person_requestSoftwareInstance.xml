@@ -90,7 +90,7 @@ for si in portal.portal_catalog(\n
     request_software_instance = si\n
     break\n
   else:\n
-    if cleanup_delivery_line.getSimulationState() != \'destroyed\':\n
+    if cleanup_delivery_line.getSimulationState() != \'delivered\':\n
       request_software_instance = si\n
       break\n
 \n
