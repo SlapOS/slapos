@@ -61,6 +61,20 @@ def restrictMethodAsShadowUser(self, open_order=None, callable_object=None,
       # Restore the original user.
       setSecurityManager(sm)
 
+def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
+  comment=None):
+  """Call bang on self."""
+  # micro security: can caller access software instance?
+  software_instance = self.restrictedTraverse(relative_url)
+  sm = getSecurityManager()
+  newSecurityManager(None, self.getPortalObject().acl_users.getUserById(
+    reference))
+  try:
+    software_instance.reportComputerPartitionBang(comment=comment)
+  finally:
+    # Restore the original user.
+    setSecurityManager(sm)
+
 def getComputerSecurityCategory(self, base_category_list, user_name, 
                                 object, portal_type):
   """
