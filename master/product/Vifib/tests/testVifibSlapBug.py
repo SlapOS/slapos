@@ -1217,13 +1217,37 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetSoftwareTitleRandom(self, sequence, **kw):
+    sequence['software_title'] = str(random.random())
+
   def test_request_new_with_destroyed_reference_web_ui(self):
     """Prove that having destroyed SI allows to request new one with same
       reference
 
       Supports web UI case.
       """
-    raise NotImplementedError
+    sequence_list = SequenceList()
+    sequence_string = "SetSoftwareTitleRandom" + \
+      self.prepare_destroyed_computer_partition + \
+      """
+
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
 def test_suite():
   suite = unittest.TestSuite()

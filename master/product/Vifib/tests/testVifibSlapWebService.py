@@ -463,7 +463,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
     software_release = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_release_uid'])
-    software_title = self.id() + str(random())
+    software_title = sequence.get('software_title',
+      self.id() + str(random()))
 
     if 'software_type' not in kw:
       kw['software_type'] = sequence.get('requested_software_type',
@@ -485,9 +486,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     # duplication
     software_instance_portal_type = kw.get("instance_portal_type",
                                   self.software_instance_portal_type)
-    software_instance_list = self.portal.portal_catalog(
+    software_instance_list = []
+    cleanup_resource = self.portal.portal_preferences\
+      .getPreferredInstanceCleanupResource()
+    for software_instance in self.portal.portal_catalog(
         portal_type=software_instance_portal_type,
-        title=software_title)
+        title=software_title):
+      try:
+        software_instance.Item_getInstancePackingListLine(cleanup_resource)
+      except ValueError:
+        software_instance_list.append(software_instance)
     self.assertEqual(1, len(software_instance_list))
     software_instance = software_instance_list[0]
     sequence.edit(
