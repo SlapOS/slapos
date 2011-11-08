@@ -550,9 +550,118 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_computer_bang_not_called_on_destroyed_ones(self):
-    """Check that bang is ignoring destroyed computer partitions"""
-    raise NotImplementedError
+  def stepCheckComputerPartitionNoInstanceUpdateSalePackingList(self,
+      sequence, **kw):
+    self._checkComputerPartitionNoSalePackingList(
+        self.portal.portal_preferences.getPreferredInstanceUpdateResource(),
+        sequence)
+
+  def test_computer_bang_not_called_on_destroying_destroyed(self):
+    """Check that bang is ignoring destruction in progress and
+       destroyed computer partitions"""
+    self.computer_partition_amount = 1
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_destroy_requested_computer_partition + \
+      """
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      ComputerBang
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionNoInstanceUpdateSalePackingList
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+
+      SlapLoginCurrentComputer
+      CheckEmptyComputerGetComputerPartitionCall
+      ComputerBang
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionNoInstanceUpdateSalePackingList
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepFinishSoftwareInstancePartlyDestroyedTree(self, sequence, **kw):
+    self.stepLoginDefaultUser()
+    rand = str(random())
+    S1 = 'S1' + rand
+    root_software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+    common_kw = dict(
+      software_release=sequence['software_release_uri'],
+      software_type='any', instance_xml=self.minimal_correct_xml,
+      sla_xml=self.minimal_correct_xml, state='stopped')
+    self.logout()
+
+    self.login(sequence['software_instance_reference'])
+    root_software_instance.requestSoftwareInstance(
+      partition_reference=S1,
+      **common_kw)
+    self.stepTic()
+    self.logout()
+
+    self.stepLoginDefaultUser()
+    S1_instance = self.portal.portal_catalog.getResultValue(
+      portal_type='Software Instance', title=S1)
+    S1_reference = S1_instance.getReference()
+    self.logout()
+
+    self.login(S1_reference)
+    S1_instance.stopComputerPartitionInstallation()
+    self.logout()
+
+    self.login(sequence['software_instance_reference'])
+    root_software_instance.requestDestroyComputerPartition()
+    self.stepTic()
+    self.logout()
+    
+    self.login(sequence['computer_reference'])
+    root_software_instance.destroyComputerPartition()
+    self.stepTic()
+    self.logout()
+
+    self.stepLoginDefaultUser()
+    sequence.edit(
+      S0_uid = sequence['software_instance_uid'],
+      S1_uid = S1_instance.getUid(),
+    )
+    self.logout()
+
+  def test_computer_bang_not_called_on_partly_destroyed_tree(self):
+    """Check that bang is ignoring partitions on partly destroyed tree"""
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + \
+      """
+      FinishSoftwareInstancePartlyDestroyedTree
+
+      SlapLoginCurrentComputer
+      CheckEmptyComputerGetComputerPartitionCall
+      ComputerBang
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionNoInstanceUpdateSalePackingList
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
 def test_suite():
   suite = unittest.TestSuite()
