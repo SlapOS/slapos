@@ -266,6 +266,24 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_bang_computer_simple_tree(self):
+    """Checks that bangs works on simple tree"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + \
+      """
+      SlapLoginCurrentComputer
+      CheckEmptyComputerGetComputerPartitionCall
+      ComputerBang
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      SlapLogout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   # Computer owner cannot do bang yet
   @expectedFailure
   def test_admin_bang_computer_complex_tree(self):
