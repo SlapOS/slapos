@@ -82,13 +82,13 @@ class Recipe:
       if 'default' in self.options:
         software_type = 'default'
       else:
-        raise zc.buildout.UserError("This software type isn't mapped. And"
+        raise zc.buildout.UserError("This software type isn't mapped. And "
                                     "there's no default software type.")
 
     instance_file_path = self.options[software_type]
 
     if not os.path.exists(instance_file_path):
-      raise zc.buildout.UserError("The specified buildout config file does not"
+      raise zc.buildout.UserError("The specified buildout config file does not "
                                   "exist.")
 
     buildout = ConfigParser()
@@ -103,9 +103,9 @@ class Recipe:
       buildout.set('slap-parameter', parameter, value)
 
     buildout.add_section('slap-network-information')
-    buildout.set('slap-network-information', 'local-ipv4', 
+    buildout.set('slap-network-information', 'local-ipv4',
                  self.getLocalIPv4Address())
-    buildout.set('slap-network-information', 'global-ipv6', 
+    buildout.set('slap-network-information', 'global-ipv6',
                  self.getGlobalIPv6Address())
 
     # Copy/paste slap_connection
