@@ -62,7 +62,11 @@ for software_instance in context.portal_catalog(\n
   portal_type=\'Software Instance\',\n
   root_uid=root_software_instance.getUid()):\n
   software_instance = software_instance.getObject()\n
-  software_instance.activate().requestUpdateComputerPartition()\n
+  try:\n
+    software_instance.Item_getInstancePackingListLine(service_relative_url=portal.portal_preferences.getPreferredInstanceCleanupResource())\n
+  except ValueError:\n
+    #no instance cleanup, there is sense to try to destroy\n
+    software_instance.activate().requestUpdateComputerPartition()\n
 </string> </value>
         </item>
         <item>
