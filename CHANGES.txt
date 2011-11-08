@@ -1,10 +1,14 @@
 Changes
 =======
 
-0.34 (Unreleased)
+0.34 (2011-11-08)
 -----------------
 
-  * No change yet.
+  * Any LAMP software can specify its own php.ini [Alain Takoudjou]
+  * LAMP : Fix bug where buildout does not has sufficient rights to update
+    application parts. [Alain Takoudjou]
+  * LAMP : Update formatting when returning list of renamed files.
+    [Alain Takoudjou]
 
 0.33 (2011-10-31)
 -----------------
