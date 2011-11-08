@@ -223,9 +223,18 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
             requested_slap_computer_partition.getId())
 
   def stepSetCurrentPersonSlapRequestedSoftwareInstance(self, sequence, **kw):
-    software_instance_list = self.portal.portal_catalog(
+    cleanup_resource = self.portal.portal_preferences\
+      .getPreferredInstanceCleanupResource()
+    software_instance_list = []
+    for software_instance in self.portal.portal_catalog(
         portal_type=self.software_instance_portal_type,
-        title=sequence['requested_reference'])
+        title=sequence['requested_reference']):
+      # only not yet destroyed ones
+      try:
+        software_instance.Item_getInstancePackingListLine(cleanup_resource)
+      except ValueError:
+        software_instance_list.append(software_instance)
+
     self.assertEqual(1, len(software_instance_list))
     software_instance = software_instance_list[0]
     sequence.edit(
@@ -3415,9 +3424,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition = computer_partition_list[0]
 
     # This Computer Partition shall have only Sale Packing List Line related
-    computer_partition_sale_packing_list_line_list = computer_partition\
+    computer_partition_sale_packing_list_line_list = []
+    for delivery_line in computer_partition\
         .getAggregateRelatedValueList(
-            portal_type=self.sale_packing_list_line_portal_type)
+            portal_type=self.sale_packing_list_line_portal_type):
+      if sequence['software_instance_uid'] in delivery_line\
+          .getAggregateUidList():
+        computer_partition_sale_packing_list_line_list.append(delivery_line)
     self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
 
     # There should be only one Sale Order Line
@@ -3434,9 +3447,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition = computer_partition_list[0]
 
     # This Computer Partition shall have only Sale Order Line related
-    computer_partition_sale_order_line_list = computer_partition\
+    computer_partition_sale_order_line_list = []
+    for order_line in computer_partition\
         .getAggregateRelatedValueList(
-            portal_type=self.sale_order_line_portal_type)
+            portal_type=self.sale_order_line_portal_type):
+      if sequence['software_instance_uid'] in order_line.getAggregateUidList():
+        computer_partition_sale_order_line_list.append(order_line)
     self.assertEqual(1, len(computer_partition_sale_order_line_list))
 
   def stepCheckSoftwareInstanceAndRelatedComputerPartition(self,

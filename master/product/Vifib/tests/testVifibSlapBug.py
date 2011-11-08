@@ -1079,7 +1079,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.play(self)
 
   def stepSetRequestedStateStarted(self, sequence, **kw):
-    sequence['state'] = 'started'
+    sequence['requested_state'] = 'started'
+
+  def stepSetRequestedStateStopped(self, sequence, **kw):
+    sequence['requested_state'] = 'stopped'
 
   def stepSetRequestedReferenceRandom(self, sequence, **kw):
     sequence['requested_reference'] = str(random.random())
@@ -1131,6 +1134,8 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_published_software_release + \
       self.prepare_formated_computer + """
+      SetRequestedStateStopped
+
       LoginTestVifibAdmin
       RequestSoftwareInstallation
       Tic
@@ -1165,11 +1170,52 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionNoInstanceHostingSalePackingList
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
       Logout
+
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstancePrepare
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      SetSelectedComputerPartition
+      SetRequestedComputerPartition
+      CheckComputerPartitionNoInstanceHostingSalePackingList
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-
-    raise NotImplementedError
 
   def test_request_new_with_destroyed_reference_web_ui(self):
     """Prove that having destroyed SI allows to request new one with same
