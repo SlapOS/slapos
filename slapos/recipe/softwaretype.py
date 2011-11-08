@@ -95,8 +95,7 @@ class Recipe:
     with open(instance_file_path) as instance_path:
       buildout.readfp(instance_path)
 
-    buildout.set('buildout', 'installed',
-                 '.installed-%s.cfg' % software_type)
+    buildout.set('buildout', 'installed', '.installed2.cfg')
 
     buildout.add_section('slap-parameter')
     for parameter, value in self.parameter_dict.items():
