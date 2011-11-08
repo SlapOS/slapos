@@ -314,6 +314,113 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepStoreComputerCoordinatesAsC1(self, sequence, **kw):
+    sequence.edit(
+      computer_uid_c1=sequence['computer_uid'],
+      computer_reference_c1=sequence['computer_reference'],
+    )
+
+  def stepRestoreComputerC1Coordinates(self, sequence, **kw):
+    sequence.edit(
+      computer_uid=sequence['computer_uid_c1'],
+      computer_reference=sequence['computer_reference_c1'],
+    )
+
+  def stepStoreComputerCoordinatesAsC0(self, sequence, **kw):
+    sequence.edit(
+      computer_uid_c0=sequence['computer_uid'],
+      computer_reference_c0=sequence['computer_reference'],
+    )
+
+  def stepFinishSoftwareInstanceSpannedTree(self, sequence, **kw):
+    self.stepLoginDefaultUser()
+    rand = str(random())
+    S1 = 'S1' + rand
+    S2 = 'S2' + rand
+    S3 = 'S3' + rand
+    root_software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+    common_kw = dict(
+      software_release=sequence['software_release_uri'],
+      software_type='any', instance_xml=self.minimal_correct_xml,
+      state='stopped')
+    self.logout()
+
+    self.login(sequence['software_instance_reference'])
+    root_software_instance.requestSoftwareInstance(
+      partition_reference=S1,
+      sla_xml="""<?xml version='1.0' encoding='utf-8'?>
+      <instance>
+        <parameter id="computer_guid">%s</parameter>
+        </instance>""" % sequence['computer_reference_c1'],
+      **common_kw)
+    self.stepTic()
+    self.logout()
+
+    self.stepLoginDefaultUser()
+    S1_instance = self.portal.portal_catalog.getResultValue(
+      portal_type='Software Instance', title=S1)
+    S1_reference = S1_instance.getReference()
+    self.logout()
+
+    self.login(S1_reference)
+    S1_instance.requestSoftwareInstance(
+      partition_reference=S2,
+      sla_xml="""<?xml version='1.0' encoding='utf-8'?>
+      <instance>
+        <parameter id="computer_guid">%s</parameter>
+        </instance>""" % sequence['computer_reference_c0'],
+      **common_kw)
+    self.stepTic()
+    self.logout()
+
+    self.stepLoginDefaultUser()
+    S2_instance = self.portal.portal_catalog.getResultValue(
+      portal_type='Software Instance', title=S2)
+    S2_reference = S2_instance.getReference()
+    self.logout()
+
+    self.login(S2_reference)
+    S2_instance.requestSoftwareInstance(
+      partition_reference=S3,
+      sla_xml="""<?xml version='1.0' encoding='utf-8'?>
+      <instance>
+        <parameter id="computer_guid">%s</parameter>
+        </instance>""" % sequence['computer_reference_c1'],
+      **common_kw)
+    self.stepTic()
+    self.logout()
+
+    self.stepLoginDefaultUser()
+    S3_instance = self.portal.portal_catalog.getResultValue(
+      portal_type='Software Instance', title=S3)
+    S3_reference = S3_instance.getReference()
+    self.logout()
+
+    self.login(S1_reference)
+    S1_instance.stopComputerPartitionInstallation()
+    self.stepTic()
+    self.logout()
+
+    self.login(S2_reference)
+    S2_instance.stopComputerPartitionInstallation()
+    self.stepTic()
+    self.logout()
+
+    self.login(S3_reference)
+    S3_instance.stopComputerPartitionInstallation()
+    self.stepTic()
+    self.logout()
+
+    self.stepLoginDefaultUser()
+    sequence.edit(
+      S0_uid = sequence['software_instance_uid'],
+      S1_uid = S1_instance.getUid(),
+      S2_uid = S2_instance.getUid(),
+      S3_uid = S3_instance.getUid(),
+    )
+    self.logout()
+
   def test_computer_bang_tree_with_other_computer(self):
     """Check that bang works on complex tree spanned on many computers
 
@@ -328,7 +435,120 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     Where S0 and S2 are on C0 and S1 is on C1 and both are non public it shall
     work.
     """
-    raise NotImplementedError
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      """
+      # prepare first computer
+      LoginTestVifibCustomer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      StoreComputerCoordinatesAsC1
+      ComputerSetAllocationScopeOpenPersonal
+      Tic
+      CheckComputerTradeConditionDestinationSectionTestVifibCustomer
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      LoginTestVifibCustomer
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # prepare second computer
+      LoginTestVifibCustomer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      StoreComputerCoordinatesAsC0
+      ComputerSetAllocationScopeOpenPersonal
+      Tic
+      CheckComputerTradeConditionDestinationSectionTestVifibCustomer
+      Logout
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+      LoginTestVifibCustomer
+      RequestSoftwareInstallation
+      Tic
+      Logout
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      # Request S0
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceBuilding
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      SetSelectedComputerPartition
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceStart
+      Tic
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      Logout
+
+      FinishSoftwareInstanceSpannedTree
+
+      SlapLoginCurrentComputer
+      CheckEmptyComputerGetComputerPartitionCall
+      ComputerBang
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      SlapLogout
+
+      RestoreComputerC1Coordinates
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      SlapLogout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   def test_computer_bang_not_called_on_destroyed_ones(self):
     """Check that bang is ignoring destroyed computer partitions"""

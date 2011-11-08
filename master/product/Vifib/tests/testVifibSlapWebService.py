@@ -178,6 +178,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps -- scenarios
   ########################################
+  def stepCheckComputerTradeConditionDestinationSectionTestVifibCustomer(
+      self, sequence, **kw):
+    computer = self.portal.portal_catalog.getResultValue(
+      uid=sequence['computer_uid'])
+    trade_condition = computer.getAggregateRelatedValue(
+      portal_type='Sale Supply Line').getParentValue()
+    person_url = self.portal.portal_catalog.getResultValue(portal_type='Person',
+      default_email_text='test_customer@example.org').getRelativeUrl()
+    self.assertEqual(trade_condition.getDestinationSectionList(), [person_url])
+
   def stepPersonRequestSlapSoftwareInstancePrepare(self, sequence,
       **kw):
     software_release = sequence['software_release_uri']
