@@ -1198,6 +1198,8 @@ SSLCARevocationPath %(ca_crl)s"""
           mysql_conf))
 
     mysql_script_list = []
+    mysql_script_list.append(pkg_resources.resource_string(__name__,
+                   'template/mysql-init-function.sql.in'))
     for x_database, x_user, x_password in \
           [(mysql_conf['mysql_database'],
             mysql_conf['mysql_user'],
@@ -1207,7 +1209,7 @@ SSLCARevocationPath %(ca_crl)s"""
             mysql_conf['mysql_test_password']),
           ] + mysql_conf['mysql_parallel_test_dict']:
       mysql_script_list.append(pkg_resources.resource_string(__name__,
-                     'template/initmysql.sql.in') % {
+                     'template/mysql-init-database.sql.in') % {
                         'mysql_database': x_database,
                         'mysql_user': x_user,
                         'mysql_password': x_password})
