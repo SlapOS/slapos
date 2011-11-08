@@ -29,6 +29,7 @@ import os
 import sys
 import copy
 from ConfigParser import ConfigParser
+import json
 import subprocess
 import slapos.slap
 import netaddr
@@ -99,7 +100,10 @@ class Recipe:
 
     buildout.add_section('slap-parameter')
     for parameter, value in self.parameter_dict.items():
-      buildout.set('slap-parameter', parameter, value)
+      if isinstance(value, str):
+        buildout.set('slap-parameter', parameter, value)
+      else:
+        buildout.set('slap-parameter', parameter, json.dumps(value))
 
     buildout.add_section('slap-network-information')
     buildout.set('slap-network-information', 'local-ipv4',
