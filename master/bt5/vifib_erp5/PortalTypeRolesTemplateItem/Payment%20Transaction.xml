@@ -1,0 +1,7 @@
+<type_roles>
+  <role id='Associate'>
+   <property id='title'>Destination Section is Associate</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
+   <multi_property id='base_category'>destination_section</multi_property>
+  </role>
+</type_roles>
