@@ -62,7 +62,7 @@ elif slap_state == \'busy\':\n
 \n
   # Partition under destruction does not accept new slave\n
   try:\n
-    delivery_line = context.Item_getInstancePackingListLine(service_relative_url=portal_preferences.getPreferredInstanceCleanupResource())\n
+    delivery_line = context.Item_getInstancePackingListLine(service_relative_url=portal_preferences.getPreferredInstanceCleanupResource(), aggregate_portal_type=\'Software Instance\')\n
   except ValueError:\n
     pass\n
   else:\n
