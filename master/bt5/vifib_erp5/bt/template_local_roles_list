@@ -24,6 +24,7 @@ person_module/test_vifib_developer
 person_module/test_vifib_member
 person_module/test_vifib_user_admin
 person_module/test_vifib_user_developer
+portal_integrations
 purchase_packing_list_module
 sale_order_module
 sale_packing_list_module
@@ -37,4 +38,4 @@ software_product_module/test_software_product
 software_release_module
 software_release_module/test_software_release
 support_request_module
-portal_integrations
+system_event_module
