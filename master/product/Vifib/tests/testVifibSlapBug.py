@@ -1317,6 +1317,59 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetSoftwareInstanceUidToCurrentSlave(self, sequence, **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(uid=sequence[
+      'computer_partition_uid'])
+    instance_setup_packing_list = computer_partition\
+      .Item_getInstancePackingListLine()
+    slave_instance = instance_setup_packing_list.getAggregateValue(
+        portal_type='Slave Instance')
+    sequence['software_instance_uid'] = slave_instance.getUid()
+
+  def test_catalog_slave_destruction(self):
+    """Test that computer partition if correctly catalogged with slave destruction"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + \
+      """
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SetRandomRequestedReference
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      SoftwareInstanceAvailable
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      SetSoftwareInstanceUidToCurrentSlave
+      Logout
+
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
 def test_suite():
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(TestVifibSlapBug))
