@@ -58,6 +58,8 @@ price = 1.0\n
 resource = \'currency_module/EUR\'\n
 bank_account = \'account_module/1\'\n
 receivable_account = \'account_module/2\'\n
+source_section = \'organisation_module/vifib_internet\'\n
+source_payment = \'organisation_module/vifib_internet/2\'\n
 # end of hardcoded values\n
 \n
 payment_transaction = context.getPortalObject().accounting_module.newContent(\n
@@ -65,6 +67,8 @@ payment_transaction = context.getPortalObject().accounting_module.newContent(\n
   specialise=integration_site.getSourceTrade(),\n
   destination_section=context.ERP5Site_getAuthenticatedMemberPersonValue().getRelativeUrl(),\n
   resource=resource,\n
+  source_section=source_section,\n
+  source_payment=source_payment\n
 )\n
 \n
 payment_transaction.bank.edit(\n
