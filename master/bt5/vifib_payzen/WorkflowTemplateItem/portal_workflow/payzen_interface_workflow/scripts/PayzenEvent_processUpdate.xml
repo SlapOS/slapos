@@ -108,7 +108,7 @@ elif transaction_status in continue_transaction_id_list:\n
   if transaction_devise != auth_devise:\n
     payzen_event.confirm(comment=\'Received devise (%r) does not match stored on transaction (%r)\'% (auth_devise, transaction_devise))\n
     return\n
-  transaction.activate().PaymentTranscation_start()\n
+  transaction.activate().PaymentTransaction_start()\n
   payzen_event.confirm()\n
   payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
 else:\n
