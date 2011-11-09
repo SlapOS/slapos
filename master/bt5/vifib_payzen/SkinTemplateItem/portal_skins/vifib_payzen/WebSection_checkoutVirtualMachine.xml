@@ -76,7 +76,7 @@ payment_transaction.bank.edit(\n
   source=bank_account\n
 )\n
 payment_transaction.receivable.edit(\n
-  -price,\n
+  quantity=-price,\n
   source=receivable_account\n
 )\n
 \n
