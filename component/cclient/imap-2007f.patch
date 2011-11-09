@@ -1,6 +1,19 @@
 --- old/Makefile	2011-09-22 13:19:53.000000000 +0100
-+++ new/Makefile	2011-09-23 11:29:12.405271442 +0100
-@@ -580,7 +580,6 @@
++++ new/Makefile	2011-11-09 15:02:54.038306922 +0100
+@@ -280,7 +280,11 @@
+ SYSTEM=unix
+ TOOLS=tools
+ TOUCH=touch
+-
++IMAPDIR=$(CCLIENT)/cclient
++COMPILEDIR = $(CCLIENT)/cclient__compile__/imap-2007f
++CP=cp -r
++INSTALL=install
++FOR=for
+ 
+ # Primary build command
+ 
+@@ -580,7 +584,6 @@
  	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	@echo
  	@echo Do you want to continue this build anyway?  Type y or n please:
@@ -8,7 +21,7 @@
  
  nounenc:
  	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-@@ -639,7 +638,7 @@
+@@ -639,7 +642,7 @@
  	@echo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	@echo
  	@echo Do you want to build with IPv6 anyway?  Type y or n please:
@@ -17,15 +30,27 @@
  	@echo OK, I will remember that you really want to build with IPv6.
  	@echo You will not see this message again.
  	@$(TOUCH) ip6
-@@ -731,6 +730,12 @@
+@@ -731,6 +734,24 @@
  	$(SH) -c '$(RM) an ua OSTYPE SPECIALS c-client mtest imapd ipopd mailutil mlock dmail tmail || true'
  	$(CD) tools;$(MAKE) clean
  
-+install:
-+	install -v -d $(CCLIENT)/cclient/include
-+	ln -svf $(CCLIENT)/cclient__compile__/imap-2007f/c-client $(CCLIENT)/cclient/include
-+	install -v -d $(CCLIENT)/cclient/lib
-+	ln -svf $(CCLIENT)/cclient__compile__/imap-2007f/c-client/c-client.a $(CCLIENT)/cclient/lib/libc-client.a
++install:	
++	$(INSTALL) -v -d $(IMAPDIR)/include
++	$(INSTALL) -v -d $(IMAPDIR)/lib
++	$(INSTALL) -v -m 644 $(COMPILEDIR)/c-client/*.h $(IMAPDIR)/include
++	$(INSTALL) -v -m 644 $(COMPILEDIR)/c-client/c-client.a $(IMAPDIR)/lib
++	$(CP) $(COMPILEDIR)/ipopd $(COMPILEDIR)/mailutil $(COMPILEDIR)/imapd \
++	$(COMPILEDIR)/dmail $(COMPILEDIR)/mlock $(COMPILEDIR)/mtest $(COMPILEDIR)/tmail $(IMAPDIR)
++	$(RM) $(IMAPDIR)/ipopd/*.h $(IMAPDIR)/ipopd/*.c $(IMAPDIR)/ipopd/Makefile;
++	$(RM) $(IMAPDIR)/mailutil/*.h $(IMAPDIR)/mailutil/*.c $(IMAPDIR)/mailutil/Makefile;
++	$(RM) $(IMAPDIR)/imapd/*.h $(IMAPDIR)/imapd/*.c $(IMAPDIR)/imapd/Makefile;
++	$(RM) $(IMAPDIR)/tmail/*.h $(IMAPDIR)/tmail/*.c $(IMAPDIR)/tmail/Makefile;
++	$(RM) $(IMAPDIR)/mlock/*.h $(IMAPDIR)/mlock/*.c $(IMAPDIR)/mlock/Makefile;
++	$(RM) $(IMAPDIR)/mtest/*.h $(IMAPDIR)/mtest/*.c $(IMAPDIR)/mtest/Makefile;
++	$(RM) $(IMAPDIR)/dmail/*.h $(IMAPDIR)/dmail/*.c $(IMAPDIR)/dmail/Makefile;
++	$(INSTALL) -v -m 644 $(COMPILEDIR)/ip6 $(IMAPDIR)
++	$(INSTALL) -v -m 644 $(COMPILEDIR)/OSTYPE $(IMAPDIR)
++	$(INSTALL) -v -m 644 $(COMPILEDIR)/SPECIALS $(IMAPDIR)
 +
  
  # A monument to a hack of long ago and far away...
