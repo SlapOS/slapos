@@ -1,3 +1,5 @@
+Account Module
+Account
 Accounting Transaction
 Accounting Transaction Module
 Acknowledgement
@@ -29,6 +31,7 @@ Open Sale Order
 Open Sale Order Module
 Organisation
 Organisation Module
+Payment Transaction
 Payzen Event
 Person
 Person Module
@@ -57,4 +60,3 @@ Support Request Module
 System Event Module
 Visit
 Web Message
-Payment Transaction
