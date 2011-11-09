@@ -115,11 +115,11 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data',
       'vifib_data_category',
       'vifib_data_web',
+      'vifib_payzen',
+      'vifib_data_payzen',
       'vifib_erp5',
       'vifib_test',
       'vifib_invoicing',
-      'vifib_payzen',
-      'vifib_data_payzen',
     ]
     return result
 
