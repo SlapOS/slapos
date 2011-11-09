@@ -60,7 +60,7 @@ for payment_transaction in portal.portal_catalog(\n
       ):\n
   # do not trust catalog\n
   if payment_transaction.getSimulationState() == \'confirmed\':\n
-    payment_transaction.PaymentTransaction_updateStatus()\n
+    payment_transaction.activate().PaymentTransaction_updateStatus()\n
 </string> </value>
         </item>
         <item>
