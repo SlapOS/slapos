@@ -37,3 +37,4 @@ software_product_module/test_software_product
 software_release_module
 software_release_module/test_software_release
 support_request_module
+portal_integrations

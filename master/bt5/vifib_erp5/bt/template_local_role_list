@@ -24,6 +24,7 @@ person_module/test_vifib_developer
 person_module/test_vifib_member
 person_module/test_vifib_user_admin
 person_module/test_vifib_user_developer
+portal_integrations
 purchase_packing_list_module
 sale_order_module
 sale_packing_list_module
