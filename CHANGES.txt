@@ -1,12 +1,45 @@
 Changes
 =======
 
-0.31 (Unreleased)
+0.35 (2011-11-10)
+-----------------
+
+ * KVM : Promise are now working properly. [Łukasz Nowak]
+ * KVM : Use NoVNC with automatic login. [Cedric de Saint Martin]
+ * KVM : Use websockify egg and remove numpy hack. [Cedric de Saint Martin]
+
+0.34 (2011-11-08)
+-----------------
+
+  * Any LAMP software can specify its own php.ini [Alain Takoudjou]
+  * LAMP : Fix bug where buildout does not has sufficient rights to update
+    application parts. [Alain Takoudjou]
+  * LAMP : Update formatting when returning list of renamed files.
+    [Alain Takoudjou]
+
+0.33 (2011-10-31)
+-----------------
+
+  * erp5 : use percona toolkit instead of maatkit [Sebastien Robin]
+
+0.32 (2011-10-28)
+-----------------
+
+  * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will 
+   configure PHP application instance when needed. [Alain Takoudjou Kamdem]
+
+0.31 (2011-10-16)
 -----------------
 
  * Split big redundant recipes into small ones. In order to factorize the code
    and have everything in the buildout file. [Antoine Catton, Romain Courteaud,
    Łukasz Nowak]
+ * LAMP : Update apache and php configuration files to work with a lot of different
+   PHP software. [Alain Takoudjou Kamdem]
+ * LAMP : Recipe can launch scripts, move or remove files or directories
+   when a given condition is filled. Useful when PHP apps require you to
+   remove "admin" directory after configuration for example.
+   [Alain Takoudjou Kamdem]
 
 0.30 (2011-10-06)
 -----------------
