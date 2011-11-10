@@ -543,11 +543,13 @@ class Slapgrid(object):
           if process_handler.poll() is None:
             process_handler.kill()
             computer_partition.error("The promise %r timed out" % promise)
+            clean_run = False
           elif process_handler.poll() != 0:
             stderr = process_handler.communicate()[1]
             if stderr is None:
               stderr = 'No error output from %r.' % promise
             computer_partition.error(stderr)
+            clean_run = False
 
 
     logger.info("Finished computer partitions...")
