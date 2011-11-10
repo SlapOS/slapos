@@ -59,7 +59,8 @@ class Recipe(BaseSlapRecipe):
 
     # Install the socket_connection_attempt script
     catcher = zc.buildout.easy_install.scripts(
-      [('check_port_listening', __name__ + 'socket_connection_attempt', 'connection_attempt')],
+      [('check_port_listening', 'slapos.recipe.kvm.socket_connection_attempt',
+        'connection_attempt')],
       self.ws,
       sys.executable,
       self.bin_directory,
@@ -84,11 +85,11 @@ class Recipe(BaseSlapRecipe):
 
     self.linkBinary()
     self.computer_partition.setConnectionDict(dict(
-        url = "https://[%s]:%s/vnc.html?host=[%s]&port=%s&encrypt=1" % (noVNC_conf['source_ip'],
-                                                     noVNC_conf['source_port'],
-                                                     noVNC_conf['source_ip'],
-                                                     noVNC_conf['source_port']
-                                                     ),
+        url = "https://[%s]:%s/vnc_auto.html?host=[%s]&port=%s&encrypt=1" % (
+            noVNC_conf['source_ip'],
+            noVNC_conf['source_port'],
+            noVNC_conf['source_ip'],
+            noVNC_conf['source_port']),
         password = kvm_conf['vnc_passwd']))
 
     return self.path_list
@@ -155,7 +156,8 @@ class Recipe(BaseSlapRecipe):
 
     # Instanciate KVM
     kvm_template_location = pkg_resources.resource_filename(
-      __name__, 'template/kvm_run.in')
+                                             __name__, os.path.join(
+                                             'template', 'kvm_run.in'))
 
     kvm_runner_path = self.createRunningWrapper("kvm",
           self.substituteTemplate(kvm_template_location,
@@ -165,7 +167,9 @@ class Recipe(BaseSlapRecipe):
 
     # Instanciate KVM controller
     kvm_controller_template_location = pkg_resources.resource_filename(
-      __name__, 'template/kvm_controller_run.in')
+                                             __name__, os.path.join(
+                                             'template',
+                                             'kvm_controller_run.in' ))
 
     kvm_controller_runner_path = self.createRunningWrapper("kvm_controller",
           self.substituteTemplate(kvm_controller_template_location,
@@ -205,34 +209,24 @@ class Recipe(BaseSlapRecipe):
     """
 
     noVNC_conf = {}
-   
+
     noVNC_conf['source_ip']   = source_ip
     noVNC_conf['source_port'] = source_port
-    
-    # Install numpy.
-    # XXX-Cedric : this looks like a hack. Do we have better solution, knowing
-    # That websockify is not an egg?
-    numpy = zc.buildout.easy_install.install(['numpy'], self.options['eggs-directory'])
-    environment = dict(PYTHONPATH='%s' % numpy.entries[0])
-    
-    # Instanciate Websockify
-    websockify_runner_path = zc.buildout.easy_install.scripts([('websockify',
-      'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
-      sys.executable, self.wrapper_directory, arguments=[
-        [sys.executable.strip(),
-         self.options['websockify_path'],
-         '--web',
-         self.options['noVNC_location'],
-         '--key=%s' % (self.key_path),
-         '--cert=%s' % (self.certificate_path),
-         '--ssl-only',
-         '%s:%s' % (source_ip, source_port),
-         '%s:%s' % (target_ip, target_port)],
-        [self.certificate_path, self.key_path],
-        environment]
-       )[0]
 
-    self.path_list.append(websockify_runner_path)
+    execute_arguments = [[
+        self.options['websockify'].strip(),
+        '--web',
+        self.options['noVNC_location'],
+        '--key=%s' % (self.key_path),
+        '--cert=%s' % (self.certificate_path),
+        '--ssl-only',
+        '%s:%s' % (source_ip, source_port),
+        '%s:%s' % (target_ip, target_port)],
+        [self.certificate_path, self.key_path]]
+
+    self.path_list.extend(zc.buildout.easy_install.scripts([('websockify',
+      'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=execute_arguments))
 
     # Add noVNC promise
     self.port_listening_promise_conf.update(hostname=noVNC_conf['source_ip'],
