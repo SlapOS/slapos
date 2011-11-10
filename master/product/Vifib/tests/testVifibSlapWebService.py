@@ -3954,16 +3954,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     sequence_list.play(self)
 
   ########################################
-  # ComputerPartition.stopped
-  ########################################
-  def test_ComputerPartition_stopped(self):
-    sequence_list = SequenceList()
-    sequence_string = self\
-        .prepare_stopped_computer_partition_sequence_string
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  ########################################
   # ComputerPartition.destroy
   ########################################
 
