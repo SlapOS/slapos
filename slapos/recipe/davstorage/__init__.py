@@ -41,13 +41,12 @@ class Recipe(BaseSlapRecipe):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
     document_root = self.createDataDirectory('www')
-    self.apache_config = self.installApache(document_root)
-    self.setConnectionDict(
-      dict(url='https://[%s]:%s/' % (self.apache_config['ip'],
-                                     self.apache_config['port']),
-           user=self.apache_config['user'],
-           password=self.apache_config['password']),
-    )
+    apache_config = self.installApache(document_root)
+    self.setConnectionUrl(scheme='webdavs',
+                          host=apache_config['ip'],
+                          port=apache_config['port'],
+                          auth=(apache_config['user'],
+                                apache_config['password']))
     return self.path_list
 
   def installApache(self, document_root, ip=None, port=None):

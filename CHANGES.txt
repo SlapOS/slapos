@@ -1,10 +1,80 @@
 Changes
 =======
 
-0.25 (unreleased)
+0.35 (2011-11-10)
 -----------------
 
- * No changes yet.
+ * KVM : Promise are now working properly. [Łukasz Nowak]
+ * KVM : Use NoVNC with automatic login. [Cedric de Saint Martin]
+ * KVM : Use websockify egg and remove numpy hack. [Cedric de Saint Martin]
+
+0.34 (2011-11-08)
+-----------------
+
+  * Any LAMP software can specify its own php.ini [Alain Takoudjou]
+  * LAMP : Fix bug where buildout does not has sufficient rights to update
+    application parts. [Alain Takoudjou]
+  * LAMP : Update formatting when returning list of renamed files.
+    [Alain Takoudjou]
+
+0.33 (2011-10-31)
+-----------------
+
+  * erp5 : use percona toolkit instead of maatkit [Sebastien Robin]
+
+0.32 (2011-10-28)
+-----------------
+
+  * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will 
+   configure PHP application instance when needed. [Alain Takoudjou Kamdem]
+
+0.31 (2011-10-16)
+-----------------
+
+ * Split big redundant recipes into small ones. In order to factorize the code
+   and have everything in the buildout file. [Antoine Catton, Romain Courteaud,
+   Łukasz Nowak]
+ * LAMP : Update apache and php configuration files to work with a lot of different
+   PHP software. [Alain Takoudjou Kamdem]
+ * LAMP : Recipe can launch scripts, move or remove files or directories
+   when a given condition is filled. Useful when PHP apps require you to
+   remove "admin" directory after configuration for example.
+   [Alain Takoudjou Kamdem]
+
+0.30 (2011-10-06)
+-----------------
+
+ * LAMP : Update apache and php configuration files to work with a lot of different
+   PHP software. [Alain Takoudjou Kamdem]
+
+0.29 (2011-09-28)
+-----------------
+
+ * mysql: bug fix on database recovering (avoid importing dump two times). [Antoine Catton]
+
+0.28 (2011-09-27)
+-----------------
+
+ * lamp.request: requesting the mariadb software release instead of itself. [Antoine Catton]
+ * lamp.request: adding support of remote backup repo (using a different
+   software type). The default remote backup is a davstorage. [Antoine Catton]
+
+0.27 (2011-09-27)
+-----------------
+
+ * mysql: add backup and backup recovering using different software type. [Antoine Catton]
+
+0.26 (2011-09-27)
+-----------------
+
+ * Davstorage: returning more explicit url (using webdav scheme). [Antoine Catton]
+ * Other mysql minor fixes. [Antoine Catton]
+
+0.25 (2011-09-21)
+-----------------
+
+ * mysql: Restore to default behaviour. [Antoine Catton]
+ * mysql: Use mysqldump instead of non trustable backup system. [Antoine Catton]
 
 0.24 (2011-09-19)
 -----------------

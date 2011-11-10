@@ -31,8 +31,13 @@ import pkg_resources
 import zc.buildout
 import sys
 import zc.recipe.egg
+import urlparse
 
 class BaseRecipe(BaseSlapRecipe):
+  def getTemplateFilename(self, template_name):
+    return pkg_resources.resource_filename(__name__,
+        'template/%s' % template_name)
+
   def installMysqlServer(self, ip=None, port=None):
     if ip is None:
       ip = self.getLocalIPv4Address()
@@ -55,8 +60,8 @@ class BaseRecipe(BaseSlapRecipe):
     self._createDirectory(mysql_conf['data_directory'])
 
     mysql_conf_path = self.createConfigurationFile("my.cnf",
-        self.substituteTemplate(pkg_resources.resource_filename(__name__, 'template/my.cnf.in'),
-          mysql_conf))
+        self.substituteTemplate(pkg_resources.resource_filename(__name__,
+        'template/my.cnf.in'), mysql_conf))
 
     mysql_script = pkg_resources.resource_string(__name__,
         'template/mysqlinit.sql.in') % mysql_conf
@@ -122,9 +127,11 @@ class BaseRecipe(BaseSlapRecipe):
         self.substituteTemplate(pkg_resources.resource_filename(__name__,
           'template/apache.in'), apache_config))
     self.path_list.append(config_file)
+    php_ini = pkg_resources.resource_filename(__name__, 'template/php.ini.in')
+    if self.options.has_key('php_ini'):
+      php_ini = os.path.join(self.options['php_ini'], 'php.ini.in')
     self.path_list.append(self.createConfigurationFile('php.ini',
-        self.substituteTemplate(pkg_resources.resource_filename(__name__,
-          'template/php.ini.in'), dict(tmp_directory=self.tmp_directory))))
+        self.substituteTemplate(php_ini, dict(tmp_directory=self.tmp_directory))))
     self.path_list.extend(zc.buildout.easy_install.scripts([(
       'httpd',
         __name__ + '.apache', 'runApache')], self.ws,
@@ -148,6 +155,60 @@ class BaseRecipe(BaseSlapRecipe):
     destination = os.path.join(path, file)
     open(destination, 'w').write(open(template, 'r').read() % d)
 
+  def configureInstallation(self, document_root, url, mysql_conf):
+    """Start process which can launch python scripts, move or remove files or 
+    directories when installing software.
+    """
+    if not self.options.has_key('delete') and not self.options.has_key('rename') and not\
+        self.options.has_key('chmod') and not self.options.has_key('script'):
+      return ""
+    delete = []
+    chmod = []
+    data = []
+    rename = []
+    rename_list = ""
+    argument = [self.options['lampconfigure_directory'].strip(),
+                             "-H", mysql_conf['mysql_host'], "-P", mysql_conf['mysql_port'],
+                             "-p", mysql_conf['mysql_password'], "-u", mysql_conf['mysql_user']]
+    if not self.options.has_key('file_token'):
+      argument = argument + ["-d", mysql_conf['mysql_database'],
+                             "--table", self.options['table_name'].strip(), "--cond",
+                             self.options['constraint'].strip()]
+    else:
+      argument = argument + ["-f", self.options['file_token'].strip()]
+    argument += ["-t", document_root]
+    
+    if self.options.has_key('delete'):
+      delete = ["delete"]
+      for fname in self.options['delete'].split(','):
+        delete.append(fname.strip())
+    if self.options.has_key('rename'):
+      for fname in self.options['rename'].split(','):
+        if fname.find("=>") < 0:
+          old_name = fname
+          fname = []
+          fname.append(old_name)
+          fname.append(old_name + '-' + mysql_conf['mysql_user'])
+        else:
+          fname = fname.split("=>")
+        cmd = ["rename"]
+        if self.options.has_key('rename_chmod'):
+          cmd += ["--chmod", self.options['rename_chmod'].strip()]
+        rename.append(cmd + [fname[0].strip(), fname[1].strip()])
+        rename_list += fname[0] + " to " + fname[1] + " "
+    if self.options.has_key('chmod'):
+      chmod = ["chmod", self.options['mode'].strip()]
+      for fname in self.options['chmod'].split(','):
+        chmod.append(fname.strip())
+    if self.options.has_key('script') and \
+        self.options['script'].strip().endswith(".py"):
+      data = ["run", self.options['script'].strip(), "-v", mysql_conf['mysql_database'], url, document_root]
+    self.path_list.extend(zc.buildout.easy_install.scripts(
+        [('configureInstall', __name__ + '.runner', 'executeRunner')], self.ws,
+        sys.executable, self.wrapper_directory, arguments=[argument, delete, rename,
+            chmod, data]))
+    return rename_list
+
 class Static(BaseRecipe):
   def _install(self):
     self.path_list = []
@@ -166,12 +227,17 @@ class Simple(BaseRecipe):
     self.createHtdocs(self.options['source'].strip(), document_root)
     mysql_conf = self.installMysqlServer()
     url = self.installApache(document_root)
-    self.setConnectionDict(dict(
-      url=url,
+    renamed = self.configureInstallation(document_root, url, mysql_conf)
+    connectionDict = dict(
+      url=url,      
       **mysql_conf
-    ))
-    self.createConfiguration(self.options['template'], document_root,
-        self.options['configuration'], mysql_conf)
+    )
+    if not renamed == "":
+      connectionDict['rename'] = renamed
+    self.setConnectionDict(connectionDict)
+    if self.options.has_key('template') and self.options.has_key('configuration'):
+      self.createConfiguration(self.options['template'], document_root,
+          self.options['configuration'], mysql_conf)
     return self.path_list
 
 class Request(BaseRecipe):
@@ -179,28 +245,60 @@ class Request(BaseRecipe):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
     software_type = self.parameter_dict['slap_software_type']
-    if software_type == 'RootSoftwareInstance':
-      document_root = self.createDataDirectory('htdocs')
-      self.createHtdocs(self.options['source'].strip(), document_root)
-      mysql = self.request(self.software_release_url, 'MySQL Server', 'mysql')
-      mysql_conf = dict(
-        mysql_host=mysql.getConnectionParameter('mysql_host'),
-        mysql_port=mysql.getConnectionParameter('mysql_port'),
-        mysql_user=mysql.getConnectionParameter('mysql_user'),
-        mysql_password=mysql.getConnectionParameter('mysql_password'),
-        mysql_database=mysql.getConnectionParameter('mysql_database'),
-      )
-      url = self.installApache(document_root)
-      self.setConnectionDict(dict(
-        url=url,
-      ))
-      self.createConfiguration(self.options['template'], document_root,
-          self.options['configuration'], mysql_conf)
-    elif software_type == 'MySQL Server':
-      mysql_conf = self.installMysqlServer()
-      self.setConnectionDict(dict(
-        **mysql_conf
-      ))
+
+    document_root = self.createDataDirectory('htdocs')
+    self.createHtdocs(self.options['source'].strip(), document_root)
+
+    if software_type == 'Backuped':
+      davstorage = self.request(self.options['davstorage-software-url'],
+        software_type, 'Backup Server').getConnectionParameter('url')
+
+      parameters = {'remote_backup': davstorage}
+    elif software_type == 'PersonnalBackup':
+      parameters = {'remote_backup': self.parameter_dict['remote_backup']}
     else:
-      raise zc.buildout.UserError('Uknown software type %r' % software_type)
+      parameters = {}
+
+    mysql = self.request(self.options['mariadb-software-url'],
+      software_type, 'MariaDB Server', partition_parameter_kw=parameters
+    ).getConnectionParameter('url')
+    mysql_parsed = urlparse.urlparse(mysql)
+
+    mysql_host, mysql_port = mysql_parsed.hostname, mysql_parsed.port
+    if mysql_parsed.scheme == 'mysqls': # Listen over stunnel
+      mysql_host, mysql_port = self.installStunnelClient(mysql_host,
+                                                         mysql_port)
+
+    mysql_conf = dict(mysql_database=mysql_parsed.path.strip('/'),
+                      mysql_user=mysql_parsed.username,
+                      mysql_password=mysql_parsed.password,
+                      mysql_host='%s:%s' % (mysql_host,mysql_port))
+
+    url = self.installApache(document_root)
+
+    self.setConnectionDict(dict(
+      url=url,
+    ))
+
+    self.createConfiguration(self.options['template'], document_root,
+        self.options['configuration'], mysql_conf)
     return self.path_list
+
+  def installStunnelClient(self, remote_host, remote_port):
+    local_host = self.getLocalIPv4Address()
+    local_port = 8888
+    stunnel_conf_path = self.createConfigurationFile('stunnel.conf',
+      self.substituteTemplate(
+      self.getTemplateFilename('stunnel.conf.in'), {
+        'log': os.path.join(self.log_directory, 'stunnel.log'),
+        'pid_file': os.path.join(self.run_directory, 'stunnel.pid'),
+        'remote_host': remote_host, 'remote_port': remote_port,
+        'local_host': local_host, 'local_port': local_port,
+      }))
+    wrapper = zc.buildout.easy_install.scripts([('stunnel',
+      'slapos.recipe.librecipe.execute', 'execute')], self.ws,
+      sys.executable, self.wrapper_directory, arguments=[
+        self.options['stunnel_binary'].strip(), stunnel_conf_path]
+      )[0]
+    self.path_list.append(wrapper)
+    return (local_host, local_port,)
