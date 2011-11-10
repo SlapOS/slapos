@@ -59,7 +59,8 @@ class Recipe(BaseSlapRecipe):
 
     # Install the socket_connection_attempt script
     catcher = zc.buildout.easy_install.scripts(
-      [('check_port_listening', __name__ + 'socket_connection_attempt', 'connection_attempt')],
+      [('check_port_listening', 'slapos.recipe.kvm.socket_connection_attempt',
+        'connection_attempt')],
       self.ws,
       sys.executable,
       self.bin_directory,
