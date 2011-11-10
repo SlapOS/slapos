@@ -1,10 +1,12 @@
 Changes
 =======
 
-0.35 (Unreleased)
+0.35 (2011-11-10)
 -----------------
 
- * No change yet.
+ * KVM : Promise are now working properly. [Łukasz Nowak]
+ * KVM : Use NoVNC with automatic login. [Cedric de Saint Martin]
+ * KVM : Use websockify egg and remove numpy hack. [Cedric de Saint Martin]
 
 0.34 (2011-11-08)
 -----------------
