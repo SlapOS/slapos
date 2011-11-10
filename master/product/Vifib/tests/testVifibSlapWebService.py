@@ -53,7 +53,6 @@ DEFAULT_INSTANCE_DICT_PARAMETER_LIST = [
     'slap_computer_id',
     'slap_computer_partition_id',
     'slap_partition_reference',
-    'slap_server_url',
     'slap_software_release_url',
     'slap_software_type',
     "slave_instance_list"
@@ -3094,7 +3093,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     expected = {
         'slap_computer_id': computer_guid,
         'slap_computer_partition_id': partition_id,
-        'slap_server_url': self.server_url,
         'slap_software_release_url': software_release_uri,
         'slap_software_type': 
           sequence.get('requested_software_type',
@@ -3195,7 +3193,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         'new_test_parameter': 'lala2',
         'slap_computer_id': computer_guid,
         'slap_computer_partition_id': partition_id,
-        'slap_server_url': self.server_url,
         'slap_software_release_url': software_release_uri,
         'slap_software_type': 
           sequence.get('requested_software_type',
