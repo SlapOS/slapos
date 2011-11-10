@@ -412,16 +412,20 @@ class SlapTool(BaseTool):
 
   def _instanceXmlToDict(self, xml):
     result_dict = {}
-    if xml is not None and xml != '':
-      tree = etree.fromstring(xml.encode('utf-8'))
-      for element in tree.findall('parameter'):
-        key = element.get('id')
-        value = result_dict.get(key, None)
-        if value is not None:
-          value = value + ' ' + element.text
-        else:
-          value = element.text
-        result_dict[key] = value
+    try:
+      if xml is not None and xml != '':
+        tree = etree.fromstring(xml.encode('utf-8'))
+        for element in tree.findall('parameter'):
+          key = element.get('id')
+          value = result_dict.get(key, None)
+          if value is not None:
+            value = value + ' ' + element.text
+          else:
+            value = element.text
+          result_dict[key] = value
+    except (etree.XMLSchemaError, etree.XMLSchemaParseError,
+      etree.XMLSchemaValidateError, etree.XMLSyntaxError):
+      LOG('SlapTool', INFO, 'Issue during parsing xml:', error=True)
     return result_dict
 
   def _getSlapPartitionByPackingList(self, computer_partition_document):
