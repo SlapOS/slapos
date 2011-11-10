@@ -589,13 +589,30 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetSoftwareInstanceValidConnectionXML(self, sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    software_instance.edit(connection_xml="")
+
+  def stepDamageSoftwareInstanceSlaXml(self, sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    software_instance.edit(sla_xml="""
+    DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""")
+
+  def stepDamageSoftwareInstanceConnectionXml(self, sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    software_instance.edit(connection_xml="""
+    DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""")
+
   def stepDamageSoftwareInstanceXml(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
     software_instance.edit(text_content="""
     DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""")
 
-  def test_Computer_getComputerPartitionList_damaged_instance_xml(self):
+  def test_Computer_getComputerPartitionList_damaged_xml(self):
     """Check that getComputerPartitionList works in case of damaged XML on instance."""
     sequence_list = SequenceList()
     sequence_string = self\
@@ -608,6 +625,27 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CheckSuccessComputerGetComputerPartitionCall
       Tic
       SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceValidXML
+      DamageSoftwareInstanceConnectionXml
+      Logout
+
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceValidConnectionXML
+      DamageSoftwareInstanceSlaXml
+      Logout
+
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      Tic
+      SlapLogout
+
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
