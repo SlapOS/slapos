@@ -1370,6 +1370,52 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepMarkBusyComputerPartition(self, sequence, **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence['computer_partition_uid'])
+    computer_partition.markBusy()
+
+  def stepUpdateLocalRolesOnComputerPartition(self, sequence, **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence['computer_partition_uid'])
+    computer_partition.updateLocalRolesOnSecurityGroups()
+
+  def stepCheckNoHostingSubscriptionComputerPartitionLocalRoles(self, sequence,
+    **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+      uid=sequence['computer_partition_uid'])
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'])
+    self.assertTrue(hosting_subscription.getReference() not in \
+      computer_partition.__ac_local_roles__)
+
+  def test_hosting_subscription_security_on_partition_with_destroyed(self):
+    """Checks that history of Computer Partition does not impacts its security
+      configuration"""
+
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_destroyed_computer_partition + \
+      """
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+
+      # Marked busy in order to simulate previous wrong behaviour
+      MarkBusyComputerPartition
+      Tic
+
+      UpdateLocalRolesOnComputerPartition
+      Tic
+
+      # All related packing lists are delivered, so no local roles for
+      # Hosting Subscription shall be defined
+      CheckNoHostingSubscriptionComputerPartitionLocalRoles
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
 def test_suite():
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(TestVifibSlapBug))
