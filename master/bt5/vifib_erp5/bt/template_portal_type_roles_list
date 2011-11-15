@@ -1,5 +1,5 @@
-Account Module
 Account
+Account Module
 Accounting Transaction
 Accounting Transaction Module
 Acknowledgement
@@ -40,6 +40,8 @@ Purchase Packing List
 Purchase Packing List Module
 Sale Order
 Sale Order Module
+Sale Opportunity
+Sale Opportunity Module
 Sale Packing List
 Sale Packing List Module
 Sale Trade Condition
