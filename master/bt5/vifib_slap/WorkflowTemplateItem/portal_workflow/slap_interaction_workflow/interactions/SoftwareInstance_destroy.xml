@@ -27,9 +27,7 @@
         <item>
             <key> <string>after_script_name</string> </key>
             <value>
-              <list>
-                <string>SoftwareInstance_requestStopSlaveInstanceListFromComputerPartition</string>
-              </list>
+              <tuple/>
             </value>
         </item>
         <item>
@@ -75,7 +73,9 @@
         <item>
             <key> <string>script_name</string> </key>
             <value>
-              <tuple/>
+              <list>
+                <string>SoftwareInstance_destroySlaveInstanceListFromComputerPartition</string>
+              </list>
             </value>
         </item>
         <item>

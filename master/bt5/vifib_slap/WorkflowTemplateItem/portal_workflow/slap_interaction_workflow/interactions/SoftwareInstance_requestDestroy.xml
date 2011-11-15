@@ -28,7 +28,7 @@
             <key> <string>after_script_name</string> </key>
             <value>
               <list>
-                <string>SoftwareInstance_requestStopSlaveInstanceListFromComputerPartition</string>
+                <string>SoftwareInstance_requestDestroySlaveInstanceListFromComputerPartition</string>
               </list>
             </value>
         </item>
