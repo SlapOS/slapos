@@ -1,0 +1,141 @@
+diff --git a/options.h b/options.h
+index d309ab4..63048e1 100644
+--- a/options.h
++++ b/options.h
+@@ -287,6 +287,12 @@ be overridden at runtime with -I. 0 disables idle timeouts */
+ /* The default path. This will often get replaced by the shell */
+ #define DEFAULT_PATH "/usr/bin:/bin"
+ 
++/* The prefix of dropbear environment variable overriding. */
++#define DROPBEAR_OVERRIDE_PREFIX "DROPBEAR_OVERRIDE_"
++#define DROPBEAR_OVERRIDE_PASSWORD DROPBEAR_OVERRIDE_PREFIX "PASSWORD"
++#define DROPBEAR_OVERRIDE_HOME DROPBEAR_OVERRIDE_PREFIX "HOME"
++#define DROPBEAR_OVERRIDE_SHELL DROPBEAR_OVERRIDE_PREFIX "SHELL"
++
+ /* Some other defines (that mostly should be left alone) are defined
+  * in sysoptions.h */
+ #include "sysoptions.h"
+diff --git a/runopts.h b/runopts.h
+index 83b5861..f8999b9 100644
+--- a/runopts.h
++++ b/runopts.h
+@@ -86,6 +86,15 @@ typedef struct svr_runopts {
+ 	int noauthpass;
+ 	int norootpass;
+ 
++#ifdef ENABLE_SINGLEUSER
++	int singleuser;
++	struct {
++		char *password;
++		char *home;
++		char *shell;
++	} singleuserenv;
++#endif /* ifdef ENABLE_SINGLEUSER */
++
+ #ifdef ENABLE_SVR_REMOTETCPFWD
+ 	int noremotetcp;
+ #endif
+diff --git a/svr-auth.c b/svr-auth.c
+index 87e3c5e..adb2e8b 100644
+--- a/svr-auth.c
++++ b/svr-auth.c
+@@ -126,6 +126,14 @@ void recv_msg_userauth_request() {
+ 
+ 	
+ 	username = buf_getstring(ses.payload, &userlen);
++#ifdef ENABLE_SINGLEUSER
++	/* If userspace enabled, ignore username */
++	if (svr_opts.singleuser) {
++		m_free(username);
++		/* Get the current login of the user running dropbear */
++		username = m_strdup(getlogin());
++	}
++#endif /* ifdef ENABLE_SINGLEUSER */
+ 	servicename = buf_getstring(ses.payload, &servicelen);
+ 	methodname = buf_getstring(ses.payload, &methodlen);
+ 
+@@ -228,6 +236,18 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
+ 			}
+ 			authclear();
+ 			fill_passwd(username);
++#ifdef ENABLE_SINGLEUSER
++			if (svr_opts.singleuser) {
++				if (svr_opts.singleuserenv.home != NULL) {
++					m_free(ses.authstate.pw_dir);
++					ses.authstate.pw_dir = m_strdup(svr_opts.singleuserenv.home);
++				}
++				if (svr_opts.singleuserenv.shell != NULL) {
++					m_free(ses.authstate.pw_shell);
++					ses.authstate.pw_shell = m_strdup(svr_opts.singleuserenv.shell);
++				}
++			}
++#endif /* ifdef ENABLE_SINGLEUSER */
+ 			ses.authstate.username = m_strdup(username);
+ 	}
+ 
+diff --git a/svr-runopts.c b/svr-runopts.c
+index 2e836d2..1c21d7c 100644
+--- a/svr-runopts.c
++++ b/svr-runopts.c
+@@ -83,6 +83,9 @@ static void printhelp(const char * progname) {
+ 					"-W <receive_window_buffer> (default %d, larger may be faster, max 1MB)\n"
+ 					"-K <keepalive>  (0 is never, default %d)\n"
+ 					"-I <idle_timeout>  (0 is never, default %d)\n"
++#ifdef ENABLE_SINGLEUSER
++					"-n		Enable the single user mode.\n"
++#endif /* ifdef ENABLE_SINGLEUSER */
+ #ifdef DEBUG_TRACE
+ 					"-v		verbose (compiled with DEBUG_TRACE)\n"
+ #endif
+@@ -128,6 +131,12 @@ void svr_getopts(int argc, char ** argv) {
+ #ifndef DISABLE_ZLIB
+ 	opts.enable_compress = 1;
+ #endif
++#ifdef ENABLE_SINGLEUSER
++	svr_opts.singleuser = 0;
++	svr_opts.singleuserenv.password = NULL;
++	svr_opts.singleuserenv.home = NULL;
++	svr_opts.singleuserenv.shell = NULL;
++#endif /* ifdef ENABLE_SINGLEUSER */
+ 	/* not yet
+ 	opts.ipv4 = 1;
+ 	opts.ipv6 = 1;
+@@ -242,6 +251,17 @@ void svr_getopts(int argc, char ** argv) {
+ 				case 'u':
+ 					/* backwards compatibility with old urandom option */
+ 					break;
++#ifdef ENABLE_SINGLEUSER
++				case 'n':
++#ifndef ENABLE_SINGLEUSER_ROOT
++					/* If current user is root */
++					if (getuid() == 0) {
++						dropbear_log(LOG_ERR, "Can't enable singleuser mode as root.");
++					}
++#endif /* ifndef ENABLE_SINGLEUSER_ROOT */
++					svr_opts.singleuser = 1;
++					break;
++#endif /* ifdef ENABLE_SINGLEUSER */
+ #ifdef DEBUG_TRACE
+ 				case 'v':
+ 					debug_trace = 1;
+@@ -313,6 +333,20 @@ void svr_getopts(int argc, char ** argv) {
+ 		}
+ 		opts.idle_timeout_secs = val;
+ 	}
++#ifdef ENABLE_SINGLEUSER
++	if (svr_opts.singleuser) {
++		dropbear_log(LOG_INFO, "Starting dropbear as single user mode.");
++		svr_opts.singleuserenv.password = getenv(DROPBEAR_OVERRIDE_PASSWORD);
++		svr_opts.singleuserenv.home = getenv(DROPBEAR_OVERRIDE_HOME);
++		if (svr_opts.singleuserenv.home != NULL) {
++			dropbear_log(LOG_INFO, "Single user home is '%s'", svr_opts.singleuserenv.home);
++		}
++		svr_opts.singleuserenv.shell = getenv(DROPBEAR_OVERRIDE_SHELL);
++		if (svr_opts.singleuserenv.shell != NULL) {
++			dropbear_log(LOG_INFO, "Single user shell is '%s'", svr_opts.singleuserenv.shell);
++		}
++	}
++#endif /* ifdef ENABLE_SINGLEUSER */
+ }
+ 
+ static void addportandaddress(char* spec) {
