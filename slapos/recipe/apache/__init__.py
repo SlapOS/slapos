@@ -134,9 +134,9 @@ class Recipe(BaseSlapRecipe):
         ca_conf["certificate_authority_path"])
 
     apache_parameter_dict = self.installFrontendApache(
-        ip_list=["[%s]" % self.getGlobalIPv6Address(), 
+        ip_list=["[%s]" % self.getGlobalIPv6Address(),
                  self.getLocalIPv4Address()],
-        port=frontend_port_number, 
+        port=frontend_port_number,
         name=frontend_domain_name,
         rewrite_rule_list=rewrite_rule_list,
         key=key, certificate=certificate)
@@ -146,7 +146,7 @@ class Recipe(BaseSlapRecipe):
 
     self.setConnectionDict(
       dict(site_url=apache_parameter_dict["site_url"],
-           domain_ipv6_address=self.getGlobalIPv6Address(), 
+           domain_ipv6_address=self.getGlobalIPv6Address(),
            domain_ipv4_address=self.getLocalIPv4Address()))
     return self.path_list
 
@@ -344,7 +344,7 @@ class Recipe(BaseSlapRecipe):
         { name: (public_ip, private_ip, public_port, private_port),}
     """
     template_filename = self.getTemplateFilename('stunnel.conf.in')
-    template_entry_filename = self.getTemplateFilename('stunnel.conf.entry.in') 
+    template_entry_filename = self.getTemplateFilename('stunnel.conf.entry.in')
 
     log = os.path.join(self.log_directory, 'stunnel.log')
     pid_file = os.path.join(self.run_directory, 'stunnel.pid')
