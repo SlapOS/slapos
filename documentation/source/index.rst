@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    rest.rst
+   slap.rst
 
 Indices and tables
 ==================
