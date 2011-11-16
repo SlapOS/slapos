@@ -29,6 +29,14 @@ import signal
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+def post_rotate(args):
+  pid_file = args['pid_file']
+
+  if os.path.exist(pid_file):
+    with open(pid_file, 'r') as file_:
+      pid = file_.read().strip()
+    os.kill(pid, signal.SIGUSR1)
+
 class Recipe(GenericBaseRecipe):
 
   def install(self):
@@ -79,5 +87,10 @@ class Recipe(GenericBaseRecipe):
         pid = file_.read().strip()
       # Reload configuration
       os.kill(int(pid, 10), signal.SIGHUP)
+
+    if 'post-rotate-script' in self.options:
+      self.createPythonScript(self.options['post-rotate-script'],
+                              __name__ + 'post_rotate',
+                              dict(pid_file=pid_file))
 
     return path_list
