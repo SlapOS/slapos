@@ -13,6 +13,7 @@ Contents:
 
    rest.rst
    slap.rst
+   tioformat.rst
 
 Indices and tables
 ==================
