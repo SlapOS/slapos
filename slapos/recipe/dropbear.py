@@ -28,6 +28,32 @@ import os
 import itertools
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+class KnownHostsFile(dict):
+
+  def __init__(self, filename):
+    self._filename = filename
+
+  def _load(self):
+    if os.path.exists(self._filename):
+      with open(self._filename, 'r') as keyfile:
+        for line in keyfile:
+          host, key = [column.strip() for column in line.split(' ', 1)]
+          self[host] = key
+
+  def _dump(self):
+    with open(self._filename, 'w') as keyfile:
+      for key, value in self.items():
+        keyfile.write('%(host)s %(key)s\n' % {'host': key,
+                                              'key': value})
+
+  def __enter__(self):
+    self._load()
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    self._dump()
+
+
+
 class AuthorizedKeysFile(object):
 
   def __init__(self, filename):
