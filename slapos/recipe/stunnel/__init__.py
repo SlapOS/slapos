@@ -24,6 +24,9 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import os
+import signal
+
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
@@ -46,7 +49,6 @@ class Recipe(GenericBaseRecipe):
 
     pid_file = self.options['pid-file']
     conf.update(pid_file=pid_file)
-    path_list.append(pid_file)
 
     log_file = self.options['log-file']
     conf.update(log=log_file)
@@ -71,5 +73,11 @@ class Recipe(GenericBaseRecipe):
       [self.options['stunnel-binary'], conf_file]
     )
     path_list.append(wrapper)
+
+    if os.path.exists(pid_file):
+      with open(pid_file, 'r') as file_:
+        pid = file_.read().strip()
+      # Reload configuration
+      os.kill(int(pid, 10), signal.SIGHUP)
 
     return path_list
