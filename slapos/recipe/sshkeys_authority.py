@@ -28,6 +28,7 @@ import json
 import hashlib
 import os
 import subprocess
+import re
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 from slapos.recipe.librecipe.inotify import subfiles
@@ -51,6 +52,8 @@ def sshkeys_authority(args):
       break
 
     if not os.path.exists(private_key):
+      if os.path.exists(public_key):
+        os.unlink(public_key)
       keygen_cmd = [keygen_binary, '-t', key_type, '-f', private_key,
                     '-s', size]
       # If the keygeneration return an non-zero status, it means there's a
@@ -72,9 +75,15 @@ def sshkeys_authority(args):
       if keygen.wait() != 0:
         raise subprocess.CalledProcessError("%r returned a non-zero status" % \
                                             ' '.join(keygen_cmd))
-      # Line : "Public key portion is :"
-      keygen.stdout.readline()
-      public_key_value = keygen.stdout.readline().strip()
+      public_key_value = ''
+      for line in keygen.stdout:
+        # Perl programming !
+        # Don't worry, just regex to detect the ssh public key line
+        matchresult = re.match(r'ssh-.*?=+', line)
+        if matchresult:
+          public_key_value = matchresult.group(0)
+          break
+
       with open(public_key, 'w') as public_key_file:
         public_key_file.write(public_key_value)
 
