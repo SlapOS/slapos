@@ -48,6 +48,10 @@ class Recipe(object):
     if 'name' not in options:
       options['name'] = name
 
+    self.isSlave = False
+    if 'slave' in options:
+      self.isSlave = options['slave'].lower() in ['y', 'yes', 'true', '1']
+
     self.return_parameters = []
     if 'return' in options:
       self.return_parameters = [str(parameter).strip()
@@ -73,7 +77,7 @@ class Recipe(object):
 
     instance = self.request(options['software-url'], software_type,
       options['name'], partition_parameter_kw=partition_parameter_kw,
-        filter_kw=filter_kw)
+        filter_kw=filter_kw, shared=self.isSlave)
 
     self.failed = None
     for param in self.return_parameters:
