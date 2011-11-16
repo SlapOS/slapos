@@ -114,6 +114,7 @@ class Recipe(GenericBaseRecipe):
 
     if entry['type'] == 'push':
       command.extend(['--restore-as-of', 'now'])
+      command.append('--force')
       command.extend([local_directory, remote_directory])
     else:
       command.extend([remote_directory, local_directory])
