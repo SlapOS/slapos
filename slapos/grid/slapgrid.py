@@ -427,6 +427,7 @@ class Slapgrid(object):
         self.supervisord_configuration_path)
 
   def _checkPromises(self, computer_partition):
+    self.logger.info("Checking promises...")
     instance_path = os.path.join(self.instance_root,
         computer_partition.getId())
 
@@ -437,6 +438,7 @@ class Slapgrid(object):
     uid = stat_info.st_uid
     gid = stat_info.st_gid
 
+    promise_present = False
     # Get the list of promises
     promise_dir = os.path.join(instance_path, 'etc', 'promise')
     if os.path.exists(promise_dir) and os.path.isdir(promise_dir):
@@ -445,10 +447,12 @@ class Slapgrid(object):
 
       # Check whether every promise is kept
       for promise in promises_list:
+        promise_present = True
 
         command = [os.path.join(promise_dir, promise)]
 
         promise = os.path.basename(command[0])
+        self.logger.info("Checking promise %r.", promise)
 
         kw = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
