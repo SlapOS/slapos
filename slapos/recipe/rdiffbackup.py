@@ -30,6 +30,7 @@ from urlparse import urlparse
 import os
 import subprocess
 import sys
+import time
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 from slapos.recipe.dropbear import KnownHostsFile
@@ -52,6 +53,10 @@ def promise(args):
   ssh.stdin.write(quitcommand)
   ssh.stdin.flush()
   ssh.stdin.close()
+
+  time.sleep(2)
+  if ssh.poll() is None:
+    ssh.kill()
 
   if ssh.wait() != 0:
     # Bad python 2 syntax, looking forward python 3 to have print(file=)
