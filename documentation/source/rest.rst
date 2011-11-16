@@ -4,18 +4,15 @@ SlapOS Master REST API (v1)
 Find your SSL keys
 ------------------
 
-You can find  X509 key/certificate to authentificate on the SlapOS Master.
+You can find  X509 key/certificate to authenticate to the SlapOS Master.
 Visit https://www.vifib.net/.
 
 Exchange format
 ---------------
 
 SlapOS master will support both XML and JSON formats for input and output.
-When you make an API request, you will have to specify which format you want to
-manage by setting it at the end of the route (.json or .xml)::
 
-  POST http://example.com/api/v1/request.json
-  POST http://example.com/api/v1/request.xml
+The Content Type header is required and responsible for format selection.
 
 Response status code
 --------------------
@@ -34,19 +31,36 @@ will return a ``"200 OK"`` response if successful.
 
 ``DELETE`` requests will return a ``"200 OK"`` response if the resource is successfully deleted.
 
-Error
-+++++
+Common Error Responses
+++++++++++++++++++++++
 
-If you attempt to authenticate with an ``invalid SSL key`` or you attempt to use an
-invalid ID for a resource, you'll received a ``"403 Forbidden"`` response.
+400 Bad Request
+~~~~~~~~~~~~~~~
+The request body does not follow the API (one argument is missing or malformed). The full information is available as text body::
 
-If there is an ``error in your input``, you'll receive a ``"400 Bad Request"`` response, with details of the error.
+  HTTP/1.1 400 Bad Request
+  Content-Type: application/json; charset=utf-8
 
-If you attempt to request a ``resource which doesn't exist``, you'll receive a
-``"404 Not Found"`` response.
+  {
+    "computer_id": "Parameter is missing"
+  }
 
-If an ``unhandled error occurs`` on the API server for some reason, you'll
-receive a ``"500 Internal Server Error"`` response.
+402 Payment Required
+~~~~~~~~~~~~~~~~~~~~
+
+The request can not be fulfilled because account is locked.
+
+403 Forbidden
+~~~~~~~~~~~~~
+Wrong SSL key used or access to invalid ID.
+
+404 Not Found
+~~~~~~~~~~~~~
+Request to non existing resource made.
+
+500 Internal Server Error
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Unexpected error.
 
 Instance Methods
 ****************
@@ -54,11 +68,12 @@ Instance Methods
 Requesting a new instance
 -------------------------
 
-Request a new instanciation of a software.
+Request a new instantiation of a software.
 
 `Request`::
 
-  `POST` http://example.com/api/v1/request.{xml|json}
+  POST http://example.com/api/v1/request HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Expected Request Body`::
 
@@ -66,8 +81,8 @@ Request a new instanciation of a software.
     "title": "My unique instance",
     "software_release": "http://example.com/example.cfg",
     "software_type": "type_provided_by_the_software",
-    "slave": False,
-    "status": "started",
+    "slave": False, # one of: True or False
+    "status": "started", # one of: started, stopped
     "parameter": {
       "Custom1": "one string",
       "Custom2": "one float",
@@ -92,20 +107,22 @@ Request a new instanciation of a software.
     }
   }
 
+`Additional Responses`::
+
+  HTTP/1.1 202 Accepted
+  Content-Type: application/json; charset=utf-8
+
+  {
+    "instance_id": "azevrvtrbt",
+    "status": "processing"
+  }
+
+The request has been accepted for processing
+
 `Error Responses`:
-
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
 
 * ``409 Conflict`` The request can not be process because of the current status of the instance (sla changed, instance is under deletion, software release can not be changed, ...).
 
-* ``202 Accepted`` The request has been accepted for processing::
-
-    {
-      "instance_id": "azevrvtrbt",
-      "status": "starting"
-    }
 
 Deleting an instance
 --------------------
@@ -114,7 +131,8 @@ Request the deletion of an instance.
 
 `Request`::
 
-   `DELETE` http://example.com/api/v1/instance/{instance_id}.{xml|json}
+  DELETE http://example.com/api/v1/instance/{instance_id} HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Route values`:
 
@@ -126,28 +144,20 @@ Request the deletion of an instance.
 
   HTTP/1.1 202 Accepted
   Content-Type: application/json; charset=utf-8
-  {
-    "status": "under deletion",
-  }
 
 `Error Responses`:
-
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``404 Not Found`` The instance can not be found.
 
 * ``409 Conflict`` The request can not be process because of the current status of the instance.
 
 Get instance information
 ------------------------
 
-Request all instance informations.
+Request all instance information.
 
 `Request`::
 
-   `GET` http://example.com/api/v1/instance/{instance_id}.{xml|json}
+  GET http://example.com/api/v1/instance/{instance_id} HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Route values`:
 
@@ -159,12 +169,13 @@ Request all instance informations.
 
   HTTP/1.1 200 OK
   Content-Type: application/json; charset=utf-8
+
   {
     "instance_id": "azevrvtrbt",
-    "status": "started",
+    "status": "start", # one of: start, stop, destroy
     "software_release": "http://example.com/example.cfg",
     "software_type": "type_provided_by_the_software",
-    "slave": False,
+    "slave": False, # one of: True, False
     "connection": {
       "custom_connection_parameter_1": "foo",
       "custom_connection_parameter_2": "bar"
@@ -179,30 +190,25 @@ Request all instance informations.
       }
     "children_id_list": ["subinstance1", "subinstance2"],
     "partition": {
-      "public_ip": "::1",
-      "private_ip": "127.0.0.1",
+      "public_ip": ["::1", "91.121.63.94"],
+      "private_ip": ["127.0.0.1"],
       "tap_interface": "tap2",
     },
   }
 
 `Error Responses`:
 
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``404 Not Found`` The instance can not be found.
-
 * ``409 Conflict`` The request can not be process because of the current status of the instance
 
-Get instance authentification certificates
-------------------------------------------
+Get instance authentication certificates
+----------------------------------------
 
 Request the instance certificates.
 
 `Request`::
 
-   `GET` http://example.com/api/v1/instance/{instance_id}/getcertificate.{xml|json}
+  GET http://example.com/api/v1/instance/{instance_id}/certificate HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Route values`:
 
@@ -214,29 +220,25 @@ Request the instance certificates.
 
   HTTP/1.1 200 OK
   Content-Type: application/json; charset=utf-8
+
   {
-    "ssl_key": "...",
-    "ssl_certificate": "...",
+    "ssl_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADAN...h2VSZRlSN\n-----END PRIVATE KEY-----",
+    "ssl_certificate": "-----BEGIN CERTIFICATE-----\nMIIEAzCCAuugAwIBAgICHQI...ulYdXJabLOeCOA=\n-----END CERTIFICATE-----",
   }
 
 `Error Responses`:
-
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``404 Not Found`` The instance can not be found.
 
 * ``409 Conflict`` The request can not be process because of the current status of the instance
 
 Bang instance
 -------------
 
-Trigger the reinstanciation of all partitions in the instance tree
+Trigger the re-instantiation of all partitions in the instance tree
 
 `Request`::
 
-   `POST` http://example.com/api/v1/instance/{instance_id}/bang.{xml|json}
+  POST http://example.com/api/v1/instance/{instance_id}/bang HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Route values`:
 
@@ -252,89 +254,38 @@ Trigger the reinstanciation of all partitions in the instance tree
 
   HTTP/1.1 200 OK
   Content-Type: application/json; charset=utf-8
-  {
-    "status": "updating"
-  }
 
-`Error Responses`:
+Modifying instance
+------------------
 
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``404 Not Found`` The instance can not be found.
-
-* ``202 Accepted`` The request has been accepted for processing::
-
-    {
-      "status": "waiting before processing"
-    }
-
-Update instance status
-----------------------
-
-Update the instance status
+Modify the instance information and status.
 
 `Request`::
 
-   `POST` http://example.com/api/v1/instance/{instance_id}.{xml|json}
+  PUT http://example.com/api/v1/instance/{instance_id} HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Expected Request Body`::
 
   {
-    "status": "{start,stop,updating,error}",
+    "status": "started", # one of: started, stopped, updating, error
     "log": "explanation of the status",
+    "connection": {
+      "custom_connection_parameter_1": "foo",
+      "custom_connection_parameter_2": "bar"
+    }
   }
+
+Where `status` is required with `log`, `connection` is optional and its existence allow to not send `status` and `log`.
 
 `Expected Response`::
 
   HTTP/1.1 200 OK
   Content-Type: application/json; charset=utf-8
-  {
-    "status": "started",
-  }
 
 `Error Responses`:
 
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
 * ``409 Conflict`` The request can not be process because of the current status of the instance (sla changed, instance is under deletion, software release can not be changed, ...).
-
-* ``404 Not Found`` The instance can not be found.
-
-Update instance connection
---------------------------
-
-Update the instance connection informations
-
-`Request`::
-
-   `POST` http://example.com/api/v1/instance/{instance_id}/setconnection.{xml|json}
-
-`Expected Request Body`::
-
-  {
-    "connection": {
-      "custom_connection_parameter_1": "foo",
-      "custom_connection_parameter_2": "bar"
-    },
-  }
-
-`Expected Response`::
-
-  HTTP/1.1 200 OK
-
-`Error Responses`:
-
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``409 Conflict`` The request can not be process because of the current status of the instance (sla changed, instance is under deletion, software release can not be changed, ...).
-
-* ``404 Not Found`` The instance can not be found.
 
 Computer Methods
 ****************
@@ -346,7 +297,8 @@ Add a new computer in the system.
 
 `Request`::
 
-   `POST` http://example.com/api/v1/computer.{xml|json}
+  POST http://example.com/api/v1/computer HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Expected Request Body`::
 
@@ -358,26 +310,16 @@ Add a new computer in the system.
 
   HTTP/1.1 201 Created
   Content-Type: application/json; charset=utf-8
+
   {
     "computer_id": "COMP-0",
-    "ssl_key": "...",
-    "ssl_certificate": "...",
-    "status": "available"
+    "ssl_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADAN...h2VSZRlSN\n-----END PRIVATE KEY-----",
+    "ssl_certificate": "-----BEGIN CERTIFICATE-----\nMIIEAzCCAuugAwIBAgICHQI...ulYdXJabLOeCOA=\n-----END CERTIFICATE-----",
   }
 
 `Error Responses`:
 
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
 * ``409 Conflict`` The request can not be process because of the existence of a computer with the same title
-
-* ``202 Accepted`` The request has been accepted for processing::
-
-    {
-      "status": "waiting before processing"
-    }
 
 Getting computer information
 ----------------------------
@@ -386,11 +328,12 @@ Get the status of a computer
 
 `Request`::
 
-   `GET` http://example.com/api/v1/computer/{computer_id}.{xml|json}
+  GET http://example.com/api/v1/computer/{computer_id} HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Route values`:
 
-* ``computer_id``: the ID of the instance
+* ``computer_id``: the ID of the computer
 
 `No Expected Request Body`
 
@@ -398,51 +341,44 @@ Get the status of a computer
 
   HTTP/1.1 200 OK
   Content-Type: application/json; charset=utf-8
+
   {
     "computer_id": "COMP-0",
-    "status": "available",
     "software": [
       {
         software_release="http://example.com/example.cfg",
-        status="install requested",
+        status="install", # one of: install, uninstall
       },
     ],
     "partition": [
       {
         title="slapart1",
         instance_id="foo",
-        status="start requested",
+        status="start", # one of: start, stop, destroy
         software_release="http://example.com/example.cfg",
       },
       {
         title="slapart2",
         instance_id="bar",
-        status="started",
+        status="stop", # one of: start, stop, destroy
         software_release="http://example.com/example.cfg",
       },
     ],
   }
 
-`Error Responses`:
+Modifying computer
+------------------
 
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``404 Not Found`` The computer can not be found.
-
-Modifying computer partition
-----------------------------
-
-Modify computer status in the system
+Modify computer information in the system
 
 `Request`::
 
-   `POST` http://example.com/api/v1/computer/{computer_id}/setpartition.{xml|json}
+  PUT http://example.com/api/v1/computer/{computer_id} HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Route values`:
 
-* ``computer_id``: the ID of the instance
+* ``computer_id``: the ID of the computer
 
 `Expected Request Body`::
 
@@ -455,73 +391,46 @@ Modify computer status in the system
         "tap_interface": "tap2",
       },
     ],
+    "software": [
+      {
+        software_release="http://example.com/example.cfg",
+        status="installed", # one of: installed, uninstalled, error
+        log="Installation log"
+      },
+    ],
   }
+
+Where ``partition`` and ``software`` keys are optional, but at least one is required.
 
 `Expected Response`::
 
   HTTP/1.1 200 OK
   Content-Type: application/json; charset=utf-8
-  {
-  }
-
-`Error Responses`:
-
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``404 Not Found`` The computer can not be found.
-
-* ``409 Conflict`` The request can not be process because of the existence of a computer with the same title
-
-* ``202 Accepted`` The request has been accepted for processing::
-
-    {
-      "status": "waiting before processing"
-    }
 
 Supplying new software
 ----------------------
 
-Request to suply a new software release on a computer
+Request to supply a new software release on a computer
 
 `Request`::
 
-   `POST` http://example.com/api/v1/computer/{computer_id}/supply.{xml|json}
+  POST http://example.com/api/v1/computer/{computer_id}/supply HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Route values`:
 
-* ``computer_id``: the ID of the instance
+* ``computer_id``: the ID of the computer
 
 `Expected Request Body`::
 
   {
-    "status": "{requested,updating,available,error,unavailable}",
-    "log": "explanation of the status",
+    "software_release": "http://example.com/example.cfg"
   }
 
 `Expected Response`::
 
   HTTP/1.1 200 OK
   Content-Type: application/json; charset=utf-8
-  {
-  }
-
-`Error Responses`:
-
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``404 Not Found`` The computer can not be found.
-
-* ``409 Conflict`` The request can not be process because of the existence of a computer with the same title
-
-* ``202 Accepted`` The request has been accepted for processing::
-
-    {
-      "status": "waiting before processing"
-    }
 
 Bang computer
 -------------
@@ -530,11 +439,12 @@ Request update on all partitions
 
 `Request`::
 
-   `POST` http://example.com/api/v1/computer/{computer_id}/bang.{xml|json}
+  POSThttp://example.com/api/v1/computer/{computer_id}/bang HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Route values`:
 
-* ``computer_id``: the ID of the instance
+* ``computer_id``: the ID of the computer
 
 `Expected Request Body`::
 
@@ -546,23 +456,6 @@ Request update on all partitions
 
   HTTP/1.1 200 OK
   Content-Type: application/json; charset=utf-8
-  {
-    "status": "updating"
-  }
-
-`Error Responses`:
-
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``404 Not Found`` The computer can not be found.
-
-* ``202 Accepted`` The request has been accepted for processing::
-
-    {
-      "status": "waiting before processing"
-    }
 
 Report usage
 ------------
@@ -571,11 +464,12 @@ Report computer usage
 
 `Request`::
 
-   `POST` http://example.com/api/v1/computer/{computer_id}/report.{xml|json}
+  POST http://example.com/api/v1/computer/{computer_id}/report HTTP/1.1
+  Content-Type: application/json; charset=utf-8
 
 `Route values`:
 
-* ``computer_id``: the ID of the instance
+* ``computer_id``: the ID of the computer
 
 `Expected Request Body`::
 
@@ -586,11 +480,4 @@ Report computer usage
 `Expected Response`::
 
   HTTP/1.1 200 OK
-
-`Error Responses`:
-
-* ``400 Bad Request`` The request body does not follow the API (one argument is missing or malformed).
-
-* ``402 Payment Required`` The request can not be fullfilled because account is locked.
-
-* ``404 Not Found`` The computer can not be found.
+  Content-Type: application/json; charset=utf-8
