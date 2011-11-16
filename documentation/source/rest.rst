@@ -346,22 +346,22 @@ Get the status of a computer
     "computer_id": "COMP-0",
     "software": [
       {
-        software_release="http://example.com/example.cfg",
-        status="install", # one of: install, uninstall
+        "software_release": "http://example.com/example.cfg",
+        "status": "install" # one of: install, uninstall
       },
     ],
     "partition": [
       {
-        title="slapart1",
-        instance_id="foo",
-        status="start", # one of: start, stop, destroy
-        software_release="http://example.com/example.cfg",
+        "title": "slapart1",
+        "instance_id": "foo",
+        "status": "start", # one of: start, stop, destroy
+        "software_release": "http://example.com/example.cfg"
       },
       {
-        title="slapart2",
-        instance_id="bar",
-        status="stop", # one of: start, stop, destroy
-        software_release="http://example.com/example.cfg",
+        "title": "slapart2",
+        "instance_id": "bar",
+        "status": "stop", # one of: start, stop, destroy
+        "software_release": "http://example.com/example.cfg"
       },
     ],
   }
@@ -393,9 +393,9 @@ Modify computer information in the system
     ],
     "software": [
       {
-        software_release="http://example.com/example.cfg",
-        status="installed", # one of: installed, uninstalled, error
-        log="Installation log"
+        "software_release": "http://example.com/example.cfg",
+        "status": "installed", # one of: installed, uninstalled, error
+        "log": "Installation log"
       },
     ],
   }
@@ -474,7 +474,17 @@ Report computer usage
 `Expected Request Body`::
 
   {
-    "tiosafe": "...",
+    "title": "Resource consumptions",
+    "start_date": "2011/11/15",
+    "stop_date": "2011/11/16",
+    "movement": [
+      {
+        "resource": "CPU Consumption",
+        "title": "line 1",
+        "reference": "slappart0",
+        "quantity": 42.42
+      }
+    ]
   }
 
 `Expected Response`::
