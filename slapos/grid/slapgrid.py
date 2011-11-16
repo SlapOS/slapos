@@ -446,18 +446,19 @@ class Slapgrid(object):
       # Check whether every promise is kept
       for promise in promises_list:
 
-        command = os.path.join(promise_dir, promise)
+        command = [os.path.join(promise_dir, promise)]
+
+        promise = os.path.basename(command[0])
 
         kw = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         process_handler = SlapPopen(command,
           preexec_fn=lambda: dropPrivileges(uid, gid),
           cwd=cwd,
-          env=None, **kw)
+          env={}, **kw)
 
         time.sleep(self.promise_timeout)
 
-        promise = os.path.basename(command)
 
         if process_handler.poll() is None:
           process_handler.kill()
@@ -466,7 +467,12 @@ class Slapgrid(object):
           stderr = process_handler.communicate()[1]
           if stderr is None:
             stderr = 'No error output from %r.' % promise
+          else:
+            stderr = 'Promise %r:' % promise + stderr
           raise Slapgrid.PromiseError(stderr)
+
+    if not promise_present:
+      self.logger.info("No promise.")
 
 
   def processComputerPartitionList(self):
