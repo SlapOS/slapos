@@ -107,6 +107,27 @@ class Recipe(GenericBaseRecipe):
 
     return path_list
 
+class Client(GenericBaseRecipe):
+
+  def install(self):
+    env = dict()
+
+    if 'home' in self.options:
+      env['HOME'] = self.options['home']
+      self.createDirectory(self.options['home'], '.ssh')
+
+    dropbear_cmd = [self.options['dbclient-binary'], '-T']
+    if 'identity-file' in self.options:
+      dropbear_cmd.extend(['-i', self.options['identity-file']])
+
+    wrapper = self.createPythonScript(
+      self.options['wrapper'],
+      'slapos.recipe.librecipe.execute.executee',
+      (dropbear_cmd, env, )
+    )
+
+    return [wrapper]
+
 class AddAuthorizedKey(GenericBaseRecipe):
 
   def install(self):
