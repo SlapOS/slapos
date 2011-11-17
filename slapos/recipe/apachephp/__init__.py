@@ -26,6 +26,7 @@
 ##############################################################################
 import shutil
 import os
+import signal
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -92,5 +93,11 @@ class Recipe(GenericBaseRecipe):
     config = self.createFile(destination,
       self.substituteTemplate(self.options['template'], mysql_conf))
     path_list.append(config)
+
+    if os.path.exists(self.options['pid-file']):
+      # Reload apache configuration
+      with open(self.options['pid-file']) as pid_file:
+        pid = int(pid_file.read().strip(), 10)
+      os.kill(pid, signal.SIGUSR1) # Graceful restart
 
     return path_list
