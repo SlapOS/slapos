@@ -141,22 +141,39 @@ class Recipe(GenericBaseRecipe):
     backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
     path_list.append(backup_controller)
     # maatkit installation
-    for mk_script_name in (
-        'mk-variable-advisor',
-        'mk-table-usage',
-        'mk-visual-explain',
-        'mk-config-diff',
-        'mk-deadlock-logger',
-        'mk-error-log',
-        'mk-index-usage',
-        'mk-query-advisor',
+    for pt_script_name in (
+        'pt-archiver',
+        'pt-config-diff',
+        'pt-deadlock-logger',
+        'pt-duplicate-key-checker',
+        'pt-fifo-split',
+        'pt-find',
+        'pt-fk-error-logger',
+        'pt-heartbeat',
+        'pt-index-usage',
+        'pt-kill',
+        'pt-log-player',
+        'pt-online-schema-change',
+        'pt-query-advisor',
+        'pt-query-digest',
+        'pt-show-grants',
+        'pt-slave-delay',
+        'pt-slave-find',
+        'pt-slave-restart',
+        'pt-table-checksum',
+        'pt-table-sync',
+        'pt-tcp-model',
+        'pt-trend',
+        'pt-upgrade',
+        'pt-variable-advisor',
+        'pt-visual-explain',
         ):
-      mk_argument_list = [self.options['perl-binary'],
-          self.options['%s-binary' % mk_script_name],
+      pt_argument_list = [self.options['perl-binary'],
+          self.options['%s-binary' % pt_script_name],
           '--defaults-file=%s' % mysql_conf_file,
           '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
           ]
-      mk_exe = self.createPythonScript(os.path.join(self.options['bin-directory'], mk_script_name), 'slapos.recipe.librecipe.execute.executee', [mk_argument_list, environment])
-      path_list.append(mk_exe)
+      pt_exe = self.createPythonScript(os.path.join(self.options['bin-directory'], pt_script_name), 'slapos.recipe.librecipe.execute.executee', [pt_argument_list, environment])
+      path_list.append(pt_exe)
 
     return path_list

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.31-dev'
+version = '0.35'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -44,7 +44,6 @@ setup(name=name,
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
           'cron = slapos.recipe.dcron:Recipe',
           'cron.d = slapos.recipe.dcron:Part',
-          'download = slapos.recipe.download:Recipe',
           'davstorage = slapos.recipe.davstorage:Recipe',
           'duplicity = slapos.recipe.duplicity:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',

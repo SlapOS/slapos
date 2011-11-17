@@ -21,7 +21,7 @@ long_query_time = 5
 max_allowed_packet = 128M
 query_cache_size = 32M
 
-plugin-load = ha_innodb_plugin.so
+plugin-load = ha_groonga.so;ha_sphinx.so
 
 # By default only 100 connections are allowed, when using zeo
 # we may have much more connections
