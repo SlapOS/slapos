@@ -1,29 +1,50 @@
 Account
 Account Module
+Accounting Period
 Accounting Transaction
 Accounting Transaction Module
 Acknowledgement
 Assignment
+Balance Transaction
+Bank Account
 Business Process
 Business Process Module
 Campaign
 Campaign Module
+Cash Register
+Component
+Component Module
 Computer
 Computer Module
 Computer Partition
+Contribution Tool
 Credential Update Module
+Credit Card
 Currency
 Currency Module
+Document Ingestion Module
+Document Module
+Drawing
 Event Module
 Fax Message
+Gadget
+Gadget Tool
 Hosting Subscription
 Hosting Subscription Module
+Image Module
 Integration Site
 Integration Tool
 Internal Packing List
 Internal Packing List Module
+Inventory
+Inventory Module
+Knowledge Box
+Knowledge Pad
+Knowledge Pad Module
 Letter
 Mail Message
+Meeting
+Meeting Module
 Note
 Notification Message
 Notification Message Module
@@ -31,13 +52,25 @@ Open Sale Order
 Open Sale Order Module
 Organisation
 Organisation Module
+PDF
 Payment Transaction
 Payzen Event
 Person
 Person Module
 Phone Call
+Presentation
+Product
+Product Module
+Purchase Invoice Transaction
+Purchase Order
+Purchase Order Module
 Purchase Packing List
 Purchase Packing List Module
+Purchase Trade Condition
+Purchase Trade Condition Module
+Query
+Query Module
+Sale Invoice Transaction
 Sale Opportunity
 Sale Opportunity Module
 Sale Order
@@ -57,8 +90,16 @@ Software Product
 Software Product Module
 Software Release
 Software Release Module
+Spreadsheet
 Support Request
 Support Request Module
 System Event Module
+Tax
+Tax Module
+Text
+Transformation
+Transformation Module
 Visit
 Web Message
+Web Page
+Web Page Module

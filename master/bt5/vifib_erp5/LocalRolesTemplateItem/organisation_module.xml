@@ -1,10 +1,6 @@
 <local_roles_item>
  <local_roles>
-  <role id='F-PRODUCTION_G-COMPANY'>
-   <item>Auditor</item>
-   <item>Author</item>
-  </role>
-  <role id='F-SALE_G-COMPANY'>
+  <role id='G-COMPANY'>
    <item>Auditor</item>
    <item>Author</item>
   </role>
