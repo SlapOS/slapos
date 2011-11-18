@@ -92,7 +92,7 @@
                 </item>
                 <item>
                     <key> <string>name</string> </key>
-                    <value> <string>Base_edit:method</string> </value>
+                    <value> <string>SoftwareInstance_editWebMode:method</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
