@@ -1103,7 +1103,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       LoginDefaultUser
       SetChildrenBComputerPartition
       Logout
-      """ 
+      """
 
   computer_with_software_release = """
       CustomerRegisterNewComputer
@@ -1412,7 +1412,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       if uri != software_release_uri:
         sequence.edit(software_release_uri=uri)
         break
-    self.assertNotEquals(sequence["software_release_uri"], 
+    self.assertNotEquals(sequence["software_release_uri"],
         old_software_release_uri)
 
   def stepStoreSoftwareReleaseUri(self, sequence, **kw):
@@ -1705,14 +1705,14 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
 
-    self.assertRaises(slap.NotFoundError, 
+    self.assertRaises(slap.NotFoundError,
       slap_computer_partition.request,
       software_release=software_release_uri,
       software_type=sequence.get('requested_software_type',
                                  'requested_software_type'),
       partition_reference=requested_reference,
       partition_parameter_kw=requested_parameter_dict,
-      shared=True, 
+      shared=True,
       filter_kw=sequence.get('requested_filter_dict', {}),
       state=sequence.get('instance_state'))
 
@@ -3080,7 +3080,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         'slap_computer_id': computer_guid,
         'slap_computer_partition_id': partition_id,
         'slap_software_release_url': software_release_uri,
-        'slap_software_type': 
+        'slap_software_type':
           sequence.get('requested_software_type',
                        'requested_software_type'),
         'slave_instance_list': [],
@@ -3180,7 +3180,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         'slap_computer_id': computer_guid,
         'slap_computer_partition_id': partition_id,
         'slap_software_release_url': software_release_uri,
-        'slap_software_type': 
+        'slap_software_type':
           sequence.get('requested_software_type',
                        'requested_software_type'),
         'test_parameter': 'lala',
@@ -3681,7 +3681,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
           slave_instance["slap_software_type"])
 
   def stepCheckTwoSlaveInstanceListFromOneComputerPartition(self, sequence):
-    self.stepCheckSlaveInstanceListFromOneComputerPartition(sequence, 
+    self.stepCheckSlaveInstanceListFromOneComputerPartition(sequence,
         expected_amount=2)
 
   def stepCheckSlaveInstanceAccessUsingCurrentSoftwareInstanceUser(self, sequence):
