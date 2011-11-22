@@ -33,7 +33,8 @@ def log(args):
   prefix = time.strftime('%Y-%m-%d.%H:%M.%s:')
   with open(args['filename'], 'aw') as logfile:
     for line in sys.stdin:
-      print >> logfile, prefix, line
+      print >> logfile, prefix, line,
+    print >> logfile, prefix, '------------------------'
 
 class Recipe(GenericBaseRecipe):
 
