@@ -26,6 +26,7 @@
 ##############################################################################
 import os
 import signal
+import errno
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -86,7 +87,13 @@ class Recipe(GenericBaseRecipe):
       with open(pid_file, 'r') as file_:
         pid = file_.read().strip()
       # Reload configuration
-      os.kill(int(pid, 10), signal.SIGHUP)
+      try:
+        os.kill(int(pid, 10), signal.SIGHUP)
+      except OSError, e:
+        if e.errno == errno.ESRCH: # No such process
+          os.unlink(pid_file)
+        else:
+          raise e
 
     if 'post-rotate-script' in self.options:
       self.createPythonScript(self.options['post-rotate-script'],
