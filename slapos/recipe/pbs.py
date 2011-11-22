@@ -32,8 +32,10 @@ import subprocess
 import sys
 import time
 
-from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.recipe.librecipe import GenericSlapRecipe
 from slapos.recipe.dropbear import KnownHostsFile
+from slapos.recipe.notifier import Notify
+from slapos.recipe.notifier import Callback
 from slapos import slap as slapmodule
 
 
@@ -67,7 +69,7 @@ def promise(args):
 
 
 
-class Recipe(GenericBaseRecipe):
+class Recipe(GenericSlapRecipe, Notify, Callback):
 
   def add_slave(self, entry, known_hosts_file):
     path_list = []
@@ -119,21 +121,46 @@ class Recipe(GenericBaseRecipe):
     else:
       command.extend([remote_directory, local_directory])
 
+    wrapper_basepath = os.path.join(self.options['wrappers-directory'],
+                                    url_hash)
+
+    wrapper_path = wrapper_basepath
+    if 'notify' in entry:
+      wrapper_path = '%s_raw' % wrapper_basepath
+
     wrapper = self.createPythonScript(
-      os.path.join(self.options['wrappers-directory'], url_hash),
+       wrapper_path,
       'slapos.recipe.librecipe.execute.execute',
-      command
+      [str(i) for i in command]
     )
     path_list.append(wrapper)
 
-    cron_entry = os.path.join(self.options['cron-entries'], url_hash)
-    with open(cron_entry, 'w') as cron_entry_file:
-      cron_entry_file.write('%s %s' % (entry['frequency'], wrapper))
-    path_list.append(cron_entry)
+    if 'notify' in entry:
+      feed_url = '%s/get/%s' % (self.options['notifier-url'],
+                                entry['notification-id'])
+      wrapper = self.createNotifier(
+        self.options['notifier-binary'],
+        wrapper=wrapper_basepath,
+        executable=wrapper_path,
+        log=os.path.join(self.options['feeds'], entry['notification-id']),
+        title=entry['title'],
+        notification_url=entry['notify'],
+        feed_url=feed_url,
+      )
+      path_list.append(wrapper)
+      #self.setConnectionDict(dict(feed_url=feed_url), entry['slave_reference'])
+
+    if 'on-notification' in entry:
+      path_list.append(self.createCallback(entry['on-notification'], wrapper))
+    else:
+      cron_entry = os.path.join(self.options['cron-entries'], url_hash)
+      with open(cron_entry, 'w') as cron_entry_file:
+        cron_entry_file.write('%s %s' % (entry['frequency'], wrapper))
+      path_list.append(cron_entry)
 
     return path_list
 
-  def install(self):
+  def _install(self):
     path_list = []
 
 
