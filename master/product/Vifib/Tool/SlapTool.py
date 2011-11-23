@@ -246,6 +246,14 @@ class SlapTool(BaseTool):
                                        error_log)
 
   security.declareProtected(Permissions.AccessContentsInformation,
+    'softwareInstanceRename')
+  def softwareInstanceRename(self, new_name, computer_id,
+                             computer_partition_id, slave_reference=None):
+    return self._softwareInstanceRename(new_name, computer_id,
+                                        computer_partition_id,
+                                        slave_reference)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
     'softwareInstanceBang')
   def softwareInstanceBang(self, computer_id,
                             computer_partition_id, message):
@@ -625,6 +633,15 @@ class SlapTool(BaseTool):
         computer_id,
         computer_partition_id).reportComputerPartitionError(
                                      comment=error_log)
+
+  @convertToREST
+  def _softwareInstanceRename(self, new_name, computer_id,
+                              computer_partition_id, slave_reference):
+    software_instance = self._getSoftwareInstanceForComputerPartition(
+      computer_id, computer_partition_id,
+      slave_reference)
+    return software_instance.rename(new_name=new_name,
+      comment="Rename %s into %s" % (software_instance.title, new_name))
 
   @convertToREST
   def _softwareInstanceBang(self, computer_id,
