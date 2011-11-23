@@ -75,9 +75,16 @@ class Recipe(object):
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
 
+    name = options['name']
+    if 'id' in options:
+      id_ = int(options['id'], 10)
+      if 'id-increment' in options:
+        id_ += int(options['id-increment'], 10)
+      name += '-%03d' % id_
+
     instance = self.request(options['software-url'], software_type,
-      options['name'], partition_parameter_kw=partition_parameter_kw,
-        filter_kw=filter_kw, shared=self.isSlave)
+      name, partition_parameter_kw=partition_parameter_kw,
+      filter_kw=filter_kw, shared=self.isSlave)
 
     self.failed = None
     for param in self.return_parameters:
