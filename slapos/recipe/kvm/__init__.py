@@ -54,10 +54,9 @@ class Recipe(BaseSlapRecipe):
     self.requirements, self.ws           = self.egg.working_set()
     self.cron_d                          = self.installCrond()
 
-    # XXX-Cedric: Cert is self-signed and issuer is randomly generated.
-    ca_company = binascii.hexlify(os.urandom(10))
+    ca_email = binascii.hexlify(os.urandom(10))
     self.ca_conf                         = self.installCertificateAuthority(
-                                               ca_company = ca_company)
+                                               ca_email = ca_email)
     self.key_path, self.certificate_path = self.requestCertificate('noVNC')
 
     # Install the socket_connection_attempt script
