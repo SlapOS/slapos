@@ -34,7 +34,6 @@ import zc.buildout
 import pkg_resources
 import ConfigParser
 import hashlib
-import uuid
 
 class Recipe(BaseSlapRecipe):
 
@@ -56,9 +55,9 @@ class Recipe(BaseSlapRecipe):
     self.cron_d                          = self.installCrond()
 
     # XXX-Cedric: Cert is self-signed and issuer is randomly generated.
-    ca_common_name = 'SlapOS KVM root %s' % uuid.uuid1()
+    ca_company = binascii.hexlify(os.urandom(10))
     self.ca_conf                         = self.installCertificateAuthority(
-                                               ca_company = ca_common_name)
+                                               ca_company = ca_company)
     self.key_path, self.certificate_path = self.requestCertificate('noVNC')
 
     # Install the socket_connection_attempt script
@@ -268,7 +267,7 @@ class Recipe(BaseSlapRecipe):
 
   def installCertificateAuthority(self, ca_country_code='XX',
       ca_email='xx@example.com', ca_state='State', ca_city='City',
-      ca_company='Company', ca_common_name="CommonName"):
+      ca_company='Company'):
     backup_path = self.createBackupDirectory('ca')
     self.ca_dir = os.path.join(self.data_root_directory, 'ca')
     self._createDirectory(self.ca_dir)
@@ -296,7 +295,6 @@ class Recipe(BaseSlapRecipe):
         city=ca_city,
         company=ca_company,
         email_address=ca_email,
-        common_name=ca_common_name,
     )
     self._writeFile(openssl_configuration, pkg_resources.resource_string(
       __name__, 'template/openssl.cnf.ca.in') % config)

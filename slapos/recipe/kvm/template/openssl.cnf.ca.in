@@ -145,7 +145,6 @@ localityName_value			= %(city)s
 #1.organizationName_default	 = World Wide Web Pty Ltd
 
 commonName	   = Common Name (eg, your name or your server\'s hostname)
-commonName_value = %(common_name)s
 commonName_max	   = 64
 
 emailAddress	   = Email Address
