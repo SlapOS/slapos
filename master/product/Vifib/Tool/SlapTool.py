@@ -249,6 +249,9 @@ class SlapTool(BaseTool):
     'softwareInstanceRename')
   def softwareInstanceRename(self, new_name, computer_id,
                              computer_partition_id, slave_reference=None):
+    """
+    Change the title of a Software Instance using Workflow.
+    """
     return self._softwareInstanceRename(new_name, computer_id,
                                         computer_partition_id,
                                         slave_reference)
