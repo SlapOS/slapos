@@ -50,12 +50,27 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>predecessor_software_instance = context\n
+            <value> <string># Did not import Products.ERP5Security.ERP5GroupManager\n
+# because of semantic matter.\n
+class ConsistencyError(Exception):\n
+  pass\n
+\n
+predecessor_software_instance = context\n
 while (predecessor_software_instance is not None):\n
   root_software_instance = predecessor_software_instance\n
   predecessor_software_instance = predecessor_software_instance.getPredecessorRelatedValue(\n
     portal_type=["Software Instance", "Slave Instance"])\n
-return root_software_instance.getUid()\n
+\n
+root_hosting_subscription = root_software_instance.getPredecessorRelatedValue(\n
+  portal_type=["Hosting Subscription"])\n
+\n
+# XXX-Antoine: As Romain wanted it, we raise an error if it\'s not attached to a\n
+#              root Hosting Subscription.\n
+if root_hosting_subscription is None:\n
+  raise ConsistencyError(("Software instance %s has no hosting "\n
+                          "subscription as root.") % context.getReference())\n
+\n
+return root_hosting_subscription.getUid()\n
 </string> </value>
         </item>
         <item>
@@ -64,7 +79,7 @@ return root_software_instance.getUid()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_getRootSoftwareInstanceUid</string> </value>
+            <value> <string>SoftwareInstance_getRootHostingSubscriptionUid</string> </value>
         </item>
       </dictionary>
     </pickle>
