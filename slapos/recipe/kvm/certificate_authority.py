@@ -45,7 +45,8 @@ class CertificateAuthority:
       popenCommunicate([self.openssl_binary, 'req', '-nodes', '-config',
           self.openssl_configuration, '-new', '-x509', '-extensions', 'v3_ca',
           '-keyout', self.key, '-out', self.certificate, '-days', '10950'],
-          'Automatic Certificate Authority %s\n' % uuid.uuid1())
+          # Authority name will be random, so no instance has the same issuer
+          'Certificate Authority %s\n' % uuid.uuid1())
     except:
       try:
         for f in file_list:
