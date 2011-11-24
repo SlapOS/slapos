@@ -54,9 +54,7 @@ class Recipe(BaseSlapRecipe):
     self.requirements, self.ws           = self.egg.working_set()
     self.cron_d                          = self.installCrond()
 
-    ca_email = binascii.hexlify(os.urandom(10))
-    self.ca_conf                         = self.installCertificateAuthority(
-                                               ca_email = ca_email)
+    self.ca_conf                         = self.installCertificateAuthority()
     self.key_path, self.certificate_path = self.requestCertificate('noVNC')
 
     # Install the socket_connection_attempt script
