@@ -667,7 +667,8 @@ class Slapgrid(object):
 
     clean_run = True
     #We loop on the different computer partitions
-    for computer_partition in slap_computer_usage.getComputerPartitionList():
+    computer_partition_list = slap_computer_usage.getComputerPartitionList()
+    for computer_partition in computer_partition_list:
       computer_partition_id = computer_partition.getId()
 
       #We want execute all the script in the report folder
@@ -726,7 +727,7 @@ class Slapgrid(object):
 
     #Now we loop through the different computer partitions to ggetId()et reports
     report_usage_issue_cp_list = []
-    for computer_partition in slap_computer_usage.getComputerPartitionList():
+    for computer_partition in computer_partition_list:
       filename_delete_list = []
       computer_partition_id = computer_partition.getId()
       instance_path = os.path.join(self.instance_root, computer_partition_id)
@@ -800,7 +801,7 @@ class Slapgrid(object):
         computer_partition.error(issue)
         report_usage_issue_cp_list.append(computer_partition_id)
 
-    for computer_partition in slap_computer_usage.getComputerPartitionList():
+    for computer_partition in computer_partition_list:
       computer_partition_id = computer_partition.getId()
       try:
         software_url = computer_partition.getSoftwareRelease().getURI()
