@@ -379,12 +379,14 @@ class ComputerPartition(SlapDocument):
       'message': message})
 
   def rename(self, new_name, slave_reference=None):
-    self._connection_helper.POST('/renameSoftwareInstance', {
-      'computer_id': self._computer_id,
-      'computer_partition_id': self._computer_id,
-      'new_name': new_name,
-      'slave_reference': slave_reference,
-    })
+    post_dict = dict(
+      computer_id=self._computer_id,
+      computer_partition_id=self._partition_id,
+      new_name=new_name,
+    )
+    if slave_reference is not None:
+      post_dict.update(slave_reference=slave_reference)
+    self._connection_helper.POST('/softwareInstanceRename', post_dict)
 
   def getId(self):
     return self._partition_id
