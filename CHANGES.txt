@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.36 (2011-11-16)
+-----------------
+
+ * erp5testnode : the code of testnode is not in slapos repository anymore
+
 0.35 (2011-11-10)
 -----------------
 
