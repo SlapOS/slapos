@@ -34,6 +34,7 @@ import zc.buildout
 import pkg_resources
 import ConfigParser
 import hashlib
+import uuid
 
 class Recipe(BaseSlapRecipe):
 
@@ -321,13 +322,16 @@ class Recipe(BaseSlapRecipe):
       certificate_authority_path=config['ca_dir']
     )
 
-  def requestCertificate(self, name):
+  def requestCertificateRandomName(self, name):
+    """Add certificate to be generated, using 'name + random number' as Common
+       Name. If certificate already exists, it won't be regenerated.
+    """
     hash = hashlib.sha512(name).hexdigest()
     key = os.path.join(self.ca_private, hash + self.ca_key_ext)
     certificate = os.path.join(self.ca_certs, hash + self.ca_crt_ext)
     parser = ConfigParser.RawConfigParser()
     parser.add_section('certificate')
-    parser.set('certificate', 'name', name)
+    parser.set('certificate', 'name', name + uuid.uuid1())
     parser.set('certificate', 'key_file', key)
     parser.set('certificate', 'certificate_file', certificate)
     parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
