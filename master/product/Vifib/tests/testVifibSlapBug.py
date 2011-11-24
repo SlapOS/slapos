@@ -1,6 +1,8 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
+from slapos import slap
+import random
 
 class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def test_bug_Person_request_more_then_one_instance(self):
@@ -219,7 +221,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create first computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -313,7 +318,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       # Now prepare second computer
 
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -571,7 +579,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create first computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -682,7 +693,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create the computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -830,7 +844,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create the computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -987,7 +1004,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Create the computer
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -1054,6 +1074,344 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser # login as superuser in order to work in erp5
       DirectRequestComputerPartitionRaisesValueError
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepSetRequestedStateStarted(self, sequence, **kw):
+    sequence['requested_state'] = 'started'
+
+  def stepSetRequestedStateStopped(self, sequence, **kw):
+    sequence['requested_state'] = 'stopped'
+
+  def stepSetRequestedReferenceRandom(self, sequence, **kw):
+    sequence['requested_reference'] = str(random.random())
+
+  def test_request_start_non_instantiated_partition(self):
+    """Prove that requesting start of non instantiated partition will not
+    result in any error"""
+    self.computer_partition_amount = 0
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SlapLoginTestVifibCustomer
+      SetRequestedStateStarted
+      SetRequestedReferenceRandom
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      SoftwareInstanceSaleOrderConfirmRaisesValueError
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SoftwareInstanceSaleOrderConfirmRaisesValueError
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_request_new_with_destroyed_reference(self):
+    """Prove that having destroyed SI allows to request new one with same
+      reference"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      SetRequestedStateStopped
+
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SetRandomRequestedReference
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstancePrepare
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      SetSelectedComputerPartition
+      SetRequestedComputerPartition
+      CheckComputerPartitionNoInstanceHostingSalePackingList
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstancePrepare
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      SetSelectedComputerPartition
+      SetRequestedComputerPartition
+      CheckComputerPartitionNoInstanceHostingSalePackingList
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepSetSoftwareTitleRandom(self, sequence, **kw):
+    sequence['software_title'] = str(random.random())
+
+  def test_request_new_with_destroyed_reference_web_ui(self):
+    """Prove that having destroyed SI allows to request new one with same
+      reference
+
+      Supports web UI case.
+      """
+    sequence_list = SequenceList()
+    sequence_string = "SetSoftwareTitleRandom" + \
+      self.prepare_destroyed_computer_partition + \
+      """
+
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepCheckComputerPartitionInTable(self, sequence, **kw):
+    self.assertEqual(
+      1,
+      self.portal.erp5_sql_connection.manage_test(
+        'select count(*) from computer_partition where uid=%s' %
+          sequence['computer_partition_uid'])[0][0]
+    )
+
+  def stepCheckComputerPartitionNotInTable(self, sequence, **kw):
+    self.assertEqual(
+      0,
+      self.portal.erp5_sql_connection.manage_test(
+        'select count(*) from computer_partition where uid=%s' %
+          sequence['computer_partition_uid'])[0][0]
+    )
+
+  def test_catalog_after_destruction(self):
+    """Test that computer partition if correctly catalogged after destruction"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_installed_computer_partition_sequence_string + \
+      """
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      Logout
+
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionNotInTable
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      Logout
+
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstance
+      Tic
+      Logout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SetSelectedComputerPartition
+      SelectCurrentlyUsedSalePackingListUid
+      Logout
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepSetSoftwareInstanceUidToCurrentSlave(self, sequence, **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(uid=sequence[
+      'computer_partition_uid'])
+    instance_setup_packing_list = computer_partition\
+      .Item_getInstancePackingListLine()
+    slave_instance = instance_setup_packing_list.getAggregateValue(
+        portal_type='Slave Instance')
+    sequence['software_instance_uid'] = slave_instance.getUid()
+
+  def test_catalog_slave_destruction(self):
+    """Test that computer partition if correctly catalogged with slave destruction"""
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_started_computer_partition_sequence_string + \
+      """
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SetRandomRequestedReference
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentSoftwareInstance
+      SoftwareInstanceAvailable
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      SetSoftwareInstanceUidToCurrentSlave
+      Logout
+
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckComputerPartitionInTable
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepMarkBusyComputerPartition(self, sequence, **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence['computer_partition_uid'])
+    computer_partition.markBusy()
+
+  def stepUpdateLocalRolesOnComputerPartition(self, sequence, **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        uid=sequence['computer_partition_uid'])
+    computer_partition.updateLocalRolesOnSecurityGroups()
+
+  def stepCheckNoHostingSubscriptionComputerPartitionLocalRoles(self, sequence,
+    **kw):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+      uid=sequence['computer_partition_uid'])
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'])
+    self.assertTrue(hosting_subscription.getReference() not in \
+      computer_partition.__ac_local_roles__)
+
+  def test_hosting_subscription_security_on_partition_with_destroyed(self):
+    """Checks that history of Computer Partition does not impacts its security
+      configuration"""
+
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_destroyed_computer_partition + \
+      """
+      LoginDefaultUser
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+
+      # Marked busy in order to simulate previous wrong behaviour
+      MarkBusyComputerPartition
+      Tic
+
+      UpdateLocalRolesOnComputerPartition
+      Tic
+
+      # All related packing lists are delivered, so no local roles for
+      # Hosting Subscription shall be defined
+      CheckNoHostingSubscriptionComputerPartitionLocalRoles
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

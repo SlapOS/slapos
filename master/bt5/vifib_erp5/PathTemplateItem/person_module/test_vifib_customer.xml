@@ -95,10 +95,6 @@
             <value> <string>test_vifib_customer</string> </value>
         </item>
         <item>
-            <key> <string>last_id</string> </key>
-            <value> <string>1</string> </value>
-        </item>
-        <item>
             <key> <string>last_name</string> </key>
             <value> <string>Customer</string> </value>
         </item>

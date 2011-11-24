@@ -73,7 +73,7 @@ portal = obj.getPortalObject()\n
 movement = portal.portal_catalog.getResultValue(\n
   portal_type=movement_portal_type,\n
   aggregate_uid=obj.getUid(),\n
-  simulation_state=portal.getPortalCurrentInventoryStateList() + portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList(),\n
+  simulation_state=(\'stopped\',) + portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList(),\n
 )\n
 \n
 if movement is not None:\n

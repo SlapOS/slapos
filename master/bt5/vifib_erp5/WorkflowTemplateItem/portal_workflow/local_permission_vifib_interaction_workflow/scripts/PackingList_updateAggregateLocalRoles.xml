@@ -54,10 +54,13 @@
 This script updates all local roles on the object. It requires Assignor\n
 proxy role since it may be called by owner in draft state.\n
 """\n
-portal_type_list = ["Software Instance", "Slave Instance", "Hosting Subscription"]\n
+portal_type_list = ["Software Instance", "Slave Instance", "Hosting Subscription", "Computer Partition"]\n
 for movement in state_change[\'object\'].getMovementList():\n
   tag = "softinssec_%s" % movement.getUid()\n
-  movement.activate(tag=tag).immediateReindexObject()\n
+  movement.activate(activity=\'SQLQueue\', tag=tag, after_path_and_method_id=(movement.getPath(),\n
+      (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))).serialize()\n
+  movement.activate(activity=\'SQLQueue\', tag=tag, after_path_and_method_id=(movement.getParentValue().getPath(),\n
+      (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))).serialize()\n
   for software_instance in movement.getAggregateValueList(portal_type=portal_type_list):\n
     software_instance.activate(after_tag=tag).updateLocalRolesOnSecurityGroups()\n
 </string> </value>

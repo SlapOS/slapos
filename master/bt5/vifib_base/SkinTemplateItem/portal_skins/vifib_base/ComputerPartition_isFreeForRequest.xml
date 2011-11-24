@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>return context.getPortalObject().portal_workflow.isTransitionPossible(context, \'mark_busy\') and 1 or 0\n
+            <value> <string>if context.getPortalObject().portal_workflow.isTransitionPossible(context, \'mark_busy\') and context.getParentValue().isMemberOf(\'allocation_scope/open\'):\n
+  return 1\n
+return 0\n
 </string> </value>
         </item>
         <item>

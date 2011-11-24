@@ -336,8 +336,14 @@ class Partition(object):
     """
     supervisor = self.getSupervisorRPC()
     partition_id = self.computer_partition.getId()
-    supervisor.startProcessGroup(partition_id, False)
-    self.logger.info("Requested start of %s..." % self.computer_partition.getId())
+    try:
+      supervisor.startProcessGroup(partition_id, False)
+    except xmlrpclib.Fault, e:
+      if e.faultString.startswith('BAD_NAME:'):
+        self.logger.info("Nothing to start on %s..." % \
+                         self.computer_partition.getId())
+    else:
+      self.logger.info("Requested start of %s..." % self.computer_partition.getId())
 
   def stop(self):
     """Asks supervisord to stop the instance."""

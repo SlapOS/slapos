@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.19-dev'
+version = '0.21-dev'
 name = 'slapos.core'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -55,6 +55,7 @@ setup(name=name,
           'slapgrid-supervisorctl = slapos.grid.svcbackend:supervisorctl',
           'slapgrid-supervisord = slapos.grid.svcbackend:supervisord',
           'slapproxy = slapos.proxy:main',
+          'bang = slapos.bang:main',
         ]
       },
       test_suite="slapos.tests",

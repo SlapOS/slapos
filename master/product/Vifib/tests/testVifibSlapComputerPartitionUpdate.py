@@ -505,7 +505,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
   def stepRequestComputerPartitionNoTic(self, sequence, **kw):
     self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url)
+    self.slap.initializeConnection(self.server_url, timeout=None)
     slap_computer_partition = self.slap.registerComputerPartition(
         sequence['computer_reference'],
         sequence['computer_partition_reference'])

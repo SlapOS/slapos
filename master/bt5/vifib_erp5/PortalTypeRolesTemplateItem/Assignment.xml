@@ -1,9 +1,7 @@
 <type_roles>
   <role id='Auditor; Assignor'>
-   <property id='title'>Vifib Production Manager</property>
-   <multi_property id='category'>function/production</multi_property>
+   <property id='title'>Company group</property>
    <multi_property id='category'>group/company</multi_property>
-   <multi_property id='base_category'>function</multi_property>
    <multi_property id='base_category'>group</multi_property>
   </role>
 </type_roles>

@@ -3,12 +3,12 @@
   <role id='R-COMPUTER'>
    <item>Auditor</item>
   </role>
-  <role id='R-INSTANCE'>
-   <item>Auditor</item>
-  </role>
   <role id='R-MEMBER'>
    <item>Auditor</item>
    <item>Author</item>
+  </role>
+  <role id='R-SHADOW'>
+   <item>Auditor</item>
   </role>
   <role id='devel'>
    <item>Owner</item>

@@ -99,6 +99,7 @@
                       <list>
                         <string>my_title</string>
                         <string>my_reference</string>
+                        <string>your_allocation_scope_update</string>
                         <string>listbox</string>
                       </list>
                     </value>

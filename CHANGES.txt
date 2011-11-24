@@ -1,10 +1,23 @@
 Changes
 =======
 
-0.19 (unreleased)
+0.21 (unreleased)
 -----------------
 
  * No changes yet.
+
+0.20 (2011-11-24)
+-----------------
+
+ * slapgrid: Support service-less parttions. [Antoine Catton]
+ * slapgrid: Avoid gid collision while dropping privileges. [Antoine Catton]
+ * slapgrid: Drop down network usage during usage reporting. [Łukasz Nowak]
+ * general: Add sphinx documentation. [Romain Courteaud]
+
+0.19 (2011-11-07)
+-----------------
+
+ * bang: Executable to be called by being banged computer. [Łukasz Nowak]
 
 0.18 (2011-10-18)
 -----------------

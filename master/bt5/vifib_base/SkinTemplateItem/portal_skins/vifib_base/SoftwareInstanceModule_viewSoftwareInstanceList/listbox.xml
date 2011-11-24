@@ -83,6 +83,10 @@
                           <string>Reference</string>
                         </tuple>
                         <tuple>
+                          <string>translated_portal_type</string>
+                          <string>Type</string>
+                        </tuple>
+                        <tuple>
                           <string>source_reference</string>
                           <string>Software Type</string>
                         </tuple>
@@ -112,6 +116,10 @@
                         <tuple>
                           <string>reference</string>
                           <string>Reference</string>
+                        </tuple>
+                        <tuple>
+                          <string>translated_portal_type</string>
+                          <string>Type</string>
                         </tuple>
                       </list>
                     </value>

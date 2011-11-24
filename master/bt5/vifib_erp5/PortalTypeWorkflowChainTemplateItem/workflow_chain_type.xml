@@ -16,6 +16,10 @@
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Open Sale Order Module</type>
+  <workflow>init_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Person</type>
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>
@@ -46,6 +50,10 @@
  <chain>
   <type>Sale Trade Condition</type>
   <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Sale Trade Condition Module</type>
+  <workflow>init_vifib_interaction_workflow</workflow>
  </chain>
  <chain>
   <type>Slave Instance</type>

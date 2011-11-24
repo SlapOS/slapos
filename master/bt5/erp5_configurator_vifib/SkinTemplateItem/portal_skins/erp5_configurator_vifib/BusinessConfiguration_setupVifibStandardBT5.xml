@@ -52,61 +52,70 @@
             <key> <string>_body</string> </key>
             <value> <string>configuration_save = context.restrictedTraverse(configuration_save_url)\n
 \n
-bt5_installation_list = (      \n
-      \'erp5_simulation\', \n
-      \'erp5_administration\', \n
-      \'erp5_pdm\', \n
-      \'erp5_trade\', \n
-      \'erp5_simulation_test\', \n
-      \'erp5_item\', \n
+bt5_installation_list = (\n
+      \'erp5_simulation\',\n
+      \'erp5_administration\',\n
+      \'erp5_pdm\',\n
+      \'erp5_trade\',\n
+      \'erp5_simulation_test\',\n
+      \'erp5_item\',\n
       \'erp5_open_trade\',\n
-      \'erp5_forge\', \n
-      \'erp5_ingestion_mysql_innodb_catalog\', \n
-      \'erp5_ingestion\', \n
-      \'erp5_crm\', \n
-      \'erp5_jquery\', \n
-      \'erp5_jquery_ui\', \n
-      \'erp5_knowledge_pad\', \n
-      \'erp5_web\', \n
-      \'erp5_dms\', \n
-      \'erp5_l10n_fr\', \n
-      \'erp5_content_translation\', \n
-      \'erp5_software_pdm\', \n
-      \'erp5_computer_immobilisation\', \n
-      \'erp5_accounting\', \n
-      \'erp5_accounting_l10n_fr\', \n
-      \'erp5_tax_resource\', \n
-      \'erp5_discount_resource\', \n
-      \'erp5_invoicing\', \n
-      \'erp5_ods_style\', \n
-      \'erp5_odt_style\', \n
-      \'erp5_ooo_import\', \n
-      \'erp5_simplified_invoicing\', \n
-      \'erp5_legacy_tax_system\', \n
-      \'erp5_commerce\', \n
-      \'erp5_project\', \n
-      \'erp5_xhtml_jquery_style\', \n
-      \'erp5_credential\', \n
-      \'erp5_km\', \n
-      \'erp5_web_download_theme\', \n
-      \'vifib_mysql_innodb_catalog\', \n
-      \'vifib_core\', \n
-      \'vifib_base\', \n
-      \'vifib_slap\', \n
-      \'vifib_crm\', \n
-      \'vifib_forge_release\', \n
-      \'vifib_software_pdm\', \n
+      \'erp5_forge\',\n
+      \'erp5_ingestion_mysql_innodb_catalog\',\n
+      \'erp5_ingestion\',\n
+      \'erp5_crm\',\n
+      \'erp5_jquery\',\n
+      \'erp5_jquery_ui\',\n
+      \'erp5_dhtml_style\',\n
+      \'erp5_knowledge_pad\',\n
+      \'erp5_web\',\n
+      \'erp5_dms\',\n
+      \'erp5_l10n_fr\',\n
+      \'erp5_content_translation\',\n
+      \'erp5_software_pdm\',\n
+      \'erp5_computer_immobilisation\',\n
+      \'erp5_accounting\',\n
+      \'erp5_accounting_l10n_fr\',\n
+      \'erp5_tax_resource\',\n
+      \'erp5_discount_resource\',\n
+      \'erp5_invoicing\',\n
+      \'erp5_ods_style\',\n
+      \'erp5_odt_style\',\n
+      \'erp5_ooo_import\',\n
+      \'erp5_simplified_invoicing\',\n
+      \'erp5_legacy_tax_system\',\n
+      \'erp5_commerce\',\n
+      \'erp5_project\',\n
+      \'erp5_xhtml_jquery_style\',\n
+      \'erp5_credential\',\n
+      \'erp5_km\',\n
+      \'erp5_web_download_theme\',\n
+      \'erp5_tiosafe_core\',\n
+      \'erp5_system_event\',\n
+      \'erp5_secure_payment\',\n
+      \'erp5_payzen_secure_payment\',\n
+      \'vifib_mysql_innodb_catalog\',\n
+      \'vifib_core\',\n
+      \'vifib_base\',\n
+      \'vifib_slap\',\n
+      \'vifib_crm\',\n
+      \'vifib_forge_release\',\n
+      \'vifib_software_pdm\',\n
       \'vifib_web\',\n
-      \'vifib_open_trade\', \n
+      \'vifib_open_trade\',\n
       \'vifib_l10n_fr\',\n
       \'vifib_data\',\n
-      \'vifib_data_web\',\n
       \'vifib_data_category\',\n
-      \'vifib_erp5\'\n
+      \'vifib_data_web\',\n
+      \'vifib_payzen\',\n
+      \'vifib_data_payzen\',\n
+      \'vifib_erp5\',\n
+      \'vifib_test\',\n
+      \'vifib_invoicing\',\n
 )\n
 \n
-bt5_update_catalog = (\'erp5_ingestion_mysql_innodb_catalog\', \n
-                      \'vifib_mysql_innodb_catalog\', \n
+bt5_update_catalog = (\'erp5_ingestion_mysql_innodb_catalog\',\n
+                      \'vifib_mysql_innodb_catalog\',\n
                       \'erp5_content_translation\')\n
 \n
 for name in bt5_installation_list:\n

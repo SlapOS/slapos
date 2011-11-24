@@ -30,6 +30,8 @@
 
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
+from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
+from Products.ERP5Security.ERP5UserManager import SUPER_USER
 from OFS.Traversable import NotFound
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
@@ -138,18 +140,18 @@ class SlapTool(BaseTool):
 
     Reuses slap library for easy marshalling.
     """
-    computer_document = self._getComputerDocument(computer_id)
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
-
     slap_computer = Computer(computer_id)
-    slap_computer._software_release_list = \
-           self._getSoftwareReleaseValueListForComputer(computer_document)
+    parent_uid = self._getComputerUidByReference(computer_id)
 
     slap_computer._computer_partition_list = []
-    for computer_partition_document in computer_document.contentValues(
-                                          portal_type="Computer Partition"):
+    slap_computer._software_release_list = \
+         self._getSoftwareReleaseValueListForComputer(computer_id)
+    for computer_partition in self.getPortalObject().portal_catalog(
+                    parent_uid=parent_uid,
+                    portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
-          self._getSlapPartitionByPackingList(computer_partition_document))
+          self._getSlapPartitionByPackingList(computer_partition.getObject()))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -410,16 +412,20 @@ class SlapTool(BaseTool):
 
   def _instanceXmlToDict(self, xml):
     result_dict = {}
-    if xml is not None and xml != '':
-      tree = etree.fromstring(xml.encode('utf-8'))
-      for element in tree.findall('parameter'):
-        key = element.get('id')
-        value = result_dict.get(key, None)
-        if value is not None:
-          value = value + ' ' + element.text
-        else:
-          value = element.text
-        result_dict[key] = value
+    try:
+      if xml is not None and xml != '':
+        tree = etree.fromstring(xml.encode('utf-8'))
+        for element in tree.findall('parameter'):
+          key = element.get('id')
+          value = result_dict.get(key, None)
+          if value is not None:
+            value = value + ' ' + element.text
+          else:
+            value = element.text
+          result_dict[key] = value
+    except (etree.XMLSchemaError, etree.XMLSchemaParseError,
+      etree.XMLSchemaValidateError, etree.XMLSyntaxError):
+      LOG('SlapTool', INFO, 'Issue during parsing xml:', error=True)
     return result_dict
 
   def _getSlapPartitionByPackingList(self, computer_partition_document):
@@ -743,6 +749,8 @@ class SlapTool(BaseTool):
     else:
       instance_portal_type = "Software Instance"
 
+    cleanup_resource = self.getPortalObject().portal_preferences\
+      .getPreferredInstanceCleanupResource()
     if computer_id and computer_partition_id:
       # requested by Software Instance, there is already top part of tree
       software_instance_document = self.\
@@ -779,15 +787,25 @@ class SlapTool(BaseTool):
               instance_xml=instance_xml,
               sla_xml=sla_xml,
               state=state)
-      requested_software_instance = person.portal_catalog.\
-          getResultValue(
+      requested_software_instance = None
+      for software_instance in person.portal_catalog(
                 portal_type=instance_portal_type,
                 # In order be in sync with defaults of person.
                 #   requestSoftwareInstance it is required to default here
                 # too
                 source_reference=software_type or 'RootSoftwareInstance',
                 title=partition_reference,
-          )
+          ):
+        try:
+          cleanup_delivery_line = software_instance\
+            .Item_getInstancePackingListLine(cleanup_resource)
+        except ValueError:
+          requested_software_instance = software_instance
+          break
+        else:
+          if cleanup_delivery_line.getSimulationState() != 'delivered':
+            requested_software_instance = software_instance
+            break
 
     if requested_software_instance is None:
       raise SoftwareInstanceNotReady
@@ -828,16 +846,20 @@ class SlapTool(BaseTool):
         validation_state="validated",
         reference=computer_reference)
 
+  @UnrestrictedMethod
+  def _getComputerUidByReference(self, computer_reference):
+    return self._getComputerDocument(computer_reference).getUid()
+
   def _getComputerPartitionDocument(self, computer_reference,
                                     computer_partition_reference):
     """
     Get the computer partition defined in an available computer
     """
     # Related key might be nice
-    computer = self._getComputerDocument(computer_reference)
     return self._getDocument(portal_type='Computer Partition',
                              reference=computer_partition_reference,
-                             parent_uid=computer.getUid())
+                             parent_uid=self._getComputerUidByReference(
+                                computer_reference))
 
   def _getUsageReportServiceDocument(self):
     service_document = self.Base_getUsageReportServiceDocument()
@@ -871,17 +893,20 @@ class SlapTool(BaseTool):
       else:
         return software_instance
 
+  @UnrestrictedMethod
   def _getSalePackingListLineAsSoftwareInstance(self, sale_packing_list_line):
     merged_dict = sale_packing_list_line.\
-      SalePackinListLine_asSoftwareInstnaceComputerPartitionMergedDict()
+        SalePackinListLine_asSoftwareInstnaceComputerPartitionMergedDict()
     if merged_dict is None:
       LOG('SlapTool._getSalePackingListLineAsSoftwareInstance', INFO,
         '%s returned no information' % sale_packing_list_line.getRelativeUrl())
       raise Unauthorized
     return merged_dict
 
-  def _getSoftwareReleaseValueListForComputer(self, computer_document):
+  @UnrestrictedMethod
+  def _getSoftwareReleaseValueListForComputer(self, computer_reference):
     """Returns list of Software Releases documentsfor computer"""
+    computer_document = self._getComputerDocument(computer_reference)
     portal = self.getPortalObject()
 
     state_list = []
@@ -889,7 +914,6 @@ class SlapTool(BaseTool):
     state_list.extend(portal.getPortalTransitInventoryStateList())
 
     software_release_list = []
-    computer_reference = computer_document.getReference()
     for software_release_url_string in computer_document\
       .Computer_getSoftwareReleaseUrlStringList(state_list):
       software_release_response = SoftwareRelease(

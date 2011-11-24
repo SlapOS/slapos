@@ -27,7 +27,10 @@ class TestVifibSlapComputerPartitionConnection(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginTestVifibAdmin
-      CreateComputer
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPublic
       Tic
       Logout
 

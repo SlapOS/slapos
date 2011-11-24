@@ -50,24 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_packing_list = state_change[\'object\']\n
+            <value> <string>payzen_event = state_change[\'object\']\n
+payment_transaction = payzen_event.getDestinationValue()\n
+portal = payment_transaction.getPortalObject()\n
+service = portal.portal_secure_payments.find()\n
+integration_tool = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
 \n
-sale_order = sale_packing_list.getCausalityValue(portal_type="Sale Order")\n
-if sale_order is None:\n
-  setup_service_relative_url = sale_packing_list.portal_preferences.getPreferredInstanceSetupResource()\n
+transaction_id = integration_tool.getMappingFromCategory(\'causality/%s\' % payment_transaction.getRelativeUrl())\n
+if transaction_id == \'Causality/%s\' % payment_transaction.getRelativeUrl():\n
+  raise ValueError(\'Transaction not registered in payzen integration tool\')\n
+transaction_id = transaction_id.split(\'/\')[1]\n
+transmissionDate, transactionId = transaction_id.split(\'_\')\n
 \n
-  for sale_packing_list_line in sale_packing_list.contentValues(\n
-                                  portal_type="Sale Packing List Line"):\n
-    if sale_packing_list_line.getResource() == setup_service_relative_url:\n
-      computer_partition = sale_packing_list_line.getAggregateValue(portal_type=["Computer Partition"])\n
-      if computer_partition is None:\n
-        raise ValueError("Sale Packing List Line \'%s\' should have a computer partition aggregated" % sale_packing_list_line.getRelativeUrl())\n
-      else:\n
-        # Slave instance do not change state of computer partitions.\n
-        if sale_packing_list_line.getAggregateValue(portal_type=["Slave Instance"]) is None:\n
-          # Mark computer partition as busy\n
-          # This method should be always callable in this step to prevent having 2 packing list related to the same computer partition\n
-          computer_partition.markBusy()\n
+data_kw, signature, sent_text, received_text = service.soap_getInfo(DateTime(transmissionDate).toZone(\'UTC\').asdatetime(), transactionId)\n
+sent = payzen_event.newContent(title=\'Sent SOAP\', portal_type=\'Payzen Event Message\', text_content=sent_text)\n
+received = payzen_event.newContent(title=\'Received SOAP\', portal_type=\'Payzen Event Message\', text_content=received_text, predecessor_value=sent)\n
+context.PayzenEvent_processUpdate(state_change, data_kw, signature)\n
 </string> </value>
         </item>
         <item>
@@ -76,7 +74,7 @@ if sale_order is None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SalePackingList_markComputerPartitionBusy</string> </value>
+            <value> <string>PayzenEvent_updateStatus</string> </value>
         </item>
       </dictionary>
     </pickle>

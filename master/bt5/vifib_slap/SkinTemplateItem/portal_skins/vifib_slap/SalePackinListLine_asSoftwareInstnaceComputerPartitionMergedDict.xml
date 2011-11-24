@@ -101,7 +101,6 @@ if software_instance is not None and computer_partition is not None and software
     \'slap_computer_partition_id\':computer_partition.getReference(),\n
     \'slap_software_type\': software_instance.getSourceReference(),\n
     \'slap_software_release_url\':software_release.getUrlString(),\n
-    \'slap_server_url\':context.getPortalObject().portal_slap.absolute_url(),\n
     \'slave_instance_list\': slave_instance_list,\n
     \'ip_list\':ip_list,\n
   }\n

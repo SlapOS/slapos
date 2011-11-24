@@ -116,7 +116,8 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
     SlapLogout"""
 
   def stepInitializeTime(self, sequence=None):
-    sequence['start'] = DateTime()
+    sequence['start'] = self.portal.portal_catalog(
+        sort_on=('uid', 'DESC'), limit=1)[0].uid
     sequence['first_call'] = False
     sequence['second_call'] = False
 
@@ -197,7 +198,7 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
     #We retrieve the Sale Packing List
     sale_packing_list_list = sale_packing_list_module.searchFolder(
       title='Resource consumptions',
-      creation_date={
+      uid={
         'query' : sequence['start'],
         'range' : 'min'})
 
@@ -235,7 +236,7 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
     #We retrieve the Sale Invoice
     sale_invoice_list = accounting_module.searchFolder(
       title='Resource consumptions',
-      creation_date={
+      uid={
         'query' : sequence['start'],
         'range' : 'min'})
 
@@ -283,7 +284,7 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
 
       result_tuple = module_object.searchFolder(
         title='Resource consumptions',
-        creation_date={
+        uid={
           'query' : sequence['start'],
           'range' : 'min'})
 
@@ -310,7 +311,7 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
     # We retrieve computer
     computer_id = sequence['computer_reference']
     computer = self.getPortal().computer_module.searchFolder(
-      title = computer_id)[0].getObject()
+      reference = computer_id)[0].getObject()
 
     for sale_invoice in sale_invoice_list:
       sale_invoice_line_list = \

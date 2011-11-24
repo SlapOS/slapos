@@ -61,6 +61,9 @@ portal = item.getPortalObject()\n
 portal_preferences = portal.portal_preferences\n
 service_uid_list = []\n
 \n
+if aggregate_portal_type is None:\n
+  aggregate_portal_type = [\'Software Instance\', \'Slave Instance\']\n
+\n
 if service_relative_url is None:\n
   for service_relative_url in \\\n
     (portal_preferences.getPreferredInstanceSetupResource(),\n
@@ -86,6 +89,7 @@ packing_list_line = portal.portal_catalog.getResultValue(\n
   default_resource_uid=service_uid_list,\n
   sort_on=((\'movement.start_date\', \'DESC\'),),\n
   limit=1,\n
+  aggregate_portal_type=aggregate_portal_type\n
 )\n
 \n
 if packing_list_line is None:\n
@@ -97,7 +101,7 @@ else:\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>service_relative_url=None</string> </value>
+            <value> <string>service_relative_url=None, aggregate_portal_type=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

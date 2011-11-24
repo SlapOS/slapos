@@ -26,6 +26,54 @@
 ##############################################################################
 
 from Products.ERP5Security.ERP5GroupManager import ConsistencyError
+from AccessControl.SecurityManagement import getSecurityManager, \
+             setSecurityManager, newSecurityManager
+from AccessControl import Unauthorized
+
+def restrictMethodAsShadowUser(self, open_order=None, callable_object=None,
+    argument_list=None, argument_dict=None):
+  """
+  Restrict the security access of a method to the unaccessible shadow user
+  associated to the current user.
+  """
+  if argument_list is None:
+    argument_list = []
+  if argument_dict is None:
+    argument_dict = {}
+  if open_order is None or callable_object is None:
+    raise TypeError('open_order and callable_object cannot be None')
+  relative_url = open_order.getRelativeUrl()
+  if open_order.getPortalType() != 'Open Sale Order':
+    raise Unauthorized("%s is not an Open Sale Order" % relative_url)
+  else:
+    # Check that open order is the validated one for the current user
+    if open_order.getValidationState() != 'validated':
+      raise Unauthorized('Open Sale Order %s is not validated.' % relative_url)
+
+    acl_users = open_order.getPortalObject().acl_users
+    # Switch to the shadow user temporarily, so that the behavior would not
+    # change even if this method is invoked by random users.
+    sm = getSecurityManager()
+    newSecurityManager(None, acl_users.getUserById(open_order.getReference()))
+    try:
+      return callable_object(*argument_list, **argument_dict)
+    finally:
+      # Restore the original user.
+      setSecurityManager(sm)
+
+def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
+  comment=None):
+  """Call bang on self."""
+  # micro security: can caller access software instance?
+  software_instance = self.restrictedTraverse(relative_url)
+  sm = getSecurityManager()
+  newSecurityManager(None, self.getPortalObject().acl_users.getUserById(
+    reference))
+  try:
+    software_instance.reportComputerPartitionBang(comment=comment)
+  finally:
+    # Restore the original user.
+    setSecurityManager(sm)
 
 def getComputerSecurityCategory(self, base_category_list, user_name, 
                                 object, portal_type):
@@ -82,7 +130,7 @@ def getSoftwareInstanceSecurityCategory(self, base_category_list, user_name,
               self.getPortalFutureInventoryStateList() + \
               self.getPortalReservedInventoryStateList() + \
               self.getPortalTransitInventoryStateList(),
-          sort_on=(('creation_date', 'DESC'),)
+          sort_on=(('movement.start_date', 'DESC'),)
         )
         if current_delivery_line is not None:
           hosting_item = current_delivery_line.getAggregateValue(portal_type='Hosting Subscription')
@@ -94,3 +142,4 @@ def getSoftwareInstanceSecurityCategory(self, base_category_list, user_name,
                             "with reference %r" % user_name
 
   return category_list
+

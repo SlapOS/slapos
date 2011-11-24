@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>def storeWorkflowComment(ctx, comment):\n
+  portal = ctx.getPortalObject()\n
+  workflow_tool = portal.portal_workflow\n
+  workflow_tool.doActionFor(ctx, \'edit_action\', comment=comment)\n
+\n
+payzen_event = state_change[\'object\']\n
+transaction = payzen_event.getDestinationValue()\n
+portal = transaction.getPortalObject()\n
+\n
+from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
+if signature is not True:\n
+  # signature is wrong, bye bye\n
+  payzen_event.confirm(comment=\'Signature does not match\')\n
+  return\n
+\n
+transaction_code_mapping = {\n
+  \'0\' : \'Initial (being treated)\',\n
+  \'1\' : \'To be validated \',\n
+  \'2\' : \'To be forced - Contact issuer\',\n
+  \'3\' : \'To be validated and authorized\',\n
+  \'4\' : \'Waiting for submission\',\n
+  \'5\' : \'Waiting for authorization\',\n
+  \'6\' : \'Submitted\',\n
+  \'7\' : \'Expired\',\n
+  \'8\' : \'Refused\',\n
+  \'9\' : \'Cancelled\',\n
+  \'10\': \'Waiting\',\n
+  \'11\': \'Being submitted\',\n
+  \'12\': \'Being authorized\',\n
+  \'13\': \'Failed\',\n
+}\n
+\n
+transaction_status = data_kw[\'transactionStatus\']\n
+transaction_status_description = transaction_code_mapping.get(transaction_status, None)\n
+if transaction_status_description is None:\n
+  payzen_event.confirm(comment=\'Unknown transactionStatus %r\' % transaction_status)\n
+  return\n
+integration_tool = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
+mark_transaction_id_list = [\'0\', \'1\', \'3\', \'4\', \'5\', \'10\', \'11\', \'12\']\n
+continue_transaction_id_list = [\'6\']\n
+\n
+if transaction_status in mark_transaction_id_list:\n
+  # Mark on payment transaction history log that transaction was not processed yet\n
+  storeWorkflowComment(transaction, \'Transaction status %s (%s) did not changed the document state\' % (transaction_status, transaction_status_description))\n
+  payzen_event.confirm()\n
+  payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
+elif transaction_status in continue_transaction_id_list:\n
+  # Check authAmount and authDevise and if match, start transaction\n
+  auth_amount = int(data_kw[\'authAmount\'])\n
+  auth_devise = data_kw[\'authDevise\']\n
+  transaction_amount = int(round((transaction.PaymentTransaction_getTotalPayablePrice() * 100), 2))\n
+  if transaction_amount != auth_amount:\n
+    payzen_event.confirm(comment=\'Received amount (%r) does not match stored on transaction (%r)\'% (auth_amount, transaction_amount))\n
+    return\n
+  transaction_devise = integration_tool.getMappingFromCategory(\'resource/currency_module/%s\' % transaction.getResourceReference()).split(\'/\')[-1]\n
+  if transaction_devise != auth_devise:\n
+    payzen_event.confirm(comment=\'Received devise (%r) does not match stored on transaction (%r)\'% (auth_devise, transaction_devise))\n
+    return\n
+  transaction.activate().PaymentTransaction_start()\n
+  payzen_event.confirm()\n
+  payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
+else:\n
+  payzen_event.confirm(comment=\'Transaction status %r (%r) is not supported\' % (transaction_status, transaction_status_description))\n
+  return\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>state_change, data_kw, signature</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>PayzenEvent_processUpdate</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
