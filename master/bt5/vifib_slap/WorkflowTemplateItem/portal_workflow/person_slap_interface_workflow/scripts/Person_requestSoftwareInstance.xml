@@ -80,21 +80,27 @@ tag = "%s_%s_inProgress" % (person.getUid(),\n
 # Check if it already exists\n
 cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
 request_software_instance = None\n
-for si in portal.portal_catalog(\n
-  portal_type=software_instance_portal_type,\n
+request_hosting_subscription = None\n
+for hs in portal.portal_catalog(\n
+  portal_type=hosting_subscription_portal_type,\n
   title=software_title,\n
   ):\n
-  try:\n
-    cleanup_delivery_line = si.Item_getInstancePackingListLine(cleanup_resource)\n
-  except ValueError:\n
-    request_software_instance = si\n
-    break\n
-  else:\n
-    if cleanup_delivery_line.getSimulationState() != \'delivered\':\n
+  si_list = hs.portal_catalog(portal_type=software_instance_portal_type,\n
+    title=software_title, root_uid=hs.getUid())\n
+  if len(si_list) == 0:\n
+    request_hosting_subscription = hs\n
+  for si in si_list:\n
+    try:\n
+      cleanup_delivery_line = si.Item_getInstancePackingListLine(cleanup_resource)\n
+    except ValueError:\n
       request_software_instance = si\n
       break\n
+    else:\n
+      if cleanup_delivery_line.getSimulationState() != \'delivered\':\n
+        request_software_instance = si\n
+        break\n
 \n
-if (request_software_instance is None):\n
+if request_software_instance is None and request_hosting_subscription is None:\n
   hosting_subscription_reference = "HOSTSUBS-%s" % context.getPortalObject().portal_ids\\\n
       .generateNewId(id_group=\'slap_hosting_subscription_reference\', id_generator=\'uid\')\n
   if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
@@ -121,6 +127,8 @@ if (request_software_instance is None):\n
       title=software_title,\n
       activate_kw={\'tag\': tag},\n
     )\n
+    subscription.setPredecessorValue(software_instance)\n
+\n
     if state == \'started\':\n
       software_instance.startRequested()\n
     elif state == \'stopped\':\n
@@ -165,6 +173,7 @@ if (request_software_instance is None):\n
           ob=person, name=\'open_order_url\',\n
           wf_id=\'person_slap_interface_workflow\')\n
         open_order = portal.restrictedTraverse(open_order_url)\n
+        pass\n
       else:\n
         raise ValueError(\'Person has no open order created\')\n
 \n
@@ -177,6 +186,26 @@ if (request_software_instance is None):\n
 \n
     # Find Computer partition\n
     # XXX Link subscript to open order\n
+elif request_software_instance is None:\n
+  if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+    # The software instance is already under creation but can not be fetched from catalog\n
+    # As it is not possible to fetch informations, it is better to raise an error\n
+    raise NotImplementedError(tag)\n
+  else:\n
+    setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
+\n
+    software_instance = portal.getDefaultModule(portal_type=software_instance_portal_type).newContent(\n
+            portal_type=software_instance_portal_type,\n
+            source_reference=software_type,\n
+            title=software_title,\n
+            text_content=instance_xml,\n
+            sla_xml=sla_xml,\n
+            activate_kw={\'tag\': tag},\n
+            **portal.Base_getNewSoftwareInstanceCoordinate()\n
+    )\n
+    software_instance.portal_workflow.doActionFor(software_instance, \'validate_action\')\n
+    request_hosting_subscription.setPredecessorValueList(\n
+      request_hosting_subscription.getPredecessorList() + [software_instance])\n
 else:\n
   # Update existing software instance\n
   request_software_instance.edit(\n
