@@ -59,11 +59,11 @@ portal = person.getPortalObject()\n
 kwargs = state_change.kwargs\n
 software_release_url_string = state_change.kwargs[\'software_release\']\n
 software_title = kwargs["software_title"]\n
-software_type = kwargs.get("software_type", "RootSoftwareInstance")\n
+software_type = kwargs.get("software_type") or "RootSoftwareInstance"\n
 instance_xml = kwargs["instance_xml"]\n
-sla_xml = kwargs.get("sla_xml", "")\n
+sla_xml = kwargs.get("sla_xml") or ""\n
 is_slave = kwargs.get("shared", False)\n
-state = kwargs.get(\'state\', \'started\')\n
+state = kwargs.get(\'state\') or \'started\'\n
 \n
 sale_order_portal_type = "Sale Order"\n
 sale_order_line_portal_type = "Sale Order Line"\n
