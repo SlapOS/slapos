@@ -62,7 +62,7 @@ while (predecessor_software_instance is not None):\n
     portal_type=["Software Instance", "Slave Instance"])\n
 \n
 root_hosting_subscription = root_software_instance.getPredecessorRelatedValue(\n
-  portal_type=["Hosting Subscription"])\n
+  portal_type="Hosting Subscription")\n
 \n
 # XXX-Antoine: As Romain wanted it, we raise an error if it\'s not attached to a\n
 #              root Hosting Subscription.\n
