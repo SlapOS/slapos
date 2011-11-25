@@ -110,6 +110,7 @@ vifib_invoicing
 vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
+vifib_payzen
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -198,6 +199,7 @@ vifib_invoicing
 vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
+vifib_payzen
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -288,6 +290,7 @@ vifib_invoicing
 vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
+vifib_payzen
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -373,6 +376,7 @@ vifib_crm
 vifib_forge_release
 vifib_invoicing
 vifib_open_trade
+vifib_payzen
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -455,6 +459,7 @@ vifib_crm
 vifib_forge_release
 vifib_invoicing
 vifib_open_trade
+vifib_payzen
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -537,6 +542,7 @@ vifib_crm
 vifib_forge_release
 vifib_invoicing
 vifib_open_trade
+vifib_payzen
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -623,6 +629,7 @@ vifib_crm
 vifib_forge_release
 vifib_invoicing
 vifib_open_trade
+vifib_payzen
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -709,6 +716,7 @@ vifib_crm
 vifib_forge_release
 vifib_invoicing
 vifib_open_trade
+vifib_payzen
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -791,6 +799,7 @@ vifib_crm
 vifib_forge_release
 vifib_invoicing
 vifib_open_trade
+vifib_payzen
 vifib_slap
 vifib_software_pdm
 vifib_test
