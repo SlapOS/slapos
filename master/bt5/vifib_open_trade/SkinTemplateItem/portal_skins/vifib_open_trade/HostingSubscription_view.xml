@@ -96,6 +96,9 @@
                         <string>my_title</string>
                         <string>my_reference</string>
                         <string>my_predecessor_title_list</string>
+                        <string>my_source_reference</string>
+                        <string>my_text_content</string>
+                        <string>my_sla_xml</string>
                       </list>
                     </value>
                 </item>
