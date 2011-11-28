@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>is_root_slave_property</string> </value>
+            <value> <string>root_slave_property</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -30,7 +30,9 @@
         </item>
         <item>
             <key> <string>property_default</string> </key>
-            <value> <string>False</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
       </dictionary>
     </pickle>
