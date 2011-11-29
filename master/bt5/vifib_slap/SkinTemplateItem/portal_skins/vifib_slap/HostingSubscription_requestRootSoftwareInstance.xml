@@ -50,10 +50,19 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from DateTime import DateTime\n
+            <value> <string encoding="cdata"><![CDATA[
+
+from DateTime import DateTime\n
 \n
 portal = context.getPortalObject()\n
 cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
+\n
+# copy and paste from\n
+# portal_workflow/person_slap_interface_workflow/scripts/Person_requestSoftwareInstance\n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  # The software instance is already under creation but can not be fetched from catalog\n
+  # As it is not possible to fetch informations, it is better to raise an error\n
+  raise NotImplementedError(tag)\n
 \n
 sale_order_portal_type = "Sale Order"\n
 sale_order_line_portal_type = "Sale Order Line"\n
@@ -114,11 +123,13 @@ else:\n
     request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
 \n
 return request_software_instance\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag=None</string> </value>
+            <value> <string>tag</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
