@@ -158,7 +158,7 @@ else:\n
     request_software_instance.startRequested()\n
     request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
   elif state == \'stopped\':\n
-    request_software_instance.stopRequested()    \n
+    request_software_instance.stopRequested()\n
     request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
   else:\n
     raise ValueError(\'State %r is not supported\' % state)\n
