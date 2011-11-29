@@ -1,7 +1,6 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-from slapos import slap
 import random
 
 class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
