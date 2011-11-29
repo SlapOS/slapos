@@ -54,7 +54,8 @@
 portal = software_instance.getPortalObject()\n
 \n
 root_hosting_subscription = portal.portal_catalog.getResultValue(uid=software_instance.SoftwareInstance_getRootHostingSubscriptionUid())\n
-root_software_instance = root_hosting_subscription.HostingSubscription_requestRootSoftwareInstance()\n
+tag = \'%s_%s_inProgress\' % (software_instance.getUid(), root_hosting_subscription.getTitle())\n
+root_software_instance = root_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag)\n
 \n
 # Use iterative algorithm instead of recursive approach in order to avoid\n
 # complexity as much as possible.\n
