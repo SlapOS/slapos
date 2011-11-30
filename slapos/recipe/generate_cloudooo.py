@@ -38,7 +38,9 @@ class Recipe(GenericSlapRecipe):
 
   def _generateRealTemplate(self):
     # TODO check json against schema
-    json_data = json.loads(self.parameter_dict['cloudooo-json'])
+    json_data = {}
+    if self.parameter_dict.get('cloudooo-json', None):
+      json_data = json.loads(self.parameter_dict['cloudooo-json'])
     # dymanic fonts
     font_url_list = json_data.get('font_url_list', [])
     fontconfig_template = open(self.options['template']).read()
@@ -50,10 +52,9 @@ class Recipe(GenericSlapRecipe):
   def _install(self):
     if not os.path.exists(self.dirname):
       os.mkdir(self.dirname)
-    if "cloudooo-json" in self.parameter_dict:
-      try:
-        self._generateRealTemplate()
-      except Exception:
-        print 'Ignored issue during template generation:\n%s' % \
-          traceback.format_exc()
+    try:
+      self._generateRealTemplate()
+    except Exception:
+      print 'Ignored issue during template generation:\n%s' % \
+        traceback.format_exc()
     return [self.dirname]
