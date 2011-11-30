@@ -80,13 +80,13 @@ predecessor_list = root_hosting_subscription.getPredecessorValueList()\n
 graph[root_hosting_subscription.getUid()] = [predecessor.getUid() for predecessor in predecessor_list]\n
 while True:\n
   try:\n
-    software_instance = predecessor_list.pop(0)\n
+    current_software_instance = predecessor_list.pop(0)\n
   except IndexError:\n
     break\n
-  software_instance_predecessor_list = software_instance.getPredecessorValueList() or []\n
-  graph[software_instance.getUid()] = [predecessor.getUid()\n
-                                       for predecessor in software_instance_predecessor_list]\n
-  predecessor_list.extend(software_instance_predecessor_list)\n
+  current_software_instance_predecessor_list = current_software_instance.getPredecessorValueList() or []\n
+  graph[current_software_instance.getUid()] = [predecessor.getUid()\n
+                                               for predecessor in current_software_instance_predecessor_list]\n
+  predecessor_list.extend(current_software_instance_predecessor_list)\n
 \n
 tag = "%s_%s_inProgress" % (root_hosting_subscription.getUid(),\n
                                requested_partition_reference)\n
