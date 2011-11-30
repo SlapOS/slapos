@@ -173,6 +173,48 @@ Request to non existing resource made.
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Unexpected error.
 
+Account Methods
+***************
+
+Requesting a new account
+------------------------
+
+Add a new user account.
+
+`Request`::
+
+  POST http://example.com/api/v1/account HTTP/1.1
+  Content-Type: application/json; charset=utf-8
+
+`Expected Request Body`::
+
+  {
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "login": "login", # XXX email is perhaps enough?
+    "email": "email@example.org",
+    "password": "one password",
+    "organisation": "ORG", # optional
+    "phone_number": "0323232", # optional
+    "address": "address",
+    "postal_code": "21232",
+    "city": "Tokyo"
+  }
+
+`Expected Response`::
+
+  HTTP/1.1 201 Created
+  Content-Type: application/json; charset=utf-8
+
+  {
+    "ssl_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADAN...h2VSZRlSN\n-----END PRIVATE KEY-----",
+    "ssl_certificate": "-----BEGIN CERTIFICATE-----\nMIIEAzCCAuugAwIBAgICHQI...ulYdXJabLOeCOA=\n-----END CERTIFICATE-----",
+  }
+
+`Error Responses`:
+
+* ``409 Conflict`` The request can not be process because of the existence of an account with the same login or email
+
 Instance Methods
 ****************
 
