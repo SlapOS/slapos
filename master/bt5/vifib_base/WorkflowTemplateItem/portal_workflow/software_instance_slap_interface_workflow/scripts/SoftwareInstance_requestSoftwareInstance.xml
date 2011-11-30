@@ -52,6 +52,8 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
+import collections\n
+\n
 software_instance = state_change[\'object\']\n
 portal = software_instance.getPortalObject()\n
 # Get required arguments\n
@@ -76,12 +78,9 @@ root_hosting_subscription = software_instance.portal_catalog.getResultValue(\n
   uid=software_instance.SoftwareInstance_getRootHostingSubscriptionUid(),\n
 )\n
 \n
-predecessor_list = root_hosting_subscription.getPredecessorValueList()\n
-while True:\n
-  try:\n
-    software_instance = predecessor_list.pop(0)\n
-  except IndexError:\n
-    break\n
+predecessor_list = collections.deque(root_hosting_subscription.getPredecessorValueList())\n
+while predecessor_list:\n
+  software_instance = predecessor_list.popleft()\n
   software_instance_predecessor_list = software_instance.getPredecessorValueList() or []\n
   graph[software_instance.getUid()] = [predecessor.getUid()\n
                                        for predecessor in software_instance_predecessor_list]\n

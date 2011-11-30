@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
+            <value> <string>import collections\n
+\n
+software_instance = state_change[\'object\']\n
 portal = software_instance.getPortalObject()\n
 \n
 root_hosting_subscription = portal.portal_catalog.getResultValue(uid=software_instance.SoftwareInstance_getRootHostingSubscriptionUid())\n
@@ -59,12 +61,9 @@ root_software_instance = root_hosting_subscription.HostingSubscription_requestRo
 \n
 # Use iterative algorithm instead of recursive approach in order to avoid\n
 # complexity as much as possible.\n
-flat_tree = [root_software_instance]\n
-while True:\n
-  try:\n
-    software_instance = flat_tree.pop(0)\n
-  except:\n
-    break\n
+flat_tree = collections.deque([root_software_instance])\n
+while flat_tree:\n
+  software_instance = flat_tree.popleft()\n
   flat_tree.extend(software_instance.getPredecessorValueList())\n
   try:\n
     software_instance.Item_getInstancePackingListLine(service_relative_url=portal.portal_preferences.getPreferredInstanceCleanupResource())\n
