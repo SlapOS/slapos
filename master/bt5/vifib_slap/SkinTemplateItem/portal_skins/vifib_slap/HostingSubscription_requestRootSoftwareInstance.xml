@@ -115,12 +115,23 @@ else:\n
     sla_xml=context.getSlaXml(),\n
     activate_kw={\'tag\': tag},\n
   )\n
-  if context.getRootState() == \'started\':\n
-    request_software_instance.startRequested()\n
-    request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
-  elif context.getRootState() == \'stopped\':\n
-    request_software_instance.stopRequested()\n
-    request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
+  destroyed = False\n
+  try:\n
+    cleanup_delivery_line = request_software_instance.Item_getInstancePackingListLine(\n
+      portal.portal_preferences.getPreferredInstanceCleanupResource()\n
+    )\n
+    if cleanup_delivery_line.getSimulationState() == \'delivered\':\n
+      destroyed = True\n
+  except ValueError:\n
+    pass\n
+\n
+  if not destroyed:\n
+    if context.getRootState() == \'started\':\n
+      request_software_instance.startRequested()\n
+      request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
+    elif context.getRootState() == \'stopped\':\n
+      request_software_instance.stopRequested()\n
+      request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
 \n
 return request_software_instance\n
 
