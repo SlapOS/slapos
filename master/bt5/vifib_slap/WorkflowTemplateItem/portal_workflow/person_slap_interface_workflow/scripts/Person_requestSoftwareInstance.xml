@@ -119,10 +119,10 @@ if request_hosting_subscription is None:\n
     text_content=instance_xml,\n
     sla_xml=sla_xml,\n
     root_state=state,\n
-    software_release_url=software_release_url_string,\n
+    root_software_release_url=software_release_url_string,\n
     root_slave=is_slave,\n
   )\n
-  software_instance = subscription.HostingSubscription_requestRootSoftwareInstance(tag)\n
+  software_instance = subscription.HostingSubscription_requestRootSoftwareInstance(tag, person_request=True)\n
 \n
   software_release_document = context.portal_catalog.getResultValue(\n
     portal_type=\'Software Release\',\n
