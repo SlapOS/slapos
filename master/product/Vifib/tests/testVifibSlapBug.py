@@ -658,6 +658,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       sla_xml=self.minimal_correct_xml,
       state='started'
     )
+    transaction.abort()
 
   def test_bug_orhpaned_software_instance(self):
     """Check that no orphaned Software Instances would be created
