@@ -1783,7 +1783,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     children_software_instance = \
       software_instance.portal_catalog.getResultValue(
           portal_type="Software Instance", source_reference='children_a',
-          root_uid=software_instance_uid)
+          root_uid=sequence['hosting_subscription_uid'])
     self.assertNotEqual(None, children_software_instance)
     self.assertNotEqual(software_instance.getRelativeUrl(),
         children_software_instance.getRelativeUrl())
@@ -1807,7 +1807,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     children_software_instance = \
       software_instance.portal_catalog.getResultValue(
           portal_type="Software Instance", source_reference='children_b',
-          root_uid=software_instance_uid)
+          root_uid=sequence['hosting_subscription_uid'])
     self.assertNotEqual(None, children_software_instance)
     self.assertNotEqual(software_instance.getRelativeUrl(),
         children_software_instance.getRelativeUrl())
