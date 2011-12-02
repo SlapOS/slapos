@@ -2,6 +2,7 @@ from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 import random
+import transaction
 
 class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def test_bug_Person_request_more_then_one_instance(self):
@@ -808,6 +809,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       sla_xml=self.minimal_correct_xml,
       state='started'
     )
+    transaction.abort()
 
   def test_bug_cyclic_software_instance(self):
     """Check that no cyclic Software Instance trees would be created
@@ -938,6 +940,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SelectRequestedReferenceB
 
       LoginDefaultUser # login as superuser in order to work in erp5
+      Pdb
       DirectRequestComputerPartitionRaisesCyclicSoftwareTree
       """
     sequence_list.addSequenceString(sequence_string)
