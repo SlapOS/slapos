@@ -521,9 +521,9 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     slap_computer_partition.request(**kw)
 
   def stepCheckActivityRequestInProgress(self, sequence, **kw):
-    software_instance_uid = sequence['software_instance_uid']
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
     requested_partition_reference = sequence.get('software_type', 'requested_reference')
-    tag = "%s_%s_inProgress" % (software_instance_uid,
+    tag = "%s_%s_inProgress" % (hosting_subscription_uid,
         requested_partition_reference)
 
     self.assertNotEqual(0, self.portal.portal_activities.
