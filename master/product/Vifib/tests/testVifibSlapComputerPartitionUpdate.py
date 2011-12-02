@@ -645,31 +645,6 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       connection_xml = self.minimal_correct_xml
     )
 
-  def test_update_on_title_change(self):
-    sequence_list = SequenceList()
-    sequence_string = \
-      self.prepare_started_computer_partition_sequence_string + """
-        SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
-        SlapLogout
-
-        LoginTestVifibCustomer
-        SoftwareInstanceEditTitle
-        Tic
-        Logout
-
-        LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
-        Logout
-
-        SlapLoginCurrentComputer
-        CheckSuccessComputerGetComputerPartitionCall
-        SlapLogout
-
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
   def test_update_on_source_reference_change(self):
     sequence_list = SequenceList()
     sequence_string = \
