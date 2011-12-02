@@ -940,7 +940,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SelectRequestedReferenceB
 
       LoginDefaultUser # login as superuser in order to work in erp5
-      Pdb
       DirectRequestComputerPartitionRaisesCyclicSoftwareTree
       """
     sequence_list.addSequenceString(sequence_string)
