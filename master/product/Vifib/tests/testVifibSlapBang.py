@@ -747,19 +747,19 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
-    SetRootSoftwareInstanceCurrentInstance
-    Tic
-    LoginTestVifibCustomer
-    RenameCurrentSoftwareInstanceDead
-    Tic
-    Logout
-    SlapLoginCurrentSoftwareInstance
-    Bang
-    SlapLogout
-    Tic
-    LoginTestVifibCustomer
-    CheckTreeHasARootSoftwareInstance
-    Logout
+      SetRootSoftwareInstanceCurrentInstance
+      Tic
+      DefaultUser
+      RenameCurrentSoftwareInstanceDead
+      Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
+      Bang
+      SlapLogout
+      Tic
+      LoginTestVifibCustomer
+      CheckTreeHasARootSoftwareInstance
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
