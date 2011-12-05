@@ -1985,6 +1985,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     finally:
       Base.serialize = Base.serialize_call
 
+    transaction.abort()
+
   def _getComputerPartitionByReference(self, sequence):
     computer_partition_list = self.portal.portal_catalog(
         portal_type=self.computer_partition_portal_type,
