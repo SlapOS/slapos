@@ -1,7 +1,12 @@
 Changes
 =======
 
-0.38 (Unreleased)
+0.39 (unreleased)
+-----------------
+
+ * No changes yet.
+
+0.38 (2011-12-05)
 -----------------
 
  * erp5: Swtich to percona, as maatkit is obsoleted. [Sebastien Robin]
