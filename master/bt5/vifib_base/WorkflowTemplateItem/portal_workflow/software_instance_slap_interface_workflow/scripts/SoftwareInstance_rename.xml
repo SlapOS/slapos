@@ -66,10 +66,8 @@ parent = software_instance.getPredecessorRelatedValue(\n
 parent_predecessor_list = parent.getPredecessorValueList()\n
 hosting_subscription_predecessor_list = hosting_subscription.getPredecessorValueList()\n
 \n
-\n
-hosting_subscription_predecessor_list.append(\n
-  parent_predecessor_list.pop(parent_predecessor_list.index(software_instance))\n
-)\n
+tmp = parent_predecessor_list.pop(parent_predecessor_list.index(software_instance))\n
+hosting_subscription_predecessor_list.append(tmp)\n
 \n
 hosting_subscription.setPredecessorValueList(hosting_subscription_predecessor_list)\n
 parent.setPredecessorValueList(parent_predecessor_list)\n
