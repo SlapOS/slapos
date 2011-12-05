@@ -1,6 +1,21 @@
 Changes
 =======
 
+0.38 (Unreleased)
+-----------------
+ * No change yet.
+
+0.37 (2011-11-24)
+-----------------
+
+ * KVM : allow access to several KVM instances without SSL certificate duplicate
+   problem. [Cedric de Saint Martin]
+
+0.36 (2011-11-16)
+-----------------
+
+ * erp5testnode : the code of testnode is not in slapos repository anymore
+
 0.35 (2011-11-10)
 -----------------
 
