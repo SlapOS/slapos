@@ -55,6 +55,24 @@ software_instance = state_change[\'object\']\n
 \n
 # Change the title\n
 software_instance.edit(title=state_change.kwargs[\'new_name\'])\n
+\n
+# Reattach to root hosting subscription\n
+sale_packing_list_line = context.SoftwareInstance_getInstanceSetupPackingListLine(state_change)\n
+hosting_subscription = sale_packing_list_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
+parent = software_instance.getPredecessorRelatedValue(\n
+  portal_type=["Hosting Subscription", "Software Instance", "Slave Instance"]\n
+)\n
+\n
+parent_predecessor_list = parent.getPredecessorValueList()\n
+hosting_subscription_predecessor_list = hosting_subscription.getPredecessorValueList()\n
+\n
+\n
+hosting_subscription_predecessor_list.append(\n
+  parent_predecessor_list.pop(parent_predecessor_list.index(software_instance))\n
+)\n
+\n
+hosting_subscription.edit(predecessor_list=hosting_subscription_predecessor_list)\n
+parent.edit(predecessor_list=parent_predecessor_list)\n
 </string> </value>
         </item>
         <item>
