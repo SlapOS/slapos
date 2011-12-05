@@ -71,8 +71,8 @@ hosting_subscription_predecessor_list.append(\n
   parent_predecessor_list.pop(parent_predecessor_list.index(software_instance))\n
 )\n
 \n
-hosting_subscription.edit(predecessor_list=hosting_subscription_predecessor_list)\n
-parent.edit(predecessor_list=parent_predecessor_list)\n
+hosting_subscription.setPredecessorValueList(hosting_subscription_predecessor_list)\n
+parent.setPredecessorValueList(parent_predecessor_list)\n
 </string> </value>
         </item>
         <item>
