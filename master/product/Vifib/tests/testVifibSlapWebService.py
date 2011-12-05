@@ -1800,6 +1800,18 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.assertNotEqual(None, software_instance_uid)
     sequence.edit(root_software_instance_uid=software_instance_uid)
 
+  def stepSetSoftwareInstanceRoot(self, sequence, **kw):
+    root_software_instance_uid = sequence['root_software_instance_uid']
+    self.failIfEqual(None, root_software_instance_uid)
+    root_software_instance = self.portal.portal_catalog.getResultValue(
+      uid=root_software_instance_uid,
+    )
+    self.failIfEqual(None, root_software_instance)
+    computer_partition_reference = self._softwareInstance_getComputerPartition(
+      root_software_instance).getReference()
+    sequence.edit(software_instance_uid=root_software_instance_uid,
+                  computer_partition_reference=computer_partition_reference)
+
   def stepSetSoftwareInstanceChildrenB(self, sequence, **kw):
     software_instance_uid = sequence['root_software_instance_uid']
     software_instance = self.portal.portal_catalog.getResultValue(
