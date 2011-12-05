@@ -681,6 +681,34 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepCheckTreeLooksLikeRenameComplexTree(self, sequence, **kw):
+    computer_guid = sequence["computer_reference"]
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
+
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    computer = self.slap.registerComputer(computer_guid)
+    partition_to_process = [partition
+                            for partition in computer.getComputerPartitionList()
+                            if partition._need_modification]
+    self.failUnlessEqual(len(partition_to_process), 4)
+
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=hosting_subscription_uid
+    )
+
+    root_software_instance = hosting_subscription.portal_catalog.getResultValue(
+      title=hosting_subscription.getTitle(), portal_type="Software Instance")
+    self.failIfEqual(root_software_instance, None)
+
+    self.failUnlessEqual(len(root_software_instance.getPredecessorList()), 2)
+
+    children_b = hosting_subscription.portal_catalog.getResultValue(
+      title='children_b',
+      root_uid=hosting_subscription.getUid(),
+    )
+    self.failUnlessEqual(len(children_b.getPredecessorList()), 1)
+
   def test_ComputerPartition_rename_root_and_bang(self):
     r"""
     Request Master:                     __________
@@ -731,6 +759,254 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
+  def test_ComputerPartition_rename_root_complex_tree(self):
+    r"""
+    Request Master which is a software realease having a complex tree :
+              ___________________________
+             /                            \
+            |           HS: Master         |
+             \____________________________/
+              _____________|_____________
+             /                            \
+            |           SI: Master         |
+             \____________________________/
+              _____/_____     _____\_____
+             /           \   /           \
+            | SI: Child A | | SI: Child B |
+             \___________/   \___________/
+                             ______|______
+                            /              \
+                           | SI: GreatChild |
+                            \______________/
+
+    Rename Software Instance Master :
+              ___________________________
+             /                            \
+            |           SI: Master         |
+             \____________________________/
+              _____________|_____________
+             /                            \
+            |        SI: MasterDead        |
+             \____________________________/
+              _____/_____     _____\_____
+             /           \   /           \
+            | SI: Child A | | SI: Child B |
+             \___________/   \___________/
+                             ______|______
+                            /              \
+                           | SI: GreatChild |
+                            \______________/
+
+    Run bang() on the tree. We expect to have a new root as :
+              _______________________________________________
+             /                                               \
+            |                     HS: Master                  |
+             \_______________________________________________/
+              _____________|______________     _______|______
+             /                            \   /              \
+            |           SI: Master         | | SI: MasterDead |
+             \____________________________/   \______________/
+              _____/_____     _____\_____
+             /           \   /           \
+            | SI: Child A | | SI: Child B |
+             \___________/   \___________/
+                             ______|______
+                            /              \
+                           | SI: GreatChild |
+                            \______________/
+
+    """
+    self.computer_partition_amount = 5
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_children_a_children_b_sequence_string + """
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReferenceChildrenBChild
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SlapLoginTestVifibCustomer
+      SetSoftwareInstanceRoot
+      RenameCurrentSoftwareInstanceDead
+      Bang
+      Tic
+      Logout
+      SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceGetRootOfTheTree
+      SetRootSoftwareInstanceCurrentInstance
+      SelectRequestedReferenceChildrenA
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SelectRequestedReferenceChildrenB
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReferenceChildrenBChild
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SlapLoginCurrentComputer
+      CheckTreeLooksLikeRenameComplexTree
+      SlapLogout
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_rename_child_complex_tree(self):
+    r"""
+    Request A which is a software realease having a complex tree :
+              ___________________________
+             /                            \
+            |           HS: Master         |
+             \____________________________/
+              _____________|_____________
+             /                            \
+            |           SI: Master         |
+             \____________________________/
+              _____/_____     _____\_____
+             /           \   /           \
+            | SI: Child A | | SI: Child B |
+             \___________/   \___________/
+                             ______|______
+                            /              \
+                           | SI: GreatChild |
+                            \______________/
+
+    Rename child C into E :
+    (Rename reattach to root as Luke wanted it)
+              ________________________________
+             /                                \
+            |             HS: Master           |
+             \________________________________/
+              _____/____      _________\______
+             /           \   /                \
+            |  SI: Master | | SI: Child B Dead |
+             \___________/   \________________/
+              _____|_____      ______|______
+             /           \    /              \
+            | SI: Child A |  | SI: GreatChild |
+             \___________/    \______________/
+
+    Bang the tree. We espect to have a new C replacing it,
+    as :      _________________________________________________
+             /                                                 \
+            |                      HS: Master                   |
+             \_________________________________________________/
+              _____________|______________     _______|________
+             /                            \   /                \
+            |           SI: Master         | | SI: Child B Dead |
+             \____________________________/   \________________/
+              _____/_____     _____\_____
+             /           \   /           \
+            | SI: Child A | | SI: Child B |
+             \___________/   \___________/
+                             ______|______
+                            /              \
+                           | SI: GreatChild |
+                            \______________/
+    """
+    self.computer_partition_amount = 5
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_children_a_children_b_sequence_string + """
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReferenceChildrenBChild
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SlapLoginTestVifibCustomer
+      SetSoftwareInstanceChildrenB
+      RenameCurrentSoftwareInstanceDead
+      Bang
+      Tic
+      Logout
+      SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceGetRootOfTheTree
+      SetRootSoftwareInstanceCurrentInstance
+      SelectRequestedReferenceChildrenA
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SelectRequestedReferenceChildrenB
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReferenceChildrenBChild
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SlapLoginCurrentComputer
+      CheckTreeLooksLikeRenameComplexTree
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
 
 def test_suite():
   suite = unittest.TestSuite()
