@@ -3870,6 +3870,56 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepSetRandomRequestedReference(self, sequence, **kw):
     sequence['requested_reference'] = self.id() + str(random())
 
+  def stepRenameCurrentSoftwareInstanceDead(self, sequence, **kw):
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'],
+    )
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid']
+    )
+
+    software_instance.rename(new_name='%sDead' % software_instance.getTitle())
+    self.stepTic()
+    parent = software_instance.getPredecessorRelatedValue(
+      portal_type=["Hosting Subscription", "Software Instance",
+                   "Slave Instance"]
+    )
+    self.assertEquals(hosting_subscription,
+                      parent,
+                      "Software Instance wasn't reattached to the hosting "
+                      "subscription")
+
+  def stepCheckTreeHasARootSoftwareInstance(self, sequence, **kw):
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
+
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=hosting_subscription_uid,
+    )
+    root_software_instance = self.portal.portal_catalog.getResultValue(
+      root_uid=hosting_subscription_uid,
+      title=hosting_subscription.getTitle(),
+    )
+
+    self.failIfEqual(root_software_instance, None,
+                     "No root software instance")
+
+  def stepSetSoftwareInstanceGetRootOfTheTree(self, sequence, **kw):
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
+
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=hosting_subscription_uid,
+    )
+    root_software_instance = self.portal.portal_catalog.getResultValue(
+      root_uid=hosting_subscription_uid,
+      title=hosting_subscription.getTitle(),
+    )
+    self.failIfEqual(root_software_instance, None,
+                     "No root software instance")
+    computer_partition_reference = self._softwareInstance_getComputerPartition(
+      root_software_instance).getReference()
+    sequence.edit(software_instance_uid=root_software_instance.getUid(),
+                  computer_partition_reference=computer_partition_reference)
+
 class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
   # slap.initializeConnection
@@ -4203,38 +4253,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-
-  def stepRenameCurrentSoftwareInstanceDead(self, sequence):
-    hosting_subscription = self.portal.portal_catalog.getResultValue(
-      uid=sequence['hosting_subscription_uid'],
-    )
-    software_instance = self.portal.portal_catalog.getResultValue(
-      uid=sequence['software_instance_uid']
-    )
-
-    software_instance.rename(new_name='%sDead' % software_instance.getTitle())
-    parent = software_instance.getPredecessorRelatedValue(
-      portal_type=["Hosting Subscription", "Software Instance",
-                   "Slave Instance"]
-    )
-    self.assertEquals(hosting_subscription,
-                      parent,
-                      "Software Instance wasn't reattached to the hosting "
-                      "subscription")
-
-  def stepCheckTreeHasARootSoftwareInstance(self, sequence):
-    hosting_subscription_uid = sequence['hosting_subscription_uid']
-
-    hosting_subscription = self.portal.portal_catalog.getResultValue(
-      uid=hosting_subscription_uid,
-    )
-    root_software_instance = self.portal.portal_catalog.getResultValue(
-      root_uid=hosting_subscription_uid,
-      title=hosting_subscription.getTitle(),
-    )
-
-    self.failIfEqual(root_software_instance, None,
-                     "No root software instance")
 
 # class IComputerPartition
 #   def started():
