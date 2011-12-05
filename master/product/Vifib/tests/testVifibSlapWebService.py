@@ -4201,6 +4201,39 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
+  def stepRenameCurrentSoftwareInstanceDead(self, sequence):
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'],
+    )
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid']
+    )
+
+    software_instance.rename(new_name='%sDead' % software_instance.getTitle())
+    parent = software_instance.getPredecessorRelatedValue(
+      portal_type=["Hosting Subscription", "Software Instance",
+                   "Slave Instance"]
+    )
+    self.assertEquals(hosting_subscription,
+                      parent,
+                      "Software Instance wasn't reattached to the hosting "
+                      "subscription")
+
+  def stepCheckTreeHasARootSoftwareInstance(self, sequence):
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
+
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=hosting_subscription_uid,
+    )
+    root_software_instance = self.portal.portal_catalog.getResultValue(
+      root_uid=hosting_subscription_uid,
+      title=hosting_subscription.getTitle(),
+    )
+
+    self.failIfEqual(root_software_instance, None,
+                     "No root software instance")
+
 # class IComputerPartition
 #   def started():
 #   def stopped():
