@@ -63,18 +63,18 @@ parent = software_instance.getPredecessorRelatedValue(\n
   portal_type=["Hosting Subscription", "Software Instance", "Slave Instance"]\n
 )\n
 \n
-if parent is not hosting_subscription:\n
+if parent != hosting_subscription:\n
 \n
-    parent_predecessor_list = parent.getPredecessorValueList()\n
-    hosting_subscription_predecessor_list = hosting_subscription.getPredecessorValueList()\n
+    parent_predecessor_list = parent.getPredecessorList()\n
+    hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
 \n
 \n
     hosting_subscription_predecessor_list.append(\n
-      parent_predecessor_list.pop(parent_predecessor_list.index(software_instance))\n
+      parent_predecessor_list.pop(parent_predecessor_list.index(software_instance.getRelativeUrl()))\n
     )\n
 \n
-    hosting_subscription.setPredecessorValueList(hosting_subscription_predecessor_list)\n
-    parent.setPredecessorValueList(parent_predecessor_list)\n
+    hosting_subscription.edit(predecessor_list=hosting_subscription_predecessor_list)\n
+    parent.edit(predecessor_list=parent_predecessor_list)\n
 </string> </value>
         </item>
         <item>
