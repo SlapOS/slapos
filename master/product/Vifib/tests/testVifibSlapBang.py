@@ -745,7 +745,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       SetRootSoftwareInstanceCurrentInstance
       Tic
-      DefaultUser
+      LoginDefaultUser
       RenameCurrentSoftwareInstanceDead
       Tic
       Logout
@@ -879,6 +879,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SlapLoginCurrentComputer
+      CheckTreeHasARootSoftwareInstance
       CheckTreeLooksLikeRenameComplexTree
       SlapLogout
       Logout
@@ -1001,6 +1002,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SlapLoginCurrentComputer
+      CheckTreeHasARootSoftwareInstance
       CheckTreeLooksLikeRenameComplexTree
       SlapLogout
     """
