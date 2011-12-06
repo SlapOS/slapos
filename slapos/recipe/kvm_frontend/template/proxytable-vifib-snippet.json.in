@@ -1,0 +1,6 @@
+
+  "/domain": {
+    "port": 4443,
+    "host":"vifib",
+    "https": true
+  }

@@ -246,8 +246,9 @@ class Recipe(BaseSlapRecipe):
     for rewrite_rule in rewrite_rule_list:
       rewrite_part = self.substituteTemplate(
          self.getTemplateFilename('proxytable-host.json.in'), rewrite_rule)
-      proxy_table_content = """%s
-%s""" % (proxy_table_content, rewrite_part)
+      proxy_table_content = """%s%s,""" % (proxy_table_content, rewrite_part)
+    proxy_table_content = """%s%s""" % (proxy_table_content,
+         self.getTemplateFilename('proxytable-vifib-snippet.json.in'))
     proxy_table_content = '%s}' % proxy_table_content
     return proxy_table_content
 
