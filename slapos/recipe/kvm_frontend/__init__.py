@@ -89,9 +89,9 @@ class Recipe(BaseSlapRecipe):
       key = ca_conf.pop('key')
       certificate = ca_conf.pop('certificate')
 
+    # Install node + js script
     node_parameter_dict = self.installFrontendNode(
-        ip_list=['%s' % self.getGlobalIPv6Address(),
-                 self.getLocalIPv4Address()],
+        ip=self.getGlobalIPv6Address(),
         port=frontend_port_number,
         plain_http=redirect_plain_http,
         name=frontend_domain_name,
@@ -241,62 +241,28 @@ class Recipe(BaseSlapRecipe):
       certificate_authority_path=config['ca_dir']
     )
 
-  def _getApacheConfigurationDict(self, name, ip_list, port):
-    apache_conf = dict()
-    apache_conf['server_name'] = name
-    apache_conf['pid_file'] = os.path.join(self.run_directory,
-        name + '.pid')
-    apache_conf['lock_file'] = os.path.join(self.run_directory,
-        name + '.lock')
-    apache_conf['ip_list'] = ip_list
-    apache_conf['port'] = port
-    apache_conf['server_admin'] = 'admin@'
-    apache_conf['error_log'] = os.path.join(self.log_directory,
-        name + '-error.log')
-    apache_conf['access_log'] = os.path.join(self.log_directory,
-        name + '-access.log')
-    self.registerLogRotation(name, [apache_conf['error_log'],
-      apache_conf['access_log']], self.killpidfromfile + ' ' +
-      apache_conf['pid_file'] + ' SIGUSR1')
-    return apache_conf
+  def _getProxyTableContent(self, rewrite_rule_list):
+    proxy_table_content = '{'
+    for rewrite_rule in rewrite_rule_list:
+      rewrite_part = self.substituteTemplate(
+         self.getTemplateFilename('proxytable-host.json.in'), rewrite_rule)
+      proxy_table_content = """%s
+%s""" % (proxy_table_content, rewrite_part)
+    proxy_table_content = '%s}' % proxy_table_content
+    return proxy_table_content
 
-  def installFrontendNode(self, ip_list, port, key, certificate, plain_http,
-                            name, rewrite_rule_list, access_control_string=None):
-    apachemap_name = "apachemap.txt"
+  def installFrontendNode(self, ip, port, key, certificate, plain_http,
+                            name, rewrite_rule_list):
+    map_name = "proxy_table.json"
+    map_content = self._getProxyTableContent(rewrite_rule_list)
+    map_file = self.createConfigurationFile(map_name, map_content)
 
-    self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
-    apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
-    apache_conf['ssl_snippet'] = self.substituteTemplate(
-        self.getTemplateFilename('apache.ssl-snippet.conf.in'),
-        dict(login_certificate=certificate, login_key=key))
-
-    apache_conf["listen"] = "\n".join(["Listen %s:%s" % (ip, port) for ip in ip_list])
-
-    path = self.substituteTemplate(
-        self.getTemplateFilename('apache.conf.path-protected.in'),
-        dict(path='/', access_control_string='none'))
-
-    apache_conf.update(**dict(
-      path_enable=path,
-      apachemap_path=os.path.join(self.etc_directory, apachemap_name),
-      apache_domain=name,
-      port=port,
-    ))
-
-    apache_conf_string = self.substituteTemplate(
-          self.getTemplateFilename('apache.conf.in'), apache_conf)
-
-    apache_config_file = self.createConfigurationFile(name + '.conf',
-        apache_conf_string)
-
-    self.path_list.append(apache_config_file)
-    self.path_list.extend(zc.buildout.easy_install.scripts([(
-      name, 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
-          sys.executable, self.wrapper_directory, arguments=[
-            dict(
-              required_path_list=[key, certificate],
-              binary=self.options['httpd_binary'],
-              config=apache_config_file)
-          ]))
+    self.path_list.append(map_file)
+    wrapper = zc.buildout.easy_install.scripts([(
+        name, 'slapos.recipe.librecipe.execute', 'execute')], self.ws,
+        sys.executable, self.wrapper_directory, arguments=[
+        ip, port, key, certificate, plain_http]
+      )[0]
+    self.path_list.extend(wrapper)
 
     return dict(site_url="https://%s:%s/" % (name, port))
