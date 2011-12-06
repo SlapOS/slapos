@@ -35,6 +35,8 @@ import pkg_resources
 import ConfigParser
 import hashlib
 
+FALSE_VALUE_LIST = ['n', 'no', '0', 'false']
+
 class Recipe(BaseSlapRecipe):
 
   # To avoid magic numbers
@@ -86,13 +88,41 @@ class Recipe(BaseSlapRecipe):
                                    target_port = vnc_port)
 
     self.linkBinary()
-    self.computer_partition.setConnectionDict(dict(
-        url = "https://[%s]:%s/vnc_auto.html?host=[%s]&port=%s&encrypt=1" % (
-            noVNC_conf['source_ip'],
-            noVNC_conf['source_port'],
-            noVNC_conf['source_ip'],
-            noVNC_conf['source_port']),
-        password = kvm_conf['vnc_passwd']))
+
+    ipv6_url = 'https://[%s]:%s/vnc_auto.html?host=[%s]&port=%s&encrypt=1' % (
+      noVNC_conf['source_ip'], noVNC_conf['source_port'],
+      noVNC_conf['source_ip'], noVNC_conf['source_port'])
+
+    # Request frontend slave instance, unless contrary is specified
+    # XXX-Cedric : HARDCODE : during dev, request is OPT-IN
+    request_frontend = self.parameter_dict.get('frontend', 'false')
+    #request_frontend = self.parameter_dict.get('frontend', True)
+    if not request_frontend in FALSE_VALUE_LIST:
+      slave_frontend = self.request(
+        # XXX-Cedric : how to "de-hardcode" url?
+        software_release='/opt/slapdev/software/kvm-frontend/software.cfg',
+        software_type='RootInstanceSoftware',
+        partition_reference='%s_frontend' % self.computer_partition_id,
+        shared=True
+      )
+      url = 'https://%s:%s/%s/vnc_auto.html?host=%s&port=%s&encrypt=1&path=%s' % (
+        # XXX-Cedric : uh? how to fetch slave url/port/reference?
+        slave_frontend.getParameter('domain'),
+        slave_frontend.getParameter('port'),
+        slave_frontend.get('reference'),
+        slave_frontend.getParameter('domain'),
+        slave_frontend.getParameter('port'),
+        slave_frontend.get('reference'))
+      connection_dict = dict(
+        url = url,
+        backend_url = ipv6_url,
+        password = kvm_conf['vnc_passwd'])
+    else:
+      connection_dict = dict(
+          url = ipv6_url,
+          password = kvm_conf['vnc_passwd'])
+
+    self.computer_partition.setConnectionDict(connection_dict)
 
     return self.path_list
 

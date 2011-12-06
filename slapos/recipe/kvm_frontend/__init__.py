@@ -101,10 +101,10 @@ class Recipe(BaseSlapRecipe):
     for reference, url in slave_dict.iteritems():
       self.setConnectionDict(dict(site_url=url), reference)
 
+    # XXX-Cedric : how to get/set slave parameters?
     self.setConnectionDict(
       dict(site_url=node_parameter_dict['site_url'],
-           domain_ipv6_address=self.getGlobalIPv6Address(),
-           domain_ipv4_address=self.getLocalIPv4Address()))
+           domain_ipv6_address=self.getGlobalIPv6Address()))
     return self.path_list
 
   def installLogrotate(self):
