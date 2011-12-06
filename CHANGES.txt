@@ -1,6 +1,16 @@
 Changes
 =======
 
+0.38 (Unreleased)
+-----------------
+ * No change yet.
+
+0.37 (2011-11-24)
+-----------------
+
+ * KVM : allow access to several KVM instances without SSL certificate duplicate
+   problem. [Cedric de Saint Martin]
+
 0.36 (2011-11-16)
 -----------------
 
