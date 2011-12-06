@@ -151,7 +151,7 @@ class testVifibMixin(ERP5TypeTestCase):
       return
 
     if not self.portal.hasObject('portal_certificate_authority'):
-      self.portal.manage_addProduct['Vifib'].manage_addTool(
+      self.portal.manage_addProduct['ERP5'].manage_addTool(
         'ERP5 Certificate Authority Tool', None)
     self.portal.portal_certificate_authority.certificate_authority_path = \
         os.environ['TEST_CA_PATH']
