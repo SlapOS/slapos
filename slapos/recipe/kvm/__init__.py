@@ -74,7 +74,9 @@ class Recipe(BaseSlapRecipe):
      check_port_listening_script=check_port_listening_script,
     )
 
-    kvm_conf = self.installKvm(vnc_ip = self.getLocalIPv4Address())
+    kvm_conf = self.installKvm(vnc_ip = self.getLocalIPv4Address(),
+        nbd_ip = self.parameter_dict['nbd_ip'],
+        nbd_port = self.parameter_dict['nbd_port'])
 
     vnc_port = Recipe.VNC_BASE_PORT + kvm_conf['vnc_display']
 
@@ -94,7 +96,7 @@ class Recipe(BaseSlapRecipe):
 
     return self.path_list
 
-  def installKvm(self, vnc_ip):
+  def installKvm(self, vnc_ip, nbd_ip, nbd_port):
     """
     Create kvm configuration dictionnary and instanciate a wrapper for kvm and
     kvm controller
@@ -140,9 +142,8 @@ class Recipe(BaseSlapRecipe):
       if retcode != 0:
         raise OSError, "Disk creation failed!"
 
-    # Options nbd_ip and nbd_port are provided by slapos master
-    kvm_conf['nbd_ip']   = self.parameter_dict['nbd_ip']
-    kvm_conf['nbd_port'] = self.parameter_dict['nbd_port']
+    kvm_conf['nbd_ip']   = nbd_ip
+    kvm_conf['nbd_port'] = nbd_port
 
     # First octet has to represent a locally administered address
     octet_list         = [254] + [random.randint(0x00, 0xff) for x in range(5)]
