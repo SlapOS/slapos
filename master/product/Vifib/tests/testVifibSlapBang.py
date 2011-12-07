@@ -777,7 +777,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
              \___________/   \___________/
                              ______|______
                             /              \
-                           | SI: GreatChild |
+                           | SI: GrandChild |
                             \______________/
 
     Rename Software Instance Master :
@@ -795,7 +795,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
              \___________/   \___________/
                              ______|______
                             /              \
-                           | SI: GreatChild |
+                           | SI: GrandChild |
                             \______________/
 
     Run bang() on the tree. We expect to have a new root as :
@@ -813,7 +813,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
              \___________/   \___________/
                              ______|______
                             /              \
-                           | SI: GreatChild |
+                           | SI: GrandChild |
                             \______________/
 
     """
@@ -904,7 +904,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
              \___________/   \___________/
                              ______|______
                             /              \
-                           | SI: GreatChild |
+                           | SI: GrandChild |
                             \______________/
 
     Rename child C into E :
@@ -919,7 +919,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
              \___________/   \________________/
               _____|_____      ______|______
              /           \    /              \
-            | SI: Child A |  | SI: GreatChild |
+            | SI: Child A |  | SI: GrandChild |
              \___________/    \______________/
 
     Bang the tree. We espect to have a new C replacing it,
@@ -937,7 +937,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
              \___________/   \___________/
                              ______|______
                             /              \
-                           | SI: GreatChild |
+                           | SI: GrandChild |
                             \______________/
     """
     self.computer_partition_amount = 5
