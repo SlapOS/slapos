@@ -267,16 +267,13 @@ class Recipe(BaseSlapRecipe):
         kvm_proxy_script_in)
     self.path_list.append(kvm_proxy_script)
     
-    # Get environment
-    self.options['node-path']
-
     # Create wrapper
     wrapper = zc.buildout.easy_install.scripts([(
         name, 'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
         sys.executable, self.wrapper_directory, arguments=[
-        self.options['dcrond_binary'].strip(), kvm_proxy_script,
+        self.options['node_binary'].strip(), kvm_proxy_script,
         ip, port, key, certificate, plain_http,
-        {'NODE_PATH': self.options['node-path']}]
+        {'NODE_PATH': self.options['node_path']}]
       )[0]
     self.path_list.extend(wrapper)
 
