@@ -275,8 +275,8 @@ class Recipe(BaseSlapRecipe):
         name, 'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
         sys.executable, self.wrapper_directory, arguments=[
         self.options['dcrond_binary'].strip(), kvm_proxy_script,
-        ip, port, key, certificate, plain_http],
-        {'NODE_PATH': self.options['node-path']}
+        ip, port, key, certificate, plain_http,
+        {'NODE_PATH': self.options['node-path']}]
       )[0]
     self.path_list.extend(wrapper)
 
