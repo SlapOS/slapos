@@ -254,15 +254,29 @@ class Recipe(BaseSlapRecipe):
 
   def installFrontendNode(self, ip, port, key, certificate, plain_http,
                             name, rewrite_rule_list):
+    # Create Map
     map_name = "proxy_table.json"
     map_content = self._getProxyTableContent(rewrite_rule_list)
     map_file = self.createConfigurationFile(map_name, map_content)
-
     self.path_list.append(map_file)
+    
+    # Install script
+    kvm_proxy_script_in = pkg_resources.resource_filename(
+        __name__, os.path.join('template', 'kvm-proxy.js'))
+    kvm_proxy_script = self.createRunningWrapper("kvm-proxy.js",
+        kvm_proxy_script_in)
+    self.path_list.append(kvm_proxy_script)
+    
+    # Get environment
+    self.options['node-path']
+
+    # Create wrapper
     wrapper = zc.buildout.easy_install.scripts([(
-        name, 'slapos.recipe.librecipe.execute', 'execute')], self.ws,
+        name, 'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
         sys.executable, self.wrapper_directory, arguments=[
-        ip, port, key, certificate, plain_http]
+        self.options['dcrond_binary'].strip(), kvm_proxy_script,
+        ip, port, key, certificate, plain_http],
+        {'NODE_PATH': self.options['node-path']}
       )[0]
     self.path_list.extend(wrapper)
 
