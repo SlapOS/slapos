@@ -34,6 +34,7 @@ import zc.recipe.egg
 import ConfigParser
 
 TRUE_VALUE_LIST = ['y', 'yes', '1', 'true']
+FALSE_VALUE_LIST = ['n', 'no', '0', 'false']
 
 class Recipe(BaseSlapRecipe):
 
@@ -57,7 +58,11 @@ class Recipe(BaseSlapRecipe):
     frontend_port_number = self.parameter_dict.get("port", 4443)
     frontend_domain_name = self.parameter_dict.get("domain",
         "host.vifib.net")
-    redirect_plain_http = self.parameter_dict.get("redirect_plain_http", False)
+
+    # Create http server redirecting (302) to https proxy?
+    redirect_plain_http = self.parameter_dict.get("redirect_plain_http", '')
+    if redirect_plain_http in TRUE_VALUE_LIST:
+      redirect_plain_http = '1'
 
     # Get all slaves, add them to config
     slave_instance_list = self.parameter_dict.get('slave_instance_list', [])
@@ -71,7 +76,11 @@ class Recipe(BaseSlapRecipe):
       if current_slave_dict['host'] is None \
           or current_slave_dict['port'] is None:
         continue
-      current_slave_dict['https'] = slave_instance.get('https', False)
+      # Is target https or http?
+      current_slave_dict['https'] = slave_instance.get('https', 'true')
+      if current_slave_dict['https'] in FALSE_VALUE_LIST:
+        current_slave_dict['https'] = 'false'
+
       reference = slave_instance.get('slave_reference')
       current_slave_dict['reference'] = reference
       slave_dict[reference] = "%s%s" % (base_url, reference.replace('-', ''))
@@ -267,12 +276,7 @@ class Recipe(BaseSlapRecipe):
     kvm_proxy_script = self.createRunningWrapper("kvm-proxy.js",
         kvm_proxy_script_in)
     self.path_list.append(kvm_proxy_script)
-    
-    # Create http server?
-    if plain_http in TRUE_VALUE_LIST:
-      plain_http = '1'
-    else:
-      plain_http = ''
+
     # Create wrapper
     wrapper = zc.buildout.easy_install.scripts([(
         "kvm_frontend", 'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
