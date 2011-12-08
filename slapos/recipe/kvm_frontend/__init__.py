@@ -247,13 +247,14 @@ class Recipe(BaseSlapRecipe):
       rewrite_part = self.substituteTemplate(
          self.getTemplateFilename('proxytable-host.json.in'), rewrite_rule)
       proxy_table_content = """%s%s,""" % (proxy_table_content, rewrite_part)
-    proxy_table_content = """%s%s""" % (proxy_table_content,
-         self.getTemplateFilename('proxytable-vifib-snippet.json.in'))
-    proxy_table_content = '%s}' % proxy_table_content
+    proxy_table_content = '%s%s' % (proxy_table_content,
+         open(self.getTemplateFilename('proxytable-vifib-snippet.json.in')).read())
+    proxy_table_content = '%s}\n' % proxy_table_content
     return proxy_table_content
 
   def installFrontendNode(self, ip, port, key, certificate, plain_http,
                             name, rewrite_rule_list):
+    # XXX-Cedric : is name necessary?
     # Create Map
     map_name = "proxy_table.json"
     map_content = self._getProxyTableContent(rewrite_rule_list)
@@ -261,20 +262,21 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(map_file)
     
     # Install script
-    kvm_proxy_script_in = pkg_resources.resource_filename(
-        __name__, os.path.join('template', 'kvm-proxy.js'))
+    kvm_proxy_script_in = open(self.getTemplateFilename(
+          'kvm-proxy.js'), 'r').read()
     kvm_proxy_script = self.createRunningWrapper("kvm-proxy.js",
         kvm_proxy_script_in)
     self.path_list.append(kvm_proxy_script)
     
     # Create wrapper
     wrapper = zc.buildout.easy_install.scripts([(
-        name, 'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
+        "kvm_frontend", 'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
         sys.executable, self.wrapper_directory, arguments=[
-        self.options['node_binary'].strip(), kvm_proxy_script,
-        ip, port, key, certificate, plain_http,
+        [self.options['node_binary'].strip(), kvm_proxy_script,
+        ip, str(port), key, certificate, map_file, str(plain_http)],
+        [key, certificate],
         {'NODE_PATH': self.options['node_path']}]
       )[0]
-    self.path_list.extend(wrapper)
+    self.path_list.append(wrapper)
 
     return dict(site_url="https://%s:%s/" % (name, port))

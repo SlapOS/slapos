@@ -3,16 +3,14 @@ var fs = require('fs'),
     colors = require('colors'),
     http = require('http'),
     httpProxy = require('http-proxy'),
-    process = require('process')
     proxyByUrl = require('proxy-by-url');
 
-var proxyTable = 'proxy-table.json',
-    //listenInterface = '2a01:e34:ec03:8610:60c:ceff:fed1:b9fc',
-    listenInterface = process.argv[1],
-    port = process.argv[2],
-    sslKeyFile = process.argv[3],
-    sslCertFile = process.argv[4],
-    redirect = process.argv[5] || false,
+var listenInterface = process.argv[2],
+    port = process.argv[3],
+    sslKeyFile = process.argv[4],
+    sslCertFile = process.argv[5],
+    proxyTable = process.argv[6],
+    redirect = process.argv[7] || false,
     isRawIPv6;
 
 isRawIPv6 = function checkipv6(str) {
@@ -39,10 +37,8 @@ var middlewareVifib = function(req, res, next) {
   // Completely hardcoded rewrite
   var vifibPrefix = '/hosting';
   if (req.url.indexOf(vifibPrefix) == 0) {
-    var hostname = 'localhost',
-        port = '8000';
     // Rewrite URL to match virtual host
-    req.url = vifibPrefix + '/VirtualHostBase/https/' + hostname + ':' + port +
+    req.url = vifibPrefix + '/VirtualHostBase/https/' + req.headers.host +
               '/erp5/web_site_module/VirtualHostRoot' + req.url;
     console.log('Vifib rewrite. New URL is : ' + req.url);
   }
