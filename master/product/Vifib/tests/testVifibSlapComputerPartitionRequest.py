@@ -573,6 +573,96 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_ComputerPartition_request_SlaveInstance_twiceDifferentParent(self):
+    """
+    Checks that requesting a Slave Instance twice with same arguments from
+    different Computer Partition will return same object.
+
+    This test is reproducing scenario:
+
+            Master
+          /       \
+    ChildrenA   ChildrenB
+          \
+      SlaveInstanceRequestTwice
+
+    Then ChildrenB requests SlaveInstanceRequestedTwice, so graph changes to:
+
+            Master
+          /       \
+    ChildrenA   ChildrenB
+                  /
+      SlaveInstanceRequestedTwice
+    """
+    self.computer_partition_amount = 3
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_children_a_children_b_sequence_string + """
+      # Generate first part of graph
+      #            Master
+      #          /       \
+      #    ChildrenA   ChildrenB
+      #          \
+      #      SlaveInstanceRequestedTwice
+
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenA
+      SelectRequestedReference
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetRequestedComputerPartition
+      CheckComputerPartitionChildrenA
+      CheckComputerPartitionChildrenBNoChild
+      Logout
+
+      # Generate second part of graph
+      #            Master
+      #          /       \
+      #    ChildrenA   ChildrenB
+      #                  /
+      #      SlaveInstanceRequestedTwice
+
+      LoginDefaultUser
+      SetRequestedComputerPartition
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReference
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetRequestedComputerPartition
+      CheckComputerPartitionChildrenANoChild
+      CheckComputerPartitionChildrenB
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   # Marked as expectedFailure as implementation is not ready yet
   @expectedFailure
   def test_ComputerPartition_request_twiceDifferentParentWithoutTic(self):
