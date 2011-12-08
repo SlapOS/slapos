@@ -33,6 +33,7 @@ import zc.buildout
 import zc.recipe.egg
 import ConfigParser
 
+TRUE_VALUE_LIST = ['y', 'yes', '1', 'true']
 
 class Recipe(BaseSlapRecipe):
 
@@ -53,7 +54,6 @@ class Recipe(BaseSlapRecipe):
 
     self.path_list.append(self.killpidfromfile)
 
-    # This should come from parameter.
     frontend_port_number = self.parameter_dict.get("port", 4443)
     frontend_domain_name = self.parameter_dict.get("domain",
         "host.vifib.net")
@@ -268,12 +268,17 @@ class Recipe(BaseSlapRecipe):
         kvm_proxy_script_in)
     self.path_list.append(kvm_proxy_script)
     
+    # Create http server?
+    if plain_http in TRUE_VALUE_LIST:
+      plain_http = '1'
+    else:
+      plain_http = ''
     # Create wrapper
     wrapper = zc.buildout.easy_install.scripts([(
         "kvm_frontend", 'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
         sys.executable, self.wrapper_directory, arguments=[
         [self.options['node_binary'].strip(), kvm_proxy_script,
-        ip, str(port), key, certificate, map_file, str(plain_http)],
+        ip, str(port), key, certificate, map_file, plain_http],
         [key, certificate],
         {'NODE_PATH': self.options['node_path']}]
       )[0]
