@@ -215,7 +215,7 @@ class Recipe(BaseSlapRecipe):
     self._writeFile(openssl_configuration, pkg_resources.resource_string(
       __name__, 'template/openssl.cnf.ca.in') % config)
     self.path_list.extend(zc.buildout.easy_install.scripts([
-      ('certificate_authority', 'slapos.recipe.erp5.certificate_authority',
+      ('certificate_authority', 'slapos.recipe.kvm.certificate_authority',
          'runCertificateAuthority')],
         self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
           openssl_configuration=openssl_configuration,
