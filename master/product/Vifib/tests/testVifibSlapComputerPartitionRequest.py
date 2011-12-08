@@ -663,6 +663,127 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_ComputerPartition_request_SlaveInstance_twiceAfterRenaming(self):
+    r"""
+    Checks that requesting a Slave Instance twice with same arguments from
+    different Computer Partition will return same object.
+
+    This test is reproducing scenario:
+
+            Master
+               |
+           ChildrenA
+               |
+         SlaveInstance
+
+    Then ChildrenB requests SlaveInstanceRequestedTwice, so graph changes to:
+
+            Master
+          /       \
+    ChildrenA   ChildrenADead
+          \
+      SlaveInstance
+    """
+    self.computer_partition_amount = 3
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + r"""
+      # Generate first part of graph
+      #     Master
+      #        |
+      #    ChildrenA
+      #        |
+      #  SlaveInstance
+
+      LoginDefaultUser
+      SetRootSoftwareInstanceCurrentInstance
+      SelectRequestedReferenceChildrenA
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetChildrenAComputerPartition
+      SetSoftwareInstanceChildrenA
+      SelectRequestedReference
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetRequestedComputerPartition
+      CheckComputerPartitionChildrenA
+      Logout
+
+      # Generate second part of graph
+      #         Master
+      #       /       \
+      # ChildrenA   ChildrenADead
+      #       \
+      #   SlaveInstance
+
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenA
+      RenameCurrentSoftwareInstanceDead
+      SetRootSoftwareInstanceCurrentInstance
+      SelectRequestedReferenceChildrenA
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetChildrenAComputerPartition
+      SetSoftwareInstanceChildrenA
+      SelectRequestedReference
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetRequestedComputerPartition
+      CheckComputerPartitionChildrenA
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   # Marked as expectedFailure as implementation is not ready yet
   @expectedFailure
   def test_ComputerPartition_request_twiceDifferentParentWithoutTic(self):
