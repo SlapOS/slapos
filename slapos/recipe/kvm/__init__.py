@@ -107,12 +107,12 @@ class Recipe(BaseSlapRecipe):
       )
       url = 'https://%s:%s/%s/vnc_auto.html?host=%s&port=%s&encrypt=1&path=%s' % (
         # XXX-Cedric : uh? how to fetch slave reference?
-        slave_frontend.getParameter('domainname'),
-        slave_frontend.getParameter('port'),
-        slave_frontend.get('reference'),
-        slave_frontend.getParameter('domainname'),
-        slave_frontend.getParameter('port'),
-        slave_frontend.get('reference'))
+        slave_frontend.get('connection_xml').getParameter('domainname'),
+        slave_frontend.get('connection_xml').getParameter('port'),
+        slave_frontend.get('slave_reference'),
+        slave_frontend.get('connection_xml').getParameter('domainname'),
+        slave_frontend.get('connection_xml').getParameter('port'),
+        slave_frontend.get('slave_reference'))
       connection_dict = dict(
         url = url,
         backend_url = ipv6_url,

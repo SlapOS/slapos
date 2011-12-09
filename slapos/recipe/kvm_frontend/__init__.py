@@ -109,22 +109,19 @@ class Recipe(BaseSlapRecipe):
         rewrite_rule_list=rewrite_rule_list,
         key=key, certificate=certificate)
 
-    for reference, url in slave_dict.iteritems():
-      self.setConnectionDict(dict(site_url=url), reference)
-
     # Send connection parameters of master instance
     self.setConnectionDict(
       dict(site_url=node_parameter_dict['site_url'],
            domain_ipv6_address=self.getGlobalIPv6Address()))
     # Send connection parameters of slave instances
-    for slave_instance in slave_instance_list:
+    for slave_instance in slave_dict.iteritems():
       slave_site_url = '%s%s' % (node_parameter_dict['site_url'],
-          # XXX-Cedric reference?
           slave_instance.get('reference'))
-      slave_instance.setConnectionDict(
-        dict(site_url=slave_site_url,
-             domainname=frontend_domain_name),
-             port=frontend_port_number)
+      self.setConnectionDict(
+          dict(site_url=slave_site_url,
+               domainname=frontend_domain_name,
+               port=frontend_port_number),
+          slave_instance.get('slave_reference'))
 
     return self.path_list
 
