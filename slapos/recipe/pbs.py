@@ -30,7 +30,8 @@ from urlparse import urlparse
 import os
 import subprocess
 import sys
-import time
+import signal
+import inspect
 
 from slapos.recipe.librecipe import GenericSlapRecipe
 from slapos.recipe.dropbear import KnownHostsFile
@@ -40,9 +41,37 @@ from slapos import slap as slapmodule
 
 
 def promise(args):
+
+  def sigterm_handler(signum, frame):
+    # Walk up in the stack to get promise local
+    # variables
+    ssh = None
+    for upper_frame in inspect.getouterframes(frame):
+      # Use promise.func_name insteand of 'promise' in order to be
+      # detected by editor if promise func name change.
+      # Else, it's hard to debug this kind of error.
+      if upper_frame[3] == promise.func_name:
+        try:
+          partition = upper_frame[0].f_locals['partition']
+          ssh = upper_frame[0].f_locals['ssh']
+        except KeyError:
+          raise SystemExit("SIGTERM Send too soon.")
+        break
+    # If ever promise function wasn't found in the stack.
+    if ssh is None:
+      raise SystemExit
+
+    # Bad python 2 syntax, looking forward python 3 to have print(file=)
+    print >> sys.stderr, "SSH Connection failed"
+    ssh.terminate()
+    partition.bang("SSH Connection failed. rdiff-backup is unusable.")
+
+  signal.signal(signal.SIGTERM, sigterm_handler)
+
   slap = slapmodule.slap()
   slap.initializeConnection(args['server_url'],
     key_file=args.get('key_file'), cert_file=args.get('cert_file'))
+  # This is used in sigterm_handler, it get it from the frame.
   partition = slap.registerComputerPartition(args['computer_id'],
                                              args['partition_id'])
 
@@ -55,16 +84,10 @@ def promise(args):
   ssh.stdin.write(quitcommand)
   ssh.stdin.flush()
   ssh.stdin.close()
+  ssh.wait()
 
-  time.sleep(2)
   if ssh.poll() is None:
-    ssh.kill()
-
-  if ssh.wait() != 0:
-    # Bad python 2 syntax, looking forward python 3 to have print(file=)
-    print >> sys.stderr, "SSH Connection failed"
-    partition.bang("SSH Connection failed. rdiff-backup is unusable.")
-
+    return 1
   return ssh.returncode
 
 
