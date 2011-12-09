@@ -106,11 +106,11 @@ class Recipe(BaseSlapRecipe):
         shared=True
       )
       url = 'https://%s:%s/%s/vnc_auto.html?host=%s&port=%s&encrypt=1&path=%s' % (
-        # XXX-Cedric : uh? how to fetch slave url/port/reference?
-        slave_frontend.getParameter('domain'),
+        # XXX-Cedric : uh? how to fetch slave reference?
+        slave_frontend.getParameter('domainname'),
         slave_frontend.getParameter('port'),
         slave_frontend.get('reference'),
-        slave_frontend.getParameter('domain'),
+        slave_frontend.getParameter('domainname'),
         slave_frontend.getParameter('port'),
         slave_frontend.get('reference'))
       connection_dict = dict(
@@ -118,6 +118,7 @@ class Recipe(BaseSlapRecipe):
         backend_url = ipv6_url,
         password = kvm_conf['vnc_passwd'])
     else:
+      # No frontend : just set raw IPv6
       connection_dict = dict(
           url = ipv6_url,
           password = kvm_conf['vnc_passwd'])

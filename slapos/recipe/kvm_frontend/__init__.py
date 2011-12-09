@@ -71,17 +71,19 @@ class Recipe(BaseSlapRecipe):
     base_url = 'https://%s:%s/' % (frontend_domain_name, frontend_port_number)
     for slave_instance in slave_instance_list:
       current_slave_dict = dict()
-      current_slave_dict['host'] = slave_instance.get('host')
-      current_slave_dict['port'] = slave_instance.get('port')
+      current_slave_dict['host'] = slave_instance.getConnectionParameter('host')
+      current_slave_dict['port'] = slave_instance.getConnectionParameter('port')
       if current_slave_dict['host'] is None \
           or current_slave_dict['port'] is None:
         continue
       # Is target https or http?
-      current_slave_dict['https'] = slave_instance.get('https', 'true')
+      current_slave_dict['https'] = slave_instance.getConnectionParameter(
+          'https', 'true')
       if current_slave_dict['https'] in FALSE_VALUE_LIST:
         current_slave_dict['https'] = 'false'
 
       reference = slave_instance.get('slave_reference')
+      # XXX-Cedric : how to fetch reference?
       current_slave_dict['reference'] = reference
       slave_dict[reference] = "%s%s" % (base_url, reference.replace('-', ''))
       rewrite_rule_list.append(current_slave_dict)
@@ -110,10 +112,20 @@ class Recipe(BaseSlapRecipe):
     for reference, url in slave_dict.iteritems():
       self.setConnectionDict(dict(site_url=url), reference)
 
-    # XXX-Cedric : how to get/set slave parameters?
+    # Send connection parameters of master instance
     self.setConnectionDict(
       dict(site_url=node_parameter_dict['site_url'],
            domain_ipv6_address=self.getGlobalIPv6Address()))
+    # Send connection parameters of slave instances
+    for slave_instance in slave_instance_list:
+      slave_site_url = '%s%s' % (node_parameter_dict['site_url'],
+          # XXX-Cedric reference?
+          slave_instance.get('reference'))
+      slave_instance.setConnectionDict(
+        dict(site_url=slave_site_url,
+             domainname=frontend_domain_name),
+             port=frontend_port_number)
+
     return self.path_list
 
   def installLogrotate(self):
