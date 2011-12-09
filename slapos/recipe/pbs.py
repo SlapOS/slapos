@@ -143,7 +143,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         wrapper=wrapper_basepath,
         executable=wrapper_path,
         log=os.path.join(self.options['feeds'], entry['notification-id']),
-        title=entry['title'],
+        title=entry.get('title', 'Untitled'),
         notification_url=entry['notify'],
         feed_url=feed_url,
       )
