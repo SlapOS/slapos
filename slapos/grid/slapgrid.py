@@ -465,7 +465,7 @@ class Slapgrid(object):
 
 
         if process_handler.poll() is None:
-          process_handler.kill()
+          process_handler.terminate()
           raise Slapgrid.PromiseError("The promise %r timed out" % promise)
         elif process_handler.poll() != 0:
           stderr = process_handler.communicate()[1]
