@@ -58,7 +58,7 @@ portal = context.getPortalObject() \n
 \n
 ## Create new portal tool for Vifib\n
 if getattr(portal, "portal_certificate_authority", None ) is None:\n
-  portal.manage_addProduct[\'Vifib\'].manage_addTool(\'ERP5 Certificate Authority Tool\', None)\n
+  portal.manage_addProduct[\'ERP5\'].manage_addTool(\'ERP5 Certificate Authority Tool\', None)\n
   print "Created portal_certificate_authority"\n
 else:\n
   print "portal_certificate_authority already exists."\n
