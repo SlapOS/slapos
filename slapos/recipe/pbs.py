@@ -42,6 +42,15 @@ from slapos import slap as slapmodule
 
 def promise(args):
 
+  def failed_ssh(partition, ssh):
+    # Bad python 2 syntax, looking forward python 3 to have print(file=)
+    print >> sys.stderr, "SSH Connection failed"
+    try:
+      ssh.terminate()
+    except:
+      pass
+    partition.bang("SSH Connection failed. rdiff-backup is unusable.")
+
   def sigterm_handler(signum, frame):
     # Walk up in the stack to get promise local
     # variables
@@ -60,18 +69,13 @@ def promise(args):
     # If ever promise function wasn't found in the stack.
     if ssh is None:
       raise SystemExit
-
-    # Bad python 2 syntax, looking forward python 3 to have print(file=)
-    print >> sys.stderr, "SSH Connection failed"
-    ssh.terminate()
-    partition.bang("SSH Connection failed. rdiff-backup is unusable.")
+    failed_ssh(partition, ssh)
 
   signal.signal(signal.SIGTERM, sigterm_handler)
 
   slap = slapmodule.slap()
   slap.initializeConnection(args['server_url'],
     key_file=args.get('key_file'), cert_file=args.get('cert_file'))
-  # This is used in sigterm_handler, it get it from the frame.
   partition = slap.registerComputerPartition(args['computer_id'],
                                              args['partition_id'])
 
@@ -88,6 +92,8 @@ def promise(args):
 
   if ssh.poll() is None:
     return 1
+  if ssh.returncode != 0:
+    failed_ssh(partition, ssh)
   return ssh.returncode
 
 
