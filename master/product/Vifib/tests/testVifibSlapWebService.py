@@ -1817,25 +1817,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sequence.edit(software_instance_uid=root_software_instance_uid,
                   computer_partition_reference=computer_partition_reference)
 
-  def stepSetSoftwareInstanceChildrenB(self, sequence, **kw):
-    software_instance_uid = sequence['root_software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    children_software_instance = \
-      software_instance.portal_catalog.getResultValue(
-          portal_type="Software Instance", source_reference='children_b',
-          root_uid=sequence['hosting_subscription_uid'])
-    self.assertNotEqual(None, children_software_instance)
-    self.assertNotEqual(software_instance.getRelativeUrl(),
-        children_software_instance.getRelativeUrl())
-    sequence.edit(
-        software_instance_uid=children_software_instance.getUid(),
-        software_instance_refernece=children_software_instance.getReference(),
-        computer_partition_reference=self.\
-            _softwareInstance_getComputerPartition(children_software_instance
-              ).getReference()
-        )
-
   def stepRequestComputerPartitionDifferentReferenceSameTransaction(self,
       sequence, **kw):
     software_release_uri = sequence['software_release_uri']
