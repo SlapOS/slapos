@@ -41,6 +41,7 @@ setup(name=name,
       entry_points={
         'zc.buildout': [
           'apachephp = slapos.recipe.apachephp:Recipe',
+          'apacheproxy = slapos.recipe.apacheproxy:Recipe',
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
           'cron = slapos.recipe.dcron:Recipe',
