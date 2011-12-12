@@ -635,6 +635,158 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SlaveInstance_change_parameter_dict_after_request(self):
+    """
+      Check that request to change the parameter dict from a Slave Instance
+      will create update packing list correctly
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SetRandomRequestedReference
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginDefaultUser
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Logout
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      CheckEmptyComputerGetComputerPartitionCall
+      SlapLogout
+      SlapLoginCurrentSoftwareInstance
+      SelectRequestedParameterDictRequestedParameter
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      LoginDefaultUser
+      CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+      Logout
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetComputerPartitionCall
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+    
+  def test_SlaveInstance_security_related_Hosting_Subscription(self):
+    """
+    Check that one Software Instance can view and access one Slave Instance
+    requested by the root Software Instance
+    This test is reproducing scenario:
+
+               Master
+              /     \
+             /       \
+    SoftwareInstance  SlaveInstance
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      LoginDefaultUser
+      SetRootSoftwareInstanceCurrentInstance
+      SelectRequestedReference
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginDefaultUser
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Logout
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      CheckEmptyComputerGetComputerPartitionCall
+      SlapLogout
+
+      LoginDefaultUser
+      SelectRequestedReferenceChildrenA
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      RequestComputerPartition
+      Tic
+      SetChildrenAComputerPartition
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      SetSelectedComputerPartition
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      CheckEmptyComputerGetComputerPartitionCall
+      SlapLogout
+      LoginDefaultUser
+      CheckCurrentSoftwareInstanceCanViewSlaveInstanceOnTree
+      CheckCurrentSoftwareInstanceCanAccessSlaveInstanceOnTree
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def _getSlaveInstanceRelatedCurrentHostingSubscription(self, reference):
+    portal_catalog = self.portal.portal_catalog
+    software_instance = portal_catalog.getResultValue(
+        reference=reference)
+    hosting_subscription = software_instance.getAggregateRelatedValue(
+        portal_type="Sale Packing List Line").getAggregateValue(
+            portal_type=self.hosting_subscription_portal_type)
+    packing_list = portal_catalog.getResultValue(
+        portal_type=self.sale_packing_list_line_portal_type,
+        aggregate_uid=hosting_subscription.getUid(),
+        aggregate_portal_type=self.slave_instance_portal_type)
+    return packing_list.getAggregateValue(
+        portal_type=self.slave_instance_portal_type)
+
+  def stepCheckCurrentSoftwareInstanceCanViewSlaveInstanceOnTree(self, sequence):
+    username = sequence["software_instance_reference"]
+    slave_instance = self._getSlaveInstanceRelatedCurrentHostingSubscription(
+        username)
+    self.assertUserCanViewDocument(username,
+        slave_instance)
+
+  def stepCheckCurrentSoftwareInstanceCanAccessSlaveInstanceOnTree(self, sequence):
+    username = sequence["software_instance_reference"]
+    slave_instance = self._getSlaveInstanceRelatedCurrentHostingSubscription(
+        username)
+    self.assertUserCanAccessDocument(username,
+        slave_instance)
+
 
 def test_suite():
   suite = unittest.TestSuite()
