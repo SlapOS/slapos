@@ -1776,14 +1776,14 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       filter_kw=sequence.get('requested_filter_dict', {}),
       state=sequence.get('instance_state'))
 
-  def stepSetSoftwareInstanceChildrenA(self, sequence, **kw):
+  def _stepSetSoftwareInstanceChildren(self, sequence, source_reference):
     software_instance_uid = sequence['root_software_instance_uid']
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=software_instance_uid)
     children_software_instance = \
       software_instance.portal_catalog.getResultValue(
-          portal_type="Software Instance", source_reference='children_a',
-          root_uid=sequence['hosting_subscription_uid'])
+          portal_type="Software Instance", source_reference=source_reference,
+          root_uid=software_instance_uid)
     self.assertNotEqual(None, children_software_instance)
     self.assertNotEqual(software_instance.getRelativeUrl(),
         children_software_instance.getRelativeUrl())
@@ -1794,6 +1794,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
             _softwareInstance_getComputerPartition(children_software_instance
               ).getReference()
         )
+  def stepSetSoftwareInstanceChildrenA(self, sequence, **kw):
+    self._stepSetSoftwareInstanceChildren(sequence, 'children_a')
+
+  def stepSetSoftwareInstanceChildrenB(self, sequence, **kw):
+    self._stepSetSoftwareInstanceChildren(sequence, 'children_b')
 
   def stepSetRootSoftwareInstanceCurrentInstance(self, sequence, **kw):
     software_instance_uid = sequence['software_instance_uid']
