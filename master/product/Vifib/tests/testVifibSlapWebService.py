@@ -1813,7 +1813,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         children_software_instance.getRelativeUrl())
     sequence.edit(
         software_instance_uid=children_software_instance.getUid(),
-        software_instance_refernece=children_software_instance.getReference(),
+        software_instance_reference=children_software_instance.getReference(),
         computer_partition_reference=self.\
             _softwareInstance_getComputerPartition(children_software_instance
               ).getReference()
