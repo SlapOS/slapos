@@ -1778,12 +1778,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def _stepSetSoftwareInstanceChildren(self, sequence, source_reference):
     software_instance_uid = sequence['root_software_instance_uid']
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=software_instance_uid)
     children_software_instance = \
       software_instance.portal_catalog.getResultValue(
           portal_type="Software Instance", source_reference=source_reference,
-          root_uid=software_instance_uid)
+          root_uid=hosting_subscription_uid)
     self.assertNotEqual(None, children_software_instance)
     self.assertNotEqual(software_instance.getRelativeUrl(),
         children_software_instance.getRelativeUrl())
