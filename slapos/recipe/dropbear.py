@@ -43,8 +43,9 @@ class KnownHostsFile(dict):
   def _dump(self):
     with open(self._filename, 'w') as keyfile:
       for key, value in self.items():
-        keyfile.write('%(host)s %(key)s\n' % {'host': key,
-                                              'key': value})
+        if key is not None and value is not None:
+          keyfile.write('%(host)s %(key)s\n' % {'host': key,
+                                                'key': value})
 
   def __enter__(self):
     self._load()
