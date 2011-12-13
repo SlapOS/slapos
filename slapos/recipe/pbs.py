@@ -180,7 +180,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       #self.setConnectionDict(dict(feed_url=feed_url), entry['slave_reference'])
 
     if 'on-notification' in entry:
-      path_list.append(self.createCallback(entry['on-notification'], wrapper))
+      path_list.append(self.createCallback(str(entry['on-notification']),
+                                           wrapper))
     else:
       cron_entry = os.path.join(self.options['cron-entries'], url_hash)
       with open(cron_entry, 'w') as cron_entry_file:
