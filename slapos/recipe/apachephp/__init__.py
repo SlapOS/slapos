@@ -27,6 +27,7 @@
 import shutil
 import os
 import signal
+from binascii import b2a_uu as uuencode
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -72,12 +73,17 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(wrapper)
 
-    mysql_conf = dict(mysql_database=self.options['mysql-database'],
-                      mysql_user=self.options['mysql-username'],
-                      mysql_password=self.options['mysql-password'],
-                      mysql_host='%s:%s' % (self.options['mysql-host'],
-                                            self.options['mysql-port']),
-                     )
+    secret_key = uuencode(os.urandom(45)).strip()
+    # Remove unsafe characters
+    secret_key = secret_key.translate(None, '"\'')
+
+    application_conf = dict(mysql_database=self.options['mysql-database'],
+                            mysql_user=self.options['mysql-username'],
+                            mysql_password=self.options['mysql-password'],
+                            mysql_host='%s:%s' % (self.options['mysql-host'],
+                                                  self.options['mysql-port']),
+                            secret_key=secret_key,
+                           )
 
     directory, file_ = os.path.split(self.options['configuration'])
 
@@ -91,7 +97,7 @@ class Recipe(GenericBaseRecipe):
 
     destination = os.path.join(path, file_)
     config = self.createFile(destination,
-      self.substituteTemplate(self.options['template'], mysql_conf))
+      self.substituteTemplate(self.options['template'], application_conf))
     path_list.append(config)
 
     if os.path.exists(self.options['pid-file']):
