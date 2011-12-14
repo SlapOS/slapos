@@ -207,7 +207,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         ssh_client=self.options['sshclient-binary'],
       )
 
-      slaves = unjson(self.buildout['slap-parameter']['slave_instance_list'])
+      slaves = unjson(self.options['slave-instance-list'])
       known_hosts = KnownHostsFile(self.options['known-hosts'])
       with known_hosts:
         for slave in slaves:
