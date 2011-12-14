@@ -455,7 +455,6 @@ class SlapTool(BaseTool):
 
     update_movement = self._getSalePackingListLineForComputerPartition(
       computer_partition_document, service_uid_list=[portal.restrictedTraverse(portal_preferences.getPreferredInstanceUpdateResource()).getUid()])
-    renamed = False
     if update_movement is not None:
       if update_movement.getSimulationState() != 'confirmed':
         # only confirmed update movements are interesting
@@ -463,13 +462,6 @@ class SlapTool(BaseTool):
     movement = self._getSalePackingListLineForComputerPartition(
                                            computer_partition_document)
     if movement is not None:
-      # XXX-Antoine: support renaming
-      software_instance = movement.getAggregateValue(portal_type="Software Instance")
-      hosting_subscription = movement.getAggregateValue(portal_type="Hosting Subscription")
-      if software_instance in hosting_subscription.getPredecessorValueList() and \
-         software_instance.getTitle() != hosting_subscription.getTitle():
-        renamed = True
-
       software_release_document = \
               movement.getAggregateValue(portal_type='Software Release')
       slap_partition._software_release_document =  SoftwareRelease(
@@ -540,10 +532,6 @@ class SlapTool(BaseTool):
       else:
         raise NotImplementedError, "Unexpected resource%s" % \
                                    movement.getResource()
-
-    if renamed and slap_partition._requested_state != 'destroyed':
-      slap_partition._need_modification = 0
-
     return slap_partition
 
   def _hasSlaveInstanceNeedModification(self, computer_partition_document):
