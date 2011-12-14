@@ -145,18 +145,24 @@ else:\n
   # Update the predecessor category of the original caller\n
   predecessor_software_instance = request_software_instance.getPredecessorRelatedValue(\n
     portal_type="Software Instance")\n
+\n
+  predecessor = None\n
   if predecessor_software_instance is None:\n
     sale_packing_list_line = context.SoftwareInstance_getInstanceSetupPackingListLine(state_change)\n
     hosting_subscription = sale_packing_list_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
     if request_software_instance.getPredecessorRelatedValue(portal_type="Hosting Subscription") != hosting_subscription:\n
       raise ValueError(\'Requested Software Instance %s should have a predecessor from same tree\' % request_software_instance.getRelativeUrl())\n
+    else:\n
+        predecessor = hosting_subscription\n
   else:\n
-    predecessor_uid_list = predecessor_software_instance.getPredecessorUidList()\n
-    predecessor_uid_list.remove(request_software_instance.getUid())\n
-    predecessor_software_instance.edit(\n
-      predecessor_uid_list=predecessor_uid_list,\n
-      activate_kw={\'tag\': tag},)\n
-    graph[predecessor_software_instance.getUid()] = predecessor_uid_list\n
+    predecessor = predecessor_software_instance\n
+\n
+  predecessor_uid_list = predecessor.getPredecessorUidList()\n
+  predecessor_uid_list.remove(request_software_instance.getUid())\n
+  predecessor.edit(\n
+    predecessor_uid_list=predecessor_uid_list,\n
+    activate_kw={\'tag\': tag},)\n
+  graph[predecessor.getUid()] = predecessor_uid_list\n
 \n
   if state == \'started\':\n
     request_software_instance.startRequested()\n
