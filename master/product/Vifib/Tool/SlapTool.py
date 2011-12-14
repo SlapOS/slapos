@@ -466,7 +466,7 @@ class SlapTool(BaseTool):
       # XXX-Antoine: support renaming
       software_instance = movement.getAggregateValue(portal_type="Software Instance")
       hosting_subscription = movement.getAggregateValue(portal_type="Hosting Subscription")
-      if software_instance.getRelativeUrl() in hosting_subscription.getPredecessorList() and \
+      if software_instance in hosting_subscription.getPredecessorValueList() and \
          software_instance.getTitle() != hosting_subscription.getTitle():
         renamed = True
 
