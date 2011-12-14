@@ -146,7 +146,10 @@ else:\n
   predecessor_software_instance = request_software_instance.getPredecessorRelatedValue(\n
     portal_type="Software Instance")\n
   if predecessor_software_instance is None:\n
-    raise ValueError(\'Requested Software Instance %s should have a predecessor\' % request_software_instance.getRelativeUrl())\n
+    sale_packing_list_line = context.SoftwareInstance_getInstanceSetupPackingListLine(state_change)\n
+    hosting_subscription = sale_packing_list_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
+    if request_software_instance.getPredecessorRelatedValue(portal_type="Hosting Subscription") != hosting_subscription:\n
+      raise ValueError(\'Requested Software Instance %s should have a predecessor from same tree\' % request_software_instance.getRelativeUrl())\n
   else:\n
     predecessor_uid_list = predecessor_software_instance.getPredecessorUidList()\n
     predecessor_uid_list.remove(request_software_instance.getUid())\n
