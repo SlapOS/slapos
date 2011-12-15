@@ -20,6 +20,10 @@
   <workflow>init_vifib_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Payment Transaction</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Person</type>
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>
