@@ -80,7 +80,7 @@ console.log('HTTPS server started and listening at ' + listenInterface + ':' +
             port);
 
 // Dummy HTTP server redirecting to HTTPS. Only has sense if we can use port 80
-if (redirect = '1') {
+if (redirect === '1') {
   try {
     var httpPort = 80;
     http.createServer(function(req, res) {
@@ -104,7 +104,7 @@ if (redirect = '1') {
     }).listen(httpPort, listenInterface);
     console.log('HTTP redirect server started and listening at ' +
                 listenInterface + ':' + httpPort);
-  } catch (EACCES) {
-    console.log('Couldn\'t start plain HTTP redirection server : ' + EACCESS)
+  } catch (error) {
+    console.log('Couldn\'t start plain HTTP redirection server : ' + error)
   }
 }
