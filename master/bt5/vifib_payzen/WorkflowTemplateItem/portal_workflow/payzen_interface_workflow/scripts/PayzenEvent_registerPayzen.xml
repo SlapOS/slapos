@@ -82,8 +82,7 @@ if previous_id is None: \n
   raise ValueError(\'Transaction %s had not defined payzen integration\' % previous_transaction.getRelativeUrl())\n
 \n
 previous_date, previous_id = previous_id.split(\'_\')\n
-now_utc = DateTime().toZone(\'UTC\').asdatetime()\n
-today = now_utc.strftime(\'%Y%m%d\')\n
+today = DateTime().toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d\')\n
 transaction_id = str(portal.portal_ids.generateNewId(\n
     id_group=\'%s_%s\' % (service.getRelativeUrl(), today),\n
     id_generator=\'uid\')).zfill(6)\n
