@@ -24,9 +24,9 @@ Instance parameters
 Incoming master instance parameters
 +++++++
 
-``port``                - self explanatory, mandatory
+``port``                - Port of server, optional, defaults to 4443.
 ``domain``              - domain name to use, optional, default to
-                          "host.vifib.net"
+                          "host.vifib.net".
 ``redirect_plain_http`` - if value is one of ['y', 'yes', '1', 'true'], instance
                           will try to create a simple http server on port 80
                           redirecting to the proxy. Optional.
