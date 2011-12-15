@@ -106,11 +106,11 @@ vifib_cash
 vifib_core
 vifib_crm
 vifib_forge_release
-vifib_invoicing
 vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
 vifib_payzen
+vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -161,7 +161,6 @@ erp5_project
 erp5_project_trade
 erp5_secure_payment
 erp5_simplified_invoicing
-erp5_simulation_test
 erp5_software_pdm
 erp5_system_event
 erp5_tax_resource
@@ -199,11 +198,11 @@ vifib_core
 vifib_crm
 vifib_fiber_theme
 vifib_forge_release
-vifib_invoicing
 vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
 vifib_payzen
+vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -255,7 +254,6 @@ erp5_project
 erp5_project_trade
 erp5_secure_payment
 erp5_simplified_invoicing
-erp5_simulation_test
 erp5_software_pdm
 erp5_system_event
 erp5_tax_resource
@@ -294,11 +292,11 @@ vifib_crm
 vifib_forge_release
 vifib_hosting
 vifib_hosting_theme
-vifib_invoicing
 vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
 vifib_payzen
+vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -349,7 +347,6 @@ erp5_project
 erp5_project_trade
 erp5_secure_payment
 erp5_simplified_invoicing
-erp5_simulation_test
 erp5_software_pdm
 erp5_system_event
 erp5_tax_resource
@@ -386,9 +383,9 @@ vifib_base
 vifib_core
 vifib_crm
 vifib_forge_release
-vifib_invoicing
 vifib_open_trade
 vifib_payzen
+vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -437,7 +434,6 @@ erp5_project
 erp5_project_trade
 erp5_secure_payment
 erp5_simplified_invoicing
-erp5_simulation_test
 erp5_software_pdm
 erp5_system_event
 erp5_tax_resource
@@ -473,9 +469,9 @@ vifib_base
 vifib_core
 vifib_crm
 vifib_forge_release
-vifib_invoicing
 vifib_open_trade
 vifib_payzen
+vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -524,7 +520,6 @@ erp5_project
 erp5_project_trade
 erp5_secure_payment
 erp5_simplified_invoicing
-erp5_simulation_test
 erp5_software_pdm
 erp5_system_event
 erp5_tax_resource
@@ -560,9 +555,9 @@ vifib_base
 vifib_core
 vifib_crm
 vifib_forge_release
-vifib_invoicing
 vifib_open_trade
 vifib_payzen
+vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -614,7 +609,6 @@ erp5_project
 erp5_project_trade
 erp5_secure_payment
 erp5_simplified_invoicing
-erp5_simulation_test
 erp5_software_pdm
 erp5_system_event
 erp5_tax_resource
@@ -651,9 +645,9 @@ vifib_base
 vifib_core
 vifib_crm
 vifib_forge_release
-vifib_invoicing
 vifib_open_trade
 vifib_payzen
+vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -705,7 +699,6 @@ erp5_project
 erp5_project_trade
 erp5_secure_payment
 erp5_simplified_invoicing
-erp5_simulation_test
 erp5_software_pdm
 erp5_system_event
 erp5_tax_resource
@@ -742,9 +735,9 @@ vifib_base
 vifib_core
 vifib_crm
 vifib_forge_release
-vifib_invoicing
 vifib_open_trade
 vifib_payzen
+vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -793,7 +786,6 @@ erp5_project
 erp5_project_trade
 erp5_secure_payment
 erp5_simplified_invoicing
-erp5_simulation_test
 erp5_software_pdm
 erp5_system_event
 erp5_tax_resource
@@ -829,9 +821,9 @@ vifib_base
 vifib_core
 vifib_crm
 vifib_forge_release
-vifib_invoicing
 vifib_open_trade
 vifib_payzen
+vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
@@ -880,7 +872,6 @@ erp5_project
 erp5_project_trade
 erp5_secure_payment
 erp5_simplified_invoicing
-erp5_simulation_test
 erp5_software_pdm
 erp5_system_event
 erp5_tax_resource

@@ -87,6 +87,18 @@
             <key> <string>type_class</string> </key>
             <value> <string>SubscriptionItem</string> </value>
         </item>
+        <item>
+            <key> <string>type_interface</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>type_mixin</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
       </dictionary>
     </pickle>
   </record>

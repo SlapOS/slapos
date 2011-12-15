@@ -69,6 +69,7 @@
             <value>
               <list>
                 <string>Payment Transaction</string>
+                <string>Sale Invoice Transaction</string>
               </list>
             </value>
         </item>

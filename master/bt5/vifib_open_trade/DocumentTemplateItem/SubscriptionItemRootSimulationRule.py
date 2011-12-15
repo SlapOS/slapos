@@ -104,4 +104,3 @@ class SubscriptionItemRootSimulationRuleMovementGenerator(MovementGeneratorMixin
     return self._applied_rule.getCausalityValue()._getInputMovementList(
                    movement_list=movement_list, rounding=rounding)
 
-

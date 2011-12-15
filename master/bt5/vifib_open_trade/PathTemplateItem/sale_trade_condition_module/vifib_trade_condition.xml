@@ -95,6 +95,7 @@
             <value>
               <tuple>
                 <string>specialise/business_process_module/erp5_default_business_process</string>
+                <string>specialise/sale_trade_condition_module/payzen_sale_trade_condition</string>
               </tuple>
             </value>
         </item>
@@ -113,10 +114,6 @@
         <item>
             <key> <string>id</string> </key>
             <value> <string>vifib_trade_condition</string> </value>
-        </item>
-        <item>
-            <key> <string>last_id</string> </key>
-            <value> <string>1</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>

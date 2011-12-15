@@ -36,6 +36,10 @@
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Sale Invoice Transaction</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Sale Order</type>
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>

@@ -106,6 +106,10 @@
             <value> <string>service_module/vifib_instance_setup</string> </value>
         </item>
         <item>
+            <key> <string>preferred_instance_subscription_resource</string> </key>
+            <value> <string>service_module/vifib_instance_subscription</string> </value>
+        </item>
+        <item>
             <key> <string>preferred_instance_update_resource</string> </key>
             <value> <string>service_module/vifib_instance_update</string> </value>
         </item>
@@ -116,6 +120,12 @@
         <item>
             <key> <string>preferred_ooodoc_server_port_number</string> </key>
             <value> <int>23000</int> </value>
+        </item>
+        <item>
+            <key> <string>preferred_payzen_integration_site</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>preferred_software_setup_resource</string> </key>

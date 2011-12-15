@@ -1,2 +1,10 @@
+portal_alarms/build_account_path
+portal_alarms/build_account_path/**
+portal_alarms/build_deliver_path
+portal_alarms/build_deliver_path/**
+portal_alarms/build_invoice_path
+portal_alarms/build_invoice_path/**
+portal_alarms/build_pay_path
+portal_alarms/build_pay_path/**
 portal_alarms/confirm_ordered_sale_order
 portal_alarms/confirm_ordered_sale_order/**

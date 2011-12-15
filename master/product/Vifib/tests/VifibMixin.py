@@ -32,15 +32,6 @@ from AccessControl.SecurityManagement import newSecurityManager
 from Products.ERP5Type.tests.utils import DummyMailHost
 import os
 
-REQUIRED_RULE_REFERENCE_LIST = [
-  'default_delivering_rule',
-  'default_delivery_rule',
-  'default_invoice_rule',
-  'default_invoice_transaction_rule',
-  'default_invoicing_rule',
-  'default_order_rule',
-]
-
 REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST = [
   'crendential_request-confirmation-without-password',
 ]
@@ -65,7 +56,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_administration',
       'erp5_pdm',
       'erp5_trade',
-      'erp5_simulation_test',
       'erp5_item',
       'erp5_open_trade',
       'erp5_forge',
@@ -117,9 +107,9 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data_web',
       'vifib_payzen',
       'vifib_data_payzen',
+      'vifib_data_simulation',
       'vifib_erp5',
       'vifib_test',
-      'vifib_invoicing',
     ]
     return result
 
@@ -222,21 +212,6 @@ class testVifibMixin(ERP5TypeTestCase):
         if isTransitionPossible(message, 'validate'):
           message.validate()
 
-  def setupRuleTool(self):
-    """Validates newest version of each rule from REQUIRED_RULE_REFERENCE_LIST"""
-    rule_tool = self.portal.portal_rules
-    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
-    for rule_reference in REQUIRED_RULE_REFERENCE_LIST:
-      rule_list = rule_tool.searchFolder(
-        reference=rule_reference,
-        limit=1,
-        sort_on=(('version', 'DESC'),)
-      )
-      self.assertEqual(1, len(rule_list), '%s not found' % rule_reference)
-      rule = rule_list[0].getObject()
-      if isTransitionPossible(rule, 'validate'):
-        rule.validate()
-
   def prepareTestUsers(self):
     """
     Prepare test users.
@@ -326,7 +301,6 @@ class testVifibMixin(ERP5TypeTestCase):
     self.setupVifibShadowAuthenticationPlugin()
     self.setPreference()
     self.setSystemPreference()
-    self.setupRuleTool()
     self.setupNotificationModule()
     self.prepareTestUsers()
     self.prepareTestServices()

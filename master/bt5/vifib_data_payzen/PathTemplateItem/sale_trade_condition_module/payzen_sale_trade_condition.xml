@@ -75,9 +75,7 @@
         <item>
             <key> <string>categories</string> </key>
             <value>
-              <tuple>
-                <string>specialise/sale_trade_condition_module/vifib_trade_condition</string>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>

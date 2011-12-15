@@ -73,6 +73,7 @@ state_list = portal.getPortalCurrentInventoryStateList() + \\\n
   portal.getPortalTransitInventoryStateList()\n
 \n
 sale_packing_list_line = portal.portal_catalog.getResultValue(\n
+      resource_relative_url=portal.portal_preferences.getPreferredInstanceHostingResource(),\n
       aggregate_uid=obj.getUid(),\n
       portal_type="Sale Packing List Line",\n
       simulation_state=state_list)\n

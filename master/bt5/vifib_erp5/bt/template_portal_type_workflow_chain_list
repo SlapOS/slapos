@@ -7,6 +7,7 @@ Payment Transaction | local_permission_vifib_interaction_workflow
 Person | local_permission_vifib_interaction_workflow
 Purchase Packing List Line | local_permission_vifib_interaction_workflow
 Purchase Packing List | local_permission_vifib_interaction_workflow
+Sale Invoice Transaction | local_permission_vifib_interaction_workflow
 Sale Order Line | local_permission_vifib_interaction_workflow
 Sale Order | local_permission_vifib_interaction_workflow
 Sale Packing List Line | local_permission_vifib_interaction_workflow
