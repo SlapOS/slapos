@@ -682,32 +682,26 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.play(self)
 
   def stepCheckTreeLooksLikeRenameComplexTree(self, sequence, **kw):
-    computer_guid = sequence["computer_reference"]
     hosting_subscription_uid = sequence['hosting_subscription_uid']
-
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    partition_to_process = [partition
-                            for partition in computer.getComputerPartitionList()
-                            if partition._need_modification]
-    self.failUnlessEqual(len(partition_to_process), 4)
 
     hosting_subscription = self.portal.portal_catalog.getResultValue(
       uid=hosting_subscription_uid
     )
 
     root_software_instance = hosting_subscription.portal_catalog.getResultValue(
-      title=hosting_subscription.getTitle(), portal_type="Software Instance")
+      title=hosting_subscription.getTitle(), portal_type="Software Instance",
+      root_uid=hosting_subscription_uid)
     self.failIfEqual(root_software_instance, None)
 
-    self.failUnlessEqual(len(root_software_instance.getPredecessorList()), 2)
+    children_titles = set([si.getTitle()
+                           for si in root_software_instance.getPredecessorValueList()])
+    self.failUnless(set(['children_a', 'children_b']) <= children_titles)
 
-    children_b = hosting_subscription.portal_catalog.getResultValue(
-      title='children_b',
+    children_b_child = hosting_subscription.portal_catalog.getResultValue(
+      title='children_b_child',
       root_uid=hosting_subscription.getUid(),
     )
-    self.failUnlessEqual(len(children_b.getPredecessorList()), 1)
+    self.failIfEqual(children_b_child, None)
 
   def test_ComputerPartition_rename_root_and_bang(self):
     r"""
@@ -913,28 +907,32 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
              /                                \
             |             HS: Master           |
              \________________________________/
-              _____/____      _________\______
+              ________________|_______________
+             /                                \
+            |            SI: Master            |
+             \________________________________/
+              _____/_____     _________\______
              /           \   /                \
-            |  SI: Master | | SI: Child B Dead |
+            | SI: Child A | | SI: Child B Dead |
              \___________/   \________________/
-              _____|_____      ______|______
-             /           \    /              \
-            | SI: Child A |  | SI: GrandChild |
-             \___________/    \______________/
+                               ______|______
+                              /              \
+                             | SI: GrandChild |
+                              \______________/
 
     Bang the tree. We espect to have a new C replacing it,
     as :      _________________________________________________
              /                                                 \
             |                      HS: Master                   |
              \_________________________________________________/
-              _____________|______________     _______|________
-             /                            \   /                \
-            |           SI: Master         | | SI: Child B Dead |
-             \____________________________/   \________________/
-              _____/_____     _____\_____
-             /           \   /           \
-            | SI: Child A | | SI: Child B |
-             \___________/   \___________/
+              _____________|___________________________________
+             /                                                 \
+            |                     SI: Master                    |
+             \_________________________________________________/
+              _____/_____     _____\_____      _______|________
+             /           \   /           \    /                \
+            | SI: Child A | | SI: Child B |  | SI: Child B Dead |
+             \___________/   \___________/    \________________/
                              ______|______
                             /              \
                            | SI: GrandChild |

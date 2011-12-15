@@ -3878,15 +3878,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     )
 
     software_instance.rename(new_name='%sDead' % software_instance.getTitle())
-    self.stepTic()
-    parent = software_instance.getPredecessorRelatedValue(
-      portal_type=["Hosting Subscription", "Software Instance",
-                   "Slave Instance"]
-    )
-    self.assertEquals(hosting_subscription,
-                      parent,
-                      "Software Instance wasn't reattached to the hosting "
-                      "subscription")
 
   def stepCheckTreeHasARootSoftwareInstance(self, sequence, **kw):
     hosting_subscription_uid = sequence['hosting_subscription_uid']
