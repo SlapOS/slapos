@@ -51,11 +51,8 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
-sale_trade_condition = integration_site.getSourceTrade()\n
 for payment_transaction in portal.portal_catalog(\n
       portal_type="Payment Transaction", \n
-      specialise_relative_url=sale_trade_condition,\n
       simulation_state="confirmed",\n
       ):\n
   # do not trust catalog\n
