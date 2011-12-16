@@ -108,28 +108,18 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       BuildOneMoreSalePackingList
       Tic
-      SlapLogout
-      LoginDefaultUser
-      CheckSalePackingList
-      Tic
-      Logout
-      LoginDefaultUser
       BuildOneMoreInvoice
       Tic
       BuildOneMoreInvoiceTransaction
       Tic
-      SlapLogout
-      LoginDefaultUser
-      CheckInvoiceAndInvoiceTransaction
-      Tic
-      Logout
-      LoginDefaultUser
       BuildOneMorePayment
       Tic
-      SlapLogout
+      Logout
+
       LoginDefaultUser
+      CheckSalePackingList
+      CheckInvoiceAndInvoiceTransaction
       CheckPayment
-      Tic
       Logout
     """
     self.computer_partition_amount = 1
