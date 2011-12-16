@@ -31,6 +31,7 @@ from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
 from AccessControl.SecurityManagement import newSecurityManager
 from Products.ERP5Type.tests.utils import DummyMailHost
 import os
+from DateTime import DateTime
 
 REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST = [
   'crendential_request-confirmation-without-password',
@@ -229,6 +230,25 @@ class testVifibMixin(ERP5TypeTestCase):
         if isTransitionPossible(assignment, 'open'):
           assignment.open()
 
+  def prepareVifibAccountingPeriod(self):
+    vifib = self.portal.organisation_module['vifib_internet']
+    year = DateTime().year()
+    start_date = '%s/01/01' % year
+    stop_date = '%s/12/31' % (year + 1)
+    accounting_period = self.portal.portal_catalog.getResultValue(
+      portal_type='Accounting Period',
+      parent_uid=vifib.getUid(),
+      simulation_state='started',
+      **{
+        'delivery.start_date': start_date,
+        'delivery.stop_date': stop_date
+      }
+    )
+    if accounting_period is None:
+      accounting_period = vifib.newContent(portal_type='Accounting Period',
+        start_date=start_date, stop_date=stop_date)
+      accounting_period.start()
+
   def prepareTestServices(self):
     isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
     for service in self.portal.portal_catalog(
@@ -303,6 +323,7 @@ class testVifibMixin(ERP5TypeTestCase):
     self.setSystemPreference()
     self.setupNotificationModule()
     self.prepareTestUsers()
+    self.prepareVifibAccountingPeriod()
     self.prepareTestServices()
     transaction.commit()
     self.tic()
