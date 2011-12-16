@@ -106,11 +106,6 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       portal_type="Payment Transaction",
       sort_on=(("creation_date", "DESC"),))[0]
 
-  def stepRefresh(self, sequence, **kw):
-    self.stepBuildOneMoreInvoice(sequence, **kw)
-    self.stepBuildOneMoreInvoiceTransaction(sequence, **kw)
-    self.stepBuildOneMorePayment(sequence, **kw)
-
   def test_OpenOrder_sale_packing_list(self):
     """
     Check that sale_packing_list is generated properly from simulation
@@ -147,12 +142,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = \
         self.prepare_installed_computer_partition_sequence_string \
-          + """
-        LoginDefaultUser
-        Refresh
-        Tic
-        SlapLogout
-        """ + (check_one_month * 12)
+          + (check_one_month * 12)
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
