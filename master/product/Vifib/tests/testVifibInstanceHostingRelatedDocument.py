@@ -9,8 +9,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
   def stepBuildOneMoreSalePackingList(self, sequence, **kw):
     sequence.edit(
-      number_of_sale_packing_list=\
-      len(self.portal.sale_packing_list_module.contentValues()))
+      number_of_sale_packing_list=sequence.get(
+        'number_of_sale_packing_list', 0) + 1)
     build_before = sequence.get('build_before')
     if build_before is None:
       build_before = getClosestDate(
@@ -23,31 +23,48 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     sequence.edit(build_before=build_before)
 
   def stepBuildOneMoreInvoice(self, sequence, **kw):
-    sequence.edit(number_of_invoice=\
-      len(self.portal.accounting_module.contentValues(
-        portal_type="Sale Invoice Transaction")))
+    sequence.edit(number_of_invoice=sequence.get('number_of_invoice', 0) + 1)
     self.portal.portal_alarms.build_invoice_path.activeSense()
 
   def stepBuildOneMoreInvoiceTransaction(self, sequence, **kw):
     self.portal.portal_alarms.build_account_path.activeSense()
 
   def stepBuildOneMorePayment(self, sequence, **kw):
-    sequence.edit(number_of_payment=\
-      len(self.portal.accounting_module.contentValues(
-        portal_type="Payment Transaction")))
+    sequence.edit(number_of_payment=sequence.get('number_of_payment', 0) + 1)
     self.portal.portal_alarms.build_pay_path.activeSense()
+
+  def stepCheckOneMoreDocumentList(self, sequence, **kw):
+    hosting_subscription = self.portal.portal_catalog\
+      .getResultValue(uid=sequence['hosting_subscription_uid'])
+    sale_packing_list_list = self.portal.portal_catalog(
+      portal_type='Sale Packing List',
+      causality_relative_url=hosting_subscription.getRelativeUrl(),
+      sort_on=(('delivery.start_date', "DESC")))
+
+    self.assertEqual(sequence['number_of_sale_packing_list'],
+      len(sale_packing_list_list))
+
+    sale_packing_list = sale_packing_list_list[0].getObject()
+    sale_invoice_transaction_list = sale_packing_list\
+      .getCausalityRelatedValueList(portal_type='Sale Invoice Transaction')
+    self.assertEqual(1, len(sale_invoice_transaction_list))
+    sale_invoice_transaction = sale_invoice_transaction_list[0]
+
+    payment_transaction_list = sale_invoice_transaction\
+      .getCausalityRelatedValueList(portal_type='Payment Transaction')
+    self.assertEqual(1, len(payment_transaction_list))
+    payment_transaction = payment_transaction_list[0]
+
+    sequence.edit(
+      current_sale_packing_list=sale_packing_list,
+      current_sale_invoice_transaction=sale_invoice_transaction,
+      current_payment_transaction=payment_transaction
+    )
 
   def stepCheckSalePackingList(self, sequence, **kw):
     # check one more sale packing list is generated
     # and only one sale packing list line is inside
-    self.assertEquals(
-      len(self.portal.sale_packing_list_module.contentValues()),
-      sequence.get('number_of_sale_packing_list') + 1)
-    build_before = sequence.get('build_before')
-    sale_packing_list = \
-      self.portal.sale_packing_list_module.contentValues(
-        portal_type="Sale Packing List",
-        sort_on=(("creation_date", "DESC"),))[0]
+    sale_packing_list = sequence['current_sale_packing_list']
     sale_packing_list_line_list = \
       sale_packing_list.contentValues(portal_type="Sale Packing List Line")
     self.assertEquals(1, len(sale_packing_list_line_list))
@@ -81,24 +98,31 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
     open_order_line = \
       open_order.contentValues(portal_type="Open Sale Order Line")[0]
-    hosting_subscription = \
-      open_order_line.getAggregateValue(portal_type="Hosting Subscription")
 
     # check related property
     self.assertEquals(open_order_line.getSpecialise(),
       sale_packing_list.getSpecialise())
 
   def stepCheckInvoiceAndInvoiceTransaction(self, sequence, **kw):
-    self.assertEquals(
-      len(self.portal.accounting_module.contentValues(
-        portal_type="Sale Invoice Transaction")),
-      sequence.get('number_of_invoice') + 1)
+    sale_invoice_transaction = sequence['current_sale_invoice_transaction']
+    self.assertEqual(sale_invoice_transaction.getSimulationState(),
+      'confirmed')
+    self.assertEqual(sale_invoice_transaction.getCausalityList(),
+      [sequence['current_sale_packing_list'].getRelativeUrl()])
+    self.portal.portal_workflow.doActionFor(sale_invoice_transaction,
+      'start_action')
+    self.assertEqual(sale_invoice_transaction.getSimulationState(),
+      'started')
 
   def stepCheckPayment(self, sequence, **kw):
-    self.assertEquals(
-      len(self.portal.accounting_module.contentValues(
-        portal_type="Payment Transaction")),
-      sequence.get('number_of_payment') + 1)
+    payment_transaction = sequence['current_payment_transaction']
+    self.assertEqual(payment_transaction.getSimulationState(), 'planned')
+    self.assertEqual(payment_transaction.getCausalityList(),
+      [sequence['current_sale_invoice_transaction'].getRelativeUrl()])
+    self.portal.portal_workflow.doActionFor(payment_transaction,
+      'confirm_action')
+    self.assertEqual(payment_transaction.getSimulationState(),
+      'confirmed')
 
   def test_OpenOrder_sale_packing_list(self):
     """
@@ -117,7 +141,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckOne
+      CheckOneMoreDocumentList
       CheckSalePackingList
       CheckInvoiceAndInvoiceTransaction
       CheckPayment
