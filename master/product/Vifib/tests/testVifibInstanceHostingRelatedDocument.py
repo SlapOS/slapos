@@ -22,6 +22,21 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         params={'build_before':build_before})
     sequence.edit(build_before=build_before)
 
+  def stepBuildOneMoreInvoice(self, sequence, **kw):
+    sequence.edit(number_of_invoice=\
+      len(self.portal.accounting_module.contentValues(
+        portal_type="Sale Invoice Transaction")))
+    self.portal.portal_alarms.build_invoice_path.activeSense()
+
+  def stepBuildOneMoreInvoiceTransaction(self, sequence, **kw):
+    self.portal.portal_alarms.build_account_path.activeSense()
+
+  def stepBuildOneMorePayment(self, sequence, **kw):
+    sequence.edit(number_of_payment=\
+      len(self.portal.accounting_module.contentValues(
+        portal_type="Payment Transaction")))
+    self.portal.portal_alarms.build_pay_path.activeSense()
+
   def stepCheckSalePackingList(self, sequence, **kw):
     # check one more sale packing list is generated
     # and only one sale packing list line is inside
@@ -73,26 +88,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEquals(open_order_line.getSpecialise(),
       sale_packing_list.getSpecialise())
 
-  def stepBuildOneMoreInvoice(self, sequence, **kw):
-    sequence.edit(number_of_invoice=\
-      len(self.portal.accounting_module.contentValues(
-        portal_type="Sale Invoice Transaction")))
-    self.portal.portal_alarms.build_invoice_path.activeSense()
-
-  def stepBuildOneMoreInvoiceTransaction(self, sequence, **kw):
-    self.portal.portal_alarms.build_account_path.activeSense()
-
   def stepCheckInvoiceAndInvoiceTransaction(self, sequence, **kw):
     self.assertEquals(
       len(self.portal.accounting_module.contentValues(
         portal_type="Sale Invoice Transaction")),
       sequence.get('number_of_invoice') + 1)
-
-  def stepBuildOneMorePayment(self, sequence, **kw):
-    sequence.edit(number_of_payment=\
-      len(self.portal.accounting_module.contentValues(
-        portal_type="Payment Transaction")))
-    self.portal.portal_alarms.build_pay_path.activeSense()
 
   def stepCheckPayment(self, sequence, **kw):
     self.assertEquals(
@@ -117,6 +117,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
+      CheckOne
       CheckSalePackingList
       CheckInvoiceAndInvoiceTransaction
       CheckPayment
