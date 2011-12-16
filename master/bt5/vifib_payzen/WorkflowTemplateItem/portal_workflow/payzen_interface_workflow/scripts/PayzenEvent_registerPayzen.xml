@@ -115,7 +115,6 @@ data_kw, signature, sent_text, received_text = service.soap_duplicate(**payzen_d
 \n
 sent = payzen_event.newContent(title=\'Sent SOAP\', portal_type=\'Payzen Event Message\', text_content=sent_text)\n
 received = payzen_event.newContent(title=\'Received SOAP\', text_content=received_text, predecessor_value=sent, portal_type=\'Payzen Event Message\')\n
-transaction.activate().PaymentTransaction_confirm()\n
 context.PayzenEvent_processUpdate(state_change, data_kw, signature)\n
 </string> </value>
         </item>
