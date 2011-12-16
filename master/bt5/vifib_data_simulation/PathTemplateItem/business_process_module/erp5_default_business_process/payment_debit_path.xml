@@ -53,6 +53,7 @@
                 <string>source/account_module/bank</string>
                 <string>destination/account_module/bank</string>
                 <string>trade_date/trade_phase/default/invoicing</string>
+                <string>source_payment/organisation_module/vifib_internet/bank_account</string>
               </tuple>
             </value>
         </item>
