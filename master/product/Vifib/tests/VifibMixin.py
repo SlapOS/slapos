@@ -189,19 +189,6 @@ class testVifibMixin(ERP5TypeTestCase):
     """
     return "vifib_default_system_preference"
 
-  def setSystemPreference(self):
-    """Configures and enables default system preference"""
-    default_system_preference = self.portal.portal_preferences\
-        .restrictedTraverse(self.getDefaultSitePreferenceId())
-    default_system_preference.edit(
-      preferred_credential_recovery_automatic_approval=1,
-      preferred_credential_request_automatic_approval=1,
-      preferred_person_credential_update_automatic_approval=1,
-      preferred_subscription_assignment_category=['role/member'],
-    )
-    if default_system_preference.getPreferenceState() == 'disabled':
-      default_system_preference.enable()
-
   def setupNotificationModule(self):
     module = self.portal.notification_message_module
     isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
@@ -320,7 +307,6 @@ class testVifibMixin(ERP5TypeTestCase):
     self.setupVifibMachineAuthenticationPlugin()
     self.setupVifibShadowAuthenticationPlugin()
     self.setPreference()
-    self.setSystemPreference()
     self.setupNotificationModule()
     self.prepareTestUsers()
     self.prepareVifibAccountingPeriod()
