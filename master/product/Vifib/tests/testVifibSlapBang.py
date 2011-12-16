@@ -833,6 +833,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLoginTestVifibCustomer
       SetSoftwareInstanceRoot
       RenameCurrentSoftwareInstanceDead
+      Tic
       Bang
       Tic
       Logout
@@ -960,6 +961,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLoginTestVifibCustomer
       SetSoftwareInstanceChildrenB
       RenameCurrentSoftwareInstanceDead
+      Tic
       Bang
       Tic
       Logout
