@@ -8,10 +8,8 @@ from DateTime.DateTime import DateTime
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
   def stepBuildOneMoreSalePackingList(self, sequence, **kw):
-    sequence.edit(
-      number_of_sale_packing_list=sequence.get(
-        'number_of_sale_packing_list', 0) + 1)
     build_before = sequence.get('build_before')
+    self.portal.portal_alarms.vifib_trigger_build.activeSense()
     if build_before is None:
       build_before = getClosestDate(
         target_date=DateTime(), precision='month', before=0)
@@ -22,16 +20,14 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         params={'build_before':build_before})
     sequence.edit(build_before=build_before)
 
-  def stepBuildOneMoreInvoice(self, sequence, **kw):
-    sequence.edit(number_of_invoice=sequence.get('number_of_invoice', 0) + 1)
-    self.portal.portal_alarms.build_invoice_path.activeSense()
-
-  def stepBuildOneMoreInvoiceTransaction(self, sequence, **kw):
-    self.portal.portal_alarms.build_account_path.activeSense()
-
-  def stepBuildOneMorePayment(self, sequence, **kw):
-    sequence.edit(number_of_payment=sequence.get('number_of_payment', 0) + 1)
-    self.portal.portal_alarms.build_pay_path.activeSense()
+  def stepTriggerNextBuild(self, sequence, **kw):
+    sequence.edit(
+      number_of_sale_packing_list=sequence.get(
+        'number_of_sale_packing_list', 0) + 1,
+      number_of_invoice=sequence.get('number_of_invoice', 0) + 1,
+      number_of_payment=sequence.get('number_of_payment', 0) + 1
+    )
+    self.portal.portal_alarms.vifib_trigger_build.activeSense()
 
   def stepCheckOneMoreDocumentList(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog\
@@ -130,13 +126,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     """
     check_one_month = """
       LoginDefaultUser
-      BuildOneMoreSalePackingList
-      Tic
-      BuildOneMoreInvoice
-      Tic
-      BuildOneMoreInvoiceTransaction
-      Tic
-      BuildOneMorePayment
+      TriggerNextBuild
       Tic
       Logout
 
