@@ -87,9 +87,6 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       len(self.portal.accounting_module.contentValues(
         portal_type="Sale Invoice Transaction")),
       sequence.get('number_of_invoice') + 1)
-    invoice = self.portal.accounting_module.contentValues(
-      portal_type="Sale Invoice Transaction",
-      sort_on=(("creation_date", "DESC"),))[0]
 
   def stepBuildOneMorePayment(self, sequence, **kw):
     sequence.edit(number_of_payment=\
@@ -102,9 +99,6 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       len(self.portal.accounting_module.contentValues(
         portal_type="Payment Transaction")),
       sequence.get('number_of_payment') + 1)
-    payment = self.portal.accounting_module.contentValues(
-      portal_type="Payment Transaction",
-      sort_on=(("creation_date", "DESC"),))[0]
 
   def test_OpenOrder_sale_packing_list(self):
     """
