@@ -304,9 +304,6 @@ class testVifibMixin(ERP5TypeTestCase):
     self.portal.portal_caches.clearAllCache()
     self.portal.portal_workflow.refreshWorklistCache()
 
-  def stepClearCache(self, sequence=None, sequence_list=None, **kw):
-    self.clearCache()
-
   # access related steps
   def stepLoginDefaultUser(self, **kw):
     self.login('default_user')
