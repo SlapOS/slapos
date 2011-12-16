@@ -50,16 +50,28 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().business_process_module.erp5_default_business_process.pay.build()\n
+            <value> <string>portal = context.getPortalObject()\n
+business_process = portal.business_process_module.erp5_default_business_process\n
+\n
+build_before = None\n
+if params is not None:\n
+  build_before = params.get(\'build_before\', None)\n
+  kw = {\'build_before\':build_before}\n
+else:\n
+  kw = {}\n
+\n
+for link in business_process.contentValues(portal_type="Business Link"):\n
+  for delivery_builder in link.getDeliveryBuilderValueList():\n
+    delivery_builder.activate().build(**kw)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>fixit, tag, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_buildPayPath</string> </value>
+            <value> <string>Alarm_buildVifibPath</string> </value>
         </item>
       </dictionary>
     </pickle>

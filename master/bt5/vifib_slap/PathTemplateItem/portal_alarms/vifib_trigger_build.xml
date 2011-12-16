@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_buildAccountPath</string> </value>
+            <value> <string>Alarm_buildVifibPath</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>build_account_path</string> </value>
+            <value> <string>vifib_trigger_build</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
@@ -89,7 +89,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Build default Business Process Account Path</string> </value>
+            <value> <string>Vifib Trigger Build</string> </value>
         </item>
       </dictionary>
     </pickle>
