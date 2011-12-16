@@ -42,10 +42,14 @@ class Recipe(GenericBaseRecipe):
                     self.options['htdocs'])
 
     # Install php.ini
+    if not os.path.exists(self.options['php-error-log']):
+      open(self.options['php-error-log'], 'w').close() # Just a touch
+
     php_ini = self.createFile(os.path.join(self.options['php-ini-dir'],
                                            'php.ini'),
       self.substituteTemplate(self.getTemplateFilename('php.ini.in'),
-        dict(tmp_directory=self.options['tmp-dir']))
+        dict(tmp_directory=self.options['tmp-dir'],
+             error_log=self.options['php-error-log']))
     )
     path_list.append(php_ini)
 
