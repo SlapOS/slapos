@@ -33,10 +33,6 @@ from Products.ERP5Type.tests.utils import DummyMailHost
 import os
 from DateTime import DateTime
 
-REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST = [
-  'crendential_request-confirmation-without-password',
-]
-
 class testVifibMixin(ERP5TypeTestCase):
   """
   Mixin class for unit test of Vifib.
@@ -189,17 +185,6 @@ class testVifibMixin(ERP5TypeTestCase):
     """
     return "vifib_default_system_preference"
 
-  def setupNotificationModule(self):
-    module = self.portal.notification_message_module
-    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
-
-    for reference in REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST:
-      for message in module.searchFolder(portal_type='Notification Message',
-        reference=reference):
-        message = message.getObject()
-        if isTransitionPossible(message, 'validate'):
-          message.validate()
-
   def prepareTestUsers(self):
     """
     Prepare test users.
@@ -307,7 +292,6 @@ class testVifibMixin(ERP5TypeTestCase):
     self.setupVifibMachineAuthenticationPlugin()
     self.setupVifibShadowAuthenticationPlugin()
     self.setPreference()
-    self.setupNotificationModule()
     self.prepareTestUsers()
     self.prepareVifibAccountingPeriod()
     self.prepareTestServices()
