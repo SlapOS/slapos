@@ -191,7 +191,6 @@ class testVifibSecurityMixin(SecurityTestCase, testVifibMixin):
     self.logMessage("Create Manager")
     self.createManagerAndLogin()
     self.createVifibDocumentList()
-    self.setSystemPreference()
     self.validateRule()
     self.logMessage("Create Administrator")
     self.createAdministratorUser()
