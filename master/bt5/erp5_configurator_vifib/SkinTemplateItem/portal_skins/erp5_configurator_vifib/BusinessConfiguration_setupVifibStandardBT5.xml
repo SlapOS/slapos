@@ -109,6 +109,7 @@ bt5_installation_list = (\n
       \'vifib_data_web\',\n
       \'vifib_payzen\',\n
       \'vifib_data_payzen\',\n
+      \'vifib_data_simulation\',\n
       \'vifib_erp5\',\n
       \'vifib_test\',\n
       \'vifib_invoicing\',\n
