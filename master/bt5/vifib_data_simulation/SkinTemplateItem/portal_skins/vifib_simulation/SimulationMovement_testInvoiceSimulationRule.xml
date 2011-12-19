@@ -52,6 +52,13 @@
             <key> <string>_body</string> </key>
             <value> <string>movement = context\n
 \n
+if movement.getExplanationValue().getPortalType().startswith(\'Purchase\'):\n
+  # Vifib case: Purchase Business Process is minimalistic and does not care about\n
+  # invoice (and deeper parts of tree)\n
+  # But when this rule would get applied, it will try to create 0 simulation movements\n
+  # and code inside of BusinessProcess.py would raise "ValueError: A Business Process can not erase amounts"\n
+  # So just do not apply the rule in such case.\n
+  return False\n
 source_section = movement.getSourceSection()\n
 destination_section = movement.getDestinationSection()\n
 if source_section == destination_section or source_section is None \\\n
