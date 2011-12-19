@@ -49,8 +49,8 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_date/trade_phase/default/delivery</string>
-                <string>trade_phase/default/invoicing</string>
+                <string>trade_phase/vifib/order</string>
+                <string>trade_date/trade_phase/vifib/order</string>
               </tuple>
             </value>
         </item>
@@ -66,8 +66,8 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1280786400.0</float>
-                    <string>GMT+2</string>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
                   </tuple>
                 </state>
               </object>
@@ -75,7 +75,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>TMP-INVOICE</string> </value>
+            <value> <string>TMP-ORDER</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -85,11 +85,17 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>invoice_path</string> </value>
+            <value> <string>order_path</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
-            <value> <int>3</int> </value>
+            <value> <int>1</int> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>modification_date</string> </key>
@@ -101,16 +107,12 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1280786400.0</float>
-                    <string>GMT+2</string>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
                   </tuple>
                 </state>
               </object>
             </value>
-        </item>
-        <item>
-            <key> <string>payment_end_of_month</string> </key>
-            <value> <int>0</int> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -118,7 +120,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Invoicing</string> </value>
+            <value> <string>Order</string> </value>
         </item>
       </dictionary>
     </pickle>

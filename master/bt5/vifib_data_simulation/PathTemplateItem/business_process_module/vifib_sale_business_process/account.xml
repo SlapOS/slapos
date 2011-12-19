@@ -67,6 +67,33 @@
             </value>
         </item>
         <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>modification_date</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>date</string> </value>
+                  </item>
+                </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>creation_date</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>date</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>_range_criterion</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
@@ -76,13 +103,10 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_phase/default/payment</string>
-                <string>predecessor/trade_state/accounted</string>
-                <string>successor/trade_state/paid</string>
-                <string>source/account_module/bank</string>
-                <string>destination/account_module/bank</string>
-                <string>delivery_builder/portal_deliveries/payment_transaction_builder</string>
-                <string>delivery_builder/portal_deliveries/vifib_payment_transaction_builder</string>
+                <string>trade_phase/vifib/accounting</string>
+                <string>predecessor/trade_state/invoiced</string>
+                <string>successor/trade_state/accounted</string>
+                <string>delivery_builder/portal_deliveries/vifib_sale_invoice_transaction_builder</string>
               </tuple>
             </value>
         </item>
@@ -91,7 +115,29 @@
             <value>
               <tuple>
                 <string>confirmed</string>
+                <string>delivered</string>
+                <string>started</string>
+                <string>stopped</string>
               </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>creation_date</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global id="1.1" name="DateTime" module="DateTime.DateTime"/>
+                </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
+                  </tuple>
+                </state>
+              </object>
             </value>
         </item>
         <item>
@@ -105,12 +151,44 @@
             </value>
         </item>
         <item>
+            <key> <string>frozen_state</string> </key>
+            <value>
+              <tuple>
+                <string>delivered</string>
+                <string>stopped</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
-            <value> <string>pay</string> </value>
+            <value> <string>account</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
-            <value> <int>4</int> </value>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>modification_date</string> </key>
+            <value>
+              <object>
+                <klass> <reference id="1.1"/> </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
+                  </tuple>
+                </state>
+              </object>
+            </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -118,7 +196,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>pay</string> </value>
+            <value> <string>account</string> </value>
         </item>
       </dictionary>
     </pickle>

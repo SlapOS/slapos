@@ -2,10 +2,64 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Trade Model Path" module="erp5.portal_type"/>
+      <global name="Business Link" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
+        <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Author</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Add_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Author</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_Modify_portal_content_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Author</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Author</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
         <item>
             <key> <string>_identity_criterion</string> </key>
             <value>
@@ -49,10 +103,21 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_phase/default/accounting</string>
-                <string>trade_date/trade_phase/default/invoicing</string>
-                <string>source/account_module/receivable</string>
-                <string>destination/account_module/payable</string>
+                <string>trade_phase/vifib/delivery</string>
+                <string>predecessor/trade_state/ordered</string>
+                <string>successor/trade_state/delivered</string>
+                <string>delivery_builder/portal_deliveries/purchase_packing_list_builder</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>completed_state</string> </key>
+            <value>
+              <tuple>
+                <string>confirmed</string>
+                <string>delivered</string>
+                <string>started</string>
+                <string>stopped</string>
               </tuple>
             </value>
         </item>
@@ -68,35 +133,49 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1280786400.0</float>
-                    <string>GMT+2</string>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
                   </tuple>
                 </state>
               </object>
             </value>
         </item>
         <item>
-            <key> <string>default_reference</string> </key>
-            <value> <string>TMP-ACCOUNTING-DEBIT</string> </value>
+            <key> <string>deliverable</string> </key>
+            <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>This business path is just a template thus disabled by using \'python:False\' in Predicate.\n
-For real use, it is required to set an appropriate source (= account) category in Profile.</string> </value>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>frozen_state</string> </key>
+            <value>
+              <tuple>
+                <string>delivered</string>
+                <string>stopped</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>account_debit_path</string> </value>
+            <value> <string>deliver</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
-            <value> <int>4</int> </value>
+            <value> <int>1</int> </value>
         </item>
         <item>
-            <key> <string>membership_criterion_category</string> </key>
+            <key> <string>language</string> </key>
             <value>
-              <tuple/>
+              <none/>
             </value>
+        </item>
+        <item>
+            <key> <string>lead_time</string> </key>
+            <value> <float>10.0</float> </value>
         </item>
         <item>
             <key> <string>modification_date</string> </key>
@@ -108,49 +187,30 @@ For real use, it is required to set an appropriate source (= account) category i
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1280786400.0</float>
-                    <string>GMT+2</string>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
                   </tuple>
                 </state>
               </object>
             </value>
         </item>
         <item>
-            <key> <string>payment_end_of_month</string> </key>
-            <value> <int>0</int> </value>
-        </item>
-        <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Trade Model Path</string> </value>
-        </item>
-        <item>
-            <key> <string>string_index</string> </key>
-            <value>
-              <none/>
-            </value>
-        </item>
-        <item>
-            <key> <string>test_method_id</string> </key>
-            <value>
-              <tuple/>
-            </value>
-        </item>
-        <item>
-            <key> <string>test_tales_expression</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>Business Link</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Accounting Debit</string> </value>
+            <value> <string>deliver</string> </value>
         </item>
       </dictionary>
     </pickle>
   </record>
   <record id="2" aka="AAAAAAAAAAI=">
     <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
     </pickle>
     <pickle>
       <dictionary>
@@ -165,7 +225,10 @@ For real use, it is required to set an appropriate source (= account) category i
   </record>
   <record id="3" aka="AAAAAAAAAAM=">
     <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
     </pickle>
     <pickle>
       <dictionary>

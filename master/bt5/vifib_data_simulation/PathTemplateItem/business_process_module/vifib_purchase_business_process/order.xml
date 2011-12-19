@@ -76,12 +76,8 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_phase/default/accounting</string>
-                <string>predecessor/trade_state/invoiced</string>
-                <string>successor/trade_state/accounted</string>
-                <string>delivery_builder/portal_deliveries/purchase_invoice_transaction_builder</string>
-                <string>delivery_builder/portal_deliveries/sale_invoice_transaction_builder</string>
-                <string>delivery_builder/portal_deliveries/vifib_sale_invoice_transaction_builder</string>
+                <string>successor/trade_state/ordered</string>
+                <string>trade_phase/vifib/order</string>
               </tuple>
             </value>
         </item>
@@ -90,15 +86,12 @@
             <value>
               <tuple>
                 <string>confirmed</string>
-                <string>delivered</string>
-                <string>started</string>
-                <string>stopped</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>deliverable</string> </key>
-            <value> <int>0</int> </value>
+            <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -109,19 +102,16 @@
         <item>
             <key> <string>frozen_state</string> </key>
             <value>
-              <tuple>
-                <string>delivered</string>
-                <string>stopped</string>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>account</string> </value>
+            <value> <string>order</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
-            <value> <int>3</int> </value>
+            <value> <int>0</int> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -129,7 +119,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>account</string> </value>
+            <value> <string>order</string> </value>
         </item>
       </dictionary>
     </pickle>

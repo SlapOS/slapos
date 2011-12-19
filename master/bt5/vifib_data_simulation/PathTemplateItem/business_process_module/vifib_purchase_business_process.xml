@@ -2,43 +2,34 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Category" module="erp5.portal_type"/>
+      <global name="Business Process" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
         <item>
+            <key> <string>_Access_contents_information_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Author</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>_Add_portal_content_Permission</string> </key>
             <value>
               <tuple>
+                <string>Assignee</string>
                 <string>Assignor</string>
+                <string>Associate</string>
+                <string>Author</string>
                 <string>Manager</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>_Add_portal_folders_Permission</string> </key>
-            <value>
-              <tuple>
-                <string>Assignor</string>
-                <string>Manager</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>_Copy_or_Move_Permission</string> </key>
-            <value>
-              <tuple>
-                <string>Assignor</string>
-                <string>Manager</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>_Delete_objects_Permission</string> </key>
-            <value>
-              <tuple>
-                <string>Assignor</string>
-                <string>Manager</string>
+                <string>Owner</string>
               </tuple>
             </value>
         </item>
@@ -48,6 +39,22 @@
               <tuple>
                 <string>Assignee</string>
                 <string>Assignor</string>
+                <string>Associate</string>
+                <string>Author</string>
+                <string>Manager</string>
+                <string>Owner</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>_View_Permission</string> </key>
+            <value>
+              <tuple>
+                <string>Assignee</string>
+                <string>Assignor</string>
+                <string>Associate</string>
+                <string>Auditor</string>
+                <string>Author</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
@@ -60,9 +67,21 @@
             </value>
         </item>
         <item>
+            <key> <string>_identity_criterion</string> </key>
+            <value>
+              <dictionary/>
+            </value>
+        </item>
+        <item>
             <key> <string>_mt_index</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+            </value>
+        </item>
+        <item>
+            <key> <string>_range_criterion</string> </key>
+            <value>
+              <dictionary/>
             </value>
         </item>
         <item>
@@ -72,16 +91,32 @@
             </value>
         </item>
         <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>vifib_purchase_business_process</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value> <string>Vifib Business Process for sales.</string> </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
-            <value> <string>default</string> </value>
+            <value> <string>vifib_purchase_business_process</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Category</string> </value>
+            <value> <string>Business Process</string> </value>
+        </item>
+        <item>
+            <key> <string>referential_date</string> </key>
+            <value> <string>start_date</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>default</string> </value>
+            <value> <string>Vifib Purchase Business Process</string> </value>
+        </item>
+        <item>
+            <key> <string>version</string> </key>
+            <value> <string>1</string> </value>
         </item>
       </dictionary>
     </pickle>

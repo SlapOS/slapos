@@ -9,10 +9,10 @@ account_module/purchase
 account_module/receivable
 account_module/refundable_vat
 account_module/sales
-business_process_module/erp5_default_business_process
-business_process_module/erp5_default_business_process/**
-portal_categories/trade_phase/default
-portal_categories/trade_phase/default/**
+business_process_module/vifib_purchase_business_process
+business_process_module/vifib_purchase_business_process/**
+business_process_module/vifib_sale_business_process
+business_process_module/vifib_sale_business_process/**
 portal_categories/trade_phase/vifib
 portal_categories/trade_phase/vifib/**
 portal_categories/trade_state/**

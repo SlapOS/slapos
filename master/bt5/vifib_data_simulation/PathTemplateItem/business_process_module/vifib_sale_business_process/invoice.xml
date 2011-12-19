@@ -67,6 +67,33 @@
             </value>
         </item>
         <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>modification_date</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>date</string> </value>
+                  </item>
+                </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>creation_date</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>date</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>_range_criterion</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
@@ -76,13 +103,9 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_phase/default/invoicing</string>
+                <string>trade_phase/vifib/invoicing</string>
                 <string>predecessor/trade_state/delivered</string>
                 <string>successor/trade_state/invoiced</string>
-                <string>delivery_builder/portal_deliveries/purchase_invoice_builder</string>
-                <string>delivery_builder/portal_deliveries/purchase_invoice_transaction_trade_model_builder</string>
-                <string>delivery_builder/portal_deliveries/sale_invoice_builder</string>
-                <string>delivery_builder/portal_deliveries/sale_invoice_transaction_trade_model_builder</string>
                 <string>delivery_builder/portal_deliveries/vifib_sale_invoice_builder</string>
               </tuple>
             </value>
@@ -96,6 +119,25 @@
                 <string>started</string>
                 <string>stopped</string>
               </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>creation_date</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global id="1.1" name="DateTime" module="DateTime.DateTime"/>
+                </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
+                  </tuple>
+                </state>
+              </object>
             </value>
         </item>
         <item>
@@ -124,6 +166,29 @@
         <item>
             <key> <string>int_index</string> </key>
             <value> <int>2</int> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>modification_date</string> </key>
+            <value>
+              <object>
+                <klass> <reference id="1.1"/> </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
+                  </tuple>
+                </state>
+              </object>
+            </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>

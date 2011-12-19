@@ -92,15 +92,15 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>erp5_default_business_process</string> </value>
+            <value> <string>vifib_sale_business_process</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Default process previously defined implicitly in core ERP5 business templates.</string> </value>
+            <value> <string>Vifib Business Process for sales.</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>erp5_default_business_process</string> </value>
+            <value> <string>vifib_sale_business_process</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -109,6 +109,10 @@
         <item>
             <key> <string>referential_date</string> </key>
             <value> <string>start_date</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Vifib Sale Business Process</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>

@@ -40,7 +40,7 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_phase/default/accounting</string>
+                <string>trade_phase/vifib/accounting</string>
               </tuple>
             </value>
         </item>
@@ -57,6 +57,12 @@ This is not used anymore and is left only as an example.</string> </value>
         <item>
             <key> <string>id</string> </key>
             <value> <string>new_accounting_transaction_root_simulation_rule</string> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>

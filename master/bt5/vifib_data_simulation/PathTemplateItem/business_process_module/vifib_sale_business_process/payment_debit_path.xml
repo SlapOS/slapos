@@ -49,10 +49,11 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_phase/default/payment</string>
-                <string>source/account_module/receivable</string>
-                <string>destination/account_module/payable</string>
-                <string>trade_date/trade_phase/default/invoicing</string>
+                <string>trade_phase/vifib/payment</string>
+                <string>source/account_module/bank</string>
+                <string>destination/account_module/bank</string>
+                <string>trade_date/trade_phase/vifib/invoicing</string>
+                <string>source_payment/organisation_module/vifib_internet/bank_account</string>
               </tuple>
             </value>
         </item>
@@ -68,8 +69,8 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1280786400.0</float>
-                    <string>GMT+2</string>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
                   </tuple>
                 </state>
               </object>
@@ -77,7 +78,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>TMP-PAYMENT-CREDIT</string> </value>
+            <value> <string>TMP-PAYMENT-DEBIT</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -85,16 +86,18 @@
 For real use, it is required to set an appropriate source (= account) category in Profile.</string> </value>
         </item>
         <item>
-            <key> <string>efficiency</string> </key>
-            <value> <float>-1.0</float> </value>
-        </item>
-        <item>
             <key> <string>id</string> </key>
-            <value> <string>payment_credit_path</string> </value>
+            <value> <string>payment_debit_path</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
             <value> <int>5</int> </value>
+        </item>
+        <item>
+            <key> <string>language</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>membership_criterion_category</string> </key>
@@ -112,8 +115,8 @@ For real use, it is required to set an appropriate source (= account) category i
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1280786400.0</float>
-                    <string>GMT+2</string>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
                   </tuple>
                 </state>
               </object>
@@ -147,7 +150,7 @@ For real use, it is required to set an appropriate source (= account) category i
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Payment Credit</string> </value>
+            <value> <string>Payment Debit</string> </value>
         </item>
       </dictionary>
     </pickle>
