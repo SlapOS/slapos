@@ -94,7 +94,7 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>specialise/business_process_module/erp5_default_business_process</string>
+                <string>specialise/business_process_module/vifib_sale_business_process</string>
                 <string>specialise/sale_trade_condition_module/payzen_sale_trade_condition</string>
               </tuple>
             </value>
