@@ -112,7 +112,6 @@ bt5_installation_list = (\n
       \'vifib_data_simulation\',\n
       \'vifib_erp5\',\n
       \'vifib_test\',\n
-      \'vifib_invoicing\',\n
 )\n
 \n
 bt5_update_catalog = (\'erp5_ingestion_mysql_innodb_catalog\',\n
