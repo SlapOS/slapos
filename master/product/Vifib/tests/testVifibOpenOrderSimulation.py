@@ -130,7 +130,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement.getSpecialise())
       self.assertEquals("service_module/vifib_instance_subscription",
         simulation_movement.getResource())
-      self.assertEquals("default/delivery",
+      self.assertEquals("vifib/delivery",
         simulation_movement.getTradePhase())
       self.assertEquals(None,
                            simulation_movement.getAggregate(
