@@ -106,6 +106,10 @@
             <value> <string>service_module/vifib_instance_setup</string> </value>
         </item>
         <item>
+            <key> <string>preferred_instance_subscription_resource</string> </key>
+            <value> <string>service_module/vifib_instance_subscription</string> </value>
+        </item>
+        <item>
             <key> <string>preferred_instance_update_resource</string> </key>
             <value> <string>service_module/vifib_instance_update</string> </value>
         </item>
@@ -118,6 +122,16 @@
             <value> <int>23000</int> </value>
         </item>
         <item>
+            <key> <string>preferred_organisation_credential_update_automatic_approval</string> </key>
+            <value> <int>1</int> </value>
+        </item>
+        <item>
+            <key> <string>preferred_payzen_integration_site</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>preferred_software_setup_resource</string> </key>
             <value> <string>service_module/vifib_software_setup</string> </value>
         </item>
@@ -125,7 +139,7 @@
             <key> <string>preferred_subscription_assignment_category</string> </key>
             <value>
               <tuple>
-                <string>function/customer</string>
+                <string>role/member</string>
               </tuple>
             </value>
         </item>

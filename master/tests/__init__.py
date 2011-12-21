@@ -1,7 +1,6 @@
 from test_suite import SavedTestSuite, ProjectTestSuite
 class VIFIB(SavedTestSuite, ProjectTestSuite):
   _bt_list = [
-    'erp5_configurator_vifib',
     'vifib_base',
     'vifib_core',
     'vifib_crm',

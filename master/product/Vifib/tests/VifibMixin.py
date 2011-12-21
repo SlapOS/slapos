@@ -31,19 +31,7 @@ from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
 from AccessControl.SecurityManagement import newSecurityManager
 from Products.ERP5Type.tests.utils import DummyMailHost
 import os
-
-REQUIRED_RULE_REFERENCE_LIST = [
-  'default_delivering_rule',
-  'default_delivery_rule',
-  'default_invoice_rule',
-  'default_invoice_transaction_rule',
-  'default_invoicing_rule',
-  'default_order_rule',
-]
-
-REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST = [
-  'crendential_request-confirmation-without-password',
-]
+from DateTime import DateTime
 
 class testVifibMixin(ERP5TypeTestCase):
   """
@@ -65,7 +53,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_administration',
       'erp5_pdm',
       'erp5_trade',
-      'erp5_simulation_test',
       'erp5_item',
       'erp5_open_trade',
       'erp5_forge',
@@ -117,9 +104,9 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data_web',
       'vifib_payzen',
       'vifib_data_payzen',
+      'vifib_data_simulation',
       'vifib_erp5',
       'vifib_test',
-      'vifib_invoicing',
     ]
     return result
 
@@ -198,45 +185,6 @@ class testVifibMixin(ERP5TypeTestCase):
     """
     return "vifib_default_system_preference"
 
-  def setSystemPreference(self):
-    """Configures and enables default system preference"""
-    default_system_preference = self.portal.portal_preferences\
-        .restrictedTraverse(self.getDefaultSitePreferenceId())
-    default_system_preference.edit(
-      preferred_credential_recovery_automatic_approval=1,
-      preferred_credential_request_automatic_approval=1,
-      preferred_person_credential_update_automatic_approval=1,
-      preferred_subscription_assignment_category=['role/member'],
-    )
-    if default_system_preference.getPreferenceState() == 'disabled':
-      default_system_preference.enable()
-
-  def setupNotificationModule(self):
-    module = self.portal.notification_message_module
-    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
-
-    for reference in REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST:
-      for message in module.searchFolder(portal_type='Notification Message',
-        reference=reference):
-        message = message.getObject()
-        if isTransitionPossible(message, 'validate'):
-          message.validate()
-
-  def setupRuleTool(self):
-    """Validates newest version of each rule from REQUIRED_RULE_REFERENCE_LIST"""
-    rule_tool = self.portal.portal_rules
-    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
-    for rule_reference in REQUIRED_RULE_REFERENCE_LIST:
-      rule_list = rule_tool.searchFolder(
-        reference=rule_reference,
-        limit=1,
-        sort_on=(('version', 'DESC'),)
-      )
-      self.assertEqual(1, len(rule_list), '%s not found' % rule_reference)
-      rule = rule_list[0].getObject()
-      if isTransitionPossible(rule, 'validate'):
-        rule.validate()
-
   def prepareTestUsers(self):
     """
     Prepare test users.
@@ -253,6 +201,25 @@ class testVifibMixin(ERP5TypeTestCase):
       for assignment in person.contentValues(portal_type='Assignment'):
         if isTransitionPossible(assignment, 'open'):
           assignment.open()
+
+  def prepareVifibAccountingPeriod(self):
+    vifib = self.portal.organisation_module['vifib_internet']
+    year = DateTime().year()
+    start_date = '%s/01/01' % year
+    stop_date = '%s/12/31' % (year + 1)
+    accounting_period = self.portal.portal_catalog.getResultValue(
+      portal_type='Accounting Period',
+      parent_uid=vifib.getUid(),
+      simulation_state='started',
+      **{
+        'delivery.start_date': start_date,
+        'delivery.stop_date': stop_date
+      }
+    )
+    if accounting_period is None:
+      accounting_period = vifib.newContent(portal_type='Accounting Period',
+        start_date=start_date, stop_date=stop_date)
+      accounting_period.start()
 
   def prepareTestServices(self):
     isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
@@ -325,10 +292,8 @@ class testVifibMixin(ERP5TypeTestCase):
     self.setupVifibMachineAuthenticationPlugin()
     self.setupVifibShadowAuthenticationPlugin()
     self.setPreference()
-    self.setSystemPreference()
-    self.setupRuleTool()
-    self.setupNotificationModule()
     self.prepareTestUsers()
+    self.prepareVifibAccountingPeriod()
     self.prepareTestServices()
     transaction.commit()
     self.tic()
@@ -338,9 +303,6 @@ class testVifibMixin(ERP5TypeTestCase):
   def clearCache(self):
     self.portal.portal_caches.clearAllCache()
     self.portal.portal_workflow.refreshWorklistCache()
-
-  def stepClearCache(self, sequence=None, sequence_list=None, **kw):
-    self.clearCache()
 
   # access related steps
   def stepLoginDefaultUser(self, **kw):

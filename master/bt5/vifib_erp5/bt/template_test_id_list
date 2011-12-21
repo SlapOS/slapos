@@ -4,5 +4,4 @@ testVifibModuleSecurity
 testVifibUserAdmin
 testVifibUserCustomer
 testVifibUserDeveloper
-ViFiBOrderTest
 testVifibConstraint

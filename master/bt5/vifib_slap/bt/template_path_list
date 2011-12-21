@@ -1,2 +1,4 @@
 portal_alarms/confirm_ordered_sale_order
 portal_alarms/confirm_ordered_sale_order/**
+portal_alarms/vifib_trigger_build
+portal_alarms/vifib_trigger_build/**

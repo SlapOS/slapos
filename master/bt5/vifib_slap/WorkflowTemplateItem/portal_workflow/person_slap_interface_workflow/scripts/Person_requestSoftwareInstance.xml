@@ -53,6 +53,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 from DateTime import DateTime\n
+from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
 person = state_change[\'object\']\n
 portal = person.getPortalObject()\n
 # Get required arguments\n
@@ -118,10 +119,14 @@ if request_hosting_subscription is None:\n
     source_reference=software_type,\n
     text_content=instance_xml,\n
     sla_xml=sla_xml,\n
+    periodicity_hour_list=[0],\n
+    periodicity_minute_list=[0],\n
+    periodicity_month_day=[1],\n
     root_state=state,\n
     root_software_release_url=software_release_url_string,\n
     root_slave=is_slave,\n
   )\n
+  subscription.portal_workflow.doActionFor(subscription, \'validate_action\')\n
   software_instance = subscription.HostingSubscription_requestRootSoftwareInstance(tag, person_request=True)\n
 \n
   software_release_document = context.portal_catalog.getResultValue(\n
@@ -138,6 +143,7 @@ if request_hosting_subscription is None:\n
     # XXX Hardcoded values\n
     source="organisation_module/vifib_internet",\n
     source_section="organisation_module/vifib_internet",\n
+    quantity_unit="unit/piece",\n
     price_currency="currency_module/EUR",\n
     activate_kw={\'tag\': tag},\n
   )\n
@@ -145,6 +151,7 @@ if request_hosting_subscription is None:\n
     portal_type=sale_order_line_portal_type,\n
     resource=setup_service_relative_url,\n
     quantity=1,\n
+    price=0,\n
     aggregate_value_list=[software_instance, subscription, software_release_document],\n
     activate_kw={\'tag\': tag},\n
   )\n
@@ -167,10 +174,29 @@ if request_hosting_subscription is None:\n
     else:\n
       raise ValueError(\'Person has no open order created\')\n
 \n
+  now = DateTime()\n
+  start_date = getClosestDate(target_date=now, precision=\'day\', before=1)\n
+  # 12 months of subscription by default\n
+  stop_date = addToDate(getClosestDate(target_date=now, precision=\'month\', before=1), year=1)\n
+\n
+  subscription_service_relative_url = portal.portal_preferences.getPreferredInstanceSubscriptionResource()\n
   open_order.newContent(\n
     portal_type="Open Sale Order Line",\n
     title=software_title,\n
     aggregate_value=subscription,\n
+    start_date=start_date,\n
+    stop_date=stop_date,\n
+    quantity=1,\n
+    quantity_unit="unit/piece",\n
+    price=1,\n
+    price_currency="currency_module/EUR",\n
+    specialise=sale_order.getSpecialise(portal_type="Sale Trade Condition"),\n
+    # XXX Hardcoded values\\n\n
+    resource=subscription_service_relative_url,\n
+    destination_value=person,\n
+    destination_section_value=person,\n
+    source="organisation_module/vifib_internet",\n
+    source_section="organisation_module/vifib_internet",\n
     activate_kw={\'tag\': tag},\n
   )\n
 \n

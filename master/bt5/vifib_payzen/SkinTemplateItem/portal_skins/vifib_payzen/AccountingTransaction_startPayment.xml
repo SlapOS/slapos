@@ -62,8 +62,7 @@ system_event_kw = {\n
 }\n
 system_event = portal.system_event_module.newContent(title=\'User navigation script\', **system_event_kw)\n
 \n
-now_utc = DateTime().toZone(\'UTC\').asdatetime()\n
-today = now_utc.strftime(\'%Y%m%d\')\n
+today = DateTime().toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d\')\n
 transaction_id = str(portal.portal_ids.generateNewId(\n
     id_group=\'%s_%s\' % (service.getRelativeUrl(), today),\n
     id_generator=\'uid\')).zfill(6)\n
@@ -81,13 +80,13 @@ else:\n
   system_event.confirm(comment=\'Key %s already found!\' % mapping_id)\n
   return \'There was system issue\'\n
 \n
-context.activate().PaymentTransaction_setStartDateConfirm(date=now_utc)\n
+context.activate().PaymentTransaction_confirm()\n
 \n
 payzen_dict = {}\n
 payzen_dict.update(\n
   vads_currency=integration_site.getMappingFromCategory(\'resource/currency_module/%s\' % context.getResourceReference()).split(\'/\')[-1],\n
   vads_amount=str(int(round((context.PaymentTransaction_getTotalPayablePrice() * 100), 0))),\n
-  vads_trans_date=now_utc.strftime(\'%Y%m%d%H%M%S\'),\n
+  vads_trans_date=context.getStartDate().toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d%H%M%S\'),\n
   vads_trans_id=transaction_id,\n
   vads_language=\'en\',\n
 )\n
