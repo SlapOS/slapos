@@ -57,17 +57,17 @@ from Products.ERP5Type.Message import translateString\n
 \n
 packing_list = context\n
 \n
+try:\n
+  packing_list.PackingList_copyOrderProperties()\n
+except AttributeError:\n
+  # does not come from Order\n
+  pass\n
+\n
 # Then, modify state\n
 confirm_tag = \'%s_confirm\' % packing_list.getPath()\n
 packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
   (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
   tag=confirm_tag).Delivery_confirm()\n
-\n
-# # Start delivery\n
-# start_tag = \'%s_start\' % packing_list.getPath()\n
-# packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-#   (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-#   tag=start_tag, after_tag=confirm_tag).Delivery_startConfirmedSalePackingList()\n
 \n
 # First set the packing_list in the building state\n
 packing_list.startBuilding()\n
@@ -83,7 +83,7 @@ packing_list.activate(after_path_and_method_id=(related_simulation_movement_path
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscriptionSalePackingList_copyProperties</string> </value>
+            <value> <string>VifibSalePackingList_postGeneration</string> </value>
         </item>
       </dictionary>
     </pickle>
