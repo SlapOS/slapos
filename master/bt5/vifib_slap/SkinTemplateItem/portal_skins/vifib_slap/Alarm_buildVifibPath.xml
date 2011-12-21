@@ -51,7 +51,6 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-business_process = portal.business_process_module.vifib_sale_business_process\n
 \n
 build_before = None\n
 if params is not None:\n
@@ -60,9 +59,11 @@ if params is not None:\n
 else:\n
   kw = {}\n
 \n
-for link in business_process.contentValues(portal_type="Business Link"):\n
-  for delivery_builder in link.getDeliveryBuilderValueList():\n
-    delivery_builder.activate().build(**kw)\n
+for business_process in [\n
+  portal.business_process_module.vifib_sale_business_process,\n
+  portal.business_process_module.vifib_purchase_business_process]:\n
+  for link in business_process.contentValues(portal_type="Business Link"):\n
+    link.build(**kw)\n
 </string> </value>
         </item>
         <item>
