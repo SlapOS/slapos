@@ -67,18 +67,17 @@ class Recipe(BaseSlapRecipe):
     # Get all slaves, add them to config
     slave_instance_list = self.parameter_dict.get('slave_instance_list', [])
     rewrite_rule_list = []
-    slave_dict = {}
+    slave_dict = dict()
     base_url = 'https://%s:%s/' % (frontend_domain_name, frontend_port_number)
     for slave_instance in slave_instance_list:
       current_slave_dict = dict()
-      current_slave_dict['host'] = slave_instance.getConnectionParameter('host')
-      current_slave_dict['port'] = slave_instance.getConnectionParameter('port')
+      current_slave_dict['host'] = slave_instance['host']
+      current_slave_dict['port'] = slave_instance['port']
       if current_slave_dict['host'] is None \
           or current_slave_dict['port'] is None:
         continue
       # Is target https or http?
-      current_slave_dict['https'] = slave_instance.getConnectionParameter(
-          'https', 'true')
+      current_slave_dict['https'] = slave_instance.get('https', 'true')
       if current_slave_dict['https'] in FALSE_VALUE_LIST:
         current_slave_dict['https'] = 'false'
 
@@ -114,9 +113,7 @@ class Recipe(BaseSlapRecipe):
       dict(site_url=node_parameter_dict['site_url'],
            domain_ipv6_address=self.getGlobalIPv6Address()))
     # Send connection parameters of slave instances
-    for slave_instance in slave_dict.iteritems():
-      slave_site_url = '%s%s' % (node_parameter_dict['site_url'],
-          slave_instance.get('reference'))
+    for slave_reference, slave_site_url in slave_dict.iteritems():
       self.setConnectionDict(
           dict(site_url=slave_site_url,
                domainname=frontend_domain_name,
@@ -282,6 +279,7 @@ class Recipe(BaseSlapRecipe):
     # Install script
     kvm_proxy_script_in = open(self.getTemplateFilename(
           'kvm-proxy.js'), 'r').read()
+    # XXX-Cedric : this is NOT a wrapper.
     kvm_proxy_script = self.createRunningWrapper("kvm-proxy.js",
         kvm_proxy_script_in)
     self.path_list.append(kvm_proxy_script)
