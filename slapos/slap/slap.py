@@ -378,6 +378,14 @@ class ComputerPartition(SlapDocument):
       'computer_partition_id': self._partition_id,
       'message': message})
 
+  def rename(self, new_name, slave_reference=None):
+    self._connection_helper.POST('/rename', {
+      'computer_id': self._computer_id,
+      'computer_partition_id': self._computer_id,
+      'new_name': new_name,
+      'slave_reference': slave_reference,
+    })
+
   def getId(self):
     return self._partition_id
 
