@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.32-dev'
+version = '0.39-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -46,7 +46,6 @@ setup(name=name,
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
           'cron = slapos.recipe.dcron:Recipe',
           'cron.d = slapos.recipe.dcron:Part',
-          'download = slapos.recipe.download:Recipe',
           'davstorage = slapos.recipe.davstorage:Recipe',
           'dropbear = slapos.recipe.dropbear:Recipe',
           'dropbear.add_authorized_key = slapos.recipe.dropbear:AddAuthorizedKey',

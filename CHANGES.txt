@@ -1,12 +1,62 @@
 Changes
 =======
 
-0.32 (Unreleased)
+0.39 (unreleased)
 -----------------
 
-  * No change yet.
+ * No changes yet.
 
-0.31 (2011-10-06)
+0.38 (2011-12-05)
+-----------------
+
+ * erp5: Swtich to percona, as maatkit is obsoleted. [Sebastien Robin]
+ * erp5: Improve haproxy configuration. [Sebastien Robin]
+ * erp5: Support sphinxd. [Kazuhiko Shiozaki]
+ * erp5: Improve and make logging more usual. [Sebastien Robin]
+ * erp5: Allow mysql connection from localhost. [Romain Courteaud]
+ * erp5: Allow to control Zope/Zeo cache [Arnaud Fontaine]
+ * erp5: Increase precision in logs [Julien Muchembled]
+ * erp5: Improve erp5 update [Arnaud Fontaine, Rafael Monnerat]
+
+0.37 (2011-11-24)
+-----------------
+
+ * KVM : allow access to several KVM instances without SSL certificate duplicate
+   problem. [Cedric de Saint Martin]
+
+0.36 (2011-11-16)
+-----------------
+
+ * erp5testnode : the code of testnode is not in slapos repository anymore
+
+0.35 (2011-11-10)
+-----------------
+
+ * KVM : Promise are now working properly. [Łukasz Nowak]
+ * KVM : Use NoVNC with automatic login. [Cedric de Saint Martin]
+ * KVM : Use websockify egg and remove numpy hack. [Cedric de Saint Martin]
+
+0.34 (2011-11-08)
+-----------------
+
+  * Any LAMP software can specify its own php.ini [Alain Takoudjou]
+  * LAMP : Fix bug where buildout does not has sufficient rights to update
+    application parts. [Alain Takoudjou]
+  * LAMP : Update formatting when returning list of renamed files.
+    [Alain Takoudjou]
+
+0.33 (2011-10-31)
+-----------------
+
+  * erp5 : use percona toolkit instead of maatkit [Sebastien Robin]
+
+0.32 (2011-10-28)
+-----------------
+
+  * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will 
+   configure PHP application instance when needed. [Alain Takoudjou Kamdem]
+
+0.31 (2011-10-16)
 -----------------
 
  * Split big redundant recipes into small ones. In order to factorize the code
