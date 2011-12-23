@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.21 (unreleased)
+0.21 (2011-12-23)
 -----------------
 
- * No changes yet.
+ * slap: Add renaming API. [Antoine Catton]
 
 0.20 (2011-11-24)
 -----------------
