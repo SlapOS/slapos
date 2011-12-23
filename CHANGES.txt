@@ -1,6 +1,34 @@
 Changes
 =======
 
+0.39 (unreleased)
+-----------------
+
+ * No changes yet.
+
+0.38 (2011-12-05)
+-----------------
+
+ * erp5: Swtich to percona, as maatkit is obsoleted. [Sebastien Robin]
+ * erp5: Improve haproxy configuration. [Sebastien Robin]
+ * erp5: Support sphinxd. [Kazuhiko Shiozaki]
+ * erp5: Improve and make logging more usual. [Sebastien Robin]
+ * erp5: Allow mysql connection from localhost. [Romain Courteaud]
+ * erp5: Allow to control Zope/Zeo cache [Arnaud Fontaine]
+ * erp5: Increase precision in logs [Julien Muchembled]
+ * erp5: Improve erp5 update [Arnaud Fontaine, Rafael Monnerat]
+
+0.37 (2011-11-24)
+-----------------
+
+ * KVM : allow access to several KVM instances without SSL certificate duplicate
+   problem. [Cedric de Saint Martin]
+
+0.36 (2011-11-16)
+-----------------
+
+ * erp5testnode : the code of testnode is not in slapos repository anymore
+
 0.35 (2011-11-10)
 -----------------
 
