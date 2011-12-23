@@ -215,11 +215,11 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       simulation_movement_invoice_transaction_debit = None
       for simulation_movement_invoice_transaction in \
         simulation_movement_invoice_transaction_list:
-        if "business_process_module/erp5_default_business_process/account_credit_path" \
+        if "business_process_module/vifib_sale_business_process/account_credit_path" \
           in simulation_movement_invoice_transaction.getCausalityList():
             simulation_movement_invoice_transaction_credit = \
               simulation_movement_invoice_transaction.getObject()
-        if "business_process_module/erp5_default_business_process/account_debit_path" \
+        if "business_process_module/vifib_sale_business_process/account_debit_path" \
           in simulation_movement_invoice_transaction.getCausalityList():
             simulation_movement_invoice_transaction_debit = \
               simulation_movement_invoice_transaction.getObject()
@@ -302,11 +302,11 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       simulation_movement_credit_payment_debit = None
       for simulation_movement_credit_payment in \
         simulation_movement_credit_payment_list:
-        if "business_process_module/erp5_default_business_process/payment_credit_path" \
+        if "business_process_module/vifib_sale_business_process/payment_credit_path" \
           in simulation_movement_credit_payment.getCausalityList():
             simulation_movement_credit_payment_credit = \
               simulation_movement_credit_payment.getObject()
-        if "business_process_module/erp5_default_business_process/payment_debit_path" \
+        if "business_process_module/vifib_sale_business_process/payment_debit_path" \
           in simulation_movement_credit_payment.getCausalityList():
             simulation_movement_credit_payment_debit = \
               simulation_movement_credit_payment.getObject()
