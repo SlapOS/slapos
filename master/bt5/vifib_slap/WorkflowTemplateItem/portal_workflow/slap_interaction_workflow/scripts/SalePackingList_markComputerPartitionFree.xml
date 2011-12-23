@@ -75,7 +75,7 @@ else:\n
 \n
 # Deliver all SPL related to this software instance\n
 isTransitionPossible = context.portal_workflow.isTransitionPossible\n
-software_instance = current_delivery_line.getAggregateValue(portal_type="Software Instance")\n
+software_instance = current_delivery_line.getAggregateValue(portal_type=["Software Instance", "Slave Instance"])\n
 for sale_packing_list_line in portal.portal_catalog(\n
   portal_type="Sale Packing List Line", \n
   default_aggregate_uid=software_instance.getUid(),\n

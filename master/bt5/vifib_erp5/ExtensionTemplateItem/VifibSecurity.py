@@ -75,6 +75,71 @@ def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
     # Restore the original user.
     setSecurityManager(sm)
 
+def SoftwareInstance_requestDestroySlaveInstanceRelated(self):
+  """ request destroy all Slave Instance allocated in the Computer Partition 
+  related to the Software Instance """
+  sm = getSecurityManager()
+  portal = self.getPortalObject()
+  service_relative_url = portal.portal_preferences.getPreferredInstanceCleanupResource()
+  newSecurityManager(None, portal.acl_users.getUserById(
+    self.getReference()))
+  computer_partition_relative_url = self.getAggregateRelatedValue(
+    "Sale Packing List Line").getAggregate(portal_type="Computer Partition")
+  portal_preferences = portal.portal_preferences
+  simulation_state = ["started", "confirmed"]
+  service_uid_list = [
+    portal.restrictedTraverse(portal_preferences.getPreferredInstanceHostingResource()).getUid(),
+    portal.restrictedTraverse(portal_preferences.getPreferredInstanceSetupResource()).getUid(),
+  ]
+  try:
+    result_list = self.portal_catalog(portal_type="Sale Packing List Line",
+       aggregate_portal_type="Slave Instance",
+       computer_partition_relative_url=computer_partition_relative_url,
+       simulation_state=simulation_state,
+       default_resource_uid=service_uid_list)
+    slave_instance_list = [line.getAggregateValue(portal_type="Slave Instance") for line in result_list]
+    for slave_instance in slave_instance_list:
+      cleanup_packing_list = self.portal_catalog(
+         portal_type='Sale Packing List Line',
+         aggregate_relative_url=slave_instance.getRelativeUrl(),
+         resource_relative_url=service_relative_url,
+         limit=1,
+      )
+      if len(cleanup_packing_list) == 0:
+        slave_instance.requestDestroyComputerPartition()
+  finally:
+    # Restore the original user.
+    setSecurityManager(sm)
+
+def SoftwareInstance_destroySlaveInstanceRelated(self):
+  """ destroy all Slave Instance allocated in the Computer Partition 
+  related to the Software Instance """
+  sm = getSecurityManager()
+  newSecurityManager(None, self.getPortalObject().acl_users.getUserById(
+    self.getReference()))
+  portal = self.getPortalObject()
+  portal_preferences = portal.portal_preferences
+  computer_partition_relative_url = self.getAggregateRelatedValue(
+    "Sale Packing List Line").getAggregate(portal_type="Computer Partition")
+  simulation_state = ["confirmed"]
+  service_uid_list = [
+    portal.restrictedTraverse(portal_preferences.getPreferredInstanceCleanupResource()).getUid(),
+  ]
+  try:
+    result_list = self.portal_catalog(portal_type="Sale Packing List Line",
+       aggregate_portal_type="Slave Instance",
+       computer_partition_relative_url=computer_partition_relative_url,
+       simulation_state=simulation_state,
+       default_resource_uid=service_uid_list)
+    slave_instance_list = [line.getAggregateValue(portal_type="Slave Instance") for line in result_list]
+    # restore the original user to destroy each Slave Instance
+    setSecurityManager(sm)
+    for slave_instance in slave_instance_list:
+      slave_instance.destroyComputerPartition()
+  finally:
+    # Restore the original user.
+    setSecurityManager(sm)
+
 def getComputerSecurityCategory(self, base_category_list, user_name, 
                                 object, portal_type):
   """

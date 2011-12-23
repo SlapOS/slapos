@@ -20,7 +20,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotFoundResponse \
+      RequestComputerPartition \
       SlapLogout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -43,6 +43,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
       Logout \
@@ -81,6 +83,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
       Logout \
@@ -146,8 +150,9 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       CheckRaisesNotFoundComputerPartitionParameterDict \
       Tic \
       SlapLogout \
-      \
       LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
       Logout \
@@ -209,8 +214,9 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       CheckRaisesNotFoundComputerPartitionParameterDict \
       Tic \
       SlapLogout \
-      \
       LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
       Logout \
@@ -220,7 +226,9 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       CheckRequestedComputerPartitionCleanParameterList \
       SlapLogout \
-      \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
       LoginDefaultUser \
       SetCurrentSoftwareInstanceRequested \
       SetSelectedComputerPartition \
@@ -429,6 +437,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
       Logout \
@@ -458,8 +468,9 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       CheckRaisesNotFoundComputerPartitionParameterDict \
       Tic \
       SlapLogout \
-      \
       LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
       Logout \
@@ -528,7 +539,10 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
+      Logout
       RequestComputerPartition
       Tic
       SlapLogout
@@ -558,7 +572,10 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
+      Logout
       RequestComputerPartition
       Tic
       SlapLogout
@@ -568,6 +585,96 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionChildrenANoChild
       CheckComputerPartitionChildrenB
       CheckComputerPartitionRequestedDoubleScenarioChildrenB
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_SlaveInstance_twiceDifferentParent(self):
+    """
+    Checks that requesting a Slave Instance twice with same arguments from
+    different Computer Partition will return same object.
+
+    This test is reproducing scenario:
+
+            Master
+          /       \
+    ChildrenA   ChildrenB
+          \
+      SlaveInstanceRequestTwice
+
+    Then ChildrenB requests SlaveInstanceRequestedTwice, so graph changes to:
+
+            Master
+          /       \
+    ChildrenA   ChildrenB
+                  /
+      SlaveInstanceRequestedTwice
+    """
+    self.computer_partition_amount = 3
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_children_a_children_b_sequence_string + """
+      # Generate first part of graph
+      #            Master
+      #          /       \
+      #    ChildrenA   ChildrenB
+      #          \
+      #      SlaveInstanceRequestedTwice
+
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenA
+      SelectRequestedReference
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetRequestedComputerPartition
+      CheckComputerPartitionChildrenA
+      CheckComputerPartitionChildrenBNoChild
+      Logout
+
+      # Generate second part of graph
+      #            Master
+      #          /       \
+      #    ChildrenA   ChildrenB
+      #                  /
+      #      SlaveInstanceRequestedTwice
+
+      LoginDefaultUser
+      SetRequestedComputerPartition
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReference
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      RequestSlaveInstanceFromComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetRequestedComputerPartition
+      CheckComputerPartitionChildrenANoChild
+      CheckComputerPartitionChildrenB
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -645,7 +752,11 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
+      Logout
+
       RequestComputerPartition
       Tic
       SlapLogout
@@ -663,7 +774,10 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
+      Logout
       RequestComputerPartition
       Tic
       SlapLogout
@@ -748,12 +862,16 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-      LoginDefaultUser \
+      SlapLoginCurrentSoftwareInstance \
       SelectRequestedReferenceChildrenA \
       SelectEmptyRequestedParameterDict \
-      RequestComputerComputerPartitionCheckSerializeCalledOnSelected \
+      RequestComputerPartition \
       SlapLogout \
+      LoginDefaultUser \
+      ConfirmSaleOrderOrderedToCheckSerializeCalledOnSelected \
+      Logout \
     '
+
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
@@ -786,7 +904,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       \
       SelectYetAnotherRequestedReference \
       SlapLoginCurrentSoftwareInstance \
-      RequestComputerPartitionNotFoundResponse \
+      RequestComputerPartition \
       Tic \
       SlapLogout \
       '
@@ -933,9 +1051,18 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         SlapLoginCurrentSoftwareInstance
         SelectEmptyRequestedParameterDict
         SelectRequestedReference
-        RequestSlaveInstanceFromComputerPartitionNotFoundError
+        RequestSlaveInstanceFromComputerPartition
         Tic
-        RequestSlaveInstanceFromComputerPartitionNotFoundError
+        LoginDefaultUser
+        SelectSlaveInstanceFromSaleOrderOrdered
+        SoftwareInstanceSaleOrderConfirmRaisesValueError
+        ConfirmOrderedSaleOrderActiveSense
+        Tic
+        CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+        CheckComputerPartitionInstanceSetupSalePackingListStopped
+        CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+        SetDeliveryLineAmountEqualZero
+        CheckComputerPartitionInstanceSetupSalePackingListConfirmed
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -1034,22 +1161,38 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SelectAnotherRequestedReference \
       SelectEmptyRequestedParameterDict \
       SlapLoginCurrentSoftwareInstance \
-      RequestSlaveInstanceFromComputerPartitionNotFoundError \
+      RequestSlaveInstanceFromComputerPartition \
       Tic \
       SlapLogout \
-      \
+      LoginDefaultUser \
+      SelectSlaveInstanceFromSaleOrderOrdered \
+      SoftwareInstanceSaleOrderConfirmRaisesValueError \
+      Tic \
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      Logout \
       SlapLoginCurrentSoftwareInstance \
       SetRequestedFilterParameterDict \
       RequestSlaveInstanceFromComputerPartition \
       Tic \
       SlapLogout \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      SetDeliveryLineAmountEqualTwo \
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      Logout \
       \
       SetRequestedWrongFilterParameterDict \
       SelectYetAnotherRequestedReference \
       SlapLoginCurrentSoftwareInstance \
-      RequestSlaveInstanceFromComputerPartitionNotFoundError \
+      RequestSlaveInstanceFromComputerPartition \
       Tic \
       SlapLogout \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      Logout \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -1061,6 +1204,13 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
   def stepSetFirstSoftwareType(self, sequence,
       **kw):
     sequence.edit(requested_software_type="FirstSoftwareType")
+
+  def stepSelectSlaveInstanceFromSaleOrderOrdered(self, sequence):
+    order_line = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Order Line", simulation_state="ordered")
+    slave_instance_uid = order_line.getAggregateValue(
+        portal_type="Slave Instance").getUid()
+    sequence.edit(software_instance_uid=slave_instance_uid)
 
   def stepRequestComputerPartitionWithAnotherSoftwareType(self, sequence, **kw):
     self.slap = slap.slap()
@@ -1117,12 +1267,20 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SetFirstSoftwareType \
       RequestComputerPartition \
       Tic \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      Logout \
       RequestComputerPartition \
       Tic \
       RequestComputerPartitionWithAnotherSoftwareType \
       Tic \
       RequestComputerPartitionWithAnotherSoftwareType \
       Tic \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      Logout \
       CheckRequestComputerPartitionWithAnotherSoftwareType \
       Tic \
       SlapLogout \

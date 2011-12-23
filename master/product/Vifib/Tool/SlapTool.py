@@ -536,28 +536,34 @@ class SlapTool(BaseTool):
     setup_service = portal.restrictedTraverse(
        portal_preferences.getPreferredInstanceSetupResource())
 
-    hosting_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
-      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
-      # Search only for Confirmed and Stopped, the only one states that require
-      # buildout be re-updated.
-      Query(simulation_state=["confirmed", "stopped"]),
+    update_service = portal.restrictedTraverse(
+       portal_preferences.getPreferredInstanceUpdateResource())
+
+    global_query_kw = dict(aggregate_portal_type="Slave Instance",
+        aggregate_relative_url=computer_partition_document.getRelativeUrl(),)
+
+    hosting_query = ComplexQuery(Query(simulation_state=["confirmed", "stopped"]),
       Query(default_resource_uid=hosting_service.getUid()),
       operator="AND")
 
-    setup_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
-      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
-      Query(simulation_state=["confirmed", "started"]),
+    setup_query = ComplexQuery(Query(simulation_state=["confirmed", "started"]),
       Query(default_resource_uid=setup_service.getUid()),
       operator="AND")
 
-    query = ComplexQuery(hosting_query, setup_query, operator="OR")
+    update_query = ComplexQuery(Query(simulation_state=["confirmed"]),
+      Query(default_resource_uid=update_service.getUid()),
+      operator="AND")
+
+    query = ComplexQuery(hosting_query,
+                         setup_query,
+                         update_query,
+                         operator="OR")
 
     # Use getTrackingList
     catalog_result = portal.portal_catalog(
       portal_type='Sale Packing List Line',
-      sort_on=(('movement.start_date', 'DESC'),),
       limit=1,
-      query=query)
+      query=query, **global_query_kw)
 
     return len(catalog_result)
 

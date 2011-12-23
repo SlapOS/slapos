@@ -349,7 +349,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
+      SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
       SlapLogout
@@ -738,7 +741,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
       SlapLogout
@@ -764,6 +771,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
       Tic
       RequestComputerPartition
       Tic
@@ -888,7 +900,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
       SlapLogout
@@ -914,7 +930,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
       SlapLogout
@@ -1048,7 +1068,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       RequestComputerPartition
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
       Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
       SlapLogout
@@ -1344,7 +1368,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       RequestSlaveInstanceFromComputerPartition
       Tic
       SlapLogout
-
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
       SlapLoginCurrentSoftwareInstance
       SoftwareInstanceAvailable
       Tic

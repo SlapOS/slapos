@@ -50,25 +50,14 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-software_instance = state_change[\'object\']\n
-tag = "%s_destroyInProgress" % software_instance.getUid()\n
-portal = context.getPortalObject()\n
-if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
-  raise ValueError("Software Instance is currently being destroyed.")\n
-# lock software instance in transaction\n
-software_instance.serialize()\n
-service_relative_url = software_instance.portal_preferences.\\\n
-                            getPreferredInstanceCleanupResource()\n
-sale_packing_list = context.SoftwareInstance_createSalePackingList(state_change, service_relative_url, tag=tag)\n
-sale_packing_list.confirm(activate_kw={\'tag\':tag})\n
+            <value> <string>portal = context.getPortalObject()\n
+count_result_kw = dict(portal_type="Sale Packing List Line",\n
+                       aggregate_uid=state_change["object"].getUid(),\n
+                       limit=1)\n
 \n
-if software_instance.getPortalType() == "Software Instance":\n
-  software_instance.SoftwareInstance_requestDestroySlaveInstanceRelated()\n
-
-
-]]></string> </value>
+if len(portal.portal_catalog(**count_result_kw)) == 1:\n
+  state_change[\'object\'].requestUpdateComputerPartition()\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -76,7 +65,7 @@ if software_instance.getPortalType() == "Software Instance":\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_requestDestroy</string> </value>
+            <value> <string>SlaveInstance_requestUpdate</string> </value>
         </item>
       </dictionary>
     </pickle>
