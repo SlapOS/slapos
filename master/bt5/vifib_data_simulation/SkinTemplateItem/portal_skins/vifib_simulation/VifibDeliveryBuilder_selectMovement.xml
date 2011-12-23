@@ -329,12 +329,12 @@ from DateTime import DateTime\n
 build_before = kw.pop(\'build_before\', None)\n
 if build_before is None:\n
   build_before = getClosestDate(target_date=DateTime(), precision=\'month\', before=0)\n
-\n
 kw[\'movement.start_date\'] = \'< %s\' % build_before\n
 \n
+script.log(context.portal_catalog(src__=1, **kw))\n
 if src__==0:\n
-  movement_list = context.portal_catalog(**kw)\n
-  return movement_list\n
+  return context.portal_catalog(**kw)\n
+\n
 else:\n
   return context.portal_catalog(src__=1, **kw)\n
 
