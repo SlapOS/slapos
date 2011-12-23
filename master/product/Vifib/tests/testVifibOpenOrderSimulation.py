@@ -180,7 +180,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice.getSpecialise())
       self.assertEquals("service_module/vifib_instance_subscription",
         simulation_movement_invoice.getResource())
-      self.assertEquals("default/invoicing",
+      self.assertEquals("vifib/invoicing",
         simulation_movement_invoice.getTradePhase())
       self.assertEquals(expected_time_frame_list[idx+1],
         simulation_movement_invoice.getStartDate())
@@ -247,7 +247,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice_transaction_credit.getResource())
       self.assertEquals(open_order_line.getSpecialise(),
         simulation_movement_invoice_transaction_credit.getSpecialise())
-      self.assertEquals("default/accounting",
+      self.assertEquals("vifib/accounting",
         simulation_movement_invoice_transaction_credit.getTradePhase())
       self.assertEquals(expected_time_frame_list[idx+1],
         simulation_movement_invoice_transaction_credit.getStartDate())
@@ -274,7 +274,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice_transaction_debit.getResource())
       self.assertEquals(open_order_line.getSpecialise(),
         simulation_movement_invoice_transaction_debit.getSpecialise())
-      self.assertEquals("default/accounting",
+      self.assertEquals("vifib/accounting",
         simulation_movement_invoice_transaction_debit.getTradePhase())
       self.assertEquals(expected_time_frame_list[idx+1],
         simulation_movement_invoice_transaction_debit.getStartDate())
@@ -332,7 +332,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_credit_payment_credit.getDestinationSection())
       self.assertEquals(open_order_line.getSpecialise(),
         simulation_movement_credit_payment_credit.getSpecialise())
-      self.assertEquals("default/payment",
+      self.assertEquals("vifib/payment",
         simulation_movement_credit_payment_credit.getTradePhase())
       self.assertEquals(expected_time_frame_list[idx+1],
         simulation_movement_credit_payment_credit.getStartDate())
@@ -357,7 +357,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_credit_payment_debit.getDestinationSection())
       self.assertEquals(open_order_line.getSpecialise(),
         simulation_movement_credit_payment_debit.getSpecialise())
-      self.assertEquals("default/payment",
+      self.assertEquals("vifib/payment",
         simulation_movement_credit_payment_debit.getTradePhase())
       self.assertEquals(expected_time_frame_list[idx+1],
         simulation_movement_credit_payment_debit.getStartDate())
