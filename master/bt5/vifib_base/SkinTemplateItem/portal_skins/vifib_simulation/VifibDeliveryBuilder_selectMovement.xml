@@ -320,25 +320,11 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from Products.ERP5Type.DateUtils import getClosestDate\n
-from DateTime import DateTime\n
-\n
-# support build_before\n
-build_before = kw.pop(\'build_before\', None)\n
-if build_before is None:\n
-  build_before = getClosestDate(target_date=DateTime(), precision=\'month\', before=0)\n
-kw[\'movement.start_date\'] = \'< %s\' % build_before\n
-\n
-if src__==0:\n
+            <value> <string>if src__==0:\n
   return context.portal_catalog(**kw)\n
-\n
 else:\n
   return context.portal_catalog(src__=1, **kw)\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>

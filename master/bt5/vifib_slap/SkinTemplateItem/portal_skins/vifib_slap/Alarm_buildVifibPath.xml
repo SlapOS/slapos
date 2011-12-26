@@ -51,19 +51,11 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-\n
-build_before = None\n
-if params is not None:\n
-  build_before = params.get(\'build_before\', None)\n
-  kw = {\'build_before\':build_before}\n
-else:\n
-  kw = {}\n
-\n
 for business_process in [\n
   portal.business_process_module.vifib_sale_business_process,\n
   portal.business_process_module.vifib_purchase_business_process]:\n
   for link in business_process.contentValues(portal_type="Business Link"):\n
-    link.build(**kw)\n
+    link.build()\n
 </string> </value>
         </item>
         <item>
