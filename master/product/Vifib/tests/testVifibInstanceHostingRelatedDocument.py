@@ -110,7 +110,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         self.prepare_installed_computer_partition_sequence_string  + \
         """
         LoginDefaultUser
-        TriggerNextBuild
+        TriggerBuild
         Tic
         CheckSubscriptionSalePackingListCoverage
         Logout
