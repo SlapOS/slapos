@@ -1,9 +1,6 @@
 import unittest
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.DateUtils import getClosestDate, addToDate
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-
-from DateTime.DateTime import DateTime
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
