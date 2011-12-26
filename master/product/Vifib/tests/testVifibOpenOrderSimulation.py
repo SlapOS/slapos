@@ -374,7 +374,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = \
         self.prepare_installed_computer_partition_sequence_string + """
-      LoginDefaultUser
+      LoginERP5TypeTestCase
       CheckSimulationMovement
       Tic
       SlapLogout
