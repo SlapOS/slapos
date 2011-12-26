@@ -89,7 +89,7 @@ catalog_result = portal.portal_catalog(portal_type=movement_portal_type,\n
 for item in catalog_result:\n
   software_instance = item.getAggregateValue(portal_type="Software Instance")\n
   if software_instance is not None:\n
-    return {"Assignee": [software_instance.getReference(),]}\n
+    return [{"aggregate": [software_instance.getRelativeUrl()]}]\n
 </string> </value>
         </item>
         <item>

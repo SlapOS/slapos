@@ -50,40 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>if related_simulation_movement_path_list is None:\n
-  raise RuntimeError, \'related_simulation_movement_path_list is missing. Update ERP5 Product.\'\n
+            <value> <string>portal = context.getPortalObject()\n
+count_result_kw = dict(portal_type="Sale Packing List Line",\n
+                       aggregate_uid=state_change["object"].getUid(),\n
+                       limit=1)\n
 \n
-from Products.ERP5Type.Message import translateString\n
-\n
-packing_list = context\n
-\n
-# Then, modify state\n
-confirm_tag = \'%s_confirm\' % packing_list.getPath()\n
-packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  tag=confirm_tag).Delivery_confirm()\n
-\n
-# # Start delivery\n
-# start_tag = \'%s_start\' % packing_list.getPath()\n
-# packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-#   (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-#   tag=start_tag, after_tag=confirm_tag).Delivery_startConfirmedSalePackingList()\n
-\n
-# First set the packing_list in the building state\n
-packing_list.startBuilding()\n
-# Then an activity should put the causality state in diverged or solved\n
-packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  after_tag=confirm_tag).updateCausalityState()\n
+if len(portal.portal_catalog(**count_result_kw)) == 1:\n
+  state_change[\'object\'].requestUpdateComputerPartition()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>related_simulation_movement_path_list=None</string> </value>
+            <value> <string>state_change</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscriptionSalePackingList_copyProperties</string> </value>
+            <value> <string>SlaveInstance_requestUpdate</string> </value>
         </item>
       </dictionary>
     </pickle>

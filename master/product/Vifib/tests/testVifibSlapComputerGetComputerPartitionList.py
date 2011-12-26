@@ -340,7 +340,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SlapLogout \
       \
       LoginTestVifibCustomer \
-      RequestSlaveInstanceStop \
+      RequestSoftwareInstanceStop \
       Tic \
       Logout \
       \

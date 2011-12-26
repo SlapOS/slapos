@@ -50,33 +50,40 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-software_instance = state_change[\'object\']\n
-tag = "%s_destroyInProgress" % software_instance.getUid()\n
-portal = context.getPortalObject()\n
-if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
-  raise ValueError("Software Instance is currently being destroyed.")\n
-# lock software instance in transaction\n
-software_instance.serialize()\n
-service_relative_url = software_instance.portal_preferences.\\\n
-                            getPreferredInstanceCleanupResource()\n
-sale_packing_list = context.SoftwareInstance_createSalePackingList(state_change, service_relative_url, tag=tag)\n
-sale_packing_list.confirm(activate_kw={\'tag\':tag})\n
+            <value> <string>if related_simulation_movement_path_list is None:\n
+  raise RuntimeError, \'related_simulation_movement_path_list is missing. Update ERP5 Product.\'\n
 \n
-if software_instance.getPortalType() == "Software Instance":\n
-  software_instance.SoftwareInstance_requestDestroySlaveInstanceRelated()\n
-
-
-]]></string> </value>
+from Products.ERP5Type.Message import translateString\n
+\n
+packing_list = context\n
+\n
+try:\n
+  packing_list.PackingList_copyOrderProperties()\n
+except AttributeError:\n
+  # does not come from Order\n
+  pass\n
+\n
+# Then, modify state\n
+confirm_tag = \'%s_confirm\' % packing_list.getPath()\n
+packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
+  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
+  tag=confirm_tag).Delivery_confirm()\n
+\n
+# First set the packing_list in the building state\n
+packing_list.startBuilding()\n
+# Then an activity should put the causality state in diverged or solved\n
+packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
+  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
+  after_tag=confirm_tag).updateCausalityState()\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string>related_simulation_movement_path_list=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_requestDestroy</string> </value>
+            <value> <string>VifibSalePackingList_postGeneration</string> </value>
         </item>
       </dictionary>
     </pickle>

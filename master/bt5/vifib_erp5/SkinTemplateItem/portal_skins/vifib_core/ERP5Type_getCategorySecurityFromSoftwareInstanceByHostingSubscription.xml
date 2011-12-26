@@ -72,8 +72,11 @@ state_list = portal.getPortalCurrentInventoryStateList() + \\\n
   portal.getPortalReservedInventoryStateList() + \\\n
   portal.getPortalTransitInventoryStateList()\n
 \n
+resource_list = [portal.portal_preferences.getPreferredInstanceSetupResource(),\n
+  portal.portal_preferences.getPreferredInstanceHostingResource()]\n
+\n
 sale_packing_list_line = portal.portal_catalog.getResultValue(\n
-      resource_relative_url=portal.portal_preferences.getPreferredInstanceHostingResource(),\n
+      resource_relative_url=resource_list,\n
       aggregate_uid=obj.getUid(),\n
       portal_type="Sale Packing List Line",\n
       simulation_state=state_list)\n
@@ -91,15 +94,28 @@ query = ComplexQuery(\n
   Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
   operator="AND",\n
 )\n
+\n
 catalog_result = portal.portal_catalog(portal_type="Sale Packing List Line",\n
+  aggregate_portal_type="Slave Instance",\n
+  aggregate_relative_url=obj.getRelativeUrl(),\n
   simulation_state=state_list,\n
-  aggregate_relative_url=query,\n
+  limit=1,\n
+  query=query,\n
 )\n
-for sale_packing_list_line in catalog_result:\n
-  software_instance = sale_packing_list_line.getAggregateValue(\n
-    portal_type="Software Instance")\n
-  if software_instance is not None:\n
-    return {"Auditor": [software_instance.getReference(),]}\n
+\n
+if len(catalog_result) == 0:\n
+  return catalog_result\n
+\n
+packing_list_line = portal.portal_catalog.getResultValue(\n
+    portal_type="Sale Packing List Line",\n
+    aggregate_portal_type="Software Instance",\n
+    simulation_state=state_list,\n
+    query=query,)\n
+\n
+if packing_list_line is not None:\n
+  software_instance = packing_list_line.getAggregateValue(\n
+     portal_type="Software Instance")\n
+  return {"Auditor": [software_instance.getReference(),]}\n
 \n
 return category_list\n
 </string> </value>

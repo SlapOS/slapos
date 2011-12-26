@@ -52,8 +52,11 @@
             <key> <string>_body</string> </key>
             <value> <string>computer = state_change[\'object\']\n
 for computer_partition in [x for x in computer.contentValues(portal_type=\'Computer Partition\') if x.getSlapState() == \'busy\']:\n
-  # raises ValueError in case of no packing list found, left as is\n
-  packing_list_line = computer_partition.Item_getInstancePackingListLine()\n
+  try:\n
+    packing_list_line = computer_partition.Item_getInstancePackingListLine()\n
+  except ValueError:\n
+    # no need to bang trees without any delivery line\n
+    continue\n
   software_instance = packing_list_line.getAggregateValue(portal_type=\'Software Instance\')\n
   software_instance.activate().SoftwareInstance_bangAsSelf(reference=software_instance.getReference(),\n
     comment=state_change.kwargs.get(\'comment\', \'\'))\n

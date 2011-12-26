@@ -481,6 +481,8 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
       CheckSoftwareInstanceAndRelatedComputerPartition
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition
       Logout
@@ -528,7 +530,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # now this computer patrition request new one
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotFoundResponse
+      RequestComputerPartition
       SlapLogout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -610,7 +612,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # now this computer patrition request new one
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotFoundResponse
+      RequestComputerPartition
       SlapLogout
 
       # now vifib_admin computer partition request new one and suceeds
@@ -624,6 +626,8 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
       CheckSoftwareInstanceAndRelatedComputerPartition
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition
       Logout
@@ -671,7 +675,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # now this computer patrition request new one
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotFoundResponse
+      RequestComputerPartition
       SlapLogout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -711,7 +715,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # now this computer patrition request new one
       SlapLoginCurrentSoftwareInstance
-      RequestComputerPartitionNotFoundResponse
+      RequestComputerPartition
       SlapLogout
     """
     sequence_list.addSequenceString(sequence_string)

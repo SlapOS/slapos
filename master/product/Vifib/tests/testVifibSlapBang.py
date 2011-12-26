@@ -25,17 +25,21 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     root_software_instance.requestSoftwareInstance(partition_reference=S1,
       **common_kw)
     self.stepTic()
+    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepTic()
 
     S1_instance = self.portal.portal_catalog.getResultValue(
       portal_type='Software Instance', title=S1)
-
     S1_instance.requestSoftwareInstance(partition_reference=S2, **common_kw)
     self.stepTic()
     S1_instance.requestSoftwareInstance(partition_reference=S3, **common_kw)
+    self.stepConfirmOrderedSaleOrderActiveSense()
     self.stepTic()
 
     root_software_instance.requestSoftwareInstance(partition_reference=S4,
       **common_kw)
+    self.stepTic()
+    self.stepConfirmOrderedSaleOrderActiveSense()
     self.stepTic()
 
     S2_instance = self.portal.portal_catalog.getResultValue(
@@ -141,7 +145,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       FinishSoftwareInstanceTree
       Logout
-
       SlapLoginCurrentComputer
       CheckEmptyComputerGetComputerPartitionCall
       SlapLogout
@@ -363,7 +366,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       software_type='any', instance_xml=self.minimal_correct_xml,
       state='stopped')
     self.logout()
-
     self.login(sequence['software_instance_reference'])
     root_software_instance.requestSoftwareInstance(
       partition_reference=S1,
@@ -373,6 +375,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         </instance>""" % sequence['computer_reference_c1'],
       **common_kw)
     self.stepTic()
+    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepTic()
     self.logout()
 
     self.stepLoginDefaultUser()
@@ -380,7 +384,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       portal_type='Software Instance', title=S1)
     S1_reference = S1_instance.getReference()
     self.logout()
-
     self.login(S1_reference)
     S1_instance.requestSoftwareInstance(
       partition_reference=S2,
@@ -389,6 +392,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         <parameter id="computer_guid">%s</parameter>
         </instance>""" % sequence['computer_reference_c0'],
       **common_kw)
+    self.stepTic()
+    self.stepConfirmOrderedSaleOrderActiveSense()
     self.stepTic()
     self.logout()
 
@@ -410,6 +415,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.logout()
 
     self.stepLoginDefaultUser()
+    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepTic()
     S3_instance = self.portal.portal_catalog.getResultValue(
       portal_type='Software Instance', title=S3)
     S3_reference = S3_instance.getReference()
@@ -550,6 +557,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       FinishSoftwareInstanceSpannedTree
 
+      Tic
       SlapLoginCurrentComputer
       CheckEmptyComputerGetComputerPartitionCall
       ComputerBang
@@ -630,6 +638,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     root_software_instance.requestSoftwareInstance(
       partition_reference=S1,
       **common_kw)
+    self.stepTic()
+    self.stepConfirmOrderedSaleOrderActiveSense()
     self.stepTic()
     self.logout()
 

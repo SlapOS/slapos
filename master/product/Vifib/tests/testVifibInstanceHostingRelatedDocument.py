@@ -7,27 +7,23 @@ from DateTime.DateTime import DateTime
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
-  def stepBuildOneMoreSalePackingList(self, sequence, **kw):
+  def stepTriggerNextBuild(self, sequence, **kw):
     build_before = sequence.get('build_before')
-    self.portal.portal_alarms.vifib_trigger_build.activeSense()
     if build_before is None:
       build_before = getClosestDate(
         target_date=DateTime(), precision='month', before=0)
-      self.portal.portal_alarms.build_deliver_path.activeSense()
+      self.portal.portal_alarms.vifib_trigger_build.activeSense()
     else:
       build_before = addToDate(build_before, month=1)
-      self.portal.portal_alarms.build_deliver_path.activeSense(
+      self.portal.portal_alarms.vifib_trigger_build.activeSense(
         params={'build_before':build_before})
-    sequence.edit(build_before=build_before)
-
-  def stepTriggerNextBuild(self, sequence, **kw):
     sequence.edit(
       number_of_sale_packing_list=sequence.get(
         'number_of_sale_packing_list', 0) + 1,
-      number_of_invoice=sequence.get('number_of_invoice', 0) + 1,
-      number_of_payment=sequence.get('number_of_payment', 0) + 1
+      invoice_amount=sequence.get('invoice_amount', 0) + 1,
+      payment_amount=sequence.get('payment_amount', 0) + 1,
+      build_before=build_before
     )
-    self.portal.portal_alarms.vifib_trigger_build.activeSense()
 
   def stepCheckOneMoreDocumentList(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog\
@@ -43,7 +39,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     sale_packing_list = sale_packing_list_list[0].getObject()
     sale_invoice_transaction_list = sale_packing_list\
       .getCausalityRelatedValueList(portal_type='Sale Invoice Transaction')
-    self.assertEqual(1, len(sale_invoice_transaction_list))
+    self.assertEqual(sequence['invoice_amount'], len(sale_invoice_transaction_list))
     sale_invoice_transaction = sale_invoice_transaction_list[0]
 
     payment_transaction_list = sale_invoice_transaction\

@@ -322,25 +322,18 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-from DateTime import DateTime\n
 from Products.ERP5Type.DateUtils import getClosestDate\n
-from Products.ZSQLCatalog.SQLCatalog import Query\n
+from DateTime import DateTime\n
 \n
-kw[\'query\'] = Query(portal_type=\'Simulation Movement\',\n
-                    parent_specialise_portal_type=\'Subscription Item Root Simulation Rule\',\n
-                    simulation_state=\'planned\', causality_state=\'expanded\')\n
-\n
-build_before = kw.get(\'build_before\', None)\n
+# support build_before\n
+build_before = kw.pop(\'build_before\', None)\n
 if build_before is None:\n
   build_before = getClosestDate(target_date=DateTime(), precision=\'month\', before=0)\n
+kw[\'movement.start_date\'] = \'< %s\' % build_before\n
 \n
 if src__==0:\n
-  candidate_list = [x.getObject() for x in context.portal_catalog(**kw)]\n
-  movement_list = []\n
-  for x in candidate_list:\n
-    if x.getStartDate() < build_before:\n
-      movement_list.append(x)\n
-  return movement_list\n
+  return context.portal_catalog(**kw)\n
+\n
 else:\n
   return context.portal_catalog(src__=1, **kw)\n
 
@@ -353,7 +346,7 @@ else:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscription_selectMovement</string> </value>
+            <value> <string>VifibDeliveryBuilder_selectMovement</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>

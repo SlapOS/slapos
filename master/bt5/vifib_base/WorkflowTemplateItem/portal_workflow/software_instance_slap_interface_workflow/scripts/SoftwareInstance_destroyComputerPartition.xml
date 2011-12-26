@@ -50,20 +50,27 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
+            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+\n
+software_instance = state_change[\'object\']\n
 # mark destroy is requested\n
+portal = context.getPortalObject()\n
+if software_instance.getPortalType() == "Software Instance":\n
+  software_instance.SoftwareInstance_destroySlaveInstanceRelated()\n
+\n
 software_instance.destroyRequested()\n
 # deliver proper packing list\n
 packing_list_line = context.SoftwareInstance_getInstanceDestroyPackingListLine(state_change)\n
+\n
 packing_list = packing_list_line.getParentValue()\n
-if packing_list.getPortalObject().portal_workflow.isTransitionPossible(packing_list, \'start\'):\n
+if portal.portal_workflow.isTransitionPossible(packing_list, \'start\'):\n
   packing_list.start()\n
-if packing_list.getPortalObject().portal_workflow.isTransitionPossible(packing_list, \'deliver\'):\n
+if portal.portal_workflow.isTransitionPossible(packing_list, \'deliver\'):\n
   packing_list.deliver()\n
 \n
 # revoke certificate\n
 try:\n
-  context.getPortalObject().portal_certificate_authority\\\n
+  portal.portal_certificate_authority\\\n
     .revokeCertificate(software_instance.getDestinationReference())\n
 except ValueError:\n
   # Ignore already revoked certificates, as OpenSSL backend is\n

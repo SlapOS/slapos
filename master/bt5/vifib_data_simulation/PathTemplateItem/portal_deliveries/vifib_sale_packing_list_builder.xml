@@ -65,7 +65,7 @@
         </item>
         <item>
             <key> <string>delivery_after_generation_script_id</string> </key>
-            <value> <string>SalePackingList_copyOrderProperties</string> </value>
+            <value> <string>VifibSalePackingList_postGeneration</string> </value>
         </item>
         <item>
             <key> <string>delivery_cell_collect_order</string> </key>
@@ -152,7 +152,7 @@
         </item>
         <item>
             <key> <string>simulation_select_method_id</string> </key>
-            <value> <string>SaleOrder_selectMovement</string> </value>
+            <value> <string>VifibDeliveryBuilder_selectMovement</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>

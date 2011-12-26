@@ -16,8 +16,6 @@ business_process_module/vifib_sale_business_process/**
 portal_categories/trade_phase/vifib
 portal_categories/trade_phase/vifib/**
 portal_categories/trade_state/**
-portal_deliveries/hosting_subscription_sale_packing_list_builder
-portal_deliveries/hosting_subscription_sale_packing_list_builder/**
 portal_deliveries/vifib_payment_transaction_builder
 portal_deliveries/vifib_payment_transaction_builder/**
 portal_deliveries/vifib_purchase_packing_list_builder
