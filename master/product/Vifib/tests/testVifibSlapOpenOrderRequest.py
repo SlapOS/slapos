@@ -1,5 +1,4 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from slapos import slap
@@ -131,7 +130,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
     open_order = self.slap.registerOpenOrder()
-    requested_slap_computer_partition = open_order.request(
+    open_order.request(
        software_release=software_release,
        software_type="SecondSoftwareType",
        partition_reference=sequence['requested_reference'],

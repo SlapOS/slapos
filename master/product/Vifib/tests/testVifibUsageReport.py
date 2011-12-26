@@ -28,7 +28,6 @@
 #############################################################################
 import unittest
 
-from DateTime import DateTime
 from lxml import etree
 from slapos import slap
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
