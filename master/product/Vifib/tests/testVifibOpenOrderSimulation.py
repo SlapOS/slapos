@@ -1,7 +1,6 @@
 import unittest
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.DateUtils import getClosestDate, addToDate, \
-  atTheEndOfPeriod
+from Products.ERP5Type.DateUtils import getClosestDate, addToDate
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
 from DateTime.DateTime import DateTime
@@ -77,32 +76,29 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       0.0, open_order_line.getStopDate().second())
 
     # Calculate the list of time frames
-    expected_time_frame_tuple_list = [(start_date, (atTheEndOfPeriod(start_date, 'month') - 1).latestTime())]
-    # now 11 months in form: 2022/02/01 00:00, 2022/02/28 23:59
+    expected_time_frame_list = [start_date]
     current = \
-      getClosestDate(target_date=start_date, precision='month', before=1)
-    for m in range(1, 12):
-      expected_time_frame_tuple_list.append((current, (addToDate(current, month=1)-1).latestTime()))
-      current = addToDate(current, month=1)
+      getClosestDate(target_date=start_date, precision='month', before=0)
+    for m in range(0, 12):
+      expected_time_frame_list.append(addToDate(current, month=m))
 
-    # test the test: have we generated 12th months coverage?
-    self.assertEqual(12, len(expected_time_frame_tuple_list))
+    # test the test: have we generated 12th next months coverage?
+    self.assertEqual(13, len(expected_time_frame_list))
 
     simulation_movement_list = self.portal.portal_catalog(
       portal_type='Simulation Movement',
       parent_uid=applied_rule.getUid(),
       sort_on=(('movement.start_date', 'desc'),)
     )
-    # Check that simulation is created by the periodicity
-    self.assertEquals(len(expected_time_frame_tuple_list),
+    # Check that simulation is created by the periodicity for one year
+    self.assertEquals(12,
                       len(simulation_movement_list))
 
     # Check the list of expected simulation
     idx = 0
     for simulation_movement in simulation_movement_list:
-      excepted_start_date = expected_time_frame_tuple_list[idx][0]
-      excepted_stop_date = expected_time_frame_tuple_list[idx][1]
-      idx += 1
+      excepted_start_date = expected_time_frame_list[idx]
+      excepted_stop_date = expected_time_frame_list[idx+1]
       # Check simulation movement property
       self.assertEquals(1.0,
         simulation_movement.getQuantity())
