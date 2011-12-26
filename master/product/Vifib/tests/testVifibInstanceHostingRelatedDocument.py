@@ -7,23 +7,8 @@ from DateTime.DateTime import DateTime
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
-  def stepTriggerNextBuild(self, sequence, **kw):
-    build_before = sequence.get('build_before')
-    if build_before is None:
-      build_before = getClosestDate(
-        target_date=DateTime(), precision='month', before=0)
-      self.portal.portal_alarms.vifib_trigger_build.activeSense()
-    else:
-      build_before = addToDate(build_before, month=1)
-      self.portal.portal_alarms.vifib_trigger_build.activeSense(
-        params={'build_before':build_before})
-    sequence.edit(
-      number_of_sale_packing_list=sequence.get(
-        'number_of_sale_packing_list', 0) + 1,
-      invoice_amount=sequence.get('invoice_amount', 0) + 1,
-      payment_amount=sequence.get('payment_amount', 0) + 1,
-      build_before=build_before
-    )
+  def stepTriggerBuild(self, sequence, **kw):
+    self.portal.portal_alarms.vifib_trigger_build.activeSense()
 
   def stepCheckOneMoreDocumentList(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog\
@@ -120,24 +105,16 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     """
     Check that sale_packing_list is generated properly from simulation
     """
-    check_one_month = """
-      LoginDefaultUser
-      TriggerNextBuild
-      Tic
-      Logout
-
-      LoginDefaultUser
-      CheckOneMoreDocumentList
-      CheckSalePackingList
-      CheckInvoiceAndInvoiceTransaction
-      CheckPayment
-      Logout
-    """
-    self.computer_partition_amount = 1
     sequence_list = SequenceList()
     sequence_string = \
-        self.prepare_installed_computer_partition_sequence_string \
-          + (check_one_month * 12)
+        self.prepare_installed_computer_partition_sequence_string  + \
+        """
+        LoginDefaultUser
+        TriggerNextBuild
+        Tic
+        CheckSubscriptionSalePackingListCoverage
+        Logout
+        """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
