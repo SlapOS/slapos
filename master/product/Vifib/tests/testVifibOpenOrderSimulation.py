@@ -97,8 +97,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     # Check the list of expected simulation
     idx = 0
     for simulation_movement in simulation_movement_list:
-      excepted_start_date = expected_time_frame_list[idx]
-      excepted_stop_date = expected_time_frame_list[idx+1]
+      expected_start_date = expected_time_frame_list[idx]
+      expected_stop_date = expected_time_frame_list[idx+1]
       # Check simulation movement property
       self.assertEquals(1.0,
         simulation_movement.getQuantity())
@@ -136,8 +136,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       self.assertEquals(None,
                            simulation_movement.getAggregate(
                              portal_type="Software Release"))
-      self.assertEqual(excepted_start_date, simulation_movement.getStartDate())
-      self.assertEqual(excepted_stop_date, simulation_movement.getStopDate())
+      self.assertEqual(expected_start_date, simulation_movement.getStartDate())
+      self.assertEqual(expected_stop_date, simulation_movement.getStopDate())
 
       # fetch invoice level simulation
       applied_rule_invoice_list = \
@@ -176,9 +176,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice.getResource())
       self.assertEquals("vifib/invoicing",
         simulation_movement_invoice.getTradePhase())
-      self.assertEquals(excepted_start_date,
+      self.assertEquals(expected_start_date,
         simulation_movement_invoice.getStartDate())
-      self.assertEquals(excepted_stop_date,
+      self.assertEquals(expected_stop_date,
         simulation_movement_invoice.getStopDate())
       self.assertEquals(None,
                         simulation_movement_invoice.getAggregate(
@@ -243,9 +243,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice_transaction_credit.getSpecialise())
       self.assertEquals("vifib/accounting",
         simulation_movement_invoice_transaction_credit.getTradePhase())
-      self.assertEquals(excepted_start_date,
+      self.assertEquals(expected_start_date,
         simulation_movement_invoice_transaction_credit.getStartDate())
-      self.assertEquals(excepted_stop_date,
+      self.assertEquals(expected_stop_date,
         simulation_movement_invoice_transaction_credit.getStopDate())
 
       self.assertEquals(1.0,
@@ -270,9 +270,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice_transaction_debit.getSpecialise())
       self.assertEquals("vifib/accounting",
         simulation_movement_invoice_transaction_debit.getTradePhase())
-      self.assertEquals(excepted_start_date,
+      self.assertEquals(expected_start_date,
         simulation_movement_invoice_transaction_debit.getStartDate())
-      self.assertEquals(excepted_stop_date,
+      self.assertEquals(expected_stop_date,
         simulation_movement_invoice_transaction_debit.getStopDate())
 
       # credit simulation movement has no content
@@ -328,9 +328,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_credit_payment_credit.getSpecialise())
       self.assertEquals("vifib/payment",
         simulation_movement_credit_payment_credit.getTradePhase())
-      self.assertEquals(excepted_start_date,
+      self.assertEquals(expected_start_date,
         simulation_movement_credit_payment_credit.getStartDate())
-      self.assertEquals(excepted_stop_date,
+      self.assertEquals(expected_stop_date,
         simulation_movement_credit_payment_credit.getStopDate())
 
       self.assertEquals(1.0,
@@ -353,9 +353,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_credit_payment_debit.getSpecialise())
       self.assertEquals("vifib/payment",
         simulation_movement_credit_payment_debit.getTradePhase())
-      self.assertEquals(excepted_start_date,
+      self.assertEquals(expected_start_date,
         simulation_movement_credit_payment_debit.getStartDate())
-      self.assertEquals(excepted_stop_date,
+      self.assertEquals(expected_stop_date,
         simulation_movement_credit_payment_debit.getStopDate())
 
       # check next simulation movement
