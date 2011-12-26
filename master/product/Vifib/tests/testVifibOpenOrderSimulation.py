@@ -1,6 +1,7 @@
 import unittest
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.DateUtils import getClosestDate, addToDate
+from Products.ERP5Type.DateUtils import getClosestDate, addToDate, \
+  atTheEndOfPeriod
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
 from DateTime.DateTime import DateTime
@@ -76,32 +77,34 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       0.0, open_order_line.getStopDate().second())
 
     # Calculate the list of time frames
-    expected_time_frame_list = [start_date]
+    expected_time_frame_tuple_list = [(start_date, (atTheEndOfPeriod(start_date, 'month') - 1).latestTime())]
+    # now 11 months in form: 2022/02/01 00:00, 2022/02/28 23:59
     current = \
-      getClosestDate(target_date=start_date, precision='month', before=0)
-    if start_date == current:
-      current = addToDate(start_date, month=1)
-    while current <= stop_date:
-      expected_time_frame_list.append(current)
-      current = addToDate(
-        getClosestDate(target_date=current, precision='month', before=0),
-        month=1)
+      getClosestDate(target_date=start_date, precision='month', before=1)
+    for m in range(1, 12):
+      expected_time_frame_tuple_list.append((current, (addToDate(current, month=1)-1).latestTime()))
+      current = addToDate(current, month=1)
+
+    # test the test: have we generated 12th months coverage?
+    self.assertEqual(12, len(expected_time_frame_tuple_list))
 
     # Check that simulation is created by the periodicity
-    self.assertEquals(len(expected_time_frame_list),
-                      len(applied_rule.contentValues()) + 1)
+    self.assertEquals(len(expected_time_frame_tuple_list),
+                      len(applied_rule.contentValues()))
 
     # Check the list of expected simulation
     idx = 0
-    while idx + 1 < len(expected_time_frame_list):
+    while idx + 1 < len(expected_time_frame_tuple_list):
+      excepted_start_date = expected_time_frame_tuple_list[idx][0]
+      excepted_stop_date = expected_time_frame_tuple_list[idx][1]
       # select simulation given start_date and stop_date
       simulation_movement_list = \
         self.portal.portal_catalog.unrestrictedSearchResults(
           parent_uid=applied_rule.getUid(),
           portal_type="Simulation Movement",
           **{
-            'movement.start_date':expected_time_frame_list[idx],
-            'movement.stop_date':expected_time_frame_list[idx + 1],
+            'movement.start_date':excepted_start_date,
+            'movement.stop_date':excepted_stop_date,
           })
       self.assertEquals(1, len(simulation_movement_list))
       simulation_movement = simulation_movement_list[0].getObject()
@@ -182,9 +185,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice.getResource())
       self.assertEquals("vifib/invoicing",
         simulation_movement_invoice.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_start_date,
         simulation_movement_invoice.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_stop_date,
         simulation_movement_invoice.getStopDate())
       self.assertEquals(None,
                         simulation_movement_invoice.getAggregate(
@@ -249,9 +252,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice_transaction_credit.getSpecialise())
       self.assertEquals("vifib/accounting",
         simulation_movement_invoice_transaction_credit.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_start_date,
         simulation_movement_invoice_transaction_credit.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_stop_date,
         simulation_movement_invoice_transaction_credit.getStopDate())
 
       self.assertEquals(1.0,
@@ -276,9 +279,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice_transaction_debit.getSpecialise())
       self.assertEquals("vifib/accounting",
         simulation_movement_invoice_transaction_debit.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_start_date,
         simulation_movement_invoice_transaction_debit.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_stop_date,
         simulation_movement_invoice_transaction_debit.getStopDate())
 
       # credit simulation movement has no content
@@ -334,9 +337,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_credit_payment_credit.getSpecialise())
       self.assertEquals("vifib/payment",
         simulation_movement_credit_payment_credit.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_start_date,
         simulation_movement_credit_payment_credit.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_stop_date,
         simulation_movement_credit_payment_credit.getStopDate())
 
       self.assertEquals(1.0,
@@ -359,9 +362,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_credit_payment_debit.getSpecialise())
       self.assertEquals("vifib/payment",
         simulation_movement_credit_payment_debit.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_start_date,
         simulation_movement_credit_payment_debit.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(excepted_stop_date,
         simulation_movement_credit_payment_debit.getStopDate())
 
       # check next simulation movement
