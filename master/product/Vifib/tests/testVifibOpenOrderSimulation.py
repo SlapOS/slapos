@@ -5,6 +5,14 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
 from DateTime.DateTime import DateTime
 
+def generateTimeFrameList(start_date):
+  expected_time_frame_list = [start_date]
+  current = \
+    getClosestDate(target_date=start_date, precision='month', before=0)
+  for m in range(0, 12):
+    expected_time_frame_list.append(addToDate(current, month=m))
+  return expected_time_frame_list
+
 class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
 
   def stepCheckSimulationMovement(self, sequence, **kw):
@@ -76,11 +84,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       0.0, open_order_line.getStopDate().second())
 
     # Calculate the list of time frames
-    expected_time_frame_list = [start_date]
-    current = \
-      getClosestDate(target_date=start_date, precision='month', before=0)
-    for m in range(0, 12):
-      expected_time_frame_list.append(addToDate(current, month=m))
+    expected_time_frame_list = generateTimeFrameList(start_date)
 
     # test the test: have we generated 12th next months coverage?
     self.assertEqual(13, len(expected_time_frame_list))

@@ -1,6 +1,9 @@
 import unittest
 from Products.ERP5Type.tests.Sequence import SequenceList
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
+from Products.ERP5Type.DateUtils import getClosestDate
+from DateTime import DateTime
+from testVifibOpenOrderSimulation import generateTimeFrameList
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
@@ -8,49 +11,70 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.portal.portal_alarms.vifib_trigger_build.activeSense()
 
   def stepCheckSubscriptionSalePackingListCoverage(self, sequence, **kw):
-    raise NotImplementedError(
-      "Shall check that 12 SPLs are build to cover the whole year.")
-    # check one more sale packing list is generated
-    # and only one sale packing list line is inside
-    sale_packing_list = sequence['current_sale_packing_list']
-    sale_packing_list_line_list = \
-      sale_packing_list.contentValues(portal_type="Sale Packing List Line")
-    self.assertEquals(1, len(sale_packing_list_line_list))
-    sale_packing_list_line = sale_packing_list_line_list[0]
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'])
+    delivery_list = self.portal.portal_catalog(
+      portal_type='Sale Packing List',
+      causality_relative_url=hosting_subscription.getRelativeUrl(),
+      sort_on=(('delivery.start_date', 'desc'),)
+    )
+    # is whole year covered?
+    self.assertEqual(12, len(delivery_list))
 
-    # check sale packing list related property
-    self.assertEquals("organisation_module/vifib_internet",
-      sale_packing_list.getSource())
-    self.assertEquals("organisation_module/vifib_internet",
-      sale_packing_list.getSourceSection())
-    self.assertEquals("person_module/test_vifib_customer",
-      sale_packing_list.getDestination())
-    self.assertEquals("person_module/test_vifib_customer",
-      sale_packing_list.getDestinationSection())
-    self.assertEquals("currency_module/EUR",
-      sale_packing_list.getPriceCurrency())
+    # generate the expected time frames
+    now = DateTime()
+    start_date = \
+      getClosestDate(target_date=now, precision='day', before=1)
 
-    # check sale packing list line related property
-    self.assertEquals("service_module/vifib_instance_subscription",
-      sale_packing_list_line.getResource())
-    self.assertEquals(1,
-      sale_packing_list_line.getQuantity())
-    self.assertEquals("unit/piece",
-      sale_packing_list_line.getQuantityUnit())
-    self.assertEquals(1,
-      sale_packing_list_line.getPrice())
+    # Calculate the list of time frames
+    expected_time_frame_list = generateTimeFrameList(start_date)
 
-    # fetch open order, open order line and subscription
-    person = self.portal.person_module['test_vifib_customer']
-    open_order = \
-      person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
-    open_order_line = \
-      open_order.contentValues(portal_type="Open Sale Order Line")[0]
+    idx = 0
+    for delivery in delivery_list:
+      expected_start_date = expected_time_frame_list[idx]
+      expected_stop_date = expected_time_frame_list[idx+1]
+      self.assertEqual(expected_start_date, delivery.getStartDate())
+      self.assertEqual(expected_stop_date, delivery.getStopDate())
 
-    # check related property
-    self.assertEquals(open_order_line.getSpecialise(),
-      sale_packing_list.getSpecialise())
+      self.assertEqual(hosting_subscription.getRelativeUrl(),
+        delivery.getCausality())
+      delivery_line_list = \
+        delivery.contentValues(portal_type="Sale Packing List Line")
+      self.assertEquals(1, len(delivery_line_list))
+      delivery_line = delivery_line_list[0]
+      self.assertEquals("organisation_module/vifib_internet",
+        delivery.getSource())
+      self.assertEquals("organisation_module/vifib_internet",
+        delivery.getSourceSection())
+      self.assertEquals("person_module/test_vifib_customer",
+        delivery.getDestination())
+      self.assertEquals("person_module/test_vifib_customer",
+        delivery.getDestinationSection())
+      self.assertEquals("currency_module/EUR",
+        delivery.getPriceCurrency())
 
+      # check sale packing list line related property
+      self.assertEquals("service_module/vifib_instance_subscription",
+        delivery_line.getResource())
+      self.assertEquals(1,
+        delivery_line.getQuantity())
+      self.assertEquals("unit/piece",
+        delivery_line.getQuantityUnit())
+      self.assertEquals(1,
+        delivery_line.getPrice())
+
+      # fetch open order, open order line and subscription
+      person = self.portal.person_module['test_vifib_customer']
+      open_order = \
+        person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
+      open_order_line = \
+        open_order.contentValues(portal_type="Open Sale Order Line")[0]
+
+      # check related property
+      self.assertEquals(open_order_line.getSpecialise(),
+        delivery.getSpecialise())
+
+      idx += 1
 
   def stepCheckOneMoreDocumentList(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog\
@@ -117,6 +141,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+    raise NotImplementedError('Cover various cases of triggering build')
 
 def test_suite():
   suite = unittest.TestSuite()
