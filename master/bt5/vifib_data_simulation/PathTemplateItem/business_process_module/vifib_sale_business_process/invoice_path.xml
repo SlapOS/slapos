@@ -49,7 +49,6 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_date/trade_phase/vifib/delivery</string>
                 <string>trade_phase/vifib/invoicing</string>
               </tuple>
             </value>

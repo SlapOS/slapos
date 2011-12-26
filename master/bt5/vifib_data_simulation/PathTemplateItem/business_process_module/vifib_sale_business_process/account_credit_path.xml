@@ -50,7 +50,6 @@
             <value>
               <tuple>
                 <string>trade_phase/vifib/accounting</string>
-                <string>trade_date/trade_phase/vifib/invoicing</string>
                 <string>source/account_module/sales</string>
                 <string>destination/account_module/purchase</string>
               </tuple>
