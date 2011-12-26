@@ -88,28 +88,21 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     # test the test: have we generated 12th months coverage?
     self.assertEqual(12, len(expected_time_frame_tuple_list))
 
+    simulation_movement_list = self.portal.portal_catalog(
+      portal_type='Simulation Movement',
+      parent_uid=applied_rule.getUid(),
+      sort_on=(('movement.start_date', 'desc'),)
+    )
     # Check that simulation is created by the periodicity
     self.assertEquals(len(expected_time_frame_tuple_list),
-                      len(applied_rule.contentValues()))
+                      len(simulation_movement_list))
 
     # Check the list of expected simulation
     idx = 0
-    while idx + 1 < len(expected_time_frame_tuple_list):
+    for simulation_movement in simulation_movement_list:
       excepted_start_date = expected_time_frame_tuple_list[idx][0]
       excepted_stop_date = expected_time_frame_tuple_list[idx][1]
-      # select simulation given start_date and stop_date
-      simulation_movement_list = \
-        self.portal.portal_catalog.unrestrictedSearchResults(
-          parent_uid=applied_rule.getUid(),
-          portal_type="Simulation Movement",
-          **{
-            'movement.start_date':excepted_start_date,
-            'movement.stop_date':excepted_stop_date,
-          })
-      self.assertEquals(1, len(simulation_movement_list))
-      simulation_movement = simulation_movement_list[0].getObject()
-      self.assertNotEquals(None, simulation_movement)
-
+      idx += 1
       # Check simulation movement property
       self.assertEquals(1.0,
         simulation_movement.getQuantity())
@@ -147,6 +140,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       self.assertEquals(None,
                            simulation_movement.getAggregate(
                              portal_type="Software Release"))
+      self.assertEqual(excepted_start_date, simulation_movement.getStartDate())
+      self.assertEqual(excepted_stop_date, simulation_movement.getStopDate())
 
       # fetch invoice level simulation
       applied_rule_invoice_list = \
