@@ -147,6 +147,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     # invoice shall be solved
     self.assertEqual('solved', setup_invoice_line_list[0].getCausalityState())
 
+    # invoice shall have causality of one packing list
+    self.assertEqual(
+      [setup_delivery_line_list[0].getParentValue().getUid()],
+      setup_invoice_line_list[0].getParentValue().getCausalityUidList())
+
     sequence.edit(
       subscription_delivery_uid_list=[q.getParentValue().getUid() for q in \
         subscription_delivery_line_list]
@@ -232,6 +237,13 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
     # invoice shall be solved
     self.assertEqual('solved', setup_invoice_line_list[0].getCausalityState())
+
+    # invoice shall have causality of two packing lists
+    self.assertEqual(
+      sorted([setup_delivery_line_list[0].getParentValue().getUid()] +
+      [q.getParentValue().getUid() for q in subscription_delivery_line_list if q.getSimulationState() == 'stopped']),
+      sorted(setup_invoice_line_list[0].getParentValue().getCausalityUidList()))
+
 
   def test_OpenOrder_sale_packing_list(self):
     """
