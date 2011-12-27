@@ -790,6 +790,73 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SlaveInstance_destroy_slave_with_SlaveInstance_stopped(self):
+    """
+      Check that request destroy from Software Instance when exists one Slave
+      Instance stopped, both instances will be destroyed correctly
+
+      Scenario:
+        1. request master instance
+        2. request Slave Instance
+        3. stop Slave Instance
+        4. request destroy the master instance
+      Both instances must be destroyed
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      Tic
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      CheckEmptySlaveInstanceListFromOneComputerPartition
+      SlapLoginCurrentSoftwareInstance
+      SelectEmptyRequestedParameterDict
+      SetRandomRequestedReference
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
+      RequestSlaveInstanceFromComputerPartition
+      SlapLogout
+      SlapLoginCurrentComputer
+      SoftwareInstanceAvailable
+      Tic
+      LoginDefaultUser
+      StartSoftwareInstanceFromCurrentComputerPartition
+      Logout
+      Tic
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+      LoginDefaultUser
+      SelectSlaveInstanceFromOneComputerPartition
+      SlapLoginCurrentSoftwareInstance
+      RequestSoftwareInstanceStop
+      Tic
+      SlaveInstanceStopped
+      Tic
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      SetDeliveryLineAmountEqualTwo
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      RequestDestroySoftwareInstanceFromCurrentComputerPartition
+      Tic
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+      SlapLoginCurrentComputer
+      SoftwareInstanceDestroyed
+      Tic
+      LoginDefaultUser
+      CheckComputerPartitionIsFree
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_Security_after_destroy_SoftwareInstance_with_different_user(self):
     """
       Check that destroying one Software Instance it will not destroy Slave

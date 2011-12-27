@@ -1,4 +1,4 @@
-##############################################################################
+###############################################################################
 #
 # Copyright (c) 2002-2011 Nexedi SA and Contributors. All Rights Reserved.
 #
@@ -86,7 +86,6 @@ def SoftwareInstance_requestDestroySlaveInstanceRelated(self):
   computer_partition_relative_url = self.getAggregateRelatedValue(
     "Sale Packing List Line").getAggregate(portal_type="Computer Partition")
   portal_preferences = portal.portal_preferences
-  simulation_state = ["started", "confirmed"]
   service_uid_list = [
     portal.restrictedTraverse(portal_preferences.getPreferredInstanceHostingResource()).getUid(),
     portal.restrictedTraverse(portal_preferences.getPreferredInstanceSetupResource()).getUid(),
@@ -95,10 +94,13 @@ def SoftwareInstance_requestDestroySlaveInstanceRelated(self):
     result_list = self.portal_catalog(portal_type="Sale Packing List Line",
        aggregate_portal_type="Slave Instance",
        computer_partition_relative_url=computer_partition_relative_url,
-       simulation_state=simulation_state,
        default_resource_uid=service_uid_list)
     slave_instance_list = [line.getAggregateValue(portal_type="Slave Instance") for line in result_list]
+    uid_list = []
     for slave_instance in slave_instance_list:
+      slave_instance_uid = slave_instance.getUid()
+      if slave_instance_uid in uid_list:
+        continue
       cleanup_packing_list = self.portal_catalog(
          portal_type='Sale Packing List Line',
          aggregate_relative_url=slave_instance.getRelativeUrl(),
@@ -106,6 +108,7 @@ def SoftwareInstance_requestDestroySlaveInstanceRelated(self):
          limit=1,
       )
       if len(cleanup_packing_list) == 0:
+        uid_list.append(slave_instance_uid)
         slave_instance.requestDestroyComputerPartition()
   finally:
     # Restore the original user.
