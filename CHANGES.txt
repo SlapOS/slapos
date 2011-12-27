@@ -1,42 +1,239 @@
-0.9 (unreleased)
-================
+Changes
+=======
+
+0.39 (unreleased)
+-----------------
 
  * No changes yet.
 
-0.8 (2011-06-15)
-================
+0.38 (2011-12-05)
+-----------------
 
- * Add MySQL and MariaDB standalone software release and recipe [Cedric de Saint Martin]
+ * erp5: Swtich to percona, as maatkit is obsoleted. [Sebastien Robin]
+ * erp5: Improve haproxy configuration. [Sebastien Robin]
+ * erp5: Support sphinxd. [Kazuhiko Shiozaki]
+ * erp5: Improve and make logging more usual. [Sebastien Robin]
+ * erp5: Allow mysql connection from localhost. [Romain Courteaud]
+ * erp5: Allow to control Zope/Zeo cache [Arnaud Fontaine]
+ * erp5: Increase precision in logs [Julien Muchembled]
+ * erp5: Improve erp5 update [Arnaud Fontaine, Rafael Monnerat]
+
+0.37 (2011-11-24)
+-----------------
+
+ * KVM : allow access to several KVM instances without SSL certificate duplicate
+   problem. [Cedric de Saint Martin]
+
+0.36 (2011-11-16)
+-----------------
+
+ * erp5testnode : the code of testnode is not in slapos repository anymore
+
+0.35 (2011-11-10)
+-----------------
+
+ * KVM : Promise are now working properly. [Łukasz Nowak]
+ * KVM : Use NoVNC with automatic login. [Cedric de Saint Martin]
+ * KVM : Use websockify egg and remove numpy hack. [Cedric de Saint Martin]
+
+0.34 (2011-11-08)
+-----------------
+
+  * Any LAMP software can specify its own php.ini [Alain Takoudjou]
+  * LAMP : Fix bug where buildout does not has sufficient rights to update
+    application parts. [Alain Takoudjou]
+  * LAMP : Update formatting when returning list of renamed files.
+    [Alain Takoudjou]
+
+0.33 (2011-10-31)
+-----------------
+
+  * erp5 : use percona toolkit instead of maatkit [Sebastien Robin]
+
+0.32 (2011-10-28)
+-----------------
+
+  * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will 
+   configure PHP application instance when needed. [Alain Takoudjou Kamdem]
+
+0.31 (2011-10-16)
+-----------------
+
+ * Split big redundant recipes into small ones. In order to factorize the code
+   and have everything in the buildout file. [Antoine Catton, Romain Courteaud,
+   Łukasz Nowak]
+ * LAMP : Update apache and php configuration files to work with a lot of different
+   PHP software. [Alain Takoudjou Kamdem]
+ * LAMP : Recipe can launch scripts, move or remove files or directories
+   when a given condition is filled. Useful when PHP apps require you to
+   remove "admin" directory after configuration for example.
+   [Alain Takoudjou Kamdem]
+
+0.30 (2011-10-06)
+-----------------
+
+ * LAMP : Update apache and php configuration files to work with a lot of different
+   PHP software. [Alain Takoudjou Kamdem]
+
+0.29 (2011-09-28)
+-----------------
+
+ * mysql: bug fix on database recovering (avoid importing dump two times). [Antoine Catton]
+
+0.28 (2011-09-27)
+-----------------
+
+ * lamp.request: requesting the mariadb software release instead of itself. [Antoine Catton]
+ * lamp.request: adding support of remote backup repo (using a different
+   software type). The default remote backup is a davstorage. [Antoine Catton]
+
+0.27 (2011-09-27)
+-----------------
+
+ * mysql: add backup and backup recovering using different software type. [Antoine Catton]
+
+0.26 (2011-09-27)
+-----------------
+
+ * Davstorage: returning more explicit url (using webdav scheme). [Antoine Catton]
+ * Other mysql minor fixes. [Antoine Catton]
+
+0.25 (2011-09-21)
+-----------------
+
+ * mysql: Restore to default behaviour. [Antoine Catton]
+ * mysql: Use mysqldump instead of non trustable backup system. [Antoine Catton]
+
+0.24 (2011-09-19)
+-----------------
+
+ * mysql: Unhardcode the requested url. [Antoine Catton]
+
+0.23 (2011-09-19)
+-----------------
+
+ * Clean code in mysql recipe [Cedric de Saint Martin]
+ * librecipe: Provide createPromiseWrapper method. [Antoine Catton]
+ * kvm: Expose promisee checks to slapgrid. [Antoine Catton]
+ * davstorage: Initial version. [Antoine Catton]
+ * mysql: Support DAV backup. [Antoine Catton]
+
+0.22 (2011-09-12)
+-----------------
+
+ * Fix haproxy setup for erp5 [Sebastien Robin]
+
+0.21 (2011-09-12)
+-----------------
+
+ * Update PHP configuration to set session and date options.
+   [Alain Takoudjou Kamdem]
+ * Improve logrotate policy and haproxy config for erp5
+   [Sebastien Robin]
+
+0.20 (2011-09-07)
+-----------------
+
+ * Update and fix KVM/noVNC installation to be compatible with new WebSocket
+   protocol (HyBi-10) required by Chrome >= 14 and Firefox >= 7.
+   [Cedric de Saint Martin]
+
+0.19 (2011-09-06)
+-----------------
+
+ * Update PHP configuration to disable debug logging. [Cedric de Saint Martin]
+
+0.18 (2011-08-25)
+-----------------
+
+ * Repackage egg to include needed .bin files. [Cedric de Saint Martin]
+
+0.17 (2011-08-25)
+-----------------
+
+ * Add XWiki software release [Cedric de Saint Martin]
+
+0.16 (2011-07-15)
+-----------------
+
+ * Improve Vifib and pure ERP5 instantiation [Rafael Monnerat]
+ * Use configurator for Vifib [Rafael Monnerat]
+
+0.15 (2011-07-13)
+-----------------
+
+ * Encrypt connection by default. [Vivien Alger]
+
+0.14 (2011-07-13)
+-----------------
+
+ * Provide new way to instantiate kvm. [Cedric de Saint Martin, Vivien Alger]
+
+0.13 (2011-07-13)
+-----------------
+
+ * Implement generic execute_wait wrapper, which allows to wait for some files
+   to appear before starting service depending on it. [Łukasz Nowak]
+
+0.12 (2011-07-11)
+-----------------
+
+ * Fix slaprunner, phpmyadmin software releases, added
+   wordpress software release. [Cedric de Saint Martin]
+
+0.11 (2011-07-07)
+-----------------
+
+ * Enable test suite runner for vifib.
+
+0.10 (2011-07-01)
+-----------------
+
+ * Add PHPMyAdmin software release used in SlapOS tutorials
+   [Cedric de Saint Martin]
+ * Add slaprunner software release [Cedric de Saint Martin]
+
+0.9 (2011-06-24)
+----------------
+
+ * mysql recipe : Changing slapos.recipe.erp5.execute to
+   slapos.recipe.librecipe.execute [Cedric de Saint Martin]
+
+0.8 (2011-06-15)
+----------------
+
+ * Add MySQL and MariaDB standalone software release and recipe
+   [Cedric de Saint Martin]
  * Fixed slapos.recipe.erp5testnode instantiation [Sebastien Robin]
 
 0.7 (2011-06-14)
-================
+----------------
 
  * Fix slapos.recipe.erp5 package by providing site.zcml in it. [Łukasz Nowak]
  * Improve slapos.recipe.erp5testnode partition instantiation error reporting
    [Sebastien Robin]
 
 0.6 (2011-06-13)
-================
+----------------
 
  * Fixed slapos.recipe.erp5 instantiation. [Łukasz Nowak]
 
 0.5 (2011-06-13)
-================
+----------------
 
  * Implement zabbix agent instantiation. [Łukasz Nowak]
  * Drop dependency on Zope2. [Łukasz Nowak]
  * Share more in slapos.recipe.librecipe module. [Łukasz Nowak]
 
 0.4 (2011-06-09)
-================
+----------------
 
  * Remove reference to slapos.tool.networkcache as it was removed from pypi. [Łukasz Nowak]
  * Add Kumofs standalone software release and recipe [Cedric de Saint Martin]
  * Add Memcached standalone software release and recipe [Cedric de Saint Martin]
 
 0.3 (2011-06-09)
-================
+----------------
 
  * Moved out template and build to separate distributions [Łukasz Nowak]
  * Depend on slapos.core instead of depracated slapos.slap [Romain Courteaud]
@@ -44,11 +241,11 @@
  * Allow to control full environment in erp5 module [Łukasz Nowak]
 
 0.2 (2011-05-30)
-================
+----------------
 
   * Allow to pass zope_environment in erp5 entry point [Łukasz Nowak]
 
 0.1 (2011-05-27)
-================
+----------------
 
   * All slapos.recipe.* became slapos.cookbook:* [Łukasz Nowak]

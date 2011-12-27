@@ -1,0 +1,12 @@
+# In OpenSuse 11.2, 'gcc -dumpversion' returns '4.4', not '4.4.*'.
+--- memcached-1.4.8/configure.ac.orig
++++ memcached-1.4.8/configure.ac
+@@ -502,7 +502,7 @@
+   GCC_VERSION=`$CC -dumpversion`
+   CFLAGS="$CFLAGS -Wall -Werror -pedantic -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls"
+   case $GCC_VERSION in
+-    4.4.*)
++    4.4 | 4.4.*)
+     CFLAGS="$CFLAGS -fno-strict-aliasing"
+     ;;
+   esac

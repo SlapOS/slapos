@@ -31,57 +31,8 @@ import zc.buildout
 import sys
 
 class Recipe(slapos.recipe.erp5.Recipe):
-  def installKeyAuthorisationApache(self, ip, port, backend, key, certificate,
-      ca_conf, key_auth_path='/erp5/portal_slap'):
-    ssl_template = """SSLEngine on
-SSLVerifyClient require
-RequestHeader set REMOTE_USER %%{SSL_CLIENT_S_DN_CN}s
-SSLCertificateFile %(key_auth_certificate)s
-SSLCertificateKeyFile %(key_auth_key)s
-SSLCACertificateFile %(ca_certificate)s
-SSLCARevocationPath %(ca_crl)s"""
-    apache_conf = self._getApacheConfigurationDict('key_auth_apache', ip, port)
-    apache_conf['ssl_snippet'] = ssl_template % dict(
-        key_auth_certificate=certificate,
-        key_auth_key=key,
-        ca_certificate=ca_conf['ca_certificate'],
-        ca_crl=ca_conf['ca_crl']
-        )
-    prefix = 'ssl_key_auth_apache'
-    rewrite_rule_template = \
-      "RewriteRule (.*) http://%(backend)s%(key_auth_path)s$1 [L,P]"
-    path_template = pkg_resources.resource_string('slapos.recipe.erp5',
-      'template/apache.zope.conf.path.in')
-    path = path_template % dict(path='/')
-    d = dict(
-          path=path,
-          backend=backend,
-          backend_path='/',
-          port=apache_conf['port'],
-          vhname=path.replace('/', ''),
-          key_auth_path=key_auth_path,
-    )
-    rewrite_rule = rewrite_rule_template % d
-    apache_conf.update(**dict(
-      path_enable=path,
-      rewrite_rule=rewrite_rule
-    ))
-    apache_config_file = self.createConfigurationFile(prefix + '.conf',
-        pkg_resources.resource_string('slapos.recipe.erp5',
-          'template/apache.zope.conf.in') % apache_conf)
-    self.path_list.append(apache_config_file)
-    self.path_list.extend(zc.buildout.easy_install.scripts([(
-      'key_auth_apache',
-        'slapos.recipe.erp5.apache', 'runApache')], self.ws,
-          sys.executable, self.wrapper_directory, arguments=[
-            dict(
-              required_path_list=[certificate, key, ca_conf['ca_certificate'],
-                ca_conf['ca_crl']],
-              binary=self.options['httpd_binary'],
-              config=apache_config_file
-            )
-          ]))
-    return 'https://%(ip)s:%(port)s' % apache_conf
+
+  default_bt5_list = []
 
   def _getZeoClusterDict(self):
     site_path = '/erp5/'
@@ -116,13 +67,13 @@ SSLCARevocationPath %(ca_crl)s"""
         self.getTemplateFilename('zope-zeo-snippet.conf.in'), dict(
         storage_name=storage_dict['storage_name'],
         address='%s:%s' % (storage_dict['ip'], storage_dict['port']),
-        mount_point=mount_point
-        )))
+        mount_point=mount_point, zodb_cache_size=self.zodb_cache_size,
+        zeo_client_cache_size=self.zeo_client_cache_size)))
     tidstorage_config = dict(host=self.getLocalIPv4Address(), port='6001')
     zodb_configuration_string = '\n'.join(zodb_configuration_list)
     zope_port = 12000
     # One Distribution Node
-    zope_port +=1
+    zope_port += 1
     self.installZope(ip, zope_port, 'zope_distribution', with_timerservice=True,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config)
@@ -147,9 +98,15 @@ SSLCARevocationPath %(ca_crl)s"""
         login_url_list)
     apache_login = self.installBackendApache(self.getGlobalIPv6Address(), 15000,
         login_haproxy, backend_key, backend_certificate)
+
+    # Install Frontend
+    frontend_domain_name = self.parameter_dict.get("domain_name", 'vifib')
+    frontend_key, frontend_certificate = \
+                  self.requestCertificate(frontend_domain_name)
     apache_frontend_login = self.installFrontendZopeApache(
-        self.getGlobalIPv6Address(), 4443, 'vifib', '/',
-        apache_login, '/', backend_key, backend_certificate)
+        self.getGlobalIPv6Address(), 4443, frontend_domain_name, '/',
+        apache_login, '', frontend_key, frontend_certificate)
+
     # Four Web Service Nodes (Machine access)
     service_url_list = []
     for i in (1, 2, 3, 4):
@@ -163,15 +120,21 @@ SSLCARevocationPath %(ca_crl)s"""
 
     key_auth_key, key_auth_certificate = self.requestCertificate(
         'Key Based Access')
-    apache_keyauth = self.installKeyAuthorisationApache(
-        self.getLocalIPv4Address(), 15500, service_haproxy, key_auth_key,
-        key_auth_certificate, ca_conf, key_auth_path=self.key_auth_path)
+    apache_keyauth = self.installKeyAuthorisationApache(False, 15500,
+        service_haproxy, key_auth_key, key_auth_certificate, ca_conf,
+        key_auth_path=self.key_auth_path)
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     self.installTidStorage(tidstorage_config['host'], tidstorage_config['port'],
         known_tid_storage_identifier_dict, 'http://'+login_haproxy)
     self.linkBinary()
+
+    # Connect direct to Zope to create the instance.
+    self.installERP5Site(user, password, service_url_list[-1], mysql_conf,
+             conversion_server_conf, memcached_conf, kumo_conf,
+             self.site_id, self.default_bt5_list, ca_conf)
+
     self.setConnectionDict(dict(
       front_end_url=apache_frontend_login,
       site_url=apache_login,
@@ -182,15 +145,12 @@ SSLCARevocationPath %(ca_crl)s"""
       kumo_url=kumo_conf['kumo_address'],
       conversion_server_url='%(conversion_server_ip)s:%(conversion_server_port)s' %
         conversion_server_conf,
-      # openssl binary might be removed, as soon as CP environment will be
-      # fully controlled
-      openssl_binary=self.options['openssl_binary'],
-      # As soon as there would be Vifib ERP5 configuration and possibility to
-      # call it over the network this can be removed
-      certificate_authority_path=ca_conf['certificate_authority_path'],
       # as installERP5Site is not trusted (yet) and this recipe is production
       # ready expose more information
-      mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
+      # XXX Use socket access to prevent unwanted connections to original MySQL
+      #     server when cloning an existing ERP5 instance.
+      #     TCP will be required if MySQL is in a different partition/server.
+      mysql_url='%(mysql_database)s %(mysql_user)s %(mysql_password)s %(socket)s' % mysql_conf,
     ))
     return self.path_list
 
@@ -204,13 +164,14 @@ SSLCARevocationPath %(ca_crl)s"""
     user, password = self.installERP5()
     zodb_dir = os.path.join(self.data_root_directory, 'zodb')
     self._createDirectory(zodb_dir)
-    zodb_root_path = os.path.join(zodb_dir, 'root.fs')
+    zodb_root_path = os.path.join(zodb_dir, 'main.fs')
     ip = self.getLocalIPv4Address()
     zope_port = '18080'
     zope_access = self.installZope(ip, zope_port, 'zope_development',
         zodb_configuration_string=self.substituteTemplate(
           self.getTemplateFilename('zope-zodb-snippet.conf.in'),
-          dict(zodb_root_path=zodb_root_path)),
+          dict(zodb_root_path=zodb_root_path,
+            zodb_cache_size=self.zodb_cache_size)),
           thread_amount=8, with_timerservice=True)
     service_haproxy = self.installHaproxy(ip, 15000, 'service',
         self.site_check_path, [zope_access])
@@ -224,7 +185,13 @@ SSLCARevocationPath %(ca_crl)s"""
     kumo_conf = self.installKumo(self.getLocalIPv4Address())
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
         memcached_conf, kumo_conf)
+    self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
+                           memcached_conf, kumo_conf)
     self.linkBinary()
+    self.installERP5Site(user, password, zope_access, mysql_conf,
+             conversion_server_conf, memcached_conf, kumo_conf,
+             self.site_id, self.default_bt5_list, ca_conf)
+
     self.setConnectionDict(dict(
       development_zope='http://%s:%s/' % (ip, zope_port),
       site_user=user,
@@ -234,15 +201,12 @@ SSLCARevocationPath %(ca_crl)s"""
       kumo_url=kumo_conf['kumo_address'],
       conversion_server_url='%(conversion_server_ip)s:%(conversion_server_port)s' %
         conversion_server_conf,
-      # openssl binary might be removed, as soon as CP environment will be
-      # fully controlled
-      openssl_binary=self.options['openssl_binary'],
-      # As soon as there would be Vifib ERP5 configuration and possibility to
-      # call it over the network this can be removed
-      certificate_authority_path=ca_conf['certificate_authority_path'],
       # as installERP5Site is not trusted (yet) and this recipe is production
       # ready expose more information
-      mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
+      # XXX Use socket access to prevent unwanted connections to original MySQL
+      #     server when cloning an existing ERP5 instance.
+      #     TCP will be required if MySQL is in a different partition/server.
+      mysql_url='%(mysql_database)s %(mysql_user)s %(mysql_password)s %(socket)s' % mysql_conf,
     ))
     return self.path_list
 
@@ -252,14 +216,18 @@ SSLCARevocationPath %(ca_crl)s"""
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
     # self.cron_d is a directory, where cron jobs can be registered
+    self.zodb_cache_size = int(self.options.get('zodb_cache_size', 5000))
+    self.zeo_client_cache_size = self.options.get('zeo_client_cache_size',
+      '20MB')
     self.cron_d = self.installCrond()
     self.logrotate_d, self.logrotate_backup = self.installLogrotate()
     self.killpidfromfile = zc.buildout.easy_install.scripts(
         [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
     self.path_list.append(self.killpidfromfile)
-    if self.parameter_dict.get('development', 'false').lower() == 'true':
-      return self.installDevelopment()
+    if self.parameter_dict.get("flavour", "default") == 'configurator':
+      self.default_bt5_list = self.options.get("configurator_bt5_list", '').split()
+
     if self.parameter_dict.get('production', 'false').lower() == 'true':
       return self.installProduction()
-    raise NotImplementedError('Flavour of instance have to be given.')
+    return self.installDevelopment()

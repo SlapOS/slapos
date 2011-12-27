@@ -33,12 +33,14 @@ lock-filename %(lock-filename)s
 <eventlog>
   level info
   <logfile>
+    dateformat
     path %(event_log)s
   </logfile>
 </eventlog>
 <logger access>
   level WARN
   <logfile>
+    dateformat
     path %(z2_log)s
   </logfile>
 </logger>

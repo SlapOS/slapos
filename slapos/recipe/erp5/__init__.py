@@ -34,6 +34,9 @@ import sys
 import zc.buildout
 import zc.recipe.egg
 import ConfigParser
+import re
+
+_isurl = re.compile('([a-zA-Z0-9+.-]+)://').match
 
 # based on Zope2.utilities.mkzopeinstance.write_inituser
 def Zope2InitUser(path, username, password):
@@ -68,33 +71,235 @@ class Recipe(BaseSlapRecipe):
         self.getLocalIPv4Address(), 23000, 23060)
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
     user, password = self.installERP5()
-    zodb_dir = os.path.join(self.data_root_directory, 'zodb')
-    self._createDirectory(zodb_dir)
-    zodb_root_path = os.path.join(zodb_dir, 'root.fs')
-    zope_access = self.installZope(ip=self.getLocalIPv4Address(),
-          port=12000 + 1, name='zope_%s' % 1,
-          zodb_configuration_string=self.substituteTemplate(
-            self.getTemplateFilename('zope-zodb-snippet.conf.in'),
-            dict(zodb_root_path=zodb_root_path)), with_timerservice=True)
+
+    if self.parameter_dict.get("slap_software_type", "").lower() == "cluster":
+      # Site access is done by HAProxy
+      zope_access, site_access, key_access = self.installZopeCluster(ca_conf)
+    else:
+      zope_access = self.installZopeStandalone()
+      site_access = zope_access
+      key_access = None
+
     key, certificate = self.requestCertificate('Login Based Access')
     apache_conf = dict(
-        apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
-          port=13000, backend=zope_access, key=key, certificate=certificate))
-    self.installERP5Site(user, password, zope_access, mysql_conf, 
-             conversion_server_conf, memcached_conf, kumo_conf, self.site_id)
+         apache_login=self.installBackendApache(ip=self.getGlobalIPv6Address(),
+         port=13000, backend=site_access, key=key, certificate=certificate))
+
+    connection_dict = dict(site_url=apache_conf['apache_login'])
+
+    if self.parameter_dict.get("domain_name") is not None:
+      connection_dict["backend_url"] = apache_conf['apache_login']
+      connection_dict["domain_ip"] = self.getGlobalIPv6Address()
+
+      # XXX Define a fake domain_name for now.
+      frontend_name = self.parameter_dict.get("domain_name")
+      frontend_key, frontend_certificate = \
+             self.requestCertificate(frontend_name)
+
+      connection_dict["site_url"] = self.installFrontendZopeApache(
+        ip=self.getGlobalIPv6Address(), port=4443, name=frontend_name,
+        frontend_path='/', backend_path='',
+        backend_url=apache_conf['apache_login'], key=frontend_key,
+        certificate=frontend_certificate)
+
+    default_bt5_list = []
+    if self.parameter_dict.get("flavour", "default") == 'configurator':
+      default_bt5_list = self.options.get("configurator_bt5_list", '').split()
+
+    self.installERP5Site(user, password, zope_access, mysql_conf,
+             conversion_server_conf, memcached_conf, kumo_conf,
+             self.site_id, default_bt5_list, ca_conf)
+
     self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
                            memcached_conf, kumo_conf)
     self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
                            memcached_conf, kumo_conf)
     self.linkBinary()
-    self.setConnectionDict(dict(
-      site_url=apache_conf['apache_login'],
+    connection_dict.update(**dict(
       site_user=user,
       site_password=password,
       memcached_url=memcached_conf['memcached_url'],
       kumo_url=kumo_conf['kumo_address']
     ))
+    if key_access is not None:
+      connection_dict['key_access'] = key_access
+    if self.options.get('fulltext_search', None) == 'sphinx':
+      sphinx_searchd = self.installSphinxSearchd(ip=self.getLocalIPv4Address())
+      connection_dict.update(**sphinx_searchd)
+    self.setConnectionDict(connection_dict)
     return self.path_list
+
+  def installZopeStandalone(self):
+    """ Install a single Zope instance without ZEO Server.
+    """
+    zodb_dir = os.path.join(self.data_root_directory, 'zodb')
+    self._createDirectory(zodb_dir)
+    zodb_root_path = os.path.join(zodb_dir, 'main.fs')
+
+    thread_amount_per_zope = int(self.options.get(
+                                 'single_zope_thread_amount', 4))
+
+    zodb_cache_size = int(self.options.get('zodb_cache_size', 5000))
+
+    return self.installZope(ip=self.getLocalIPv4Address(),
+          port=12000 + 1, name='zope_%s' % 1,
+          zodb_configuration_string=self.substituteTemplate(
+            self.getTemplateFilename('zope-zodb-snippet.conf.in'),
+            dict(zodb_root_path=zodb_root_path,
+                 zodb_cache_size=zodb_cache_size)),
+            with_timerservice=True,
+            thread_amount=thread_amount_per_zope)
+
+  def installKeyAuthorisationApache(self, ipv6, port, backend, key, certificate,
+      ca_conf, key_auth_path='/'):
+    if ipv6:
+      ip = self.getGlobalIPv6Address()
+    else:
+      ip = self.getLocalIPv4Address()
+    ssl_template = """SSLEngine on
+SSLVerifyClient require
+RequestHeader set REMOTE_USER %%{SSL_CLIENT_S_DN_CN}s
+SSLCertificateFile %(key_auth_certificate)s
+SSLCertificateKeyFile %(key_auth_key)s
+SSLCACertificateFile %(ca_certificate)s
+SSLCARevocationPath %(ca_crl)s"""
+    apache_conf = self._getApacheConfigurationDict('key_auth_apache', ip, port)
+    apache_conf['ssl_snippet'] = ssl_template % dict(
+        key_auth_certificate=certificate,
+        key_auth_key=key,
+        ca_certificate=ca_conf['ca_certificate'],
+        ca_crl=ca_conf['ca_crl']
+        )
+    prefix = 'ssl_key_auth_apache'
+    rewrite_rule_template = \
+      "RewriteRule (.*) http://%(backend)s%(key_auth_path)s$1 [L,P]"
+    path_template = pkg_resources.resource_string('slapos.recipe.erp5',
+      'template/apache.zope.conf.path.in')
+    path = path_template % dict(path='/')
+    d = dict(
+          path=path,
+          backend=backend,
+          backend_path='/',
+          port=apache_conf['port'],
+          vhname=path.replace('/', ''),
+          key_auth_path=key_auth_path,
+    )
+    rewrite_rule = rewrite_rule_template % d
+    apache_conf.update(**dict(
+      path_enable=path,
+      rewrite_rule=rewrite_rule
+    ))
+    apache_config_file = self.createConfigurationFile(prefix + '.conf',
+        pkg_resources.resource_string('slapos.recipe.erp5',
+          'template/apache.zope.conf.in') % apache_conf)
+    self.path_list.append(apache_config_file)
+    self.path_list.extend(zc.buildout.easy_install.scripts([(
+      'key_auth_apache',
+        'slapos.recipe.erp5.apache', 'runApache')], self.ws,
+          sys.executable, self.wrapper_directory, arguments=[
+            dict(
+              required_path_list=[certificate, key, ca_conf['ca_certificate'],
+                ca_conf['ca_crl']],
+              binary=self.options['httpd_binary'],
+              config=apache_config_file
+            )
+          ]))
+    if ipv6:
+      return 'https://[%(ip)s:%(port)s]' % apache_conf
+    else:
+      return 'https://%(ip)s:%(port)s' % apache_conf
+
+  def installZopeCluster(self, ca_conf=None):
+    """ Install ERP5 using ZEO Cluster
+    """
+    site_check_path = '/%s/getId' % self.site_id
+    thread_amount_per_zope = int(self.options.get(
+                                'cluster_zope_thread_amount', 1))
+
+    activity_node_amount = int(self.options.get(
+                   "cluster_activity_node_amount", 2))
+
+    user_node_amount = int(self.options.get(
+                   "cluster_user_node_amount", 2))
+
+    key_auth_node_amount = int(self.options.get(
+                   "key_auth_node_amount", 0))
+
+    ip = self.getLocalIPv4Address()
+    storage_dict = self._requestZeoFileStorage('Zeo Server 1', 'main')
+
+    zeo_conf = self.installZeo(ip)
+    tidstorage_config = dict(host=ip, port='6001')
+
+    # XXX How to define good values for this?
+    mount_point = '/'
+    zodb_cache_size = 5000
+    zeo_client_cache_size = '20MB'
+    check_path = '/erp5/account_module'
+
+    known_tid_storage_identifier_dict = {}
+    known_tid_storage_identifier_dict[
+      (((storage_dict['ip'],storage_dict['port']),), storage_dict['storage_name'])
+        ] = (zeo_conf[storage_dict['storage_name']]['path'], check_path or mount_point)
+
+    zodb_configuration_string = self.substituteTemplate(
+        self.getTemplateFilename('zope-zeo-snippet.conf.in'), dict(
+        storage_name=storage_dict['storage_name'],
+        address='%s:%s' % (storage_dict['ip'], storage_dict['port']),
+        mount_point=mount_point, zodb_cache_size=zodb_cache_size,
+        zeo_client_cache_size=zeo_client_cache_size
+        ))
+
+    zope_port = 12000
+    # One Distribution Node (Single Thread Always)
+    zope_port += 1
+    self.installZope(ip, zope_port, 'zope_distribution', with_timerservice=True,
+        zodb_configuration_string=zodb_configuration_string,
+        tidstorage_config=tidstorage_config)
+
+    # Activity Nodes (Single Thread Always)
+    for i in range(activity_node_amount):
+      zope_port += 1
+      self.installZope(ip, zope_port, 'zope_activity_%s' % i,
+          with_timerservice=True,
+          zodb_configuration_string=zodb_configuration_string,
+          tidstorage_config=tidstorage_config)
+
+    # Four Web Page Nodes (Human access)
+    login_url_list = []
+    for i in range(user_node_amount):
+      zope_port += 1
+      login_url_list.append(self.installZope(ip, zope_port,
+        'zope_login_%s' % i, with_timerservice=False,
+        zodb_configuration_string=zodb_configuration_string,
+        tidstorage_config=tidstorage_config,
+        thread_amount=thread_amount_per_zope))
+
+    login_haproxy = self.installHaproxy(ip, 15001, 'login',
+                               site_check_path, login_url_list)
+
+    key_access = None
+    if key_auth_node_amount > 0:
+      service_url_list = []
+      for i in range(key_auth_node_amount):
+        zope_port += 1
+        service_url_list.append(self.installZope(ip, zope_port,
+          'zope_service_%s' % i, with_timerservice=False,
+          zodb_configuration_string=zodb_configuration_string,
+          tidstorage_config=tidstorage_config))
+      service_haproxy = self.installHaproxy(ip, 15000, 'service',
+          site_check_path, service_url_list)
+
+      key_auth_key, key_auth_certificate = self.requestCertificate(
+          'Key Based Access')
+      key_access = self.installKeyAuthorisationApache(True, 15500,
+          service_haproxy, key_auth_key, key_auth_certificate, ca_conf)
+
+    self.installTidStorage(tidstorage_config['host'],
+                           tidstorage_config['port'],
+            known_tid_storage_identifier_dict, 'http://' + login_haproxy)
+
+    return login_url_list[-1], login_haproxy, key_access
 
   def _requestZeoFileStorage(self, server_name, storage_name):
     """Local, slap.request compatible, call to ask for filestorage on Zeo
@@ -229,6 +434,27 @@ class Recipe(BaseSlapRecipe):
         memcached_ip=config['memcached_ip'],
         memcached_port=config['memcached_port'])
 
+  def installSphinxSearchd(self, ip, port=9312, sql_port=9306):
+    data_directory = self.createDataDirectory('sphinx')
+    sphinx_conf_path = self.createConfigurationFile('sphinx.conf',
+      self.substituteTemplate(self.getTemplateFilename('sphinx.conf.in'), dict(
+          ip_address=ip,
+          port=port,
+          sql_port=sql_port,
+          data_directory=data_directory,
+          log_directory=self.log_directory,
+          )))
+    self.path_list.append(sphinx_conf_path)
+    wrapper = zc.buildout.easy_install.scripts([('sphinx_searchd',
+     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=[
+        self.options['sphinx_searchd_binary'].strip(), '-c', sphinx_conf_path, '--nodetach']
+      )[0]
+    self.path_list.append(wrapper)
+    return dict(sphinx_searchd_ip=ip,
+                sphinx_searchd_port=port,
+                sphinx_searchd_sql_port=sql_port)
+
   def installTestRunner(self, ca_conf, mysql_conf, conversion_server_conf,
                         memcached_conf, kumo_conf):
     """Installs bin/runUnitTest executable to run all tests using
@@ -237,6 +463,12 @@ class Recipe(BaseSlapRecipe):
     # workaround wrong assumptions of ERP5Type.tests.runUnitTest about
     # directory existence
     unit_test = os.path.join(testinstance, 'unit_test')
+    connection_string_list = []
+    for test_database, test_user, test_password in \
+          mysql_conf['mysql_parallel_test_dict'][-4:]:
+      connection_string_list.append(
+          '%s@%s:%s %s %s' % (test_database, mysql_conf['ip'],
+                            mysql_conf['tcp_port'], test_user, test_password))
     if not os.path.isdir(unit_test):
       os.mkdir(unit_test)
     runUnitTest = zc.buildout.easy_install.scripts([
@@ -250,6 +482,7 @@ class Recipe(BaseSlapRecipe):
           '--erp5_sql_connection_string', '%(mysql_test_database)s@%'
           '(ip)s:%(tcp_port)s %(mysql_test_user)s '
           '%(mysql_test_password)s' % mysql_conf,
+          '--extra_sql_connection_string_list',','.join(connection_string_list),
           '--conversion_server_hostname=%(conversion_server_ip)s' % \
                                                          conversion_server_conf,
           '--conversion_server_port=%(conversion_server_port)s' % \
@@ -435,7 +668,15 @@ class Recipe(BaseSlapRecipe):
     # maxconn should be set as the maximum thread we have per zope, like this
     #      haproxy will manage the queue of request with the possibility to
     #      move a request to another node if the initially selected one is dead
-    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxconn %(cluster_zope_thread_amount)s"""
+    # maxqueue is the number of waiting request in the queue of every zope client.
+    #      It allows to make sure that there is not a zope client handling all
+    #      the work while other clients are doing nothing. This was happening
+    #      even thoug we have round robin distribution because when a node dies
+    #      some seconds, all request are dispatched to other nodes, and then users
+    #      stick in other nodes and are not coming back. Please note this option
+    #      is not an issue if you have more than (maxqueue * node_quantity) requests
+    #      because haproxy will handle a top-level queue
+    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxqueue 5 maxconn %(cluster_zope_thread_amount)s"""
     config = dict(name=name, ip=ip, port=port,
         server_check_path=server_check_path,)
     i = 1
@@ -488,12 +729,56 @@ class Recipe(BaseSlapRecipe):
       self._createDirectory(os.path.join(self.erp5_directory, directory))
     self._createDirectory(os.path.join(self.erp5_directory, 'etc',
       'package-includes'))
+
+    # Symlink to BT5 repositories defined in instance config.
+    # Those paths will eventually end up in the ZODB, and having symlinks
+    # inside the XXX makes it possible to reuse such ZODB with another software
+    # release[ version].
+    # Note: this path cannot be used for development, it's really just a
+    # read-only repository.
+    repository_path = os.path.join(self.var_directory, "bt5_repository")
+    if not os.path.isdir(repository_path):
+      os.mkdir(repository_path)
+    self.path_list.append(repository_path)
+    self.bt5_repository_list = []
+    append = self.bt5_repository_list.append
+    for repository in self.options.get('bt5_repository_list', '').split():
+      repository = repository.strip()
+      if not repository:
+        continue
+
+      if _isurl(repository) and not repository.startswith("file://"):
+        # XXX: assume it's a valid URL
+        append(repository)
+        continue
+
+      if repository.startswith('file://'):
+        repository = repository.replace('file://', '', '')
+
+      if os.path.isabs(repository):
+        repo_id = hashlib.sha1(repository).hexdigest()
+        link = os.path.join(repository_path, repo_id)
+        if os.path.lexists(link):
+          if not os.path.islink(link):
+            raise zc.buildout.UserError(
+              'Target link already %r exists but it is not link' % link)
+          os.unlink(link)
+        os.symlink(repository, link)
+        self.logger.debug('Created link %r -> %r' % (link, repository_path))
+        # Always provide a URL-Type
+        append("file://" + link)
+
     return user, password
 
   def installERP5Site(self, user, password, zope_access, mysql_conf,
-          conversion_server_conf=None, memcached_conf=None, kumo_conf=None, erp5_site_id='erp5'):
-    """ Create a script controlled by supervisor, which creates a erp5
-    site on current available zope and mysql environment"""
+                      conversion_server_conf=None, memcached_conf=None,
+                      kumo_conf=None,
+                      erp5_site_id='erp5', default_bt5_list=[], ca_conf={},
+                      supervisor_controlled=True):
+    """
+    Create  a script  to  automatically set  up  an erp5  site (controlled  by
+    supervisor by default) on available zope and mysql environments.
+    """
     conversion_server = None
     if conversion_server_conf is not None:
       conversion_server = "%s:%s" % (conversion_server_conf['conversion_server_ip'],
@@ -504,24 +789,36 @@ class Recipe(BaseSlapRecipe):
       kumo_conf = {}
     # XXX Conversion server and memcache server coordinates are not relevant
     # for pure site creation.
-    https_connection_url = "http://%s:%s@%s/" % (user, password, zope_access)
-    mysql_connection_string = "%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s" % mysql_conf
+    assert mysql_conf['mysql_user'] and mysql_conf['mysql_password'], \
+        "ZMySQLDA requires a user and a password for socket connections"
+    # XXX Use socket access to prevent unwanted connections to original MySQL
+    #     server when cloning an existing ERP5 instance.
+    #     TCP will be required if MySQL is in a different partition/server.
+    mysql_connection_string = "%(mysql_database)s %(mysql_user)s %(mysql_password)s %(socket)s" % mysql_conf
 
-    # XXX URL list vs. repository + list of bt5 names?
-    bt5_list = self.parameter_dict.get("bt5_list", "").split()
-    bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split()
+    bt5_list = self.parameter_dict.get("bt5_list", "").split() or default_bt5_list
+    bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
+      or getattr(self, 'bt5_repository_list', [])
 
-    self.path_list.extend(zc.buildout.easy_install.scripts([('erp5_update',
+    erp5_update_directory = supervisor_controlled and self.wrapper_directory or \
+        self.bin_directory
+
+    script = zc.buildout.easy_install.scripts([('erp5_update',
             __name__ + '.erp5', 'updateERP5')], self.ws,
-                  sys.executable, self.wrapper_directory,
+                  sys.executable, erp5_update_directory,
                   arguments=[erp5_site_id,
                              mysql_connection_string,
-                             https_connection_url,
+                             [user, password, zope_access],
                              memcached_conf.get('memcached_url'),
                              conversion_server,
                              kumo_conf.get("kumo_address"),
                              bt5_list,
-                             bt5_repository_list]))
+                             bt5_repository_list,
+                             ca_conf.get('certificate_authority_path'),
+                             self.options.get('openssl_binary')])
+
+    self.path_list.extend(script)
+
     return []
 
   def installZeo(self, ip):
@@ -563,6 +860,26 @@ class Recipe(BaseSlapRecipe):
         )[0]
       self.path_list.append(wrapper)
     return zeo_configuration_dict
+
+  def installRepozo(self, zodb_root_path):
+    """
+    Add only repozo to cron (e.g. without tidstorage) allowing full
+    and incremental backups.
+    """
+    backup_path = self.createBackupDirectory('zodb')
+    repozo_cron_path = os.path.join(self.cron_d, 'repozo')
+    repozo_cron_file = open(repozo_cron_path, 'w')
+    try:
+      repozo_cron_file.write('''
+0 0 * * 0 %(repozo_binary)s --backup --full --file="%(zodb_root_path)s" --repository="%(backup_path)s"
+0 * * * * %(repozo_binary)s --backup --file="%(zodb_root_path)s" --repository="%(backup_path)s"
+''' % dict(repozo_binary=self.options['repozo_binary'],
+           zodb_root_path=zodb_root_path,
+           backup_path=backup_path))
+    finally:
+      repozo_cron_file.close()
+
+    self.path_list.append(repozo_cron_path)
 
   def installTidStorage(self, ip, port, known_tid_storage_identifier_dict,
       access_url):
@@ -758,13 +1075,15 @@ class Recipe(BaseSlapRecipe):
     ident = 'frontend_' + name
     apache_conf = self._getApacheConfigurationDict(ident, ip, port)
     apache_conf['server_name'] = name
+    apache_conf['frontend_path'] = frontend_path
     apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
         'template/apache.ssl-snippet.conf.in') % dict(
         login_certificate=certificate, login_key=key)
 
-    rewrite_rule_template = \
-        "RewriteRule ^%(path)s($|/.*) %(backend_url)s/VirtualHostBase/https/%(server_name)s:%(port)s%(backend_path)s/VirtualHostRoot/_vh_%(vhname)s$1 [L,P]\n"
-    path = pkg_resources.resource_string(__name__, 'template/apache.zope.conf.path-protected.in') % dict(path='/', access_control_string='none')
+    path = pkg_resources.resource_string(__name__,
+           'template/apache.zope.conf.path-protected.in') % \
+              dict(path='/', access_control_string='none')
+
     if access_control_string is None:
       path_template = pkg_resources.resource_string(__name__,
         'template/apache.zope.conf.path.in')
@@ -774,15 +1093,24 @@ class Recipe(BaseSlapRecipe):
         'template/apache.zope.conf.path-protected.in')
       path += path_template % dict(path=frontend_path,
           access_control_string=access_control_string)
-    d = dict(
+
+    rewrite_rule_template = \
+        "RewriteRule ^%(path)s($|/.*) %(backend_url)s/VirtualHostBase/https/%(server_name)s:%(port)s%(backend_path)s/VirtualHostRoot/%(vhname)s$1 [L,P]\n"
+
+    if frontend_path not in ["", None, "/"]:
+      vhname = "_vh_%s" % frontend_path.replace('/', '')
+    else:
+      vhname = ""
+      frontend_path = ""
+
+    rewrite_rule = rewrite_rule_template % dict(
           path=frontend_path,
           backend_url=backend_url,
           backend_path=backend_path,
           port=apache_conf['port'],
-          vhname=frontend_path.replace('/', ''),
-          server_name=name
-    )
-    rewrite_rule = rewrite_rule_template % d
+          vhname=vhname,
+          server_name=name)
+
     apache_conf.update(**dict(
       path_enable=path,
       rewrite_rule=rewrite_rule
@@ -802,7 +1130,7 @@ class Recipe(BaseSlapRecipe):
             )
           ]))
     # Note: IPv6 is assumed always
-    return 'https://[%(ip)s]:%(port)s' % apache_conf
+    return 'https://%(server_name)s:%(port)s%(frontend_path)s' % (apache_conf)
 
   def installBackendApache(self, ip, port, backend, key, certificate,
       suffix='', access_control_string=None):
@@ -831,7 +1159,7 @@ class Recipe(BaseSlapRecipe):
   def installMysqlServer(self, ip, port, database='erp5', user='user',
       test_database='test_erp5', test_user='test_user', template_filename=None,
       parallel_test_database_amount=100, mysql_conf=None, with_backup=True,
-      with_maatkit=True):
+      with_percona_toolkit=True):
     if mysql_conf is None:
       mysql_conf = {}
     backup_directory = self.createBackupDirectory('mysql')
@@ -870,6 +1198,8 @@ class Recipe(BaseSlapRecipe):
           mysql_conf))
 
     mysql_script_list = []
+    mysql_script_list.append(pkg_resources.resource_string(__name__,
+                   'template/mysql-init-function.sql.in'))
     for x_database, x_user, x_password in \
           [(mysql_conf['mysql_database'],
             mysql_conf['mysql_user'],
@@ -879,7 +1209,7 @@ class Recipe(BaseSlapRecipe):
             mysql_conf['mysql_test_password']),
           ] + mysql_conf['mysql_parallel_test_dict']:
       mysql_script_list.append(pkg_resources.resource_string(__name__,
-                     'template/initmysql.sql.in') % {
+                     'template/mysql-init-database.sql.in') % {
                         'mysql_database': x_database,
                         'mysql_user': x_user,
                         'mysql_password': x_password})
@@ -940,29 +1270,46 @@ class Recipe(BaseSlapRecipe):
       open(mysql_backup_cron, 'w').write('0 0 * * * ' + backup_controller)
       self.path_list.append(mysql_backup_cron)
 
-    if with_maatkit:
+    if with_percona_toolkit:
       # maatkit installation
-      for mk_script_name in (
-          'mk-variable-advisor',
-          'mk-table-usage',
-          'mk-visual-explain',
-          'mk-config-diff',
-          'mk-deadlock-logger',
-          'mk-error-log',
-          'mk-index-usage',
-          'mk-query-advisor',
+      for pt_script_name in (
+          'pt-archiver',
+          'pt-config-diff',
+          'pt-deadlock-logger',
+          'pt-duplicate-key-checker',
+          'pt-fifo-split',
+          'pt-find',
+          'pt-fk-error-logger',
+          'pt-heartbeat',
+          'pt-index-usage',
+          'pt-kill',
+          'pt-log-player',
+          'pt-online-schema-change',
+          'pt-query-advisor',
+          'pt-query-digest',
+          'pt-show-grants',
+          'pt-slave-delay',
+          'pt-slave-find',
+          'pt-slave-restart',
+          'pt-table-checksum',
+          'pt-table-sync',
+          'pt-tcp-model',
+          'pt-trend',
+          'pt-upgrade',
+          'pt-variable-advisor',
+          'pt-visual-explain',
           ):
-        mk_argument_list = [self.options['perl_binary'],
-            self.options['%s_binary' % mk_script_name],
+        pt_argument_list = [self.options['perl_binary'],
+            self.options['%s_binary' % pt_script_name],
             '--defaults-file=%s' % mysql_conf_path,
             '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
             ]
         environment = dict(PATH='%s' % self.bin_directory)
-        mk_exe = zc.buildout.easy_install.scripts([(
-          mk_script_name,'slapos.recipe.librecipe.execute', 'executee')],
+        pt_exe = zc.buildout.easy_install.scripts([(
+          pt_script_name,'slapos.recipe.librecipe.execute', 'executee')],
           self.ws, sys.executable, self.bin_directory, arguments=[
-            mk_argument_list, environment])[0]
-        self.path_list.append(mk_exe)
+            pt_argument_list, environment])[0]
+        self.path_list.append(pt_exe)
 
     # The return could be more explicit database, user ...
     return mysql_conf

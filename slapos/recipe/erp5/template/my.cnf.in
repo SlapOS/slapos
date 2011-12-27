@@ -15,18 +15,26 @@ socket = %(socket)s
 datadir = %(data_directory)s
 pid-file = %(pid_file)s
 log-error = %(error_log)s
-log-slow-file = %(slow_query_log)s
+slow_query_log
+slow_query_log_file = %(slow_query_log)s
 long_query_time = 5
 max_allowed_packet = 128M
 query_cache_size = 32M
 
-plugin-load = ha_innodb_plugin.so
+plugin-load = ha_groonga.so;ha_sphinx.so
+
+# By default only 100 connections are allowed, when using zeo
+# we may have much more connections
+# max_connections = 1000
 
 # The following are important to configure and depend a lot on to the size of
 # your database and the available resources.
 #innodb_buffer_pool_size = 4G
 #innodb_log_file_size = 256M
 #innodb_log_buffer_size = 8M
+
+# very important to allow parallel indexing
+innodb_locks_unsafe_for_binlog = 1
 
 # Some dangerous settings you may want to uncomment if you only want
 # performance or less disk access. Useful for unit tests.

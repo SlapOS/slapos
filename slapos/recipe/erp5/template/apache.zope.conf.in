@@ -38,9 +38,9 @@ RequestHeader unset REMOTE_USER
 
 # Log configuration
 ErrorLog "%(error_log)s"
-LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
-LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b" common
-CustomLog "%(access_log)s" common
+# Default apache log format with request time in microsecond at the end
+LogFormat "%%h %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\" %%D" combined
+CustomLog "%(access_log)s" combined
 
 # Directory protection
 <Directory />
