@@ -133,6 +133,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       .getPreferredInstanceSetupResource()
     subscription_resource = self.portal.portal_preferences\
       .getPreferredInstanceSubscriptionResource()
+    sequence.edit(
+      hosting_resource=hosting_resource,
+      setup_resource=setup_resource,
+      subscription_resource=subscription_resource
+    )
 
     hosting_subscription = catalog.getResultValue(
       uid=sequence['hosting_subscription_uid'])
@@ -172,7 +177,9 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     subscription_delivery_line_list = catalog(
       portal_type='Sale Packing List Line',
       aggregate_relative_url=hosting_subscription_url,
-      resource_relative_url=subscription_resource)
+      resource_relative_url=subscription_resource,
+      sort_on=(('movement.start_date', 'desc'),)
+    )
 
     self.assertEqual(12, len(subscription_delivery_line_list))
     self.assertEqual(['confirmed'] * 12, [q.getSimulationState() for \
@@ -182,6 +189,89 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=subscription_resource)
     self.assertEqual(0, len(subscription_invoice_line_list))
+
+    sequence.edit(
+      subscription_delivery_uid_list=[q.getParentValue().getUid() for q in \
+        subscription_delivery_line_list]
+    )
+
+  def stepSelectNextSubscriptionDelivery(self, sequence, **kw):
+    subscription_delivery_uid_list = sequence['subscription_delivery_uid_list']
+    subscription_delivery_uid_list.reverse()
+    subscription_delivery_uid = subscription_delivery_uid_list.pop()
+    subscription_delivery_uid_list.reverse()
+    sequence.edit(
+      subscription_delivery_uid_list=subscription_delivery_uid_list,
+      subscription_delivery_uid=subscription_delivery_uid
+    )
+
+  def stepStartSubscriptionDelivery(self, sequence, **kw):
+    self.portal.portal_catalog.getResultValue(
+      uid=sequence['subscription_delivery_uid']).start()
+
+  def stepStopSubscriptionDelivery(self, sequence, **kw):
+    self.portal.portal_catalog.getResultValue(
+      uid=sequence['subscription_delivery_uid']).stop()
+
+  def stepCheckHostingSubscriptionStoppedDocumentCoverage(self, sequence, **kw):
+    catalog = self.portal.portal_catalog
+    hosting_subscription = catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'])
+    hosting_subscription_url = hosting_subscription.getRelativeUrl()
+
+    # hosting is confirmed, so no invoice
+    hosting_delivery_line_list = catalog(portal_type='Sale Packing List Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['hosting_resource'])
+
+    self.assertEqual(1, len(hosting_delivery_line_list))
+    self.assertEqual('confirmed', hosting_delivery_line_list[0]\
+      .getSimulationState())
+
+    hosting_invoice_line_list = catalog(portal_type='Invoice Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['hosting_resource'])
+    self.assertEqual(0, len(hosting_invoice_line_list))
+
+    # setup is stopped, and has there is invoice
+    setup_delivery_line_list = catalog(portal_type='Sale Packing List Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['setup_resource'])
+
+    self.assertEqual(1, len(setup_delivery_line_list))
+    self.assertEqual('stopped', setup_delivery_line_list[0]\
+      .getSimulationState())
+
+    setup_invoice_line_list = catalog(portal_type='Invoice Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['setup_resource'])
+    self.assertEqual(1, len(setup_invoice_line_list))
+    self.assertEqual('planned', setup_invoice_line_list[0]\
+      .getSimulationState())
+
+    # there are 11 confirmed and 1 stopped subscription, so 1 invoice line
+    subscription_delivery_line_list = catalog(
+      portal_type='Sale Packing List Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['subscription_resource'])
+
+    self.assertEqual(12, len(subscription_delivery_line_list))
+    self.assertEqual((['confirmed'] * 11) + ['stopped'],
+      sorted([q.getSimulationState() for \
+      q in subscription_delivery_line_list]))
+
+    subscription_invoice_line_list = catalog(portal_type='Invoice Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['subscription_resource'])
+    self.assertEqual(1, len(subscription_invoice_line_list))
+    self.assertEqual('planned', subscription_invoice_line_list[0]\
+      .getSimulationState())
+
+    # there are two invoice lines sharing same invoice
+    self.assertEqual(
+      setup_invoice_line_list[0].getParentValue().getRelativeUrl(),
+      subscription_invoice_line_list[0].getParentValue().getRelativeUrl()
+    )
 
   def test_OpenOrder_sale_packing_list(self):
     """
@@ -200,6 +290,19 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         Tic
         # Nothing shall change
         CheckHostingSubscriptionInitialDocumentCoverage
+
+        # Stop first Subscriptoin delivery and after triggering build check
+        # that invoice got updated
+
+        SelectNextSubscriptionDelivery
+        StartSubscriptionDelivery
+        StopSubscriptionDelivery
+        Tic
+
+        TriggerBuild
+        Tic
+
+        CheckHostingSubscriptionStoppedDocumentCoverage
         """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
