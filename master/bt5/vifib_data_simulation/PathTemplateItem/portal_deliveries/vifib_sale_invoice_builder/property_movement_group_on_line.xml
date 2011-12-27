@@ -38,6 +38,8 @@
             <value>
               <tuple>
                 <string>description</string>
+                <string>start_date</string>
+                <string>stop_date</string>
               </tuple>
             </value>
         </item>
@@ -46,6 +48,10 @@
             <value>
               <none/>
             </value>
+        </item>
+        <item>
+            <key> <string>update_always</string> </key>
+            <value> <int>0</int> </value>
         </item>
       </dictionary>
     </pickle>

@@ -70,7 +70,6 @@
             <value>
               <tuple>
                 <string>trade_phase/vifib/delivery</string>
-                <string>trade_date/trade_phase/vifib/order</string>
                 <string>end_of/day</string>
               </tuple>
             </value>

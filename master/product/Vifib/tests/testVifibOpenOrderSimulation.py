@@ -5,6 +5,14 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
 from DateTime.DateTime import DateTime
 
+def generateTimeFrameList(start_date):
+  expected_time_frame_list = [start_date]
+  current = \
+    getClosestDate(target_date=start_date, precision='month', before=0)
+  for m in range(0, 12):
+    expected_time_frame_list.append(addToDate(current, month=m))
+  return expected_time_frame_list
+
 class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
 
   def stepCheckSimulationMovement(self, sequence, **kw):
@@ -76,37 +84,25 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       0.0, open_order_line.getStopDate().second())
 
     # Calculate the list of time frames
-    expected_time_frame_list = [start_date]
-    current = \
-      getClosestDate(target_date=start_date, precision='month', before=0)
-    if start_date == current:
-      current = addToDate(start_date, month=1)
-    while current <= stop_date:
-      expected_time_frame_list.append(current)
-      current = addToDate(
-        getClosestDate(target_date=current, precision='month', before=0),
-        month=1)
+    expected_time_frame_list = generateTimeFrameList(start_date)
 
-    # Check that simulation is created by the periodicity
-    self.assertEquals(len(expected_time_frame_list),
-                      len(applied_rule.contentValues()) + 1)
+    # test the test: have we generated 12th next months coverage?
+    self.assertEqual(13, len(expected_time_frame_list))
+
+    simulation_movement_list = self.portal.portal_catalog(
+      portal_type='Simulation Movement',
+      parent_uid=applied_rule.getUid(),
+      sort_on=(('movement.start_date', 'desc'),)
+    )
+    # Check that simulation is created by the periodicity for one year
+    self.assertEquals(12,
+                      len(simulation_movement_list))
 
     # Check the list of expected simulation
     idx = 0
-    while idx + 1 < len(expected_time_frame_list):
-      # select simulation given start_date and stop_date
-      simulation_movement_list = \
-        self.portal.portal_catalog.unrestrictedSearchResults(
-          parent_uid=applied_rule.getUid(),
-          portal_type="Simulation Movement",
-          **{
-            'movement.start_date':expected_time_frame_list[idx],
-            'movement.stop_date':expected_time_frame_list[idx + 1],
-          })
-      self.assertEquals(1, len(simulation_movement_list))
-      simulation_movement = simulation_movement_list[0].getObject()
-      self.assertNotEquals(None, simulation_movement)
-
+    for simulation_movement in simulation_movement_list:
+      expected_start_date = expected_time_frame_list[idx]
+      expected_stop_date = expected_time_frame_list[idx+1]
       # Check simulation movement property
       self.assertEquals(1.0,
         simulation_movement.getQuantity())
@@ -144,6 +140,13 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       self.assertEquals(None,
                            simulation_movement.getAggregate(
                              portal_type="Software Release"))
+      self.assertEqual(expected_start_date, simulation_movement.getStartDate())
+      self.assertEqual(expected_stop_date, simulation_movement.getStopDate())
+
+      # not delivered yet
+      self.assertEqual(None, simulation_movement.getDelivery())
+      # packing list shall be buildable
+      self.assertTrue(simulation_movement.isBuildable())
 
       # fetch invoice level simulation
       applied_rule_invoice_list = \
@@ -158,6 +161,11 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       simulation_movement_invoice = \
         simulation_movement_invoice_list[0].getObject()
       self.assertNotEquals(None, simulation_movement_invoice)
+
+      # not delivered yet
+      self.assertEqual(None, simulation_movement_invoice.getDelivery())
+      # invoice shall be not yet buildable
+      self.assertFalse(False, simulation_movement_invoice.isBuildable())
 
       # check property of invoice simulation
       self.assertEquals(1.0,
@@ -182,9 +190,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice.getResource())
       self.assertEquals("vifib/invoicing",
         simulation_movement_invoice.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_start_date,
         simulation_movement_invoice.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_stop_date,
         simulation_movement_invoice.getStopDate())
       self.assertEquals(None,
                         simulation_movement_invoice.getAggregate(
@@ -215,6 +223,10 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       simulation_movement_invoice_transaction_debit = None
       for simulation_movement_invoice_transaction in \
         simulation_movement_invoice_transaction_list:
+        # not delivered nor buildable
+        self.assertEqual(None, simulation_movement_invoice_transaction\
+          .getDelivery())
+        self.assertFalse(simulation_movement_invoice_transaction.isBuildable())
         if "business_process_module/vifib_sale_business_process/account_credit_path" \
           in simulation_movement_invoice_transaction.getCausalityList():
             simulation_movement_invoice_transaction_credit = \
@@ -224,7 +236,17 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
             simulation_movement_invoice_transaction_debit = \
               simulation_movement_invoice_transaction.getObject()
       self.assertNotEquals(None, simulation_movement_invoice_transaction_credit)
+      # not delivered nor buildable
+      self.assertEqual(None, simulation_movement_invoice_transaction_credit\
+        .getDelivery())
+      self.assertFalse(simulation_movement_invoice_transaction_credit\
+        .isBuildable())
       self.assertNotEquals(None, simulation_movement_invoice_transaction_debit)
+      # not delivered nor buildable
+      self.assertEqual(None, simulation_movement_invoice_transaction_debit\
+        .getDelivery())
+      self.assertFalse(simulation_movement_invoice_transaction_debit\
+        .isBuildable())
 
       # check property of invoice transaction simulation
       self.assertEquals(-1.0,
@@ -249,9 +271,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice_transaction_credit.getSpecialise())
       self.assertEquals("vifib/accounting",
         simulation_movement_invoice_transaction_credit.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_start_date,
         simulation_movement_invoice_transaction_credit.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_stop_date,
         simulation_movement_invoice_transaction_credit.getStopDate())
 
       self.assertEquals(1.0,
@@ -276,9 +298,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_invoice_transaction_debit.getSpecialise())
       self.assertEquals("vifib/accounting",
         simulation_movement_invoice_transaction_debit.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_start_date,
         simulation_movement_invoice_transaction_debit.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_stop_date,
         simulation_movement_invoice_transaction_debit.getStopDate())
 
       # credit simulation movement has no content
@@ -311,7 +333,17 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
             simulation_movement_credit_payment_debit = \
               simulation_movement_credit_payment.getObject()
       self.assertNotEquals(None, simulation_movement_credit_payment_credit)
+      # not delivered nor buildable
+      self.assertEqual(None, simulation_movement_credit_payment_credit\
+        .getDelivery())
+      self.assertFalse(simulation_movement_credit_payment_credit\
+        .isBuildable())
       self.assertNotEquals(None, simulation_movement_credit_payment_debit)
+      # not delivered nor buildable
+      self.assertEqual(None, simulation_movement_credit_payment_debit\
+        .getDelivery())
+      self.assertFalse(simulation_movement_credit_payment_debit\
+        .isBuildable())
 
       # check payment level of simulation
       self.assertEquals(-1.0,
@@ -334,9 +366,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_credit_payment_credit.getSpecialise())
       self.assertEquals("vifib/payment",
         simulation_movement_credit_payment_credit.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_start_date,
         simulation_movement_credit_payment_credit.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_stop_date,
         simulation_movement_credit_payment_credit.getStopDate())
 
       self.assertEquals(1.0,
@@ -359,9 +391,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement_credit_payment_debit.getSpecialise())
       self.assertEquals("vifib/payment",
         simulation_movement_credit_payment_debit.getTradePhase())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_start_date,
         simulation_movement_credit_payment_debit.getStartDate())
-      self.assertEquals(expected_time_frame_list[idx+1],
+      self.assertEquals(expected_stop_date,
         simulation_movement_credit_payment_debit.getStopDate())
 
       # check next simulation movement
@@ -376,7 +408,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = \
         self.prepare_installed_computer_partition_sequence_string + """
-      LoginDefaultUser
+      LoginERP5TypeTestCase
       CheckSimulationMovement
       Tic
       SlapLogout

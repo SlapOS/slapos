@@ -1226,7 +1226,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       filter_kw=sequence.get('requested_filter_dict', {}),
       state=sequence.get('instance_state'))
 
-    requested_slap_computer_partition = slap_computer_partition.request(**kw)
+    slap_computer_partition.request(**kw)
 
   def stepCheckRequestComputerPartitionWithAnotherSoftwareType(
                                      self, sequence, **kw):

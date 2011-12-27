@@ -50,20 +50,10 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-"""This script is called on the Invoice after the delivery builder has created\n
+            <value> <string>"""This script is called on the Invoice after the delivery builder has created\n
 the new Invoice.\n
 """\n
 from Products.ERP5Type.Message import translateString\n
-try:\n
-  from Products.CMFCore.WorkflowCore import WorkflowException\n
-except ImportError:\n
-  # WorkflowException has not always been allowed in restricted\n
-  # environment, in this case, make sure WorkflowException is \n
-  # defined \n
-  class WorkflowException(Exception):\n
-    pass\n
 \n
 if related_simulation_movement_path_list is None:\n
   raise RuntimeError, \'related_simulation_movement_path_list is missing. Update ERP5 Product.\'\n
@@ -75,60 +65,17 @@ if not invoice.Invoice_isAdvanced():\n
   if not invoice.getResource():\n
     invoice.setResource(invoice.getPriceCurrency())\n
 \n
-related_packing_list = invoice.getDefaultCausalityValue()\n
-related_order = related_packing_list.getDefaultCausalityValue()\n
-\n
-# copy payment conditions from packing list\n
-# if missing, try to copy from order (for compatibility)\n
-if not invoice.contentValues(portal_type=\'Payment Condition\'):\n
-  payment_condition_copy_id_list = []\n
-  if related_packing_list is not None:\n
-    payment_condition_copy_id_list = related_packing_list.contentIds(filter={\'portal_type\':\'Payment Condition\'})\n
-  if len(payment_condition_copy_id_list) > 0:\n
-    clipboard = related_packing_list.manage_copyObjects(ids=payment_condition_copy_id_list)\n
-    invoice.manage_pasteObjects(clipboard)\n
-  elif related_order is not None:\n
-    payment_condition_copy_id_list = related_order.contentIds(\n
-      filter={\'portal_type\':\'Payment Condition\'})\n
-    if len(payment_condition_copy_id_list) > 0:\n
-      clipboard = related_order.manage_copyObjects(ids=payment_condition_copy_id_list)\n
-      invoice.manage_pasteObjects(clipboard)\n
-\n
-if related_order is not None and context.portal_skins.hasObject(\'erp5_simulation_legacy\'):\n
-  # copy trade condition:\n
-  if not context.getSpecialise():\n
-    context.edit(specialise=related_order.getSpecialise())\n
-  \n
-  # copy order\'s trade model lines\n
-  invoice_trade_model_line_reference_list = [document.getReference() \\\n
-      for document in context.contentValues(portal_type=\'Trade Model Line\')]\n
-  order_trade_model_line_copy_id_list = []\n
-  for order_trade_model_line in related_order.contentValues(\n
-      portal_type=\'Trade Model Line\'):\n
-    if order_trade_model_line.getReference() not in \\\n
-        invoice_trade_model_line_reference_list:\n
-      order_trade_model_line_copy_id_list.append(order_trade_model_line.getId())\n
-  \n
-  if order_trade_model_line_copy_id_list:\n
-    clipboard = related_order.manage_copyObjects(\n
-      ids=order_trade_model_line_copy_id_list)\n
-    context.manage_pasteObjects(clipboard)\n
-  \n
-# copy title, if not updating a new delivery\n
-if not invoice.hasTitle() and related_packing_list.hasTitle():\n
-  invoice.setTitle(related_packing_list.getTitle())\n
-\n
-# initialize accounting_workflow to confirmed state\n
-confirm_tag = \'%s_confirm\' % invoice.getPath()\n
+# initialize accounting_workflow to planned state\n
+plan_tag = \'%s_plan\' % invoice.getPath()\n
 if invoice.getSimulationState() == \'draft\':\n
   invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
   (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  tag=confirm_tag).Delivery_confirm()\n
+  tag=plan_tag).plan(comment=translateString(\'Initialised by Delivery Builder.\'))\n
 else:\n
-  # call builder just same as after script of \'confirm\' transition\n
+  # call builder just same as after script of \'plan\' transition\n
   invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
   (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  tag=confirm_tag).Delivery_expandAndBuild()\n
+  tag=plan_tag).Delivery_expandAndBuild()\n
 \n
 # First set the invoice in the building state on the causality workflow\n
 invoice.startBuilding()\n
@@ -136,10 +83,22 @@ invoice.startBuilding()\n
 # Then an activity should put the causality state in diverged or solved\n
 invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
   (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  after_tag=confirm_tag).updateCausalityState()\n
-
-
-]]></string> </value>
+  after_tag=plan_tag).updateCausalityState()\n
+\n
+# update casuality from movements\n
+causality_list = invoice.getCausalityList()\n
+causality_list.sort()\n
+modified = 0\n
+for movement in invoice.getMovementList(portal_type=\'Invoice Line\'):\n
+  movement_causality = movement.getCausality()\n
+  if movement_causality not in causality_list:\n
+    modified = 1\n
+    causality_list.append(movement_causality)\n
+\n
+if modified:\n
+  causality_list.sort()\n
+  invoice.setCausalityList(causality_list)\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>

@@ -52,7 +52,6 @@
                 <string>trade_phase/vifib/payment</string>
                 <string>source/account_module/receivable</string>
                 <string>destination/account_module/payable</string>
-                <string>trade_date/trade_phase/vifib/invoicing</string>
               </tuple>
             </value>
         </item>

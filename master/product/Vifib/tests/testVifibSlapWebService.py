@@ -31,7 +31,6 @@ from DateTime import DateTime
 from AccessControl.SecurityManagement import newSecurityManager
 from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
 from Products.ERP5Type.tests.backportUnittest import skip
 from Products.ERP5Type.tests.SecurityTestCase import AssertNoPermissionMethod, \
     AssertPermissionMethod
@@ -4179,7 +4178,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
 
   def stepPersonRequestCredentialUpdate(self, sequence, **kw):
     sequence['updated_last_name'] = 'Another'
-    result = self.portal.ERP5Site_newPersonCredentialUpdate(
+    self.portal.ERP5Site_newPersonCredentialUpdate(
         first_name='Homer',
         last_name=sequence['updated_last_name'],
         reference=sequence['web_user'],
