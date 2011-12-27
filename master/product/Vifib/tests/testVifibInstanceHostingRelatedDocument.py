@@ -10,6 +10,9 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
   def stepTriggerBuild(self, sequence, **kw):
     self.portal.portal_alarms.vifib_trigger_build.activeSense()
 
+  def stepCheckPayment(self, sequence, **kw):
+    raise NotImplementedError
+
   def stepCheckSubscriptionSalePackingListCoverage(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog.getResultValue(
       uid=sequence['hosting_subscription_uid'])
@@ -75,55 +78,6 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         delivery.getSpecialise())
 
       idx += 1
-
-  def stepCheckOneMoreDocumentList(self, sequence, **kw):
-    hosting_subscription = self.portal.portal_catalog\
-      .getResultValue(uid=sequence['hosting_subscription_uid'])
-    sale_packing_list_list = self.portal.portal_catalog(
-      portal_type='Sale Packing List',
-      causality_relative_url=hosting_subscription.getRelativeUrl(),
-      sort_on=(('delivery.start_date', "DESC")))
-
-    self.assertEqual(sequence['number_of_sale_packing_list'],
-      len(sale_packing_list_list))
-
-    sale_packing_list = sale_packing_list_list[0].getObject()
-    sale_invoice_transaction_list = sale_packing_list\
-      .getCausalityRelatedValueList(portal_type='Sale Invoice Transaction')
-    self.assertEqual(sequence['invoice_amount'], len(sale_invoice_transaction_list))
-    sale_invoice_transaction = sale_invoice_transaction_list[0]
-
-    payment_transaction_list = sale_invoice_transaction\
-      .getCausalityRelatedValueList(portal_type='Payment Transaction')
-    self.assertEqual(1, len(payment_transaction_list))
-    payment_transaction = payment_transaction_list[0]
-
-    sequence.edit(
-      current_sale_packing_list=sale_packing_list,
-      current_sale_invoice_transaction=sale_invoice_transaction,
-      current_payment_transaction=payment_transaction
-    )
-
-  def stepCheckInvoiceAndInvoiceTransaction(self, sequence, **kw):
-    sale_invoice_transaction = sequence['current_sale_invoice_transaction']
-    self.assertEqual(sale_invoice_transaction.getSimulationState(),
-      'confirmed')
-    self.assertEqual(sale_invoice_transaction.getCausalityList(),
-      [sequence['current_sale_packing_list'].getRelativeUrl()])
-    self.portal.portal_workflow.doActionFor(sale_invoice_transaction,
-      'start_action')
-    self.assertEqual(sale_invoice_transaction.getSimulationState(),
-      'started')
-
-  def stepCheckPayment(self, sequence, **kw):
-    payment_transaction = sequence['current_payment_transaction']
-    self.assertEqual(payment_transaction.getSimulationState(), 'planned')
-    self.assertEqual(payment_transaction.getCausalityList(),
-      [sequence['current_sale_invoice_transaction'].getRelativeUrl()])
-    self.portal.portal_workflow.doActionFor(payment_transaction,
-      'confirm_action')
-    self.assertEqual(payment_transaction.getSimulationState(),
-      'confirmed')
 
   def stepCheckHostingSubscriptionInitialDocumentCoverage(self, sequence, **kw):
     catalog = self.portal.portal_catalog
@@ -309,10 +263,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         Tic
 
         CheckHostingSubscriptionStoppedDocumentCoverage
+
+        CheckPayment
         """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-    raise NotImplementedError('Cover various cases of triggering build')
 
 def test_suite():
   suite = unittest.TestSuite()
