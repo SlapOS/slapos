@@ -56,14 +56,6 @@
 the new Invoice.\n
 """\n
 from Products.ERP5Type.Message import translateString\n
-try:\n
-  from Products.CMFCore.WorkflowCore import WorkflowException\n
-except ImportError:\n
-  # WorkflowException has not always been allowed in restricted\n
-  # environment, in this case, make sure WorkflowException is \n
-  # defined \n
-  class WorkflowException(Exception):\n
-    pass\n
 \n
 if related_simulation_movement_path_list is None:\n
   raise RuntimeError, \'related_simulation_movement_path_list is missing. Update ERP5 Product.\'\n
@@ -75,8 +67,35 @@ if not invoice.Invoice_isAdvanced():\n
   if not invoice.getResource():\n
     invoice.setResource(invoice.getPriceCurrency())\n
 \n
+# initialize accounting_workflow to planned state\n
+plan_tag = \'%s_plan\' % invoice.getPath()\n
+if invoice.getSimulationState() == \'draft\':\n
+  invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
+  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
+  tag=plan_tag).plan(comment=translateString(\'Initialised by Delivery Builder.\'))\n
+else:\n
+  # call builder just same as after script of \'plan\' transition\n
+  invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
+  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
+  tag=plan_tag).Delivery_expandAndBuild()\n
+\n
+# First set the invoice in the building state on the causality workflow\n
+invoice.startBuilding()\n
+\n
+# Then an activity should put the causality state in diverged or solved\n
+invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
+  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
+  after_tag=plan_tag).updateCausalityState()\n
+\n
 related_packing_list = invoice.getDefaultCausalityValue()\n
+if related_packing_list is None:\n
+  # XXX: oink\n
+  return\n
+\n
 related_order = related_packing_list.getDefaultCausalityValue()\n
+if related_order is None:\n
+  # XXX: oink\n
+  return\n
 \n
 # copy payment conditions from packing list\n
 # if missing, try to copy from order (for compatibility)\n
@@ -117,26 +136,6 @@ if related_order is not None and context.portal_skins.hasObject(\'erp5_simulatio
 # copy title, if not updating a new delivery\n
 if not invoice.hasTitle() and related_packing_list.hasTitle():\n
   invoice.setTitle(related_packing_list.getTitle())\n
-\n
-# initialize accounting_workflow to planned state\n
-plan_tag = \'%s_plan\' % invoice.getPath()\n
-if invoice.getSimulationState() == \'draft\':\n
-  invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  tag=plan_tag).plan(comment=translateString(\'Initialised by Delivery Builder.\'))\n
-else:\n
-  # call builder just same as after script of \'plan\' transition\n
-  invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  tag=plan_tag).Delivery_expandAndBuild()\n
-\n
-# First set the invoice in the building state on the causality workflow\n
-invoice.startBuilding()\n
-\n
-# Then an activity should put the causality state in diverged or solved\n
-invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  after_tag=plan_tag).updateCausalityState()\n
 
 
 ]]></string> </value>
