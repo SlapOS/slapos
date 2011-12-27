@@ -37,6 +37,7 @@
             <key> <string>tested_property</string> </key>
             <value>
               <tuple>
+                <string>specialise</string>
                 <string>resource</string>
                 <string>aggregate</string>
                 <string>quantity_unit</string>
@@ -46,6 +47,14 @@
                 <string>destination_function</string>
                 <string>source_account</string>
                 <string>destination_account</string>
+                <string>source_decision</string>
+                <string>destination_decision</string>
+                <string>source_administration</string>
+                <string>destination_administration</string>
+                <string>source_project</string>
+                <string>destination_project</string>
+                <string>source_payment</string>
+                <string>destination_payment</string>
               </tuple>
             </value>
         </item>
