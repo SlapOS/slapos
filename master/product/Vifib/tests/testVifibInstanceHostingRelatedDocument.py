@@ -125,6 +125,64 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEqual(payment_transaction.getSimulationState(),
       'confirmed')
 
+  def stepCheckHostingSubscriptionInitialDocumentCoverage(self, sequence, **kw):
+    catalog = self.portal.portal_catalog
+    hosting_resource = self.portal.portal_preferences\
+      .getPreferredInstanceHostingResource()
+    setup_resource = self.portal.portal_preferences\
+      .getPreferredInstanceSetupResource()
+    subscription_resource = self.portal.portal_preferences\
+      .getPreferredInstanceSubscriptionResource()
+
+    hosting_subscription = catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'])
+    hosting_subscription_url = hosting_subscription.getRelativeUrl()
+
+    # hosting is confirmed, so no invoice
+    hosting_delivery_line_list = catalog(portal_type='Sale Packing List Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=hosting_resource)
+
+    self.assertEqual(1, len(hosting_delivery_line_list))
+    self.assertEqual('confirmed', hosting_delivery_line_list[0]\
+      .getSimulationState())
+
+    hosting_invoice_line_list = catalog(portal_type='Invoice Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=hosting_resource)
+    self.assertEqual(0, len(hosting_invoice_line_list))
+
+    # setup is stopped, and has there is invoice
+    setup_delivery_line_list = catalog(portal_type='Sale Packing List Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=setup_resource)
+
+    self.assertEqual(1, len(setup_delivery_line_list))
+    self.assertEqual('stopped', setup_delivery_line_list[0]\
+      .getSimulationState())
+
+    setup_invoice_line_list = catalog(portal_type='Invoice Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=setup_resource)
+    self.assertEqual(1, len(setup_invoice_line_list))
+    self.assertEqual('planned', setup_invoice_line_list[0]\
+      .getSimulationState())
+
+    # there are 12 confirmed subscription, so no invoice
+    subscription_delivery_line_list = catalog(
+      portal_type='Sale Packing List Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=subscription_resource)
+
+    self.assertEqual(12, len(subscription_delivery_line_list))
+    self.assertEqual(['confirmed'] * 12, [q.getSimulationState() for \
+      q in subscription_delivery_line_list])
+
+    subscription_invoice_line_list = catalog(portal_type='Invoice Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=subscription_resource)
+    self.assertEqual(0, len(subscription_invoice_line_list))
+
   def test_OpenOrder_sale_packing_list(self):
     """
     Check that sale_packing_list is generated properly from simulation
@@ -137,7 +195,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         TriggerBuild
         Tic
         CheckSubscriptionSalePackingListCoverage
-        Logout
+
+        TriggerBuild
+        Tic
+        # Nothing shall change
+        CheckHostingSubscriptionInitialDocumentCoverage
         """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
