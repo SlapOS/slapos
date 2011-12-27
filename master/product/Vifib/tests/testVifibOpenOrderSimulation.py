@@ -143,6 +143,11 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       self.assertEqual(expected_start_date, simulation_movement.getStartDate())
       self.assertEqual(expected_stop_date, simulation_movement.getStopDate())
 
+      # not delivered yet
+      self.assertEqual(None, simulation_movement.getDelivery())
+      # packing list shall be buildable
+      self.assertTrue(simulation_movement.isBuildable())
+
       # fetch invoice level simulation
       applied_rule_invoice_list = \
         simulation_movement.contentValues(portal_type="Applied Rule")
@@ -156,6 +161,11 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       simulation_movement_invoice = \
         simulation_movement_invoice_list[0].getObject()
       self.assertNotEquals(None, simulation_movement_invoice)
+
+      # not delivered yet
+      self.assertEqual(None, simulation_movement_invoice.getDelivery())
+      # invoice shall be not yet buildable
+      self.assertFalse(False, simulation_movement_invoice.isBuildable())
 
       # check property of invoice simulation
       self.assertEquals(1.0,
@@ -213,6 +223,10 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       simulation_movement_invoice_transaction_debit = None
       for simulation_movement_invoice_transaction in \
         simulation_movement_invoice_transaction_list:
+        # not delivered nor buildable
+        self.assertEqual(None, simulation_movement_invoice_transaction\
+          .getDelivery())
+        self.assertFalse(simulation_movement_invoice_transaction.isBuildable())
         if "business_process_module/vifib_sale_business_process/account_credit_path" \
           in simulation_movement_invoice_transaction.getCausalityList():
             simulation_movement_invoice_transaction_credit = \
@@ -222,7 +236,17 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
             simulation_movement_invoice_transaction_debit = \
               simulation_movement_invoice_transaction.getObject()
       self.assertNotEquals(None, simulation_movement_invoice_transaction_credit)
+      # not delivered nor buildable
+      self.assertEqual(None, simulation_movement_invoice_transaction_credit\
+        .getDelivery())
+      self.assertFalse(simulation_movement_invoice_transaction_credit\
+        .isBuildable())
       self.assertNotEquals(None, simulation_movement_invoice_transaction_debit)
+      # not delivered nor buildable
+      self.assertEqual(None, simulation_movement_invoice_transaction_debit\
+        .getDelivery())
+      self.assertFalse(simulation_movement_invoice_transaction_debit\
+        .isBuildable())
 
       # check property of invoice transaction simulation
       self.assertEquals(-1.0,
@@ -309,7 +333,17 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
             simulation_movement_credit_payment_debit = \
               simulation_movement_credit_payment.getObject()
       self.assertNotEquals(None, simulation_movement_credit_payment_credit)
+      # not delivered nor buildable
+      self.assertEqual(None, simulation_movement_credit_payment_credit\
+        .getDelivery())
+      self.assertFalse(simulation_movement_credit_payment_credit\
+        .isBuildable())
       self.assertNotEquals(None, simulation_movement_credit_payment_debit)
+      # not delivered nor buildable
+      self.assertEqual(None, simulation_movement_credit_payment_debit\
+        .getDelivery())
+      self.assertFalse(simulation_movement_credit_payment_debit\
+        .isBuildable())
 
       # check payment level of simulation
       self.assertEquals(-1.0,
