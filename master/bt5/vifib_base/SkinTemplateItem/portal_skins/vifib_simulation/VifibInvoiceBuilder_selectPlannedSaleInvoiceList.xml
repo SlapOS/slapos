@@ -50,14 +50,12 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-accounting_module = portal.getDefaultModule(\'Sale Invoice Transaction\')\n
-\n
-invoice = accounting_module.searchFolder(\n
+            <value> <string>portal_catalog = context.getPortalObject().portal_catalog\n
+simulation_state = \'planned\'\n
+# use catalog to prefetch, but check later in ZODB\n
+return [q.getObject() for q in portal_catalog(\n
     portal_type=\'Sale Invoice Transaction\',\n
-    simulation_state=\'planned\')\n
-\n
-return invoice\n
+    simulation_state=simulation_state) if q.getSimulationState() == simulation_state]\n
 </string> </value>
         </item>
         <item>
