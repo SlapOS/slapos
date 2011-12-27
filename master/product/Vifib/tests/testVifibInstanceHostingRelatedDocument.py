@@ -190,6 +190,9 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       resource_relative_url=subscription_resource)
     self.assertEqual(0, len(subscription_invoice_line_list))
 
+    # invoice shall be solved
+    self.assertEqual('solved', setup_invoice_line_list[0].getCausalityState())
+
     sequence.edit(
       subscription_delivery_uid_list=[q.getParentValue().getUid() for q in \
         subscription_delivery_line_list]
@@ -272,6 +275,9 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       setup_invoice_line_list[0].getParentValue().getRelativeUrl(),
       subscription_invoice_line_list[0].getParentValue().getRelativeUrl()
     )
+
+    # invoice shall be solved
+    self.assertEqual('solved', setup_invoice_line_list[0].getCausalityState())
 
   def test_OpenOrder_sale_packing_list(self):
     """
