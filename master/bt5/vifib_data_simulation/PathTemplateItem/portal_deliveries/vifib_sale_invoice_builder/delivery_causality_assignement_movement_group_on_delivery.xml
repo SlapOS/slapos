@@ -34,7 +34,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Delivery Causality Assignement Movement Group On Delivery</string> </value>
+            <value> <string>delivery_causality_assignement_movement_group_on_delivery</string> </value>
         </item>
       </dictionary>
     </pickle>
