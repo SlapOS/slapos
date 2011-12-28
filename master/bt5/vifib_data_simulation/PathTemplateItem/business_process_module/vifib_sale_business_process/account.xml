@@ -114,7 +114,6 @@
             <key> <string>completed_state</string> </key>
             <value>
               <tuple>
-                <string>confirmed</string>
                 <string>delivered</string>
                 <string>started</string>
                 <string>stopped</string>
