@@ -755,6 +755,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
       SlapLoginCurrentSoftwareInstance
       Bang
+      ConfirmOrderedSaleOrderActiveSense
       SlapLogout
       Tic
       LoginTestVifibCustomer
@@ -845,6 +846,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       RenameCurrentSoftwareInstanceDead
       Tic
       Bang
+      ConfirmOrderedSaleOrderActiveSense
       Tic
       Logout
       SlapLogout
@@ -868,6 +870,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLogout
 
@@ -879,6 +882,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLogout
 
@@ -964,6 +968,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       CheckRaisesNotFoundComputerPartitionParameterDict
       Tic
       RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLogout
 
@@ -973,6 +978,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       RenameCurrentSoftwareInstanceDead
       Tic
       Bang
+      ConfirmOrderedSaleOrderActiveSense
       Tic
       Logout
       SlapLogout
@@ -986,6 +992,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLogout
 
@@ -996,6 +1003,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLogout
 
@@ -1007,6 +1015,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLogout
 
