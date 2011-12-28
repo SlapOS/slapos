@@ -127,9 +127,7 @@
         </item>
         <item>
             <key> <string>preferred_payzen_integration_site</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>portal_integrations/vifib_payzen_integration</string> </value>
         </item>
         <item>
             <key> <string>preferred_software_setup_resource</string> </key>
