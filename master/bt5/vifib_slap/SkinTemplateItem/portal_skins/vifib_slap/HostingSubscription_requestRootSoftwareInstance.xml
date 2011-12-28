@@ -98,7 +98,7 @@ if request_software_instance is None:\n
     )\n
 \n
     if not person_request:\n
-      request_software_instance.requestComputerPartition(\n
+      request_software_instance.requestSoftwareInstance(\n
         software_release=context.getRootSoftwareReleaseUrl(),\n
         hosting_subscription_uid=context.getUid(),\n
         software_type=context.getSourceReference(),\n
