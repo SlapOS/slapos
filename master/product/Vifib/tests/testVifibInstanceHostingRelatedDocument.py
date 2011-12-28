@@ -263,7 +263,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         # Nothing shall change
         CheckHostingSubscriptionInitialDocumentCoverage
 
-        # Stop first Subscriptoin delivery and after triggering build check
+        # Stop first Subscription delivery and after triggering build check
         # that invoice got updated
 
         SelectNextSubscriptionDelivery
