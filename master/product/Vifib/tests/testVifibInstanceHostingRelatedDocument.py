@@ -544,6 +544,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         Tic
 
         CheckHostingSubscriptionStartedInvoiceDocumentCoverage
+
+        CheckPaymentStarting
         """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
