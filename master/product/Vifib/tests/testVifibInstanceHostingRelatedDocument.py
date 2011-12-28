@@ -455,11 +455,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
     # there shall be one payment transaction related to started invoice
     payment_transaction_list = started_invoice.getCausalityRelatedValueList(
-      portal_type='Payment Transcation')
+      portal_type='Payment Transaction')
     self.assertEqual(1, len(payment_transaction_list))
     payment_transaction = payment_transaction_list[0]
 
-    # this payment transcation shall be planned and solved
+    # this payment transaction shall be planned and solved
     self.assertEqual('planned', payment_transaction.getSimulationState())
     self.assertEqual('solved', payment_transaction.getCausalityState())
 
