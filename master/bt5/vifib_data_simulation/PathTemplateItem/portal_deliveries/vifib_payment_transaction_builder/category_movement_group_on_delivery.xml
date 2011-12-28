@@ -37,13 +37,10 @@
             <key> <string>tested_property</string> </key>
             <value>
               <tuple>
-                <string>source_payment</string>
-                <string>destination_payment</string>
                 <string>source_section</string>
                 <string>destination_section</string>
                 <string>payment_mode</string>
                 <string>resource</string>
-                <string>specialise</string>
               </tuple>
             </value>
         </item>
