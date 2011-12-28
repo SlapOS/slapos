@@ -536,7 +536,6 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
         # Lets check the payment
 
-        SelectPlannedInvoice
         StartInvoice
         Tic
 
