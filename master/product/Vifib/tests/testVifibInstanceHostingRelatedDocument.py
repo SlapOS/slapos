@@ -422,7 +422,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['subscription_resource'])
     self.assertEqual(2, len(subscription_invoice_line_list))
-    self.assertEqual(['started', 'planned'],
+    self.assertEqual(['planned', 'started'],
       sorted([q.getSimulationState() for q in subscription_invoice_line_list]))
 
     # there are three invoice lines, where two share same invoice
