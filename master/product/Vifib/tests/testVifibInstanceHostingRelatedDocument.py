@@ -561,7 +561,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEqual(1, len(payment_transaction_list))
     payment_transaction = payment_transaction_list[0]
     self.assertEqual([payment_transaction.getRelativeUrl()],
-      second_invoice.getCausalityRelatedValueList(
+      second_invoice.getCausalityRelatedList(
         portal_type='Payment Transaction'))
 
     # this payment transaction shall be planned and solved
