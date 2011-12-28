@@ -370,7 +370,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.portal.portal_catalog.getResultValue(
       uid=sequence['invoice_uid']).start()
 
-  def stepCheckHostingSubscriptionStartedInvoiceDocumentCoverage(self,
+  def stepStopInvoice(self, sequence, **kw):
+    self.portal.portal_catalog.getResultValue(
+      uid=sequence['invoice_uid']).stop()
+
+  def stepCheckHostingSubscriptionStoppedInvoiceDocumentCoverage(self,
     sequence, **kw):
     catalog = self.portal.portal_catalog
     hosting_subscription = catalog.getResultValue(
@@ -404,7 +408,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['setup_resource'])
     self.assertEqual(1, len(setup_invoice_line_list))
-    self.assertEqual('started', setup_invoice_line_list[0]\
+    self.assertEqual('stopped', setup_invoice_line_list[0]\
       .getSimulationState())
 
     # there are 10 confirmed and 2 stopped subscription, so 2 invoice line
@@ -422,7 +426,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['subscription_resource'])
     self.assertEqual(2, len(subscription_invoice_line_list))
-    self.assertEqual(['planned', 'started'],
+    self.assertEqual(['planned', 'stopped'],
       sorted([q.getSimulationState() for q in subscription_invoice_line_list]))
 
     # there are three invoice lines, where two share same invoice
@@ -431,7 +435,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       setup_invoice_line_list[0].getParentValue().getRelativeUrl(),
       [q.getParentValue().getRelativeUrl() for q in \
         subscription_invoice_line_list \
-          if q.getSimulationState() == 'started'][0]
+          if q.getSimulationState() == 'stopped'][0]
     )
     self.assertNotEqual(
       setup_invoice_line_list[0].getParentValue().getRelativeUrl(),
@@ -440,21 +444,21 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
           if q.getSimulationState() == 'planned'][0]
     )
 
-    started_invoice = setup_invoice_line_list[0].getParentValue()
+    stopped_invoice = setup_invoice_line_list[0].getParentValue()
     planned_invoice = [q.getParentValue() for q in \
       subscription_invoice_line_list \
         if q.getSimulationState() == 'planned'][0]
 
     # invoices shall be solved
     self.assertEqual('solved', planned_invoice.getCausalityState())
-    self.assertEqual('solved', started_invoice.getCausalityState())
+    self.assertEqual('solved', stopped_invoice.getCausalityState())
 
     # there shall be no payment transaction related to planned invoice
     self.assertEqual([], planned_invoice.getCausalityRelatedList(
       portal_type='Payment Transaction'))
 
-    # there shall be one payment transaction related to started invoice
-    payment_transaction_list = started_invoice.getCausalityRelatedValueList(
+    # there shall be one payment transaction related to stopped invoice
+    payment_transaction_list = stopped_invoice.getCausalityRelatedValueList(
       portal_type='Payment Transaction')
     self.assertEqual(1, len(payment_transaction_list))
     payment_transaction = payment_transaction_list[0]
@@ -464,20 +468,20 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEqual('solved', payment_transaction.getCausalityState())
 
     # only this invoice shall be covered by this payment transaction
-    self.assertEqual(started_invoice.getRelativeUrl(),
+    self.assertEqual(stopped_invoice.getRelativeUrl(),
       payment_transaction.getCausality())
 
     # this payment shall fully pay the invoice
-    self.assertEqual(started_invoice.getTotalPrice(),
+    self.assertEqual(stopped_invoice.getTotalPrice(),
       payment_transaction.PaymentTransaction_getTotalPayablePrice())
 
-    # Started invoice shall have causality of two packing lists
+    # Stopped invoice shall have causality of two packing lists
     self.assertEqual(
       sorted([setup_delivery_line_list[0].getParentValue().getUid()] +
       [q.getParentValue().getUid() for q in subscription_delivery_line_list \
         if q.getSimulationState() == 'stopped' and \
           q.getParentValue().getUid() != sequence['subscription_delivery_uid']]),
-      sorted(started_invoice.getCausalityUidList()))
+      sorted(stopped_invoice.getCausalityUidList()))
 
     # planned invoice shall have causality of one packing list
     self.assertEqual(
@@ -537,12 +541,13 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         # Lets check the payment
 
         StartInvoice
+        StopInvoice
         Tic
 
         TriggerBuild
         Tic
 
-        CheckHostingSubscriptionStartedInvoiceDocumentCoverage
+        CheckHostingSubscriptionStoppedInvoiceDocumentCoverage
 
         CheckPaymentStarting
         """
