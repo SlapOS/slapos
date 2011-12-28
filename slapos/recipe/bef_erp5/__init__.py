@@ -31,11 +31,6 @@ import zc.buildout
 import sys
 import netaddr
 
-# BST and Europe/Dublin timezones suffer from bug when conversion to self
-# zone adds one hour
-#BEF_TIMEZONE = 'BST'
-BEF_TIMEZONE = 'Europe/London'
-
 def validLoopBackAddress(ip):
   if netaddr.IPAddress(ip).is_loopback():
     return True
@@ -158,7 +153,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
         with_timerservice=True,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config,
-        zope_environment=dict(TZ=BEF_TIMEZONE))
+        )
     # Two Activity Nodes
     for i in (1, 2):
       zope_port += 1
@@ -166,7 +161,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
         with_timerservice=True,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config,
-        zope_environment=dict(TZ=BEF_TIMEZONE))
+        )
     # Eight Working Nodes (Human access)
     login_url_list = []
     for i in (1, 2, 3, 4, 5, 6, 7, 8):
@@ -175,7 +170,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
         'zope_login_%s' % i, with_timerservice=False,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config,
-        zope_environment=dict(TZ=BEF_TIMEZONE)))
+        )
     login_haproxy = self.installHaproxy(ip, 15001, 'login', site_check_path,
         login_url_list)
     # One Web Node
@@ -184,7 +179,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
         with_timerservice=True,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config,
-        thread_amount=10, zope_environment=dict(TZ=BEF_TIMEZONE))]
+        thread_amount=10, )]
     web_haproxy = self.installHaproxy(ip, 15002, 'web', site_check_path,
         web_url_list)
     apache_web = self.installBackendApache(self.getGlobalIPv6Address(), 15001,
@@ -201,7 +196,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
         with_timerservice=True,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config,
-        zope_environment=dict(TZ=BEF_TIMEZONE))]
+        )]
     admin_haproxy = self.installHaproxy(ip, 15003, 'admin', site_check_path,
         admin_url_list)
     apache_admin = self.installBackendApache(self.getGlobalIPv6Address(), 15002,
@@ -308,7 +303,7 @@ class Recipe(slapos.recipe.erp5.Recipe):
           self.getTemplateFilename('zope-zodb-snippet.conf.in'),
           dict(zodb_root_path=zodb_root_path)),
           thread_amount=8, with_timerservice=True,
-          zope_environment=dict(TZ=BEF_TIMEZONE))
+          )
     self.setConnectionDict(dict(
       site_user=user,
       site_password=password,
