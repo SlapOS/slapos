@@ -27,7 +27,7 @@
         </item>
         <item>
             <key> <string>int_index</string> </key>
-            <value> <int>2</int> </value>
+            <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -37,8 +37,6 @@
             <key> <string>tested_property</string> </key>
             <value>
               <tuple>
-                <string>delivery_mode</string>
-                <string>incoterm</string>
                 <string>source</string>
                 <string>destination</string>
                 <string>source_section</string>
@@ -50,6 +48,10 @@
         <item>
             <key> <string>title</string> </key>
             <value> <string>category_movement_group_on_delivery</string> </value>
+        </item>
+        <item>
+            <key> <string>update_always</string> </key>
+            <value> <int>0</int> </value>
         </item>
       </dictionary>
     </pickle>
