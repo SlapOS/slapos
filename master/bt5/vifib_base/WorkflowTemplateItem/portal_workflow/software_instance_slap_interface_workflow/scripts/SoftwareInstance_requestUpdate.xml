@@ -73,7 +73,11 @@ service_uid_state_mapping = {\n
   setup_resource_uid: [\'stopped\'],\n
   hosting_resource_uid: [\'started\', \'delivered\']\n
 }\n
-previous_packing_list_line = context.SoftwareInstance_getInstancePackingListLine(state_change)\n
+try:\n
+  previous_packing_list_line = context.SoftwareInstance_getInstancePackingListLine(state_change)\n
+except ValueError:\n
+  # no packing list yet, no need to update\n
+  return\n
 \n
 if previous_packing_list_line.getResourceUid() == hosting_resource_uid:\n
   if previous_packing_list_line.getSimulationState() not in service_uid_state_mapping[hosting_resource_uid]:\n
