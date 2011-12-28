@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,30 +24,37 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from slapos.recipe.librecipe import GenericSlapRecipe
 import os
+import json
+import traceback
 
-from slapos.recipe.librecipe import GenericBaseRecipe
 
-class Recipe(GenericBaseRecipe):
-
+class Recipe(GenericSlapRecipe):
   def _options(self, options):
-    self.directory = options.copy()
-    del self.directory['recipe']
+    self.dirname = os.path.join(self.buildout['buildout']['parts-directory'],
+                                self.name)
+    options['output'] = os.path.join(self.dirname, self.name + '.cfg')
 
-    str_mode = '0700'
-    if 'mode' in self.directory:
-      str_mode = self.directory['mode']
-      del self.directory['mode']
-    self.mode = int(str_mode, 8)
+  def _generateRealTemplate(self):
+    # TODO check json against schema
+    json_data = {}
+    if self.parameter_dict.get('cloudooo-json', None):
+      json_data = json.loads(self.parameter_dict['cloudooo-json'])
+    # dymanic fonts
+    font_url_list = json_data.get('font_url_list', [])
+    fontconfig_template = open(self.options['template']).read()
+    fontconfig = open(self.options['snippet-fontconfig']).read()
+    fontconfig_extension = fontconfig % dict(font_url_list=' '.join(font_url_list))
+    with open(self.options['output'], 'w') as f:
+      f.write(fontconfig_template + fontconfig_extension)
 
-  def install(self):
-
-    for directory in sorted(self.directory.values()):
-      path = directory
-
-      if not os.path.exists(path):
-        os.mkdir(path, self.mode)
-      elif not os.path.isdir(path):
-        raise OSError("%s path exits, but it's not a directory.")
-
-    return []
+  def _install(self):
+    if not os.path.exists(self.dirname):
+      os.mkdir(self.dirname)
+    try:
+      self._generateRealTemplate()
+    except Exception:
+      print 'Ignored issue during template generation:\n%s' % \
+        traceback.format_exc()
+    return [self.dirname]

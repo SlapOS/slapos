@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,30 +24,35 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import os
-
+import zc.buildout
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
-
-  def _options(self, options):
-    self.directory = options.copy()
-    del self.directory['recipe']
-
-    str_mode = '0700'
-    if 'mode' in self.directory:
-      str_mode = self.directory['mode']
-      del self.directory['mode']
-    self.mode = int(str_mode, 8)
-
   def install(self):
-
-    for directory in sorted(self.directory.values()):
-      path = directory
-
-      if not os.path.exists(path):
-        os.mkdir(path, self.mode)
-      elif not os.path.isdir(path):
-        raise OSError("%s path exits, but it's not a directory.")
-
-    return []
+    path_list = []
+    conversion_server_dict = dict(
+      working_path=self.options['data-directory'],
+      uno_path=self.options['ooo-uno-path'],
+      office_binary_path=self.options['ooo-binary-path'],
+      ip=self.options['ip'],
+      port=int(self.options['port']),
+      openoffice_port=int(self.options['openoffice-port']),
+    )
+    for env_line in self.options['environment'].splitlines():
+      env_line = env_line.strip()
+      if not env_line:
+        continue
+      if '=' in env_line:
+        env_key, env_value = env_line.split('=')
+        conversion_server_dict[env_key.strip()] = env_value.strip()
+      else:
+        raise zc.buildout.UserError('Line %r in environment parameter is '
+            'incorrect' % env_line)
+    config_file = self.createFile(self.options['configuration-file'],
+        self.substituteTemplate(self.getTemplateFilename('cloudooo.cfg.in'),
+          conversion_server_dict))
+    path_list.append(config_file)
+    path_list.append(self.createPythonScript(self.options['wrapper'],
+     'slapos.recipe.librecipe.execute.execute_with_signal_translation',
+      [self.options['ooo-paster'].strip(), 'serve', config_file]))
+    return path_list

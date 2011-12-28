@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,30 +24,35 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import os
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
 
-  def _options(self, options):
-    self.directory = options.copy()
-    del self.directory['recipe']
-
-    str_mode = '0700'
-    if 'mode' in self.directory:
-      str_mode = self.directory['mode']
-      del self.directory['mode']
-    self.mode = int(str_mode, 8)
-
   def install(self):
 
-    for directory in sorted(self.directory.values()):
-      path = directory
+    # Configuration file
+    config = dict(
+      data_directory=self.options['data-directory'],
+      ip_address=self.options['ip'],
+      port=self.options['sphinx-port'],
+      sql_port=self.options['sql-port'],
+      searchd_log=self.options['searchd-log'],
+      query_log=self.options['query-log'],
+      pid=self.options['pid'],
+      )
+    sphinx_conf_path = self.createFile(
+        self.options['configuration-file'], 
+        self.substituteTemplate(self.getTemplateFilename('sphinx.conf.in'),
+          config)
+    )
 
-      if not os.path.exists(path):
-        os.mkdir(path, self.mode)
-      elif not os.path.isdir(path):
-        raise OSError("%s path exits, but it's not a directory.")
+    # Create init script
+    wrapper = self.createPythonScript(
+        self.options['wrapper'], 
+        'slapos.recipe.librecipe.execute.execute', 
+        [self.options['sphinx-searchd-binary'].strip(), '-c',
+         sphinx_conf_path, '--nodetach'],
+        )
 
-    return []
+    return [wrapper, sphinx_conf_path]

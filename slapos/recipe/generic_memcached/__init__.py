@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,30 +24,33 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import os
-
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
+  """
+  memcached instance configuration.
 
-  def _options(self, options):
-    self.directory = options.copy()
-    del self.directory['recipe']
+  wrapper-path -- location of the init script to generate
 
-    str_mode = '0700'
-    if 'mode' in self.directory:
-      str_mode = self.directory['mode']
-      del self.directory['mode']
-    self.mode = int(str_mode, 8)
+  binary-path -- location of the memcached command
+
+  ip -- ip of the memcached server
+
+  port -- port of the memcached server
+  """
 
   def install(self):
+    template_filename = self.getTemplateFilename('memcached.in')
 
-    for directory in sorted(self.directory.values()):
-      path = directory
+    config = dict(
+        memcached_binary=self.options['binary_path'],
+        memcached_ip=self.options['ip'],
+        memcached_port=self.options['port'],
+    )
 
-      if not os.path.exists(path):
-        os.mkdir(path, self.mode)
-      elif not os.path.isdir(path):
-        raise OSError("%s path exits, but it's not a directory.")
+    executable_path = self.createExecutable(
+      self.options['wrapper_path'],
+      self.substituteTemplate(self.getTemplateFilename('memcached.in'),
+                              config))
 
-    return []
+    return [executable_path]

@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,29 +25,32 @@
 #
 ##############################################################################
 import os
+import logging
 
-from slapos.recipe.librecipe import GenericBaseRecipe
-
-class Recipe(GenericBaseRecipe):
-
-  def _options(self, options):
-    self.directory = options.copy()
-    del self.directory['recipe']
-
-    str_mode = '0700'
-    if 'mode' in self.directory:
-      str_mode = self.directory['mode']
-      del self.directory['mode']
-    self.mode = int(str_mode, 8)
+class Recipe:
+  def __init__(self, buildout, name, options):
+    self.buildout = buildout
+    self.name = name
+    self.options = options
+    self.logger = logging.getLogger(self.name)
 
   def install(self):
+    """
+    Links binaries to instance's bin directory for easier exposal
+    """
+    path_list = []
+    target_directory = self.options['target-directory']
+    for linkline in self.options['link-binary'].split():
+      path, linkname = os.path.split(linkline)
 
-    for directory in sorted(self.directory.values()):
-      path = directory
+      link = os.path.join(target_directory, linkname)
+      if os.path.lexists(link):
+        if not os.path.islink(link):
+          raise zc.buildout.UserError(
+              'Target link already %r exists but it is not link' % link)
+        os.unlink(link)
+      os.symlink(linkline, link)
+      self.logger.debug('Created link %r -> %r' % (link, linkline))
+      path_list.append(link)
 
-      if not os.path.exists(path):
-        os.mkdir(path, self.mode)
-      elif not os.path.isdir(path):
-        raise OSError("%s path exits, but it's not a directory.")
-
-    return []
+    return path_list

@@ -1,0 +1,10 @@
+<zodb_db %(storage-name)s>
+  cache-size %(zope-cache-size)s
+  mount-point %(mount-point)s
+  <zeoclient>
+    cache-size %(zeo-cache-size)s
+    server %(server)s
+    storage %(storage-name)s
+    name %(storage-name)s
+  </zeoclient>
+</zodb_db>

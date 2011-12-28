@@ -24,30 +24,15 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import os
+import zc.buildout
 
-from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.recipe.librecipe import GenericSlapRecipe
 
-class Recipe(GenericBaseRecipe):
-
-  def _options(self, options):
-    self.directory = options.copy()
-    del self.directory['recipe']
-
-    str_mode = '0700'
-    if 'mode' in self.directory:
-      str_mode = self.directory['mode']
-      del self.directory['mode']
-    self.mode = int(str_mode, 8)
-
-  def install(self):
-
-    for directory in sorted(self.directory.values()):
-      path = directory
-
-      if not os.path.exists(path):
-        os.mkdir(path, self.mode)
-      elif not os.path.isdir(path):
-        raise OSError("%s path exits, but it's not a directory.")
-
+class Recipe(GenericSlapRecipe):
+  def _install(self):
+    publish_dict = dict()
+    for k, v in self.options.iteritems():
+      if k.startswith('url'):
+        publish_dict[k] = v
+    self.setConnectionDict(publish_dict)
     return []

@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,29 +25,17 @@
 #
 ##############################################################################
 import os
-
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
-
-  def _options(self, options):
-    self.directory = options.copy()
-    del self.directory['recipe']
-
-    str_mode = '0700'
-    if 'mode' in self.directory:
-      str_mode = self.directory['mode']
-      del self.directory['mode']
-    self.mode = int(str_mode, 8)
-
   def install(self):
+    path_list = []
+    a = path_list.append
+    configuration_file = self.createFile(self.options['configuration-path'], self.substituteTemplate(self.getTemplateFilename('tidstorage.py.in'), self.options))
+    a(configuration_file)
+    tidstorage_wrapper = self.createPythonScript(self.options['tidstorage-wrapper'], 'slapos.recipe.librecipe.execute.execute', [self.options['tidstoraged-binary'], '--nofork', '--config', configuration_file])
+    a(tidstorage_wrapper)
+    repozo_wrapper = self.createPythonScript(self.options['repozo-wrapper'], 'slapos.recipe.librecipe.execute.execute', [self.options['tidstorage-repozo-binary'], '--config', configuration_file, '--repozo', self.options['repozo-binary'], '-z'])
+    a(repozo_wrapper)
 
-    for directory in sorted(self.directory.values()):
-      path = directory
-
-      if not os.path.exists(path):
-        os.mkdir(path, self.mode)
-      elif not os.path.isdir(path):
-        raise OSError("%s path exits, but it's not a directory.")
-
-    return []
+    return path_list
