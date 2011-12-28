@@ -115,9 +115,7 @@
         <item>
             <key> <string>completed_state</string> </key>
             <value>
-              <tuple>
-                <string>confirmed</string>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>
@@ -147,6 +145,14 @@
             <key> <string>description</string> </key>
             <value>
               <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>frozen_state</string> </key>
+            <value>
+              <tuple>
+                <string>delivered</string>
+              </tuple>
             </value>
         </item>
         <item>
