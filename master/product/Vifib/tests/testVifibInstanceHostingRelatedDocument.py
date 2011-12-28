@@ -585,6 +585,14 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEqual('confirmed', payment_transaction.getSimulationState())
     self.assertEqual('solved', payment_transaction.getCausalityState())
 
+  def stepInvoiceSetStartDatePreviousMonth(self, sequence, **kw):
+    invoice = self.portal.portal_catalog.getResultValue(
+      uid=sequence['invoice_uid'])
+    invoice.setStartDate(getClosestDate(target_date=DateTime())-1)
+
+  def stepTriggerStopInvoiceAlarm(self, sequence, **kw):
+    self.portal.portal_alarms.stop_planned_sale_invoice_transaction.activeSense()
+
   def test_OpenOrder_sale_packing_list(self):
     """
     Check that sale_packing_list is generated properly from simulation
@@ -616,6 +624,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
         CheckHostingSubscriptionStoppedDocumentCoverage
 
+        # proff that alarm will ignore this month invoices
+        TriggerStopInvoiceAlarm
+        Tic
+        CheckHostingSubscriptionStoppedDocumentCoverage
+
         # Confirm current invoice and stop next delivery. After triggering build
         # new planned invoice shall be available.
 
@@ -644,13 +657,14 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
         CheckHostingSubscriptionStoppedInvoiceDocumentCoverage
 
-        # Payment should cover both invoices
+        # Proof that alarm is capable to stop previous month invoice
         SelectPlannedInvoice
-        ConfirmInvoice
-        StartInvoice
-        StopInvoice
+        InvoiceSetStartDatePreviousMonth
+        Tic
+        TriggerStopInvoiceAlarm
         Tic
 
+        # Payment should cover both invoices
         TriggerBuild
         Tic
 
