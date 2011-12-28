@@ -490,6 +490,101 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
           q.getParentValue().getUid() == sequence['subscription_delivery_uid']],
       planned_invoice.getCausalityUidList())
 
+  def stepCheckHostingSubscriptionTwoStoppedInvoiceDocumentCoverage(self,
+    sequence, **kw):
+    catalog = self.portal.portal_catalog
+    hosting_subscription = catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'])
+    hosting_subscription_url = hosting_subscription.getRelativeUrl()
+
+    # hosting is confirmed, so no invoice
+    hosting_delivery_line_list = catalog(portal_type='Sale Packing List Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['hosting_resource'])
+
+    self.assertEqual(1, len(hosting_delivery_line_list))
+    self.assertEqual('confirmed', hosting_delivery_line_list[0]\
+      .getSimulationState())
+
+    hosting_invoice_line_list = catalog(portal_type='Invoice Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['hosting_resource'])
+    self.assertEqual(0, len(hosting_invoice_line_list))
+
+    # setup is stopped, and has there is invoice
+    setup_delivery_line_list = catalog(portal_type='Sale Packing List Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['setup_resource'])
+
+    self.assertEqual(1, len(setup_delivery_line_list))
+    self.assertEqual('stopped', setup_delivery_line_list[0]\
+      .getSimulationState())
+
+    setup_invoice_line_list = catalog(portal_type='Invoice Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['setup_resource'])
+    self.assertEqual(1, len(setup_invoice_line_list))
+    self.assertEqual('stopped', setup_invoice_line_list[0]\
+      .getSimulationState())
+
+    # there are 10 confirmed and 2 stopped subscription, so 2 invoice line
+    subscription_delivery_line_list = catalog(
+      portal_type='Sale Packing List Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['subscription_resource'])
+
+    self.assertEqual(12, len(subscription_delivery_line_list))
+    self.assertEqual((['confirmed'] * 10) + (['stopped'] * 2),
+      sorted([q.getSimulationState() for \
+      q in subscription_delivery_line_list]))
+
+    subscription_invoice_line_list = catalog(portal_type='Invoice Line',
+      aggregate_relative_url=hosting_subscription_url,
+      resource_relative_url=sequence['subscription_resource'])
+    self.assertEqual(2, len(subscription_invoice_line_list))
+    self.assertEqual(['stopped', 'stopped'],
+      sorted([q.getSimulationState() for q in subscription_invoice_line_list]))
+
+    # there are three invoice lines, where two share same invoice
+    # and other is on other one
+    first_invoice = setup_invoice_line_list[0].getParentValue()
+    second_invoice = [q.getParentValue() for q in subscription_invoice_line_list \
+      if q.getParentValue().getUid() != first_invoice.getUid()][0]
+
+    # invoices shall be solved
+    self.assertEqual('solved', first_invoice.getCausalityState())
+    self.assertEqual('solved', second_invoice.getCausalityState())
+
+    # both invoice shall have shared payment transaction
+    payment_transaction_list = first_invoice.getCausalityRelatedValueList(
+      portal_type='Payment Transaction')
+    self.assertEqual(1, len(payment_transaction_list))
+    payment_transaction = payment_transaction_list[0]
+    self.assertEqual([payment_transaction.getRelativeUrl()],
+      second_invoice.getCausalityRelatedValueList(
+        portal_type='Payment Transaction'))
+
+    # this payment transaction shall be planned and solved
+    self.assertEqual('planned', payment_transaction.getSimulationState())
+    self.assertEqual('solved', payment_transaction.getCausalityState())
+
+    # this payment shall fully pay both invoices
+    self.assertEqual(
+      first_invoice.getTotalPrice() + second_invoice.getTotalPrice(),
+      payment_transaction.PaymentTransaction_getTotalPayablePrice())
+
+    sequence.edit(payment_transaction_uid=payment_transaction.getUid())
+
+  def stepConfirmPayment(self, sequence, **kw):
+    self.portal.portal_catalog.getResultValue(
+      uid=sequence['payment_transaction_uid']).confirm()
+
+  def stepCheckPayment(self, sequence, **kw):
+    payment_transaction = self.portal.portal_catalog.getResultValue(
+      uid=sequence['payment_transaction_uid'])
+    self.assertEqual('confirmed', payment_transaction.getSimulationState())
+    self.assertEqual('solved', payment_transaction.getCausalityState())
+
   def test_OpenOrder_sale_packing_list(self):
     """
     Check that sale_packing_list is generated properly from simulation
@@ -549,7 +644,21 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
         CheckHostingSubscriptionStoppedInvoiceDocumentCoverage
 
-        CheckPaymentStarting
+        # Payment should cover both invoices
+        SelectPlannedInvoice
+        ConfirmInvoice
+        StartInvoice
+        StopInvoice
+        Tic
+
+        TriggerBuild
+        Tic
+
+        CheckHostingSubscriptionTwoStoppedInvoiceDocumentCoverage
+
+        ConfirmPayment
+        Tic
+        CheckPayment
         """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
