@@ -39,7 +39,6 @@ setup(name=name,
       zip_safe=True,
       entry_points={
         'zc.buildout': [
-          'bef_erp5 = slapos.recipe.bef_erp5:Recipe',
           'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
