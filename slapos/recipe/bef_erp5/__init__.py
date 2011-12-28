@@ -41,7 +41,6 @@ def validPublicAddress(ip):
   return not validLoopBackAddress(ip)
 
 class Recipe(slapos.recipe.erp5.Recipe):
-  site_id = 'erp5'
 
   def getLocalIPv4Address(self):
     """Returns local IPv4 address available on partition"""
