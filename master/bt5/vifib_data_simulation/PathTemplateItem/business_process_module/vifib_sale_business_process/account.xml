@@ -115,7 +115,6 @@
             <value>
               <tuple>
                 <string>delivered</string>
-                <string>started</string>
                 <string>stopped</string>
               </tuple>
             </value>
