@@ -145,12 +145,17 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEqual(0, len(subscription_invoice_line_list))
 
     # invoice shall be solved
-    self.assertEqual('solved', setup_invoice_line_list[0].getCausalityState())
+    invoice =  setup_invoice_line_list[0].getParentValue()
+    self.assertEqual('solved', invoice.getCausalityState())
 
     # invoice shall have causality of one packing list
     self.assertEqual(
       [setup_delivery_line_list[0].getParentValue().getUid()],
-      setup_invoice_line_list[0].getParentValue().getCausalityUidList())
+      invoice.getCausalityUidList())
+
+    # there shall be no payment transaction related
+    self.assertEqual([], invoice.getCausalityRelatedList(
+      portal_type='Payment Transaction'))
 
     sequence.edit(
       subscription_delivery_uid_list=[q.getParentValue().getUid() for q in \
@@ -254,6 +259,10 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       simulation_state='planned'
     )
 
+    # there shall be no payment transaction related
+    self.assertEqual([], invoice_line.getParentValue().getCausalityRelatedList(
+      portal_type='Payment Transaction'))
+
     sequence.edit(invoice_uid=invoice_line.getParentValue().getUid())
 
   def stepConfirmInvoice(self, sequence, **kw):
@@ -338,6 +347,12 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     # invoices shall be solved
     self.assertEqual('solved', planned_invoice.getCausalityState())
     self.assertEqual('solved', confirmed_invoice.getCausalityState())
+
+    # there shall be no payment transaction related
+    self.assertEqual([], planned_invoice.getCausalityRelatedList(
+      portal_type='Payment Transaction'))
+    self.assertEqual([], confirmed_invoice.getCausalityRelatedList(
+      portal_type='Payment Transaction'))
 
     # confirmed invoice shall have causality of two packing lists
     self.assertEqual(
