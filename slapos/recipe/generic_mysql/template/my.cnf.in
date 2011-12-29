@@ -1,60 +1,193 @@
-# ERP5 buildout my.cnf template based on my-huge.cnf shipped with mysql
+# Example MySQL config file for medium systems.
+#
+# This is for a system with little memory (32M - 64M) where MySQL plays
+# an important part, or systems up to 128M where MySQL is used together with
+# other programs (such as a web server)
+#
+
+# The following options will be passed to all MySQL clients
+[client]
+user		= root
+#password	= your_password
+port		= %(tcp_port)s
+socket		= %(socket)s
+
+# Here follows entries for some specific programs
+
 # The MySQL server
 [mysqld]
-# ERP5 by default requires InnoDB storage. MySQL by default fallbacks to using
-# different engine, like MyISAM. Such behaviour generates problems only, when
-# tables requested as InnoDB are silently created with MyISAM engine.
+#user		= mysql # not needed in SlapOS
+datadir		= %(data_directory)s
+port		= %(tcp_port)s
+socket		= %(socket)s
+pid-file	= %(pid_file)s
+skip-locking
+key_buffer = 128M
+max_allowed_packet = 100M
+table_cache = 1024
+sort_buffer_size = 100M
+key_buffer_size = 1G
+net_buffer_length = 8K
+read_buffer_size = 256K
+read_rnd_buffer_size = 512K
+myisam_sort_buffer_size = 8M
+collation_server = utf8_unicode_ci
+character_set_server = utf8
+
+bind-address = %(ip)s # new in SlapOS
+log-error = %(error_log)s # new in SlapOS
+
+# max_connections = 256
+max_connections = 512
+# Default to using old password format for compatibility with old and
+# shorter password hash.
+# Reference: http://dev.mysql.com/doc/mysql/en/Password_hashing.html
+# old_passwords
+
+# Don't listen on a TCP/IP port at all. This can be a security enhancement,
+# if all processes that need to connect to mysqld run on the same host.
+# All interaction with mysqld must be made via Unix sockets or named pipes.
+# Note that using this option without enabling named pipes on Windows
+# (via the "enable-named-pipe" option) will render mysqld useless!
+# 
+# skip-networking
+
+# Replication Master Server (default)
+# binary logging is required for replication
+#log-bin=mysql-bin
+
+# required unique id between 1 and 2^32 - 1
+# defaults to 1 if master-host is not set
+# but will not function as a master if omitted
+server-id	= 1
+
+# Replication Slave (comment out master section to use this)
 #
-# Loud fail is really required in such case.
-sql-mode="NO_ENGINE_SUBSTITUTION"
+# To configure this host as a replication slave, you can choose between
+# two methods :
+#
+# 1) Use the CHANGE MASTER TO command (fully described in our manual) -
+#    the syntax is:
+#
+#    CHANGE MASTER TO MASTER_HOST=<host>, MASTER_PORT=<port>,
+#    MASTER_USER=<user>, MASTER_PASSWORD=<password> ;
+#
+#    where you replace <host>, <user>, <password> by quoted strings and
+#    <port> by the master's port number (%(tcp_port)s by default).
+#
+#    Example:
+#
+#    CHANGE MASTER TO MASTER_HOST='125.564.12.1', MASTER_PORT=%(tcp_port)s,
+#    MASTER_USER='joe', MASTER_PASSWORD='secret';
+#
+# OR
+#
+# 2) Set the variables below. However, in case you choose this method, then
+#    start replication for the first time (even unsuccessfully, for example
+#    if you mistyped the password in master-password and the slave fails to
+#    connect), the slave will create a master.info file, and any later
+#    change in this file to the variables' values below will be ignored and
+#    overridden by the content of the master.info file, unless you shutdown
+#    the slave server, delete master.info and restart the slaver server.
+#    For that reason, you may want to leave the lines below untouched
+#    (commented) and instead use CHANGE MASTER TO (see above)
+#
+# required unique id between 2 and 2^32 - 1
+# (and different from the master)
+# defaults to 2 if master-host is set
+# but will not function as a slave if omitted
+#server-id       = 2
+#
+# The replication master for this slave - required
+#master-host     =   <hostname>
+#
+# The username the slave will use for authentication when connecting
+# to the master - required
+#master-user     =   <username>
+#
+# The password the slave will authenticate with when connecting to
+# the master - required
+#master-password =   <password>
+#
+# The port the master is listening on.
+# optional - defaults to %(tcp_port)s
+#master-port     =  <port>
+#
+# binary logging - not required for slaves, but recommended
+#log-bin=mysql-bin
 
-skip-show-database
-port = %(tcp_port)s
-bind-address = %(ip)s
-socket = %(socket)s
-datadir = %(data_directory)s
-pid-file = %(pid_file)s
-log-error = %(error_log)s
-slow_query_log
-slow_query_log_file = %(slow_query_log)s
-long_query_time = 5
-max_allowed_packet = 128M
-query_cache_size = 32M
+# Point the following paths to different dedicated disks
+#tmpdir		= /tmp/		
+#log-update 	= /path-to-dedicated-directory/hostname
 
-plugin-load = ha_groonga.so;ha_sphinx.so
+# Uncomment the following if you are using BDB tables
+#bdb_cache_size = 4M
+#bdb_max_lock = 10000
 
-# By default only 100 connections are allowed, when using zeo
-# we may have much more connections
-# max_connections = 1000
-
-# The following are important to configure and depend a lot on to the size of
-# your database and the available resources.
-#innodb_buffer_pool_size = 4G
-#innodb_log_file_size = 256M
-#innodb_log_buffer_size = 8M
-
-# very important to allow parallel indexing
-innodb_locks_unsafe_for_binlog = 1
+# Uncomment the following if you are using InnoDB tables
+#innodb_data_home_dir = /var/lib/mysql/
+#innodb_data_file_path = ibdata1:10M:autoextend
+#innodb_log_group_home_dir = /var/lib/mysql/
+#innodb_log_arch_dir = /var/lib/mysql/
+# You can set .._buffer_pool_size up to 50 - 80 %%
+# of RAM but beware of setting memory usage too high
+innodb_buffer_pool_size = %(innodb_buffer_pool_size)s
+innodb_additional_mem_pool_size = 20M
+# Set .._log_file_size to 25 %% of buffer pool size
+innodb_log_file_size = 1G
+innodb_log_buffer_size = 8M
+#innodb_lock_wait_timeout = 50
 
 # Some dangerous settings you may want to uncomment if you only want
 # performance or less disk access. Useful for unit tests.
-#innodb_flush_log_at_trx_commit = 0
-#innodb_flush_method = nosync
-#innodb_doublewrite = 0
-#sync_frm = 0
+# innodb_flush_log_at_trx_commit = 0
+# innodb_flush_method = nosync
+# innodb_doublewrite = 0
+# sync_frm = 0
+log-slow-queries=%(slow_query_log)s
+long_query_time=1
 
-# Uncomment the following if you need binary logging, which is recommended
-# on production instances (either for replication or incremental backups).
-#log-bin=mysql-bin
+innodb_locks_unsafe_for_binlog=1
+innodb_flush_method=O_DIRECT
 
-# Force utf8 usage
-collation_server = utf8_unicode_ci
-character_set_server = utf8
+#bind-address=192.168.100.1
+
+## Options for mysqld process:
+#ndbcluster                      # run NDB engine
+#ndb-connectstring=192.168.0.10  # location of MGM node
+
+## Options for ndbd process:
+#[mysql_cluster]                 
+#ndb-connectstring=192.168.0.10  # location of MGM node
+#
+
+# Use utf8 as the default character set.                                                                                                                                                                       
+default-character-set=utf8                                                                                                                                                                                     
+# Ignore client information and use the default server character set.                                                                                                                                          
 skip-character-set-client-handshake
+
+
+[mysqldump]
+quick
+max_allowed_packet = 16M
 
 [mysql]
 no-auto-rehash
-socket = %(socket)s
+# Remove the next comment character if you are not familiar with SQL
+#safe-updates
+default-character-set = utf8
+
+[isamchk]
+key_buffer = 20M
+sort_buffer_size = 20M
+read_buffer = 2M
+write_buffer = 2M
+
+[myisamchk]
+key_buffer = 20M
+sort_buffer_size = 20M
+read_buffer = 2M
+write_buffer = 2M
 
 [mysqlhotcopy]
 interactive-timeout
