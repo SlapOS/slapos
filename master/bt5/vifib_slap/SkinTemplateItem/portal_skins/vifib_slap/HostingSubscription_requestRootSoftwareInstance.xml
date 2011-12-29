@@ -177,6 +177,9 @@ if (request_software_instance is None):\n
     activate_kw={\'tag\': tag},\n
   )\n
 \n
+  hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
+  hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
+\n
   # Find Computer partition\n
   # XXX Link subscript to open order\n
 else:\n
