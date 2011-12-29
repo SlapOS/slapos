@@ -205,6 +205,8 @@ elif hosting_subscription.getRootState() == \'stopped\':\n
   request_software_instance.stopRequested()\n
   if not new_one:\n
     request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
+\n
+return request_software_instance\n
 
 
 ]]></string> </value>
