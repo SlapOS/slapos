@@ -54,6 +54,7 @@ class Recipe(GenericBaseRecipe):
         mysql_test_database=self.options['test-database'],
         mysql_test_user=self.options['test-user'],
         mysql_test_password=self.options['test-password'],
+        innodb_buffer_pool_size=self.options['innodb-buffer-pool-size'],
     )
 
     mysql_binary = self.options['mysql-binary']
