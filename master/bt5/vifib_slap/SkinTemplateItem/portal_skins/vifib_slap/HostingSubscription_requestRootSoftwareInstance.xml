@@ -86,7 +86,7 @@ if person is None:\n
   open_sale_order_line = hosting_subscription.portal_catalog.getResultValue(\n
     portal_type=\'Open Sale Order Line\', strict_aggregate_uid=hosting_subscription.getUid())\n
   open_order = open_sale_order_line.getParentValue()\n
-  person_relative_url = open_sale_order.getDestinationSection()\n
+  person_relative_url = open_order.getDestinationSection()\n
 else:\n
   person_relative_url = person.getRelativeUrl()\n
 \n
