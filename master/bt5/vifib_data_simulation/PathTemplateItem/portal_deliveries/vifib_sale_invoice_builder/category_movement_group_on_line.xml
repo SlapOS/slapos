@@ -55,12 +55,18 @@
                 <string>destination_project</string>
                 <string>source_payment</string>
                 <string>destination_payment</string>
+                <string>delivery_mode</string>
+                <string>incoterm</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>title</string> </key>
             <value> <string>category_movement_group_on_line</string> </value>
+        </item>
+        <item>
+            <key> <string>update_always</string> </key>
+            <value> <int>0</int> </value>
         </item>
       </dictionary>
     </pickle>

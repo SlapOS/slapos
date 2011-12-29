@@ -126,7 +126,7 @@
         </item>
         <item>
             <key> <string>delivery_select_method_id</string> </key>
-            <value> <string>VifibInvoiceBuilder_selectPlannedSaleInvoiceList</string> </value>
+            <value> <string>VifibDeliveryBuilder_selectPlannedDeliveryList</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>

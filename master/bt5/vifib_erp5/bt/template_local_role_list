@@ -47,6 +47,7 @@ person_module/test_vifib_user_developer
 portal_contributions
 portal_gadgets
 portal_integrations
+portal_integrations/vifib_payzen_integration
 product_module
 purchase_order_module
 purchase_packing_list_module

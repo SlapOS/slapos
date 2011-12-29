@@ -11,7 +11,7 @@
             <value>
               <tuple>
                 <string>divergence_scope/property</string>
-                <string>collect_order_group/delivery</string>
+                <string>collect_order_group/line</string>
               </tuple>
             </value>
         </item>
@@ -23,7 +23,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>property_movement_group_on_delivery</string> </value>
+            <value> <string>property_movement_group_on_line</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
@@ -44,7 +44,11 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>property_movement_group_on_delivery</string> </value>
+            <value> <string>property_movement_group_on_line</string> </value>
+        </item>
+        <item>
+            <key> <string>update_always</string> </key>
+            <value> <int>0</int> </value>
         </item>
       </dictionary>
     </pickle>

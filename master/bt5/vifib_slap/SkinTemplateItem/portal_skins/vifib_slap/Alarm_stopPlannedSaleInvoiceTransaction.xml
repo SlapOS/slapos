@@ -50,13 +50,27 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal_catalog = context.getPortalObject().portal_catalog\n
-simulation_state = \'planned\'\n
-# use catalog to prefetch, but check later in ZODB\n
-return [q.getObject() for q in portal_catalog(\n
-    portal_type=\'Sale Invoice Transaction\',\n
-    simulation_state=simulation_state) if q.getSimulationState() == simulation_state]\n
-</string> </value>
+            <value> <string encoding="cdata"><![CDATA[
+
+from DateTime import DateTime\n
+from Products.ERP5Type.DateUtils import getClosestDate\n
+\n
+portal = context.getPortalObject()\n
+this_month = getClosestDate(target_date=DateTime())\n
+for sale_invoice_transaction in portal.portal_catalog(\n
+  portal_type=\'Sale Invoice Transaction\',\n
+  simulation_state=\'planned\',\n
+  limit=10,\n
+  **{"delivery.start_date": \'< %s\' % this_month}\n
+):\n
+  if sale_invoice_transaction.getSimulationState() == \'planned\' and sale_invoice_transaction.getStartDate() < this_month:\n
+    # do not trust catalog\n
+    sale_invoice_transaction.confirm()\n
+    sale_invoice_transaction.start()\n
+    sale_invoice_transaction.stop()\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -64,7 +78,7 @@ return [q.getObject() for q in portal_catalog(\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibInvoiceBuilder_selectPlannedSaleInvoiceList</string> </value>
+            <value> <string>Alarm_stopPlannedSaleInvoiceTransaction</string> </value>
         </item>
       </dictionary>
     </pickle>

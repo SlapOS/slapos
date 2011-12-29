@@ -50,47 +50,24 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from Products.ERP5Type.Message import translateString\n
-from DateTime import DateTime\n
-\n
-payment_transaction = context\n
-\n
-# initialize accounting_workflow to planned state\n
-if payment_transaction.getSimulationState() == "draft":\n
-  payment_transaction.plan(comment=translateString("Initialised by Delivery Builder."))\n
-\n
-if payment_transaction.getStartDate() is None:\n
-  payment_transaction.setStartDate(DateTime())\n
-\n
-# First set the payment transaction in the building state on the causality workflow\n
-payment_transaction.startBuilding()\n
-\n
-# Then an activity should put the causality state in diverged or solved\n
-payment_transaction.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\'))).updateCausalityState()\n
-\n
-# update casuality from movements\n
-causality_list = payment_transaction.getCausalityList()\n
-causality_list.sort()\n
-modified = 0\n
-for movement in payment_transaction.getMovementList():\n
-  movement_causality = movement.getCausality()\n
-  if movement_causality not in causality_list:\n
-    modified = 1\n
-    causality_list.append(movement_causality)\n
-\n
-if modified:\n
-  causality_list.sort()\n
-  payment_transaction.setCausalityList(causality_list)\n
+            <value> <string>portal = context.getPortalObject()\n
+for payment_transaction in portal.portal_catalog(\n
+      portal_type="Payment Transaction", \n
+      simulation_state="planned",\n
+      limit=10\n
+      ):\n
+  # do not trust catalog\n
+  if payment_transaction.getSimulationState() == \'planned\':\n
+    payment_transaction.PaymentTransaction_registerPayzen()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>related_simulation_movement_path_list=None, **kw</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibPaymentTransaction_postGeneration</string> </value>
+            <value> <string>Alarm_registerPlannedPaymentTransactionPayzen</string> </value>
         </item>
       </dictionary>
     </pickle>

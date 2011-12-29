@@ -37,6 +37,7 @@
             <key> <string>tested_property</string> </key>
             <value>
               <tuple>
+                <string>specialise</string>
                 <string>resource</string>
                 <string>source</string>
                 <string>destination</string>
@@ -51,6 +52,10 @@
         <item>
             <key> <string>title</string> </key>
             <value> <string>category_movement_group_on_line</string> </value>
+        </item>
+        <item>
+            <key> <string>update_always</string> </key>
+            <value> <int>0</int> </value>
         </item>
       </dictionary>
     </pickle>
