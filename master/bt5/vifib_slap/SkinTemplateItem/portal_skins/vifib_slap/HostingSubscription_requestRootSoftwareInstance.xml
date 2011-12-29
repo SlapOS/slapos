@@ -135,7 +135,9 @@ if (request_software_instance is None):\n
                          ],\n
     activate_kw={\'tag\': tag},\n
   )\n
-  portal.portal_workflow.doActionFor(sale_order, "order_action")\n
+  #portal.portal_workflow.doActionFor(sale_order, "order_action")\n
+  # XXX: Do not verify security\n
+  sale_order.order()\n
 \n
   if person is not None:\n
     # Update Open Order\n
