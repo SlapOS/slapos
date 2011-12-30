@@ -32,7 +32,6 @@ import pprint
 import hashlib
 import sys
 import zc.buildout
-import zc.recipe.egg
 import ConfigParser
 import re
 
@@ -260,7 +259,7 @@ SSLCARevocationPath %(ca_crl)s"""
     # Activity Nodes (Single Thread Always)
     for i in range(activity_node_amount):
       zope_port += 1
-      self.installZope(ip, zope_port, 'zope_activity_%s' % i,
+      self.installZope(ip, zope_port, 'zope_activity_%02d' % int(i),
           with_timerservice=True,
           zodb_configuration_string=zodb_configuration_string,
           tidstorage_config=tidstorage_config)
@@ -270,7 +269,7 @@ SSLCARevocationPath %(ca_crl)s"""
     for i in range(user_node_amount):
       zope_port += 1
       login_url_list.append(self.installZope(ip, zope_port,
-        'zope_login_%s' % i, with_timerservice=False,
+        'zope_login_%02d' % int(i), with_timerservice=False,
         zodb_configuration_string=zodb_configuration_string,
         tidstorage_config=tidstorage_config,
         thread_amount=thread_amount_per_zope))
