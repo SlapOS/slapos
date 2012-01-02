@@ -63,30 +63,7 @@ class Recipe(BaseSlapRecipe):
     redirect_plain_http = self.parameter_dict.get("redirect_plain_http", '')
     if redirect_plain_http in TRUE_VALUE_LIST:
       redirect_plain_http = '1'
-
-    # Get all slaves, add them to config
-    slave_instance_list = self.parameter_dict.get('slave_instance_list', [])
-    rewrite_rule_list = []
-    slave_dict = dict()
-    base_url = 'https://%s:%s/' % (frontend_domain_name, frontend_port_number)
-    for slave_instance in slave_instance_list:
-      current_slave_dict = dict()
-      current_slave_dict['host'] = slave_instance['host']
-      current_slave_dict['port'] = slave_instance['port']
-      if current_slave_dict['host'] is None \
-          or current_slave_dict['port'] is None:
-        continue
-      # Is target https or http?
-      current_slave_dict['https'] = slave_instance.get('https', 'true')
-      if current_slave_dict['https'] in FALSE_VALUE_LIST:
-        current_slave_dict['https'] = 'false'
-
-      reference = slave_instance.get('slave_reference')
-      # XXX-Cedric : how to fetch reference?
-      current_slave_dict['reference'] = reference
-      slave_dict[reference] = "%s%s" % (base_url, reference.replace('-', ''))
-      rewrite_rule_list.append(current_slave_dict)
-
+    
     # Cert stuffs
     valid_certificate_str = self.parameter_dict.get('domain_ssl_ca_cert')
     valid_key_str = self.parameter_dict.get('domain_ssl_ca_key')
@@ -105,20 +82,21 @@ class Recipe(BaseSlapRecipe):
         port=frontend_port_number,
         plain_http=redirect_plain_http,
         name=frontend_domain_name,
-        rewrite_rule_list=rewrite_rule_list,
+        slave_instance_list=self.parameter_dict.get('slave_instance_list', []),
         key=key, certificate=certificate)
 
     # Send connection parameters of master instance
+    site_url = node_parameter_dict['site_url']
     self.setConnectionDict(
-      dict(site_url=node_parameter_dict['site_url'],
+      dict(site_url=site_url,
            domain_ipv6_address=self.getGlobalIPv6Address()))
     # Send connection parameters of slave instances
-    for slave_reference, slave_site_url in slave_dict.iteritems():
+    for slave in node_parameter_dict['rewrite_rule_list']:
       self.setConnectionDict(
-          dict(site_url=slave_site_url,
+          dict(site_url="%s%s" % (site_url, slave['resource']),
                domainname=frontend_domain_name,
                port=frontend_port_number),
-          slave_instance.get('slave_reference'))
+          slave['reference'])
 
     return self.path_list
 
@@ -260,16 +238,41 @@ class Recipe(BaseSlapRecipe):
     proxy_table_content = '{'
     for rewrite_rule in rewrite_rule_list:
       rewrite_part = self.substituteTemplate(
-         self.getTemplateFilename('proxytable-host.json.in'), rewrite_rule)
+         self.getTemplateFilename('proxytable-resource-snippet.json.in'),
+         rewrite_rule)
       proxy_table_content = """%s%s,""" % (proxy_table_content, rewrite_part)
     proxy_table_content = '%s%s' % (proxy_table_content,
          open(self.getTemplateFilename('proxytable-vifib-snippet.json.in')).read())
     proxy_table_content = '%s}\n' % proxy_table_content
     return proxy_table_content
 
+  def _getRewriteRuleContent(self, slave_instance_list):
+    rewrite_rule_list = []
+    for slave_instance in slave_instance_list:
+      current_slave_dict = dict()
+      current_slave_dict['host'] = slave_instance['host']
+      current_slave_dict['port'] = slave_instance['port']
+      if current_slave_dict['host'] is None \
+          or current_slave_dict['port'] is None:
+        # XXX-Cedric: should raise warning because slave seems badly configured
+        continue
+      # Check if target is https or http
+      current_slave_dict['https'] = slave_instance.get('https', 'true')
+      if current_slave_dict['https'] in FALSE_VALUE_LIST:
+        current_slave_dict['https'] = 'false'
+      # Set reference and resource url
+      # Reference is raw reference from SlapOS Master, resource is
+      # URL-compatible name
+      reference = slave_instance.get('slave_reference')
+      current_slave_dict['reference'] = reference
+      current_slave_dict['resource'] = reference.replace('-', '')
+      rewrite_rule_list.append(current_slave_dict)
+    return rewrite_rule_list
+
   def installFrontendNode(self, ip, port, key, certificate, plain_http,
-                            name, rewrite_rule_list):
-    # XXX-Cedric : is name necessary?
+                            name, slave_instance_list):
+    # Generate rewrite rules
+    rewrite_rule_list = self._getRewriteRuleContent(slave_instance_list)
     # Create Map
     map_name = "proxy_table.json"
     map_content = self._getProxyTableContent(rewrite_rule_list)
@@ -295,4 +298,5 @@ class Recipe(BaseSlapRecipe):
       )[0]
     self.path_list.append(wrapper)
 
-    return dict(site_url="https://%s:%s/" % (name, port))
+    return dict(site_url="https://%s:%s/" % (name, port),
+                rewrite_rule_list=rewrite_rule_list)
