@@ -99,17 +99,16 @@ class Recipe(BaseSlapRecipe):
     #request_frontend = self.parameter_dict.get('frontend', True)
     if not request_frontend in FALSE_VALUE_LIST:
       slave_frontend = self.request(
-        # XXX-Cedric : how to "de-hardcode" url?
+        # XXX-Cedric : Use KVM Software Type to instantiate kvmfrontend.
+        #              kvmfrontend should be in KVM recipe but using different
+        #              software type.
         software_release='/opt/slapdev/software/kvm-frontend/software.cfg',
         software_type='RootInstanceSoftware',
         partition_reference='%s_frontend' % self.computer_partition_id,
         shared=True
       )
-      url = 'https://%s:%s/%s/vnc_auto.html?host=%s&port=%s&encrypt=1&path=%s' % (
-        # XXX-Cedric : uh? how to fetch slave reference?
-        slave_frontend.get('connection_xml').getParameter('domainname'),
-        slave_frontend.get('connection_xml').getParameter('port'),
-        slave_frontend.get('slave_reference'),
+      url = '%s/vnc_auto.html?host=%s&port=%s&encrypt=1&path=%s' % (
+        slave_frontend.get('connection_xml').getParameter('site_url'),
         slave_frontend.get('connection_xml').getParameter('domainname'),
         slave_frontend.get('connection_xml').getParameter('port'),
         slave_frontend.get('slave_reference'))
