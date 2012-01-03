@@ -7,9 +7,6 @@ from testVifibOpenOrderSimulation import generateTimeFrameList
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
-  def stepTriggerBuild(self, sequence, **kw):
-    self.portal.portal_alarms.vifib_trigger_build.activeSense()
-
   def stepCheckSubscriptionSalePackingListCoverage(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog.getResultValue(
       uid=sequence['hosting_subscription_uid'])
