@@ -104,8 +104,12 @@ class Recipe(BaseSlapRecipe):
         #              software type.
         software_release='/opt/slapdev/software/kvm-frontend/software.cfg',
         software_type='RootInstanceSoftware',
+        # XXX-Cedric : reference is created from CP ID, should be created from
+        #              instance ID.
         partition_reference='%s_frontend' % self.computer_partition_id,
-        shared=True
+        shared=True,
+        partition_parameter_kw={"host":noVNC_conf['source_ip'], 
+            "port":noVNC_conf['source_port']}
       )
       url = '%s/vnc_auto.html?host=%s&port=%s&encrypt=1&path=%s' % (
         slave_frontend.getConnectionParameter('site_url'),
