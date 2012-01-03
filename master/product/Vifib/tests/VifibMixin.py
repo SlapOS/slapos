@@ -333,17 +333,21 @@ class testVifibMixin(ERP5TypeTestCase):
     self.portal.portal_alarms.vifib_trigger_build.activeSense()
 
   def stepTic(self, **kw):
+    def build(**kw):
+      if 'vifib_trigger_build' in self.portal.portal_alarms.objectIds():
+        self.stepTriggerBuild(**kw)
+
     if kw.get('sequence', None) is None:
       # in case of using not in sequence commit transaction
       transaction.commit()
     # trigger build before tic
-    self.stepTriggerBuild(**kw)
+    build(**kw)
     transaction.commit()
 
     super(testVifibMixin, self).stepTic(**kw)
 
     # retrigger build after tic
-    self.stepTriggerBuild(**kw)
+    build(**kw)
     transaction.commit()
 
     # tic after build
