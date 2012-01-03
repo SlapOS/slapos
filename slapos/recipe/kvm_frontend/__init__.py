@@ -96,7 +96,8 @@ class Recipe(BaseSlapRecipe):
       self.setConnectionDict(
           dict(site_url="%s%s" % (site_url, slave['resource']),
                domainname=frontend_domain_name,
-               port=frontend_port_number),
+               port=frontend_port_number,
+               resource=slave['resource']),
           slave['reference'])
 
     return self.path_list
@@ -236,6 +237,7 @@ class Recipe(BaseSlapRecipe):
     )
 
   def _getProxyTableContent(self, rewrite_rule_list):
+    """Generate proxy table file content from rewrite rules list"""
     proxy_table_content = '{'
     for rewrite_rule in rewrite_rule_list:
       rewrite_part = self.substituteTemplate(
@@ -248,6 +250,7 @@ class Recipe(BaseSlapRecipe):
     return proxy_table_content
 
   def _getRewriteRuleContent(self, slave_instance_list):
+    """Generate rewrite rules list from slaves list"""
     rewrite_rule_list = []
     for slave_instance in slave_instance_list:
       current_slave_dict = dict()
