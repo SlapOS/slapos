@@ -28,7 +28,8 @@
 #
 ##############################################################################
 from DateTime import DateTime
-from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl.SecurityManagement import newSecurityManager, \
+  getSecurityManager, setSecurityManager
 from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 from Products.ERP5Type.tests.Sequence import SequenceList
 from Products.ERP5Type.tests.backportUnittest import skip
@@ -786,7 +787,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition.building()
 
   def stepConfirmOrderedSaleOrderActiveSense(self, **kw):
-    self.portal.portal_alarms.confirm_ordered_sale_order.activeSense()
+    sm = getSecurityManager()
+    self.login()
+    try:
+      self.portal.portal_alarms.confirm_ordered_sale_order\
+        .Alarm_confirmOrderedSaleOrder()
+    finally:
+      setSecurityManager(sm)
 
   ########################################
   # Steps -- REMOTE_USER logins
