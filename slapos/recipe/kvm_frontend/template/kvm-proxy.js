@@ -13,21 +13,25 @@ var listenInterface = process.argv[2],
     redirect = process.argv[7] || false,
     isRawIPv6;
 
+if (process.argv.length < 7) {
+    console.error("Too few arguments. Exiting.");
+  process.exit(1);
+}
+
 isRawIPv6 = function checkipv6(str) {
   // Inspired by http://forums.intermapper.com/viewtopic.php?t=452
   return (/^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/.test(str));
 }(listenInterface);
 
-// Dummy middleware that throws 404 not found.
+/**
+ * Dummy middleware that throws 404 not found. Does not contain websocket
+ * middleware.
+ */
 var middlewareNotFound = function(req, res, proxy) {
   res.statusCode = 404;
   res.setHeader('Content-Type', 'text/plain');
   res.end('This URL is not known. Please check your URL or contact your ' +
       'SlapOS administrator.');
-};
-middlewareNotFound.proxyWebSocketRequest = function(req, socket, head, next) {
-  console.log('stop');
-  socket.end();
 };
 
 /**
@@ -74,7 +78,7 @@ var proxyServer = httpProxy.createServer(
   }}
 );
 
-// We gonna rock this civilization.
+// Release the beast.
 proxyServer.listen(port, listenInterface);
 console.log('HTTPS server started and listening at ' + listenInterface + ':' +
             port);
