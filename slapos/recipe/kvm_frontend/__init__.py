@@ -28,6 +28,7 @@ from slapos.recipe.librecipe import BaseSlapRecipe
 import os
 import pkg_resources
 import hashlib
+import string
 import sys
 import zc.buildout
 import zc.recipe.egg
@@ -250,7 +251,9 @@ class Recipe(BaseSlapRecipe):
     rewrite_rule_list = []
     for slave_instance in slave_instance_list:
       current_slave_dict = dict()
-      current_slave_dict['host'] = slave_instance['host']
+      # Get host, and if IPv6 address, remove "[" and "]"
+      current_slave_dict['host'] = string.replace(string.replace(
+          slave_instance['host'], '[', ''), ']', '')
       current_slave_dict['port'] = slave_instance['port']
       if current_slave_dict['host'] is None \
           or current_slave_dict['port'] is None:
