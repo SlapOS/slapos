@@ -103,7 +103,7 @@ class Recipe(BaseSlapRecipe):
         #              kvmfrontend should be in KVM recipe but using different
         #              software type.
         software_release='/opt/slapdev/software/kvm-frontend/software.cfg',
-        software_type='RootInstanceSoftware',
+        software_type='RootSoftwareInstance',
         # XXX-Cedric : reference is created from CP ID, should be created from
         #              instance ID.
         partition_reference='%s_frontend' % self.computer_partition_id,
