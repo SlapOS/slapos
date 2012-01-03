@@ -28,7 +28,8 @@
 ##############################################################################
 import transaction
 from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
-from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl.SecurityManagement import newSecurityManager, \
+  getSecurityManager, setSecurityManager
 from Products.ERP5Type.tests.utils import DummyMailHost
 import os
 from DateTime import DateTime
@@ -334,8 +335,13 @@ class testVifibMixin(ERP5TypeTestCase):
 
   def stepTic(self, **kw):
     def build():
-      if 'vifib_trigger_build' in self.portal.portal_alarms.objectIds():
-        self.portal.portal_alarms.vifib_trigger_build.Alarm_buildVifibPath()
+      sm = getSecurityManager()
+      self.login()
+      try:
+        if 'vifib_trigger_build' in self.portal.portal_alarms.objectIds():
+          self.portal.portal_alarms.vifib_trigger_build.Alarm_buildVifibPath()
+      finally:
+        setSecurityManager(sm)
 
     if kw.get('sequence', None) is None:
       # in case of using not in sequence commit transaction
