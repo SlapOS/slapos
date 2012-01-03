@@ -108,10 +108,10 @@ class Recipe(BaseSlapRecipe):
         shared=True
       )
       url = '%s/vnc_auto.html?host=%s&port=%s&encrypt=1&path=%s' % (
-        slave_frontend.get('connection_xml').getParameter('site_url'),
-        slave_frontend.get('connection_xml').getParameter('domainname'),
-        slave_frontend.get('connection_xml').getParameter('port'),
-        slave_frontend.get('slave_reference'))
+        slave_frontend.getConnectionParameter('site_url'),
+        slave_frontend.getConnectionParameter('domainname'),
+        slave_frontend.getConnectionParameter('port'),
+        slave_frontend.getConnectionParameter('resource'))
       connection_dict = dict(
         url = url,
         backend_url = ipv6_url,
