@@ -77,9 +77,7 @@
         <item>
             <key> <string>script_name</string> </key>
             <value>
-              <list>
-                <string>SoftwareInstance_destroySlaveInstanceListFromComputerPartition</string>
-              </list>
+              <tuple/>
             </value>
         </item>
         <item>
