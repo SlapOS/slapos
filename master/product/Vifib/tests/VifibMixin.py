@@ -358,3 +358,9 @@ class testVifibMixin(ERP5TypeTestCase):
 
     # tic after build
     super(testVifibMixin, self).stepTic(**kw)
+
+    # everything shall be consistent
+    self.portal.portal_alarms.vifib_check_consistency.activeSense()
+    transaction.commit()
+    super(testVifibMixin, self).stepTic(**kw)
+    self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
