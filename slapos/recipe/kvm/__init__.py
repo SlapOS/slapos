@@ -104,9 +104,7 @@ class Recipe(BaseSlapRecipe):
         #              software type.
         software_release='/opt/slapdev/software/kvm-frontend/software.cfg',
         software_type='RootSoftwareInstance',
-        # XXX-Cedric : reference is created from CP ID, should be created from
-        #              instance ID.
-        partition_reference='%s_frontend' % self.computer_partition_id,
+        partition_reference='frontend',
         shared=True,
         partition_parameter_kw={"host":noVNC_conf['source_ip'], 
             "port":noVNC_conf['source_port']}
