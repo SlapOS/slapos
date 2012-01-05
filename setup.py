@@ -41,6 +41,7 @@ setup(name=name,
         'zc.buildout': [
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
+          'check_port_listening = slapos.recipe.check_port_listening:Recipe',
           'cron = slapos.recipe.dcron:Recipe',
           'cron.d = slapos.recipe.dcron:Part',
           'davstorage = slapos.recipe.davstorage:Recipe',
