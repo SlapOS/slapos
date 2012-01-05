@@ -63,6 +63,15 @@ class Recipe:
     # XXX: Lack checking for globality of address
     return self._getIpAddress(netaddr.valid_ipv6)
 
+  def getNetworkInterface(self):
+    """Returns the network interface available on partition"""
+    if not 'ip_list' in self.parameter_dict:
+      raise AttributeError
+    for name, ip in self.parameter_dict['ip_list']:
+      if name:
+        return name
+    raise AttributeError, "Not network interface found"
+
   def install(self):
     slap = slapos.slap.slap()
     slap_connection = self.buildout['slap_connection']
@@ -107,6 +116,8 @@ class Recipe:
                  self.getLocalIPv4Address())
     buildout.set('slap-network-information', 'global-ipv6', 
                  self.getGlobalIPv6Address())
+    buildout.set('slap-network-information', 'network-interface', 
+                 self.getNetworkInterface())
 
     # Copy/paste slap_connection
     buildout.add_section('slap-connection')
