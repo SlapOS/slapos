@@ -2,6 +2,9 @@
  <portal_type id="Computer Partition">
   <item>ComputerPartition</item>
  </portal_type>
+ <portal_type id="Hosting Subscription">
+  <item>VariationRange</item>
+ </portal_type>
  <portal_type id="System Preference">
   <item>VifibSystemPreference</item>
  </portal_type>
