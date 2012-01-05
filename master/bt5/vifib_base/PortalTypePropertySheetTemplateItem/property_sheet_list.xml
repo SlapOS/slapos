@@ -13,5 +13,6 @@
   <item>SoftwareInstance</item>
   <item>SoftwareInstanceConstraint</item>
   <item>TextDocument</item>
+  <item>VariationRange</item>
  </portal_type>
 </property_sheet_list>
