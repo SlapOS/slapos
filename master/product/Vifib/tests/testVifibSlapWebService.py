@@ -195,7 +195,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     open_order = self.slap.registerOpenOrder()
     open_order.request(
        software_release=software_release,
-       software_type=sequence.get('software_type', 'software_type'),
+       software_type=sequence.get('requested_software_type', 'software_type'),
        partition_reference=sequence.get('requested_reference',
           'requested_reference'),
        partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
@@ -210,7 +210,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     open_order = self.slap.registerOpenOrder()
     requested_slap_computer_partition = open_order.request(
        software_release=software_release,
-       software_type=sequence.get('software_type', 'software_type'),
+       software_type=sequence.get('requested_software_type', 'software_type'),
        partition_reference=sequence.get('requested_reference',
          'requested_reference'),
        partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
@@ -220,6 +220,43 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         requested_slap_computer_partition=requested_slap_computer_partition,
         requested_computer_partition_reference=\
             requested_slap_computer_partition.getId())
+
+  def stepSetCurrentComputerPartitionFromRequestedComputerPartition(self, sequence):
+    sequence['computer_partition_reference'] = \
+        sequence["requested_computer_partition_reference"]
+
+  def stepSelectSoftwareInstanceFromCurrentComputerPartition(self, sequence):
+    computer_partition_reference = sequence["computer_partition_reference"]
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        portal_type="Computer Partition",
+        reference=computer_partition_reference)
+    software_instance = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        aggregate_uid=computer_partition.getUid()).getAggregateValue(
+            portal_type="Software Instance")
+    sequence.edit(
+        software_instance_uid=software_instance.getUid(),
+        software_instance_reference=software_instance.getReference(),
+        hosting_subscription_uid=software_instance.getAggregateRelatedValue(
+          portal_type='Sale Order Line').getAggregateValue(
+            portal_type='Hosting Subscription').getUid())
+
+  def stepSelectSoftwareInstanceFromCurrentSlaveInstance(self, sequence):
+    slave_instance_reference = sequence["software_instance_reference"]
+    slave_instance = self.portal.portal_catalog.getResultValue(
+        portal_type=self.slave_instance_portal_type,
+        reference=slave_instance_reference)
+    computer_partition = slave_instance.getAggregateRelatedValue(
+        portal_type="Sale Packing List Line").getAggregateValue(
+            portal_type="Computer Partition")
+    software_instance = self.portal.portal_catalog.getResultValue(
+        portal_type="Sale Packing List Line",
+        aggregate_uid=computer_partition.getUid(),
+        aggregatep_portal_type=self.software_instance_portal_type,
+        ).getAggregateValue(portal_type=self.software_instance_portal_type)
+    sequence.edit(
+        software_instance_uid=software_instance.getUid(),
+        software_instance_reference=software_instance.getReference())
 
   def stepSetCurrentPersonSlapRequestedSoftwareInstance(self, sequence, **kw):
     cleanup_resource = self.portal.portal_preferences\
@@ -510,6 +547,17 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         hosting_subscription_uid=software_instance.getAggregateRelatedValue(
           portal_type='Sale Order Line').getAggregateValue(
             portal_type='Hosting Subscription').getUid())
+
+  def stepSetComputerPartitionFromRootSoftwareInstance(self, sequence):
+    computer_partition = self.portal.portal_catalog.getResultValue(
+        title=sequence['root_software_instance_title'], 
+        portal_type="Software Instance").getAggregateRelatedValue(
+            portal_type="Sale Packing List Line").getAggregateValue(
+                portal_type="Computer Partition")
+    sequence.edit(
+      computer_partition_uid=computer_partition.getUid(),
+      computer_partition_reference=computer_partition.getReference()
+    )
 
   def stepSetSelectedComputerPartition(self, sequence, **kw):
     """Sets in sequence computer partition parameters related to current
@@ -1608,6 +1656,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sequence.edit(requested_reference='requested_reference')
     sequence.edit(requested_software_type='requested_software_type')
 
+  def stepSelectRequestedSoftwaretype(self, sequence, **kw):
+    sequence.edit(requested_software_type='requested_software_type')
+
   def stepSelectRequestedReferenceChildrenA(self, sequence, **kw):
     sequence.edit(requested_reference='children_a')
     sequence.edit(requested_software_type='children_a')
@@ -1993,6 +2044,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepSetRequestedComputerPartition(self, sequence, **kw):
     sequence.edit(requested_computer_partition=self\
         ._getComputerPartitionByReference(sequence))
+
+  def stepSetRequestedComputerPartitionAsCurrentComputerPartition(self, 
+      sequence):
+    sequence.edit(computer_partition_reference=\
+        sequence["requested_computer_partition"].getReference())
 
   def stepCheckComputerPartitionChildrenANoChild(self, sequence, **kw):
     computer_partition = sequence['children_a_computer_partition']
@@ -3641,7 +3697,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def stepSelectSlaveInstanceFromOneComputerPartition(self, sequence):
     slave_instance = self._getSlaveInstanceFromCurrentComputerPartition(sequence)
-    sequence.edit(software_instance_uid=slave_instance.getUid())
+    sequence.edit(software_instance_uid=slave_instance.getUid(),
+        software_instance_reference=slave_instance.getReference())
 
   def stepCheckEmptySlaveInstanceListFromOneComputerPartition(self, sequence):
     computer_guid = sequence["computer_reference"]

@@ -1197,6 +1197,115 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepCheckConnectionXmlOfSlaveInstanceFromComputerPartition(self, sequence):
+    computer_reference = sequence["computer_reference"]
+    computer_partition_reference = sequence["computer_partition_reference"]
+    slave_reference = sequence["requested_reference"]
+    slave_software_release = sequence["software_release_uri"]
+    slave_software_type = sequence["requested_software_type"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    # Get Computer Partition
+    computer_partition = self.slap.registerComputerPartition(
+        computer_reference, computer_partition_reference)
+    # Get slave
+    slave_instance = computer_partition.request(
+        software_release=slave_software_release,
+        software_type=slave_software_type,
+        partition_reference=slave_reference,
+        shared=True,
+    )
+    self.assertTrue(sequence["slave_instance_site_url"] == \
+        slave_instance.getConnectionParameter("site_url"))
+
+  def test_SlaveInstance_request_SlaveInstance_From_SoftwareInstance(self):
+    """
+      Check that existing Software Instance can request new Slave Instance
+      and access to its parameters.
+      
+      Scenario :
+      All Software Instances use the same SoftwareRelease.
+      SoftwareType requested_software_type can act as master instance, slave
+        instance.
+      SoftwareType another_requested_software_type can act as Software Instance
+        requesting a Slave Instance of SoftwareType requested_software_type.
+      1/ Request instance "Master Instance" with SoftwareType
+         requested_software_type.
+      2/ Simulate succesful deployment of instance
+      3/ Request instance "Normal instance" with SoftwareType
+         another_requested_software_type.
+      4/ From "Normal Instance", request a Slave Instance with SoftwareType
+         requested_software_type.
+      5/ From "Master Instance", try to set connection XML of Slave Instance
+      5/ Check that "Normal Instance" can access connection XML of Slave
+         Instance.
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+        self.prepare_install_requested_computer_partition_sequence_string + '\
+      Tic \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceAvailable \
+      Tic \
+      CheckEmptySlaveInstanceListFromOneComputerPartition \
+      \
+      SelectAnotherRequestedSoftwareType \
+      SelectAnotherRequestedReference \
+      SlapLoginTestVifibCustomer \
+      PersonRequestSlapSoftwareInstancePrepare \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      Logout \
+      SlapLoginTestVifibCustomer \
+      PersonRequestSlapSoftwareInstance \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      SetRequestedComputerPartition \
+      SetRequestedComputerPartitionAsCurrentComputerPartition \
+      SlapLogout \
+      Tic \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceAvailable \
+      Tic \
+      \
+      LoginDefaultUser \
+      SetCurrentComputerPartitionFromRequestedComputerPartition \
+      SelectSoftwareInstanceFromCurrentComputerPartition \
+      Logout \
+      SlapLoginCurrentSoftwareInstance \
+      SelectRequestedParameterDictRequestedParameter \
+      SelectYetAnotherRequestedReference \
+      SelectRequestedSoftwaretype \
+      RequestSlaveInstanceFromComputerPartition \
+      Tic \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      Logout \
+      RequestSlaveInstanceFromComputerPartition \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      SetComputerPartitionFromRootSoftwareInstance \
+      SelectSlaveInstanceFromOneComputerPartition \
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance \
+      SetConnectionXmlToSlaveInstance \
+      SlapLogout \
+      LoginDefaultUser \
+      SetRequestedComputerPartitionAsCurrentComputerPartition \
+      SelectSoftwareInstanceFromCurrentComputerPartition \
+      Logout \
+      SlapLoginCurrentSoftwareInstance \
+      CheckConnectionXmlOfSlaveInstanceFromComputerPartition \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   ##################################################
   # ComputerPartition.request - change software type
   ##################################################
