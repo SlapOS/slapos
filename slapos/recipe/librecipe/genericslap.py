@@ -34,8 +34,8 @@ class GenericSlapRecipe(GenericBaseRecipe):
 
   def __init__(self, buildout, name, options):
     """Default initialisation"""
-    GenericBaseRecipe.__init__(self, buildout, name, options)
     options['eggs'] = 'slapos.cookbook'
+    GenericBaseRecipe.__init__(self, buildout, name, options)
     self.slap = slap.slap()
 
     # SLAP related information
@@ -46,15 +46,6 @@ class GenericSlapRecipe(GenericBaseRecipe):
     self.software_release_url = slap_connection['software-release-url']
     self.key_file = slap_connection.get('key-file')
     self.cert_file = slap_connection.get('cert-file')
-
-    # setup auto uninstall/install
-    self._setupAutoInstallUninstall()
-
-  def _setupAutoInstallUninstall(self):
-    """By default SlapOS recipes are reinstalled each time"""
-    # Note: It is possible to create in future subclass which will do no-op in
-    # this method
-    self.options['slapos-timestamp'] = str(time.time())
 
   def install(self):
     self.slap.initializeConnection(self.server_url, self.key_file,

@@ -89,8 +89,8 @@ class Recipe:
     instance_file_path = self.options[software_type]
 
     if not os.path.exists(instance_file_path):
-      raise zc.buildout.UserError("The specified buildout config file does not "
-                                  "exist.")
+      raise zc.buildout.UserError("The specified buildout config file %r does "
+                                  "not exist." % instance_file_path)
 
     buildout = ConfigParser()
     with open(instance_file_path) as instance_path:
@@ -98,7 +98,8 @@ class Recipe:
 
     buildout.set('buildout', 'installed', '.installed-%s.cfg' % self.name)
 
-    buildout.add_section('slap-parameter')
+    if not buildout.has_section('slap-parameter'):
+      buildout.add_section('slap-parameter')
     for parameter, value in self.parameter_dict.items():
       if isinstance(value, str):
         buildout.set('slap-parameter', parameter, value)
@@ -120,7 +121,7 @@ class Recipe:
     work_directory = os.path.abspath(self.buildout['buildout'][
       'directory'])
     buildout_filename = os.path.join(work_directory,
-                                     'buildout-%s.cfg' % software_type)
+                                     'buildout-%s.cfg' % self.name)
     with open(buildout_filename, 'w') as buildout_file:
       buildout.write(buildout_file)
 

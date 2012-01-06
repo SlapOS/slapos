@@ -24,6 +24,8 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import zc.buildout
+
 from slapos.recipe.librecipe import GenericSlapRecipe
 
 class Recipe(GenericSlapRecipe):
@@ -33,7 +35,6 @@ class Recipe(GenericSlapRecipe):
     del options['recipe']
 
     for k, v in options.iteritems():
-      if not k.startswith('slapos-'):
-        publish_dict[k] = v
+      publish_dict[k] = v
     self.setConnectionDict(publish_dict)
     return []
