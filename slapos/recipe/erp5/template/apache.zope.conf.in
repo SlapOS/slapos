@@ -26,6 +26,10 @@ TypesConfig conf/mime.types
 AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
 
+ServerTokens Prod
+ServerSignature Off
+TraceEnable Off
+
 # As backend is trusting REMOTE_USER header unset it always
 RequestHeader unset REMOTE_USER
 
