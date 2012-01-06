@@ -58,13 +58,10 @@ class Recipe(GenericBaseRecipe):
 
 class Part(GenericBaseRecipe):
 
-  def _options(self, options):
-    if 'name' not in options:
-      options['name'] = self.name
-
   def install(self):
     cron_d = self.options['cron-entries']
-    filename = os.path.join(cron_d, 'name')
+    name = self.options['name']
+    filename = os.path.join(cron_d, name)
 
     with open(filename, 'w') as part:
       part.write('%(frequency)s %(command)s\n' % {
