@@ -24,46 +24,19 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import zc.buildout
+import shlex
 
-from slapos.recipe.librecipe import GenericSlapRecipe
+from slapos.recipe.librecipe import GenericBaseRecipe
 
-class Recipe(GenericSlapRecipe):
+class Recipe(GenericBaseRecipe):
 
-  def _options(self, options):
-
-    self.useparts = True
-
-    if 'url' in options:
-      self.useparts = False
-      self.url = options['url']
-    else:
-      self.urlparts = {}
-
-      if 'scheme' not in options:
-        raise zc.buildout.UserError("No scheme specified.")
-      else:
-        self.urlparts.update(scheme=options['scheme'])
-      if 'host' not in options:
-        raise zc.buildout.UserError("No host specified.")
-      else:
-        self.urlparts.update(host=options['host'])
-
-  def _install(self):
-
-    if self.useparts:
-      for option in ['path', 'params', 'query', 'fragment', 'port']:
-        if option in self.options:
-          self.urlparts[option] = self.options[option]
-
-      if 'username' in self.options:
-        self.urlparts.update(auth=(self.options['username'],))
-        if 'password' in self.options:
-          self.urlparts.update(auth=(self.options['username'],
-                                     self.options['password']))
-
-      self.setConnectionUrl(**self.urlparts)
-    else:
-      self.setConnectionDict(dict(url=self.url))
-
-    return []
+  def install(self):
+    files = [f for f in self.options['files'].split('\n') if f]
+    command_line = shlex.split(self.options['command-line'])
+    wrapper = self.createPythonScript(
+      self.options['wrapper'],
+      'slapos.recipe.librecipe.execute.execute_wait',
+      [ command_line,
+        files ],
+    )
+    return [wrapper]

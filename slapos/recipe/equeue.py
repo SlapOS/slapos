@@ -24,46 +24,23 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import zc.buildout
+from slapos.recipe.librecipe import GenericBaseRecipe
 
-from slapos.recipe.librecipe import GenericSlapRecipe
+class Recipe(GenericBaseRecipe):
 
-class Recipe(GenericSlapRecipe):
+  def install(self):
 
-  def _options(self, options):
+    commandline = [self.options['equeue-binary']]
+    commandline.extend(['--database', self.options['database']])
+    commandline.extend(['-l', self.options['log']])
 
-    self.useparts = True
+    if 'loglevel' in self.options:
+      commandline.extend(['--loglevel', self.options['loglevel']])
 
-    if 'url' in options:
-      self.useparts = False
-      self.url = options['url']
-    else:
-      self.urlparts = {}
+    commandline.append(self.options['socket'])
 
-      if 'scheme' not in options:
-        raise zc.buildout.UserError("No scheme specified.")
-      else:
-        self.urlparts.update(scheme=options['scheme'])
-      if 'host' not in options:
-        raise zc.buildout.UserError("No host specified.")
-      else:
-        self.urlparts.update(host=options['host'])
-
-  def _install(self):
-
-    if self.useparts:
-      for option in ['path', 'params', 'query', 'fragment', 'port']:
-        if option in self.options:
-          self.urlparts[option] = self.options[option]
-
-      if 'username' in self.options:
-        self.urlparts.update(auth=(self.options['username'],))
-        if 'password' in self.options:
-          self.urlparts.update(auth=(self.options['username'],
-                                     self.options['password']))
-
-      self.setConnectionUrl(**self.urlparts)
-    else:
-      self.setConnectionDict(dict(url=self.url))
-
-    return []
+    return [self.createPythonScript(
+      self.options['wrapper'],
+      'slapos.recipe.librecipe.execute.execute',
+      commandline,
+    )]

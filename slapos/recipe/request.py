@@ -25,7 +25,6 @@
 #
 ##############################################################################
 import logging
-import os
 
 from slapos import slap as slapmodule
 
@@ -48,6 +47,10 @@ class Recipe(object):
 
     if 'name' not in options:
       options['name'] = name
+
+    self.isSlave = False
+    if 'slave' in options:
+      self.isSlave = options['slave'].lower() in ['y', 'yes', 'true', '1']
 
     self.return_parameters = []
     if 'return' in options:
@@ -73,16 +76,21 @@ class Recipe(object):
             options['config-%s' % config_parameter]
 
     instance = self.request(options['software-url'], software_type,
-      options['name'], partition_parameter_kw=partition_parameter_kw,
-        filter_kw=filter_kw)
+      name, partition_parameter_kw=partition_parameter_kw,
+      filter_kw=filter_kw, shared=self.isSlave)
 
+    self.failed = None
     for param in self.return_parameters:
       try:
-        options['connection-%s' % param] = instance.getConnectionParameter(param)
+        options['connection-%s' % param] = str(instance.getConnectionParameter(param))
       except slapmodule.NotFoundError:
         options['connection-%s' % param] = ''
+        if self.failed is None:
+          self.failed = param
 
   def install(self):
+    if self.failed is not None:
+      raise KeyError("Connection parameter %r not found." % self.failed)
     return []
 
   update = install

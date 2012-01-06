@@ -29,6 +29,7 @@ import os
 import sys
 import copy
 from ConfigParser import ConfigParser
+import json
 import subprocess
 import slapos.slap
 import netaddr
@@ -91,7 +92,7 @@ class Recipe:
       if 'default' in self.options:
         software_type = 'default'
       else:
-        raise zc.buildout.UserError("This software type isn't mapped. And"
+        raise zc.buildout.UserError("This software type isn't mapped. And "
                                     "there's no default software type.")
 
     instance_file_path = self.options[software_type]
@@ -104,18 +105,20 @@ class Recipe:
     with open(instance_file_path) as instance_path:
       buildout.readfp(instance_path)
 
-    buildout.set('buildout', 'installed',
-                 '.installed-%s.cfg' % software_type)
+    buildout.set('buildout', 'installed', '.installed-%s.cfg' % self.name)
 
     if not buildout.has_section('slap-parameter'):
       buildout.add_section('slap-parameter')
     for parameter, value in self.parameter_dict.items():
-      buildout.set('slap-parameter', parameter, value)
+      if isinstance(value, str):
+        buildout.set('slap-parameter', parameter, value)
+      else:
+        buildout.set('slap-parameter', parameter, json.dumps(value))
 
     buildout.add_section('slap-network-information')
-    buildout.set('slap-network-information', 'local-ipv4', 
+    buildout.set('slap-network-information', 'local-ipv4',
                  self.getLocalIPv4Address())
-    buildout.set('slap-network-information', 'global-ipv6', 
+    buildout.set('slap-network-information', 'global-ipv6',
                  self.getGlobalIPv6Address())
     buildout.set('slap-network-information', 'network-interface', 
                  self.getNetworkInterface())

@@ -24,46 +24,43 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import zc.buildout
+import os
+import signal
 
-from slapos.recipe.librecipe import GenericSlapRecipe
+from slapos.recipe.librecipe import GenericBaseRecipe
 
-class Recipe(GenericSlapRecipe):
+class Recipe(GenericBaseRecipe):
 
-  def _options(self, options):
+  def install(self):
+    path_list = []
 
-    self.useparts = True
+    # Install apache
+    apache_config = dict(
+      pid_file=self.options['pid-file'],
+      lock_file=self.options['lock-file'],
+      ip=self.options['ip'],
+      port=self.options['port'],
+      error_log=self.options['error-log'],
+      access_log=self.options['access-log'],
+      backend_url=self.options['url'],
+    )
+    httpd_conf = self.createFile(self.options['httpd-conf'],
+      self.substituteTemplate(self.getTemplateFilename('apache.in'),
+                              apache_config)
+    )
+    path_list.append(httpd_conf)
 
-    if 'url' in options:
-      self.useparts = False
-      self.url = options['url']
-    else:
-      self.urlparts = {}
+    wrapper = self.createPythonScript(self.options['wrapper'],
+        'slapos.recipe.librecipe.execute.execute',
+        [self.options['httpd-binary'], '-f', self.options['httpd-conf'],
+         '-DFOREGROUND']
+    )
+    path_list.append(wrapper)
 
-      if 'scheme' not in options:
-        raise zc.buildout.UserError("No scheme specified.")
-      else:
-        self.urlparts.update(scheme=options['scheme'])
-      if 'host' not in options:
-        raise zc.buildout.UserError("No host specified.")
-      else:
-        self.urlparts.update(host=options['host'])
+    if os.path.exists(self.options['pid-file']):
+      # Reload apache configuration
+      with open(self.options['pid-file']) as pid_file:
+        pid = int(pid_file.read().strip(), 10)
+      os.kill(pid, signal.SIGUSR1) # Graceful restart
 
-  def _install(self):
-
-    if self.useparts:
-      for option in ['path', 'params', 'query', 'fragment', 'port']:
-        if option in self.options:
-          self.urlparts[option] = self.options[option]
-
-      if 'username' in self.options:
-        self.urlparts.update(auth=(self.options['username'],))
-        if 'password' in self.options:
-          self.urlparts.update(auth=(self.options['username'],
-                                     self.options['password']))
-
-      self.setConnectionUrl(**self.urlparts)
-    else:
-      self.setConnectionDict(dict(url=self.url))
-
-    return []
+    return path_list

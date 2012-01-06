@@ -24,46 +24,28 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import zc.buildout
+import os
 
-from slapos.recipe.librecipe import GenericSlapRecipe
+import inotifyx
 
-class Recipe(GenericSlapRecipe):
+def subfiles(directory):
+  """Return the list of subfiles of a directory, and wait for the newly created
+  ones.
 
-  def _options(self, options):
+  CAUTION : *DONT TRY TO CONVERT THE RESULT OF THIS FUNCTION INTO A LIST !
+  ALWAYS ITERATE OVER IT !!!*"""
+  watchfd = inotifyx.init()
+  inotifyx.add_watch(watchfd, directory, inotifyx.IN_CREATE)
+  try:
 
-    self.useparts = True
+    subfiles = set(os.listdir(directory))
+    subfiles |= set([file_.name for file_ in inotifyx.get_events(watchfd, 0)])
 
-    if 'url' in options:
-      self.useparts = False
-      self.url = options['url']
-    else:
-      self.urlparts = {}
+    while True:
+      for file_ in subfiles:
+        yield os.path.join(directory, file_)
 
-      if 'scheme' not in options:
-        raise zc.buildout.UserError("No scheme specified.")
-      else:
-        self.urlparts.update(scheme=options['scheme'])
-      if 'host' not in options:
-        raise zc.buildout.UserError("No host specified.")
-      else:
-        self.urlparts.update(host=options['host'])
+      subfiles = [file_.name for file_ in inotifyx.get_events(watchfd)]
 
-  def _install(self):
-
-    if self.useparts:
-      for option in ['path', 'params', 'query', 'fragment', 'port']:
-        if option in self.options:
-          self.urlparts[option] = self.options[option]
-
-      if 'username' in self.options:
-        self.urlparts.update(auth=(self.options['username'],))
-        if 'password' in self.options:
-          self.urlparts.update(auth=(self.options['username'],
-                                     self.options['password']))
-
-      self.setConnectionUrl(**self.urlparts)
-    else:
-      self.setConnectionDict(dict(url=self.url))
-
-    return []
+  finally:
+    os.close(watchfd)
