@@ -365,3 +365,14 @@ class testVifibMixin(ERP5TypeTestCase):
     transaction.commit()
     super(testVifibMixin, self).stepTic(**kw)
     self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
+
+    # there shall be no divergency
+    current_skin = self.app.REQUEST.get('portal_skin', 'View')
+    try:
+      # Note: Worklists are cached, so in order to have next correct result
+      # clear cache
+      self.clearCache()
+      self.changeSkin('RSS')
+      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist())
+    finally:
+      self.changeSkin(current_skin)
