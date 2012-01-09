@@ -88,9 +88,23 @@ class Recipe(object):
         if self.failed is None:
           self.failed = param
 
+    # XXX XXX XXX: Return the computer id et partition id in order to
+    #              register it later.
+    self.partition_allocated = False
+    options['computer-id'] = ''
+    options['partition-id'] = ''
+    if instance._computer_id is not None:
+      self.partition_allocated = True
+      options['computer-id'] = instance._computer_id
+    if instance._partition_id is not None:
+      self.partition_allocated = self.partition_allocated and True
+      options['partition-id'] = instance._partition_id
+
   def install(self):
     if self.failed is not None:
       raise KeyError("Connection parameter %r not found." % self.failed)
+    if not self.partition_allocated:
+      raise ValueError("The computer partition is not allocated yet.")
     return []
 
   update = install
