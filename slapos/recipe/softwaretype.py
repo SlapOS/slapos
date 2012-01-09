@@ -132,7 +132,7 @@ class Recipe:
     work_directory = os.path.abspath(self.buildout['buildout'][
       'directory'])
     buildout_filename = os.path.join(work_directory,
-                                     'buildout-%s.cfg' % software_type)
+                                     'buildout-%s.cfg' % self.name)
     with open(buildout_filename, 'w') as buildout_file:
       buildout.write(buildout_file)
 

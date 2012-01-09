@@ -47,15 +47,6 @@ class GenericSlapRecipe(GenericBaseRecipe):
     self.key_file = slap_connection.get('key-file')
     self.cert_file = slap_connection.get('cert-file')
 
-    # setup auto uninstall/install
-    self._setupAutoInstallUninstall()
-
-  def _setupAutoInstallUninstall(self):
-    """By default SlapOS recipes are reinstalled each time"""
-    # Note: It is possible to create in future subclass which will do no-op in
-    # this method
-    self.options['slapos-timestamp'] = str(time.time())
-
   def install(self):
     self.slap.initializeConnection(self.server_url, self.key_file,
         self.cert_file)
