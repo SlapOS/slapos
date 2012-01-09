@@ -131,6 +131,7 @@ class Recipe:
 
     self.logger.info("Invoking commandline : '%s'",
                      ' '.join(command_line_args))
+    self.logger.info("Software type : %s", software_type)
 
     subprocess.check_call(command_line_args, cwd=work_directory,
                           env=os.environ.copy())
