@@ -101,7 +101,7 @@ class Recipe:
     if not buildout.has_section('slap-parameter'):
       buildout.add_section('slap-parameter')
     for parameter, value in self.parameter_dict.items():
-      if isinstance(value, str):
+      if isinstance(value, basestring):
         buildout.set('slap-parameter', parameter, value)
       else:
         buildout.set('slap-parameter', parameter, json.dumps(value))
