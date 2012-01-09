@@ -54,8 +54,7 @@ class Recipe(BaseSlapRecipe):
 
     self.path_list.append(self.killpidfromfile)
 
-    # This should come from parameter.
-    frontend_port_number = 4443
+    frontend_port_number = self.parameter_dict.get("port", 4443)
     frontend_domain_name = self.parameter_dict.get("domain",
         "host.vifib.net")
 
