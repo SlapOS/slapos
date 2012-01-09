@@ -356,14 +356,14 @@
   <td>13</td>\n
 </tr>\n
 <tr>\n
-\t<td>pause</td>\n
-\t<td>1000</td>\n
-\t<td></td>\n
+  <td>pause</td>\n
+  <td>1000</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
-\t<td>submit</td>\n
-\t<td>//input[@id=&quot;password_input&quot;]/..</td>\n
-\t<td>\\13</td>\n
+  <td>submit</td>\n
+  <td>//input[@id=&quot;password_input&quot;]/..</td>\n
+  <td>\\13</td>\n
 </tr>\n
 <tr>\n
   <td>pause</td>\n
