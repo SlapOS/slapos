@@ -1215,8 +1215,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         partition_reference=slave_reference,
         shared=True,
     )
-    self.assertTrue(sequence["slave_instance_site_url"] == \
-        slave_instance.getConnectionParameter("site_url"))
+    self.assertEquals(sequence["slave_instance_site_url"],
+                      slave_instance.getConnectionParameter("site_url"))
 
   def test_SlaveInstance_request_SlaveInstance_From_SoftwareInstance(self):
     """
