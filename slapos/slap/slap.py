@@ -172,9 +172,14 @@ class OpenOrder(SlapDocument):
     else:
       xml = self._connection_helper.response.read()
       software_instance = xml_marshaller.loads(xml)
-      return ComputerPartition(
+      computer_partition = ComputerPartition(
         software_instance.slap_computer_id.encode('UTF-8'),
         software_instance.slap_computer_partition_id.encode('UTF-8'))
+      if shared:
+        computer_partition._synced = True
+        computer_partition._connection_dict = software_instance._connection_dict
+        computer_partition._parameter_dict = software_instance._parameter_dict
+      return computer_partition
 
 def _syncComputerInformation(func):
   """
@@ -237,6 +242,8 @@ def _syncComputerPartitionInformation(func):
   Synchronize computer partition object with server information
   """
   def decorated(self, *args, **kw):
+    if getattr(self, '_synced', 0):
+      return func(self, *args, **kw)
     computer = self._connection_helper.getComputerInformation(self._computer_id)
     found_computer_partition = None
     for computer_partition in computer._computer_partition_list:
@@ -334,9 +341,14 @@ class ComputerPartition(SlapDocument):
     else:
       xml = self._connection_helper.response.read()
       software_instance = xml_marshaller.loads(xml)
-      return ComputerPartition(
+      computer_partition = ComputerPartition(
         software_instance.slap_computer_id.encode('UTF-8'),
         software_instance.slap_computer_partition_id.encode('UTF-8'))
+      if shared:
+        computer_partition._synced = True
+        computer_partition._connection_dict = software_instance._connection_dict
+        computer_partition._parameter_dict = software_instance._parameter_dict
+      return computer_partition
 
   def building(self):
     self._connection_helper.POST('/buildingComputerPartition', {
