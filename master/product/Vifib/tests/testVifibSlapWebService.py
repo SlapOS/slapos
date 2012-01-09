@@ -3851,7 +3851,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     connection_dict["site_url"] += "DeF45uef"
     computer_partition.setConnectionDict(connection_dict,
         slave_reference)
-    sequence.edit(slave_instance_site_url=site_url)
+    sequence.edit(slave_instance_site_url=connection_dict["site_url"])
 
   def stepCheckConnectionXmlFromSlaveInstance(self, sequence):
     portal_catalog = self.portal.portal_catalog
