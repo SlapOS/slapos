@@ -38,7 +38,7 @@
 
 <!-- Tested with chromium 12 and --ignore-certificate-errors --disable-translate --disable-web-security options -->\n
 <html xmlns:tal="http://xml.zope.org/namespaces/tal"\n
-      xmlns:metal="http://xml.zope.org/namespaces/metal">\n
+    xmlns:metal="http://xml.zope.org/namespaces/metal">\n
 <head>\n
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n
 <title>Test KVM</title>\n
@@ -50,9 +50,9 @@
 </thead><tbody>\n
 <tal:block metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/init_environment" />\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest1.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest1.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
@@ -65,9 +65,9 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest2.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest2.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
@@ -120,9 +120,9 @@
   <td>${kvm}</td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest3.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest3.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>clickAndWait</td>\n
@@ -165,9 +165,9 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest4.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest4.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>clickAndWait</td>\n
@@ -240,9 +240,9 @@
   <td>Address</td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest5.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest5.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>clickAndWait</td>\n
@@ -250,9 +250,9 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest6.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest6.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
@@ -271,9 +271,9 @@
 </tr>-->\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest7.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest7.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>pause</td>\n
@@ -302,9 +302,9 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest8.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest8.png</td>\n
+  <td></td>\n
 </tr>\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/check_for_started_instance" />\n
 <!-- This part only work with chromium for now -->\n
@@ -376,9 +376,9 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest9.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest9.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>openAndWait</td>\n
