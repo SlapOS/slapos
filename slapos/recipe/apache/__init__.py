@@ -64,13 +64,14 @@ class Recipe(BaseSlapRecipe):
     rewrite_rule_list = []
     slave_dict = {}
     service_dict = {}
-    base_url = "https://%s:%s/" % (frontend_domain_name, frontend_port_number)
+    base_url = "%s:%s/" % (frontend_domain_name, frontend_port_number)
     for slave_instance in slave_instance_list:
       url = slave_instance.get("url")
       if url is None:
         continue
       reference = slave_instance.get("slave_reference")
-      slave_dict[reference] = "%s%s" % (base_url, reference.replace("-", ""))
+      slave_dict[reference] = "https://%s.%s" % (reference.replace("-", ""),
+          base_url)
 
       enable_cache = slave_instance.get("enable_cache", "")
       if enable_cache.upper() in ('1', 'TRUE'):
@@ -378,8 +379,12 @@ class Recipe(BaseSlapRecipe):
     return stunnel_conf
 
   def installFrontendApache(self, ip_list, port, key, certificate,
-                            name, rewrite_rule_list, access_control_string=None):
+                            name, rewrite_rule_list, rewrite_rule_zope_list,
+                            access_control_string=None):
     apachemap_name = "apachemap.txt"
+    # XXX-Cedric : implement zope specific rewrites list. Current apachemap is
+    #              generic and does not use VirtualHost Monster.
+    apachemapzope_name = "apachemapzope.txt"
 
     self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
