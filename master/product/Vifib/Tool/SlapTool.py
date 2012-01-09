@@ -845,8 +845,15 @@ class SlapTool(BaseTool):
                          requested_software_instance, **query_kw)
       if movement is None:
         raise SoftwareInstanceNotReady
-      software_instance = SoftwareInstance(
-        **self._getSalePackingListLineAsSoftwareInstance(movement))
+      parameter_dict = self._getSalePackingListLineAsSoftwareInstance(movement)
+      software_instance = SoftwareInstance(**parameter_dict)
+
+      if shared:
+        slave_instance = parameter_dict.get("slave_instance_list")[0]
+        software_instance._parameter_dict = self._instanceXmlToDict(
+          slave_instance.pop('xml'))
+        software_instance._connection_dict = self._instanceXmlToDict(
+          slave_instance.pop('connection_xml'))
       return xml_marshaller.xml_marshaller.dumps(software_instance)
 
   ####################################################
