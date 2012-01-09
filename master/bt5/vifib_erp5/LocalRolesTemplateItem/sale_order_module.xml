@@ -1,10 +1,15 @@
 <local_roles_item>
  <local_roles>
+  <role id='G-COMPANY'>
+   <item>Auditor</item>
+   <item>Author</item>
+  </role>
   <role id='R-COMPUTER'>
    <item>Auditor</item>
   </role>
   <role id='R-INSTANCE'>
    <item>Auditor</item>
+   <item>Author</item>
   </role>
   <role id='R-MEMBER'>
    <item>Auditor</item>

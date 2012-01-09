@@ -60,7 +60,7 @@ deprecated ERP5Type_asSecurityGroupIdList\n
 \n
 return (\n
   # Person security\n
-  (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'function\', \'group\']),\n
+  (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'group\']),\n
   (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'role\']),\n
   # (\'ERP5Type_getPersonSecurityFromHostingSubscription\', [\'aggregate\']),\n
 \n

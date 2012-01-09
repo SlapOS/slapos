@@ -28,6 +28,7 @@
             <key> <string>after_script_name</string> </key>
             <value>
               <list>
+                <string>SalePackingList_expandSubscription</string>
                 <string>SalePackingList_requestStoredSoftwareInstanceState</string>
               </list>
             </value>

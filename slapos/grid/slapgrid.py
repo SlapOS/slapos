@@ -282,6 +282,10 @@ class Slapgrid(object):
   """ Main class for SlapGrid. Fetches and processes informations from master
   server and pushes usage information to master server.
   """
+
+  class PromiseError(Exception):
+    pass
+
   def __init__(self,
                software_root,
                instance_root,
@@ -422,6 +426,59 @@ class Slapgrid(object):
     launchSupervisord(self.supervisord_socket,
         self.supervisord_configuration_path)
 
+  def _checkPromises(self, computer_partition):
+    self.logger.info("Checking promises...")
+    instance_path = os.path.join(self.instance_root,
+        computer_partition.getId())
+
+    uid, gid = None, None
+    stat_info = os.stat(instance_path)
+
+    #stat sys call to get statistics informations
+    uid = stat_info.st_uid
+    gid = stat_info.st_gid
+
+    promise_present = False
+    # Get the list of promises
+    promise_dir = os.path.join(instance_path, 'etc', 'promise')
+    if os.path.exists(promise_dir) and os.path.isdir(promise_dir):
+      cwd = instance_path
+      promises_list = os.listdir(promise_dir)
+
+      # Check whether every promise is kept
+      for promise in promises_list:
+        promise_present = True
+
+        command = [os.path.join(promise_dir, promise)]
+
+        promise = os.path.basename(command[0])
+        self.logger.info("Checking promise %r.", promise)
+
+        kw = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        process_handler = SlapPopen(command,
+          preexec_fn=lambda: dropPrivileges(uid, gid),
+          cwd=cwd,
+          env={}, **kw)
+
+        time.sleep(self.promise_timeout)
+
+
+        if process_handler.poll() is None:
+          process_handler.terminate()
+          raise Slapgrid.PromiseError("The promise %r timed out" % promise)
+        elif process_handler.poll() != 0:
+          stderr = process_handler.communicate()[1]
+          if stderr is None:
+            stderr = 'No error output from %r.' % promise
+          else:
+            stderr = 'Promise %r:' % promise + stderr
+          raise Slapgrid.PromiseError(stderr)
+
+    if not promise_present:
+      self.logger.info("No promise.")
+
+
   def processComputerPartitionList(self):
     """Will start supervisord and process each Computer Partition.
     """
@@ -462,6 +519,7 @@ class Slapgrid(object):
           local_partition.install()
           computer_partition.available()
           local_partition.start()
+          self._checkPromises(computer_partition)
           computer_partition.started()
         elif computer_partition_state == "stopped":
           local_partition.install()
@@ -503,52 +561,6 @@ class Slapgrid(object):
         exception = traceback.format_exc()
         logger.error(exception)
         computer_partition.error(exception)
-
-      # Promises
-
-      instance_path = os.path.join(self.instance_root,
-          computer_partition.getId())
-
-      uid, gid = None, None
-      stat_info = os.stat(instance_path)
-
-      #stat sys call to get statistics informations
-      uid = stat_info.st_uid
-      gid = stat_info.st_gid
-
-      # Get the list of promises
-      promise_dir = os.path.join(instance_path, 'etc', 'promise')
-      if os.path.exists(promise_dir) and os.path.isdir(promise_dir):
-        cwd = instance_path
-        promises_list = os.listdir(promise_dir)
-
-        # Check whether every promise is kept
-        for promise in promises_list:
-
-          command = os.path.join(promise_dir, promise)
-
-          kw = dict()
-          if not self.console:
-            kw.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-          process_handler = SlapPopen(command,
-            preexec_fn=lambda: dropPrivileges(uid, gid),
-            cwd=cwd,
-            env=None, **kw)
-
-          time.sleep(self.promise_timeout)
-
-          promise = os.path.basename(command)
-
-          if process_handler.poll() is None:
-            process_handler.kill()
-            computer_partition.error("The promise %r timed out" % promise)
-          elif process_handler.poll() != 0:
-            stderr = process_handler.communicate()[1]
-            if stderr is None:
-              stderr = 'No error output from %r.' % promise
-            computer_partition.error(stderr)
-
 
     logger.info("Finished computer partitions...")
     return clean_run
@@ -665,7 +677,8 @@ class Slapgrid(object):
 
     clean_run = True
     #We loop on the different computer partitions
-    for computer_partition in slap_computer_usage.getComputerPartitionList():
+    computer_partition_list = slap_computer_usage.getComputerPartitionList()
+    for computer_partition in computer_partition_list:
       computer_partition_id = computer_partition.getId()
 
       #We want execute all the script in the report folder
@@ -724,7 +737,7 @@ class Slapgrid(object):
 
     #Now we loop through the different computer partitions to ggetId()et reports
     report_usage_issue_cp_list = []
-    for computer_partition in slap_computer_usage.getComputerPartitionList():
+    for computer_partition in computer_partition_list:
       filename_delete_list = []
       computer_partition_id = computer_partition.getId()
       instance_path = os.path.join(self.instance_root, computer_partition_id)
@@ -798,7 +811,7 @@ class Slapgrid(object):
         computer_partition.error(issue)
         report_usage_issue_cp_list.append(computer_partition_id)
 
-    for computer_partition in slap_computer_usage.getComputerPartitionList():
+    for computer_partition in computer_partition_list:
       computer_partition_id = computer_partition.getId()
       try:
         software_url = computer_partition.getSoftwareRelease().getURI()

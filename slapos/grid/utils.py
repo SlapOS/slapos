@@ -179,7 +179,8 @@ def dropPrivileges(uid, gid):
   # drop privileges
   user_name = pwd.getpwuid(uid)[0]
   group_list = [x.gr_gid for x in grp.getgrall() if user_name in x.gr_mem]
-  group_list.append(gid)
+  if gid not in group_list:
+    group_list.append(gid)
   os.initgroups(pwd.getpwuid(uid)[0], gid)
   os.setgid(gid)
   os.setuid(uid)

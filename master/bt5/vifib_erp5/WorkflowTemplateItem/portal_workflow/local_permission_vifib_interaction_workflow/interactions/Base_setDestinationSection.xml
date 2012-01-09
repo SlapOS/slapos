@@ -27,16 +27,15 @@
         <item>
             <key> <string>after_script_name</string> </key>
             <value>
-              <tuple/>
+              <list>
+                <string>Base_updateAllLocalRoles</string>
+              </list>
             </value>
         </item>
         <item>
             <key> <string>before_commit_script_name</string> </key>
             <value>
-              <list>
-                <string>Base_updateAllLocalRoles</string>
-                <string>SaleTradeCondition_updateComputerLocalRoles</string>
-              </list>
+              <tuple/>
             </value>
         </item>
         <item>
@@ -58,9 +57,6 @@
             <value>
               <list>
                 <string>_setDestinationSection.*</string>
-                <string>_setSourceSection.*</string>
-                <string>validate</string>
-                <string>invalidate</string>
               </list>
             </value>
         </item>
@@ -72,7 +68,8 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Sale Trade Condition</string>
+                <string>Payment Transaction</string>
+                <string>Sale Invoice Transaction</string>
               </list>
             </value>
         </item>

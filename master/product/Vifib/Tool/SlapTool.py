@@ -412,16 +412,20 @@ class SlapTool(BaseTool):
 
   def _instanceXmlToDict(self, xml):
     result_dict = {}
-    if xml is not None and xml != '':
-      tree = etree.fromstring(xml.encode('utf-8'))
-      for element in tree.findall('parameter'):
-        key = element.get('id')
-        value = result_dict.get(key, None)
-        if value is not None:
-          value = value + ' ' + element.text
-        else:
-          value = element.text
-        result_dict[key] = value
+    try:
+      if xml is not None and xml != '':
+        tree = etree.fromstring(xml.encode('utf-8'))
+        for element in tree.findall('parameter'):
+          key = element.get('id')
+          value = result_dict.get(key, None)
+          if value is not None:
+            value = value + ' ' + element.text
+          else:
+            value = element.text
+          result_dict[key] = value
+    except (etree.XMLSchemaError, etree.XMLSchemaParseError,
+      etree.XMLSchemaValidateError, etree.XMLSyntaxError):
+      LOG('SlapTool', INFO, 'Issue during parsing xml:', error=True)
     return result_dict
 
   def _getSlapPartitionByPackingList(self, computer_partition_document):
@@ -532,28 +536,34 @@ class SlapTool(BaseTool):
     setup_service = portal.restrictedTraverse(
        portal_preferences.getPreferredInstanceSetupResource())
 
-    hosting_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
-      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
-      # Search only for Confirmed and Stopped, the only one states that require
-      # buildout be re-updated.
-      Query(simulation_state=["confirmed", "stopped"]),
+    update_service = portal.restrictedTraverse(
+       portal_preferences.getPreferredInstanceUpdateResource())
+
+    global_query_kw = dict(aggregate_portal_type="Slave Instance",
+        aggregate_relative_url=computer_partition_document.getRelativeUrl(),)
+
+    hosting_query = ComplexQuery(Query(simulation_state=["confirmed", "stopped"]),
       Query(default_resource_uid=hosting_service.getUid()),
       operator="AND")
 
-    setup_query = ComplexQuery(Query(aggregate_portal_type="Slave Instance"),
-      Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
-      Query(simulation_state=["confirmed", "started"]),
+    setup_query = ComplexQuery(Query(simulation_state=["confirmed", "started"]),
       Query(default_resource_uid=setup_service.getUid()),
       operator="AND")
 
-    query = ComplexQuery(hosting_query, setup_query, operator="OR")
+    update_query = ComplexQuery(Query(simulation_state=["confirmed"]),
+      Query(default_resource_uid=update_service.getUid()),
+      operator="AND")
+
+    query = ComplexQuery(hosting_query,
+                         setup_query,
+                         update_query,
+                         operator="OR")
 
     # Use getTrackingList
     catalog_result = portal.portal_catalog(
       portal_type='Sale Packing List Line',
-      sort_on=(('movement.start_date', 'DESC'),),
       limit=1,
-      query=query)
+      query=query, **global_query_kw)
 
     return len(catalog_result)
 
@@ -745,6 +755,8 @@ class SlapTool(BaseTool):
     else:
       instance_portal_type = "Software Instance"
 
+    cleanup_resource = self.getPortalObject().portal_preferences\
+      .getPreferredInstanceCleanupResource()
     if computer_id and computer_partition_id:
       # requested by Software Instance, there is already top part of tree
       software_instance_document = self.\
@@ -781,15 +793,25 @@ class SlapTool(BaseTool):
               instance_xml=instance_xml,
               sla_xml=sla_xml,
               state=state)
-      requested_software_instance = person.portal_catalog.\
-          getResultValue(
+      requested_software_instance = None
+      for software_instance in person.portal_catalog(
                 portal_type=instance_portal_type,
                 # In order be in sync with defaults of person.
                 #   requestSoftwareInstance it is required to default here
                 # too
                 source_reference=software_type or 'RootSoftwareInstance',
                 title=partition_reference,
-          )
+          ):
+        try:
+          cleanup_delivery_line = software_instance\
+            .Item_getInstancePackingListLine(cleanup_resource)
+        except ValueError:
+          requested_software_instance = software_instance
+          break
+        else:
+          if cleanup_delivery_line.getSimulationState() != 'delivered':
+            requested_software_instance = software_instance
+            break
 
     if requested_software_instance is None:
       raise SoftwareInstanceNotReady

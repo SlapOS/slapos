@@ -10,12 +10,6 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid']).requestUpdateComputerPartition()
 
-  def stepCheckComputerPartitionInstanceUpdateSalePackingListConfirmed(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('confirmed',
-        self.portal.portal_preferences.getPreferredInstanceUpdateResource(),
-        sequence)
-
   def stepCheckComputerPartitionInstanceUpdateSalePackingListDelivered(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('delivered',

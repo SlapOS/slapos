@@ -63,11 +63,22 @@ if not service_title:\n
   return context.Base_redirect(dialog_id,\n
                         keep_items={\'portal_status_message\':context.Base_translateString("You have to provide Service Title.")})\n
 \n
-software_instance_list = context.portal_catalog(\n
+cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
+software_instance_list = []\n
+for software_instance in context.portal_catalog(\n
   portal_type=[\'Software Instance\', \'Slave Instance\'],\n
   select_expression=\'title\',\n
   title={\'query\': service_title, \'key\': \'ExactMatch\'}\n
-)\n
+):\n
+  try:\n
+    cleanup_delivery_line = software_instance.Item_getInstancePackingListLine(cleanup_resource)\n
+  except ValueError:\n
+    software_instance_list.append(software_instance)\n
+    break\n
+  else:\n
+    if cleanup_delivery_line.getSimulationState() != \'delivered\':\n
+      software_instance_list.append(software_instance)\n
+      break\n
 \n
 if len(software_instance_list) > 0:\n
   return context.Base_redirect(dialog_id,\n

@@ -1,15 +1,13 @@
 <type_roles>
+  <role id='Assignor'>
+   <property id='title'>Group company</property>
+   <multi_property id='category'>group/company</multi_property>
+   <multi_property id='base_category'>group</multi_property>
+  </role>
   <role id='Assignee'>
    <property id='title'>Source Administration</property>
    <property id='description'>Monovalued role</property>
    <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
    <multi_property id='base_category'>source_administration</multi_property>
-  </role>
-  <role id='Assignor'>
-   <property id='title'>Vifib System Administrator</property>
-   <multi_property id='category'>function/computer/agent</multi_property>
-   <multi_property id='category'>group/company</multi_property>
-   <multi_property id='base_category'>function</multi_property>
-   <multi_property id='base_category'>group</multi_property>
   </role>
 </type_roles>

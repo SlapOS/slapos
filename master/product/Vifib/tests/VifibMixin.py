@@ -28,22 +28,11 @@
 ##############################################################################
 import transaction
 from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
-from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl.SecurityManagement import newSecurityManager, \
+  getSecurityManager, setSecurityManager
 from Products.ERP5Type.tests.utils import DummyMailHost
 import os
-
-REQUIRED_RULE_REFERENCE_LIST = [
-  'default_delivering_rule',
-  'default_delivery_rule',
-  'default_invoice_rule',
-  'default_invoice_transaction_rule',
-  'default_invoicing_rule',
-  'default_order_rule',
-]
-
-REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST = [
-  'crendential_request-confirmation-without-password',
-]
+from DateTime import DateTime
 
 class testVifibMixin(ERP5TypeTestCase):
   """
@@ -65,7 +54,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_administration',
       'erp5_pdm',
       'erp5_trade',
-      'erp5_simulation_test',
       'erp5_item',
       'erp5_open_trade',
       'erp5_forge',
@@ -89,6 +77,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_invoicing',
       'erp5_ods_style',
       'erp5_odt_style',
+      'erp5_rss_style',
       'erp5_ooo_import',
       'erp5_simplified_invoicing',
       'erp5_legacy_tax_system',
@@ -98,22 +87,28 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_credential',
       'erp5_km',
       'erp5_web_download_theme',
+      'erp5_tiosafe_core',
+      'erp5_system_event',
+      'erp5_secure_payment',
+      'erp5_payzen_secure_payment',
       'vifib_mysql_innodb_catalog',
       'vifib_core',
       'vifib_base',
+      'vifib_open_trade',
       'vifib_slap',
       'vifib_crm',
       'vifib_forge_release',
       'vifib_software_pdm',
       'vifib_web',
-      'vifib_open_trade',
       'vifib_l10n_fr',
       'vifib_data',
       'vifib_data_category',
       'vifib_data_web',
+      'vifib_payzen',
+      'vifib_data_payzen',
+      'vifib_data_simulation',
       'vifib_erp5',
       'vifib_test',
-      'vifib_invoicing',
     ]
     return result
 
@@ -145,7 +140,7 @@ class testVifibMixin(ERP5TypeTestCase):
       return
 
     if not self.portal.hasObject('portal_certificate_authority'):
-      self.portal.manage_addProduct['Vifib'].manage_addTool(
+      self.portal.manage_addProduct['ERP5'].manage_addTool(
         'ERP5 Certificate Authority Tool', None)
     self.portal.portal_certificate_authority.certificate_authority_path = \
         os.environ['TEST_CA_PATH']
@@ -192,45 +187,6 @@ class testVifibMixin(ERP5TypeTestCase):
     """
     return "vifib_default_system_preference"
 
-  def setSystemPreference(self):
-    """Configures and enables default system preference"""
-    default_system_preference = self.portal.portal_preferences\
-        .restrictedTraverse(self.getDefaultSitePreferenceId())
-    default_system_preference.edit(
-      preferred_credential_recovery_automatic_approval=1,
-      preferred_credential_request_automatic_approval=1,
-      preferred_person_credential_update_automatic_approval=1,
-      preferred_subscription_assignment_category=['role/member'],
-    )
-    if default_system_preference.getPreferenceState() == 'disabled':
-      default_system_preference.enable()
-
-  def setupNotificationModule(self):
-    module = self.portal.notification_message_module
-    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
-
-    for reference in REQUIRED_NOTIFICATION_MESSAGE_REFERENCE_LIST:
-      for message in module.searchFolder(portal_type='Notification Message',
-        reference=reference):
-        message = message.getObject()
-        if isTransitionPossible(message, 'validate'):
-          message.validate()
-
-  def setupRuleTool(self):
-    """Validates newest version of each rule from REQUIRED_RULE_REFERENCE_LIST"""
-    rule_tool = self.portal.portal_rules
-    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
-    for rule_reference in REQUIRED_RULE_REFERENCE_LIST:
-      rule_list = rule_tool.searchFolder(
-        reference=rule_reference,
-        limit=1,
-        sort_on=(('version', 'DESC'),)
-      )
-      self.assertEqual(1, len(rule_list), '%s not found' % rule_reference)
-      rule = rule_list[0].getObject()
-      if isTransitionPossible(rule, 'validate'):
-        rule.validate()
-
   def prepareTestUsers(self):
     """
     Prepare test users.
@@ -248,16 +204,24 @@ class testVifibMixin(ERP5TypeTestCase):
         if isTransitionPossible(assignment, 'open'):
           assignment.open()
 
-  def prepareTestServices(self):
-    isTransitionPossible = self.portal.portal_workflow.isTransitionPossible
-    for service in self.portal.portal_catalog(
-                                  portal_type="Service",
-                                  id="vifib_%",
-                                  ):
-
-      service = service.getObject()
-      if isTransitionPossible(service, 'validate'):
-        service.validate()
+  def prepareVifibAccountingPeriod(self):
+    vifib = self.portal.organisation_module['vifib_internet']
+    year = DateTime().year()
+    start_date = '%s/01/01' % year
+    stop_date = '%s/12/31' % (year + 1)
+    accounting_period = self.portal.portal_catalog.getResultValue(
+      portal_type='Accounting Period',
+      parent_uid=vifib.getUid(),
+      simulation_state='started',
+      **{
+        'delivery.start_date': start_date,
+        'delivery.stop_date': stop_date
+      }
+    )
+    if accounting_period is None:
+      accounting_period = vifib.newContent(portal_type='Accounting Period',
+        start_date=start_date, stop_date=stop_date)
+      accounting_period.start()
 
   def setupVifibMachineAuthenticationPlugin(self):
     """Sets up Vifib Authentication plugin"""
@@ -319,11 +283,8 @@ class testVifibMixin(ERP5TypeTestCase):
     self.setupVifibMachineAuthenticationPlugin()
     self.setupVifibShadowAuthenticationPlugin()
     self.setPreference()
-    self.setSystemPreference()
-    self.setupRuleTool()
-    self.setupNotificationModule()
     self.prepareTestUsers()
-    self.prepareTestServices()
+    self.prepareVifibAccountingPeriod()
     transaction.commit()
     self.tic()
     self.logout()
@@ -332,9 +293,6 @@ class testVifibMixin(ERP5TypeTestCase):
   def clearCache(self):
     self.portal.portal_caches.clearAllCache()
     self.portal.portal_workflow.refreshWorklistCache()
-
-  def stepClearCache(self, sequence=None, sequence_list=None, **kw):
-    self.clearCache()
 
   # access related steps
   def stepLoginDefaultUser(self, **kw):
@@ -372,3 +330,49 @@ class testVifibMixin(ERP5TypeTestCase):
 
   def stepLogout(self, **kw):
     self.logout()
+
+  def stepTriggerBuild(self, **kw):
+    self.portal.portal_alarms.vifib_trigger_build.activeSense()
+
+  def stepTic(self, **kw):
+    def build():
+      sm = getSecurityManager()
+      self.login()
+      try:
+        if 'vifib_trigger_build' in self.portal.portal_alarms.objectIds():
+          self.portal.portal_alarms.vifib_trigger_build.Alarm_buildVifibPath()
+      finally:
+        setSecurityManager(sm)
+
+    if kw.get('sequence', None) is None:
+      # in case of using not in sequence commit transaction
+      transaction.commit()
+    # trigger build before tic
+    build()
+    transaction.commit()
+
+    super(testVifibMixin, self).stepTic(**kw)
+
+    # retrigger build after tic
+    build()
+    transaction.commit()
+
+    # tic after build
+    super(testVifibMixin, self).stepTic(**kw)
+
+    # everything shall be consistent
+    self.portal.portal_alarms.vifib_check_consistency.activeSense()
+    transaction.commit()
+    super(testVifibMixin, self).stepTic(**kw)
+    self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
+
+    # there shall be no divergency
+    current_skin = self.app.REQUEST.get('portal_skin', 'View')
+    try:
+      # Note: Worklists are cached, so in order to have next correct result
+      # clear cache
+      self.clearCache()
+      self.changeSkin('RSS')
+      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist())
+    finally:
+      self.changeSkin(current_skin)

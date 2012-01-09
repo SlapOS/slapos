@@ -51,6 +51,8 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>def getRelatedTradeConditionList(trade_condition):\n
+  if trade_condition is None:\n
+    return []\n
   related_trade_condition_list = trade_condition.getSpecialiseValueList(\n
         portal_type=(\'Sale Trade Condition\', \'Purchase Trade Condition\'))\n
   for related_trade_condition in trade_condition.getSpecialiseValueList(\n

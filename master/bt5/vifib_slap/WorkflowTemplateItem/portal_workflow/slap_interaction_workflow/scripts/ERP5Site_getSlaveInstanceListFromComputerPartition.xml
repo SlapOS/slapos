@@ -60,6 +60,8 @@ sale_packing_list_line = portal.portal_catalog.getResultValue(\n
   portal_type="Sale Packing List Line",\n
   aggregate_relative_url=relative_url)\n
 \n
+if sale_packing_list_line is None:\n
+  return []\n
 computer_partition_relative_url = sale_packing_list_line.getAggregate(\n
   portal_type="Computer Partition")\n
 \n
@@ -73,7 +75,6 @@ query = ComplexQuery(computer_partition_query, \n
 \n
 return portal.portal_catalog(portal_type=\'Sale Packing List Line\',\n
                              default_resource_uid=service_uid_list,\n
-                             sort_on=((\'movement.start_date\', \'DESC\'),),\n
                              query=query, **kw)\n
 </string> </value>
         </item>

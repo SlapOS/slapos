@@ -1,0 +1,70 @@
+account_module/bank
+account_module/capital
+account_module/coll_vat
+account_module/equipments
+account_module/inventories
+account_module/payable
+account_module/profit_loss
+account_module/purchase
+account_module/receivable
+account_module/refundable_vat
+account_module/sales
+business_process_module/vifib_purchase_business_process
+business_process_module/vifib_purchase_business_process/**
+business_process_module/vifib_sale_business_process
+business_process_module/vifib_sale_business_process/**
+portal_categories/trade_phase/vifib
+portal_categories/trade_phase/vifib/**
+portal_categories/trade_state/**
+portal_deliveries/vifib_payment_transaction_builder
+portal_deliveries/vifib_payment_transaction_builder/**
+portal_deliveries/vifib_purchase_packing_list_builder
+portal_deliveries/vifib_purchase_packing_list_builder/**
+portal_deliveries/vifib_sale_invoice_builder
+portal_deliveries/vifib_sale_invoice_builder/**
+portal_deliveries/vifib_sale_invoice_transaction_builder
+portal_deliveries/vifib_sale_invoice_transaction_builder/**
+portal_deliveries/vifib_sale_packing_list_builder
+portal_deliveries/vifib_sale_packing_list_builder/**
+portal_rules/default_subscription_item_rule
+portal_rules/default_subscription_item_rule/**
+portal_rules/new_accounting_transaction_root_simulation_rule
+portal_rules/new_accounting_transaction_root_simulation_rule/**
+portal_rules/new_delivery_root_simulation_rule
+portal_rules/new_delivery_root_simulation_rule/**
+portal_rules/new_delivery_simulation_rule
+portal_rules/new_delivery_simulation_rule/**
+portal_rules/new_invoice_root_simulation_rule
+portal_rules/new_invoice_root_simulation_rule/**
+portal_rules/new_invoice_simulation_rule
+portal_rules/new_invoice_simulation_rule/**
+portal_rules/new_invoice_transaction_simulation_rule
+portal_rules/new_invoice_transaction_simulation_rule/**
+portal_rules/new_order_root_simulation_rule
+portal_rules/new_order_root_simulation_rule/**
+portal_rules/new_payment_simulation_rule
+portal_rules/new_payment_simulation_rule/**
+portal_rules/new_trade_model_simulation_rule
+portal_rules/new_trade_model_simulation_rule/**
+portal_solvers/Accept Solver
+portal_solvers/Accept Solver/*
+portal_solvers/Adopt Solver
+portal_solvers/Adopt Solver/*
+portal_solvers/Consolidating Sale Invoice Line
+portal_solvers/Consolidating Sale Invoice Line/**
+portal_solvers/FIFO Delivery Solver
+portal_solvers/FIFO Delivery Solver/*
+portal_solvers/LIFO Delivery Solver
+portal_solvers/LIFO Delivery Solver/*
+portal_solvers/Minimise Price Delivery Solver
+portal_solvers/Minimise Price Delivery Solver/*
+portal_solvers/Production Reduction Solver
+portal_solvers/Production Reduction Solver/*
+portal_solvers/Quantity Cancel Solver
+portal_solvers/Quantity Cancel Solver/*
+portal_solvers/Quantity Split Solver
+portal_solvers/Quantity Split Solver/*
+portal_solvers/Trade Model Solver
+portal_solvers/Trade Model Solver/*
+portal_solvers/Unify Solver
+portal_solvers/Unify Solver/*

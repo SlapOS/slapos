@@ -98,6 +98,8 @@
                         <string>my_preferred_instance_cleanup_resource</string>
                         <string>my_preferred_software_setup_resource</string>
                         <string>my_preferred_instance_update_resource</string>
+                        <string>my_preferred_instance_subscription_resource</string>
+                        <string>my_preferred_payzen_integration_site</string>
                       </list>
                     </value>
                 </item>

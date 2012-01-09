@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>payzen_event = state_change[\'object\']\n
+payment_transaction = payzen_event.getDestinationValue()\n
+portal = payment_transaction.getPortalObject()\n
+service = portal.portal_secure_payments.find()\n
+integration_tool = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
+\n
+transaction_id = integration_tool.getMappingFromCategory(\'causality/%s\' % payment_transaction.getRelativeUrl())\n
+if transaction_id == \'Causality/%s\' % payment_transaction.getRelativeUrl():\n
+  raise ValueError(\'Transaction not registered in payzen integration tool\')\n
+transaction_id = transaction_id.split(\'/\')[1]\n
+transmissionDate, transactionId = transaction_id.split(\'_\')\n
+\n
+data_kw, signature, sent_text, received_text = service.soap_getInfo(DateTime(transmissionDate).toZone(\'UTC\').asdatetime(), transactionId)\n
+sent = payzen_event.newContent(title=\'Sent SOAP\', portal_type=\'Payzen Event Message\', text_content=sent_text)\n
+received = payzen_event.newContent(title=\'Received SOAP\', portal_type=\'Payzen Event Message\', text_content=received_text, predecessor_value=sent)\n
+context.PayzenEvent_processUpdate(state_change, data_kw, signature)\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>state_change</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>PayzenEvent_updateStatus</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
