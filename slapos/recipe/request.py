@@ -76,7 +76,7 @@ class Recipe(object):
             options['config-%s' % config_parameter]
 
     instance = self.request(options['software-url'], software_type,
-      name, partition_parameter_kw=partition_parameter_kw,
+      options['name'], partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=self.isSlave)
 
     self.failed = None
