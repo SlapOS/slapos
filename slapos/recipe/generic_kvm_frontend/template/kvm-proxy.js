@@ -35,25 +35,9 @@ var middlewareNotFound = function(req, res, proxy) {
 };
 
 /**
- * Rewrite URL to match Zope's virtual host monster if we use vifib
- */
-var middlewareVifib = function(req, res, next) {
-  // Completely hardcoded rewrite
-  var vifibPrefix = '/hosting';
-  if (req.url.indexOf(vifibPrefix) == 0) {
-    // Rewrite URL to match virtual host
-    req.url = vifibPrefix + '/VirtualHostBase/https/' + req.headers.host +
-              '/erp5/web_site_module/VirtualHostRoot' + req.url;
-    console.log('Vifib rewrite. New URL is : ' + req.url);
-  }
-  next();
-};
-
-/**
  * Create server
  */
 var proxyServer = httpProxy.createServer(
-  middlewareVifib,
   // We declare our proxyByUrl middleware
   proxyByUrl(proxyTable),
   // Then we add your dummy middleware, called when proxyByUrl doesn't find url.
@@ -62,12 +46,10 @@ var proxyServer = httpProxy.createServer(
   {
     https: {
       key: fs.readFileSync(
-        //'/Users/cedricdesaintmartin/Desktop/SlapOS/slapconsole-keys/cedric-owf-0/ssl.key',
         sslKeyFile,
         'utf8'
       ),
       cert: fs.readFileSync(
-        //'/Users/cedricdesaintmartin/Desktop/SlapOS/slapconsole-keys/cedric-owf-0/ssl.cert',
         sslCertFile,
         'utf8'
       )

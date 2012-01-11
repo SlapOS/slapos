@@ -47,18 +47,9 @@ class Recipe(BaseSlapRecipe):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
 
-    # self.cron_d is a directory, where cron jobs can be registered
-    self.cron_d = self.installCrond()
-    self.logrotate_d, self.logrotate_backup = self.installLogrotate()
-    self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
-          'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-
-    self.path_list.append(self.killpidfromfile)
-
-    frontend_port_number = self.parameter_dict.get("port", 4443)
-    frontend_domain_name = self.parameter_dict.get("domain",
-        "host.vifib.net")
+#     frontend_port_number = self.parameter_dict.get("port", 4443)
+#     frontend_domain_name = self.parameter_dict.get("domain",
+#         "host.vifib.net")
 
     # Create http server redirecting (302) to https proxy?
     redirect_plain_http = self.parameter_dict.get("redirect_plain_http", '')
@@ -78,13 +69,13 @@ class Recipe(BaseSlapRecipe):
       certificate = ca_conf.pop('certificate')
 
     # Install node + js script
-    node_parameter_dict = self.installFrontendNode(
-        ip=self.getGlobalIPv6Address(),
-        port=frontend_port_number,
-        plain_http=redirect_plain_http,
-        name=frontend_domain_name,
-        slave_instance_list=self.parameter_dict.get('slave_instance_list', []),
-        key=key, certificate=certificate)
+#     node_parameter_dict = self.installFrontendNode(
+#         ip=self.getGlobalIPv6Address(),
+#         port=frontend_port_number,
+#         plain_http=redirect_plain_http,
+#         name=frontend_domain_name,
+#         slave_instance_list=self.parameter_dict.get('slave_instance_list', []),
+#         key=key, certificate=certificate)
 
     # Send connection parameters of master instance
     site_url = node_parameter_dict['site_url']
@@ -102,207 +93,9 @@ class Recipe(BaseSlapRecipe):
 
     return self.path_list
 
-  def installLogrotate(self):
-    """Installs logortate main configuration file and registers its to cron"""
-    logrotate_d = os.path.abspath(os.path.join(self.etc_directory,
-      'logrotate.d'))
-    self._createDirectory(logrotate_d)
-    logrotate_backup = self.createBackupDirectory('logrotate')
-    logrotate_conf = self.createConfigurationFile("logrotate.conf",
-        "include %s" % logrotate_d)
-    logrotate_cron = os.path.join(self.cron_d, 'logrotate')
-    state_file = os.path.join(self.data_root_directory, 'logrotate.status')
-    open(logrotate_cron, 'w').write('0 0 * * * %s -s %s %s' %
-        (self.options['logrotate_binary'], state_file, logrotate_conf))
-    self.path_list.extend([logrotate_d, logrotate_conf, logrotate_cron])
-    return logrotate_d, logrotate_backup
-
-  def registerLogRotation(self, name, log_file_list, postrotate_script):
-    """Register new log rotation requirement"""
-    open(os.path.join(self.logrotate_d, name), 'w').write(
-        self.substituteTemplate(self.getTemplateFilename(
-          'logrotate_entry.in'),
-          dict(file_list=' '.join(['"'+q+'"' for q in log_file_list]),
-            postrotate=postrotate_script, olddir=self.logrotate_backup)))
-
-  def requestCertificate(self, name):
-    hash = hashlib.sha512(name).hexdigest()
-    key = os.path.join(self.ca_private, hash + self.ca_key_ext)
-    certificate = os.path.join(self.ca_certs, hash + self.ca_crt_ext)
-    parser = ConfigParser.RawConfigParser()
-    parser.add_section('certificate')
-    parser.set('certificate', 'name', name)
-    parser.set('certificate', 'key_file', key)
-    parser.set('certificate', 'certificate_file', certificate)
-    parser.write(open(os.path.join(self.ca_request_dir, hash), 'w'))
-    return key, certificate
-
-  def installCrond(self):
-   timestamps = self.createDataDirectory('cronstamps')
-   cron_output = os.path.join(self.log_directory, 'cron-output')
-   self._createDirectory(cron_output)
-   catcher = zc.buildout.easy_install.scripts([('catchcron',
-     __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
-     self.bin_directory, arguments=[cron_output])[0]
-   self.path_list.append(catcher)
-   cron_d = os.path.join(self.etc_directory, 'cron.d')
-   crontabs = os.path.join(self.etc_directory, 'crontabs')
-   self._createDirectory(cron_d)
-   self._createDirectory(crontabs)
-   # Use execute from erp5.
-   wrapper = zc.buildout.easy_install.scripts([('crond',
-     'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-     self.wrapper_directory, arguments=[
-       self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
-       '-t', timestamps, '-f', '-l', '5', '-M', catcher]
-     )[0]
-   self.path_list.append(wrapper)
-   return cron_d
-
-  def installValidCertificateAuthority(self, domain_name, certificate, key):
-    ca_dir = os.path.join(self.data_root_directory, 'ca')
-    ca_private = os.path.join(ca_dir, 'private')
-    ca_certs = os.path.join(ca_dir, 'certs')
-    ca_crl = os.path.join(ca_dir, 'crl')
-    self._createDirectory(ca_dir)
-    for path in (ca_private, ca_certs, ca_crl):
-      self._createDirectory(path)
-    key_path = os.path.join(ca_private, domain_name + ".key")
-    certificate_path = os.path.join(ca_certs, domain_name + ".crt")
-    self._writeFile(key_path, key)
-    self._writeFile(certificate_path, certificate)
-    return dict(certificate_authority_path=ca_dir,
-        ca_crl=ca_crl,
-        certificate=certificate_path,
-        key=key_path)
-
-  def installCertificateAuthority(self, ca_country_code='XX',
-      ca_email='xx@example.com', ca_state='State', ca_city='City',
-      ca_company='Company'):
-    backup_path = self.createBackupDirectory('ca')
-    self.ca_dir = os.path.join(self.data_root_directory, 'ca')
-    self._createDirectory(self.ca_dir)
-    self.ca_request_dir = os.path.join(self.ca_dir, 'requests')
-    self._createDirectory(self.ca_request_dir)
-    config = dict(ca_dir=self.ca_dir, request_dir=self.ca_request_dir)
-    self.ca_private = os.path.join(self.ca_dir, 'private')
-    self.ca_certs = os.path.join(self.ca_dir, 'certs')
-    self.ca_crl = os.path.join(self.ca_dir, 'crl')
-    self.ca_newcerts = os.path.join(self.ca_dir, 'newcerts')
-    self.ca_key_ext = '.key'
-    self.ca_crt_ext = '.crt'
-    for d in [self.ca_private, self.ca_crl, self.ca_newcerts, self.ca_certs]:
-      self._createDirectory(d)
-    for f in ['crlnumber', 'serial']:
-      if not os.path.exists(os.path.join(self.ca_dir, f)):
-        open(os.path.join(self.ca_dir, f), 'w').write('01')
-    if not os.path.exists(os.path.join(self.ca_dir, 'index.txt')):
-      open(os.path.join(self.ca_dir, 'index.txt'), 'w').write('')
-    openssl_configuration = os.path.join(self.ca_dir, 'openssl.cnf')
-    config.update(
-        working_directory=self.ca_dir,
-        country_code=ca_country_code,
-        state=ca_state,
-        city=ca_city,
-        company=ca_company,
-        email_address=ca_email,
-    )
-    self._writeFile(openssl_configuration, pkg_resources.resource_string(
-      __name__, 'template/openssl.cnf.ca.in') % config)
-    self.path_list.extend(zc.buildout.easy_install.scripts([
-      ('certificate_authority', 'slapos.recipe.kvm.certificate_authority',
-         'runCertificateAuthority')],
-        self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
-          openssl_configuration=openssl_configuration,
-          openssl_binary=self.options['openssl_binary'],
-          certificate=os.path.join(self.ca_dir, 'cacert.pem'),
-          key=os.path.join(self.ca_private, 'cakey.pem'),
-          crl=os.path.join(self.ca_crl),
-          request_dir=self.ca_request_dir
-          )]))
-
-    # configure backup
-    backup_cron = os.path.join(self.cron_d, 'ca_rdiff_backup')
-    open(backup_cron, 'w').write(
-        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
-          rdiff_backup=self.options['rdiff_backup_binary'],
-          source=self.ca_dir,
-          destination=backup_path))
-    self.path_list.append(backup_cron)
-
-    return dict(
-      ca_certificate=os.path.join(config['ca_dir'], 'cacert.pem'),
-      ca_crl=os.path.join(config['ca_dir'], 'crl'),
-      certificate_authority_path=config['ca_dir']
-    )
-
-  def _getProxyTableContent(self, rewrite_rule_list):
-    """Generate proxy table file content from rewrite rules list"""
-    proxy_table_content = '{'
-    for rewrite_rule in rewrite_rule_list:
-      rewrite_part = self.substituteTemplate(
-         self.getTemplateFilename('proxytable-resource-snippet.json.in'),
-         rewrite_rule)
-      proxy_table_content = """%s%s,""" % (proxy_table_content, rewrite_part)
-    proxy_table_content = '%s%s' % (proxy_table_content,
-         open(self.getTemplateFilename('proxytable-vifib-snippet.json.in')).read())
-    proxy_table_content = '%s}\n' % proxy_table_content
-    return proxy_table_content
-
-  def _getRewriteRuleContent(self, slave_instance_list):
-    """Generate rewrite rules list from slaves list"""
-    rewrite_rule_list = []
-    for slave_instance in slave_instance_list:
-      current_slave_dict = dict()
-      # Get host, and if IPv6 address, remove "[" and "]"
-      current_slave_dict['host'] = string.replace(string.replace(
-          slave_instance['host'], '[', ''), ']', '')
-      current_slave_dict['port'] = slave_instance['port']
-      if current_slave_dict['host'] is None \
-          or current_slave_dict['port'] is None:
-        # XXX-Cedric: should raise warning because slave seems badly configured
-        continue
-      # Check if target is https or http
-      current_slave_dict['https'] = slave_instance.get('https', 'true')
-      if current_slave_dict['https'] in FALSE_VALUE_LIST:
-        current_slave_dict['https'] = 'false'
-      # Set reference and resource url
-      # Reference is raw reference from SlapOS Master, resource is
-      # URL-compatible name
-      reference = slave_instance.get('slave_reference')
-      current_slave_dict['reference'] = reference
-      current_slave_dict['resource'] = reference.replace('-', '')
-      rewrite_rule_list.append(current_slave_dict)
-    return rewrite_rule_list
 
   def installFrontendNode(self, ip, port, key, certificate, plain_http,
                             name, slave_instance_list):
-    # Generate rewrite rules
-    rewrite_rule_list = self._getRewriteRuleContent(slave_instance_list)
-    # Create Map
-    map_name = "proxy_table.json"
-    map_content = self._getProxyTableContent(rewrite_rule_list)
-    map_file = self.createConfigurationFile(map_name, map_content)
-    self.path_list.append(map_file)
-    
-    # Install script
-    kvm_proxy_script_in = open(self.getTemplateFilename(
-          'kvm-proxy.js'), 'r').read()
-    # XXX-Cedric : this is NOT a wrapper.
-    kvm_proxy_script = self.createRunningWrapper("kvm-proxy.js",
-        kvm_proxy_script_in)
-    self.path_list.append(kvm_proxy_script)
-
-    # Create wrapper
-    wrapper = zc.buildout.easy_install.scripts([(
-        "kvm_frontend", 'slapos.recipe.librecipe.execute', 'executee_wait')], self.ws,
-        sys.executable, self.wrapper_directory, arguments=[
-        [self.options['node_binary'].strip(), kvm_proxy_script,
-        ip, str(port), key, certificate, map_file, plain_http],
-        [key, certificate],
-        {'NODE_PATH': self.options['node_path']}]
-      )[0]
-    self.path_list.append(wrapper)
 
     return dict(site_url="https://%s:%s/" % (name, port),
                 rewrite_rule_list=rewrite_rule_list)
