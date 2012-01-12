@@ -34,8 +34,8 @@ class GenericSlapRecipe(GenericBaseRecipe):
 
   def __init__(self, buildout, name, options):
     """Default initialisation"""
-    options['eggs'] = 'slapos.cookbook'
     GenericBaseRecipe.__init__(self, buildout, name, options)
+    options['eggs'] = 'slapos.cookbook'
     self.slap = slap.slap()
 
     # SLAP related information
