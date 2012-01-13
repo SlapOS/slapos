@@ -334,7 +334,12 @@ class TestVifibUsageReport(TestVifibUsageReportMixin):
       CheckSaleInvoiceExists \
       CheckSaleInvoiceQuantitySinglePartition \
       ClearModules \
-      Logout"""
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+      """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
@@ -367,6 +372,11 @@ class TestVifibUsageReport(TestVifibUsageReportMixin):
       Tic \
       CheckSaleInvoiceExists \
       CheckSaleInvoiceQuantityTwoPartitions \
-      Logout"""
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+      """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

@@ -58,6 +58,10 @@ class TestVifibSlapComputerPartitionConnection(TestVifibSlapWebServiceMixin):
       ConfirmOrderedSaleOrderActiveSense
       Tic
       CheckGetSetConnectionDict
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

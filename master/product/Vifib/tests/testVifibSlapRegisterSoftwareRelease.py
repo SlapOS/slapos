@@ -39,6 +39,9 @@ class TestVifibSlapRegisterSoftwareRelease(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessSlapRegisterSoftwareReleaseCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -55,6 +58,9 @@ class TestVifibSlapRegisterSoftwareRelease(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessSlapRegisterSoftwareReleaseCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -74,6 +80,9 @@ class TestVifibSlapRegisterSoftwareRelease(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessSlapRegisterSoftwareReleaseCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -115,6 +124,9 @@ class TestVifibSlapRegisterSoftwareRelease(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessSlapRegisterSoftwareReleaseCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

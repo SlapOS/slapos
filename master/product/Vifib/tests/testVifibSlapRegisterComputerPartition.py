@@ -23,6 +23,9 @@ class TestVifibSlapRegisterComputerPartition(TestVifibSlapWebServiceMixin):
       SlapLogout \
       Tic \
       CheckUnexistingComputer \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -44,6 +47,9 @@ class TestVifibSlapRegisterComputerPartition(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckUnauthorizedSlapRegisterComputerPartitionCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -57,6 +63,9 @@ class TestVifibSlapRegisterComputerPartition(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer\
       CheckNotFoundSlapRegisterComputerPartitionCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -70,6 +79,9 @@ class TestVifibSlapRegisterComputerPartition(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessSlapRegisterComputerPartitionCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -83,6 +95,9 @@ class TestVifibSlapRegisterComputerPartition(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessSlapRegisterComputerPartitionCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -98,6 +113,9 @@ class TestVifibSlapRegisterComputerPartition(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessSlapRegisterComputerPartitionCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

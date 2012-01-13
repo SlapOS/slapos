@@ -18,6 +18,9 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckNotFoundSoftwareReleaseBuildingAfterRegisterCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -35,6 +38,9 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckStartedPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -56,6 +62,9 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckCancelledPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -79,6 +88,9 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckStartedPurchasePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -101,6 +113,9 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckStoppedPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -126,6 +141,9 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckDeliveredPurchasePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -147,7 +165,11 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckStartedPurchasePackingListB \
-      Logout'
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+      '
     sequence_list.addSequenceString(sequence_string)
     sequence_string = self.prepare_two_purchase_packing_list + '\
       LoginDefaultUser \
@@ -160,7 +182,11 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckStartedPurchasePackingListB \
-      Logout'
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+      '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 

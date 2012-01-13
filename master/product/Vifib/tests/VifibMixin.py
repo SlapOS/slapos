@@ -335,6 +335,14 @@ class testVifibMixin(ERP5TypeTestCase):
   def stepTriggerBuild(self, **kw):
     self.portal.portal_alarms.vifib_trigger_build.activeSense()
 
+  def stepCheckSiteConsistency(self, **kw):
+    self.portal.portal_alarms.vifib_check_consistency.activeSense()
+    transaction.commit()
+    super(testVifibMixin, self).stepTic(**kw)
+    self.assertEqual([], self.portal.portal_alarms.vifib_check_consistency\
+        .Alarm_getConsistencyCheckReportLineList())
+    self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
+
   def stepTic(self, **kw):
     def build():
       sm = getSecurityManager()
@@ -360,14 +368,6 @@ class testVifibMixin(ERP5TypeTestCase):
 
     # tic after build
     super(testVifibMixin, self).stepTic(**kw)
-
-    # everything shall be consistent
-    self.portal.portal_alarms.vifib_check_consistency.activeSense()
-    transaction.commit()
-    super(testVifibMixin, self).stepTic(**kw)
-    self.assertEqual([], self.portal.portal_alarms.vifib_check_consistency\
-        .Alarm_getConsistencyCheckReportLineList())
-    self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
 
     # there shall be no divergency
     current_skin = self.app.REQUEST.get('portal_skin', 'View')
