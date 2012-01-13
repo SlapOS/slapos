@@ -12,8 +12,8 @@ def setup(args):
 
   os.chmod(config_php, 0444)
   os.remove(install_php)
-  os.remove(install_folder)
   os.remove(upgrade_php)
+  os.removedirs(install_folder)
   
 if __name__ == '__main__':
   setup(sys.argv[1:])
