@@ -59,17 +59,6 @@ class Recipe(slapos.recipe.erp5.Recipe):
 
     return self._getIpAddress(validPublicAddress)
 
-  def installProductionMysql(self):
-    mysql_conf = self.installMysqlServer(self.getGlobalIPv6Address(), 45678,
-        template_filename=pkg_resources.resource_filename(__name__,
-          'template/my.cnf.in'), parallel_test_database_amount=1,
-          mysql_conf=dict(innodb_buffer_pool_size='10G'), with_backup=False)
-    self.installMysqldumpBackup()
-    self.setConnectionDict(dict(
-      mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
-    ))
-    return self.path_list
-
   def installProductionFrontend(self):
     frontend_key, frontend_certificate = self.requestCertificate(
         self.parameter_dict['frontend_name'])
@@ -113,51 +102,3 @@ class Recipe(slapos.recipe.erp5.Recipe):
 #       )
 #     cronfile.close()
 #     self.path_list.append(mysqldump_cron)
-
-  def installDevelopmentEnvironment(self):
-    ca_conf = self.installCertificateAuthority()
-    memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
-        port=11000)
-    conversion_server_conf = self.installConversionServer(
-        self.getLocalIPv4Address(), 23000, 23060)
-    mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678,
-        template_filename=pkg_resources.resource_filename(__name__,
-          'template/my.cnf.in'), parallel_test_database_amount=10,
-          mysql_conf=dict(innodb_buffer_pool_size='1G'), with_backup=False)
-    self.installMysqldumpBackup()
-    kumo_conf = self.installKumo(self.getLocalIPv4Address())
-    user, password = self.installERP5()
-    self.installTestRunner(ca_conf, mysql_conf, conversion_server_conf,
-        memcached_conf, kumo_conf)
-    self.installTestSuiteRunner(ca_conf, mysql_conf, conversion_server_conf,
-                           memcached_conf, kumo_conf)
-    ip = self.getLocalIPv4Address()
-    zope_port = '18080'
-    zodb_dir = os.path.join(self.data_root_directory, 'zodb')
-    self._createDirectory(zodb_dir)
-    zodb_root_path = os.path.join(zodb_dir, 'root.fs')
-    self.installZope(ip, zope_port, 'zope_development',
-        zodb_configuration_string=self.substituteTemplate(
-          self.getTemplateFilename('zope-zodb-snippet.conf.in'),
-          dict(zodb_root_path=zodb_root_path)),
-          thread_amount=8, with_timerservice=True,
-          )
-    self.setConnectionDict(dict(
-      site_user=user,
-      site_password=password,
-      memcached_url=memcached_conf['memcached_url'],
-      kumo_url=kumo_conf['kumo_address'],
-      conversion_server_url='%(conversion_server_ip)s:%(conversion_server_port)s' %
-        conversion_server_conf,
-      # openssl binary might be removed, as soon as CP environment will be
-      # fully controlled
-      openssl_binary=self.options['openssl_binary'],
-      # As soon as there would be Vifib ERP5 configuration and possibility to
-      # call it over the network this can be removed
-      certificate_authority_path=ca_conf['certificate_authority_path'],
-      # as installERP5Site is not trusted (yet) and this recipe is production
-      # ready expose more information
-      mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
-      development_zope='http://%s:%s/' % (ip, zope_port)
-    ))
-    return self.path_list
