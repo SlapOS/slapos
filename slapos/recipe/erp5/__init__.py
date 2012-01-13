@@ -668,7 +668,15 @@ SSLCARevocationPath %(ca_crl)s"""
     # maxconn should be set as the maximum thread we have per zope, like this
     #      haproxy will manage the queue of request with the possibility to
     #      move a request to another node if the initially selected one is dead
-    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxconn %(cluster_zope_thread_amount)s"""
+    # maxqueue is the number of waiting request in the queue of every zope client.
+    #      It allows to make sure that there is not a zope client handling all
+    #      the work while other clients are doing nothing. This was happening
+    #      even thoug we have round robin distribution because when a node dies
+    #      some seconds, all request are dispatched to other nodes, and then users
+    #      stick in other nodes and are not coming back. Please note this option
+    #      is not an issue if you have more than (maxqueue * node_quantity) requests
+    #      because haproxy will handle a top-level queue
+    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxqueue 5 maxconn %(cluster_zope_thread_amount)s"""
     config = dict(name=name, ip=ip, port=port,
         server_check_path=server_check_path,)
     i = 1
@@ -781,7 +789,12 @@ SSLCARevocationPath %(ca_crl)s"""
       kumo_conf = {}
     # XXX Conversion server and memcache server coordinates are not relevant
     # for pure site creation.
-    mysql_connection_string = "%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s" % mysql_conf
+    assert mysql_conf['mysql_user'] and mysql_conf['mysql_password'], \
+        "ZMySQLDA requires a user and a password for socket connections"
+    # XXX Use socket access to prevent unwanted connections to original MySQL
+    #     server when cloning an existing ERP5 instance.
+    #     TCP will be required if MySQL is in a different partition/server.
+    mysql_connection_string = "%(mysql_database)s %(mysql_user)s %(mysql_password)s %(socket)s" % mysql_conf
 
     bt5_list = self.parameter_dict.get("bt5_list", "").split() or default_bt5_list
     bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
@@ -1146,7 +1159,7 @@ SSLCARevocationPath %(ca_crl)s"""
   def installMysqlServer(self, ip, port, database='erp5', user='user',
       test_database='test_erp5', test_user='test_user', template_filename=None,
       parallel_test_database_amount=100, mysql_conf=None, with_backup=True,
-      with_maatkit=True):
+      with_percona_toolkit=True):
     if mysql_conf is None:
       mysql_conf = {}
     backup_directory = self.createBackupDirectory('mysql')
@@ -1185,6 +1198,8 @@ SSLCARevocationPath %(ca_crl)s"""
           mysql_conf))
 
     mysql_script_list = []
+    mysql_script_list.append(pkg_resources.resource_string(__name__,
+                   'template/mysql-init-function.sql.in'))
     for x_database, x_user, x_password in \
           [(mysql_conf['mysql_database'],
             mysql_conf['mysql_user'],
@@ -1194,7 +1209,7 @@ SSLCARevocationPath %(ca_crl)s"""
             mysql_conf['mysql_test_password']),
           ] + mysql_conf['mysql_parallel_test_dict']:
       mysql_script_list.append(pkg_resources.resource_string(__name__,
-                     'template/initmysql.sql.in') % {
+                     'template/mysql-init-database.sql.in') % {
                         'mysql_database': x_database,
                         'mysql_user': x_user,
                         'mysql_password': x_password})
@@ -1255,29 +1270,46 @@ SSLCARevocationPath %(ca_crl)s"""
       open(mysql_backup_cron, 'w').write('0 0 * * * ' + backup_controller)
       self.path_list.append(mysql_backup_cron)
 
-    if with_maatkit:
+    if with_percona_toolkit:
       # maatkit installation
-      for mk_script_name in (
-          'mk-variable-advisor',
-          'mk-table-usage',
-          'mk-visual-explain',
-          'mk-config-diff',
-          'mk-deadlock-logger',
-          'mk-error-log',
-          'mk-index-usage',
-          'mk-query-advisor',
+      for pt_script_name in (
+          'pt-archiver',
+          'pt-config-diff',
+          'pt-deadlock-logger',
+          'pt-duplicate-key-checker',
+          'pt-fifo-split',
+          'pt-find',
+          'pt-fk-error-logger',
+          'pt-heartbeat',
+          'pt-index-usage',
+          'pt-kill',
+          'pt-log-player',
+          'pt-online-schema-change',
+          'pt-query-advisor',
+          'pt-query-digest',
+          'pt-show-grants',
+          'pt-slave-delay',
+          'pt-slave-find',
+          'pt-slave-restart',
+          'pt-table-checksum',
+          'pt-table-sync',
+          'pt-tcp-model',
+          'pt-trend',
+          'pt-upgrade',
+          'pt-variable-advisor',
+          'pt-visual-explain',
           ):
-        mk_argument_list = [self.options['perl_binary'],
-            self.options['%s_binary' % mk_script_name],
+        pt_argument_list = [self.options['perl_binary'],
+            self.options['%s_binary' % pt_script_name],
             '--defaults-file=%s' % mysql_conf_path,
             '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
             ]
         environment = dict(PATH='%s' % self.bin_directory)
-        mk_exe = zc.buildout.easy_install.scripts([(
-          mk_script_name,'slapos.recipe.librecipe.execute', 'executee')],
+        pt_exe = zc.buildout.easy_install.scripts([(
+          pt_script_name,'slapos.recipe.librecipe.execute', 'executee')],
           self.ws, sys.executable, self.bin_directory, arguments=[
-            mk_argument_list, environment])[0]
-        self.path_list.append(mk_exe)
+            pt_argument_list, environment])[0]
+        self.path_list.append(pt_exe)
 
     # The return could be more explicit database, user ...
     return mysql_conf
