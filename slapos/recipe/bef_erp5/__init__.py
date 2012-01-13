@@ -162,27 +162,6 @@ class Recipe(slapos.recipe.erp5.Recipe):
     ))
     return self.path_list
 
-  def installBT5Repo(self):
-    """
-    Create read only repo in the partition, to ease ERP5 configuration
-    """
-    repo_path = os.path.join(self.var_directory, "bt5repo")
-    if not os.path.isdir(repo_path):
-      os.mkdir(repo_path)
-    for repo in self.options.get('bt5_repo_list', '').splitlines():
-      if not repo:
-        continue
-      target, linkname = repo.split()
-      link = os.path.join(repo_path, linkname)
-      if os.path.lexists(link):
-        if not os.path.islink(link):
-          raise zc.buildout.UserError(
-              'Target link already %r exists but it is not link' % link)
-        os.unlink(link)
-      os.symlink(target, link)
-      self.logger.debug('Created link %r -> %r' % (link, target))
-    self.path_list.append(repo_path)
-
   def _install(self):
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
