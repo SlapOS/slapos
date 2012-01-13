@@ -364,6 +364,8 @@ class testVifibMixin(ERP5TypeTestCase):
     self.portal.portal_alarms.vifib_check_consistency.activeSense()
     transaction.commit()
     super(testVifibMixin, self).stepTic(**kw)
+    self.assertEqual([], self.portal.portal_alarms.vifib_check_consistency\
+        .Alarm_getConsistencyCheckReportLineList())
     self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
 
     # there shall be no divergency
