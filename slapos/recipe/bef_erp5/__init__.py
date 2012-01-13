@@ -88,31 +88,31 @@ class Recipe(slapos.recipe.erp5.Recipe):
     ))
     return self.path_list
 
-  def installMysqldumpBackup(self):
-    backup_directory = self.createBackupDirectory('mysqldump')
-    environment = dict(PATH='%s' % self.bin_directory)
-    executable = os.path.join(self.bin_directory, 'mysqldump')
-    mysql_socket = os.path.join(self.var_directory, 'run', 'mysqld.sock')
-    mysqldump_opt = ['-u', 'root', '-S', mysql_socket, '--single-transaction',
-      '--no-autocommit', '--opt']
-    mysqldump_cron = os.path.join(self.cron_d, 'mysqldump')
-    database = 'sanef_dms'
-    cronfile = open(mysqldump_cron, 'w')
-    cronfile.write("0 0 * * * %(mysqldump)s %(mysqldump_opt)s %(database)s | %(gzip)s > %(destination)s\n" % dict(
-      mysqldump=executable, mysqldump_opt=' '.join(mysqldump_opt),
-      database=database, gzip=self.options['gzip_binary'],
-      destination=os.path.join(backup_directory, '%s.sql.gz' % database)
-    ))
-    for table in ['message', 'message_queue', 'portal_ids']:
-      destination = os.path.join(backup_directory, '%s.%s.sql.gz' % (database,
-        table))
-      cronfile.write("0 0 * * * %(mysqldump)s %(mysqldump_opt)s %(database)s %(table)s | %(gzip)s > %(destination)s\n" % dict(
-        mysqldump=executable, mysqldump_opt=' '.join(mysqldump_opt),
-        database=database, gzip=self.options['gzip_binary'],
-        table=table, destination=destination)
-      )
-    cronfile.close()
-    self.path_list.append(mysqldump_cron)
+#   def installMysqldumpBackup(self):
+#     backup_directory = self.createBackupDirectory('mysqldump')
+#     environment = dict(PATH='%s' % self.bin_directory)
+#     executable = os.path.join(self.bin_directory, 'mysqldump')
+#     mysql_socket = os.path.join(self.var_directory, 'run', 'mysqld.sock')
+#     mysqldump_opt = ['-u', 'root', '-S', mysql_socket, '--single-transaction',
+#       '--no-autocommit', '--opt']
+#     mysqldump_cron = os.path.join(self.cron_d, 'mysqldump')
+#     database = 'sanef_dms'
+#     cronfile = open(mysqldump_cron, 'w')
+#     cronfile.write("0 0 * * * %(mysqldump)s %(mysqldump_opt)s %(database)s | %(gzip)s > %(destination)s\n" % dict(
+#       mysqldump=executable, mysqldump_opt=' '.join(mysqldump_opt),
+#       database=database, gzip=self.options['gzip_binary'],
+#       destination=os.path.join(backup_directory, '%s.sql.gz' % database)
+#     ))
+#     for table in ['message', 'message_queue', 'portal_ids']:
+#       destination = os.path.join(backup_directory, '%s.%s.sql.gz' % (database,
+#         table))
+#       cronfile.write("0 0 * * * %(mysqldump)s %(mysqldump_opt)s %(database)s %(table)s | %(gzip)s > %(destination)s\n" % dict(
+#         mysqldump=executable, mysqldump_opt=' '.join(mysqldump_opt),
+#         database=database, gzip=self.options['gzip_binary'],
+#         table=table, destination=destination)
+#       )
+#     cronfile.close()
+#     self.path_list.append(mysqldump_cron)
 
   def installDevelopmentEnvironment(self):
     ca_conf = self.installCertificateAuthority()
@@ -161,32 +161,3 @@ class Recipe(slapos.recipe.erp5.Recipe):
       development_zope='http://%s:%s/' % (ip, zope_port)
     ))
     return self.path_list
-
-  def _install(self):
-    self.path_list = []
-    self.requirements, self.ws = self.egg.working_set()
-    # self.cron_d is a directory, where cron jobs can be registered
-    self.cron_d = self.installCrond()
-    self.logrotate_d, self.logrotate_backup = self.installLogrotate()
-    self.killpidfromfile = zc.buildout.easy_install.scripts(
-        [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
-          'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-    self.path_list.append(self.killpidfromfile)
-    self.linkBinary()
-    self.installBT5Repo()
-    if self.parameter_dict.get('production_mysql', 'false').lower() == 'true':
-      self.development = False
-      return self.installProductionMysql()
-    elif self.parameter_dict.get(
-        'production_application', 'false').lower() == 'true':
-      self.development = False
-      return self.installProductionApplication()
-    elif self.parameter_dict.get(
-        'production_frontend', 'false').lower() == 'true':
-      self.development = False
-      return self.installProductionFrontend()
-    elif self.parameter_dict.get('development', 'true').lower() == 'true':
-      self.development = True
-      return self.installDevelopmentEnvironment()
-    else:
-      raise NotImplementedError('Flavour of instance have to be given.')
