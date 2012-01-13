@@ -20,6 +20,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       CheckUnexistingComputer \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -39,6 +42,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       CheckUnauthorizedComputerGetSoftwareReleaseListCall \
       Tic \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -53,6 +59,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -72,6 +81,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -91,6 +103,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckUnauthorizedComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     try:
@@ -112,6 +127,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -130,6 +148,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -148,6 +169,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -168,6 +192,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -190,6 +217,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -205,6 +235,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -224,6 +257,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -243,6 +279,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -264,6 +303,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -287,6 +329,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -316,6 +361,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       CheckSuccessComputerGetSoftwareReleaseListCall \
       Tic \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -342,6 +390,9 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetSoftwareReleaseListCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

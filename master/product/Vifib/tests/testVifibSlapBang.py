@@ -207,6 +207,10 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -265,6 +269,10 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -283,6 +291,10 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -331,6 +343,10 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -572,6 +588,9 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -617,6 +636,10 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionNoInstanceUpdateSalePackingList
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -686,6 +709,10 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionNoInstanceUpdateSalePackingList
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)

@@ -23,6 +23,9 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckUnexistingComputer \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -42,6 +45,9 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
       \
       LoginDefaultUser \
       CheckSuccessSlapRegisterComputerCall \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -65,6 +71,9 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer\
       CheckSuccessSlapRegisterComputerCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -94,6 +103,9 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer\
       CheckSuccessSlapRegisterComputerCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

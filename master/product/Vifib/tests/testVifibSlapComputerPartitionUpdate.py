@@ -110,6 +110,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       CheckEmptyComputerGetComputerPartitionCall
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -152,6 +156,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         SlapLoginCurrentComputer
         CheckEmptyComputerGetComputerPartitionCall
         SlapLogout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -194,6 +202,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         SlapLoginCurrentComputer
         CheckEmptyComputerGetComputerPartitionCall
         SlapLogout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -247,6 +259,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
         CheckUpdateSalePackingListErrorText
         Logout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -264,6 +280,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         LoginDefaultUser
         CheckComputerPartitionNoInstanceUpdateSalePackingList
         Logout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -279,6 +299,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
         LoginDefaultUser
         CheckComputerPartitionNoInstanceUpdateSalePackingList
+        Logout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
         Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -348,6 +372,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionNoInstanceUpdateSalePackingList
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -363,6 +391,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
         LoginDefaultUser
         CheckComputerPartitionNoInstanceUpdateSalePackingList
+        Logout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
         Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -380,6 +412,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         LoginDefaultUser
         CheckComputerPartitionNoInstanceUpdateSalePackingList
         Logout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -396,6 +432,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         LoginDefaultUser
         CheckComputerPartitionNoInstanceUpdateSalePackingList
         Logout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -411,6 +451,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
         LoginDefaultUser
         CheckComputerPartitionNoInstanceUpdateSalePackingList
+        Logout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
         Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -433,6 +477,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
         LoginDefaultUser
         CheckComputerPartitionNoInstanceUpdateSalePackingList
+        Logout
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
         Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -464,6 +512,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionNoInstanceUpdateSalePackingList
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -492,6 +544,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionNoInstanceUpdateSalePackingList
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -543,6 +599,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionNoInstanceUpdateSalePackingList
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -596,6 +656,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       # it is proven that person data are begin in progress
       # but there is no way to request software instance update as...
       # ...it does not exists yet
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -660,6 +724,10 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -685,6 +753,9 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -710,6 +781,9 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -735,6 +809,9 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         CheckEmptyComputerGetComputerPartitionCall
         SlapLogout
 
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

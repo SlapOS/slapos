@@ -670,6 +670,10 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         ConfirmPayment
         Tic
         CheckPayment
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
         """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

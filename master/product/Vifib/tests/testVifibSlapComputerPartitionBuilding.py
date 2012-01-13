@@ -17,6 +17,9 @@ class TestVifibSlapComputerPartitionBuilding(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckNotFoundComputerPartitionBuildingAfterRegisterCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -27,7 +30,11 @@ class TestVifibSlapComputerPartitionBuilding(TestVifibSlapWebServiceMixin):
     list state to started.
     """
     sequence_list = SequenceList()
-    sequence_string = self.prepare_building_computer_partition_sequence_string
+    sequence_string = self.prepare_building_computer_partition_sequence_string + """
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
@@ -45,6 +52,10 @@ class TestVifibSlapComputerPartitionBuilding(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionInstanceSetupSalePackingListStarted
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)

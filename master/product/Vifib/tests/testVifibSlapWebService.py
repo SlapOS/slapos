@@ -3951,6 +3951,9 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckSuccessComputerPartitionGetIdCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -3967,6 +3970,9 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     sequence_string = '\
       SelectNewSoftwareReleaseUri \
       CheckSuccessSoftwareReleaseGetURICall \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -3977,7 +3983,12 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   def test_ComputerPartition_started(self):
     sequence_list = SequenceList()
     sequence_string = self\
-        .prepare_started_computer_partition_sequence_string
+        .prepare_started_computer_partition_sequence_string + """
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+        """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
@@ -3993,6 +4004,9 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckRaisesNotFoundComputerPartitionDestroyedCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -4000,7 +4014,11 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   def test_ComputerPartition_destroyed_worksOnInstalled(self):
     """Checks default destroy scenario on installed computer partition"""
     sequence_list = SequenceList()
-    sequence_string = self.prepare_destroyed_computer_partition
+    sequence_string = self.prepare_destroyed_computer_partition + """
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
@@ -4023,6 +4041,9 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckRaisesNotFoundComputerPartitionDestroyedCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -4180,6 +4201,10 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -4225,6 +4250,10 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
 
       LoginWebUser
       CheckPersonUpdatedCredential
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)

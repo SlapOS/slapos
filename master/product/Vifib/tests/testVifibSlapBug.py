@@ -12,6 +12,9 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       PersonRequestSoftwareInstance \
       Tic \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -26,6 +29,9 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance \
       RequestTwoAndCheckDifferentResult \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -43,6 +49,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -53,6 +63,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
         .prepare_stopped_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       RequestSoftwareInstanceStartCheckSerializeIsCalled
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -70,6 +84,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -80,6 +98,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
         .prepare_installed_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       RequestSoftwareInstanceDestroyCheckSerializeIsCalled
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -111,6 +133,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListStarted
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list = SequenceList()
@@ -464,6 +490,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckHostingSubscriptionMultipleComputerAuditor
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -504,6 +534,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       CheckComputerPartitionIsFree
       CheckComputerPartitionNoInstanceHostingSalePackingList
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -554,6 +588,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       CheckComputerPartitionIsFree
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -640,6 +678,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       CheckComputerPartitionIsFree
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -801,6 +843,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser # login as superuser in order to work in erp5
       DirectRequestComputerPartitionRaisesDisconnectedSoftwareTree
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -959,6 +1005,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser # login as superuser in order to work in erp5
       DirectRequestComputerPartitionRaisesCyclicSoftwareTree
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     import erp5.document.SoftwareInstance
@@ -1097,6 +1147,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser # login as superuser in order to work in erp5
       DirectRequestComputerPartitionRaisesValueError
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -1146,6 +1200,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SoftwareInstanceSaleOrderConfirmRaisesValueError
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -1236,6 +1294,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionNoInstanceHostingSalePackingList
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -1267,6 +1329,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
       LoginDefaultUser
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
@@ -1336,6 +1402,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInTable
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -1392,6 +1462,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionInTable
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -1437,6 +1511,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       # All related packing lists are delivered, so no local roles for
       # Hosting Subscription shall be defined
       CheckNoHostingSubscriptionComputerPartitionLocalRoles
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
