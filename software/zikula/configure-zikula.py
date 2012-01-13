@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
+import shutil
 
 def setup(args):
   mysql_port, mysql_host, mysql_user, mysql_password, mysql_database, base_url, htdocs = args
@@ -13,7 +14,7 @@ def setup(args):
   os.chmod(config_php, 0444)
   os.remove(install_php)
   os.remove(upgrade_php)
-  os.removedirs(install_folder)
+  shutil.rmtree(install_folder)
   
 if __name__ == '__main__':
   setup(sys.argv[1:])
