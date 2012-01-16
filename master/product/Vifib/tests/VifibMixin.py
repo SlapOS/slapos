@@ -333,7 +333,12 @@ class testVifibMixin(ERP5TypeTestCase):
     self.logout()
 
   def stepTriggerBuild(self, **kw):
-    self.portal.portal_alarms.vifib_trigger_build.activeSense()
+    sm = getSecurityManager()
+    self.login()
+    try:
+      self.portal.portal_alarms.vifib_trigger_build.activeSense()
+    finally:
+      setSecurityManager(sm)
 
   def stepCheckSiteConsistency(self, **kw):
     self.portal.portal_alarms.vifib_check_consistency.activeSense()
