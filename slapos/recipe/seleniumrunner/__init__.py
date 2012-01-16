@@ -57,14 +57,14 @@ class Recipe(BaseSlapRecipe):
     arguments = dict(
         xvfb_binary    = self.options['xvfb_binary'],
         display        = display,
-        suite_name     = self.parameter_dict.get('suite_name'),
-        base_url       = self.parameter_dict.get('url'),
+        suite_name     = self.parameter_dict['suite_name'],
+        base_url       = self.parameter_dict['url'],
         browser_argument_list = [],
-        user           = self.parameter_dict.get('user'),
-        password       = self.parameter_dict.get('password'),
-        project       = self.parameter_dict.get('project'),
+        user           = self.parameter_dict['user'],
+        password       = self.parameter_dict['password'],
+        project       = self.parameter_dict['project'],
         test_report_instance_url = \
-            self.parameter_dict.get('test_report_instance_url'),
+            self.parameter_dict['test_report_instance_url'],
         etc_directory  = self.etc_directory)
 
     # Check wanted browser XXX-Cedric not yet used but can be useful
