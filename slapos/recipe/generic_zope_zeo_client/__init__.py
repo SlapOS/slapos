@@ -143,6 +143,12 @@ class Recipe(GenericBaseRecipe):
     if self.isTrueValue(self.options['timeserver']):
       zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
           'zope.conf.timeserver.in'), {})
+    if 'tidstorage-ip' in self.options:
+      zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
+          'zope.conf.tidstorage.in'), {
+            'tidstorage-ip': self.options['tidstorage-ip'],
+            'tidstorage-port': self.options['tidstorage-port'],
+            })
 
     zope_conf_path = self.createFile(self.options['configuration-file'], zope_conf_content)
     path_list.append(zope_conf_path)
