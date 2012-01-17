@@ -151,22 +151,34 @@ class Recipe(GenericSlapRecipe):
           longrequest_logger_interval=longrequest_logger_interval,
           **zope_dict)
         haproxy_backend_list.append('${%(part_name)s:ip}:${%(part_name)s:port}' % dict(part_name=part_name))
+
+      scheme = backend_configuration.get('scheme', ['https'])
+
       # now generate backend access
       current_apache_port += 1
       current_haproxy_port += 1
-      part_list.append('apache-%(backend_name)s ca-apache-%(backend_name)s logrotate-entry-apache-%(backend_name)s haproxy-%(backend_name)s' % dict(backend_name=backend_name))
       backend_dict = dict(
         backend_name=backend_name,
         apache_port=current_apache_port,
+        apache_public_port=current_apache_port+1,
         haproxy_port=current_haproxy_port,
         access_control_string=backend_configuration['access-control-string'],
         maxconn=backend_configuration['maxconn'],
         server_check_path='/%s/getId' % site_id,
         haproxy_backend_list=' '.join(haproxy_backend_list)
       )
-      publish_url_list.append('url-%(backend_name)s = https://[${apache-%(backend_name)s:ip}]:${apache-%(backend_name)s:port}' % dict(
-        backend_name=backend_name))
+      current_apache_port += 1
       output += snippet_backend % backend_dict
+
+      if 'http' in scheme:
+        part_list.append('apache-public-%(backend_name)s logrotate-entry-apache-public-%(backend_name)s' % dict(backend_name=backend_name))
+        publish_url_list.append('url-public-%(backend_name)s = https://[${apache-public-%(backend_name)s:ip}]:${apache-public-%(backend_name)s:port}' % dict(
+          backend_name=backend_name))
+      if 'https' in scheme:
+        part_list.append('apache-%(backend_name)s ca-apache-%(backend_name)s logrotate-entry-apache-%(backend_name)s haproxy-%(backend_name)s' % dict(backend_name=backend_name))
+        publish_url_list.append('url-%(backend_name)s = https://[${apache-%(backend_name)s:ip}]:${apache-%(backend_name)s:port}' % dict(
+          backend_name=backend_name))
+
     output += SECTION_BACKEND_PUBLISHER + '\n'
     output += '\n'.join(publish_url_list)
     part_list.append('publish-apache-backend-list')
