@@ -53,6 +53,7 @@ class Recipe(GenericBaseRecipe):
       kumo_server_port=kumo_server_port,
       kumo_server_listen_port=kumo_server_listen_port,
       kumo_gateway_port=kumo_gateway_port
+      shell_path=self.options['shell-path'],
     )
 
     path_list.append(self.createExecutable(self.options['gateway-wrapper'],
