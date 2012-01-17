@@ -590,7 +590,12 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     invoice.setStartDate(getClosestDate(target_date=DateTime())-1)
 
   def stepTriggerStopInvoiceAlarm(self, sequence, **kw):
-    self.portal.portal_alarms.stop_planned_sale_invoice_transaction.activeSense()
+    sm = getSecurityManager()
+    self.login()
+    try:
+      self.portal.portal_alarms.stop_planned_sale_invoice_transaction.activeSense()
+    finally:
+      setSecurityManager(sm)
 
   def test_OpenOrder_sale_packing_list(self):
     """
