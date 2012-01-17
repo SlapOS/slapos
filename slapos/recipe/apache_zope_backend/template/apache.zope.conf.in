@@ -38,6 +38,8 @@ SSLCertificateFile %(certificate)s
 SSLCertificateKeyFile %(key)s
 SSLRandomSeed startup builtin
 SSLRandomSeed connect builtin
+SSLProtocol -ALL +SSLv3 +TLSv1
+SSLCipherSuite ALL:!aNULL:!ADH:!eNULL:!LOW:!EXP:RC4+RSA:+HIGH:+MEDIUM
 
 SSLProxyEngine On
 
