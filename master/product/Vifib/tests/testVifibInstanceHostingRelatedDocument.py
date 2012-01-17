@@ -4,6 +4,8 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.ERP5Type.DateUtils import getClosestDate
 from DateTime import DateTime
 from testVifibOpenOrderSimulation import generateTimeFrameList
+from AccessControl.SecurityManagement import getSecurityManager, \
+  setSecurityManager
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
