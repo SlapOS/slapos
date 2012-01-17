@@ -47,38 +47,41 @@ def run(args):
     # Clean old test results if any
     openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (
         config['base_url'], config['user'], config['password']))
-    if getStatus(config['base_url']) is not '':
-      print("ERROR : Impossible to clean old test result(s)")
-    else:
-      # Environment is ready, we launch test.
-      os.environ['DISPLAY'] = config['display']
-      xvfb = Xvfb(config['etc_directory'], config['xvfb_binary'])
-      profile_dir = os.path.join(config['etc_directory'], 'profile')
-      browser = Firefox(profile_dir, config['base_url'], config['browser_binary'])
-      try:
-        start = time.time()
-        xvfb.run()
+    try:
+      if getStatus(config['base_url']) is not '':
+        print("ERROR : Impossible to clean old test result(s)")
+      else:
+        # Environment is ready, we launch test.
+        os.environ['DISPLAY'] = config['display']
+        xvfb = Xvfb(config['etc_directory'], config['xvfb_binary'])
         profile_dir = os.path.join(config['etc_directory'], 'profile')
-        browser.run(test_url , xvfb.display)
-        erp5_report.reportStart()
-        while getStatus(config['base_url']) is '':
-          time.sleep(10)
-          if (time.time() - start) > float(timeout):
-            raise TimeoutError("Test took more them %s seconds" % timeout)
-      except TimeoutError:
-        continue
-      finally:
-        browser.quit()
-        xvfb.quit()
-      
-      erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",
-          "replace"))
-      
-      # Clean test results for next test
-      openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (
-          config['base_url'], config['user'], config['password']))
-      
-      print("Test finished and report sent, sleeping.")
+        browser = Firefox(profile_dir, config['base_url'], config['browser_binary'])
+        try:
+          start = time.time()
+          xvfb.run()
+          profile_dir = os.path.join(config['etc_directory'], 'profile')
+          browser.run(test_url , xvfb.display)
+          erp5_report.reportStart()
+          while getStatus(config['base_url']) is '':
+            time.sleep(10)
+            if (time.time() - start) > float(timeout):
+              raise TimeoutError("Test took more them %s seconds" % timeout)
+        except TimeoutError:
+          continue
+        finally:
+          browser.quit()
+          xvfb.quit()
+        
+        erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",
+            "replace"))
+        
+        # Clean test results for next test
+        openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (
+            config['base_url'], config['user'], config['password']))
+        
+        print("Test finished and report sent, sleeping.")
+    except urllib2.URLError, urlError:
+        print "Error: %s" % urlError.msg
     sleep(3600)
 
 def openUrl(url):
@@ -98,7 +101,14 @@ def openUrl(url):
 
 def getStatus(url):
     try:
-      status = openUrl('%s/portal_tests/TestTool_getResults' % (url))
+      # Try 5 times.
+      for i in range(5):
+        try:
+          status = openUrl('%s/portal_tests/TestTool_getResults' % (url))
+          break
+        except urllib2.URLError, urlError:
+          if i is 4: raise
+          print("Warning : %s while getting status" % urlError.msg)
     except urllib2.HTTPError, e:
       if e.msg == "No Content":
         status = ""
