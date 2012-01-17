@@ -1391,6 +1391,108 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SlaveInstance_request_SlaveInstance_From_SoftwareInstance_Fetch_Correct_Slave(self):
+    """
+      Check that existing Software Instance requesting new Slave Instance
+      fetches the correct Slave Instance when doing request() to get
+      parameters.
+      
+      Scenario :
+      All Software Instances use the same SoftwareRelease.
+      SoftwareType requested_software_type can act as master instance, slave
+        instance.
+      SoftwareType another_requested_software_type can act as Software Instance
+        requesting a Slave Instance of SoftwareType requested_software_type.
+      1/ Request instance "Master Instance" with SoftwareType
+         requested_software_type.
+      2/ "Master Instance" requests a new Slave Instance
+      3/ Simulate succesful deployment of Master Instance
+      4/ Request instance "Normal instance" with SoftwareType
+         another_requested_software_type.
+      5/ From "Normal Instance", request a Slave Instance with SoftwareType
+         requested_software_type.
+      6/ From "Master Instance", try to set connection XML of Slave Instance
+      7/ Check that "Normal Instance" can access connection XML of Slave
+         Instance.
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = \
+        self.prepare_install_requested_computer_partition_sequence_string + '\
+      SlapLoginCurrentSoftwareInstance \
+      SelectEmptyRequestedParameterDict \
+      SetRandomRequestedReference \
+      RequestSlaveInstanceFromComputerPartition \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      SlapLoginCurrentComputer \
+      CheckSlaveInstanceListFromOneComputerPartition \
+      SlapLogout \
+      \
+      Tic \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceAvailable \
+      Tic \
+      \
+      SelectAnotherRequestedSoftwareType \
+      SelectAnotherRequestedReference \
+      SlapLoginTestVifibCustomer \
+      PersonRequestSlapSoftwareInstancePrepare \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      Logout \
+      SlapLoginTestVifibCustomer \
+      PersonRequestSlapSoftwareInstance \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      SetRequestedComputerPartition \
+      SetRequestedComputerPartitionAsCurrentComputerPartition \
+      SlapLogout \
+      Tic \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceAvailable \
+      Tic \
+      \
+      LoginDefaultUser \
+      SetCurrentComputerPartitionFromRequestedComputerPartition \
+      SelectSoftwareInstanceFromCurrentComputerPartition \
+      Logout \
+      SlapLoginCurrentSoftwareInstance \
+      SelectRequestedParameterDictRequestedParameter \
+      SelectYetAnotherRequestedReference \
+      SelectRequestedSoftwaretype \
+      RequestSlaveInstanceFromComputerPartition \
+      Tic \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      Logout \
+      RequestSlaveInstanceFromComputerPartition \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      SetComputerPartitionFromRootSoftwareInstance \
+      SelectSlaveInstanceFromOneComputerPartition \
+      SlapLoginSoftwareInstanceFromCurrentSoftwareInstance \
+      SetConnectionXmlToSlaveInstance \
+      SlapLogout \
+      LoginDefaultUser \
+      SetRequestedComputerPartitionAsCurrentComputerPartition \
+      SelectSoftwareInstanceFromCurrentComputerPartition \
+      Logout \
+      SlapLoginCurrentSoftwareInstance \
+      CheckConnectionXmlOfSlaveInstanceFromComputerPartition \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   ##################################################
   # ComputerPartition.request - change software type
   ##################################################
