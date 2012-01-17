@@ -31,7 +31,6 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 class Recipe(GenericBaseRecipe):
 
   def install(self):
-    logrotate_backup = self.options['backup']
     logrotate_d = self.options['logrotate-entries']
     logrotate_conf_file = self.options['conf']
 
@@ -69,7 +68,7 @@ class Part(GenericBaseRecipe):
       'notifempty',
       'sharedscripts',
       'create',
-      'olddir %s' % logrotate_backup,
+      'olddir %s' % self.options['backup'],
     ]
 
     if 'post' in self.options:
