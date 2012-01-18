@@ -4,11 +4,10 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.ERP5Type.DateUtils import getClosestDate
 from DateTime import DateTime
 from testVifibOpenOrderSimulation import generateTimeFrameList
+from AccessControl.SecurityManagement import getSecurityManager, \
+  setSecurityManager
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
-
-  def stepTriggerBuild(self, sequence, **kw):
-    self.portal.portal_alarms.vifib_trigger_build.activeSense()
 
   def stepCheckSubscriptionSalePackingListCoverage(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog.getResultValue(
@@ -673,6 +672,10 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         ConfirmPayment
         Tic
         CheckPayment
+
+        LoginERP5TypeTestCase
+        CheckSiteConsistency
+        Logout
         """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

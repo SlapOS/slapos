@@ -65,6 +65,10 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SetCurrentPersonSlapRequestedSoftwareInstance
       SoftwareInstanceSaleOrderConfirmRaisesValueError
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -115,6 +119,10 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       CheckViewCurrentSoftwareInstance
       CheckWriteCurrentSoftwareInstance
       Tic
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -196,6 +204,10 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       CheckPersonRequestSlapSoftwareInstanceWithAnotherSoftwareType
       Tic
       SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

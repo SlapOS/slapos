@@ -60,7 +60,7 @@ for business_process in [\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>fixit, tag, params</string> </value>
+            <value> <string>*args, **kwargs</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

@@ -28,7 +28,8 @@
 ##############################################################################
 import transaction
 from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
-from AccessControl.SecurityManagement import newSecurityManager
+from AccessControl.SecurityManagement import newSecurityManager, \
+  getSecurityManager, setSecurityManager
 from Products.ERP5Type.tests.utils import DummyMailHost
 import os
 from DateTime import DateTime
@@ -76,6 +77,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_invoicing',
       'erp5_ods_style',
       'erp5_odt_style',
+      'erp5_rss_style',
       'erp5_ooo_import',
       'erp5_simplified_invoicing',
       'erp5_legacy_tax_system',
@@ -92,12 +94,13 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_mysql_innodb_catalog',
       'vifib_core',
       'vifib_base',
+      'vifib_open_trade',
       'vifib_slap',
       'vifib_crm',
       'vifib_forge_release',
       'vifib_software_pdm',
       'vifib_web',
-      'vifib_open_trade',
+      'vifib_web_ui_test',
       'vifib_l10n_fr',
       'vifib_data',
       'vifib_data_category',
@@ -328,3 +331,56 @@ class testVifibMixin(ERP5TypeTestCase):
 
   def stepLogout(self, **kw):
     self.logout()
+
+  def stepTriggerBuild(self, **kw):
+    sm = getSecurityManager()
+    self.login()
+    try:
+      self.portal.portal_alarms.vifib_trigger_build.activeSense()
+    finally:
+      setSecurityManager(sm)
+
+  def stepCheckSiteConsistency(self, **kw):
+    self.portal.portal_alarms.vifib_check_consistency.activeSense()
+    transaction.commit()
+    super(testVifibMixin, self).stepTic(**kw)
+    self.assertEqual([], self.portal.portal_alarms.vifib_check_consistency\
+        .Alarm_getConsistencyCheckReportLineList())
+    self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
+
+  def stepTic(self, **kw):
+    def build():
+      sm = getSecurityManager()
+      self.login()
+      try:
+        if 'vifib_trigger_build' in self.portal.portal_alarms.objectIds():
+          self.portal.portal_alarms.vifib_trigger_build.Alarm_buildVifibPath()
+      finally:
+        setSecurityManager(sm)
+
+    if kw.get('sequence', None) is None:
+      # in case of using not in sequence commit transaction
+      transaction.commit()
+    # trigger build before tic
+    build()
+    transaction.commit()
+
+    super(testVifibMixin, self).stepTic(**kw)
+
+    # retrigger build after tic
+    build()
+    transaction.commit()
+
+    # tic after build
+    super(testVifibMixin, self).stepTic(**kw)
+
+    # there shall be no divergency
+    current_skin = self.app.REQUEST.get('portal_skin', 'View')
+    try:
+      # Note: Worklists are cached, so in order to have next correct result
+      # clear cache
+      self.clearCache()
+      self.changeSkin('RSS')
+      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist())
+    finally:
+      self.changeSkin(current_skin)

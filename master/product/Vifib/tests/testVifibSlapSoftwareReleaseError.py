@@ -18,6 +18,9 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
       SelectNewSoftwareReleaseUri \
       CheckNotFoundSoftwareReleaseErrorAfterRegisterCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -36,6 +39,9 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckPurchasePackingListErrorText \
       CheckConfirmedPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -60,6 +66,9 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
       CheckPurchasePackingListNoErrorText \
       CheckCancelledPurchasePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -82,6 +91,9 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckPurchasePackingListErrorText \
       CheckStartedPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -106,6 +118,9 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckPurchasePackingListNoErrorText \
       CheckStoppedPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -132,6 +147,9 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
       CheckPurchasePackingListNoErrorText \
       CheckDeliveredPurchasePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -157,6 +175,9 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckPurchasePackingListErrorText \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_string = self.prepare_two_purchase_packing_list + '\
@@ -173,6 +194,9 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckPurchasePackingListErrorText \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
       Logout \
       '
     sequence_list.addSequenceString(sequence_string)

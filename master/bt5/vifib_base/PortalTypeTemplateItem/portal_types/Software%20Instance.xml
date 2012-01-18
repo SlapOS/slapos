@@ -86,6 +86,12 @@
             <value> <string>SoftwareInstance</string> </value>
         </item>
         <item>
+            <key> <string>type_interface</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
             <key> <string>type_mixin</string> </key>
             <value>
               <tuple/>

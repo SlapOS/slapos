@@ -17,6 +17,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckDestroyedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -31,6 +34,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStoppedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -50,6 +56,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckDestroyedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -64,6 +73,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStoppedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -78,6 +90,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStoppedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -104,6 +119,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckDestroyedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -118,6 +136,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -137,6 +158,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStoppedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -151,6 +175,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -165,6 +192,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStoppedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -179,6 +209,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStoppedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -193,6 +226,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckDestroyedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -211,6 +247,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckDestroyedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -230,6 +269,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckDestroyedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -250,6 +292,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckDestroyedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -265,6 +310,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckDestroyedComputerPartitionGetStateCall \
       SlapLoginCurrentComputer \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -279,6 +327,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -297,6 +348,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -311,6 +365,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -325,6 +382,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -339,6 +399,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -365,6 +428,9 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer \
       CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

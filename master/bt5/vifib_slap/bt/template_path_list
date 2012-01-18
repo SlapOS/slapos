@@ -1,6 +1,4 @@
 portal_alarms/confirm_ordered_sale_order
-portal_alarms/confirm_ordered_sale_order/**
 portal_alarms/stop_planned_sale_invoice_transaction
-portal_alarms/stop_planned_sale_invoice_transaction/**
+portal_alarms/vifib_check_consistency
 portal_alarms/vifib_trigger_build
-portal_alarms/vifib_trigger_build/**

@@ -6,7 +6,12 @@ class TestVifibSlapComputerPartitionStopped(TestVifibSlapWebServiceMixin):
   def test_ComputerPartition_stopped(self):
     sequence_list = SequenceList()
     sequence_string = self\
-        .prepare_stopped_computer_partition_sequence_string
+        .prepare_stopped_computer_partition_sequence_string + """
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+        """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
@@ -32,6 +37,10 @@ class TestVifibSlapComputerPartitionStopped(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)
@@ -59,6 +68,10 @@ class TestVifibSlapComputerPartitionStopped(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)

@@ -1,0 +1,419 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="ZopePageTemplate" module="Products.PageTemplates.ZopePageTemplate"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <unicode encoding="cdata"><![CDATA[
+
+<!-- Tested with chromium 12 and --ignore-certificate-errors --disable-translate --disable-web-security options -->\n
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"\n
+      xmlns:metal="http://xml.zope.org/namespaces/metal">\n
+<head>\n
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n
+<title>Test KVM</title>\n
+</head>\n
+<body>\n
+<table cellpadding="1" cellspacing="1" border="1">\n
+<thead>\n
+<tr><td rowspan="1" colspan="3">testkvm</td></tr>\n
+</thead><tbody>\n
+<tal:block metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/init_environment" />\n
+<tr>\n
+    <td>phantomRender</td>\n
+    <td>/home/darthabel/screen/webrequest1.png</td>\n
+    <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>//img[@alt="My Services"]</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>clickAndWait</td>\n
+  <td>//img[@alt="My Services"]</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+    <td>phantomRender</td>\n
+    <td>/home/darthabel/screen/webrequest2.png</td>\n
+    <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>link=New service</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>clickAndWait</td>\n
+  <td>link=New service</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>//td[contains(.,"KVM")]/input</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>storeAttribute</td>\n
+  <td>//td[contains(.,"KVM")]/input@value</td>\n
+  <td>value</td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>id=listbox_cb_${value}</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>name=field_your_service_title</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>id=dialog_submit_button</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>click</td>\n
+  <td>id=listbox_cb_${value}</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>store</td>\n
+  <td>javascript{"kvm_test_" + new Date().getTime();}</td>\n
+  <td>kvm</td>\n
+</tr>\n
+<tr>\n
+  <td>type</td>\n
+  <td>name=field_your_service_title</td>\n
+  <td>${kvm}</td>\n
+</tr>\n
+<tr>\n
+    <td>phantomRender</td>\n
+    <td>/home/darthabel/screen/webrequest3.png</td>\n
+    <td></td>\n
+</tr>\n
+<tr>\n
+  <td>clickAndWait</td>\n
+  <td>id=dialog_submit_button</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>//td[contains(.,"KVM")]/input</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>storeAttribute</td>\n
+  <td>//td[contains(.,"KVM")]/input@value</td>\n
+  <td>value</td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>id=listbox_cb_${value}</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>id=dialog_submit_button</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>//tr[contains(.,"KVM")][last()]/td[contains(.,"KVM")]/input</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>storeAttribute</td>\n
+  <td>//tr[contains(.,"KVM")][last()]/td[contains(.,"KVM")]/input@value</td>\n
+  <td>value</td>\n
+</tr>\n
+<tr>\n
+  <td>click</td>\n
+  <td>id=listbox_cb_${value}</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+    <td>phantomRender</td>\n
+    <td>/home/darthabel/screen/webrequest4.png</td>\n
+    <td></td>\n
+</tr>\n
+<tr>\n
+  <td>clickAndWait</td>\n
+  <td>id=dialog_submit_button</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>name=field_your_last_name</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>name=field_your_first_name</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>name=field_your_default_email_text</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>name=field_your_default_address_city</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>name=field_your_default_address_zip_code</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>name=field_your_default_address_street_address</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>id=dialog_submit_button</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>type</td>\n
+  <td>name=field_your_last_name</td>\n
+  <td>Last Name</td>\n
+</tr>\n
+<tr>\n
+  <td>type</td>\n
+  <td>name=field_your_first_name</td>\n
+  <td>First Name</td>\n
+</tr>\n
+<tr>\n
+  <td>type</td>\n
+  <td>name=field_your_default_email_text</td>\n
+  <td>mail@domain.com</td>\n
+</tr>\n
+<tr>\n
+  <td>type</td>\n
+  <td>name=field_your_default_address_city</td>\n
+  <td>City</td>\n
+</tr>\n
+<tr>\n
+  <td>type</td>\n
+  <td>name=field_your_default_address_zip_code</td>\n
+  <td>12345</td>\n
+</tr>\n
+<tr>\n
+  <td>type</td>\n
+  <td>name=field_your_default_address_street_address</td>\n
+  <td>Address</td>\n
+</tr>\n
+<tr>\n
+    <td>phantomRender</td>\n
+    <td>/home/darthabel/screen/webrequest5.png</td>\n
+    <td></td>\n
+</tr>\n
+<tr>\n
+  <td>clickAndWait</td>\n
+  <td>id=dialog_submit_button</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+    <td>phantomRender</td>\n
+    <td>/home/darthabel/screen/webrequest6.png</td>\n
+    <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>//img[@alt="My Services"]</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>clickAndWait</td>\n
+  <td>//img[@alt="My Services"]</td>\n
+  <td></td>\n
+</tr>\n
+<!--tr>\n
+  <td>assertTextPresent</td>\n
+  <td>Unimplemented: Can\'t fetch the reference of the software instance</td>\n
+  <td></td>\n
+</tr>-->\n
+<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />\n
+<tr>\n
+    <td>phantomRender</td>\n
+    <td>/home/darthabel/screen/webrequest7.png</td>\n
+    <td></td>\n
+</tr>\n
+<tr>\n
+  <td>pause</td>\n
+  <td>30000</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>link=${kvm}</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>clickAndWait</td>\n
+  <td>link=${kvm}</td>\n
+  <td></td>\n
+</tr>\n
+<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>link=${kvm}</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>clickAndWait</td>\n
+  <td>link=${kvm}</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+    <td>phantomRender</td>\n
+    <td>/home/darthabel/screen/webrequest8.png</td>\n
+    <td></td>\n
+</tr>\n
+<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/check_for_started_instance" />\n
+<!-- This part only work with chromium for now -->\n
+<!----><tr>\n
+  <td>pause</td>\n
+  <td>90000</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>storeText</td>\n
+  <td>//div[@class=&quot;inline&quot;]</td>\n
+  <td>xml</td>\n
+</tr>\n
+<tr>\n
+  <td>store</td>\n
+  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter\n
+  id=&quot;url&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
+  <td>ip</td>\n
+</tr>\n
+<tr>\n
+  <td>store</td>\n
+  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter\n
+  id=&quot;password&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
+  <td>password</td>\n
+</tr>\n
+<tr>\n
+  <td>openAndWait</td>\n
+  <td>${ip}</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>pause</td>\n
+  <td>2000</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertElementPresent</td>\n
+  <td>id=password_input</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>type</td>\n
+  <td>id=password_input</td>\n
+  <td>${password}</td>\n
+</tr>\n
+<tr>\n
+  <td>keyPress</td>\n
+  <td>id=password_input</td>\n
+  <td>13</td>\n
+</tr>\n
+<tr>\n
+\t<td>pause</td>\n
+\t<td>1000</td>\n
+\t<td></td>\n
+</tr>\n
+<tr>\n
+\t<td>submit</td>\n
+\t<td>//input[@id=&quot;password_input&quot;]/..</td>\n
+\t<td>\\13</td>\n
+</tr>\n
+<tr>\n
+  <td>pause</td>\n
+  <td>10000</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>assertTextPresent</td>\n
+  <td>Connected (encrypted) to</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+    <td>phantomRender</td>\n
+    <td>/home/darthabel/screen/webrequest9.png</td>\n
+    <td></td>\n
+</tr>\n
+<tr>\n
+  <td>openAndWait</td>\n
+  <td>${address}</td>\n
+  <td></td>\n
+</tr><!---->\n
+<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/destroy_instance" />\n
+</tbody>\n
+</table>\n
+</body>\n
+</html>
+
+]]></unicode> </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>expand</string> </key>
+            <value> <int>0</int> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>TestKVM</string> </value>
+        </item>
+        <item>
+            <key> <string>output_encoding</string> </key>
+            <value> <string>utf-8</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <unicode></unicode> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

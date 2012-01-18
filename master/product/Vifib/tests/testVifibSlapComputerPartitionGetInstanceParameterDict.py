@@ -17,6 +17,9 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
       SlapLoginCurrentComputer \
       CheckSuccessComputerPartitionGetInstanceParameterDictCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -31,6 +34,9 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
       SlapLoginCurrentSoftwareInstance \
       CheckSuccessComputerPartitionGetInstanceParameterDictCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -50,6 +56,9 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
       SlapLoginCurrentSoftwareInstance \
       CheckSuccessComputerPartitionGetInstanceParameterDictCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -64,6 +73,9 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
       SlapLoginCurrentSoftwareInstance \
       CheckSuccessComputerPartitionGetInstanceParameterDictCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -78,6 +90,9 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
       SlapLoginCurrentSoftwareInstance \
       CheckSuccessComputerPartitionGetInstanceParameterDictCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -92,6 +107,9 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
       SlapLoginCurrentSoftwareInstance \
       CheckMinimalParametersTransmitted \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -110,6 +128,9 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
       SlapLoginCurrentSoftwareInstance \
       CheckComputerPartitionGetInstanceParameterDictResult \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

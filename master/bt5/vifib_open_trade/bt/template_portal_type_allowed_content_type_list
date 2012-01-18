@@ -6,3 +6,13 @@ Delivery Simulation Rule | Specialise Divergence Tester
 Delivery Simulation Rule | String Divergence Tester
 Delivery Simulation Rule | Variation Divergence Tester
 Hosting Subscription Module | Hosting Subscription
+Subscription Item Root Simulation Rule | Accounting Rule Cell
+Subscription Item Root Simulation Rule | Category Membership Divergence Tester
+Subscription Item Root Simulation Rule | DateTime Divergence Tester
+Subscription Item Root Simulation Rule | Float Divergence Tester
+Subscription Item Root Simulation Rule | Mapped Property
+Subscription Item Root Simulation Rule | Net Converted Quantity Divergence Tester
+Subscription Item Root Simulation Rule | Predicate
+Subscription Item Root Simulation Rule | Specialise Divergence Tester
+Subscription Item Root Simulation Rule | String Divergence Tester
+Subscription Item Root Simulation Rule | Variation Divergence Tester

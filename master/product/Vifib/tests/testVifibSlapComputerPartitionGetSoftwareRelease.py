@@ -17,6 +17,9 @@ class TestVifibSlapComputerPartitionGetSoftwareRelease(TestVifibSlapWebServiceMi
       SlapLoginCurrentComputer \
       CheckNotFoundComputerPartitionGetSoftwareReleaseAfterRegisterCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -31,6 +34,9 @@ class TestVifibSlapComputerPartitionGetSoftwareRelease(TestVifibSlapWebServiceMi
       SlapLoginCurrentComputer \
       CheckSuccessComputerPartitionGetSoftwareReleaseCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -50,6 +56,9 @@ class TestVifibSlapComputerPartitionGetSoftwareRelease(TestVifibSlapWebServiceMi
       SlapLoginCurrentComputer \
       CheckSuccessComputerPartitionGetSoftwareReleaseCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -64,6 +73,9 @@ class TestVifibSlapComputerPartitionGetSoftwareRelease(TestVifibSlapWebServiceMi
       SlapLoginCurrentComputer \
       CheckSuccessComputerPartitionGetSoftwareReleaseCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -78,6 +90,9 @@ class TestVifibSlapComputerPartitionGetSoftwareRelease(TestVifibSlapWebServiceMi
       SlapLoginCurrentComputer \
       CheckSuccessComputerPartitionGetSoftwareReleaseCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -95,6 +110,9 @@ class TestVifibSlapComputerPartitionGetSoftwareRelease(TestVifibSlapWebServiceMi
       SlapLoginCurrentComputer \
       CheckSuccessComputerPartitionGetSoftwareReleaseCall \
       SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)

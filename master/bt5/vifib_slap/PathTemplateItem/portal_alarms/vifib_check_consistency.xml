@@ -1,0 +1,266 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Alarm" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>configuration_form_id</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>catalog_query_string</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>module_list</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>lines</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>active_sense_method_id</string> </key>
+            <value> <string>Alarm_activateCheckConsistency</string> </value>
+        </item>
+        <item>
+            <key> <string>alarm_notification_mode</string> </key>
+            <value>
+              <tuple>
+                <string>problem</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>catalog_query_string</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>destination/person_module/3</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>configuration_form_id</string> </key>
+            <value> <string>Alarm_viewConsistencyCheckConfiguration</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>enabled</string> </key>
+            <value> <int>1</int> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>vifib_check_consistency</string> </value>
+        </item>
+        <item>
+            <key> <string>module_list</string> </key>
+            <value>
+              <tuple>
+                <string>organisation_module</string>
+                <string>currency_module</string>
+                <string>notification_message_module</string>
+                <string>person_module</string>
+                <string>query_module</string>
+                <string>internal_supply_module</string>
+                <string>component_module</string>
+                <string>sale_supply_module</string>
+                <string>purchase_supply_module</string>
+                <string>quantity_unit_conversion_module</string>
+                <string>product_module</string>
+                <string>service_module</string>
+                <string>transformation_module</string>
+                <string>purchase_trade_condition_module</string>
+                <string>returned_sale_packing_list_module</string>
+                <string>internal_order_module</string>
+                <string>returned_purchase_packing_list_module</string>
+                <string>purchase_packing_list_module</string>
+                <string>business_process_module</string>
+                <string>sale_order_module</string>
+                <string>sale_packing_list_module</string>
+                <string>internal_packing_list_module</string>
+                <string>purchase_order_module</string>
+                <string>inventory_module</string>
+                <string>sale_trade_condition_module</string>
+                <string>internal_trade_condition_module</string>
+                <string>service_report_module</string>
+                <string>item_module</string>
+                <string>support_request_module</string>
+                <string>event_module</string>
+                <string>meeting_module</string>
+                <string>sale_opportunity_module</string>
+                <string>campaign_module</string>
+                <string>glossary_module</string>
+                <string>bug_module</string>
+                <string>open_purchase_order_module</string>
+                <string>open_sale_order_module</string>
+                <string>open_internal_order_module</string>
+                <string>web_page_module</string>
+                <string>web_site_module</string>
+                <string>external_source_module</string>
+                <string>image_module</string>
+                <string>document_module</string>
+                <string>document_ingestion_module</string>
+                <string>knowledge_pad_module</string>
+                <string>accounting_module</string>
+                <string>account_module</string>
+                <string>computer_module</string>
+                <string>tax_module</string>
+                <string>discount_module</string>
+                <string>project_module</string>
+                <string>task_report_module</string>
+                <string>task_module</string>
+                <string>requirement_module</string>
+                <string>credential_request_module</string>
+                <string>credential_recovery_module</string>
+                <string>credential_update_module</string>
+                <string>system_event_module</string>
+                <string>software_publication_module</string>
+                <string>software_product_module</string>
+                <string>software_licence_module</string>
+                <string>software_release_module</string>
+                <string>free_fiber_request_module</string>
+                <string>software_instance_module</string>
+                <string>hosting_subscription_module</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_day_frequency</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_hour</string> </key>
+            <value>
+              <tuple>
+                <int>0</int>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_hour_frequency</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_minute</string> </key>
+            <value>
+              <tuple>
+                <int>0</int>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_minute_frequency</string> </key>
+            <value> <int>1</int> </value>
+        </item>
+        <item>
+            <key> <string>periodicity_month</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_month_day</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_start_date</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="DateTime" module="DateTime.DateTime"/>
+                </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1230768000.0</float>
+                    <string>GMT</string>
+                  </tuple>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_week</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_week_day</string> </key>
+            <value>
+              <tuple>
+                <string>Sunday</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_week_frequency</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Alarm</string> </value>
+        </item>
+        <item>
+            <key> <string>report_method_id</string> </key>
+            <value> <string>Alarm_viewConsistencyCheckReport</string> </value>
+        </item>
+        <item>
+            <key> <string>solve_method_id</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Vifib Consistency Check</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
