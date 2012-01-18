@@ -25,6 +25,7 @@
 #
 #############################################################################
 
+from datetime import datetime
 from erp5functionaltestreporthandler import ERP5TestReportHandler
 from ERP5TypeFunctionalTestCase import Xvfb, Firefox, TimeoutError
 from time import sleep
@@ -44,42 +45,34 @@ def run(args):
   while True:
     erp5_report = ERP5TestReportHandler(config['test_report_instance_url'],
         config['project'] + '@' + config['suite_name'])
-    # Clean old test results if any
-    openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (
-        config['base_url'], config['user'], config['password']))
     try:
-      if getStatus(config['base_url']) is not '':
-        print("ERROR : Impossible to clean old test result(s)")
-      else:
-        # Environment is ready, we launch test.
-        os.environ['DISPLAY'] = config['display']
-        xvfb = Xvfb(config['etc_directory'], config['xvfb_binary'])
+      os.environ['DISPLAY'] = config['display']
+      xvfb = Xvfb(config['etc_directory'], config['xvfb_binary'])
+      profile_dir = os.path.join(config['etc_directory'], 'profile')
+      browser = Firefox(profile_dir, config['base_url'], config['browser_binary'])
+      try:
+        start = time.time()
+        xvfb.run()
         profile_dir = os.path.join(config['etc_directory'], 'profile')
-        browser = Firefox(profile_dir, config['base_url'], config['browser_binary'])
-        try:
-          start = time.time()
-          xvfb.run()
-          profile_dir = os.path.join(config['etc_directory'], 'profile')
-          browser.run(test_url , xvfb.display)
-          erp5_report.reportStart()
-          while getStatus(config['base_url']) is '':
-            time.sleep(10)
-            if (time.time() - start) > float(timeout):
-              raise TimeoutError("Test took more them %s seconds" % timeout)
-        except TimeoutError:
-          continue
-        finally:
-          browser.quit()
-          xvfb.quit()
-        
-        erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",
-            "replace"))
-        
-        # Clean test results for next test
-        openUrl('%s/TestTool_cleanUpTestResults?__ac_name=%s&__ac_password=%s' % (
-            config['base_url'], config['user'], config['password']))
-        
-        print("Test finished and report sent, sleeping.")
+        browser.run(test_url , xvfb.display)
+        erp5_report.reportStart()
+        while not isTestFinished(config['base_url']):
+          time.sleep(10)
+          print("Test not finished yet.")
+          if (time.time() - start) > float(timeout):
+            raise TimeoutError("Test took more than %s seconds" % timeout)
+      except TimeoutError:
+        continue
+      finally:
+        browser.quit()
+        xvfb.quit()
+      print("Test has finished and Firefox has been killed.")
+      
+      erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",
+          "replace"))
+      
+      
+      print("Test finished and report sent, sleeping.")
     except urllib2.URLError, urlError:
         print "Error: %s" % urlError.msg
     sleep(3600)
@@ -99,12 +92,29 @@ def openUrl(url):
     f.close()
     return file_content
 
+def isTestFinished(url):
+  """Fetch latest report. If report has been created less than 60 seconds ago,
+  it must be the current one.
+  Return true if test is finished, else return false.
+  """
+  latest_report = openUrl('%s/portal_tests/TestTool_getLatestReportId/' % url)
+  if latest_report is '':
+    return False
+  latest_report_date = latest_report[7:]
+  time_delta = datetime.now() - \
+      datetime.strptime(latest_report_date, '%Y%m%d_%H%M%S' )
+  if time_delta.days is not 0:
+    return False
+  if time_delta.seconds < 120:
+    return True
+  return False
+
 def getStatus(url):
     try:
       # Try 5 times.
       for i in range(5):
         try:
-          status = openUrl('%s/portal_tests/TestTool_getResults' % (url))
+          status = openUrl('%s/portal_tests/TestTool_getResults/' % (url))
           break
         except urllib2.URLError, urlError:
           if i is 4: raise
