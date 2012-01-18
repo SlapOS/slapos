@@ -144,6 +144,9 @@ class Client(GenericBaseRecipe):
       self.createDirectory(self.options['home'], '.ssh')
 
     dropbear_cmd = [self.options['dbclient-binary'], '-T']
+    if self.optionIsTrue('force-host-key', default=False):
+      dropbear_cmd.extend(['-y'])
+
     if 'identity-file' in self.options:
       dropbear_cmd.extend(['-i', self.options['identity-file']])
 
