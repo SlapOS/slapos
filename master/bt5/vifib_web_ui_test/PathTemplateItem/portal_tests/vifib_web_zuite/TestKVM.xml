@@ -149,14 +149,15 @@
   <td>id=dialog_submit_button</td>\n
   <td></td>\n
 </tr>\n
+<!-- XXX : vifib UI should automatically propose the latest version of KVM.-->\n
 <tr>\n
   <td>assertElementPresent</td>\n
-  <td>//tr[contains(.,"KVM")][last()]/td[contains(.,"KVM")]/input</td>\n
+  <td>//tr[contains(.,"001")][last()]/td[contains(.,"KVM")]/input</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>storeAttribute</td>\n
-  <td>//tr[contains(.,"KVM")][last()]/td[contains(.,"KVM")]/input@value</td>\n
+  <td>//tr[contains(.,"001")][last()]/td[contains(.,"KVM")]/input@value</td>\n
   <td>value</td>\n
 </tr>\n
 <tr>\n
@@ -174,6 +175,7 @@
   <td>id=dialog_submit_button</td>\n
   <td></td>\n
 </tr>\n
+\n
 <tr>\n
   <td>assertElementPresent</td>\n
   <td>name=field_your_last_name</td>\n
@@ -222,7 +224,7 @@
 <tr>\n
   <td>type</td>\n
   <td>name=field_your_default_email_text</td>\n
-  <td>mail@domain.com</td>\n
+  <td>email@domain.com</td>\n
 </tr>\n
 <tr>\n
   <td>type</td>\n
@@ -249,6 +251,7 @@
   <td>id=dialog_submit_button</td>\n
   <td></td>\n
 </tr>\n
+\n
 <tr>\n
   <td>phantomRender</td>\n
   <td>webrequest6.png</td>\n
@@ -259,25 +262,32 @@
   <td>//img[@alt="My Services"]</td>\n
   <td></td>\n
 </tr>\n
+<!--tr>\n
+  <td>assertTextPresent</td>\n
+  <td>Unimplemented: Can\'t fetch the reference of the software instance</td>\n
+  <td></td>\n
+</tr>\n
+<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />\n
+<tr>\n
+  <td>pause</td>\n
+  <td>30000</td>\n
+  <td></td>\n
+</tr>-->\n
+<!-- Here we wait 5 minutes too see if vifib has calculated everything and\n
+     instance is "instantiation in progress". More is not acceptable. -->\n
+<tr>\n
+  <td>pause</td>\n
+  <td>900000</td>\n
+  <td></td>\n
+</tr>\n
 <tr>\n
   <td>clickAndWait</td>\n
   <td>//img[@alt="My Services"]</td>\n
   <td></td>\n
 </tr>\n
-<!--tr>\n
-  <td>assertTextPresent</td>\n
-  <td>Unimplemented: Can\'t fetch the reference of the software instance</td>\n
-  <td></td>\n
-</tr>-->\n
-<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />\n
 <tr>\n
   <td>phantomRender</td>\n
   <td>webrequest7.png</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>pause</td>\n
-  <td>30000</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
@@ -290,7 +300,7 @@
   <td>link=${kvm}</td>\n
   <td></td>\n
 </tr>\n
-<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />\n
+<!--<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />-->\n
 <tr>\n
   <td>assertElementPresent</td>\n
   <td>link=${kvm}</td>\n
@@ -308,7 +318,8 @@
 </tr>\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/check_for_started_instance" />\n
 <!-- This part only work with chromium for now -->\n
-<!----><tr>\n
+<!---->\n
+<tr>\n
   <td>pause</td>\n
   <td>90000</td>\n
   <td></td>\n
@@ -320,14 +331,12 @@
 </tr>\n
 <tr>\n
   <td>store</td>\n
-  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter\n
-  id=&quot;url&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
+  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter id=&quot;url&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
   <td>ip</td>\n
 </tr>\n
 <tr>\n
   <td>store</td>\n
-  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter\n
-  id=&quot;password&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
+  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter id=&quot;password&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
   <td>password</td>\n
 </tr>\n
 <tr>\n
@@ -355,7 +364,7 @@
   <td>id=password_input</td>\n
   <td>13</td>\n
 </tr>\n
-<tr>\n
+<!--<tr>\n
   <td>pause</td>\n
   <td>1000</td>\n
   <td></td>\n
@@ -364,7 +373,7 @@
   <td>submit</td>\n
   <td>//input[@id=&quot;password_input&quot;]/..</td>\n
   <td>\\13</td>\n
-</tr>\n
+</tr>-->\n
 <tr>\n
   <td>pause</td>\n
   <td>10000</td>\n
