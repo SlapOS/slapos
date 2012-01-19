@@ -26,18 +26,28 @@
 ##############################################################################
 from json import loads as unjson
 from hashlib import sha512
-from urlparse import urlparse
+import urlparse
 import os
 import subprocess
 import sys
 import signal
 import inspect
+import uuid
+import base64
+import urllib
 
 from slapos.recipe.librecipe import GenericSlapRecipe
 from slapos.recipe.dropbear import KnownHostsFile
-from slapos.recipe.notifier import Notify
-from slapos.recipe.notifier import Callback
 from slapos import slap as slapmodule
+
+
+def process_backup(config):
+  from glob import glob
+
+  runafter = config['run_after']
+  pull_script = config['pull']
+  push_scripts = glob(config['push'])
+  os.execv(runafter, [runafter] + ['--first-one', pull_script] + push_scripts)
 
 
 def promise(args):
@@ -97,23 +107,17 @@ def promise(args):
   return ssh.returncode
 
 
+class Recipe(GenericSlapRecipe):
 
-class Recipe(GenericSlapRecipe, Notify, Callback):
+  def _options(self, options):
+    if self.optionIsTrue('client', True):
+      slaves = unjson(options['slave-instance-list'])
+      options['peers'] = '\n'.join([str(entry['request-agent-url'])
+                                    for entry in slaves])
 
-  def add_slave(self, entry, known_hosts_file):
-    path_list = []
-
-    url = entry.get('url')
-    if url is None:
-      url = ''
-
-    # We assume that thanks to sha512 there's no collisions
-    url_hash = sha512(url).hexdigest()
-    name_hash = sha512(entry['name']).hexdigest()
-
+  def add_slave_promise(self, parsed_url, instance_id):
     promise_path = os.path.join(self.options['promises-directory'],
-                                url_hash)
-    parsed_url = urlparse(url)
+                                instance_id)
     promise_dict = self.promise_base_dict.copy()
     promise_dict.update(user=parsed_url.username,
                         host=parsed_url.hostname,
@@ -121,27 +125,57 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     promise = self.createPythonScript(promise_path,
                                       __name__ + '.promise',
                                       promise_dict)
-    path_list.append(promise)
+    self.path_list.append(promise)
 
+  def add_slave(self, entry, known_hosts_file):
+    url = entry.get('url')
+    if url is None:
+      url = ''
+
+    # Base32 is filename safe
+    backup_id = base64.b32encode(uuid.UUID(entry['id']).bytes)
+    instance_id = '%(uuid)s%(type)s%(id)s' % {
+      'uuid': backup_id,
+      'type': entry['type'],
+      'id': entry['slave_reference']
+    }
+    parsed_url = urlparse.urlparse(url)
+
+    self.add_slave_promise(parsed_url, instance_id)
 
     host = parsed_url.hostname
-    known_hosts_file[host] = entry['server-key']
+    known_hosts_file[host] = entry['authorized-key']
 
-    remote_schema = '%(ssh)s -p %%s %(user)s@%(host)s' % \
-      {
+    remote_schema = '%(ssh)s -p %%s %(user)s@%(host)s' % {
         'ssh': self.options['sshclient-binary'],
         'user': parsed_url.username,
         'host': parsed_url.hostname,
-      }
+    }
 
-    command = [self.options['rdiffbackup-binary']]
-    command.extend(['--remote-schema', remote_schema])
+    agent_url = self.options['agent-url']
+    feed_url = urlparse.urljoin(self.options['agent-url'],
+                                'log/%s' % urllib.quote(instance_id))
+    notify_url = urlparse.urljoin(self.options['agent-url'],
+                                  'notify')
+
+    command = [self.options['notifier-binary'],
+               '--write', feed_url,
+               '--title', entry.get('name', 'Untitled'),
+              ]
+
+    for notify in entry.get('notify', '').split():
+      if notify: # Ignore empty values
+        import pdb; pdb.set_trace()
+        command.extend(['--notify', notify])
+    command.append('--')
+
+    command.extend([self.options['rdiffbackup-binary'], '--remote-schema', remote_schema])
 
     remote_directory = '%(port)s::%(path)s' % {'port': parsed_url.port,
                                                'path': parsed_url.path}
 
     local_directory = self.createDirectory(self.options['directory'],
-                                           name_hash)
+                                           backup_id)
 
     if entry['type'] == 'push':
       command.extend(['--restore-as-of', 'now'])
@@ -150,48 +184,50 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     else:
       command.extend([remote_directory, local_directory])
 
-    wrapper_basepath = os.path.join(self.options['wrappers-directory'],
-                                    url_hash)
+    wrapper_path = os.path.join(self.options['wrappers-directory'],
+                                instance_id)
 
-    wrapper_path = wrapper_basepath
-    if 'notify' in entry:
-      wrapper_path = '%s_raw' % wrapper_basepath
-
-    wrapper = self.createPythonScript(
-       wrapper_path,
+    self.path_list.append(self.createPythonScript(
+      wrapper_path,
       'slapos.recipe.librecipe.execute.execute',
-      [str(i) for i in command]
-    )
-    path_list.append(wrapper)
+      command,
+    ))
 
-    if 'notify' in entry:
-      feed_url = '%s/get/%s' % (self.options['notifier-url'],
-                                entry['notification-id'])
-      wrapper = self.createNotifier(
-        self.options['notifier-binary'],
-        wrapper=wrapper_basepath,
-        executable=wrapper_path,
-        log=os.path.join(self.options['feeds'], entry['notification-id']),
-        title=entry.get('title', 'Untitled'),
-        notification_url=entry['notify'],
-        feed_url=feed_url,
-      )
-      path_list.append(wrapper)
-      #self.setConnectionDict(dict(feed_url=feed_url), entry['slave_reference'])
+    if entry['type'] == 'pull':
+      backup_wrapper = os.path.join(self.options['wrapper-directory'],
+                                    backup_id)
+      push_pattern = os.path.join(self.options['wrapper-directory'],
+                                  '%spush*' % backup_id)
+      self.path_list.append(self.createPythonScript(
+        backup_wrapper,
+        __name__ + '.process_backup',
+        {
+          'run_after': self.options['runafter-binary'],
+          'pull': wrapper_path,
+          'push': push_pattern,
+        }
+      ))
 
-    if 'on-notification' in entry:
-      path_list.append(self.createCallback(str(entry['on-notification']),
-                                           wrapper))
-    else:
-      cron_entry = os.path.join(self.options['cron-entries'], url_hash)
-      with open(cron_entry, 'w') as cron_entry_file:
-        cron_entry_file.write('%s %s' % (entry['frequency'], wrapper))
-      path_list.append(cron_entry)
+      if 'frequency' in entry:
+        cron_entry_filename = os.path.join(self.options['cron-entries'],
+                                           '%s-%s' % (self.name, backup_id))
+        self.path_list.append(self.createFile(cron_entry_filename,
+          '%s %s' % (entry['frequency'], backup_wrapper)))
+      elif 'trigger-feed' in entry:
+        trigger_filename = os.path.join(self.options['agent-callbacks-directory'],
+                                        sha512(entry['trigger-feed']).hexdigest())
+        with open(trigger_filename, 'w') as trigger_file:
+          trigger_file.write(backup_wrapper)
+        self.path_list.append(trigger_filename)
 
-    return path_list
+    self.setConnectionDict({
+      'agent-url': agent_url,
+      'feed-url': feed_url,
+      'notify-url': notify_url,
+    }, entry['slave_reference'])
 
   def _install(self):
-    path_list = []
+    self.path_list = []
 
 
     if self.optionIsTrue('client', True):
@@ -211,7 +247,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       known_hosts = KnownHostsFile(self.options['known-hosts'])
       with known_hosts:
         for slave in slaves:
-          path_list.extend(self.add_slave(slave, known_hosts))
+          self.add_slave(slave, known_hosts)
 
     else:
       command = [self.options['rdiffbackup-binary']]
@@ -223,6 +259,6 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         self.options['wrapper'],
         'slapos.recipe.librecipe.execute.execute',
         command)
-      path_list.append(wrapper)
+      self.path_list.append(wrapper)
 
-    return path_list
+    return self.path_list
