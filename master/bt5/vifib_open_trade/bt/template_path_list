@@ -1,14 +1,8 @@
-computer_module/test_computer
-computer_module/test_computer/**
-open_sale_order_module/1
-open_sale_order_module/1/**
 organisation_module/vifib_client_A
 organisation_module/vifib_client_A/**
 organisation_module/vifib_internet
 organisation_module/vifib_internet/1
 organisation_module/vifib_internet/bank_account
-purchase_packing_list_module/test_purchase_packing_list
-purchase_packing_list_module/test_purchase_packing_list/**
 purchase_trade_condition_module/vifib_purchase_trade_condition
 purchase_trade_condition_module/vifib_purchase_trade_condition/**
 sale_trade_condition_module/10

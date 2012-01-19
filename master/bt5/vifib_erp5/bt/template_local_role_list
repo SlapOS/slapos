@@ -17,7 +17,6 @@ business_process_module/vifib_sale_business_process
 campaign_module
 component_module
 computer_module
-computer_module/test_computer
 credential_update_module
 currency_module
 currency_module/EUR
