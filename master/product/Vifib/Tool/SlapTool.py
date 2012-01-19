@@ -849,7 +849,10 @@ class SlapTool(BaseTool):
       software_instance = SoftwareInstance(**parameter_dict)
 
       if shared:
-        slave_instance = parameter_dict.get("slave_instance_list")[0]
+        # XXX: Dirty hack
+        for slave_instance in parameter_dict.get("slave_instance_list", []):
+          if slave_instance['slave_title'] == partition_reference:
+            break
         software_instance._parameter_dict = self._instanceXmlToDict(
           slave_instance.pop('xml'))
         software_instance._connection_dict = self._instanceXmlToDict(
