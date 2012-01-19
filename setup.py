@@ -116,5 +116,6 @@ setup(name=name,
           'tidstorage = slapos.recipe.tidstorage:Recipe',
           'erp5.update = slapos.recipe.erp5_update:Recipe',
           'erp5.test = slapos.recipe.erp5_test:Recipe',
+          'watchdog = slapos.recipe.watchdog:Recipe',
       ]},
     )
