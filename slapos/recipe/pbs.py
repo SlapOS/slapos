@@ -165,7 +165,6 @@ class Recipe(GenericSlapRecipe):
 
     for notify in entry.get('notify', '').split():
       if notify: # Ignore empty values
-        import pdb; pdb.set_trace()
         command.extend(['--notify', notify])
     command.append('--')
 
