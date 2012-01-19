@@ -85,7 +85,8 @@ if software_instance is not None and computer_partition is not None and software
     if instance is None:\n
       raise NotImplementedError, "Unexpected Sale Packing List without Instance aggregated %s" % sale_packing_list_line.getRelativeUrl()\n
     elif instance.getPortalType() == "Slave Instance":\n
-      slave_instance = dict(slap_software_type=instance.getSourceReference(),\n
+      slave_instance = dict(slave_title=instance.getTitle(),\n
+                            slap_software_type=instance.getSourceReference(),\n
                             slave_reference=instance.getReference(),\n
                             xml=instance.getTextContent(),\n
                             connection_xml=instance.getConnectionXml(),\n
