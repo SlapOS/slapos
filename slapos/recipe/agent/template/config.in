@@ -1,0 +1,4 @@
+PEERS = %(peers)r
+DATABASE_PATH = %(database)r
+EQUEUE_SOCKET = %(equeue_socket)r
+CALLBACKS_DIRECTORY = %(callbacks_directory)r

@@ -40,6 +40,9 @@ setup(name=name,
       zip_safe=True,
       entry_points={
         'zc.buildout': [
+          'agent = slapos.recipe.agent:Recipe',
+          'agent.trigger = slapos.recipe.agent.trigger:Recipe',
+          'agent.notifier = slapos.recipe.agent.notifier:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
           'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
