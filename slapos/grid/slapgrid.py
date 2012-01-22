@@ -49,6 +49,7 @@ from utils import setFinished
 from utils import getSoftwareUrlHash
 from slapos import slap
 from slapos.slap import NotFoundError
+from slapos.slap.slap import ServerError
 from utils import dropPrivileges
 from utils import SlapPopen
 from svcbackend import launchSupervisord
@@ -866,6 +867,10 @@ class Slapgrid(object):
           logger.debug('Ignored slap error while trying to inform about '
               'destroying not fully configured Computer Partition %r' %
                   computer_partition.getId())
+        except ServerError as server_error:
+          logger.debug('Ignored server error while trying to inform about '
+              'destroying Computer Partition %r. Error is :\n%r' %
+                  (computer_partition.getId(), server_error.args[0]))
 
     logger.info("Finished usage reports...")
     return clean_run
