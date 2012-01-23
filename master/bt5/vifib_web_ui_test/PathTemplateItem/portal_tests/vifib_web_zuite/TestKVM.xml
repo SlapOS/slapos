@@ -261,19 +261,8 @@
   <td>//img[@alt="My Services"]</td>\n
   <td></td>\n
 </tr>\n
-<!--tr>\n
-  <td>assertTextPresent</td>\n
-  <td>Unimplemented: Can\'t fetch the reference of the software instance</td>\n
-  <td></td>\n
-</tr>\n
-<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />\n
-<tr>\n
-  <td>pause</td>\n
-  <td>30000</td>\n
-  <td></td>\n
-</tr>-->\n
-<!-- Here we wait 5 minutes too see if vifib has calculated everything and\n
-     instance is "instantiation in progress". More is not acceptable. -->\n
+<!-- Here we wait 15 minutes too see if vifib has calculated everything and\n
+     instance is "instantiation in progress" or better. -->\n
 <tr>\n
   <td>pause</td>\n
   <td>900000</td>\n
@@ -299,7 +288,6 @@
   <td>link=${kvm}</td>\n
   <td></td>\n
 </tr>\n
-<!--<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />-->\n
 <tr>\n
   <td>assertElementPresent</td>\n
   <td>link=${kvm}</td>\n
@@ -316,8 +304,6 @@
   <td></td>\n
 </tr>\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/check_for_started_instance" />\n
-<!-- This part only work with chromium for now -->\n
-<!---->\n
 <tr>\n
   <td>pause</td>\n
   <td>90000</td>\n
@@ -363,7 +349,8 @@
   <td>id=password_input</td>\n
   <td>13</td>\n
 </tr>\n
-<!--<tr>\n
+<!--Check if it works without it in chrome AND firefox before removing.\n
+<tr>\n
   <td>pause</td>\n
   <td>1000</td>\n
   <td></td>\n
@@ -392,7 +379,7 @@
   <td>openAndWait</td>\n
   <td>${address}</td>\n
   <td></td>\n
-</tr><!---->\n
+</tr>\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/destroy_instance" />\n
 </tbody>\n
 </table>\n
