@@ -55,8 +55,18 @@ class TestVifibSkinSelection(testVifibMixin):
     portal = self.getPortal()
     self.assertSameSet(
         [x[0] for x in portal.portal_skins.getSkinPaths()],
-        ['Cash', 'Download', 'Fiber', 'Hosting', 'KM', 'Multiflex', 'ODS', 'ODT',
-          'View']
+        [
+          'Cash',
+          'Download',
+          'Fiber',
+          'Hosting',
+          'KM',
+          'Multiflex',
+          'ODS',
+          'ODT',
+          'RSS',
+          'View',
+        ]
     )
 
   def assertSameSkinSelection(self, skin_name, selection_string_list):
@@ -115,6 +125,7 @@ vifib_slap
 vifib_software_pdm
 vifib_test
 vifib_web
+vifib_web_ui_test
 erp5_km_theme
 erp5_knowledge_pad
 erp5_simulation
@@ -159,6 +170,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -207,6 +219,7 @@ vifib_slap
 vifib_software_pdm
 vifib_test
 vifib_web
+vifib_web_ui_test
 erp5_free_fiber_request
 erp5_km_theme
 erp5_knowledge_pad
@@ -252,6 +265,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -301,6 +315,7 @@ vifib_slap
 vifib_software_pdm
 vifib_test
 vifib_web
+vifib_web_ui_test
 erp5_km_theme
 erp5_knowledge_pad
 erp5_simulation
@@ -345,6 +360,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -432,6 +448,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -518,6 +535,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -562,6 +580,7 @@ vifib_slap
 vifib_software_pdm
 vifib_test
 vifib_web
+vifib_web_ui_test
 erp5_free_fiber_request
 erp5_knowledge_pad
 erp5_simulation
@@ -607,6 +626,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -697,6 +717,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -784,6 +805,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -870,6 +892,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -884,6 +907,91 @@ erp5_web_minimal_theme
 erp5_web_widget_library
 erp5_xhtml_jquery_style
 erp5_xhtml_style
+external_method
+Images
+activity
+zpt_content
+zpt_control
+zpt_generic
+"""
+    self.assertSameSkinSelection(skin_name, selection_string_list)
+
+  def test_13_RSS_selection(self):
+    """
+    Check the skin folder order
+    """
+    skin_name = 'RSS'
+    selection_string_list = \
+"""
+custom
+vifib_upgrader
+vifib_base
+vifib_core
+vifib_crm
+vifib_forge_release
+vifib_open_trade
+vifib_payzen
+vifib_simulation
+vifib_slap
+vifib_software_pdm
+vifib_test
+erp5_rss_style
+erp5_knowledge_pad
+erp5_simulation
+erp5_dms_base
+erp5_dms_web
+erp5_legacy_tax_system
+erp5_accounting_l10n_fr
+erp5_upgrader
+erp5_access_tab
+erp5_accounting
+erp5_accounting_bbb
+erp5_administration
+erp5_base
+erp5_commerce
+erp5_commerce_widget_library
+erp5_computer_immobilisation
+erp5_content_translation
+erp5_core
+erp5_core_proxy_field_legacy
+erp5_credential
+erp5_crm
+erp5_dhtml_style
+erp5_discount_resource
+erp5_dms
+erp5_fckeditor
+erp5_forge
+erp5_forge_release
+erp5_gadget
+erp5_glossary
+erp5_ingestion
+erp5_ingestion_test
+erp5_integration
+erp5_invoicing
+erp5_item
+erp5_item_trade
+erp5_ods_core
+erp5_odt_core
+erp5_ooo_import
+erp5_open_trade
+erp5_payzen_secure_payment
+erp5_pdm
+erp5_project
+erp5_project_trade
+erp5_rss_core
+erp5_secure_payment
+erp5_simplified_invoicing
+erp5_software_pdm
+erp5_system_event
+erp5_tax_resource
+erp5_toolbox
+erp5_trade
+erp5_vcs
+erp5_web
+erp5_web_crm
+erp5_web_minimal_theme
+erp5_web_widget_library
+erp5_xhtml_jquery_style
 external_method
 Images
 activity

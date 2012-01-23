@@ -38,7 +38,7 @@
 
 <!-- Tested with chromium 12 and --ignore-certificate-errors --disable-translate --disable-web-security options -->\n
 <html xmlns:tal="http://xml.zope.org/namespaces/tal"\n
-      xmlns:metal="http://xml.zope.org/namespaces/metal">\n
+    xmlns:metal="http://xml.zope.org/namespaces/metal">\n
 <head>\n
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n
 <title>Test KVM</title>\n
@@ -50,9 +50,9 @@
 </thead><tbody>\n
 <tal:block metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/init_environment" />\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest1.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest1.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
@@ -65,9 +65,9 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest2.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest2.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
@@ -120,9 +120,9 @@
   <td>${kvm}</td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest3.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest3.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>clickAndWait</td>\n
@@ -149,14 +149,15 @@
   <td>id=dialog_submit_button</td>\n
   <td></td>\n
 </tr>\n
+<!-- XXX : vifib UI should automatically propose the latest version of KVM.-->\n
 <tr>\n
   <td>assertElementPresent</td>\n
-  <td>//tr[contains(.,"KVM")][last()]/td[contains(.,"KVM")]/input</td>\n
+  <td>//tr[contains(.,"001")][last()]/td[contains(.,"KVM")]/input</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>storeAttribute</td>\n
-  <td>//tr[contains(.,"KVM")][last()]/td[contains(.,"KVM")]/input@value</td>\n
+  <td>//tr[contains(.,"001")][last()]/td[contains(.,"KVM")]/input@value</td>\n
   <td>value</td>\n
 </tr>\n
 <tr>\n
@@ -165,9 +166,9 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest4.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest4.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>clickAndWait</td>\n
@@ -222,7 +223,7 @@
 <tr>\n
   <td>type</td>\n
   <td>name=field_your_default_email_text</td>\n
-  <td>mail@domain.com</td>\n
+  <td>email@domain.com</td>\n
 </tr>\n
 <tr>\n
   <td>type</td>\n
@@ -240,44 +241,41 @@
   <td>Address</td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest5.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest5.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>clickAndWait</td>\n
   <td>id=dialog_submit_button</td>\n
   <td></td>\n
 </tr>\n
+\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest6.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest6.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
   <td>//img[@alt="My Services"]</td>\n
   <td></td>\n
 </tr>\n
-<tr>\n
-  <td>clickAndWait</td>\n
-  <td>//img[@alt="My Services"]</td>\n
-  <td></td>\n
-</tr>\n
-<!--tr>\n
-  <td>assertTextPresent</td>\n
-  <td>Unimplemented: Can\'t fetch the reference of the software instance</td>\n
-  <td></td>\n
-</tr>-->\n
-<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />\n
-<tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest7.png</td>\n
-    <td></td>\n
-</tr>\n
+<!-- Here we wait 15 minutes too see if vifib has calculated everything and\n
+     instance is "instantiation in progress" or better. -->\n
 <tr>\n
   <td>pause</td>\n
-  <td>30000</td>\n
+  <td>900000</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>clickAndWait</td>\n
+  <td>//img[@alt="My Services"]</td>\n
+  <td></td>\n
+</tr>\n
+<tr>\n
+  <td>phantomRender</td>\n
+  <td>webrequest7.png</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
@@ -290,7 +288,6 @@
   <td>link=${kvm}</td>\n
   <td></td>\n
 </tr>\n
-<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/finished_processing_activities" />\n
 <tr>\n
   <td>assertElementPresent</td>\n
   <td>link=${kvm}</td>\n
@@ -302,13 +299,12 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest8.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest8.png</td>\n
+  <td></td>\n
 </tr>\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/check_for_started_instance" />\n
-<!-- This part only work with chromium for now -->\n
-<!----><tr>\n
+<tr>\n
   <td>pause</td>\n
   <td>90000</td>\n
   <td></td>\n
@@ -320,14 +316,12 @@
 </tr>\n
 <tr>\n
   <td>store</td>\n
-  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter\n
-  id=&quot;url&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
+  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter id=&quot;url&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
   <td>ip</td>\n
 </tr>\n
 <tr>\n
   <td>store</td>\n
-  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter\n
-  id=&quot;password&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
+  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter id=&quot;password&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
   <td>password</td>\n
 </tr>\n
 <tr>\n
@@ -355,16 +349,17 @@
   <td>id=password_input</td>\n
   <td>13</td>\n
 </tr>\n
+<!--Check if it works without it in chrome AND firefox before removing.\n
 <tr>\n
-\t<td>pause</td>\n
-\t<td>1000</td>\n
-\t<td></td>\n
+  <td>pause</td>\n
+  <td>1000</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
-\t<td>submit</td>\n
-\t<td>//input[@id=&quot;password_input&quot;]/..</td>\n
-\t<td>\\13</td>\n
-</tr>\n
+  <td>submit</td>\n
+  <td>//input[@id=&quot;password_input&quot;]/..</td>\n
+  <td>\\13</td>\n
+</tr>-->\n
 <tr>\n
   <td>pause</td>\n
   <td>10000</td>\n
@@ -376,15 +371,15 @@
   <td></td>\n
 </tr>\n
 <tr>\n
-    <td>phantomRender</td>\n
-    <td>/home/darthabel/screen/webrequest9.png</td>\n
-    <td></td>\n
+  <td>phantomRender</td>\n
+  <td>webrequest9.png</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>openAndWait</td>\n
   <td>${address}</td>\n
   <td></td>\n
-</tr><!---->\n
+</tr>\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/destroy_instance" />\n
 </tbody>\n
 </table>\n
