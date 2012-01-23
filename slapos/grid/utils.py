@@ -178,9 +178,8 @@ def dropPrivileges(uid, gid):
     return
   # drop privileges
   user_name = pwd.getpwuid(uid)[0]
-  group_list = [x.gr_gid for x in grp.getgrall() if user_name in x.gr_mem]
-  if gid not in group_list:
-    group_list.append(gid)
+  group_list = set([x.gr_gid for x in grp.getgrall() if user_name in x.gr_mem])
+  group_list.add(gid)
   os.initgroups(pwd.getpwuid(uid)[0], gid)
   os.setgid(gid)
   os.setuid(uid)
@@ -190,7 +189,7 @@ def dropPrivileges(uid, gid):
                 'and group_list = %s' % (
                             uid, gid, group_list)
   new_uid, new_gid, new_group_list = os.getuid(), os.getgid(), os.getgroups()
-  if not (new_uid == uid and new_gid == gid and new_group_list == group_list):
+  if not (new_uid == uid and new_gid == gid and set(new_group_list) == group_list):
     raise OSError('%s new_uid = %r and new_gid = %r and ' \
                                       'new_group_list = %r which is fatal.'
                                       % (message_pre,
