@@ -156,7 +156,7 @@ def _getDict(instance):
       result[key] = _getDict(value)
     return result
 
-class Computer:
+class Computer(object):
   "Object representing the computer"
   instance_root = None
   software_root = None
@@ -376,7 +376,7 @@ class Computer:
         except IndexError:
           pass
 
-class Partition:
+class Partition(object):
   "Represent a computer partition"
 
   def __init__(self, reference, path, user, address_list, tap):
@@ -413,7 +413,7 @@ class Partition:
       os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
     os.chmod(self.path, 0750)
 
-class User:
+class User(object):
   "User: represent and manipulate a user on the system."
   path = None
 
@@ -482,7 +482,7 @@ import fcntl
 import errno
 import threading
 
-class Tap:
+class Tap(object):
   "Tap represent a tap interface on the system"
   IFF_TAP = 0x0002
   TUNSETIFF = 0x400454ca
@@ -572,7 +572,7 @@ class Tap:
     if attach_to_tap:
       threading.Thread(target=self.attach).start()
 
-class Bridge:
+class Bridge(object):
   "Bridge represent a bridge on the system"
 
   def __init__(self, name, ipv4_local_network, ipv6_interface=None):
@@ -989,7 +989,7 @@ def run(config):
   config.logger.info('Posting information to %r' % config.master_url)
   computer.send(config)
 
-class Config:
+class Config(object):
   key_file = None
   cert_file = None
   alter_network = None
@@ -1145,7 +1145,7 @@ def main(*args):
       return True
     Bridge._addSystemAddress = fake_addSystemAddress
     def fake_getpwnam(user):
-      class result:
+      class result(object):
         pw_uid = 12345
         pw_gid = 54321
       return result
