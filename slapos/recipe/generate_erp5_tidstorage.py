@@ -101,14 +101,18 @@ class Recipe(GenericSlapRecipe):
     part_list.append(zope_id)
     part_list.append('logrotate-entry-%s' % zope_id)
     output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id,
-      zope_port=current_zope_port, zope_timeserver=True, **zope_dict)
+      zope_port=current_zope_port, zope_timeserver=True, 
+      longrequest_logger_file='', longrequest_logger_timeout='', 
+      longrequest_logger_interval='', **zope_dict)
     # always one admin node
     current_zope_port += 1
     zope_id = 'zope-admin'
     part_list.append(zope_id)
     part_list.append('logrotate-entry-%s' % zope_id)
     output += snippet_zope % dict(zope_thread_amount=1, zope_id=zope_id,
-      zope_port=current_zope_port, zope_timeserver=False, **zope_dict)
+      zope_port=current_zope_port, zope_timeserver=False, 
+      longrequest_logger_file='', longrequest_logger_timeout='', 
+      longrequest_logger_interval='', **zope_dict)
     # handle activity key
     for q in range(1, json_data['activity']['zopecount'] + 1):
       current_zope_port += 1
@@ -116,7 +120,9 @@ class Recipe(GenericSlapRecipe):
       part_list.append(part_name)
       part_list.append('logrotate-entry-%s' % part_name)
       output += snippet_zope % dict(zope_thread_amount=1, zope_id=part_name,
-        zope_port=current_zope_port, zope_timeserver=True, **zope_dict)
+        zope_port=current_zope_port, zope_timeserver=True,
+        longrequest_logger_file='', longrequest_logger_timeout='', 
+        longrequest_logger_interval='', **zope_dict)
     # handle backend key
     snippet_backend = open(self.options['snippet-backend']).read()
     publish_url_list = []
@@ -127,9 +133,22 @@ class Recipe(GenericSlapRecipe):
         part_name = 'zope-%s-%s' % (backend_name, q)
         part_list.append(part_name)
         part_list.append('logrotate-entry-%s' % part_name)
+        longrequest_logger = backend_configuration.get("longrequest-logger", None)
+        if longrequest_logger is not None:
+          longrequest_part_name = '%s-longrequest' %part_name 
+          longrequest_logger_file = '${basedirectory:log}/%s.log' \
+                                      %longrequest_part_name
+          longrequest_logger_timeout = longrequest_logger.get('timeout', '4')
+          longrequest_logger_interval = longrequest_logger.get('interval', '2')
+        else:
+          longrequest_logger_file = longrequest_logger_timeout = \
+            longrequest_logger_interval = ''
         output += snippet_zope % dict(
           zope_thread_amount=backend_configuration['thread-amount'],
           zope_id=part_name, zope_port=current_zope_port, zope_timeserver=False,
+          longrequest_logger_file=longrequest_logger_file, 
+          longrequest_logger_timeout=longrequest_logger_timeout, 
+          longrequest_logger_interval=longrequest_logger_interval,
           **zope_dict)
         haproxy_backend_list.append('${%(part_name)s:ip}:${%(part_name)s:port}' % dict(part_name=part_name))
       # now generate backend access
