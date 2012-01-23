@@ -141,20 +141,19 @@ def _getDict(instance):
 
   elif isinstance(instance, dict):
     result = {}
-    for key in instance.keys():
+    for key in instance:
       result[key] = _getDict(instance[key])
     return result
 
   else:
     try:
-
-      result = {}
-      for key in instance.__dict__.keys():
-        result[key] = _getDict(instance.__dict__[key])
-      return result
-
+      dikt = instance.__dict__
     except AttributeError:
       return instance
+    result = {}
+    for key, value in dikt.iteritems():
+      result[key] = _getDict(value)
+    return result
 
 class Computer:
   "Object representing the computer"
