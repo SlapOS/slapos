@@ -859,130 +859,126 @@ class Parser(OptionParser):
     return options, args[0]
 
 def run(config):
-  try:
-    # Define the computer
-    if config.input_definition_file:
-      filepath = os.path.abspath(config.input_definition_file)
-      config.logger.info('Using definition file %r' % filepath)
-      computer_definition = ConfigParser.RawConfigParser()
-      computer_definition.read(filepath)
-      bridge = None
-      address = None
-      netmask = None
-      if computer_definition.has_option('computer', 'address'):
-        address, netmask = computer_definition.get('computer', 'address').split('/')
-      if config.alter_network and config.bridge_name is not None \
-          and config.ipv4_local_network is not None:
-        bridge = Bridge(config.bridge_name, config.ipv4_local_network,
+  # Define the computer
+  if config.input_definition_file:
+    filepath = os.path.abspath(config.input_definition_file)
+    config.logger.info('Using definition file %r' % filepath)
+    computer_definition = ConfigParser.RawConfigParser()
+    computer_definition.read(filepath)
+    bridge = None
+    address = None
+    netmask = None
+    if computer_definition.has_option('computer', 'address'):
+      address, netmask = computer_definition.get('computer', 'address').split('/')
+    if config.alter_network and config.bridge_name is not None \
+        and config.ipv4_local_network is not None:
+      bridge = Bridge(config.bridge_name, config.ipv4_local_network,
+        config.ipv6_interface)
+    computer = Computer(
+        reference=config.computer_id,
+        bridge=bridge,
+        addr=address,
+        netmask=netmask,
+        ipv6_interface=config.ipv6_interface
+      )
+    partition_list = []
+    for partition_number in range(int(config.partition_amount)):
+      section = 'partition_%s' % partition_number
+      user = User(computer_definition.get(section, 'user'))
+      address_list = []
+      for a in computer_definition.get(section, 'address').split():
+        address, netmask = a.split('/')
+        address_list.append(dict(addr=address, netmask=netmask))
+      tap = Tap(computer_definition.get(section, 'network_interface'))
+      partition_list.append(Partition(reference=computer_definition.get(section, 'pathname'),
+          path=os.path.join(config.instance_root, computer_definition.get(section, 'pathname')),
+          user=user,
+          address_list=address_list,
+          tap=tap,
+          ))
+    computer.partition_list = partition_list
+  else:
+    # no definition file, figure out computer
+    if os.path.exists(config.computer_xml):
+      config.logger.info('Loading previous computer data from %r' % config.computer_xml)
+      computer = Computer.load(config.computer_xml, reference=config.computer_id, ipv6_interface=config.ipv6_interface)
+      # Connect to the bridge interface defined by the configuration
+      computer.bridge = Bridge(config.bridge_name, config.ipv4_local_network,
           config.ipv6_interface)
-      computer = Computer(
-          reference=config.computer_id,
-          bridge=bridge,
-          addr=address,
-          netmask=netmask,
-          ipv6_interface=config.ipv6_interface
-        )
-      partition_list = []
-      for partition_number in range(int(config.partition_amount)):
-        section = 'partition_%s' % partition_number
-        user = User(computer_definition.get(section, 'user'))
-        address_list = []
-        for a in computer_definition.get(section, 'address').split():
-          address, netmask = a.split('/')
-          address_list.append(dict(addr=address, netmask=netmask))
-        tap = Tap(computer_definition.get(section, 'network_interface'))
-        partition_list.append(Partition(reference=computer_definition.get(section, 'pathname'),
-            path=os.path.join(config.instance_root, computer_definition.get(section, 'pathname')),
-            user=user,
-            address_list=address_list,
-            tap=tap,
-            ))
-      computer.partition_list = partition_list
     else:
-      # no definition file, figure out computer
-      if os.path.exists(config.computer_xml):
-        config.logger.info('Loading previous computer data from %r' % config.computer_xml)
-        computer = Computer.load(config.computer_xml, reference=config.computer_id, ipv6_interface=config.ipv6_interface)
-        # Connect to the bridge interface defined by the configuration
-        computer.bridge = Bridge(config.bridge_name, config.ipv4_local_network,
-            config.ipv6_interface)
-      else:
-        # If no pre-existent configuration found, creating a new computer object
-        config.logger.warning('Creating new data computer with id %r' % config.computer_id)
-        computer = Computer(
-          reference=config.computer_id,
-          bridge=Bridge(config.bridge_name, config.ipv4_local_network,
-            config.ipv6_interface),
-          addr=None,
-          netmask=None,
-          ipv6_interface=config.ipv6_interface
-        )
+      # If no pre-existent configuration found, creating a new computer object
+      config.logger.warning('Creating new data computer with id %r' % config.computer_id)
+      computer = Computer(
+        reference=config.computer_id,
+        bridge=Bridge(config.bridge_name, config.ipv4_local_network,
+          config.ipv6_interface),
+        addr=None,
+        netmask=None,
+        ipv6_interface=config.ipv6_interface
+      )
 
-      partition_amount = int(config.partition_amount)
-      existing_partition_amount = len(computer.partition_list)
-      if existing_partition_amount > partition_amount:
-        raise ValueError('Requested amount of computer partitions (%s) is lower '
-            'then already configured (%s), cannot continue' % (partition_amount,
-              len(computer.partition_list)))
+    partition_amount = int(config.partition_amount)
+    existing_partition_amount = len(computer.partition_list)
+    if existing_partition_amount > partition_amount:
+      raise ValueError('Requested amount of computer partitions (%s) is lower '
+          'then already configured (%s), cannot continue' % (partition_amount,
+            len(computer.partition_list)))
 
-      config.logger.info('Adding %s new partitions' %
-          (partition_amount-existing_partition_amount))
-      for nb_iter in range(existing_partition_amount, partition_amount):
-        # add new ones
-        user = User("%s%s" % (config.user_base_name, nb_iter))
+    config.logger.info('Adding %s new partitions' %
+        (partition_amount-existing_partition_amount))
+    for nb_iter in range(existing_partition_amount, partition_amount):
+      # add new ones
+      user = User("%s%s" % (config.user_base_name, nb_iter))
 
-        tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
+      tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
 
-        path = os.path.join(config.instance_root, "%s%s" % (
-                             config.partition_base_name, nb_iter))
-        computer.partition_list.append(
-          Partition(
-            reference="%s%s" % (config.partition_base_name, nb_iter),
-            path=path,
-            user=user,
-            address_list=None,
-            tap=tap,
-            ))
+      path = os.path.join(config.instance_root, "%s%s" % (
+                           config.partition_base_name, nb_iter))
+      computer.partition_list.append(
+        Partition(
+          reference="%s%s" % (config.partition_base_name, nb_iter),
+          path=path,
+          user=user,
+          address_list=None,
+          tap=tap,
+          ))
 
-    computer.instance_root = config.instance_root
-    computer.software_root = config.software_root
-    config.logger.info('Updating computer')
-    address = computer.getAddress()
-    computer.address = address['addr']
-    computer.netmask = address['netmask']
+  computer.instance_root = config.instance_root
+  computer.software_root = config.software_root
+  config.logger.info('Updating computer')
+  address = computer.getAddress()
+  computer.address = address['addr']
+  computer.netmask = address['netmask']
 
-    if config.output_definition_file:
-      computer_definition = ConfigParser.RawConfigParser()
-      computer_definition.add_section('computer')
-      if computer.address is not None and computer.netmask is not None:
-        computer_definition.set('computer', 'address', '/'.join([computer.address, computer.netmask]))
-      partition_number = 0
-      for partition in computer.partition_list:
-        section = 'partition_%s' % partition_number
-        computer_definition.add_section(section)
-        address_list = []
-        for address in partition.address_list:
-          address_list.append('/'.join([address['addr'], address['netmask']]))
-        computer_definition.set(section, 'address', ' '.join(address_list))
-        computer_definition.set(section, 'user', partition.user.name)
-        computer_definition.set(section, 'user', partition.user.name)
-        computer_definition.set(section, 'network_interface', partition.tap.name)
-        computer_definition.set(section, 'pathname', partition.reference)
-        partition_number += 1
-      filepath = os.path.abspath(config.output_definition_file)
-      computer_definition.write(open(filepath, 'w'))
-      config.logger.info('Stored computer definition in %r' % filepath)
-    computer.construct(alter_user=config.alter_user,
-        alter_network=config.alter_network)
+  if config.output_definition_file:
+    computer_definition = ConfigParser.RawConfigParser()
+    computer_definition.add_section('computer')
+    if computer.address is not None and computer.netmask is not None:
+      computer_definition.set('computer', 'address', '/'.join([computer.address, computer.netmask]))
+    partition_number = 0
+    for partition in computer.partition_list:
+      section = 'partition_%s' % partition_number
+      computer_definition.add_section(section)
+      address_list = []
+      for address in partition.address_list:
+        address_list.append('/'.join([address['addr'], address['netmask']]))
+      computer_definition.set(section, 'address', ' '.join(address_list))
+      computer_definition.set(section, 'user', partition.user.name)
+      computer_definition.set(section, 'user', partition.user.name)
+      computer_definition.set(section, 'network_interface', partition.tap.name)
+      computer_definition.set(section, 'pathname', partition.reference)
+      partition_number += 1
+    filepath = os.path.abspath(config.output_definition_file)
+    computer_definition.write(open(filepath, 'w'))
+    config.logger.info('Stored computer definition in %r' % filepath)
+  computer.construct(alter_user=config.alter_user,
+      alter_network=config.alter_network)
 
-    # Dumping and sending to the erp5 the current configuration
-    if not config.dry_run:
-      computer.dump(config.computer_xml)
-    config.logger.info('Posting information to %r' % config.master_url)
-    computer.send(config)
-  except:
-    config.logger.exception('Uncaught exception:')
-    raise
+  # Dumping and sending to the erp5 the current configuration
+  if not config.dry_run:
+    computer.dump(config.computer_xml)
+  config.logger.info('Posting information to %r' % config.master_url)
+  computer.send(config)
 
 class Config:
   def checkRequiredBinary(self, binary_list):
@@ -1104,39 +1100,44 @@ def main(*args):
   real_callAndRead = callAndRead
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
 
+  # Parse arguments
+  options, configuration_file_path = Parser(usage=usage).check_args(args)
+  config = Config()
   try:
-    # Parse arguments
-    options, configuration_file_path = Parser(usage=usage).check_args(args)
-    config = Config()
     config.setConfig(options, configuration_file_path)
-    os = OS(config)
-    if config.dry_run:
-      def dry_callAndRead(argument_list, raise_on_error=True):
-        if argument_list == ['brctl', 'show']:
-          return real_callAndRead(argument_list, raise_on_error)
-        else:
-          return 0, ''
-      callAndRead = dry_callAndRead
-      real_addSystemAddress = Bridge._addSystemAddress
-      def fake_addSystemAddress(*args, **kw):
-        real_addSystemAddress(*args, **kw)
-        # Fake success
-        return True
-      Bridge._addSystemAddress = fake_addSystemAddress
-      def fake_getpwnam(user):
-        class result:
-          pw_uid = 12345
-          pw_gid = 54321
-        return result
-      pwd.getpwnam = fake_getpwnam
-    else:
-      dry_callAndRead = real_callAndRead
-    if config.verbose:
-      def logging_callAndRead(argument_list, raise_on_error=True):
-        config.logger.debug(' '.join(argument_list))
-        return dry_callAndRead(argument_list, raise_on_error)
-      callAndRead = logging_callAndRead
-    run(config)
   except UsageError, err:
     print >>sys.stderr, err.msg
     print >>sys.stderr, "For help use --help"
+    sys.exit(1)
+  os = OS(config)
+  if config.dry_run:
+    def dry_callAndRead(argument_list, raise_on_error=True):
+      if argument_list == ['brctl', 'show']:
+        return real_callAndRead(argument_list, raise_on_error)
+      else:
+        return 0, ''
+    callAndRead = dry_callAndRead
+    real_addSystemAddress = Bridge._addSystemAddress
+    def fake_addSystemAddress(*args, **kw):
+      real_addSystemAddress(*args, **kw)
+      # Fake success
+      return True
+    Bridge._addSystemAddress = fake_addSystemAddress
+    def fake_getpwnam(user):
+      class result:
+        pw_uid = 12345
+        pw_gid = 54321
+      return result
+    pwd.getpwnam = fake_getpwnam
+  else:
+    dry_callAndRead = real_callAndRead
+  if config.verbose:
+    def logging_callAndRead(argument_list, raise_on_error=True):
+      config.logger.debug(' '.join(argument_list))
+      return dry_callAndRead(argument_list, raise_on_error)
+    callAndRead = logging_callAndRead
+  try:
+    run(config)
+  except:
+    config.logger.exception('Uncaught exception:')
+    raise
