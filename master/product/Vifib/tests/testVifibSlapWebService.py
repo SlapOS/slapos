@@ -1798,18 +1798,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     second = slap_computer_partition.request(software_release,
         software_type, software_type + str(2))
     self.stepLoginDefaultUser()
-    transaction.commit()
-    self.tic()
+    self.stepTic()
     self.stepConfirmOrderedSaleOrderActiveSense()
-    transaction.commit()
-    self.tic()
+    self.stepTic()
     self.stepLogout()
     first = slap_computer_partition.request(software_release,
         software_type, software_type + str(1))
     second = slap_computer_partition.request(software_release,
         software_type, software_type + str(2))
-    transaction.commit()
-    self.tic()
+    self.stepTic()
     self.assertNotEqual(first.getId(), second.getId())
 
   def stepRequestComputerPartition(self, sequence, **kw):
