@@ -7,6 +7,7 @@
   <item>SlaveInstanceContraint</item>
   <item>SoftwareInstance</item>
   <item>TextDocument</item>
+  <item>VariationRange</item>
  </portal_type>
  <portal_type id="Software Instance">
   <item>Reference</item>
