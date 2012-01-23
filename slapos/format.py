@@ -1078,7 +1078,6 @@ def main(*args):
   "Run default configuration."
   global os
   global callAndRead
-  global pwd
   real_callAndRead = callAndRead
   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
 
