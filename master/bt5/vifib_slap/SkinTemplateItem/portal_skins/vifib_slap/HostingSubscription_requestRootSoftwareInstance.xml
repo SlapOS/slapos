@@ -196,6 +196,14 @@ else:\n
     sla_xml=hosting_subscription.getSlaXml(),\n
     activate_kw={\'tag\': tag},\n
   )\n
+  for predecessor_related in request_software_instance.getPredecessorRelatedValueList():\n
+    predecessor_list = predecessor_related.getPredecessorList()\n
+    predecessor_list.remove(request_software_instance.getRelativeUrl())\n
+    predecessor_related.setPredecessorList(predecessor_list)\n
+\n
+  hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
+  hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
+  hosting_subscription.setPredecessorList(hosting_subscription_predecessor_list)\n
 \n
 if hosting_subscription.getRootState() == \'started\':\n
   request_software_instance.startRequested()\n
