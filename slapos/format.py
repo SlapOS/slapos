@@ -162,7 +162,7 @@ class Computer(object):
   software_root = None
 
   def __init__(self, reference, bridge=None, addr=None, netmask=None,
-    ipv6_interface=None):
+    ipv6_interface=None, software_user='slapsoft'):
     """
     Attributes:
       reference: String, the reference of the computer.
@@ -174,6 +174,7 @@ class Computer(object):
     self.address = addr
     self.netmask = netmask
     self.ipv6_interface = ipv6_interface
+    self.software_user = software_user
 
   def __getinitargs__(self):
     return (self.reference, self.bridge)
@@ -261,6 +262,7 @@ class Computer(object):
         addr = dumped_dict['address'],
         netmask = dumped_dict['netmask'],
         ipv6_interface=ipv6_interface,
+        software_user=dumped_dict.get('software_user', 'slapsoft'),
     )
 
     for partition_dict in dumped_dict['partition_list']:
@@ -302,8 +304,8 @@ class Computer(object):
       else:
         os.chmod(path, 0755)
 
-    # own self.software_root by slapsoft
-    slapsoft = User('slapsoft')
+    # own self.software_root by software user
+    slapsoft = User(self.software_user)
     slapsoft.path = self.software_root
     if alter_user:
       slapsoft.create()
@@ -865,7 +867,9 @@ def run(config):
   if config.input_definition_file:
     filepath = os.path.abspath(config.input_definition_file)
     config.logger.info('Using definition file %r' % filepath)
-    computer_definition = ConfigParser.RawConfigParser()
+    computer_definition = ConfigParser.RawConfigParser({
+      'software_user': 'slapsoft',
+    })
     computer_definition.read(filepath)
     bridge = None
     address = None
@@ -882,7 +886,8 @@ def run(config):
         bridge=bridge,
         addr=address,
         netmask=netmask,
-        ipv6_interface=config.ipv6_interface
+        ipv6_interface=config.ipv6_interface,
+        software_user=computer_definition.get('computer', 'software_user'),
       )
     partition_list = []
     for partition_number in range(int(config.partition_amount)):
@@ -922,7 +927,8 @@ def run(config):
           config.ipv6_interface),
         addr=None,
         netmask=None,
-        ipv6_interface=config.ipv6_interface
+        ipv6_interface=config.ipv6_interface,
+        software_user=config.software_user,
       )
 
     partition_amount = int(config.partition_amount)
@@ -1000,6 +1006,7 @@ class Config(object):
   verbose = None
   dry_run = None
   console = None
+  software_user = None
 
   @staticmethod
   def checkRequiredBinary(binary_list):
@@ -1046,6 +1053,8 @@ class Config(object):
       self.alter_network = 'True'
     if self.alter_user is None:
       self.alter_user = 'True'
+    if self.software_user is None:
+      self.software_user = 'slapsoft'
 
     # set up logging
     self.logger = logging.getLogger("slapformat")
