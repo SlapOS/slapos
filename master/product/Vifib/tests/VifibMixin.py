@@ -340,6 +340,18 @@ class testVifibMixin(ERP5TypeTestCase):
     finally:
       setSecurityManager(sm)
 
+  def checkDivergency(self):
+    # there shall be no divergency
+    current_skin = self.app.REQUEST.get('portal_skin', 'View')
+    try:
+      # Note: Worklists are cached, so in order to have next correct result
+      # clear cache
+      self.clearCache()
+      self.changeSkin('RSS')
+      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist())
+    finally:
+      self.changeSkin(current_skin)
+
   def stepCheckSiteConsistency(self, **kw):
     self.portal.portal_alarms.vifib_check_consistency.activeSense()
     transaction.commit()
@@ -347,6 +359,7 @@ class testVifibMixin(ERP5TypeTestCase):
     self.assertEqual([], self.portal.portal_alarms.vifib_check_consistency\
         .Alarm_getConsistencyCheckReportLineList())
     self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
+    self.checkDivergency()
 
   def stepTic(self, **kw):
     def build():
@@ -374,13 +387,4 @@ class testVifibMixin(ERP5TypeTestCase):
     # tic after build
     super(testVifibMixin, self).stepTic(**kw)
 
-    # there shall be no divergency
-    current_skin = self.app.REQUEST.get('portal_skin', 'View')
-    try:
-      # Note: Worklists are cached, so in order to have next correct result
-      # clear cache
-      self.clearCache()
-      self.changeSkin('RSS')
-      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist())
-    finally:
-      self.changeSkin(current_skin)
+    self.checkDivergency()
