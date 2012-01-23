@@ -175,7 +175,6 @@
   <td>id=dialog_submit_button</td>\n
   <td></td>\n
 </tr>\n
-\n
 <tr>\n
   <td>assertElementPresent</td>\n
   <td>name=field_your_last_name</td>\n
