@@ -157,8 +157,10 @@ def _getDict(instance):
 
 class Computer:
   "Object representing the computer"
+  instance_root = None
+  software_root = None
 
-  def __init__(self, reference, bridge=None, addr = None, netmask = None,
+  def __init__(self, reference, bridge=None, addr=None, netmask=None,
     ipv6_interface=None):
     """
     Attributes:
@@ -408,6 +410,7 @@ class Partition:
 
 class User:
   "User: represent and manipulate a user on the system."
+  path = None
 
   def __init__(self, user_name, additional_group_list=None):
     """
@@ -578,7 +581,7 @@ class Bridge:
 
     # Attach to TAP  network interface, only if the  bridge interface does not
     # report carrier
-    returncode, result = callAndRead(['ip', 'addr', 'list', self.name])
+    _, result = callAndRead(['ip', 'addr', 'list', self.name])
     self.attach_to_tap = 'DOWN' in result.split('\n', 1)[0]
 
   def __getinitargs__(self):
@@ -617,7 +620,7 @@ class Bridge:
   def getInterfaceList(self):
     """Returns list of interfaces already present on bridge"""
     interface_list = []
-    returncode, result = callAndRead(['brctl', 'show'])
+    _, result = callAndRead(['brctl', 'show'])
     in_bridge = False
     for line in result.split('\n'):
       if len(line.split()) > 1:
@@ -667,7 +670,7 @@ class Bridge:
       if interface != interface_name:
         address_dict = netifaces.ifaddresses(interface)
         if af in address_dict:
-         if address in [q['addr'].split('%')[0] for q in address_dict[af]]:
+          if address in [q['addr'].split('%')[0] for q in address_dict[af]]:
             return False
 
     if not af in netifaces.ifaddresses(interface_name) or not address in [q['addr'].split('%')[0] for q in netifaces.ifaddresses(interface_name)[af]]:
@@ -676,7 +679,7 @@ class Bridge:
       # wait few moments
       time.sleep(2)
     # check existence on interface
-    returncode, result = callAndRead(['ip', 'addr', 'list', interface_name])
+    _, result = callAndRead(['ip', 'addr', 'list', interface_name])
     for l in result.split('\n'):
       if address in l:
         if 'tentative' in l:
@@ -711,10 +714,10 @@ class Bridge:
     if addr is None:
       return self._generateRandomIPv4Address(netmask)
     elif dict(addr=addr, netmask=netmask) not in local_address_list:
-        if self._addSystemAddress(addr, netmask, False):
-          return dict(addr=addr, netmask=netmask)
-        else:
-          return self._generateRandomIPv4Address(netmask)
+      if self._addSystemAddress(addr, netmask, False):
+        return dict(addr=addr, netmask=netmask)
+      else:
+        return self._generateRandomIPv4Address(netmask)
     else:
       # confirmed to be configured
       return dict(addr=addr, netmask=netmask)
@@ -967,7 +970,19 @@ def run(config):
     raise
 
 class Config:
-  def checkRequiredBinary(self, binary_list):
+  key_file = None
+  cert_file = None
+  alter_network = None
+  alter_user = None
+  computer_xml = None
+  logger = None
+  log_file = None
+  verbose = None
+  dry_run = None
+  console = None
+
+  @staticmethod
+  def checkRequiredBinary(binary_list):
     missing_binary_list = []
     for b in binary_list:
       try:
