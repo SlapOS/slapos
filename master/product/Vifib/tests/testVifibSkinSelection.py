@@ -56,7 +56,7 @@ class TestVifibSkinSelection(testVifibMixin):
     self.assertSameSet(
         [x[0] for x in portal.portal_skins.getSkinPaths()],
         ['Cash', 'Download', 'Fiber', 'Hosting', 'KM', 'Multiflex', 'ODS', 'ODT',
-          'View']
+          'RSS', 'View']
     )
 
   def assertSameSkinSelection(self, skin_name, selection_string_list):
