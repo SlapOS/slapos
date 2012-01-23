@@ -169,6 +169,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -262,6 +263,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -355,6 +357,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -442,6 +445,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -528,6 +532,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -617,6 +622,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -707,6 +713,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -794,6 +801,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -880,6 +888,7 @@ erp5_payzen_secure_payment
 erp5_pdm
 erp5_project
 erp5_project_trade
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
