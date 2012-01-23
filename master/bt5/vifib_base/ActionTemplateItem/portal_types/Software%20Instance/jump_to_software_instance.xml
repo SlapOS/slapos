@@ -60,7 +60,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Software Instance</string> </value>
+            <value> <string>Requester</string> </value>
         </item>
         <item>
             <key> <string>visible</string> </key>
@@ -79,7 +79,7 @@
             <key> <string>text</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-string:${object_url}/Base_jumpToRelatedObject?base_category=predecessor&portal_type=Software+Instance
+string:${object_url}/Base_jumpToRelatedObject?base_category=predecessor&portal_type:list=Software+Instance&portal_type:list=Hosting+Subscription
 
 ]]></string> </value>
         </item>
