@@ -568,11 +568,12 @@ class Tap:
     check_file = '/sys/devices/virtual/net/%s/owner' % self.name
     owner_id = None
     if os.path.exists(check_file):
+      owner_id = open(check_file).read().strip()
       try:
-        owner_id = int(open(check_file).read().strip())
-      except Exception:
+        owner_id = int(owner_id)
+      except ValueError:
         pass
-    if (owner_id is None) or (owner_id != pwd.getpwnam(owner.name).pw_uid):
+    if owner_id != pwd.getpwnam(owner.name).pw_uid:
       callAndRead(['tunctl', '-t', self.name, '-u', owner.name])
     callAndRead(['ip', 'link', 'set', self.name, 'up'])
 
