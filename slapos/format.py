@@ -557,9 +557,6 @@ class Tap:
   def createWithOwner(self, owner, attach_to_tap=False):
     """
     Create a tap interface on the system.
-
-    Return:
-        True: Everything went right.
     """
 
     # some systems does not have -p switch for tunctl
@@ -578,8 +575,6 @@ class Tap:
 
     if attach_to_tap:
       threading.Thread(target=self.attach).start()
-
-    return True
 
 class Bridge:
   "Bridge represent a bridge on the system"
