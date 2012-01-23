@@ -496,7 +496,6 @@ class Tap:
     """
     Attributes:
         tap_name: String, the name of the tap interface.
-        user: User, the owner of the tap interface.
     """
 
     self.name = str(tap_name)
