@@ -259,8 +259,7 @@ class Computer:
           a valid configuration.
 
     Return:
-      A Computer object if the path where pointing on a valid
-          file, False otherwise.
+      A Computer object.
     """
 
     dumped_dict = xml_marshaller.loads(open(path_to_xml).read())
