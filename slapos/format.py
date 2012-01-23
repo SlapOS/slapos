@@ -105,7 +105,8 @@ def callAndRead(argument_list, raise_on_error=True):
       stderr=subprocess.STDOUT)
   result = popen.communicate()[0]
   if raise_on_error and popen.returncode != 0:
-    raise ValueError('Issue during invoking %r, result was:\n%s' % (argument_list, result))
+    raise ValueError('Issue during invoking %r, result was:\n%s' % (
+      argument_list, result))
   return popen.returncode, result
 
 def isGlobalScopeAddress(a):
@@ -352,16 +353,20 @@ class Computer:
           partition.address_list = []
           if len(old_partition_address_list) != 2:
             raise ValueError('There should be exactly 2 stored addresses')
-          if not any([netaddr.valid_ipv6(q['addr']) for q in old_partition_address_list]):
+          if not any([netaddr.valid_ipv6(q['addr'])
+              for q in old_partition_address_list]):
             raise ValueError('Not valid ipv6 addresses loaded')
-          if not any([netaddr.valid_ipv4(q['addr']) for q in old_partition_address_list]):
+          if not any([netaddr.valid_ipv4(q['addr'])
+              for q in old_partition_address_list]):
             raise ValueError('Not valid ipv6 addresses loaded')
           for address in old_partition_address_list:
             if netaddr.valid_ipv6(address['addr']):
-              partition.address_list.append(self.bridge.addAddr(address['addr'],
-                                                                address['netmask']))
+              partition.address_list.append(self.bridge.addAddr(
+                address['addr'],
+                address['netmask']))
             elif netaddr.valid_ipv4(address['addr']):
-              partition.address_list.append(self.bridge.addIPv4LocalAddress(address['addr']))
+              partition.address_list.append(self.bridge.addIPv4LocalAddress(
+                address['addr']))
             else:
               raise ValueError('Address %r is incorrect' % address['addr'])
     finally:
@@ -395,8 +400,8 @@ class Partition:
 
   def createPath(self, alter_user=True):
     """
-    Create the directory of the partition, assign to the partition user and give
-    it the 750 permission. In case if path exists just modifies it.
+    Create the directory of the partition, assign to the partition user and
+    give it the 750 permission. In case if path exists just modifies it.
     """
 
     self.path = os.path.abspath(self.path)
@@ -442,7 +447,8 @@ class User:
     except KeyError:
       callAndRead(['groupadd', self.name])
 
-    user_parameter_list = ['-d', self.path, '-g', self.name, '-s', '/bin/false']
+    user_parameter_list = ['-d', self.path, '-g', self.name, '-s',
+      '/bin/false']
     if self.additional_group_list is not None:
       user_parameter_list.extend(['-G', ','.join(self.additional_group_list)])
     user_parameter_list.append(self.name)
@@ -588,7 +594,10 @@ class Bridge:
     return (self.name,)
 
   def getIPv4LocalAddressList(self):
-    """Returns currently configured local IPv4 addresses which are in ipv4_local_network"""
+    """
+    Returns currently configured local IPv4 addresses which are in
+    ipv4_local_network
+    """
     if not socket.AF_INET in netifaces.ifaddresses(self.name):
       return []
     return [dict(addr=q['addr'], netmask=q['netmask']) for q in
@@ -603,8 +612,9 @@ class Bridge:
     else:
       interface_name = self.name
     try:
-      address_list = [q for q in netifaces.ifaddresses(interface_name)[socket.AF_INET6]
-                      if isGlobalScopeAddress(q['addr'].split('%')[0])]
+      address_list = [q
+        for q in netifaces.ifaddresses(interface_name)[socket.AF_INET6]
+        if isGlobalScopeAddress(q['addr'].split('%')[0])]
     except KeyError:
       raise ValueError("%s must have at least one IPv6 address assigned" % \
                          interface_name)
@@ -673,7 +683,9 @@ class Bridge:
           if address in [q['addr'].split('%')[0] for q in address_dict[af]]:
             return False
 
-    if not af in netifaces.ifaddresses(interface_name) or not address in [q['addr'].split('%')[0] for q in netifaces.ifaddresses(interface_name)[af]]:
+    if not af in netifaces.ifaddresses(interface_name) \
+        or not address in [q['addr'].split('%')[0]
+          for q in netifaces.ifaddresses(interface_name)[af]]:
       # add an address
       callAndRead(['ip', 'addr', 'add', address_string, 'dev', interface_name])
       # wait few moments
@@ -699,7 +711,8 @@ class Bridge:
     while try_num > 0:
       addr = random.choice([q for q in netaddr.glob_to_iprange(
         netaddr.cidr_to_glob(self.ipv4_local_network))]).format()
-      if dict(addr=addr, netmask=netmask) not in self.getIPv4LocalAddressList():
+      if dict(addr=addr, netmask=netmask) not in \
+          self.getIPv4LocalAddressList():
         # Checking the validity of the IPv6 address
         if self._addSystemAddress(addr, netmask, False):
           return dict(addr=addr, netmask=netmask)
@@ -728,8 +741,9 @@ class Bridge:
 
     If addr is specified and exists already on bridge does nothing.
 
-    If addr is specified and does not exists on bridge, tries to add given address.
-    In case if it is not possible (ex. because network changed) calculates new address.
+    If addr is specified and does not exists on bridge, tries to add given
+    address. If it is not possible (ex. because network changed) calculates new
+    address.
 
     Args:
       addr: Wished address to be added to bridge.
@@ -764,7 +778,8 @@ class Bridge:
         # same netmask, so there is a chance to add good one
         bridge_network = netaddr.ip.IPNetwork('%s/%s' % (address_dict['addr'],
           netmaskToPrefixIPv6(address_dict['netmask'])))
-        requested_network = netaddr.ip.IPNetwork('%s/%s' % (addr, netmaskToPrefixIPv6(netmask)))
+        requested_network = netaddr.ip.IPNetwork('%s/%s' % (addr,
+          netmaskToPrefixIPv6(netmask)))
         if bridge_network.network == requested_network.network:
           # same network, try to add
           if self._addSystemAddress(addr, netmask):
@@ -775,9 +790,11 @@ class Bridge:
     try_num = 10
     netmask = address_dict['netmask']
     while try_num > 0:
-      addr = ':'.join(address_dict['addr'].split(':')[:-1] + ['%x' % random.randint(1, 65000)])
+      addr = ':'.join(address_dict['addr'].split(':')[:-1] + ['%x' % (
+        random.randint(1, 65000), )])
       socket.inet_pton(socket.AF_INET6, addr)
-      if dict(addr=addr, netmask=netmask) not in self.getGlobalScopeAddressList():
+      if dict(addr=addr, netmask=netmask) not in \
+          self.getGlobalScopeAddressList():
         # Checking the validity of the IPv6 address
         if self._addSystemAddress(addr, netmask):
           return dict(addr=addr, netmask=netmask)
@@ -854,7 +871,8 @@ def run(config):
     address = None
     netmask = None
     if computer_definition.has_option('computer', 'address'):
-      address, netmask = computer_definition.get('computer', 'address').split('/')
+      address, netmask = computer_definition.get('computer',
+        'address').split('/')
     if config.alter_network and config.bridge_name is not None \
         and config.ipv4_local_network is not None:
       bridge = Bridge(config.bridge_name, config.ipv4_local_network,
@@ -875,8 +893,10 @@ def run(config):
         address, netmask = a.split('/')
         address_list.append(dict(addr=address, netmask=netmask))
       tap = Tap(computer_definition.get(section, 'network_interface'))
-      partition_list.append(Partition(reference=computer_definition.get(section, 'pathname'),
-          path=os.path.join(config.instance_root, computer_definition.get(section, 'pathname')),
+      partition_list.append(Partition(reference=computer_definition.get(
+        section, 'pathname'),
+          path=os.path.join(config.instance_root, computer_definition.get(
+            section, 'pathname')),
           user=user,
           address_list=address_list,
           tap=tap,
@@ -885,14 +905,17 @@ def run(config):
   else:
     # no definition file, figure out computer
     if os.path.exists(config.computer_xml):
-      config.logger.info('Loading previous computer data from %r' % config.computer_xml)
-      computer = Computer.load(config.computer_xml, reference=config.computer_id, ipv6_interface=config.ipv6_interface)
+      config.logger.info('Loading previous computer data from %r' % (
+        config.computer_xml, ))
+      computer = Computer.load(config.computer_xml,
+        reference=config.computer_id, ipv6_interface=config.ipv6_interface)
       # Connect to the bridge interface defined by the configuration
       computer.bridge = Bridge(config.bridge_name, config.ipv4_local_network,
           config.ipv6_interface)
     else:
       # If no pre-existent configuration found, creating a new computer object
-      config.logger.warning('Creating new data computer with id %r' % config.computer_id)
+      config.logger.warning('Creating new data computer with id %r' % (
+        config.computer_id, ))
       computer = Computer(
         reference=config.computer_id,
         bridge=Bridge(config.bridge_name, config.ipv4_local_network,
@@ -939,7 +962,8 @@ def run(config):
     computer_definition = ConfigParser.RawConfigParser()
     computer_definition.add_section('computer')
     if computer.address is not None and computer.netmask is not None:
-      computer_definition.set('computer', 'address', '/'.join([computer.address, computer.netmask]))
+      computer_definition.set('computer', 'address', '/'.join(
+        [computer.address, computer.netmask]))
     partition_number = 0
     for partition in computer.partition_list:
       section = 'partition_%s' % partition_number
@@ -988,8 +1012,8 @@ class Config:
       except OSError:
         missing_binary_list.append(b)
     if missing_binary_list:
-      raise UsageError('Some required binaries are missing or not functional: %s'%
-           ','.join(missing_binary_list))
+      raise UsageError('Some required binaries are missing or not '
+          'functional: %s' % (','.join(missing_binary_list), ))
 
   def setConfig(self, option_dict, configuration_file_path):
     """
@@ -1038,8 +1062,8 @@ class Config:
       elif getattr(self, o).lower() == 'false':
         setattr(self, o, False)
       else:
-        message = 'Option %r needs to be "True" or "False", wrong value: %r' % (
-            o, getattr(self, o))
+        message = 'Option %r needs to be "True" or "False", wrong value: ' \
+            '%r' % (o, getattr(self, o))
         self.logger.error(message)
         raise UsageError(message)
 
@@ -1069,7 +1093,8 @@ class Config:
           os.path.dirname(self.log_file), self.log_file))
       else:
         file_handler = logging.FileHandler(self.log_file)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        file_handler.setFormatter(logging.Formatter("%(asctime)s - "
+          "%(name)s - %(levelname)s - %(message)s"))
         self.logger.addHandler(file_handler)
         self.logger.info('Configured logging to file %r' % self.log_file)
     # Check mandatory options
