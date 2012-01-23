@@ -70,18 +70,35 @@ class OS(object):
   def __getattr__(self, name):
     return getattr(self._os, name)
 
-class SlapError(Exception):
-  """
-  Slap error
-  """
-  def __init__(self, message):
-    self.msg = message
-
-class UsageError(SlapError):
+class UsageError(Exception):
   pass
 
-class ExecError(SlapError):
-  pass
+class NoAddressOnBridge(Exception):
+  """
+  Exception raised if there's not address on the bridge to construct IPv6
+  address with.
+
+  Attributes:
+    brige: String, the name of the bridge.
+  """
+
+  def __init__(self, bridge):
+    super(NoAddressOnBridge, self).__init__(
+      'No IPv6 found on bridge %s to construct IPv6 with.' % (bridge, )
+    )
+
+class AddressGenerationError(Exception):
+  """
+  Exception raised if the generation of an IPv6 based on the prefix obtained
+  from the bridge failed.
+
+  Attributes:
+    addr: String, the invalid address the exception is raised for.
+  """
+  def __init__(self, addr):
+    super(AddressGenerationError, self).__init__(
+      'Generated IPv6 %s seems not to be a valid IP.' % addr
+    )
 
 def callAndRead(argument_list, raise_on_error=True):
   popen = subprocess.Popen(argument_list, stdout=subprocess.PIPE,
@@ -138,34 +155,6 @@ def _getDict(instance):
 
     except AttributeError:
       return instance
-
-class Error(Exception):
-  "Base class for exceptions in this module."
-  def __str__(self):
-    return self.message
-
-class NoAddressOnBridge(Error):
-  """
-  Exception raised if there's not address on the bridge to construct IPv6
-  address with.
-
-  Attributes:
-    brige: String, the name of the bridge.
-  """
-
-  def __init__(self, bridge):
-    self.message = 'No IPv6 found on bridge %s to construct IPv6 with.' % bridge
-
-class AddressGenerationError(Error):
-  """
-  Exception raised if the generation of an IPv6 based on the prefix obtained
-  from the bridge failed.
-
-  Attributes:
-    addr: String, the invalid address the exception is raised for.
-  """
-  def __init__(self, addr):
-    self.message = 'Generated IPv6 %s seems not to be a valid IP.' % addr
 
 class Computer:
   "Object representing the computer"
@@ -1100,7 +1089,7 @@ def main(*args):
   try:
     config.setConfig(options, configuration_file_path)
   except UsageError, err:
-    print >>sys.stderr, err.msg
+    print >>sys.stderr, err.message
     print >>sys.stderr, "For help use --help"
     sys.exit(1)
   os = OS(config)
