@@ -78,5 +78,9 @@ setup(name=name,
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
-      ]},
+        ],
+        'slapos.recipe.nosqltestbed.plugin': [
+          'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
+        ],
+      },
     )
