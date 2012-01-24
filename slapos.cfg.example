@@ -32,16 +32,16 @@ alias =
   erp5_branch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5:/software/erp5/software.cfg
   factux https://www.tiolive.com/vifib/P-OSOE.Factux.Wilfried.Rodrigues/Base_download
   joomla https://svn.erp5.org/repos/public/slapos/trunk/software_release.contribution/joomla.Christophe.Laroulandie/software.cfg
-  kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.21:/software/kumofs/software.cfg
+  kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.64:/software/kumofs/software.cfg
   kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.43:/software/kvm/software.cfg
   lightforum https://svn.erp5.org/repos/public/slapos/trunk/software_release.contribution/lightforum.Christophe.Lefloch/software.cfg
   mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.16-hotfix:/software/mariadb/software.cfg
   memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.43:/software/memcached/software.cfg
-  mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.47:/software/mysql-5.1/software.cfg
+  mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.65:/software/mysql-5.1/software.cfg
   nbd http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.35:/software/nbd/software.cfg
   nosqltester http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/nosqltestbed:/software/nosqltestbed/software.cfg
   respest https://www.tiolive.com/vifib/P-OSOE.Respest.BENHAMED/Base_download
-  slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.17:/software/slaprunner/software.cfg
+  slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.66:/software/slaprunner/software.cfg
   testnode http://git.erp5.org/gitweb/slapos.git/blob_plain/testnode:/software/testnode/software.cfg
   vifib http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.30:/software/vifib/software.cfg
   xwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.46:/software/xwiki/software.cfg
