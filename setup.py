@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.36'
+version = '0.39-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -46,6 +46,7 @@ setup(name=name,
           'davstorage = slapos.recipe.davstorage:Recipe',
           'duplicity = slapos.recipe.duplicity:Recipe',
           'erp5 = slapos.recipe.erp5:Recipe',
+          'erp5scalabilitytestbed = slapos.recipe.erp5scalabilitytestbed:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
           'helloworld = slapos.recipe.helloworld:Recipe',
           'java = slapos.recipe.java:Recipe',
@@ -77,5 +78,9 @@ setup(name=name,
           'vifib = slapos.recipe.vifib:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
-      ]},
+        ],
+        'slapos.recipe.nosqltestbed.plugin': [
+          'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
+        ],
+      },
     )

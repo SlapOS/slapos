@@ -668,7 +668,15 @@ SSLCARevocationPath %(ca_crl)s"""
     # maxconn should be set as the maximum thread we have per zope, like this
     #      haproxy will manage the queue of request with the possibility to
     #      move a request to another node if the initially selected one is dead
-    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxconn %(cluster_zope_thread_amount)s"""
+    # maxqueue is the number of waiting request in the queue of every zope client.
+    #      It allows to make sure that there is not a zope client handling all
+    #      the work while other clients are doing nothing. This was happening
+    #      even thoug we have round robin distribution because when a node dies
+    #      some seconds, all request are dispatched to other nodes, and then users
+    #      stick in other nodes and are not coming back. Please note this option
+    #      is not an issue if you have more than (maxqueue * node_quantity) requests
+    #      because haproxy will handle a top-level queue
+    server_template = """  server %(name)s %(address)s cookie %(name)s check inter 3s rise 1 fall 2 maxqueue 5 maxconn %(cluster_zope_thread_amount)s"""
     config = dict(name=name, ip=ip, port=port,
         server_check_path=server_check_path,)
     i = 1
@@ -781,7 +789,12 @@ SSLCARevocationPath %(ca_crl)s"""
       kumo_conf = {}
     # XXX Conversion server and memcache server coordinates are not relevant
     # for pure site creation.
-    mysql_connection_string = "%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s" % mysql_conf
+    assert mysql_conf['mysql_user'] and mysql_conf['mysql_password'], \
+        "ZMySQLDA requires a user and a password for socket connections"
+    # XXX Use socket access to prevent unwanted connections to original MySQL
+    #     server when cloning an existing ERP5 instance.
+    #     TCP will be required if MySQL is in a different partition/server.
+    mysql_connection_string = "%(mysql_database)s %(mysql_user)s %(mysql_password)s %(socket)s" % mysql_conf
 
     bt5_list = self.parameter_dict.get("bt5_list", "").split() or default_bt5_list
     bt5_repository_list = self.parameter_dict.get("bt5_repository_list", "").split() \
@@ -1185,6 +1198,8 @@ SSLCARevocationPath %(ca_crl)s"""
           mysql_conf))
 
     mysql_script_list = []
+    mysql_script_list.append(pkg_resources.resource_string(__name__,
+                   'template/mysql-init-function.sql.in'))
     for x_database, x_user, x_password in \
           [(mysql_conf['mysql_database'],
             mysql_conf['mysql_user'],
@@ -1194,7 +1209,7 @@ SSLCARevocationPath %(ca_crl)s"""
             mysql_conf['mysql_test_password']),
           ] + mysql_conf['mysql_parallel_test_dict']:
       mysql_script_list.append(pkg_resources.resource_string(__name__,
-                     'template/initmysql.sql.in') % {
+                     'template/mysql-init-database.sql.in') % {
                         'mysql_database': x_database,
                         'mysql_user': x_user,
                         'mysql_password': x_password})
