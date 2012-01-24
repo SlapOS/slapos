@@ -1,0 +1,68 @@
+[main]
+# host =
+# port = 9999
+# ocsmapping = /etc/mmc/pulse2/inventory-server/OcsNGMap.xml
+# enablessl = False
+# verifypeer = False
+# cacert = /etc/mmc/pulse2/inventory-server/keys/cacert.pem
+# localcert = /etc/mmc/pulse2/inventory-server/keys/privkey.pem
+# to put the data from the registry as hostname
+# hostname = Hardware/Host # by default
+# default_entity = .
+# entities_rules_file =
+
+[database]
+# dbdriver = mysql
+# dbhost = localhost
+# dbport = 3306
+# dbname = inventory
+# dbuser = mmc
+# dbpasswd = mmc
+# dbpoolrecycle = 60
+# dbsslenable = 0
+# dbsslca = /etc/mmc/pulse2/inventory/cacert.pem
+# dbsslcert = /etc/mmc/pulse2/inventory/cert.pem
+# dbsslkey = /etc/mmc/pulse2/inventory/key.pem
+
+[daemon]
+# pidfile = /var/run/pulse2-inventory-server.pid
+# user = root
+# group = root
+# umask = 0077
+# Example of non-root execution settings:
+# user = mmc
+# group = mmc
+# umask = 0007
+
+# [option_01]
+# NAME = REGISTRY
+# PARAM_01 = NAME::srvcomment||REGKEY::SYSTEM\CurrentControlSet\Services\lanmanserver\parameters||REGTREE::2##srvcomment
+# PARAM_02 = NAME::DisplayName||REGKEY::SYSTEM\CurrentControlSet\Services\lanmanserver||REGTREE::2##DisplayName
+
+[loggers]
+keys=root
+
+[handlers]
+keys=hand01,hand02
+
+[formatters]
+keys=form01
+
+[logger_root]
+level=NOTSET
+handlers=hand01
+
+[handler_hand01]
+class=FileHandler
+level=INFO
+formatter=form01
+args=("/var/log/mmc/pulse2-inventory-server.log",)
+
+[handler_hand02]
+class=StreamHandler
+level=DEBUG
+args=(sys.stderr,)
+
+[formatter_form01]
+format=%(asctime)s %(levelname)s %(message)s
+
