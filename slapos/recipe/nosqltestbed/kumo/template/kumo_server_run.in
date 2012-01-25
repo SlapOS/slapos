@@ -1,0 +1,6 @@
+#!/bin/sh
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+exec %(server_binary)s -l %(server_address)s:%(server_port)s \
+  -L %(server_listen_port)s -m %(manager_address)s:%(manager_port)s \
+  -s %(server_storage)s  --verbose -o %(server_log)s
