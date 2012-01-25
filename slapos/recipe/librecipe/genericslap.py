@@ -24,23 +24,20 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import logging
 from slapos import slap
-import zc.buildout
-import zc.recipe.egg
 import time
 import re
 import urlparse
 
-class GenericSlapRecipe(object):
+from generic import GenericBaseRecipe
+
+class GenericSlapRecipe(GenericBaseRecipe):
   """Base class for all slap.recipe.*"""
 
   def __init__(self, buildout, name, options):
     """Default initialisation"""
-    self.name = name
     options['eggs'] = 'slapos.cookbook'
-    self.options = options
-    self.logger = logging.getLogger(self.name)
+    GenericBaseRecipe.__init__(self, buildout, name, options)
     self.slap = slap.slap()
 
     # SLAP related information
@@ -51,12 +48,6 @@ class GenericSlapRecipe(object):
     self.software_release_url = slap_connection['software-release-url']
     self.key_file = slap_connection.get('key-file')
     self.cert_file = slap_connection.get('cert-file')
-
-    # setup egg to give possibility to generate scripts
-    self.egg = zc.recipe.egg.Egg(buildout, options['recipe'], options)
-
-    # Hook options
-    self._options(options)
 
     # setup auto uninstall/install
     self._setupAutoInstallUninstall()
@@ -87,10 +78,6 @@ class GenericSlapRecipe(object):
   def _install(self):
     """Hook which shall be implemented in children class"""
     raise NotImplementedError('Shall be implemented by subclass')
-
-  def _options(self, options):
-    """Hook which can be implemented in children class"""
-    pass
 
   def setConnectionUrl(self, *args, **kwargs):
     url = self._unparseUrl(*args, **kwargs)

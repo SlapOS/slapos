@@ -42,7 +42,7 @@ class Recipe(GenericBaseRecipe):
 
   def install(self):
 
-    for directory in self.directory.values():
+    for directory in sorted(self.directory.values()):
       path = directory
 
       if not os.path.exists(path):
