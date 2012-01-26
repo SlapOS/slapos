@@ -21,6 +21,7 @@ import shutil
 import urlparse
 import traceback
 import utils
+import json
 
 try:
     try:
@@ -53,29 +54,19 @@ def fallback_call(function):
 
 
 @fallback_call
-def download_network_cached(dir_url, cache_url, path, url, logger,
-                            signature_certificate_list, md5sum=None):
+def download_network_cached(cache_url, dir_url, software_url, key, path,
+                            logger, signature_certificate_list):
     """Downloads from a network cache provider
-
-    If something fail (providor be offline, or hash_string fail), we ignore
-    network cached files.
 
     return True if download succeeded.
     """
     if not LIBNETWORKCACHE_ENABLED:
         return False
 
-    if not(dir_url and cache_url):
+    if not(cache_url and dir_url):
         return False
-    if md5sum is None:
-        md5sum = _get_md5_from_url(url)
-
-
-    directory_key = get_directory_key(url)
-    url = os.path.basename(url)
 
     if len(signature_certificate_list) == 0:
-        # convert [] into None in order to call nc nicely
         signature_certificate_list = None
     try:
         nc = NetworkcacheClient(cache_url, dir_url,
@@ -84,21 +75,24 @@ def download_network_cached(dir_url, cache_url, path, url, logger,
       logger.warning('Incompatible version of networkcache, not using it.')
       return False
 
-    logger.info('Downloading %s from network cache.' % url)
+    logger.info('Downloading %s binary from network cache.' % software_url)
     try:
-        file_descriptor = nc.select(directory_key)
-
+        json_entry_list = nc.select_generic(key)
+        for entry in json_entry_list:
+            json_information, _ = entry
+            try:
+                tags = json.loads(json_information)
+                sha512 = tags.get('sha512')
+                file_descriptor = nc.download(sha512)
+                break
+            except Exception:
+                continue
         f = open(path, 'w+b')
         try:
             shutil.copyfileobj(file_descriptor, f)
         finally:
             f.close()
             file_descriptor.close()
-
-        if not check_md5sum(path, md5sum):
-            logger.info('MD5 checksum mismatch downloading %s' % url)
-            return False
-
     except (IOError, DirectoryNotFound), e:
         logger.info('Failed to download from network cache %s: %s' % \
                                                        (url, str(e)))

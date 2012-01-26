@@ -82,25 +82,37 @@ class Software(object):
     tarname = self.software_url_hash
     cache_dir = tempfile.mkdtemp()
     tarpath = os.path.join(cache_dir, tarname)
-    self._install_from_buildout()
-    tar = tarfile.open(tarpath, "w:gz")
-    try:
-      tar.add(self.software_path, arcname=self.software_url_hash)
-    finally:
-      tar.close()
-    upload_network_cached(
-      self.software_root,
-      self.url,
-      self.software_url_hash,
-      self.upload_binary_cache_url,
-      self.upload_binary_dir_url,
-      tarpath, self.logger,
-      self.signature_private_key_file,
-      self.shacache_cert_file,
-      self.shacache_key_file,
-      self.shadir_cert_file,
-      self.shadir_key_file
-    )
+    if os.path.exists(self.software_path):
+      self._install_from_buildout()
+    else:
+      if download_network_cached(
+          self.download_binary_cache_url,
+          self.download_binary_dir_url,
+          self.url, self.software_url_hash,
+          tarpath, self.logger,
+          self.signature_certificate_list):
+        tar = tarfile.open(tarpath)
+        try:
+          tar.extractall(path=self.software_root)
+        finally:
+          tar.close()
+      else:
+        tar = tarfile.open(tarpath, "w:gz")
+        try:
+          tar.add(self.software_path, arcname=self.software_url_hash)
+        finally:
+          tar.close()
+        upload_network_cached(
+          self.software_root,
+          self.url, self.software_url_hash,
+          self.upload_binary_cache_url,
+          self.upload_binary_dir_url,
+          tarpath, self.logger,
+          self.signature_private_key_file,
+          self.shacache_cert_file,
+          self.shacache_key_file,
+          self.shadir_cert_file,
+          self.shadir_key_file)
       
   def _install_from_buildout(self):
     """ Fetches buildout configuration from the server, run buildout with
