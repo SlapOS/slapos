@@ -35,15 +35,6 @@ except:
     LIBNETWORKCACHE_ENABLED = False
     print 'Networkcache forced to be disabled.'
 
-_md5_re = re.compile(r'md5=([a-f0-9]+)')
-
-
-def _get_md5_from_url(url):
-  match = _md5_re.search(url)
-  if match:
-    return match.group(1)
-  return None
-
 def fallback_call(function):
     """Decorator which disallow to have any problem while calling method"""
     def wrapper(self, *args, **kwd):
@@ -58,20 +49,6 @@ def fallback_call(function):
             return False
     wrapper.__doc__ = function.__doc__
     return wrapper
-
-
-@fallback_call
-def get_directory_key(url):
-    """Returns directory hash based on url.
-
-    Basically check if the url belongs to pypi:
-      - if yes, the directory key will be pypi-buildout-urlmd5
-      - if not, the directory key will be slapos-buildout-urlmd5
-    """
-    urlmd5 = hashlib.md5(url).hexdigest()
-    if 'pypi' in url:
-      return 'pypi-buildout-%s' % urlmd5
-    return 'slapos-buildout-%s' % urlmd5
 
 
 @fallback_call
@@ -181,24 +158,3 @@ def upload_network_cached(dir_url, cache_url, external_url, path, logger,
       f.close()
 
     return True
-
-
-@fallback_call
-def get_filename_from_url(url):
-    """Inspired how pip get filename from url.
-    """
-    parsed_url = urlparse.urlparse(url)
-    if parsed_url.query and parsed_url.path.endswith('/'):
-      name = parsed_url.query.split('?', 1)[0]
-    elif parsed_url.path.endswith('/') and not parsed_url.query:
-      name = parsed_url.path.split('/')[-2]
-    else:
-      name = posixpath.basename(parsed_url.path)
-
-    name = name.split('#', 1)[0]
-    assert name, (
-           'URL %r produced no filename' % url)
-    return name
-
-
-from download import check_md5sum
