@@ -120,6 +120,8 @@ def upload_network_cached(software_root, software_url, cached_key,
     logger.info('Uploading %s binary into network cache.' % software_url)
 
     kw = dict(
+      file=software_url,
+      urlmd5=cached_key,
       software_url=software_url,
       gcc_version="gcc-version",
       libc_version="libc-version",
