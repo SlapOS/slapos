@@ -56,6 +56,9 @@
 receivable_account_type_list = (\'asset/receivable\',)\n
 payable_account_type_list = (\'liability/payable\',)\n
 \n
+if movement.getSimulationState() not in movement.getCausalityValue(portal_type=\'Business Link\').getCompletedStateList():\n
+  return False\n
+\n
 for account in (movement.getSourceValue(portal_type=\'Account\'),\n
                 movement.getDestinationValue(portal_type=\'Account\')):\n
   if account is not None:\n
