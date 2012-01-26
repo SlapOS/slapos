@@ -6,7 +6,7 @@
   </role>
   <role id='Assignee'>
    <property id='title'>Customer of the Instance</property>
-   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromAggregateMovementItemByPerson</property>
+   <property id='base_category_script'>SoftwareType_getSecurityCategoryFromAggregateMovementItemByPerson</property>
    <multi_property id='base_category'>destination_section</multi_property>
   </role>
   <role id='Assignee'>
@@ -17,7 +17,7 @@
   </role>
   <role id='Assignor'>
    <property id='title'>Slave Instance related by Hosting Subscription</property>
-   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromAggregateMovementItemByHostingSubscription</property>
+   <property id='base_category_script'>SoftwareType_getSecurityCategoryFromAggregateMovementItemByHostingSubscription</property>
    <multi_property id='base_category'>aggregate</multi_property>
   </role>
   <role id='Assignor'>

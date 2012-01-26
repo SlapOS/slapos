@@ -718,6 +718,344 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepCheckTreeLooksLikeRenameComplexTree(self, sequence, **kw):
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
+
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=hosting_subscription_uid
+    )
+
+    root_software_instance = hosting_subscription.portal_catalog.getResultValue(
+      title=hosting_subscription.getTitle(), portal_type="Software Instance",
+      root_uid=hosting_subscription_uid)
+    self.failIfEqual(root_software_instance, None)
+
+    children_titles = set([si.getTitle()
+                           for si in root_software_instance.getPredecessorValueList()])
+    self.failUnless(set(['children_a', 'children_b']) <= children_titles)
+
+    children_b_child = hosting_subscription.portal_catalog.getResultValue(
+      title='children_b_child',
+      root_uid=hosting_subscription.getUid(),
+    )
+    self.failIfEqual(children_b_child, None)
+
+  def test_ComputerPartition_rename_root_and_bang(self):
+    r"""
+    Request Master:                     __________
+                                       /          \
+                                      | HS: Master |
+                                       \__________/
+                                        _____|____
+                                       /          \
+                                      | SI: Master |
+                                       \__________/
+
+    Rename Software Instance Master into MasterDead:
+           __________
+          /          \
+         | HS: Master |
+          \__________/
+         _______|______
+        /              \
+       | SI: MasterDead |
+        \______________/
+
+    Banging the tree should result:
+                          _____________________________
+                         /                              \
+                        |            HS: Master          |
+                         \______________________________/
+                          ____/_____      _______\______
+                         /          \    /              \
+                        | SI: Master |  | SI: MasterDead |
+                         \__________/    \______________/
+    """
+    self.computer_partition_amount = 2
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
+      SetRootSoftwareInstanceCurrentInstance
+      Tic
+      LoginDefaultUser
+      RenameCurrentSoftwareInstanceDead
+      Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
+      Bang
+      ConfirmOrderedSaleOrderActiveSense
+      SlapLogout
+      Tic
+      LoginTestVifibCustomer
+      CheckTreeHasARootSoftwareInstance
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_rename_root_complex_tree(self):
+    r"""
+    Request Master which is a software realease having a complex tree :
+              ___________________________
+             /                            \
+            |           HS: Master         |
+             \____________________________/
+              _____________|_____________
+             /                            \
+            |           SI: Master         |
+             \____________________________/
+              _____/_____     _____\_____
+             /           \   /           \
+            | SI: Child A | | SI: Child B |
+             \___________/   \___________/
+                             ______|______
+                            /              \
+                           | SI: GrandChild |
+                            \______________/
+
+    Rename Software Instance Master :
+              ___________________________
+             /                            \
+            |           SI: Master         |
+             \____________________________/
+              _____________|_____________
+             /                            \
+            |        SI: MasterDead        |
+             \____________________________/
+              _____/_____     _____\_____
+             /           \   /           \
+            | SI: Child A | | SI: Child B |
+             \___________/   \___________/
+                             ______|______
+                            /              \
+                           | SI: GrandChild |
+                            \______________/
+
+    Run bang() on the tree. We expect to have a new root as :
+              _______________________________________________
+             /                                               \
+            |                     HS: Master                  |
+             \_______________________________________________/
+              _____________|______________     _______|______
+             /                            \   /              \
+            |           SI: Master         | | SI: MasterDead |
+             \____________________________/   \______________/
+              _____/_____     _____\_____
+             /           \   /           \
+            | SI: Child A | | SI: Child B |
+             \___________/   \___________/
+                             ______|______
+                            /              \
+                           | SI: GrandChild |
+                            \______________/
+
+    """
+    self.computer_partition_amount = 5
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_children_a_children_b_sequence_string + """
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReferenceChildrenBChild
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SlapLoginTestVifibCustomer
+      SetSoftwareInstanceRoot
+      RenameCurrentSoftwareInstanceDead
+      Tic
+      Bang
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceGetRootOfTheTree
+      SetRootSoftwareInstanceCurrentInstance
+      SelectRequestedReferenceChildrenA
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SelectRequestedReferenceChildrenB
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReferenceChildrenBChild
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SlapLoginCurrentComputer
+      CheckTreeHasARootSoftwareInstance
+      CheckTreeLooksLikeRenameComplexTree
+      SlapLogout
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_rename_child_complex_tree(self):
+    r"""
+    Request A which is a software realease having a complex tree :
+              ___________________________
+             /                            \
+            |           HS: Master         |
+             \____________________________/
+              _____________|_____________
+             /                            \
+            |           SI: Master         |
+             \____________________________/
+              _____/_____     _____\_____
+             /           \   /           \
+            | SI: Child A | | SI: Child B |
+             \___________/   \___________/
+                             ______|______
+                            /              \
+                           | SI: GrandChild |
+                            \______________/
+
+    Rename child C into E :
+    (Rename reattach to root as Luke wanted it)
+              ________________________________
+             /                                \
+            |             HS: Master           |
+             \________________________________/
+              ________________|_______________
+             /                                \
+            |            SI: Master            |
+             \________________________________/
+              _____/_____     _________\______
+             /           \   /                \
+            | SI: Child A | | SI: Child B Dead |
+             \___________/   \________________/
+                               ______|______
+                              /              \
+                             | SI: GrandChild |
+                              \______________/
+
+    Bang the tree. We espect to have a new C replacing it,
+    as :      _________________________________________________
+             /                                                 \
+            |                      HS: Master                   |
+             \_________________________________________________/
+              _____________|___________________________________
+             /                                                 \
+            |                     SI: Master                    |
+             \_________________________________________________/
+              _____/_____     _____\_____      _______|________
+             /           \   /           \    /                \
+            | SI: Child A | | SI: Child B |  | SI: Child B Dead |
+             \___________/   \___________/    \________________/
+                             ______|______
+                            /              \
+                           | SI: GrandChild |
+                            \______________/
+    """
+    self.computer_partition_amount = 5
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_children_a_children_b_sequence_string + """
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReferenceChildrenBChild
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      Tic
+      CheckRaisesNotFoundComputerPartitionParameterDict
+      Tic
+      RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SlapLoginTestVifibCustomer
+      SetSoftwareInstanceChildrenB
+      RenameCurrentSoftwareInstanceDead
+      Tic
+      Bang
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+      SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceGetRootOfTheTree
+      SetRootSoftwareInstanceCurrentInstance
+      SelectRequestedReferenceChildrenA
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SelectRequestedReferenceChildrenB
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetSoftwareInstanceChildrenB
+      SelectRequestedReferenceChildrenBChild
+      SelectEmptyRequestedParameterDict
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      RequestComputerPartition
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SlapLoginCurrentComputer
+      CheckTreeHasARootSoftwareInstance
+      CheckTreeLooksLikeRenameComplexTree
+      SlapLogout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+
 def test_suite():
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(TestVifibSlapBang))

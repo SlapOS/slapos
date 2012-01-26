@@ -50,21 +50,36 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>predecessor_software_instance = context\n
-while (predecessor_software_instance is not None):\n
-  root_software_instance = predecessor_software_instance\n
-  predecessor_software_instance = predecessor_software_instance.getPredecessorRelatedValue(\n
-    portal_type=["Software Instance", "Slave Instance"])\n
-return root_software_instance.getUid()\n
+            <value> <string>"""\n
+This script updates all local roles on the object. It requires Assignor\n
+proxy role since it may be called by owner in draft state.\n
+"""\n
+portal_type_list = ["Slave Instance", "Software Instance", "Hosting Subscription"]\n
+for movement in state_change[\'object\'].getMovementList():\n
+  tag = "softinssec_%s" % movement.getUid()\n
+  movement.activate(activity=\'SQLQueue\', tag=tag, after_path_and_method_id=(movement.getPath(),\n
+      (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))).serialize()\n
+  movement.activate(activity=\'SQLQueue\', tag=tag, after_path_and_method_id=(movement.getParentValue().getPath(),\n
+      (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))).serialize()\n
+  for software_instance in movement.getAggregateValueList(portal_type=portal_type_list):\n
+    software_instance.activate(after_tag=tag).updateLocalRolesOnSecurityGroups()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>state_change</string> </value>
+        </item>
+        <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_getRootSoftwareInstanceUid</string> </value>
+            <value> <string>SaleOrder_updateAggregateLocalRoles</string> </value>
         </item>
       </dictionary>
     </pickle>

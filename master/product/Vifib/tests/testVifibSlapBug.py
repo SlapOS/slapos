@@ -2,6 +2,7 @@ from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 import random
+import transaction
 
 class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def test_bug_Person_request_more_then_one_instance(self):
@@ -702,6 +703,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       sla_xml=self.minimal_correct_xml,
       state='started'
     )
+    transaction.abort()
 
   def test_bug_orhpaned_software_instance(self):
     """Check that no orphaned Software Instances would be created
@@ -866,6 +868,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       sla_xml=self.minimal_correct_xml,
       state='started'
     )
+    transaction.abort()
 
   def test_bug_cyclic_software_instance(self):
     """Check that no cyclic Software Instance trees would be created

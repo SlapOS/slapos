@@ -15,7 +15,7 @@
         <item>
             <key> <string>arguments_src</string> </key>
             <value> <string>uid\r\n
-SoftwareInstance_getRootSoftwareInstanceUid</string> </value>
+SoftwareInstance_getRootHostingSubscriptionUid</string> </value>
         </item>
         <item>
             <key> <string>cache_time_</string> </key>
@@ -69,7 +69,7 @@ WHERE\n
   <dtml-in prefix="loop" expr="_.range(_.len(uid))">\n
     <dtml-call expr="row_list.append([\n
                 uid[loop_item],\n
-                SoftwareInstance_getRootSoftwareInstanceUid[loop_item]])">\n
+                SoftwareInstance_getRootHostingSubscriptionUid[loop_item]])">\n
   </dtml-in>\n
 \n
   <dtml-if "row_list">\n

@@ -50,33 +50,62 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
-portal = software_instance.getPortalObject()\n
+            <value> <string encoding="cdata"><![CDATA[
+
+# XXX For now, this script requires proxy manager\n
 \n
-root_hosting_subscription = portal.portal_catalog.getResultValue(uid=software_instance.SoftwareInstance_getRootHostingSubscriptionUid())\n
-tag = \'%s_%s_inProgress\' % (software_instance.getUid(), root_hosting_subscription.getTitle())\n
-root_software_instance = root_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag)\n
+# base_category_list : list of category values we need to retrieve\n
+# user_name : string obtained from getSecurityManager().getUser().getUserName() [NuxUserGroup]\n
+#             or from getSecurityManager().getUser().getId() [PluggableAuthService with ERP5GroupManager]\n
+# object : object which we want to assign roles to.\n
+# portal_type : portal type of object\n
 \n
-# Use iterative algorithm instead of recursive approach in order to avoid\n
-# complexity as much as possible.\n
-flat_tree = [root_software_instance]\n
-while flat_tree:\n
-  software_instance = flat_tree.pop(0)\n
-  flat_tree.extend(software_instance.getPredecessorValueList())\n
-  try:\n
-    software_instance.Item_getInstancePackingListLine(service_relative_url=portal.portal_preferences.getPreferredInstanceCleanupResource())\n
-  except ValueError:\n
-    #no instance cleanup, there is sense to try to update\n
-    software_instance.activate().requestUpdateComputerPartition()\n
-</string> </value>
+# must always return a list of dicts\n
+\n
+category_list = []\n
+\n
+if obj is None:\n
+  return []\n
+\n
+movement_portal_type = "Sale Order Line"\n
+\n
+portal = obj.getPortalObject()\n
+\n
+security_dict = {}\n
+\n
+parent_url_list = []\n
+for movement in portal.portal_catalog(\n
+  portal_type=movement_portal_type,\n
+  strict_aggregate_uid=obj.getUid(),\n
+  simulation_state=(\'ordered\', \'confirmed\'),\n
+  ):\n
+  item = movement.getDestinationSectionValue(portal_type="Person")\n
+  if item is not None:\n
+    parent_url_list.append(item.getRelativeUrl())\n
+\n
+if len(parent_url_list) > 0:\n
+  parent_url_list.sort()\n
+  category_list.append({"destination_section": parent_url_list})\n
+return category_list\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string>base_category_list, user_name, obj, portal_type</string> </value>
+        </item>
+        <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_bangSoftwareInstanceTree</string> </value>
+            <value> <string>SoftwareType_getSecurityCategoryFromAggregateMovementItemByPerson</string> </value>
         </item>
       </dictionary>
     </pickle>

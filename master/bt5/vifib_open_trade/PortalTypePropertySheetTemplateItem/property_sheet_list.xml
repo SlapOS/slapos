@@ -1,5 +1,8 @@
 <property_sheet_list>
  <portal_type id="Hosting Subscription">
+  <item>HostingSubscription</item>
+  <item>SoftwareInstance</item>
+  <item>TextDocument</item>
   <item>VariationRange</item>
  </portal_type>
 </property_sheet_list>

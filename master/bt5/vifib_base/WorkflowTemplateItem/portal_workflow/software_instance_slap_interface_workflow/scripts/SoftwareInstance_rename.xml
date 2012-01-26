@@ -50,24 +50,11 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>software_instance = state_change[\'object\']\n
-portal = software_instance.getPortalObject()\n
+            <value> <string># Get the software_instance\n
+software_instance = state_change[\'object\']\n
 \n
-root_hosting_subscription = portal.portal_catalog.getResultValue(uid=software_instance.SoftwareInstance_getRootHostingSubscriptionUid())\n
-tag = \'%s_%s_inProgress\' % (software_instance.getUid(), root_hosting_subscription.getTitle())\n
-root_software_instance = root_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag)\n
-\n
-# Use iterative algorithm instead of recursive approach in order to avoid\n
-# complexity as much as possible.\n
-flat_tree = [root_software_instance]\n
-while flat_tree:\n
-  software_instance = flat_tree.pop(0)\n
-  flat_tree.extend(software_instance.getPredecessorValueList())\n
-  try:\n
-    software_instance.Item_getInstancePackingListLine(service_relative_url=portal.portal_preferences.getPreferredInstanceCleanupResource())\n
-  except ValueError:\n
-    #no instance cleanup, there is sense to try to update\n
-    software_instance.activate().requestUpdateComputerPartition()\n
+# Change the title\n
+software_instance.edit(title=state_change.kwargs[\'new_name\'])\n
 </string> </value>
         </item>
         <item>
@@ -76,7 +63,11 @@ while flat_tree:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_bangSoftwareInstanceTree</string> </value>
+            <value> <string>SoftwareInstance_rename</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Rename software instance</string> </value>
         </item>
       </dictionary>
     </pickle>
