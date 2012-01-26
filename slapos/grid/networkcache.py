@@ -20,6 +20,7 @@ import re
 import shutil
 import urlparse
 import traceback
+import utils
 
 try:
     try:
@@ -106,23 +107,28 @@ def download_network_cached(dir_url, cache_url, path, url, logger,
 
 
 @fallback_call
-def upload_network_cached(dir_url, cache_url, external_url, path, logger,
-   signature_private_key_file, shacache_cert_file, shacache_key_file,
-   shadir_cert_file, shadir_key_file):
+def upload_network_cached(software_root, software_url, cached_key, cache_url,
+    path, logger, signature_private_key_file,
+    shacache_cert_file, shacache_key_file, shadir_cert_file, shadir_key_file):
     """Upload file to a network cache server"""
     if not LIBNETWORKCACHE_ENABLED:
         return False
 
-    if not (dir_url and cache_url):
+    if not (software_root and software_url and cached_key and cache_url):
         return False
 
-    logger.info('Uploading %s into network cache.' % external_url)
+    logger.info('Uploading %s binary into network cache.' % software_url)
 
-    file_name = get_filename_from_url(external_url)
-
-    directory_key = get_directory_key(external_url)
-    kw = dict(file_name=file_name,
-              urlmd5=hashlib.md5(external_url).hexdigest())
+    kw = dict(
+      software_url=software_url,
+      gcc_version="gcc-version",
+      libc_version="libc-version",
+      libcxx_version="libcxx-version",
+      kernel_version="kernel-version",
+      software_root=software_root,
+      arch="arch",
+      python_version="python-version"
+    )
 
     f = open(path, 'r')
     # convert '' into None in order to call nc nicely
@@ -137,7 +143,7 @@ def upload_network_cached(dir_url, cache_url, external_url, path, logger,
     if not shadir_key_file:
         shadir_key_file = None
     try:
-        nc = NetworkcacheClient(cache_url, dir_url,
+        nc = NetworkcacheClient(cache_url, software_url,
             signature_private_key_file=signature_private_key_file,
             shacache_cert_file=shacache_cert_file,
             shacache_key_file=shacache_key_file,
@@ -148,12 +154,10 @@ def upload_network_cached(dir_url, cache_url, external_url, path, logger,
         return False
 
     try:
-        return nc.upload(f, directory_key, **kw)
+        return nc.upload_generic(f, cached_key, **kw)
     except (IOError, UploadError), e:
-        logger.info('Fail to upload file. %s' % \
-                                                  (str(e)))
+        logger.info('Fail to upload file. %s' % (str(e)))
         return False
-
     finally:
       f.close()
 
