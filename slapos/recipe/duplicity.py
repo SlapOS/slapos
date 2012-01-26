@@ -30,15 +30,23 @@ class Recipe(GenericBaseRecipe):
 
   def install(self):
 
-    remote_url = self.options['remote_backup']
-    backup_directory = self.options['directory']
+    remote_url = self.options['remote-backup']
+    backup_directory = self.options['local-directory']
 
-    wrapper = self.createPythonScript(
-      self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['duplicity_binary'], '--no-encryption',
-       backup_directory, remote_url]
-    )
+    cmd = [self.options['duplicity-binary'],]
+    options = ['--no-encryption', '--archive-dir', self.options['cache']]
+
+    if self.optionIsTrue('recover', False):
+      options.append('--force')
+      # duplicity [options] remote backup
+      cmd.extend(options)
+      cmd.extend([remote_url, backup_directory])
+    else:
+      # duplicity [options] local remote
+      cmd.extend(options)
+      cmd.extend([backup_directory, remote_url])
+
+    wrapper = self.createPythonScript(self.options['wrapper'],
+      'slapos.recipe.librecipe.execute.execute', cmd)
+
     return [wrapper]
-
-

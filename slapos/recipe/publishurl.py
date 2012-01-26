@@ -56,10 +56,10 @@ class Recipe(GenericSlapRecipe):
         if option in self.options:
           self.urlparts[option] = self.options[option]
 
-      if 'user' in self.options:
-        self.urlparts.update(auth=(self.options['user'],))
+      if 'username' in self.options:
+        self.urlparts.update(auth=(self.options['username'],))
         if 'password' in self.options:
-          self.urlparts.update(auth=(self.options['user'],
+          self.urlparts.update(auth=(self.options['username'],
                                      self.options['password']))
 
       self.setConnectionUrl(**self.urlparts)

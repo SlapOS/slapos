@@ -31,8 +31,10 @@ from slapos.recipe.librecipe import GenericSlapRecipe
 class Recipe(GenericSlapRecipe):
   def _install(self):
     publish_dict = dict()
-    for k, v in self.options.iteritems():
-      if k.startswith('url'):
-        publish_dict[k] = v
+    options = self.options.copy()
+    del options['recipe']
+
+    for k, v in options.iteritems():
+      publish_dict[k] = v
     self.setConnectionDict(publish_dict)
     return []
