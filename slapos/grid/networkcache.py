@@ -108,7 +108,8 @@ def upload_network_cached(software_root, software_url, cached_key,
     if not LIBNETWORKCACHE_ENABLED:
         return False
 
-    if not (software_root and software_url and cached_key and cache_url):
+    if not (software_root and software_url and cached_key \
+                          and cache_url and dir_url):
         return False
 
     logger.info('Uploading %s binary into network cache.' % software_url)
