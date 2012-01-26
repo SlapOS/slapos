@@ -38,6 +38,8 @@ import utils
 from svcbackend import getSupervisorRPC
 from exception import BuildoutFailedError, WrongPermissionError, \
     PathDoesNotExistError
+from networkcache import download_network_cached, upload_network_cached
+import tarfile
 
 REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 
@@ -45,27 +47,62 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 class Software(object):
   """This class is responsible of installing a software release"""
   def __init__(self, url, software_root, console, buildout,
-      signature_private_key_file=None, upload_cache_url=None,
-      upload_dir_url=None, shacache_cert_file=None, shacache_key_file=None,
-      shadir_cert_file=None, shadir_key_file=None):
+      signature_private_key_file=None, signature_certificate_list=None,
+      upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
+      shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
+      download_binary_cache_url=None, upload_binary_cache_url=None,
+      download_binary_dir_url=None, upload_binary_dir_url=None):
     """Initialisation of class parameters
     """
     self.url = url
     self.software_root = software_root
+    self.software_url_hash = utils.getSoftwareUrlHash(self.url)
     self.software_path = os.path.join(self.software_root,
-                                      utils.getSoftwareUrlHash(self.url))
+                                      self.software_url_hash)
     self.buildout = buildout
     self.logger = logging.getLogger('BuildoutManager')
     self.console = console
     self.signature_private_key_file = signature_private_key_file
+    self.signature_certificate_list = signature_certificate_list
     self.upload_cache_url = upload_cache_url
     self.upload_dir_url = upload_dir_url
     self.shacache_cert_file = shacache_cert_file
     self.shacache_key_file = shacache_key_file
     self.shadir_cert_file = shadir_cert_file
     self.shadir_key_file = shadir_key_file
+    self.download_binary_cache_url = download_binary_cache_url
+    self.upload_binary_cache_url = upload_binary_cache_url
+    self.download_binary_dir_url = download_binary_dir_url
+    self.upload_binary_dir_url = upload_binary_dir_url
 
   def install(self):
+    """ Fetches binary cache if possible.
+    Installs from buildout otherwise.
+    """
+    tarname = self.software_url_hash
+    cache_dir = tempfile.mkdtemp()
+    tarpath = os.path.join(cache_dir, tarname)
+    self._install_from_buildout()
+    tar = tarfile.open(tarpath, "w:gz")
+    try:
+      tar.add(self.software_path, arcname=self.software_url_hash)
+    finally:
+      tar.close()
+    upload_network_cached(
+      self.software_root,
+      self.url,
+      self.software_url_hash,
+      self.upload_binary_cache_url,
+      self.upload_binary_dir_url,
+      tarpath, self.logger,
+      self.signature_private_key_file,
+      self.shacache_cert_file,
+      self.shacache_key_file,
+      self.shadir_cert_file,
+      self.shadir_key_file
+    )
+      
+  def _install_from_buildout(self):
     """ Fetches buildout configuration from the server, run buildout with
     it. If it fails, we notify the server.
     """
