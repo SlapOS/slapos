@@ -445,10 +445,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       'Start (payment transaction movement will be generated)')
     raise NotImplementedError('Check Open Order simulation after Sale Invoice '
       'Stop (payment transaction will be created)')
-    raise NotImplementedError('Check Open Order simulation when one month'
-      'before will be added on open order line start date and alarm to '
-      're-expand hosting subscription executed -- one more simulation movement'
-      'shall appear')
+    raise NotImplementedError('Check using vifib_update_open_sale_order_line '
+      'alarm')
 
 def test_suite():
   suite = unittest.TestSuite()
