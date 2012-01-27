@@ -97,6 +97,7 @@ class Software(object):
         finally:
           tar.close()
       else:
+        self._install_from_buildout()
         tar = tarfile.open(tarpath, "w:gz")
         try:
           tar.add(self.software_path, arcname=self.software_url_hash)
