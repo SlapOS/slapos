@@ -95,7 +95,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       sort_on=(('movement.start_date', 'desc'),)
     )
     # Check that simulation is created by the periodicity for one year
-    self.assertEquals(2,
+    self.assertEquals(12,
                       len(simulation_movement_list))
 
     # Check the list of expected simulation
