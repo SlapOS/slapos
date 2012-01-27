@@ -4,3 +4,4 @@ EQUEUE_SOCKET = %(equeue_socket)r
 CALLBACKS_DIRECTORY = %(callbacks_directory)r
 COMPUTER_ID = %(computer_id)r
 PARTITION_ID = %(partition_id)r
+AGENT_TYPE = %(agent_type)r

@@ -48,6 +48,7 @@ class Recipe(GenericBaseRecipe):
           'callbacks_directory': self.options['callbacks-directory'],
           'partition_id': self.options['partition-id'],
           'computer_id': self.options['computer-id'],
+          'agent_type': self.options['type'],
         }
       ),
     )
