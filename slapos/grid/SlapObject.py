@@ -113,6 +113,7 @@ class Software(object):
           self.shacache_key_file,
           self.shadir_cert_file,
           self.shadir_key_file)
+    shutil.rmtree(cache_dir)
       
   def _install_from_buildout(self):
     """ Fetches buildout configuration from the server, run buildout with
