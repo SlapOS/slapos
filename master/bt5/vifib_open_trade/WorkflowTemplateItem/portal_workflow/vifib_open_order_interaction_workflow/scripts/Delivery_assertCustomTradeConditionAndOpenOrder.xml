@@ -78,8 +78,10 @@ if custom_trade_condition is None:\n
                                                                     destination_section_uid=order.getDestinationSectionUid(),\n
                                                                     title="ViFiB Custom Conditions")\n
 \n
-if order.getSpecialise() != custom_trade_condition.getRelativeUrl():\n
-  order.setSpecialiseValue(custom_trade_condition, portal_type="Sale Trade Condition")\n
+if custom_trade_condition is None:\n
+  raise ValueError(\'It was impossible to generate custom trade condition.\')\n
+if order.getSpecialise(portal_type="Sale Trade Condition") != custom_trade_condition.getRelativeUrl():\n
+  order.setSpecialiseValue(custom_trade_condition)\n
 \n
 if portal.portal_workflow.isTransitionPossible(custom_trade_condition, \'validate\'):\n
   custom_trade_condition.validate()\n
