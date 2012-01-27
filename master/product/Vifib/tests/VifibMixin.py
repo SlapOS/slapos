@@ -159,6 +159,9 @@ class testVifibMixin(ERP5TypeTestCase):
     Create ERP5 user.
     This has to be called only once.
     """
+    # setup new active process for this test, in order have
+    # consistency report local for one test
+    self.portal.portal_alarms.vifib_check_consistency.newActiveProcess()
     self.setupPortalCertificateAuthority()
     import random
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
