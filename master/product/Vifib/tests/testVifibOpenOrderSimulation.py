@@ -437,14 +437,6 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-    raise NotImplementedError('Check Open Order simulation after Sale Packing '
-      'List Start (invoice movements will be generated)')
-    raise NotImplementedError('Check Open Order simulation after Sale Invoice '
-      'Confirm (invoice transaction movements will be generated)')
-    raise NotImplementedError('Check Open Order simulation after Sale Invoice '
-      'Start (payment transaction movement will be generated)')
-    raise NotImplementedError('Check Open Order simulation after Sale Invoice '
-      'Stop (payment transaction will be created)')
     raise NotImplementedError('Check using vifib_update_open_sale_order_line '
       'alarm')
 
