@@ -30,7 +30,12 @@ class Recipe(GenericBaseRecipe):
 
   def install(self):
 
-    command_line = [self.options['binary']]
+    command_line = [self.options['binary'],
+                    '--master-url', self.options['master-url'],
+                    '--cert-file', self.options['cert-file'],
+                    '--key-file', self.options['key-file'],
+                    '--software-release-url', self.options['software-release-url'],
+                   ]
     if 'frequency' in self.options:
       command_line.extend(['--frequency', self.options['frequency']])
     command_line.append(self.options['agent-url'])
