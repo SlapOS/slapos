@@ -17,8 +17,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       causality_relative_url=hosting_subscription.getRelativeUrl(),
       sort_on=(('delivery.start_date', 'desc'),)
     )
-    # is whole year covered?
-    self.assertEqual(12, len(delivery_list))
+    # are next two months covered?
+    self.assertEqual(2, len(delivery_list))
 
     # generate the expected time frames
     now = DateTime()
@@ -123,7 +123,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEqual('planned', setup_invoice_line_list[0]\
       .getSimulationState())
 
-    # there are 12 confirmed subscription, so no invoice
+    # there are 2 confirmed subscription, so no invoice
     subscription_delivery_line_list = catalog(
       portal_type='Sale Packing List Line',
       aggregate_relative_url=hosting_subscription_url,
@@ -131,8 +131,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       sort_on=(('movement.start_date', 'desc'),)
     )
 
-    self.assertEqual(12, len(subscription_delivery_line_list))
-    self.assertEqual(['confirmed'] * 12, [q.getSimulationState() for \
+    self.assertEqual(2, len(subscription_delivery_line_list))
+    self.assertEqual(['confirmed'] * 2, [q.getSimulationState() for \
       q in subscription_delivery_line_list])
 
     subscription_invoice_line_list = catalog(portal_type='Invoice Line',
@@ -212,14 +212,14 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEqual('planned', setup_invoice_line_list[0]\
       .getSimulationState())
 
-    # there are 11 confirmed and 1 stopped subscription, so 1 invoice line
+    # there are 1 confirmed and 1 stopped subscription, so 1 invoice line
     subscription_delivery_line_list = catalog(
       portal_type='Sale Packing List Line',
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['subscription_resource'])
 
-    self.assertEqual(12, len(subscription_delivery_line_list))
-    self.assertEqual((['confirmed'] * 11) + ['stopped'],
+    self.assertEqual(2, len(subscription_delivery_line_list))
+    self.assertEqual(['confirmed'] + ['stopped'],
       sorted([q.getSimulationState() for \
       q in subscription_delivery_line_list]))
 
@@ -308,8 +308,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['subscription_resource'])
 
-    self.assertEqual(12, len(subscription_delivery_line_list))
-    self.assertEqual((['confirmed'] * 10) + (['stopped'] * 2),
+    self.assertEqual(2, len(subscription_delivery_line_list))
+    self.assertEqual(['stopped'] * 2,
       sorted([q.getSimulationState() for \
       q in subscription_delivery_line_list]))
 
@@ -416,8 +416,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['subscription_resource'])
 
-    self.assertEqual(12, len(subscription_delivery_line_list))
-    self.assertEqual((['confirmed'] * 10) + (['stopped'] * 2),
+    self.assertEqual(2, len(subscription_delivery_line_list))
+    self.assertEqual(['stopped'] * 2,
       sorted([q.getSimulationState() for \
       q in subscription_delivery_line_list]))
 
@@ -532,8 +532,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       aggregate_relative_url=hosting_subscription_url,
       resource_relative_url=sequence['subscription_resource'])
 
-    self.assertEqual(12, len(subscription_delivery_line_list))
-    self.assertEqual((['confirmed'] * 10) + (['stopped'] * 2),
+    self.assertEqual(2, len(subscription_delivery_line_list))
+    self.assertEqual(['stopped'] * 2,
       sorted([q.getSimulationState() for \
       q in subscription_delivery_line_list]))
 
