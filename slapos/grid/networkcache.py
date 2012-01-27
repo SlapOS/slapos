@@ -95,7 +95,7 @@ def download_network_cached(cache_url, dir_url, software_url, key, path,
             file_descriptor.close()
     except (IOError, DirectoryNotFound), e:
         logger.info('Failed to download from network cache %s: %s' % \
-                                                       (url, str(e)))
+                                                       (software_url, str(e)))
         return False
     return True
 
