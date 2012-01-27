@@ -52,7 +52,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       None, hosting_subscription.getPeriodicityWeekFrequency())
 
     # check start date and stop date of the subscription item,
-    # currently there are 12 months
+    # currently there are 2 months
     now = DateTime()
     start_date = \
       getClosestDate(target_date=now, precision='day', before=1)
@@ -69,7 +69,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     self.assertEquals(
       0.0, open_order_line.getStartDate().second())
     stop_date = addToDate(
-      getClosestDate(target_date=now, precision='month', before=1), year=1)
+      getClosestDate(target_date=now, precision='month', before=1), month=2)
     self.assertEquals(
       stop_date.year(), open_order_line.getStopDate().year())
     self.assertEquals(
@@ -94,8 +94,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       parent_uid=applied_rule.getUid(),
       sort_on=(('movement.start_date', 'desc'),)
     )
-    # Check that simulation is created by the periodicity for one year
-    self.assertEquals(12,
+    # Check that simulation is created by the periodicity for two months
+    self.assertEquals(2,
                       len(simulation_movement_list))
 
     # Check the list of expected simulation
