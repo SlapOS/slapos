@@ -64,8 +64,6 @@ sla_xml = kwargs.get("sla_xml") or ""\n
 is_slave = kwargs.get("shared", False)\n
 state = kwargs.get(\'state\') or \'started\'\n
 \n
-sale_order_portal_type = "Sale Order"\n
-sale_order_line_portal_type = "Sale Order Line"\n
 hosting_subscription_portal_type = "Hosting Subscription"\n
 \n
 if is_slave == True:\n
