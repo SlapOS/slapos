@@ -74,7 +74,7 @@
         </item>
         <item>
             <key> <string>workflow_state_list</string> </key>
-            <value> <string>python: (\'shared\', \'released\', \'published\', \'archived\')</string> </value>
+            <value> <string>python: (\'shared\', \'released\', \'published\')</string> </value>
         </item>
         <item>
             <key> <string>workflow_variable</string> </key>
