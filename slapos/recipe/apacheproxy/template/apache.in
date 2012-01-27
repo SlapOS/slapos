@@ -27,6 +27,7 @@ CustomLog "%(access_log)s" common
 </Directory>
 
 ProxyPass / %(backend_url)s
+ProxyPreserveHost On
 
 # List of modules
 LoadModule authz_host_module modules/mod_authz_host.so
