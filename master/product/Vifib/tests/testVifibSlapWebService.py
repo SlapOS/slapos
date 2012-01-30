@@ -873,6 +873,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     global REMOTE_USER
     REMOTE_USER = 'test_vifib_customer'
 
+  def stepSlapLoginWebUser(self, sequence, **kw):
+    global REMOTE_USER
+    REMOTE_USER = sequence['web_user']
+
   ########################################
   # Typical sequences for scenarios
   ########################################
@@ -3949,6 +3953,32 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sequence.edit(software_instance_uid=root_software_instance.getUid(),
                   computer_partition_reference=computer_partition_reference)
 
+  def stepRequestCredentialFromWebSite(self, sequence, **kw):
+    sequence['web_user_email'] = '%s@example.com' % random()
+    sequence['web_user'] = '%s.%s' % (self.id(), random())
+    self.portal.ERP5Site_newCredentialRequest(\
+        first_name='Homer',
+        last_name='Simpson',
+        reference=sequence['web_user'],
+        password='secret',
+        default_email_text=sequence['web_user_email'],
+        )
+
+  def stepSubmitCredentialRequest(self, sequence, **kw):
+    """Simulates click of user in email confirmation about account"""
+    credential_request = self.portal.portal_catalog.getResultValue(
+      portal_type='Credential Request',
+      reference=sequence['web_user']
+      )
+    credential_request.submit()
+
+  def stepAcceptSubmittedCredentialsActiveSense(self, **kw):
+    self.portal.portal_alarms.accept_submitted_credentials.activeSense()
+
+  def stepLoginWebUser(self, sequence, **kw):
+    self.login(sequence['web_user'])
+
+
 class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
   # slap.initializeConnection
@@ -4190,31 +4220,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
   # Other tests
   ########################################
-
-  def stepRequestCredentialFromWebSite(self, sequence, **kw):
-    sequence['web_user_email'] = '%s@example.com' % random()
-    sequence['web_user'] = '%s.%s' % (self.id(), random())
-    self.portal.ERP5Site_newCredentialRequest(\
-        first_name='Homer',
-        last_name='Simpson',
-        reference=sequence['web_user'],
-        password='secret',
-        default_email_text=sequence['web_user_email'],
-        )
-
-  def stepSubmitCredentialRequest(self, sequence, **kw):
-    """Simulates click of user in email confirmation about account"""
-    credential_request = self.portal.portal_catalog.getResultValue(
-      portal_type='Credential Request',
-      reference=sequence['web_user']
-      )
-    credential_request.submit()
-
-  def stepAcceptSubmittedCredentialsActiveSense(self, **kw):
-    self.portal.portal_alarms.accept_submitted_credentials.activeSense()
-
-  def stepLoginWebUser(self, sequence, **kw):
-    self.login(sequence['web_user'])
 
   def test_person_from_credential_request_software_instance(self):
     """Checks that person created from web can use the system"""

@@ -1523,6 +1523,84 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_bug_person_request_ComputerPartition_own_computer(self):
+    """Checks that Person using Slap interface is able to request Computer
+       Partition"""
+    self.computer_partition_amount = 1
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      """
+      Logout
+      RequestCredentialFromWebSite
+      Tic
+
+      LoginDefaultUser
+      SubmitCredentialRequest
+      Tic
+      AcceptSubmittedCredentialsActiveSense
+      Tic
+      Logout
+
+      LoginWebUser
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPersonal
+      Logout
+
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+
+      LoginWebUser
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SetRandomRequestedReference
+      SlapLoginWebUser
+      PersonRequestSlapSoftwareInstancePrepare
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginWebUser
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      SlapLogout
+
+      LoginWebUser
+      CheckViewCurrentSoftwareInstance
+      CheckWriteCurrentSoftwareInstance
+      Tic
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
 def test_suite():
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(TestVifibSlapBug))
