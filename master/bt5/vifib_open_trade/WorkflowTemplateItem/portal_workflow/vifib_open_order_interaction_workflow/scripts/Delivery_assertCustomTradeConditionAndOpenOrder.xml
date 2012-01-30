@@ -77,7 +77,7 @@ if custom_trade_condition is None:\n
 if custom_trade_condition is None:\n
   # nothing found then create a new custom trade condition\n
   custom_trade_condition = portal.sale_trade_condition_module.newContent(specialise=vifib_trade_condition,\n
-                                                                    destination_section_relative_url=order.getDestinationSection(),\n
+                                                                    destination_section=order.getDestinationSection(),\n
                                                                     title="ViFiB Custom Conditions",\n
                                                                     portal_type=\'Sale Trade Condition\')\n
 \n
