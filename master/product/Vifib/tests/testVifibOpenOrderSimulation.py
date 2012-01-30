@@ -153,253 +153,47 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       # no invoice movements on this level
       applied_rule_invoice_list = \
         simulation_movement.contentValues(portal_type="Applied Rule")
-#      self.assertEquals(0, len(applied_rule_invoice_list))
-#      applied_rule_invoice = \
-#        applied_rule_invoice_list[0].getObject()
-#      self.assertNotEquals(None, applied_rule_invoice)
-#      simulation_movement_invoice_list = \
-#        applied_rule_invoice.contentValues(portal_type="Simulation Movement")
-#      self.assertEquals(1, len(simulation_movement_invoice_list))
-#      simulation_movement_invoice = \
-#        simulation_movement_invoice_list[0].getObject()
-#      self.assertNotEquals(None, simulation_movement_invoice)
-#
-#      # not delivered yet
-#      self.assertEqual(None, simulation_movement_invoice.getDelivery())
-#      # invoice shall be not yet buildable
-#      self.assertFalse(False, simulation_movement_invoice.isBuildable())
-#
-#      # check property of invoice simulation
-#      self.assertEquals(1.0,
-#        simulation_movement_invoice.getQuantity())
-#      self.assertEquals("unit/piece",
-#        simulation_movement_invoice.getQuantityUnit())
-#      self.assertEquals(1.0,
-#        simulation_movement_invoice.getPrice())
-#      self.assertEquals("currency_module/EUR",
-#        simulation_movement_invoice.getPriceCurrency())
-#      self.assertEquals("organisation_module/vifib_internet",
-#        simulation_movement_invoice.getSource())
-#      self.assertEquals("organisation_module/vifib_internet",
-#        simulation_movement_invoice.getSourceSection())
-#      self.assertEquals("person_module/test_vifib_customer",
-#        simulation_movement_invoice.getDestination())
-#      self.assertEquals("person_module/test_vifib_customer",
-#        simulation_movement_invoice.getDestinationSection())
-#      self.assertEquals(open_order_line.getSpecialise(),
-#        simulation_movement_invoice.getSpecialise())
-#      self.assertEquals("service_module/vifib_instance_subscription",
-#        simulation_movement_invoice.getResource())
-#      self.assertEquals("vifib/invoicing",
-#        simulation_movement_invoice.getTradePhase())
-#      self.assertEquals(expected_start_date,
-#        simulation_movement_invoice.getStartDate())
-#      self.assertEquals(expected_stop_date,
-#        simulation_movement_invoice.getStopDate())
-#      self.assertEquals(None,
-#                        simulation_movement_invoice.getAggregate(
-#                          portal_type="Computer Partition"))
-#      self.assertEquals(None,
-#                        simulation_movement_invoice.getAggregate(
-#                          portal_type="Software Instance"))
-#      self.assertEquals(hosting_subscription.getRelativeUrl(),
-#                        simulation_movement_invoice.getAggregate(
-#                          portal_type="Hosting Subscription"))
-#      self.assertEquals(None,
-#                        simulation_movement_invoice.getAggregate(
-#                          portal_type="Software Release"))
-#
-#      # fetch invoice transaction level simulation, there are 2:
-#      # credit and debit, and resource should be currency
-#      applied_rule_invoice_transaction_list = \
-#        simulation_movement_invoice.contentValues(portal_type="Applied Rule")
-#      self.assertEquals(1, len(applied_rule_invoice_transaction_list))
-#      applied_rule_invoice_transaction = \
-#        applied_rule_invoice_transaction_list[0].getObject()
-#      self.assertNotEquals(None, applied_rule_invoice_transaction)
-#      simulation_movement_invoice_transaction_list = \
-#        applied_rule_invoice_transaction.contentValues(
-#          portal_type="Simulation Movement")
-#      self.assertEquals(2, len(simulation_movement_invoice_transaction_list))
-#      simulation_movement_invoice_transaction_credit = None
-#      simulation_movement_invoice_transaction_debit = None
-#      for simulation_movement_invoice_transaction in \
-#        simulation_movement_invoice_transaction_list:
-#        # not delivered nor buildable
-#        self.assertEqual(None, simulation_movement_invoice_transaction\
-#          .getDelivery())
-#        self.assertFalse(simulation_movement_invoice_transaction.isBuildable())
-#        if "business_process_module/vifib_sale_business_process/account_credit_path" \
-#          in simulation_movement_invoice_transaction.getCausalityList():
-#            simulation_movement_invoice_transaction_credit = \
-#              simulation_movement_invoice_transaction.getObject()
-#        if "business_process_module/vifib_sale_business_process/account_debit_path" \
-#          in simulation_movement_invoice_transaction.getCausalityList():
-#            simulation_movement_invoice_transaction_debit = \
-#              simulation_movement_invoice_transaction.getObject()
-#      self.assertNotEquals(None, simulation_movement_invoice_transaction_credit)
-#      # not delivered nor buildable
-#      self.assertEqual(None, simulation_movement_invoice_transaction_credit\
-#        .getDelivery())
-#      self.assertFalse(simulation_movement_invoice_transaction_credit\
-#        .isBuildable())
-#      self.assertNotEquals(None, simulation_movement_invoice_transaction_debit)
-#      # not delivered nor buildable
-#      self.assertEqual(None, simulation_movement_invoice_transaction_debit\
-#        .getDelivery())
-#      self.assertFalse(simulation_movement_invoice_transaction_debit\
-#        .isBuildable())
-#
-#      # check property of invoice transaction simulation
-#      self.assertEquals(-1.0,
-#        simulation_movement_invoice_transaction_credit.getQuantity())
-#      self.assertEquals("unit/piece",
-#        simulation_movement_invoice_transaction_credit.getQuantityUnit())
-#      self.assertEquals(1.0,
-#        simulation_movement_invoice_transaction_credit.getPrice())
-#      self.assertEquals(None,
-#        simulation_movement_invoice_transaction_credit.getPriceCurrency())
-#      self.assertEquals("account_module/sales",
-#        simulation_movement_invoice_transaction_credit.getSource())
-#      self.assertEquals("organisation_module/vifib_internet",
-#        simulation_movement_invoice_transaction_credit.getSourceSection())
-#      self.assertEquals("account_module/purchase",
-#        simulation_movement_invoice_transaction_credit.getDestination())
-#      self.assertEquals("person_module/test_vifib_customer",
-#        simulation_movement_invoice_transaction_credit.getDestinationSection())
-#      self.assertEquals("currency_module/EUR",
-#        simulation_movement_invoice_transaction_credit.getResource())
-#      self.assertEquals(open_order_line.getSpecialise(),
-#        simulation_movement_invoice_transaction_credit.getSpecialise())
-#      self.assertEquals("vifib/accounting",
-#        simulation_movement_invoice_transaction_credit.getTradePhase())
-#      self.assertEquals(expected_start_date,
-#        simulation_movement_invoice_transaction_credit.getStartDate())
-#      self.assertEquals(expected_stop_date,
-#        simulation_movement_invoice_transaction_credit.getStopDate())
-#
-#      self.assertEquals(1.0,
-#        simulation_movement_invoice_transaction_debit.getQuantity())
-#      self.assertEquals("unit/piece",
-#        simulation_movement_invoice_transaction_debit.getQuantityUnit())
-#      self.assertEquals(1.0,
-#        simulation_movement_invoice_transaction_debit.getPrice())
-#      self.assertEquals(None,
-#        simulation_movement_invoice_transaction_debit.getPriceCurrency())
-#      self.assertEquals("account_module/receivable",
-#        simulation_movement_invoice_transaction_debit.getSource())
-#      self.assertEquals("organisation_module/vifib_internet",
-#        simulation_movement_invoice_transaction_debit.getSourceSection())
-#      self.assertEquals("account_module/payable",
-#        simulation_movement_invoice_transaction_debit.getDestination())
-#      self.assertEquals("person_module/test_vifib_customer",
-#        simulation_movement_invoice_transaction_debit.getDestinationSection())
-#      self.assertEquals("currency_module/EUR",
-#        simulation_movement_invoice_transaction_debit.getResource())
-#      self.assertEquals(open_order_line.getSpecialise(),
-#        simulation_movement_invoice_transaction_debit.getSpecialise())
-#      self.assertEquals("vifib/accounting",
-#        simulation_movement_invoice_transaction_debit.getTradePhase())
-#      self.assertEquals(expected_start_date,
-#        simulation_movement_invoice_transaction_debit.getStartDate())
-#      self.assertEquals(expected_stop_date,
-#        simulation_movement_invoice_transaction_debit.getStopDate())
-#
-#      # credit simulation movement has no content
-#      self.assertEquals([],
-#        simulation_movement_invoice_transaction_credit.contentValues(
-#          portal_type="Applied Rule"))
-#
-#      # fetch payment level simulation
-#      applied_rule_credit_payment_list = \
-#        simulation_movement_invoice_transaction_debit.contentValues(
-#          portal_type="Applied Rule")
-#      self.assertEquals(1, len(applied_rule_credit_payment_list))
-#      applied_rule_credit_payment = \
-#        applied_rule_credit_payment_list[0].getObject()
-#      self.assertNotEquals(None, applied_rule_credit_payment)
-#      simulation_movement_credit_payment_list = \
-#        applied_rule_credit_payment.contentValues(
-#          portal_type="Simulation Movement")
-#      self.assertEquals(2, len(simulation_movement_credit_payment_list))
-#      simulation_movement_credit_payment_credit = None
-#      simulation_movement_credit_payment_debit = None
-#      for simulation_movement_credit_payment in \
-#        simulation_movement_credit_payment_list:
-#        if "business_process_module/vifib_sale_business_process/payment_credit_path" \
-#          in simulation_movement_credit_payment.getCausalityList():
-#            simulation_movement_credit_payment_credit = \
-#              simulation_movement_credit_payment.getObject()
-#        if "business_process_module/vifib_sale_business_process/payment_debit_path" \
-#          in simulation_movement_credit_payment.getCausalityList():
-#            simulation_movement_credit_payment_debit = \
-#              simulation_movement_credit_payment.getObject()
-#      self.assertNotEquals(None, simulation_movement_credit_payment_credit)
-#      # not delivered nor buildable
-#      self.assertEqual(None, simulation_movement_credit_payment_credit\
-#        .getDelivery())
-#      self.assertFalse(simulation_movement_credit_payment_credit\
-#        .isBuildable())
-#      self.assertNotEquals(None, simulation_movement_credit_payment_debit)
-#      # not delivered nor buildable
-#      self.assertEqual(None, simulation_movement_credit_payment_debit\
-#        .getDelivery())
-#      self.assertFalse(simulation_movement_credit_payment_debit\
-#        .isBuildable())
-#
-#      # check payment level of simulation
-#      self.assertEquals(-1.0,
-#        simulation_movement_credit_payment_credit.getQuantity())
-#      self.assertEquals("unit/piece",
-#        simulation_movement_credit_payment_credit.getQuantityUnit())
-#      self.assertEquals(1.0,
-#        simulation_movement_credit_payment_credit.getPrice())
-#      self.assertEquals("currency_module/EUR",
-#        simulation_movement_credit_payment_credit.getResource())
-#      self.assertEquals("account_module/receivable",
-#        simulation_movement_credit_payment_credit.getSource())
-#      self.assertEquals("organisation_module/vifib_internet",
-#        simulation_movement_credit_payment_credit.getSourceSection())
-#      self.assertEquals("account_module/payable",
-#        simulation_movement_credit_payment_credit.getDestination())
-#      self.assertEquals("person_module/test_vifib_customer",
-#        simulation_movement_credit_payment_credit.getDestinationSection())
-#      self.assertEquals(open_order_line.getSpecialise(),
-#        simulation_movement_credit_payment_credit.getSpecialise())
-#      self.assertEquals("vifib/payment",
-#        simulation_movement_credit_payment_credit.getTradePhase())
-#      self.assertEquals(expected_start_date,
-#        simulation_movement_credit_payment_credit.getStartDate())
-#      self.assertEquals(expected_stop_date,
-#        simulation_movement_credit_payment_credit.getStopDate())
-#
-#      self.assertEquals(1.0,
-#        simulation_movement_credit_payment_debit.getQuantity())
-#      self.assertEquals("unit/piece",
-#        simulation_movement_credit_payment_debit.getQuantityUnit())
-#      self.assertEquals(1.0,
-#        simulation_movement_credit_payment_debit.getPrice())
-#      self.assertEquals("currency_module/EUR",
-#        simulation_movement_credit_payment_debit.getResource())
-#      self.assertEquals("account_module/bank",
-#        simulation_movement_credit_payment_debit.getSource())
-#      self.assertEquals("organisation_module/vifib_internet",
-#        simulation_movement_credit_payment_debit.getSourceSection())
-#      self.assertEquals("account_module/bank",
-#        simulation_movement_credit_payment_debit.getDestination())
-#      self.assertEquals("person_module/test_vifib_customer",
-#        simulation_movement_credit_payment_debit.getDestinationSection())
-#      self.assertEquals(open_order_line.getSpecialise(),
-#        simulation_movement_credit_payment_debit.getSpecialise())
-#      self.assertEquals("vifib/payment",
-#        simulation_movement_credit_payment_debit.getTradePhase())
-#      self.assertEquals(expected_start_date,
-#        simulation_movement_credit_payment_debit.getStartDate())
-#      self.assertEquals(expected_stop_date,
-#        simulation_movement_credit_payment_debit.getStopDate())
-#
       # check next simulation movement
       idx += 1
+
+  def stepIncreaseOpenOrderCoverage(self, sequence, **kw):
+    person = self.portal.person_module['test_vifib_customer']
+    open_order = \
+      person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
+    open_order_line_list = \
+      open_order.contentValues(portal_type="Open Sale Order Line")
+    self.assertEquals(1, len(open_order_line_list))
+    open_order_line = open_order_line_list[0]
+    open_order_line.setStopDate(getClosestDate(
+      target_date=open_order_line.getStartDate(), precision='month', before=0))
+    self.portal.portal_alarms.vifib_update_open_sale_order_line.activeSense(
+      params={'stop_date': addToDate(getClosestDate(target_date=DateTime(),
+        precision='month', before=1), month=3)})
+
+
+  def stepCheckThreeTopLevelSimulationMovement(self, sequence, **kw):
+    person = self.portal.person_module['test_vifib_customer']
+    open_order = \
+      person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
+    open_order_line_list = \
+      open_order.contentValues(portal_type="Open Sale Order Line")
+    self.assertEquals(1, len(open_order_line_list))
+    open_order_line = open_order_line_list[0]
+    hosting_subscription = \
+      open_order_line.getAggregateValue(portal_type="Hosting Subscription")
+    applied_rule = \
+      hosting_subscription.getCausalityRelatedValue(portal_type="Applied Rule")
+    self.assertEquals(
+      "portal_rules/default_subscription_item_rule",
+      applied_rule.getSpecialise())
+    simulation_movement_list = self.portal.portal_catalog(
+      portal_type='Simulation Movement',
+      parent_uid=applied_rule.getUid(),
+      sort_on=(('movement.start_date', 'desc'),)
+    )
+    # Check that simulation is created by the periodicity for two months
+    self.assertEquals(3,
+                      len(simulation_movement_list))
 
   def test_OpenOrder_request_changeSoftwareType(self):
     """
@@ -414,6 +208,12 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       CheckSimulationMovement
       Tic
       SlapLogout
+
+      LoginERP5TypeTestCase
+      IncreaseOpenOrderCoverage
+      Tic
+      CheckThreeTopLevelSimulationMovement
+      Logout
 
       LoginTestVifibCustomer
       RequestSoftwareInstanceStart
@@ -437,8 +237,6 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-    raise NotImplementedError('Check using vifib_update_open_sale_order_line '
-      'alarm')
 
 def test_suite():
   suite = unittest.TestSuite()
