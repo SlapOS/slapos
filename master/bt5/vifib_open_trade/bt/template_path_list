@@ -5,8 +5,6 @@ organisation_module/vifib_internet/1
 organisation_module/vifib_internet/bank_account
 purchase_trade_condition_module/vifib_purchase_trade_condition
 purchase_trade_condition_module/vifib_purchase_trade_condition/**
-sale_trade_condition_module/10
-sale_trade_condition_module/10/**
 sale_trade_condition_module/vifib_trade_condition
 sale_trade_condition_module/vifib_trade_condition/**
 software_product_module/test_software_product
