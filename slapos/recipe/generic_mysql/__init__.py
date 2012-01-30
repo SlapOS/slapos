@@ -68,6 +68,12 @@ class Recipe(GenericBaseRecipe):
 
     mysql_script_list = []
 
+    # user defined functions
+    mysql_script_list.append(self.substituteTemplate(
+      self.getTemplateFilename('mysql-init-function.sql.in'),
+      {
+      }
+    ))
     # real database
     mysql_script_list.append(self.substituteTemplate(
       self.getTemplateFilename('initmysql.sql.in'),
