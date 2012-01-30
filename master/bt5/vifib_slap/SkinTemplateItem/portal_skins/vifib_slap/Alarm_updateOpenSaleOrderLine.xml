@@ -50,15 +50,26 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.portal_catalog.searchAndActivate(\n
-  method_id=\'OpenSaleOrderLine_setStopDateForward\',\n
+            <value> <string>stop_date = None\n
+if params is not None:\n
+  stop_date = params.get(\'stop_date\')\n
+from DateTime import DateTime\n
+from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
+\n
+if stop_date is None:\n
+  # generate expected next month\n
+  stop_date = addToDate(getClosestDate(target_date=DateTime(), precision=\'month\', before=1), month=2)\n
+\n
+context.portal_catalog.searchAndActivate(\n
+  method_id=\'OpenSaleOrderLine_updateStopDate\',\n
   activate_kw={\'tag\':tag},\n
+  method_kw={\'stop_date\': stop_date},\n
   portal_type=\'Open Sale Order Line\')\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit</string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

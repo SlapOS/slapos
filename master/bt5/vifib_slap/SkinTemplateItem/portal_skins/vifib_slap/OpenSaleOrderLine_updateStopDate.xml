@@ -52,12 +52,6 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
-\n
-# generate expected next month\n
-stop_date = addToDate(getClosestDate(target_date=DateTime(), precision=\'month\', before=1), month=2)\n
-\n
 if context.getStopDate() < stop_date:\n
   context.setStopDate(stop_date)\n
 
@@ -66,11 +60,11 @@ if context.getStopDate() < stop_date:\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>stop_date</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>OpenSaleOrderLine_setStopDateForward</string> </value>
+            <value> <string>OpenSaleOrderLine_updateStopDate</string> </value>
         </item>
       </dictionary>
     </pickle>
