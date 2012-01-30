@@ -54,6 +54,7 @@
 order = state_change[\'object\']\n
 portal = order.getPortalObject()\n
 \n
+vifib_trade_condition = \'sale_trade_condition_module/vifib_trade_condition\'\n
 ### STEP 1: does this order have a client-specific Trade Condition\n
 trade_condition = order.getSpecialiseValue(portal_type="Sale Trade Condition")\n
 custom_trade_condition = None\n
@@ -66,15 +67,14 @@ if custom_trade_condition is None:\n
   # If no trade condition or generic trade condition\n
   # try to find existing trade condition\n
   trade_condition_list = portal.sale_trade_condition_module.searchFolder(destination_section_relative_url=order.getDestinationSectionRelativeUrl(),\n
-                                                                         validation_state="validated")\n
+                                                                         validation_state="validated",\n
+                                                                         specialise_relative_url=vifib_trade_condition)\n
   if len(trade_condition_list):\n
     custom_trade_condition = trade_condition_list[0].getObject()\n
 \n
 if custom_trade_condition is None:\n
   # nothing found then create a new custom trade condition\n
-  if trade_condition is None:\n
-    trade_condition = \'sale_trade_condition_module/vifib_trade_condition\'\n
-  custom_trade_condition = portal.sale_trade_condition_module.newContent(specialise_value=trade_condition,\n
+  custom_trade_condition = portal.sale_trade_condition_module.newContent(specialise=vifib_trade_condition,\n
                                                                     destination_section_relative_url=order.getDestinationSectionRelativeUrl(),\n
                                                                     title="ViFiB Custom Conditions")\n
 \n
