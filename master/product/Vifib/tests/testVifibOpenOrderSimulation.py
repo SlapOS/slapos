@@ -414,7 +414,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       CheckSimulationMovement
       Tic
       SlapLogout
-    """ + """
+
       LoginTestVifibCustomer
       RequestSoftwareInstanceStart
       Tic
@@ -422,13 +422,13 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
-      SlapLoginCurrentComputer \
-      SoftwareInstanceStarted \
-      Tic \
-      SlapLogout \
-      \
-      LoginDefaultUser \
-      CheckComputerPartitionInstanceHostingSalePackingListStarted \
+      SlapLoginCurrentComputer
+      SoftwareInstanceStarted
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListStarted
       Logout
 
       LoginERP5TypeTestCase
