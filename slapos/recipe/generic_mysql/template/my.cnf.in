@@ -17,7 +17,7 @@ pid-file = %(pid_file)s
 log-error = %(error_log)s
 slow_query_log
 slow_query_log_file = %(slow_query_log)s
-long_query_time = 5
+long_query_time = 1
 max_allowed_packet = 128M
 query_cache_size = 32M
 
