@@ -1,0 +1,56 @@
+diff --git a/ha_mroonga.cc b/ha_mroonga.cc
+index 722d686..9fa7168 100644
+--- a/ha_mroonga.cc
++++ b/ha_mroonga.cc
+@@ -6930,9 +6930,14 @@ int ha_mroonga::generic_store_bulk_timestamp(Field *field, grn_obj *buf)
+ {
+   MRN_DBUG_ENTER_METHOD();
+   int error = 0;
+-  my_bool is_null_value;
+   Field_timestamp *timestamp_field = (Field_timestamp *)field;
++#ifndef MRN_MARIADB_P
++  my_bool is_null_value;
+   long seconds = timestamp_field->get_timestamp(&is_null_value);
++#else
++  ulong second_part;
++  long seconds = timestamp_field->get_timestamp(&second_part);
++#endif
+   long long int time = GRN_TIME_PACK(seconds, 0);
+   grn_obj_reinit(ctx, buf, GRN_DB_TIME, 0);
+   GRN_TIME_SET(ctx, buf, time);
+@@ -7231,7 +7236,11 @@ void ha_mroonga::storage_store_field_timestamp(Field *field,
+   int32 sec, usec __attribute__((unused));
+   GRN_TIME_UNPACK(time, sec, usec);
+   Field_timestamp *timestamp_field = (Field_timestamp *)field;
++#ifndef MRN_MARIADB_P
+   timestamp_field->store_timestamp(sec);
++#else
++  timestamp_field->store_TIME(sec, 0);
++#endif
+ }
+ 
+ void ha_mroonga::storage_store_field_date(Field *field,
+@@ -7283,7 +7292,11 @@ void ha_mroonga::storage_store_field_datetime(Field *field,
+   mysql_date.minute = date.tm_min;
+   mysql_date.second = date.tm_sec;
+   Field_datetime *datetime_field = (Field_datetime *)field;
++#ifndef MRN_MARIADB_P
+   datetime_field->store_time(&mysql_date, MYSQL_TIMESTAMP_DATETIME);
++#else
++  datetime_field->store_time(&mysql_date);
++#endif
+ }
+ 
+ void ha_mroonga::storage_store_field_new_date(Field *field,
+@@ -7303,7 +7316,11 @@ void ha_mroonga::storage_store_field_new_date(Field *field,
+   mysql_date.month = date.tm_mon + 1;
+   mysql_date.day = date.tm_mday;
+   Field_newdate *newdate_field = (Field_newdate *)field;
++#ifndef MRN_MARIADB_P
+   newdate_field->store_time(&mysql_date, MYSQL_TIMESTAMP_DATE);
++#else
++  newdate_field->store_time(&mysql_date);
++#endif
+ }
+ 
+ void ha_mroonga::storage_store_field_blob(Field *field,
