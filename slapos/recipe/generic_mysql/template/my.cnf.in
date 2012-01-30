@@ -25,7 +25,7 @@ plugin-load = ha_mroonga.so;ha_sphinx.so
 
 # By default only 100 connections are allowed, when using zeo
 # we may have much more connections
-# max_connections = 1000
+max_connections = 1000
 
 # The following are important to configure and depend a lot on to the size of
 # your database and the available resources.
