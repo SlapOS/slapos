@@ -1,40 +1,94 @@
 diff --git a/ha_mroonga.cc b/ha_mroonga.cc
-index 722d686..9fa7168 100644
+index 722d686..4710eda 100644
 --- a/ha_mroonga.cc
 +++ b/ha_mroonga.cc
-@@ -6930,9 +6930,14 @@ int ha_mroonga::generic_store_bulk_timestamp(Field *field, grn_obj *buf)
+@@ -249,7 +249,7 @@ static void mrn_init_encoding_map()
+   DBUG_VOID_RETURN;
+ }
+ 
+-static int mrn_change_encoding(grn_ctx *ctx, CHARSET_INFO *charset)
++static int mrn_change_encoding(grn_ctx *ctx, const CHARSET_INFO *charset)
+ {
+   MRN_DBUG_ENTER_FUNCTION();
+   if (!charset)
+@@ -6926,14 +6926,36 @@ int ha_mroonga::generic_store_bulk_float(Field *field, grn_obj *buf)
+   DBUG_RETURN(error);
+ }
+ 
++long long int ha_mroonga::get_grn_time_from_timestamp_field(Field_timestamp *field)
++{
++  MRN_DBUG_ENTER_METHOD();
++  long long int grn_time = 0;
++#ifdef MRN_TIMESTAMP_USE_TIMEVAL
++  int warnings = 0;
++  struct timeval time_value;
++  if (field->get_timestamp(&time_value, &warnings)) {
++    // XXX: Should we report warnings or MySQL does?
++  } else {
++    grn_time = GRN_TIME_PACK(time_value.tv_sec, time_value.tv_usec);
++  }
++#elif defined(MRN_TIMESTAMP_USE_MY_TIME_T)
++  unsigned long int micro_seconds;
++  my_time_t seconds = field->get_timestamp(&micro_seconds);
++  grn_time = GRN_TIME_PACK(seconds, micro_seconds);
++#else
++  my_bool is_null_value;
++  long seconds = field->get_timestamp(&is_null_value);
++  grn_time = GRN_TIME_PACK(seconds, 0);
++#endif
++  DBUG_RETURN(grn_time);
++}
++
+ int ha_mroonga::generic_store_bulk_timestamp(Field *field, grn_obj *buf)
  {
    MRN_DBUG_ENTER_METHOD();
    int error = 0;
 -  my_bool is_null_value;
    Field_timestamp *timestamp_field = (Field_timestamp *)field;
-+#ifndef MRN_MARIADB_P
-+  my_bool is_null_value;
-   long seconds = timestamp_field->get_timestamp(&is_null_value);
-+#else
-+  ulong second_part;
-+  long seconds = timestamp_field->get_timestamp(&second_part);
-+#endif
-   long long int time = GRN_TIME_PACK(seconds, 0);
+-  long seconds = timestamp_field->get_timestamp(&is_null_value);
+-  long long int time = GRN_TIME_PACK(seconds, 0);
++  long long int time = get_grn_time_from_timestamp_field(timestamp_field);
    grn_obj_reinit(ctx, buf, GRN_DB_TIME, 0);
    GRN_TIME_SET(ctx, buf, time);
-@@ -7231,7 +7236,11 @@ void ha_mroonga::storage_store_field_timestamp(Field *field,
+   DBUG_RETURN(error);
+@@ -7228,10 +7250,20 @@ void ha_mroonga::storage_store_field_timestamp(Field *field,
+                                                uint value_length)
+ {
+   long long int time = *((long long int *)value);
++  Field_timestamp *timestamp_field = (Field_timestamp *)field;
++#ifdef MRN_TIMESTAMP_USE_TIMEVAL
++  struct timeval time_value;
++  GRN_TIME_UNPACK(time, time_value.tv_sec, time_value.tv_usec);
++  timestamp_field->store_timestamp(&time_value);
++#elif defined(MRN_TIMESTAMP_USE_MY_TIME_T)
++  int32 sec, usec;
++  GRN_TIME_UNPACK(time, sec, usec);
++  timestamp_field->store_TIME(sec, usec);
++#else
    int32 sec, usec __attribute__((unused));
    GRN_TIME_UNPACK(time, sec, usec);
-   Field_timestamp *timestamp_field = (Field_timestamp *)field;
-+#ifndef MRN_MARIADB_P
+-  Field_timestamp *timestamp_field = (Field_timestamp *)field;
    timestamp_field->store_timestamp(sec);
-+#else
-+  timestamp_field->store_TIME(sec, 0);
 +#endif
  }
  
  void ha_mroonga::storage_store_field_date(Field *field,
-@@ -7283,7 +7292,11 @@ void ha_mroonga::storage_store_field_datetime(Field *field,
+@@ -7268,7 +7300,7 @@ void ha_mroonga::storage_store_field_datetime(Field *field,
+                                               uint value_length)
+ {
+   long long int time = *((long long int *)value);
+-  int32 sec, usec __attribute__((unused));
++  int32 sec, usec;
+   GRN_TIME_UNPACK(time, sec, usec);
+   struct tm date;
+   time_t sec_t = sec;
+@@ -7282,8 +7314,13 @@ void ha_mroonga::storage_store_field_datetime(Field *field,
+   mysql_date.hour = date.tm_hour;
    mysql_date.minute = date.tm_min;
    mysql_date.second = date.tm_sec;
++  mysql_date.second_part = usec;
    Field_datetime *datetime_field = (Field_datetime *)field;
-+#ifndef MRN_MARIADB_P
++#ifdef MRN_FIELD_STORE_TIME_NEED_TYPE
    datetime_field->store_time(&mysql_date, MYSQL_TIMESTAMP_DATETIME);
 +#else
 +  datetime_field->store_time(&mysql_date);
@@ -42,11 +96,11 @@ index 722d686..9fa7168 100644
  }
  
  void ha_mroonga::storage_store_field_new_date(Field *field,
-@@ -7303,7 +7316,11 @@ void ha_mroonga::storage_store_field_new_date(Field *field,
+@@ -7303,7 +7340,11 @@ void ha_mroonga::storage_store_field_new_date(Field *field,
    mysql_date.month = date.tm_mon + 1;
    mysql_date.day = date.tm_mday;
    Field_newdate *newdate_field = (Field_newdate *)field;
-+#ifndef MRN_MARIADB_P
++#ifdef MRN_FIELD_STORE_TIME_NEED_TYPE
    newdate_field->store_time(&mysql_date, MYSQL_TIMESTAMP_DATE);
 +#else
 +  newdate_field->store_time(&mysql_date);
@@ -54,3 +108,35 @@ index 722d686..9fa7168 100644
  }
  
  void ha_mroonga::storage_store_field_blob(Field *field,
+diff --git a/ha_mroonga.h b/ha_mroonga.h
+index 4e6c8ff..0642d33 100644
+--- a/ha_mroonga.h
++++ b/ha_mroonga.h
+@@ -106,6 +106,18 @@ extern "C" {
+ #  define MRN_HAVE_HA_EXTRA_PREPARE_FOR_FORCED_CLOSE
+ #endif
+ 
++#if MYSQL_VERSION_ID >= 50604
++#  define MRN_TIMESTAMP_USE_TIMEVAL
++#elif defined(MRN_MARIADB_P)
++#  define MRN_TIMESTAMP_USE_MY_TIME_T
++#else
++#  define MRN_TIMESTAMP_USE_LONG
++#endif
++
++#if 50500 <= MYSQL_VERSION_ID && MYSQL_VERSION_ID <= 50604
++#  define MRN_FIELD_STORE_TIME_NEED_TYPE
++#endif
++
+ class ha_mroonga;
+ 
+ /* structs */
+@@ -402,6 +414,8 @@ private:
+                               longlong *limit,
+                               grn_obj *target_table, grn_obj *score_column);
+ 
++  long long int get_grn_time_from_timestamp_field(Field_timestamp *field);
++
+   int generic_store_bulk_string(Field *field, grn_obj *buf);
+   int generic_store_bulk_integer(Field *field, grn_obj *buf);
+   int generic_store_bulk_float(Field *field, grn_obj *buf);
