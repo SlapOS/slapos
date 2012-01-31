@@ -91,6 +91,8 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_system_event',
       'erp5_secure_payment',
       'erp5_payzen_secure_payment',
+      'erp5_ui_test_core',
+      'erp5_ui_test',
       'vifib_mysql_innodb_catalog',
       'vifib_core',
       'vifib_base',
