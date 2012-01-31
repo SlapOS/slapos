@@ -1,5 +1,5 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
+from Products.ERP5Type.tests.backportUnittest import skip
 import urllib
 import urlparse
 import httplib
@@ -353,10 +353,9 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  # XXX: This test fails because test_vifib_customer security is cached
-  #      and this user is not in SOFTINST-x group. We do not want to clear
-  #      cache in tests.
-  @expectedFailure
+  @skip('This test fails because test_vifib_customer security is cached '
+    'and this user is not in SOFTINST-x group. We do not want to clear '
+    'cache in tests.')
   def test_ComputerPartition_request_instantiateStop(self):
     """
     Check that after computer partition is requested it is possible to
@@ -715,8 +714,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  # Marked as expectedFailure as implementation is not ready yet
-  @expectedFailure
+  @skip('Implementation is not ready yet')
   def test_ComputerPartition_request_twiceDifferentParentWithoutTic(self):
     """
     Checks that requesting twice with same arguments from different Computer
@@ -837,8 +835,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  # Marked as expectedFailure as implementation is not ready yet
-  @expectedFailure
+  @skip('Implementation is not ready yet.')
   def test_ComputerPartition_request_differentSourceDifferentResultWithoutTic(
       self):
     """

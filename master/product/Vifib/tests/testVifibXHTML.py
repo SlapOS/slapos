@@ -28,7 +28,7 @@
 ##############################################################################
 import unittest
 from VifibMixin import testVifibMixin
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
+from Products.ERP5Type.tests.backportUnittest import skip
 
 class TestVifibXHTML(testVifibMixin):
   run_all_test = 1
@@ -112,7 +112,7 @@ class TestVifibXHTML(testVifibMixin):
               error_list.append(form_path)
     self.assertEquals(error_list, [])
 
-  @expectedFailure
+  @skip
   def test_configurationOfFieldLibrary(self):
     self.login()
     error_list = []

@@ -1,5 +1,5 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
+from Products.ERP5Type.tests.backportUnittest import skip
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
@@ -8,9 +8,8 @@ class TestVifibSlapRegisterComputerPartition(TestVifibSlapWebServiceMixin):
   # slap.registerComputerPartition
   ########################################
 
-  # ERP5/Zope does not follow REST API beacuse it is not possible to configure
-  # Cookie Crumbler to ignore portal_slap
-  @expectedFailure
+  @skip('ERP5/Zope does not follow REST API beacuse it is not possible to '
+    'configure  Cookie Crumbler to ignore portal_slap')
   def test_slap_registerComputerPartition_unknowComputerUid(self):
     """
     Check the slap.registerComputerPartition without any Computer document
@@ -30,9 +29,8 @@ class TestVifibSlapRegisterComputerPartition(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  # ERP5/Zope does not follow REST API beacuse it is not possible to configure
-  # Cookie Crumbler to ignore portal_slap
-  @expectedFailure
+  @skip('ERP5/Zope does not follow REST API beacuse it is not possible to '
+    'configure  Cookie Crumbler to ignore portal_slap')
   def test_slap_registerComputerPartition_draftComputer(self):
     """
     Check the slap.registerComputerPartition fails
