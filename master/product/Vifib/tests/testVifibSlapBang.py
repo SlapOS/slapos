@@ -711,18 +711,13 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionNoInstanceUpdateSalePackingList
       Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-    self.login()
-    self.portal.portal_alarms.vifib_check_consistency.activeSense()
-    self.stepTic()
-    self.assertTrue(self.portal.portal_alarms.vifib_check_consistency.sense())
-    consistency_list = self.portal.portal_alarms.vifib_check_consistency\
-      .Alarm_getConsistencyCheckReportLineList()
-    self.assertEqual(2, len(consistency_list))
-    self.assertEqual(sorted([q.message for q in consistency_list]),
-      ['SSL Certificate must be set', 'SSL Key must be set'])
 
   def stepCheckTreeLooksLikeRenameComplexTree(self, sequence, **kw):
     hosting_subscription_uid = sequence['hosting_subscription_uid']
