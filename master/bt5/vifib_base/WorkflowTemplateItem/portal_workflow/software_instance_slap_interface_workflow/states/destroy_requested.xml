@@ -24,6 +24,7 @@
               <tuple>
                 <string>destroy_computer_partition</string>
                 <string>destroy_requested</string>
+                <string>lock</string>
                 <string>rename</string>
                 <string>report_computer_partition_bang</string>
                 <string>report_computer_partition_error</string>
