@@ -59,9 +59,9 @@ sale_packing_list_line = sale_packing_list_line_list[0]\n
 resource = sale_packing_list_line.getResource()\n
 if resource == preference_tool.getPreferredInstanceSetupResource():\n
   software_instance = sale_packing_list_line.getAggregateValue(portal_type=[\'Software Instance\', \'Slave Instance\'])\n
-  if software_instance.getPaymentState() == \'start_requested\':\n
+  if software_instance.getSlapState() == \'start_requested\':\n
     software_instance.requestStartComputerPartition()\n
-  elif software_instance.getPaymentState() == \'stop_requested\':\n
+  elif software_instance.getSlapState() == \'stop_requested\':\n
     software_instance.requestStopComputerPartition()\n
 </string> </value>
         </item>

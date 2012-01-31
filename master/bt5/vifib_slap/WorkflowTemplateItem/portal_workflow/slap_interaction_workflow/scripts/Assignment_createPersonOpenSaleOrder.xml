@@ -57,7 +57,7 @@ open_order = portal.portal_catalog.getResultValue(\n
   portal_type="Open Sale Order",\t \t \n
   validation_state="validated")\n
 if open_order is None:\n
-  person_slap_interface_state = person.getPaymentState()\n
+  person_slap_interface_state = person.getSlapState()\n
   if person_slap_interface_state != \'open_order_created\':\n
     open_order = portal.open_sale_order_module.newContent(\n
           destination_section=person.getRelativeUrl(),\n
