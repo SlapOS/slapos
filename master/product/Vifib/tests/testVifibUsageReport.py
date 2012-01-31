@@ -32,6 +32,7 @@ from lxml import etree
 from slapos import slap
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.ERP5Type.tests.Sequence import SequenceList
+from Products.ERP5Type.tests.backportUnittest import skip
 
 def test_suite():
   suite = unittest.TestSuite()
@@ -312,6 +313,7 @@ class TestVifibUsageReport(TestVifibUsageReportMixin):
   def getTitle(self):
     return "testVifibUsageReport"
 
+  @skip('Ignored for now.')
   def test_usageReportWithSinglePartition(self):
     """
     Checks if useComputer method of SlapTool is properly called one time.
@@ -343,6 +345,7 @@ class TestVifibUsageReport(TestVifibUsageReportMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Ignored for now.')
   def test_usageReportWithTwoPartitions(self):
     """
     Checks if useComputer method of SlapTool is properly called two times.
