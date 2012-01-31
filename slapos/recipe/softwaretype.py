@@ -36,6 +36,15 @@ import logging
 
 import zc.buildout
 
+def validLoopBackAddress(ip):
+  if netaddr.IPAddress(ip).is_loopback():
+    return True
+  else:
+    return False
+
+def validPublicAddress(ip):
+  return not validLoopBackAddress(ip)
+
 class Recipe:
 
   def __init__(self, buildout, name, options):
@@ -58,10 +67,19 @@ class Recipe:
     # XXX: Lack checking for locality of address
     return self._getIpAddress(netaddr.valid_ipv4)
 
+  def getLoopbackIPv4Address(self):
+    """Returns local IPv4 address available on partition"""
+    return self._getIpAddress(validLoopBackAddress)
+
   def getGlobalIPv6Address(self):
     """Returns global IPv6 address available on partition"""
     # XXX: Lack checking for globality of address
     return self._getIpAddress(netaddr.valid_ipv6)
+
+  def getGlobalIPv4Address(self):
+    """Returns global IPv4 address available on partition"""
+    # XXX: Lack checking for globality of address
+    return self._getIpAddress(validPublicAddress)
 
   def install(self):
     slap = slapos.slap.slap()
@@ -104,10 +122,17 @@ class Recipe:
       buildout.set('slap-parameter', parameter, value)
 
     buildout.add_section('slap-network-information')
-    buildout.set('slap-network-information', 'local-ipv4', 
-                 self.getLocalIPv4Address())
-    buildout.set('slap-network-information', 'global-ipv6', 
-                 self.getGlobalIPv6Address())
+    if software_type in ('production', 'mariadb-prod'):
+      # XXX Hack for beteireflow production
+      buildout.set('slap-network-information', 'local-ipv4', 
+                   self.getLoopbackIPv4Address())
+      buildout.set('slap-network-information', 'global-ipv6', 
+                   self.getGlobalIPv4Address())
+    else:
+      buildout.set('slap-network-information', 'local-ipv4', 
+                   self.getLocalIPv4Address())
+      buildout.set('slap-network-information', 'global-ipv6', 
+                   self.getGlobalIPv6Address())
 
     # Copy/paste slap_connection
     buildout.add_section('slap-connection')

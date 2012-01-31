@@ -31,33 +31,7 @@ import zc.buildout
 import sys
 import netaddr
 
-def validLoopBackAddress(ip):
-  if netaddr.IPAddress(ip).is_loopback():
-    return True
-  else:
-    return False
-
-def validPublicAddress(ip):
-  return not validLoopBackAddress(ip)
-
 class Recipe(slapos.recipe.erp5.Recipe):
-
-  def getLocalIPv4Address(self):
-    """Returns local IPv4 address available on partition"""
-    # XXX: Lack checking for locality of address
-    if self.development:
-      # XXX: Development superhack.
-      return slapos.recipe.erp5.Recipe.getLocalIPv4Address(self)
-    return self._getIpAddress(validLoopBackAddress)
-
-  def getGlobalIPv6Address(self):
-    """Returns global IPv6 address available on partition"""
-    if self.development:
-      # XXX: Development superhack.
-      return slapos.recipe.erp5.Recipe.getGlobalIPv6Address(self)
-    # XXX: Lack checking for globality of address
-
-    return self._getIpAddress(validPublicAddress)
 
   def installProductionFrontend(self):
     frontend_key, frontend_certificate = self.requestCertificate(
