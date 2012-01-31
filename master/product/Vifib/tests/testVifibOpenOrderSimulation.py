@@ -164,8 +164,6 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       open_order.contentValues(portal_type="Open Sale Order Line")
     self.assertEquals(1, len(open_order_line_list))
     open_order_line = open_order_line_list[0]
-    open_order_line.setStopDate(getClosestDate(
-      target_date=open_order_line.getStartDate(), precision='month', before=0))
     self.portal.portal_alarms.vifib_update_open_sale_order_line.activeSense(
       params={'stop_date': addToDate(getClosestDate(target_date=DateTime(),
         precision='month', before=1), month=3)})
