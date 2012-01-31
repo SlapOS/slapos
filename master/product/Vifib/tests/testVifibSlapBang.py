@@ -1,3 +1,4 @@
+from Products.ERP5Type.tests.backportUnittest import skip
 from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from Products.ERP5Type.tests.backportUnittest import expectedFailure
@@ -745,6 +746,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     )
     self.failIfEqual(children_b_child, None)
 
+  @skip('Ignored for now')
   def test_ComputerPartition_rename_root_and_bang(self):
     r"""
     Request Master:                     __________
@@ -797,6 +799,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Ignored for now')
   def test_ComputerPartition_rename_root_complex_tree(self):
     r"""
     Request Master which is a software realease having a complex tree :
