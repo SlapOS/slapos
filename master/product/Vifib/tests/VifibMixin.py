@@ -161,7 +161,12 @@ class testVifibMixin(ERP5TypeTestCase):
     """
     # setup new active process for this test, in order have
     # consistency report local for one test
-    self.portal.portal_alarms.vifib_check_consistency.newActiveProcess()
+    sm = getSecurityManager()
+    self.login()
+    try:
+      self.portal.portal_alarms.vifib_check_consistency.newActiveProcess()
+    finally:
+      setSecurityManager(sm)
     self.setupPortalCertificateAuthority()
     import random
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
