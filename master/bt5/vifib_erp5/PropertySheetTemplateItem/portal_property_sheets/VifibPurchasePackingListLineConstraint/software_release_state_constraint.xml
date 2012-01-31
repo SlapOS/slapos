@@ -70,7 +70,7 @@
         </item>
         <item>
             <key> <string>test_tales_expression</string> </key>
-            <value> <string>python: object.getAggregateValue(portal_type=\'Software Release\') is not None</string> </value>
+            <value> <string>python: object.getAggregateValue(portal_type=\'Software Release\') is not None and object.getSimulationState() not in (\'stopped\', \'delivered\')</string> </value>
         </item>
         <item>
             <key> <string>workflow_state_list</string> </key>
