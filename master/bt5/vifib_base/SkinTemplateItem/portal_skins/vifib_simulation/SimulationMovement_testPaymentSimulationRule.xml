@@ -56,6 +56,10 @@
 receivable_account_type_list = (\'asset/receivable\',)\n
 payable_account_type_list = (\'liability/payable\',)\n
 \n
+if movement.getQuantity() == 0:\n
+  # do not create empty payment movements\n
+  return False\n
+\n
 if movement.getSimulationState() not in movement.getCausalityValue(portal_type=\'Business Link\').getCompletedStateList():\n
   return False\n
 \n
