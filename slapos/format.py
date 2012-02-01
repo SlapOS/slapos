@@ -299,7 +299,7 @@ class Computer:
 
     return computer
 
-  def construct(self, alter_user=True, alter_network=True, create_tap=True):
+  def construct(self, alter_user=True, alter_network=True):
     """
     Construct the computer object as it is.
     """
@@ -336,7 +336,7 @@ class Computer:
         else:
           owner = User('root')
 
-        if alter_network and create_tap:
+        if alter_network:
           # In case it has to be  attached to the TAP network device, only one
           # is necessary for the interface to assert carrier
           if self.interface.attach_to_tap and partition_index == 0:
@@ -376,7 +376,7 @@ class Computer:
             else:
               raise ValueError('Address %r is incorrect' % address['addr'])
     finally:
-      if alter_network and create_tap and self.interface.attach_to_tap:
+      if alter_network and self.interface.attach_to_tap:
         try:
           self.partition_list[0].tap.detach()
         except IndexError:
@@ -833,10 +833,6 @@ class Parser(OptionParser):
              help="Don't actually do anything.",
              default=False,
              action="store_true"),
-      Option("-b", "--no_bridge",
-             help="Don't use bridge but use real interface like eth0.",
-             default=False,
-             action="store_true"),
       Option("-v", "--verbose",
              default=False,
              action="store_true",
@@ -978,7 +974,7 @@ def run(config):
       computer_definition.write(open(filepath, 'w'))
       config.logger.info('Stored computer definition in %r' % filepath)
     computer.construct(alter_user=config.alter_user,
-        alter_network=config.alter_network, create_tap=not config.no_bridge)
+        alter_network=config.alter_network)
 
     # Dumping and sending to the erp5 the current configuration
     if not config.dry_run:
@@ -1096,8 +1092,6 @@ class Config:
       self.logger.debug("Verbose mode enabled.")
     if self.dry_run:
       self.logger.info("Dry-run mode enabled.")
-    if self.no_bridge:
-      self.logger.info("No-bridge mode enabled.")
 
     # Calculate path once
     self.computer_xml = os.path.abspath(self.computer_xml)
