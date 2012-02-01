@@ -2,24 +2,25 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Purchase Packing List Line" module="erp5.portal_type"/>
+      <global name="Content Existence Constraint" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
         <item>
-            <key> <string>categories</string> </key>
+            <key> <string>_identity_criterion</string> </key>
             <value>
-              <tuple>
-                <string>resource/service_module/vifib_software_setup</string>
-                <string>quantity_unit/unit/piece</string>
-                <string>aggregate/software_release_module/test_software_release</string>
-                <string>aggregate/computer_module/test_computer</string>
-              </tuple>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
             </value>
         </item>
         <item>
-            <key> <string>default_reference</string> </key>
-            <value> <string>1</string> </value>
+            <key> <string>_range_criterion</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+            </value>
+        </item>
+        <item>
+            <key> <string>constraint_portal_type</string> </key>
+            <value> <string>python: (\'Sale Order Line\',)</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -29,21 +30,19 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>1</string> </value>
+            <value> <string>lines_constraint</string> </value>
         </item>
         <item>
-            <key> <string>index</string> </key>
-            <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
-            </value>
+            <key> <string>message_no_subobject</string> </key>
+            <value> <string>Purchase Packing List Line is not defined</string> </value>
         </item>
         <item>
-            <key> <string>int_index</string> </key>
-            <value> <int>1</int> </value>
+            <key> <string>message_no_subobject_portal_type</string> </key>
+            <value> <string>Purchase Packing List Line is not defined</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Purchase Packing List Line</string> </value>
+            <value> <string>Content Existence Constraint</string> </value>
         </item>
       </dictionary>
     </pickle>
@@ -57,14 +56,7 @@
         <item>
             <key> <string>data</string> </key>
             <value>
-              <dictionary>
-                <item>
-                    <key> <string>movement</string> </key>
-                    <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
-                    </value>
-                </item>
-              </dictionary>
+              <dictionary/>
             </value>
         </item>
       </dictionary>

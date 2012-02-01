@@ -29,6 +29,7 @@
             <value>
               <tuple>
                 <string>create_open_order</string>
+                <string>lock</string>
                 <string>request_software_instance</string>
               </tuple>
             </value>

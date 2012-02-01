@@ -52,8 +52,6 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
 person = state_change[\'object\']\n
 portal = person.getPortalObject()\n
 # Get required arguments\n
@@ -66,8 +64,6 @@ sla_xml = kwargs.get("sla_xml") or ""\n
 is_slave = kwargs.get("shared", False)\n
 state = kwargs.get(\'state\') or \'started\'\n
 \n
-sale_order_portal_type = "Sale Order"\n
-sale_order_line_portal_type = "Sale Order Line"\n
 hosting_subscription_portal_type = "Hosting Subscription"\n
 \n
 if is_slave == True:\n
@@ -80,142 +76,60 @@ tag = "%s_%s_inProgress" % (person.getUid(), \n
 \n
 # Check if it already exists\n
 cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
-request_software_instance = None\n
-for si in portal.portal_catalog(\n
-  portal_type=software_instance_portal_type,\n
+request_hosting_subscription = None\n
+for hs in portal.portal_catalog(\n
+  portal_type=hosting_subscription_portal_type,\n
   title=software_title,\n
   ):\n
+  si = hs.portal_catalog.getResultValue(title=software_title,\n
+                                        root_uid=hs.getUid())\n
   try:\n
     cleanup_delivery_line = si.Item_getInstancePackingListLine(cleanup_resource)\n
   except ValueError:\n
-    request_software_instance = si\n
+    request_hosting_subscription = hs\n
     break\n
   else:\n
     if cleanup_delivery_line.getSimulationState() != \'delivered\':\n
-      request_software_instance = si\n
+      request_hosting_subscription = hs\n
       break\n
 \n
-if (request_software_instance is None):\n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  # The software instance is already under creation but can not be fetched from catalog\n
+  # As it is not possible to fetch informations, it is better to raise an error\n
+  raise NotImplementedError(tag)\n
+\n
+if (request_hosting_subscription is None):\n
   hosting_subscription_reference = "HOSTSUBS-%s" % context.getPortalObject().portal_ids\\\n
       .generateNewId(id_group=\'slap_hosting_subscription_reference\', id_generator=\'uid\')\n
-  if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
-    # The software instance is already under creation but can not be fetched from catalog\n
-    # As it is not possible to fetch informations, it is better to raise an error\n
-    raise NotImplementedError(tag)\n
-  else:\n
-\n
-    setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
-    software_instance = portal.getDefaultModule(portal_type=software_instance_portal_type).newContent(\n
-            portal_type=software_instance_portal_type,\n
-            source_reference=software_type,\n
-            title=software_title,\n
-            text_content=instance_xml,\n
-            sla_xml=sla_xml,\n
-            activate_kw={\'tag\': tag},\n
-            **portal.Base_getNewSoftwareInstanceCoordinate()\n
-    )\n
-    software_instance.portal_workflow.doActionFor(software_instance, \'validate_action\')\n
-    subscription = portal.getDefaultModule(portal_type=hosting_subscription_portal_type).newContent(\n
-      portal_type=hosting_subscription_portal_type,\n
-      reference=hosting_subscription_reference,\n
-      title=software_title,\n
-      periodicity_hour_list=[0],\n
-      periodicity_minute_list=[0],\n
-      periodicity_month_day=[1],\n
-      activate_kw={\'tag\': tag},\n
-    )\n
-    subscription.portal_workflow.doActionFor(subscription, \'validate_action\')\n
-    if state == \'started\':\n
-      software_instance.startRequested()\n
-    elif state == \'stopped\':\n
-      software_instance.stopRequested()\n
-\n
-    software_release_document = context.portal_catalog.getResultValue(\n
-      portal_type=\'Software Release\',\n
-      url_string=software_release_url_string)\n
-\n
-    sale_order = portal.getDefaultModule(portal_type=sale_order_portal_type).newContent(\n
-      portal_type=sale_order_portal_type,\n
-      destination_value=person,\n
-      destination_section_value=person,\n
-      destination_decision_value=person,\n
-      start_date=DateTime(),\n
-      received_date=DateTime(),\n
-      # XXX Hardcoded values\n
-      source="organisation_module/vifib_internet",\n
-      source_section="organisation_module/vifib_internet",\n
-      quantity_unit="unit/piece",\n
-      price_currency="currency_module/EUR",\n
-      activate_kw={\'tag\': tag},\n
-    )\n
-    sale_order_line = sale_order.newContent(\n
-      portal_type=sale_order_line_portal_type,\n
-      resource=setup_service_relative_url,\n
-      quantity=1,\n
-      price=0,\n
-      aggregate_value_list=[software_instance, subscription, software_release_document],\n
-      activate_kw={\'tag\': tag},\n
-    )\n
-    portal.portal_workflow.doActionFor(sale_order, "order_action")\n
-\n
-    # Update Open Order\n
-    # does this order have a client-specific Open Order\n
-    open_order = portal.portal_catalog.getResultValue(\n
-      default_destination_section_uid=person.getUid(),\n
-      portal_type="Open Sale Order",\n
-      validation_state="validated")\n
-    if open_order is None:\n
-      person_slap_interface_state = person.getSlapState()\n
-      if person_slap_interface_state == \'open_order_created\':\n
-        open_order_url = context.portal_workflow.getInfoFor(\n
-          ob=person, name=\'open_order_url\',\n
-          wf_id=\'person_slap_interface_workflow\')\n
-        open_order = portal.restrictedTraverse(open_order_url)\n
-      else:\n
-        raise ValueError(\'Person has no open order created\')\n
-\n
-    now = DateTime()\n
-    start_date = getClosestDate(target_date=now, precision=\'day\', before=1)\n
-    # 12 months of subscription by default\n
-    stop_date = addToDate(getClosestDate(target_date=now, precision=\'month\', before=1), year=1)\n
-\n
-    subscription_service_relative_url = portal.portal_preferences.getPreferredInstanceSubscriptionResource()\n
-    open_order.newContent(\n
-      portal_type="Open Sale Order Line",\n
-      title=software_title,\n
-      aggregate_value=subscription,\n
-      start_date=start_date,\n
-      stop_date=stop_date,\n
-      quantity=1,\n
-      quantity_unit="unit/piece",\n
-      price=1,\n
-      price_currency="currency_module/EUR",\n
-      specialise=sale_order.getSpecialise(portal_type="Sale Trade Condition"),\n
-      # XXX Hardcoded values\\n\n
-      resource=subscription_service_relative_url,\n
-      destination_value=person,\n
-      destination_section_value=person,\n
-      source="organisation_module/vifib_internet",\n
-      source_section="organisation_module/vifib_internet",\n
-      activate_kw={\'tag\': tag},\n
-    )\n
-\n
-    # Find Computer partition\n
-    # XXX Link subscript to open order\n
+  request_hosting_subscription = portal.getDefaultModule(portal_type=hosting_subscription_portal_type).newContent(\n
+    portal_type=hosting_subscription_portal_type,\n
+    reference=hosting_subscription_reference,\n
+    title=software_title,\n
+    source_reference=software_type,\n
+    text_content=instance_xml,\n
+    sla_xml=sla_xml,\n
+    root_software_release_url=software_release_url_string,\n
+    root_slave=is_slave,\n
+    root_state=state,\n
+    periodicity_hour_list=[0],\n
+    periodicity_minute_list=[0],\n
+    periodicity_month_day=[1],\n
+    activate_kw={\'tag\': tag},\n
+  )\n
+  request_hosting_subscription.portal_workflow.doActionFor(request_hosting_subscription,\n
+                                           \'validate_action\')\n
 else:\n
-  # Update existing software instance\n
-  request_software_instance.edit(\n
+  request_hosting_subscription.edit(\n
     text_content=instance_xml,\n
     source_reference=software_type,\n
     sla_xml=sla_xml,\n
+    root_software_release_url=software_release_url_string,\n
+    root_slave=is_slave,\n
+    root_state=state,\n
     activate_kw={\'tag\': tag},\n
   )\n
-  if state == \'started\':\n
-    request_software_instance.startRequested()\n
-    request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
-  elif state == \'stopped\':\n
-    request_software_instance.stopRequested()\n
-    request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
+\n
+request_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag, person=person)\n
 
 
 ]]></string> </value>

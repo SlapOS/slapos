@@ -1,0 +1,233 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+from DateTime import DateTime\n
+from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
+\n
+portal = context.getPortalObject()\n
+cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
+\n
+# copy and paste from\n
+# portal_workflow/person_slap_interface_workflow/scripts/Person_requestSoftwareInstance\n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  # The software instance is already under creation but can not be fetched from catalog\n
+  # As it is not possible to fetch informations, it is better to raise an error\n
+  raise NotImplementedError(tag)\n
+hosting_subscription = context\n
+\n
+sale_order_portal_type = "Sale Order"\n
+sale_order_line_portal_type = "Sale Order Line"\n
+hosting_subscription_portal_type = "Hosting Subscription"\n
+if hosting_subscription.isRootSlave():\n
+  software_instance_portal_type = "Slave Instance"\n
+else:\n
+  software_instance_portal_type = "Software Instance"\n
+\n
+# Mostly copy and paste from\n
+# portal_workflow/person_slap_interface_workflow/scripts/Person_requestSoftwareInstance\n
+request_software_instance = hosting_subscription.portal_catalog.getResultValue(\n
+  portal_type=software_instance_portal_type,\n
+  title=hosting_subscription.getTitle(),\n
+  root_uid=hosting_subscription.getUid(),\n
+)\n
+\n
+if person is None:\n
+  open_sale_order_line = hosting_subscription.portal_catalog.getResultValue(\n
+    portal_type=\'Open Sale Order Line\', strict_aggregate_uid=hosting_subscription.getUid())\n
+  open_sale_order = open_sale_order_line.getParentValue()\n
+  person_relative_url = open_sale_order.getDestinationSection()\n
+else:\n
+  person_relative_url = person.getRelativeUrl()\n
+\n
+new_one = False\n
+if (request_software_instance is None):\n
+  new_one = True\n
+  setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
+  request_software_instance = portal.getDefaultModule(portal_type=software_instance_portal_type).newContent(\n
+          portal_type=software_instance_portal_type,\n
+          source_reference=hosting_subscription.getSourceReference(),\n
+          title=hosting_subscription.getTitle(),\n
+          text_content=hosting_subscription.getTextContent(),\n
+          sla_xml=hosting_subscription.getSlaXml(),\n
+          activate_kw={\'tag\': tag},\n
+          **portal.Base_getNewSoftwareInstanceCoordinate()\n
+  )\n
+  request_software_instance.portal_workflow.doActionFor(request_software_instance,\n
+                                                        \'validate_action\')\n
+\n
+  software_release_document = context.portal_catalog.getResultValue(\n
+    portal_type=\'Software Release\',\n
+    url_string=hosting_subscription.getRootSoftwareReleaseUrl())\n
+\n
+  sale_order = portal.getDefaultModule(portal_type=sale_order_portal_type).newContent(\n
+    portal_type=sale_order_portal_type,\n
+    destination=person_relative_url,\n
+    destination_section=person_relative_url,\n
+    destination_decision=person_relative_url,\n
+    start_date=DateTime(),\n
+    received_date=DateTime(),\n
+    # XXX Hardcoded values\n
+    source="organisation_module/vifib_internet",\n
+    source_section="organisation_module/vifib_internet",\n
+    quantity_unit="unit/piece",\n
+    price_currency="currency_module/EUR",\n
+    activate_kw={\'tag\': tag},\n
+  )\n
+  sale_order_line = sale_order.newContent(\n
+    portal_type=sale_order_line_portal_type,\n
+    resource=setup_service_relative_url,\n
+    quantity=1,\n
+    price=0,\n
+    aggregate_value_list=[request_software_instance,\n
+                          hosting_subscription,\n
+                          software_release_document\n
+],\n
+    activate_kw={\'tag\': tag},\n
+  )\n
+  #portal.portal_workflow.doActionFor(sale_order, "order_action")\n
+  # XXX: Do not verify security\n
+  sale_order.order()\n
+\n
+  if person is not None:\n
+    # Update Open Order\n
+    # does this order have a client-specific Open Order\n
+    open_order = portal.portal_catalog.getResultValue(\n
+      default_destination_section_uid=person.getUid(),\n
+      portal_type="Open Sale Order",\n
+      validation_state="validated")\n
+    if open_order is None:\n
+      person_slap_interface_state = person.getSlapState()\n
+      if person_slap_interface_state == \'open_order_created\':\n
+        open_order_url = context.portal_workflow.getInfoFor(\n
+          ob=person, name=\'open_order_url\',\n
+          wf_id=\'person_slap_interface_workflow\')\n
+        open_order = portal.restrictedTraverse(open_order_url)\n
+      else:\n
+        raise ValueError(\'Person has no open order created\')\n
+\n
+    now = DateTime()\n
+    start_date = getClosestDate(target_date=now, precision=\'day\', before=1)\n
+    # 12 months of subscription by default\n
+    stop_date = addToDate(getClosestDate(target_date=now, precision=\'month\', before=1), month=2)\n
+\n
+    subscription_service_relative_url = portal.portal_preferences.getPreferredInstanceSubscriptionResource()\n
+    open_order.newContent(\n
+      portal_type="Open Sale Order Line",\n
+      title=hosting_subscription.getTitle(),\n
+      aggregate_value=hosting_subscription,\n
+      start_date=start_date,\n
+      stop_date=stop_date,\n
+      quantity=1,\n
+      quantity_unit="unit/piece",\n
+      price=1,\n
+      price_currency="currency_module/EUR",\n
+      specialise=sale_order.getSpecialise(portal_type="Sale Trade Condition"),\n
+      # XXX Hardcoded values\\n\n
+      resource=subscription_service_relative_url,\n
+      destination=person_relative_url,\n
+      destination_section=person_relative_url,\n
+      source="organisation_module/vifib_internet",\n
+      source_section="organisation_module/vifib_internet",\n
+      activate_kw={\'tag\': tag},\n
+    )\n
+\n
+  hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
+  hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
+  hosting_subscription.edit(predecessor_list=hosting_subscription_predecessor_list)\n
+\n
+  # Find Computer partition\n
+  # XXX Link subscript to open order\n
+else:\n
+  # Update existing software instance\n
+  request_software_instance.edit(\n
+    text_content=hosting_subscription.getTextContent(),\n
+    source_reference=hosting_subscription.getSourceReference(),\n
+    sla_xml=hosting_subscription.getSlaXml(),\n
+    activate_kw={\'tag\': tag},\n
+  )\n
+  for predecessor_related in request_software_instance.getPredecessorRelatedValueList():\n
+    predecessor_list = predecessor_related.getPredecessorList()\n
+    predecessor_list.remove(request_software_instance.getRelativeUrl())\n
+    predecessor_related.setPredecessorList(predecessor_list)\n
+\n
+  hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
+  hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
+  hosting_subscription.setPredecessorList(hosting_subscription_predecessor_list)\n
+\n
+if hosting_subscription.getRootState() == \'started\':\n
+  request_software_instance.startRequested()\n
+  if not new_one:\n
+    request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
+elif hosting_subscription.getRootState() == \'stopped\':\n
+  request_software_instance.stopRequested()\n
+  if not new_one:\n
+    request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
+\n
+return request_software_instance\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>tag, person=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>HostingSubscription_requestRootSoftwareInstance</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

@@ -1,5 +1,5 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
+from Products.ERP5Type.tests.backportUnittest import skip
 import transaction
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
@@ -50,9 +50,8 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     self.computer_partition_amount = 2
     self.test_Computer_getComputerPartitionList_emptyPartition()
 
-  # ERP5/Zope does not follow REST API beacuse it is not possible to configure
-  # Cookie Crumbler to ignore portal_slap
-  @expectedFailure
+  @skip('ERP5/Zope does not follow REST API beacuse it is not possible to '
+    'configure  Cookie Crumbler to ignore portal_slap')
   def test_Computer_getComputerPartitionList_unknowComputerUid(self):
     sequence_list = SequenceList()
     sequence_string = '\
@@ -66,9 +65,8 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  # ERP5/Zope does not follow REST API beacuse it is not possible to configure
-  # Cookie Crumbler to ignore portal_slap
-  @expectedFailure
+  @skip('ERP5/Zope does not follow REST API beacuse it is not possible to '
+    'configure  Cookie Crumbler to ignore portal_slap')
   def test_Computer_getComputerPartitionList_draftComputer(self):
     sequence_list = SequenceList()
     sequence_string = '\
@@ -109,9 +107,8 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  # ERP5/Zope does not follow REST API beacuse it is not possible to configure
-  # Cookie Crumbler to ignore portal_slap
-  @expectedFailure
+  @skip('ERP5/Zope does not follow REST API beacuse it is not possible to '
+    'configure  Cookie Crumbler to ignore portal_slap')
   def test_Computer_getComputerPartitionList_TwoValidatedComputer(self):
     # XXX: It shall be part of VifibMachineAuthentication test suite
     sequence_list = SequenceList()

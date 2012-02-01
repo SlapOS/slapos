@@ -60,6 +60,7 @@
               <tuple>
                 <string>account_type/asset/cash/bank</string>
                 <string>financial_section/asset/current_assets/cash</string>
+                <string>gap/fr/pcg/5/51/512</string>
               </tuple>
             </value>
         </item>
@@ -303,6 +304,51 @@
                     <state>
                       <tuple>
                         <float>1322152803.35</float>
+                        <string>GMT+1</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>superluke</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>915.58652.52330.26845</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass> <reference id="4.1"/> </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1327072164.63</float>
                         <string>GMT+1</string>
                       </tuple>
                     </state>

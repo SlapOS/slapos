@@ -2,6 +2,7 @@ from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 import random
+import transaction
 
 class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def test_bug_Person_request_more_then_one_instance(self):
@@ -702,6 +703,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       sla_xml=self.minimal_correct_xml,
       state='started'
     )
+    transaction.abort()
 
   def test_bug_orhpaned_software_instance(self):
     """Check that no orphaned Software Instances would be created
@@ -866,6 +868,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       sla_xml=self.minimal_correct_xml,
       state='started'
     )
+    transaction.abort()
 
   def test_bug_cyclic_software_instance(self):
     """Check that no cyclic Software Instance trees would be created
@@ -1517,6 +1520,84 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckSiteConsistency
       Logout
       """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_bug_person_request_ComputerPartition_own_computer(self):
+    """Checks that Person using Slap interface is able to request Computer
+       Partition"""
+    self.computer_partition_amount = 1
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      """
+      Logout
+      RequestCredentialFromWebSite
+      Tic
+
+      LoginDefaultUser
+      SubmitCredentialRequest
+      Tic
+      AcceptSubmittedCredentialsActiveSense
+      Tic
+      Logout
+
+      LoginWebUser
+      CustomerRegisterNewComputer
+      Tic
+      SetComputerCoordinatesFromComputerTitle
+      ComputerSetAllocationScopeOpenPersonal
+      Logout
+
+      SlapLoginCurrentComputer
+      FormatComputer
+      Tic
+      SlapLogout
+
+      LoginWebUser
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SetRandomRequestedReference
+      SlapLoginWebUser
+      PersonRequestSlapSoftwareInstancePrepare
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginWebUser
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition
+      Logout
+
+      SlapLoginCurrentSoftwareInstance
+      CheckRequestedComputerPartitionCleanParameterList
+      SlapLogout
+
+      LoginWebUser
+      CheckViewCurrentSoftwareInstance
+      CheckWriteCurrentSoftwareInstance
+      Tic
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 

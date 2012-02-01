@@ -108,3 +108,7 @@ class SoftwareInstance(Item):
     if size != len(visited) + 1:
       raise DisconnectedSoftwareTree
     return True
+
+  def getPaymentState(self):
+    """Allows to catalog slap_date in payment_state column"""
+    return self.getSlapState()

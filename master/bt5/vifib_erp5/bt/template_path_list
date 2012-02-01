@@ -3,6 +3,7 @@ person_module/test_hr_admin/**
 person_module/test_sale_agent
 person_module/test_sale_agent/**
 person_module/test_updated_vifib_user
+person_module/test_updated_vifib_user/**
 person_module/test_vifib_admin
 person_module/test_vifib_admin/**
 person_module/test_vifib_customer

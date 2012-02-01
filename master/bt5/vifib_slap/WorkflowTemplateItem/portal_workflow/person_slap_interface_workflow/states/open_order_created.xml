@@ -28,6 +28,7 @@
             <key> <string>transitions</string> </key>
             <value>
               <tuple>
+                <string>lock</string>
                 <string>request_software_instance</string>
               </tuple>
             </value>

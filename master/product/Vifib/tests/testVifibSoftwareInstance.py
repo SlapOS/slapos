@@ -1,4 +1,4 @@
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
+from Products.ERP5Type.tests.backportUnittest import skip
 import unittest
 from VifibMixin import testVifibMixin
 
@@ -65,8 +65,7 @@ class TestVifibSoftwareInstance(testVifibMixin):
     self.assertRaises(DisconnectedSoftwareTree, self.checkConnected, graph,
       root)
 
-  # For now limitation of implementation gives false positive
-  @expectedFailure
+  @skip('For now limitation of implementation gives false positive')
   def test_si_tree_cyclic_connected(self):
     """Cyclic is connected
 

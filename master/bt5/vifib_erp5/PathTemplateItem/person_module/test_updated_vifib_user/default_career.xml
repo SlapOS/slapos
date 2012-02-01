@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Sale Trade Condition" module="erp5.portal_type"/>
+      <global name="Career" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -12,22 +12,7 @@
               <tuple>
                 <string>Assignee</string>
                 <string>Assignor</string>
-                <string>Associate</string>
                 <string>Auditor</string>
-                <string>Author</string>
-                <string>Manager</string>
-                <string>Owner</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>_Add_portal_content_Permission</string> </key>
-            <value>
-              <tuple>
-                <string>Assignee</string>
-                <string>Assignor</string>
-                <string>Associate</string>
-                <string>Author</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
@@ -39,8 +24,6 @@
               <tuple>
                 <string>Assignee</string>
                 <string>Assignor</string>
-                <string>Associate</string>
-                <string>Author</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
@@ -52,9 +35,7 @@
               <tuple>
                 <string>Assignee</string>
                 <string>Assignor</string>
-                <string>Associate</string>
                 <string>Auditor</string>
-                <string>Author</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
@@ -64,22 +45,17 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>specialise/sale_trade_condition_module/vifib_trade_condition</string>
-                <string>destination_section/organisation_module/vifib_client_A</string>
+                <string>role/client</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>10</string> </value>
+            <value> <string>default_career</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Sale Trade Condition</string> </value>
-        </item>
-        <item>
-            <key> <string>title</string> </key>
-            <value> <string>ViFiB Custom Conditions</string> </value>
+            <value> <string>Career</string> </value>
         </item>
       </dictionary>
     </pickle>

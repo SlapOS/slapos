@@ -21,15 +21,15 @@
         <item>
             <key> <string>activate_script_name</string> </key>
             <value>
-              <list>
-                <string>Delivery_assertCustomTradeConditionAndOpenOrder</string>
-              </list>
+              <tuple/>
             </value>
         </item>
         <item>
             <key> <string>after_script_name</string> </key>
             <value>
-              <tuple/>
+              <list>
+                <string>Delivery_assertCustomTradeConditionAndOpenOrder</string>
+              </list>
             </value>
         </item>
         <item>
@@ -79,6 +79,10 @@
             <value>
               <tuple/>
             </value>
+        </item>
+        <item>
+            <key> <string>temporary_document_disallowed</string> </key>
+            <value> <int>0</int> </value>
         </item>
         <item>
             <key> <string>title</string> </key>

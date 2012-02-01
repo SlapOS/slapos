@@ -50,21 +50,48 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>predecessor_software_instance = context\n
-while (predecessor_software_instance is not None):\n
-  root_software_instance = predecessor_software_instance\n
-  predecessor_software_instance = predecessor_software_instance.getPredecessorRelatedValue(\n
-    portal_type=["Software Instance", "Slave Instance"])\n
-return root_software_instance.getUid()\n
-</string> </value>
+            <value> <string encoding="cdata"><![CDATA[
+
+locked = context.getSlapState() == \'locked\'\n
+customer_uid = context.getUid()\n
+balance = context.portal_simulation.getInventoryAssetPrice(\n
+  node_category=\'account_type/asset/receivable\',\n
+  simulation_state=simulation_state,\n
+  section_uid=section_uid,\n
+  mirror_section_uid=customer_uid)\n
+\n
+if maximum_balance > balance:\n
+  # customer reached his balance, shall be locked\n
+  if not locked:\n
+    context.lock()\n
+    return\n
+\n
+# check ongoing payments and check that date if is acceptable, if not lock\n
+if context.portal_catalog.countResults(\n
+  portal_type=\'Payment Transaction\',\n
+  simulation_state=ongoing_simulation_state,\n
+  **{\n
+    \'delivery.destination_section_uid\': customer_uid,\n
+    \'delivery.start_date\': \'<= %s\' % maximum_due_date\n
+  })[0][0] > 0:\n
+    # there are ongoing old payments, shall be locked\n
+    if not locked:\n
+      context.lock()\n
+else:\n
+   # there are no ongoing payments and balance is acceptable\n
+   if locked:\n
+     context.unlock()\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>maximum_balance, maximum_due_date, simulation_state, section_uid, ongoing_simulation_state</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_getRootSoftwareInstanceUid</string> </value>
+            <value> <string>Person_manageLockByBalance</string> </value>
         </item>
       </dictionary>
     </pickle>

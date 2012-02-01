@@ -178,6 +178,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -273,6 +275,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -368,6 +372,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -405,6 +411,7 @@ vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
+vifib_web_ui_test
 erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
@@ -456,6 +463,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -492,6 +501,7 @@ vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
+vifib_web_ui_test
 erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
@@ -543,6 +553,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -634,6 +646,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -671,6 +685,7 @@ vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
+vifib_web_ui_test
 erp5_km
 erp5_km_theme
 erp5_knowledge_pad
@@ -725,6 +740,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -762,6 +779,7 @@ vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
+vifib_web_ui_test
 erp5_commerce_multiflex_layout
 erp5_knowledge_pad
 erp5_simulation
@@ -813,6 +831,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -849,6 +869,7 @@ vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
+vifib_web_ui_test
 erp5_web_download_theme
 erp5_knowledge_pad
 erp5_simulation
@@ -900,6 +921,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm
@@ -935,6 +958,7 @@ vifib_simulation
 vifib_slap
 vifib_software_pdm
 vifib_test
+vifib_web_ui_test
 erp5_rss_style
 erp5_knowledge_pad
 erp5_simulation
@@ -986,6 +1010,8 @@ erp5_system_event
 erp5_tax_resource
 erp5_toolbox
 erp5_trade
+erp5_ui_test
+erp5_ui_test_core
 erp5_vcs
 erp5_web
 erp5_web_crm

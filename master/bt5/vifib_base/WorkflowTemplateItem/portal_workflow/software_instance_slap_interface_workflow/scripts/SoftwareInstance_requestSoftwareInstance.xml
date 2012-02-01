@@ -64,6 +64,8 @@ is_slave = kwargs.get("shared", False)\n
 sla_xml = kwargs["sla_xml"]\n
 state = kwargs["state"]\n
 \n
+from DateTime import DateTime\n
+\n
 if is_slave == True:\n
   software_instance_portal_type = "Slave Instance"\n
 else:\n
@@ -72,20 +74,23 @@ else:\n
 # graph allows to "simulate" tree change after requested operation\n
 graph = {}\n
 # Get root software instance and create initial graph\n
-predecessor_software_instance = software_instance\n
-while (predecessor_software_instance is not None):\n
-  predecessor_software_instance_pred_uid_list = predecessor_software_instance.getPredecessorUidList()\n
-  graph[predecessor_software_instance.getUid()] = predecessor_software_instance_pred_uid_list\n
-  # as this walking is not fetching all instances fill predecessors into graph, in order to have\n
-  # "nearly" complete representation\n
-  for uid in predecessor_software_instance_pred_uid_list:\n
-    if uid not in graph:\n
-      graph[uid] = []\n
-  root_software_instance = predecessor_software_instance\n
-  predecessor_software_instance = predecessor_software_instance.getPredecessorRelatedValue(\n
-      portal_type="Software Instance")\n
+root_hosting_subscription = software_instance.portal_catalog.getResultValue(\n
+  uid=software_instance.SoftwareInstance_getRootHostingSubscriptionUid(),\n
+)\n
 \n
-tag = "%s_%s_inProgress" % (root_software_instance.getUid(),\n
+predecessor_list = root_hosting_subscription.getPredecessorValueList()\n
+graph[root_hosting_subscription.getUid()] = [predecessor.getUid() for predecessor in predecessor_list]\n
+while True:\n
+  try:\n
+    current_software_instance = predecessor_list.pop(0)\n
+  except IndexError:\n
+    break\n
+  current_software_instance_predecessor_list = current_software_instance.getPredecessorValueList() or []\n
+  graph[current_software_instance.getUid()] = [predecessor.getUid()\n
+                                               for predecessor in current_software_instance_predecessor_list]\n
+  predecessor_list.extend(current_software_instance_predecessor_list)\n
+\n
+tag = "%s_%s_inProgress" % (root_hosting_subscription.getUid(),\n
                                requested_partition_reference)\n
 \n
 # Check if it already exists\n
@@ -94,8 +99,15 @@ request_software_instance = software_instance.portal_catalog.getResultValue(\n
   # XXX: User based property is used in non manual operation\n
   # XXX-2: Do we really need to use root_uid?\n
   title=requested_partition_reference,\n
-  root_uid=root_software_instance.getUid(),\n
+  root_uid=root_hosting_subscription.getUid(),\n
 )\n
+\n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  # The software instance is already under creation but can not be fetched from catalog\n
+  # As it is not possible to fetch informations, it is better to raise an error\n
+  raise NotImplementedError(tag)\n
+\n
+root_software_instance = root_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag)\n
 \n
 # above query does not find root software instance, but as this case is easy\n
 # to find, just check if such request does not come and raise\n
@@ -103,59 +115,50 @@ if root_software_instance.getTitle() == requested_partition_reference:\n
   raise ValueError(\'It is disallowed to request root software instance\')\n
 \n
 if (request_software_instance is None):\n
-  if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
-    # The software instance is already under creation but can not be fetched from catalog\n
-    # As it is not possible to fetch informations, it is better to raise an error\n
-    raise NotImplementedError(tag)\n
-  else:\n
-    # First time that the software instance is requested\n
-    # Create a new one\n
-    module = software_instance.getDefaultModule(portal_type="Software Instance")\n
-    request_software_instance = module.newContent(\n
-      portal_type=software_instance_portal_type,\n
-      title=requested_partition_reference,\n
-      source_reference=software_type,\n
-      text_content=instance_xml,\n
-      sla_xml=sla_xml,\n
-      activate_kw={\'tag\': tag},\n
-      **portal.Base_getNewSoftwareInstanceCoordinate()\n
-    )\n
-    request_software_instance.portal_workflow.doActionFor(request_software_instance, \'validate_action\')\n
-    if state == "started":\n
-      request_software_instance.startRequested()\n
-    if state == "stopped":\n
-      request_software_instance.stopRequested()\n
-    setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
-    packing_list_line = software_instance.getAggregateRelatedValue(portal_type="Sale Packing List Line")\n
-    subscription = packing_list_line.getAggregateValue(portal_type="Hosting Subscription")\n
-    software_release_document = context.portal_catalog.getResultValue(\n
-      portal_type=\'Software Release\',\n
-      url_string=software_release_url_string)\n
-    base_sale_packing_list = packing_list_line.getParentValue()\n
-    trade_condition = packing_list_line.getSpecialise(portal_type="Sale Trade Condition")\n
-    sale_order = portal.getDefaultModule(portal_type="Sale Order").newContent(\n
-      portal_type="Sale Order",\n
-      destination=base_sale_packing_list.getDestination(),\n
-      destination_section=base_sale_packing_list.getDestinationSection(),\n
-      destination_decision=base_sale_packing_list.getDestinationDecision(),\n
-      start_date=DateTime(),\n
-      received_date=DateTime(),\n
-      # XXX Hardcoded values\n
-      source="organisation_module/vifib_internet",\n
-      source_section="organisation_module/vifib_internet",\n
-      price_currency="currency_module/EUR",\n
-      activate_kw={\'tag\': tag},\n
+  # First time that the software instance is requested\n
+  # Create a new one\n
+  module = software_instance.getDefaultModule(portal_type="Software Instance")\n
+  request_software_instance = module.newContent(\n
+    portal_type=software_instance_portal_type,\n
+    title=requested_partition_reference,\n
+    source_reference=software_type,\n
+    text_content=instance_xml,\n
+    sla_xml=sla_xml,\n
+    activate_kw={\'tag\': tag},\n
+    **portal.Base_getNewSoftwareInstanceCoordinate()\n
+  )\n
+  request_software_instance.portal_workflow.doActionFor(request_software_instance, \'validate_action\')\n
+  packing_list_line = software_instance.getAggregateRelatedValue(portal_type="Sale Packing List Line")\n
+  subscription = packing_list_line.getAggregateValue(portal_type="Hosting Subscription")\n
+  software_release_document = context.portal_catalog.getResultValue(\n
+    portal_type=\'Software Release\',\n
+    url_string=software_release_url_string)\n
+  base_sale_packing_list = packing_list_line.getParentValue()\n
+  trade_condition = packing_list_line.getSpecialise(portal_type="Sale Trade Condition")\n
+  sale_order = portal.getDefaultModule(portal_type="Sale Order").newContent(\n
+    portal_type="Sale Order",\n
+    destination=base_sale_packing_list.getDestination(),\n
+     destination_section=base_sale_packing_list.getDestinationSection(),\n
+     destination_decision=base_sale_packing_list.getDestinationDecision(),\n
+    start_date=DateTime(),\n
+    received_date=DateTime(),\n
+    # XXX Hardcoded values\n
+    source="organisation_module/vifib_internet",\n
+    source_section="organisation_module/vifib_internet",\n
+    price_currency="currency_module/EUR",\n
+    activate_kw={\'tag\': tag},\n
     )\n
 \n
-    sale_order.setSpecialise(trade_condition, portal_type="Sale Trade Condition")\n
-    sale_order_line = sale_order.newContent(\n
-      portal_type="Sale Order Line",\n
-      resource=setup_service_relative_url,\n
-      quantity=1,\n
-      aggregate_value_list=[request_software_instance,subscription,software_release_document],\n
-      activate_kw={\'tag\': tag},\n
-    )\n
-    sale_order.order()\n
+  setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
+  sale_order.setSpecialise(trade_condition, portal_type="Sale Trade Condition")\n
+  sale_order_line = sale_order.newContent(\n
+    portal_type="Sale Order Line",\n
+    resource=setup_service_relative_url,\n
+    quantity=1,\n
+    aggregate_value_list=[request_software_instance,subscription,software_release_document],\n
+    activate_kw={\'tag\': tag},\n
+  )\n
+  sale_order.order()\n
 else:\n
   # Update existing software instance\n
   # Sale Packing List interaction has to be requested automatically with an interaction workflow\n
@@ -168,21 +171,30 @@ else:\n
   # Update the predecessor category of the original caller\n
   predecessor_software_instance = request_software_instance.getPredecessorRelatedValue(\n
     portal_type="Software Instance")\n
+\n
+  predecessor = None\n
   if predecessor_software_instance is None:\n
-    raise ValueError(\'Requested Software Instance %s should have a predecessor\' % request_software_instance.getRelativeUrl())\n
+    sale_packing_list_line = context.SoftwareInstance_getInstanceSetupPackingListLine(state_change)\n
+    hosting_subscription = sale_packing_list_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
+    if request_software_instance.getPredecessorRelatedValue(portal_type="Hosting Subscription") != hosting_subscription:\n
+      raise ValueError(\'Requested Software Instance %s should have a predecessor from same tree\' % request_software_instance.getRelativeUrl())\n
+    else:\n
+        predecessor = hosting_subscription\n
   else:\n
-    predecessor_uid_list = predecessor_software_instance.getPredecessorUidList()\n
-    predecessor_uid_list.remove(request_software_instance.getUid())\n
-    predecessor_software_instance.edit(\n
-      predecessor_uid_list=predecessor_uid_list,\n
-      activate_kw={\'tag\': tag},)\n
-    graph[predecessor_software_instance.getUid()] = predecessor_uid_list\n
+    predecessor = predecessor_software_instance\n
+\n
+  predecessor_uid_list = predecessor.getPredecessorUidList()\n
+  predecessor_uid_list.remove(request_software_instance.getUid())\n
+  predecessor.edit(\n
+    predecessor_uid_list=predecessor_uid_list,\n
+    activate_kw={\'tag\': tag},)\n
+  graph[predecessor.getUid()] = predecessor_uid_list\n
 \n
   if state == \'started\':\n
     request_software_instance.startRequested()\n
     request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
   elif state == \'stopped\':\n
-    request_software_instance.stopRequested()    \n
+    request_software_instance.stopRequested()\n
     request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
   else:\n
     raise ValueError(\'State %r is not supported\' % state)\n
@@ -195,7 +207,7 @@ if not request_software_instance.getUid() in graph:\n
 graph[software_instance.getUid()] = software_instance.getPredecessorUidList() + [request_software_instance.getUid()]\n
 \n
 # check if all elements are still connected and if there is no cycle\n
-software_instance.checkConnected(graph, root_software_instance.getUid())\n
+software_instance.checkConnected(graph, root_hosting_subscription.getUid())\n
 software_instance.checkNotCyclic(graph)\n
 \n
 software_instance.edit(\n

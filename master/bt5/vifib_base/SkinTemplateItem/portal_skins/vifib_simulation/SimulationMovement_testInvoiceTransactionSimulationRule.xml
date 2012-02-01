@@ -58,7 +58,10 @@ if delivery_movement is not None and (\n
     and delivery_movement.getPortalType() not in movement.getPortalTaxMovementTypeList()):\n
   return False\n
 \n
-return True\n
+if movement.getSimulationState() in movement.getCausalityValue(portal_type=\'Business Link\').getCompletedStateList():\n
+  return True\n
+\n
+return False\n
 </string> </value>
         </item>
         <item>

@@ -873,6 +873,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     global REMOTE_USER
     REMOTE_USER = 'test_vifib_customer'
 
+  def stepSlapLoginWebUser(self, sequence, **kw):
+    global REMOTE_USER
+    REMOTE_USER = sequence['web_user']
+
   ########################################
   # Typical sequences for scenarios
   ########################################
@@ -1798,18 +1802,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     second = slap_computer_partition.request(software_release,
         software_type, software_type + str(2))
     self.stepLoginDefaultUser()
-    transaction.commit()
-    self.tic()
+    self.stepTic()
     self.stepConfirmOrderedSaleOrderActiveSense()
-    transaction.commit()
-    self.tic()
+    self.stepTic()
     self.stepLogout()
     first = slap_computer_partition.request(software_release,
         software_type, software_type + str(1))
     second = slap_computer_partition.request(software_release,
         software_type, software_type + str(2))
-    transaction.commit()
-    self.tic()
+    self.stepTic()
     self.assertNotEqual(first.getId(), second.getId())
 
   def stepRequestComputerPartition(self, sequence, **kw):
@@ -1837,12 +1838,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def _stepSetSoftwareInstanceChildren(self, sequence, source_reference):
     software_instance_uid = sequence['root_software_instance_uid']
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=software_instance_uid)
     children_software_instance = \
       software_instance.portal_catalog.getResultValue(
           portal_type="Software Instance", source_reference=source_reference,
-          root_uid=software_instance_uid)
+          root_uid=hosting_subscription_uid)
     self.assertNotEqual(None, children_software_instance)
     self.assertNotEqual(software_instance.getRelativeUrl(),
         children_software_instance.getRelativeUrl())
@@ -1863,6 +1865,18 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_instance_uid = sequence['software_instance_uid']
     self.assertNotEqual(None, software_instance_uid)
     sequence.edit(root_software_instance_uid=software_instance_uid)
+
+  def stepSetSoftwareInstanceRoot(self, sequence, **kw):
+    root_software_instance_uid = sequence['root_software_instance_uid']
+    self.failIfEqual(None, root_software_instance_uid)
+    root_software_instance = self.portal.portal_catalog.getResultValue(
+      uid=root_software_instance_uid,
+    )
+    self.failIfEqual(None, root_software_instance)
+    computer_partition_reference = self._softwareInstance_getComputerPartition(
+      root_software_instance).getReference()
+    sequence.edit(software_instance_uid=root_software_instance_uid,
+                  computer_partition_reference=computer_partition_reference)
 
   def stepRequestComputerPartitionDifferentReferenceSameTransaction(self,
       sequence, **kw):
@@ -2016,6 +2030,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       self.assertRaises(DummyTestException, sale_order_ordered.confirm)
     finally:
       Base.serialize = Base.serialize_call
+
+    transaction.abort()
 
   def _getComputerPartitionByReference(self, sequence):
     computer_partition_list = self.portal.portal_catalog(
@@ -3896,6 +3912,73 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepSetRandomRequestedReference(self, sequence, **kw):
     sequence['requested_reference'] = self.id() + str(random())
 
+  def stepRenameCurrentSoftwareInstanceDead(self, sequence, **kw):
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'],
+    )
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid']
+    )
+
+    software_instance.rename(new_name='%sDead' % software_instance.getTitle())
+
+  def stepCheckTreeHasARootSoftwareInstance(self, sequence, **kw):
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
+
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=hosting_subscription_uid,
+    )
+    root_software_instance = self.portal.portal_catalog.getResultValue(
+      root_uid=hosting_subscription_uid,
+      title=hosting_subscription.getTitle(),
+    )
+
+    self.failIfEqual(root_software_instance, None,
+                     "No root software instance")
+
+  def stepSetSoftwareInstanceGetRootOfTheTree(self, sequence, **kw):
+    hosting_subscription_uid = sequence['hosting_subscription_uid']
+
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=hosting_subscription_uid,
+    )
+    root_software_instance = self.portal.portal_catalog.getResultValue(
+      root_uid=hosting_subscription_uid,
+      title=hosting_subscription.getTitle(),
+    )
+    self.failIfEqual(root_software_instance, None,
+                     "No root software instance")
+    computer_partition_reference = self._softwareInstance_getComputerPartition(
+      root_software_instance).getReference()
+    sequence.edit(software_instance_uid=root_software_instance.getUid(),
+                  computer_partition_reference=computer_partition_reference)
+
+  def stepRequestCredentialFromWebSite(self, sequence, **kw):
+    sequence['web_user_email'] = '%s@example.com' % random()
+    sequence['web_user'] = '%s.%s' % (self.id(), random())
+    self.portal.ERP5Site_newCredentialRequest(\
+        first_name='Homer',
+        last_name='Simpson',
+        reference=sequence['web_user'],
+        password='secret',
+        default_email_text=sequence['web_user_email'],
+        )
+
+  def stepSubmitCredentialRequest(self, sequence, **kw):
+    """Simulates click of user in email confirmation about account"""
+    credential_request = self.portal.portal_catalog.getResultValue(
+      portal_type='Credential Request',
+      reference=sequence['web_user']
+      )
+    credential_request.submit()
+
+  def stepAcceptSubmittedCredentialsActiveSense(self, **kw):
+    self.portal.portal_alarms.accept_submitted_credentials.activeSense()
+
+  def stepLoginWebUser(self, sequence, **kw):
+    self.login(sequence['web_user'])
+
+
 class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
   # slap.initializeConnection
@@ -4138,31 +4221,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   # Other tests
   ########################################
 
-  def stepRequestCredentialFromWebSite(self, sequence, **kw):
-    sequence['web_user_email'] = '%s@example.com' % random()
-    sequence['web_user'] = '%s.%s' % (self.id(), random())
-    self.portal.ERP5Site_newCredentialRequest(\
-        first_name='Homer',
-        last_name='Simpson',
-        reference=sequence['web_user'],
-        password='secret',
-        default_email_text=sequence['web_user_email'],
-        )
-
-  def stepSubmitCredentialRequest(self, sequence, **kw):
-    """Simulates click of user in email confirmation about account"""
-    credential_request = self.portal.portal_catalog.getResultValue(
-      portal_type='Credential Request',
-      reference=sequence['web_user']
-      )
-    credential_request.submit()
-
-  def stepAcceptSubmittedCredentialsActiveSense(self, **kw):
-    self.portal.portal_alarms.accept_submitted_credentials.activeSense()
-
-  def stepLoginWebUser(self, sequence, **kw):
-    self.login(sequence['web_user'])
-
   def test_person_from_credential_request_software_instance(self):
     """Checks that person created from web can use the system"""
     sequence_list = SequenceList()
@@ -4258,6 +4316,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
 # class IComputerPartition
 #   def started():
 #   def stopped():

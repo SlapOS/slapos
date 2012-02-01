@@ -65,7 +65,10 @@ if source_section == destination_section or source_section is None \\\n
     or destination_section is None:\n
   return False\n
 \n
-return True\n
+if movement.getSimulationState() in movement.getCausalityValue(portal_type=\'Business Link\').getCompletedStateList():\n
+  return True\n
+\n
+return False\n
 </string> </value>
         </item>
         <item>

@@ -100,6 +100,8 @@
                         <string>my_preferred_instance_update_resource</string>
                         <string>my_preferred_instance_subscription_resource</string>
                         <string>my_preferred_payzen_integration_site</string>
+                        <string>my_preferred_maximum_balance</string>
+                        <string>my_preferred_maximum_due_day</string>
                       </list>
                     </value>
                 </item>
