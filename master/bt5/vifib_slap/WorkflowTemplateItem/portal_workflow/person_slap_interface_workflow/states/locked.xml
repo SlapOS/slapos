@@ -23,8 +23,6 @@
             <value>
               <tuple>
                 <string>unlock</string>
-                <string>unlock_draft</string>
-                <string>unlock_open_order_created</string>
               </tuple>
             </value>
         </item>
