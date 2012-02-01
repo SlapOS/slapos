@@ -144,22 +144,22 @@ class Error(Exception):
   def __str__(self):
     return self.message
 
-class NoAddressOnInterface(Error):
+class NoAddressOnBridge(Error):
   """
-  Exception raised if there's not address on the interface to construct IPv6
+  Exception raised if there's not address on the bridge to construct IPv6
   address with.
 
   Attributes:
-    brige: String, the name of the interface.
+    brige: String, the name of the bridge.
   """
 
-  def __init__(self, interface):
-    self.message = 'No IPv6 found on interface %s to construct IPv6 with.' % interface
+  def __init__(self, bridge):
+    self.message = 'No IPv6 found on bridge %s to construct IPv6 with.' % bridge
 
 class AddressGenerationError(Error):
   """
   Exception raised if the generation of an IPv6 based on the prefix obtained
-  from the interface failed.
+  from the bridge failed.
 
   Attributes:
     addr: String, the invalid address the exception is raised for.
@@ -170,32 +170,32 @@ class AddressGenerationError(Error):
 class Computer:
   "Object representing the computer"
 
-  def __init__(self, reference, interface=None, addr = None, netmask = None,
+  def __init__(self, reference, bridge=None, addr = None, netmask = None,
     ipv6_interface=None):
     """
     Attributes:
       reference: String, the reference of the computer.
-      interface: String, if it has one, the name of the interface to be used.
+      bridge: String, if it has one, the name of the computer's bridge.
     """
     self.reference = str(reference)
-    self.interface = interface
+    self.bridge = bridge
     self.partition_list = []
     self.address = addr
     self.netmask = netmask
     self.ipv6_interface = ipv6_interface
 
   def __getinitargs__(self):
-    return (self.reference, self.interface)
+    return (self.reference, self.bridge)
 
   def getAddress(self):
     """
-    Return a list of the interface address not attributed to any partition, (which
+    Return a list of the bridge address not attributed to any partition, (which
     are therefore free for the computer itself).
 
     Returns:
-      False if the interface isn't available, else the list of the free addresses.
+      False if the bridge isn't available, else the list of the free addresses.
     """
-    if self.interface is None:
+    if self.bridge is None:
       return dict(addr=self.address, netmask=self.netmask)
 
     computer_partition_address_list = []
@@ -203,8 +203,8 @@ class Computer:
       for address in partition.address_list:
         if netaddr.valid_ipv6(address['addr']):
           computer_partition_address_list.append(address['addr'])
-    # Going through addresses of the interface
-    for address_dict in self.interface.getGlobalScopeAddressList():
+    # Going through addresses of the computer's bridge interface
+    for address_dict in self.bridge.getGlobalScopeAddressList():
       # Comparing with computer's partition addresses
       if address_dict['addr'] not in computer_partition_address_list:
         return address_dict
@@ -212,8 +212,8 @@ class Computer:
     # all addresses on interface are for partition, so lets add new one
     computer_tap = Tap('compdummy')
     computer_tap.createWithOwner(User('root'), attach_to_tap=True)
-    self.interface.addTap(computer_tap)
-    return self.interface.addAddr()
+    self.bridge.addTap(computer_tap)
+    return self.bridge.addAddr()
 
   def send(self, config):
     """
@@ -304,7 +304,7 @@ class Computer:
     Construct the computer object as it is.
     """
     if alter_network and self.address is not None:
-      self.interface.addAddr(self.address, self.netmask)
+      self.bridge.addAddr(self.address, self.netmask)
 
     for path in self.instance_root, self.software_root: 
       if not os.path.exists(path):
@@ -338,13 +338,13 @@ class Computer:
 
         if alter_network:
           # In case it has to be  attached to the TAP network device, only one
-          # is necessary for the interface to assert carrier
-          if self.interface.attach_to_tap and partition_index == 0:
+          # is necessary for the bridge to assert carrier
+          if self.bridge.attach_to_tap and partition_index == 0:
             partition.tap.createWithOwner(owner, attach_to_tap=True)
           else:
             partition.tap.createWithOwner(owner)
 
-          self.interface.addTap(partition.tap)
+          self.bridge.addTap(partition.tap)
 
         # Reconstructing partition's directory
         partition.createPath(alter_user)
@@ -355,8 +355,8 @@ class Computer:
         #  * local IPv4, took from slapformat:ipv4_local_network
         if len(partition.address_list) == 0:
           # regenerate
-          partition.address_list.append(self.interface.addIPv4LocalAddress())
-          partition.address_list.append(self.interface.addAddr())
+          partition.address_list.append(self.bridge.addIPv4LocalAddress())
+          partition.address_list.append(self.bridge.addAddr())
         elif alter_network:
           # regenerate list of addresses
           old_partition_address_list = partition.address_list
@@ -369,14 +369,14 @@ class Computer:
             raise ValueError('Not valid ipv6 addresses loaded')
           for address in old_partition_address_list:
             if netaddr.valid_ipv6(address['addr']):
-              partition.address_list.append(self.interface.addAddr(address['addr'],
+              partition.address_list.append(self.bridge.addAddr(address['addr'],
                                                                 address['netmask']))
             elif netaddr.valid_ipv4(address['addr']):
-              partition.address_list.append(self.interface.addIPv4LocalAddress(address['addr']))
+              partition.address_list.append(self.bridge.addIPv4LocalAddress(address['addr']))
             else:
               raise ValueError('Address %r is incorrect' % address['addr'])
     finally:
-      if alter_network and self.interface.attach_to_tap:
+      if alter_network and self.bridge.attach_to_tap:
         try:
           self.partition_list[0].tap.detach()
         except IndexError:
@@ -516,7 +516,6 @@ class Tap:
     there is  carrier, e.g.  the network  cable is plugged  into a  switch for
     example).
 
-    In case of bridge :
     In order  to be able to check  the uniqueness of IPv6  address assigned to
     the bridge, the network interface  must be up from an administrative *and*
     operational point of view.
@@ -582,13 +581,13 @@ class Tap:
 
     return True
 
-class Interface:
-  "Interface represent a interface on the system"
+class Bridge:
+  "Bridge represent a bridge on the system"
 
   def __init__(self, name, ipv4_local_network, ipv6_interface=None):
     """
     Attributes:
-        name: String, the name of the interface
+        name: String, the name of the bridge
     """
 
     self.name = str(name)
@@ -634,19 +633,19 @@ class Interface:
     return address_list
 
   def getInterfaceList(self):
-    """Returns list of interfaces already present on interface"""
+    """Returns list of interfaces already present on bridge"""
     interface_list = []
     returncode, result = callAndRead(['brctl', 'show'])
-    in_interface = False
+    in_bridge = False
     for line in result.split('\n'):
       if len(line.split()) > 1:
         if self.name in line:
           interface_list.append(line.split()[-1])
-          in_interface = True
+          in_bridge = True
           continue
-        if in_interface:
+        if in_bridge:
           break
-      elif in_interface:
+      elif in_bridge:
         if line.strip():
           interface_list.append(line.strip())
 
@@ -663,7 +662,7 @@ class Interface:
       callAndRead(['brctl', 'addif', self.name, tap.name])
 
   def _addSystemAddress(self, address, netmask, ipv6=True):
-    """Adds system address to interface
+    """Adds system address to bridge
     
     Returns True if address was added successfully.
 
@@ -740,15 +739,15 @@ class Interface:
 
   def addAddr(self, addr = None, netmask = None):
     """
-    Adds IP address to interface.
+    Adds IP address to bridge.
 
-    If addr is specified and exists already on interface does nothing.
+    If addr is specified and exists already on bridge does nothing.
 
-    If addr is specified and does not exists on interface, tries to add given address.
+    If addr is specified and does not exists on bridge, tries to add given address.
     In case if it is not possible (ex. because network changed) calculates new address.
 
     Args:
-      addr: Wished address to be added to interface.
+      addr: Wished address to be added to bridge.
       netmask: Wished netmask to be used.
 
     Returns:
@@ -756,32 +755,32 @@ class Interface:
 
     Raises:
       AddressGenerationError: Couldn't construct valid address with existing
-          one's on the interface.
-      NoAddressOnInterface: There's no address on the interface to construct
+          one's on the bridge.
+      NoAddressOnBridge: There's no address on the bridge to construct
           an address with.
     """
-    # Getting one address of the interface as base of the next addresses
+    # Getting one address of the bridge as base of the next addresses
     if self.ipv6_interface:
       interface_name = self.ipv6_interface
     else:
       interface_name = self.name
-    interface_addr_list = self.getGlobalScopeAddressList()
+    bridge_addr_list = self.getGlobalScopeAddressList()
 
     # No address found
-    if len(interface_addr_list) == 0:
-      raise NoAddressOnInterface(interface_name)
-    address_dict = interface_addr_list[0]
+    if len(bridge_addr_list) == 0:
+      raise NoAddressOnBridge(interface_name)
+    address_dict = bridge_addr_list[0]
 
     if addr is not None:
-      if dict(addr=addr, netmask=netmask) in interface_addr_list:
+      if dict(addr=addr, netmask=netmask) in bridge_addr_list:
         # confirmed to be configured
         return dict(addr=addr, netmask=netmask)
       if netmask == address_dict['netmask']:
         # same netmask, so there is a chance to add good one
-        interface_network = netaddr.ip.IPNetwork('%s/%s' % (address_dict['addr'],
+        bridge_network = netaddr.ip.IPNetwork('%s/%s' % (address_dict['addr'],
           netmaskToPrefixIPv6(address_dict['netmask'])))
         requested_network = netaddr.ip.IPNetwork('%s/%s' % (addr, netmaskToPrefixIPv6(netmask)))
-        if interface_network.network == requested_network.network:
+        if bridge_network.network == requested_network.network:
           # same network, try to add
           if self._addSystemAddress(addr, netmask):
             # succeed, return it
@@ -867,18 +866,18 @@ def run(config):
       config.logger.info('Using definition file %r' % filepath)
       computer_definition = ConfigParser.RawConfigParser()
       computer_definition.read(filepath)
-      interface = None
+      bridge = None
       address = None
       netmask = None
       if computer_definition.has_option('computer', 'address'):
         address, netmask = computer_definition.get('computer', 'address').split('/')
-      if config.alter_network and config.interface_name is not None \
+      if config.alter_network and config.bridge_name is not None \
           and config.ipv4_local_network is not None:
-        interface = Interface(config.interface_name, config.ipv4_local_network,
+        bridge = Bridge(config.bridge_name, config.ipv4_local_network,
           config.ipv6_interface)
       computer = Computer(
           reference=config.computer_id,
-          interface=interface,
+          bridge=bridge,
           addr=address,
           netmask=netmask,
           ipv6_interface=config.ipv6_interface
@@ -904,15 +903,15 @@ def run(config):
       if os.path.exists(config.computer_xml):
         config.logger.info('Loading previous computer data from %r' % config.computer_xml)
         computer = Computer.load(config.computer_xml, reference=config.computer_id, ipv6_interface=config.ipv6_interface)
-        # Connect to the interface interface defined by the configuration
-        computer.interface = Interface(config.interface_name, config.ipv4_local_network,
+        # Connect to the bridge interface defined by the configuration
+        computer.bridge = Bridge(config.bridge_name, config.ipv4_local_network,
             config.ipv6_interface)
       else:
         # If no pre-existent configuration found, creating a new computer object
         config.logger.warning('Creating new data computer with id %r' % config.computer_id)
         computer = Computer(
           reference=config.computer_id,
-          interface=Interface(config.interface_name, config.ipv4_local_network,
+          bridge=Bridge(config.bridge_name, config.ipv4_local_network,
             config.ipv6_interface),
           addr=None,
           netmask=None,
@@ -1020,7 +1019,7 @@ class Config:
           setattr(self, key, configuration_dict[key])
 
     # setup some nones
-    for parameter in ['interface_name', 'partition_base_name', 'user_base_name',
+    for parameter in ['bridge_name', 'partition_base_name', 'user_base_name',
         'tap_base_name', 'ipv4_local_network', 'ipv6_interface']:
       if getattr(self, parameter, None) is None:
         setattr(self, parameter, None)
@@ -1118,12 +1117,12 @@ def main(*args):
         else:
           return 0, ''
       callAndRead = dry_callAndRead
-      real_addSystemAddress = Interface._addSystemAddress
+      real_addSystemAddress = Bridge._addSystemAddress
       def fake_addSystemAddress(*args, **kw):
         real_addSystemAddress(*args, **kw)
         # Fake success
         return True
-      Interface._addSystemAddress = fake_addSystemAddress
+      Bridge._addSystemAddress = fake_addSystemAddress
       def fake_getpwnam(user):
         class result:
           pw_uid = 12345
