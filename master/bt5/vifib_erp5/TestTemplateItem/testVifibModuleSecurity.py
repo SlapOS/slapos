@@ -78,15 +78,17 @@ class TestVifibModuleSecurity(testVifibMixin):
     """
     portal = self.getPortal()
     self.login(user_name='test_vifib_member')
- 
+
+    error_list = []
     for module_id in portal.objectIds(spec=('ERP5 Folder',)):
       if module_id in self.used_module_id_list:
         try:
           portal.restrictedTraverse(module_id)
         except Unauthorized:
-          raise AssertionError, "User can not access '%s'" % module_id
+          error_list.append("User can not access '%s'" % module_id)
       else:
         try:
           self.assertRaises(Unauthorized, portal.restrictedTraverse, module_id)
         except AssertionError:
-          raise AssertionError, "User can access '%s'" % module_id
+          error_list.append("User can access '%s'" % module_id)
+    self.assertEqual([], error_list, '\n'.join(error_list))
