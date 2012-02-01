@@ -4,84 +4,930 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from random import random
 from slapos import slap
+from AccessControl import Unauthorized
 
 class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
-  def test_lock_building(self):
-    """Check locking building computer partition
-
-    It shall render it as stopped and disallow any operation.
-
-    Destruction shall be possible.
+  def stepCheckPersonPaymentState(self, sequence, **kw):
     """
-    raise NotImplementedError
-
-  def test_lock_stopping(self):
-    """Check locking stopping computer partition
-
-    It shall render it as stopped and disallow any operation.
-
-    Stopping shall be possible.
-
-    Destruction shall be possible.
+    Check that person payment state is the same than slap state
     """
-    raise NotImplementedError
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
+    self.assertEquals('open_order_created', person.getSlapState())
+    self.assertEquals(person.getSlapState(), person.getPaymentState())
 
-  def test_lock_stopped(self):
-    """Check locking stopped computer partition
-
-    It shall render it as stopped and disallow any operation.
-
-    Destruction shall be possible.
+  def test_person_payment_state(self):
+    """Person payment state value is the same than slap state
     """
-    raise NotImplementedError
+    sequence_list = SequenceList()
+    sequence_string = '\
+      LoginDefaultUser \
+      CheckPersonPaymentState \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
-  def test_lock_starting(self):
-    """Check locking starting computer partition
-
-    It shall render it as stopped and disallow any operation.
-
-    Stopping shall be possible.
-
-    Destruction shall be possible.
+  def stepCheckPersonLockedState(self, sequence, **kw):
     """
-    raise NotImplementedError
-
-  def test_lock_started(self):
-    """Check locking started computer partition
-
-    It shall render it as stopped and disallow starting.
-
-    Stopping shall be possible.
-
-    Destruction shall be possible.
+    Check that person payment state is the same than slap state
     """
-    raise NotImplementedError
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
+    self.assertEquals('locked', person.getSlapState())
 
-  def test_lock_destroying(self):
-    """Check locking destroying computer partition
-
-    It shall render it as destroyed.
-
-    Destruction shall be possible.
+  def stepCheckPersonOpenOrderCreatedState(self, sequence, **kw):
     """
-    raise NotImplementedError
-
-  def test_lock_destroyed(self):
-    """Check locking destroyed computer partition
-
-    It shall not render it at all.
+    Check that person payment state is the same than slap state
     """
-    raise NotImplementedError
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
+    self.assertEquals('open_order_created', person.getSlapState())
 
-  def test_lock_update(self):
-    """Check locking update computer partition
+  register_new_user_sequence_string = '\
+      Logout \
+      RequestCredentialFromWebSite \
+      Tic \
+      LoginDefaultUser \
+      SubmitCredentialRequest \
+      Tic \
+      AcceptSubmittedCredentialsActiveSense \
+      Tic \
+      Logout \
+      '
 
-    It shall render as stopped.
+  create_new_user_instance_sequence_string = '\
+      LoginWebUser \
+      PersonRequestSoftwareInstance \
+      Tic \
+      Logout \
+      \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      SetSelectedComputerPartition \
+      SelectCurrentlyUsedSalePackingListUid \
+      Logout \
+      '
 
-    Destruction shall be possible.
+  def test_person_locked_by_default(self):
+    """Newly registered customer are locked by default
     """
-    raise NotImplementedError
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginWebUser \
+      CheckPersonLockedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepPersonRequestIsForbidden(self, sequence, **kw):
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
+    software_release = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_release_uid'])
+    software_title = sequence.get('software_title',
+      self.id() + str(random()))
+
+    self.assertRaises(Unauthorized, person.requestSoftwareInstance,
+      software_release=software_release.getUrlString(),
+      software_title=software_title,
+      instance_xml=self.minimal_correct_xml,
+      sla_xml=sequence.get('sla_xml'),
+      **kw)
+
+  def test_locked_person_request(self):
+    """Locked person can not request
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_installed_software_release_sequence_string + \
+      self.register_new_user_sequence_string + '\
+      LoginWebUser \
+      CheckPersonLockedState \
+      PersonRequestIsForbidden \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepUnlockPerson(self, sequence, **kw):
+    """
+    Trigger global person unlocking
+    """
+    self.portal.portal_alarms.unlock_person_XXX.activeSense()
+
+  def stepLockPerson(self, sequence, **kw):
+    """
+    Trigger global person locking
+    """
+    self.portal.portal_alarms.unlock_person_XXX.activeSense()
+
+  def test_automated_person_without_payment_unlocking(self):
+    """Test that a person is automatically unlocked by an alarm if no payment
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonOpenOrderCreatedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_automated_person_without_payment_not_locking(self):
+    """Test that a person is not automatically locked by an alarm if no payment
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonOpenOrderCreatedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      LockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonOpenOrderCreatedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepCreateSmallPayment(self, sequence, **kw):
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
+      'web_user'])
+    payment_transaction = self.portal.accounting_module.newContent(
+        portal_type="Payment Transaction",
+        start_date=DateTime(),
+        # XXX More info needed
+        )
+    payment_transaction_line = payment_transaction.newContent(
+        portal_type="Accounting Transaction Line",
+        # XXX More info needed
+        )
+    payment_transaction.confirm()
+    # XXX More info needed
+    payment_transaction.checkConsistency()
+
+  def test_automated_person_small_not_paid_not_locking(self):
+    """Test that a person is not automatically locked by an alarm if
+    recent small payment is not paid yet
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonOpenOrderCreatedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CreatePastSmallPayment \
+      Tic \
+      Logout \
+      \
+      LockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonOpenOrderCreatedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepCreatePastNotPaidPayment(self, sequence, **kw):
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
+      'web_user'])
+    payment_transaction = self.portal.accounting_module.newContent(
+        portal_type="Payment Transaction",
+        start_date=DateTime()-15,
+        # XXX More info needed
+        )
+    payment_transaction_line = payment_transaction.newContent(
+        portal_type="Accounting Transaction Line",
+        # XXX More info needed
+        )
+    payment_transaction.confirm()
+    # XXX More info needed
+    payment_transaction.checkConsistency()
+
+  def test_automated_person_past_not_paid_locking(self):
+    """Test that a person is automatically locked by an alarm if payment has
+    not been done for a long time.
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonOpenOrderCreatedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CreatePastNotPaidPayment \
+      Tic \
+      Logout \
+      \
+      LockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonLockedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepCreateHighBalanceNotPaidPayment(self, sequence, **kw):
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
+      'web_user'])
+    payment_transaction = self.portal.accounting_module.newContent(
+        portal_type="Payment Transaction",
+        start_date=DateTime(),
+        # XXX More info needed
+        )
+    payment_transaction_line = payment_transaction.newContent(
+        portal_type="Accounting Transaction Line",
+        quantity=10000,
+        # XXX More info needed
+        )
+    payment_transaction.confirm()
+    # XXX More info needed
+    payment_transaction.checkConsistency()
+
+  def test_automated_person_high_not_paid_locking(self):
+    """Test that a person is automatically locked by an alarm if payment has
+    an high quantity
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonOpenOrderCreatedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CreateHighBalanceNotPaidPayment \
+      Tic \
+      Logout \
+      \
+      LockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonLockedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_automated_person_with_ongoing_payment_unlocking(self):
+    """Test that a person is can not be unlocked if there is an ongoing
+    payment.
+    Unlocking alarm doesn't have to know why user is locked.
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      \
+      LoginERP5TypeTestCase \
+      CreatePastSmallPayment \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonLockedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_automated_person_with_delivered_payment_unlocking(self):
+    """Test that a person is can be unlocked if payment are delivered
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      \
+      LoginERP5TypeTestCase \
+      CreatePastSmallPayment \
+      Tic \
+      DeliverPayment \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonOpenOrderCreatedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_automated_person_with_cancelled_payment_unlocking(self):
+    """Test that a person is can be unlocked if payment are cancelled
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      \
+      LoginERP5TypeTestCase \
+      CreatePastSmallPayment \
+      Tic \
+      CancelPayment \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonOpenOrderCreatedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_automated_software_instance_unlock(self):
+    """Locked person's instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_installed_software_release_sequence_string + \
+      self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      ' + \
+      self.create_new_user_instance_sequence_string + '\
+      LoginERP5TypeTestCase \
+      CreateHighBalanceNotPaidPayment \
+      Tic \
+      \
+      LockPerson \
+      Tic \
+      CheckInstanceLocked \
+      \
+      DeliverPayment \
+      Tic \
+      CheckInstanceUnlocked \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepInstanceRequestIsForbidden(self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    slap_computer_partition = self.slap.registerComputerPartition(
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+    kw = dict(software_release=sequence['software_release_uri'],
+      software_type=sequence.get('requested_software_type',
+                                 'requested_software_type'),
+      partition_reference=sequence.get('requested_reference',
+        'requested_reference'),
+      partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
+
+    self.assertRaises(slap.Unauthorized, slap_computer_partition.request, **kw)
+
+  def new_instance_string(self):
+    return \
+      self.prepare_installed_software_release_sequence_string + \
+      self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      ' + \
+      self.create_new_user_instance_sequence_string
+
+  def lock_user_string(self):
+    return '\
+      LoginERP5TypeTestCase \
+      CreateHighBalanceNotPaidPayment \
+      Tic \
+      \
+      LockPerson \
+      Tic \
+      Logout \
+        '
+
+  def test_locked_instance_request(self):
+    """Locked person's instance can not request
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + \
+      self.lock_user_string() + '\
+      \
+      SlapLoginCurrentSoftwareInstance \
+      InstanceRequestIsForbidden \
+      SlapLogout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_requested(self):
+    """Locked person's requested instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_building(self):
+    """Locked person's building instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_installed(self):
+    """Locked person's installed instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_starting(self):
+    """Locked person's starting instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceStart \
+      Tic \
+      Logout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_started(self):
+    """Locked person's started instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_stopping(self):
+    """Locked person's stopping instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceStop \
+      Tic \
+      Logout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_stopped(self):
+    """Locked person's stopped instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceStop \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStopped \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_update(self):
+    """Locked person's updated instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceUpdate \
+      Tic \
+      Logout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_destroying(self):
+    """Locked person's destroying instance are not automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceDestroy \
+      Tic \
+      Logout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceNotLocked \
+      CheckDestroyedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_destroyed(self):
+    """Locked person's destroyed instance are not automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceBuilding \
+      Tic \
+      SoftwareInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceDestroy \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceDestroyed \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceNotLocked \
+      CheckDestroyedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_software_instance_can_be_destroyed(self):
+    """Locked person's instance can be destroyed
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_instance_string() + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginWebUser \
+      RequestSoftwareInstanceDestroy \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckInstanceNotLocked \
+      CheckDestroyedComputerPartitionGetStateCall \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceDestroyed \
+      Tic \
+      SlapLogout \
+      \
+      LoginERP5TypeTestCase \
+      CheckInstanceNotLocked \
+      CheckDestroyedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
 def test_suite():
   suite = unittest.TestSuite()

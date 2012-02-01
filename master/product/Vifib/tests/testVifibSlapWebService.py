@@ -949,6 +949,20 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout
   """
 
+  prepare_installed_software_release_sequence_string = \
+      prepare_published_software_release + \
+      prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+    """
+
   prepare_person_requested_software_instance = \
       prepare_published_software_release + \
       prepare_formated_computer + """
