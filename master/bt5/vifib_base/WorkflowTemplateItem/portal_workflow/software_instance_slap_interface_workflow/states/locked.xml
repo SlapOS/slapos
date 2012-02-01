@@ -26,6 +26,7 @@
                 <string>destroy_requested</string>
                 <string>request_destroy_computer_partition</string>
                 <string>request_destroy_computer_partition_action</string>
+                <string>stop_computer_partition</string>
                 <string>unlock</string>
               </tuple>
             </value>
