@@ -1029,11 +1029,6 @@ class Config:
       if getattr(self, parameter, None) is None:
         setattr(self, parameter, None)
 
-    # Backward compatibility
-    if not getattr(self, "interface_name", None) \
-        and getattr(self, "bridge_name", None):
-      setattr(self, "interface_name", self.bridge_name)
-
     # Set defaults lately
     if self.alter_network is None:
       self.alter_network = 'True'
