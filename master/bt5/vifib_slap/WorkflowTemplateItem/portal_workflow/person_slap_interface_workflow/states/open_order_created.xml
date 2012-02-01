@@ -28,6 +28,8 @@
             <key> <string>transitions</string> </key>
             <value>
               <tuple>
+                <string>lock</string>
+                <string>lock_open_order_created</string>
                 <string>request_software_instance</string>
               </tuple>
             </value>
