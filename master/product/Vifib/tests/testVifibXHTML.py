@@ -112,7 +112,7 @@ class TestVifibXHTML(testVifibMixin):
               error_list.append(form_path)
     self.assertEquals(error_list, [])
 
-  @skip
+  @skip('Skipped.')
   def test_configurationOfFieldLibrary(self):
     self.login()
     error_list = []

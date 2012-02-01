@@ -299,8 +299,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  # Computer owner cannot do bang yet
-  @skip
+  @skip('Computer owner cannot do bang yet')
   def test_admin_bang_computer_complex_tree(self):
     """Checks that bangs works on complex tree
 
