@@ -5,6 +5,7 @@ from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from random import random
 from slapos import slap
 from AccessControl import Unauthorized
+from DateTime import DateTime
 
 class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
