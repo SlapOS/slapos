@@ -246,7 +246,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginERP5TypeTestCase \
-      CreatePastSmallPayment \
+      CreateSmallPayment \
       Tic \
       Logout \
       \
