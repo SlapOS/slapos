@@ -72,6 +72,20 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       '
 
+  create_new_user_slave_instance_sequence_string = '\
+      LoginWebUser \
+      PersonRequestSlaveInstance \
+      Tic \
+      Logout \
+      \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      SetSelectedComputerPartition \
+      SelectCurrentlyUsedSalePackingListUid \
+      Logout \
+      '
+
   def test_person_locked_by_default(self):
     """Newly registered customer are locked by default
     """
@@ -489,7 +503,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
     self.assertRaises(slap.Unauthorized, slap_computer_partition.request, **kw)
 
-  def new_instance_string(self):
+  def new_software_instance_string(self):
     return \
       self.prepare_installed_software_release_sequence_string + \
       self.register_new_user_sequence_string + '\
@@ -499,6 +513,17 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       ' + \
       self.create_new_user_instance_sequence_string
+
+  def new_slave_instance_string(self):
+    return \
+      self.prepare_installed_computer_partition_sequence_string + \
+      self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      UnlockPerson \
+      Tic \
+      Logout \
+      ' + \
+      self.create_new_user_slave_instance_sequence_string
 
   def lock_user_string(self):
     return '\
@@ -516,7 +541,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + \
+      self.new_software_instance_string() + \
       self.lock_user_string() + '\
       \
       SlapLoginCurrentSoftwareInstance \
@@ -535,7 +560,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + \
+      self.new_software_instance_string() + \
       self.lock_user_string() + '\
       LoginERP5TypeTestCase \
       CheckInstanceLocked \
@@ -554,7 +579,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + '\
+      self.new_software_instance_string() + '\
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceBuilding \
@@ -579,7 +604,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + '\
+      self.new_software_instance_string() + '\
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceBuilding \
@@ -606,7 +631,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + '\
+      self.new_software_instance_string() + '\
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceBuilding \
@@ -638,7 +663,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + '\
+      self.new_software_instance_string() + '\
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceBuilding \
@@ -675,7 +700,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + '\
+      self.new_software_instance_string() + '\
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceBuilding \
@@ -717,7 +742,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + '\
+      self.new_software_instance_string() + '\
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceBuilding \
@@ -764,7 +789,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + '\
+      self.new_software_instance_string() + '\
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceBuilding \
@@ -806,7 +831,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + '\
+      self.new_software_instance_string() + '\
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceBuilding \
@@ -848,7 +873,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + '\
+      self.new_software_instance_string() + '\
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceBuilding \
@@ -895,7 +920,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = \
-      self.new_instance_string() + \
+      self.new_software_instance_string() + \
       self.lock_user_string() + '\
       LoginERP5TypeTestCase \
       CheckInstanceLocked \
@@ -914,6 +939,405 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       \
       SlapLoginCurrentComputer \
       SoftwareInstanceDestroyed \
+      Tic \
+      SlapLogout \
+      \
+      LoginERP5TypeTestCase \
+      CheckInstanceNotLocked \
+      CheckDestroyedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_requested(self):
+    """Locked person's requested instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_building(self):
+    """Locked person's building instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceBuilding \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_installed(self):
+    """Locked person's installed instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceBuilding \
+      Tic \
+      SlaveInstanceAvailable \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_starting(self):
+    """Locked person's starting instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceBuilding \
+      Tic \
+      SlaveInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceStart \
+      Tic \
+      Logout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_started(self):
+    """Locked person's started instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceBuilding \
+      Tic \
+      SlaveInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceStarted \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_stopping(self):
+    """Locked person's stopping instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceBuilding \
+      Tic \
+      SlaveInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceStop \
+      Tic \
+      Logout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_stopped(self):
+    """Locked person's stopped instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceBuilding \
+      Tic \
+      SlaveInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceStop \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceStopped \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_update(self):
+    """Locked person's updated instance are automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceBuilding \
+      Tic \
+      SlaveInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceUpdate \
+      Tic \
+      Logout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_destroying(self):
+    """Locked person's destroying instance are not automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceBuilding \
+      Tic \
+      SlaveInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceDestroy \
+      Tic \
+      Logout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceNotLocked \
+      CheckDestroyedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_destroyed(self):
+    """Locked person's destroyed instance are not automatically locked
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + '\
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceBuilding \
+      Tic \
+      SlaveInstanceAvailable \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceStart \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceStarted \
+      Tic \
+      SlapLogout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceDestroy \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceDestroyed \
+      Tic \
+      SlapLogout \
+      ' + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceNotLocked \
+      CheckDestroyedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_lock_slave_instance_can_be_destroyed(self):
+    """Locked person's instance can be destroyed
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.new_slave_instance_string() + \
+      self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
+      CheckInstanceLocked \
+      CheckStoppedComputerPartitionGetStateCall \
+      Logout \
+      \
+      LoginWebUser \
+      RequestSlaveInstanceDestroy \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckInstanceNotLocked \
+      CheckDestroyedComputerPartitionGetStateCall \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      SlaveInstanceDestroyed \
       Tic \
       SlapLogout \
       \
