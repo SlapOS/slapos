@@ -204,31 +204,60 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepCreateSmallPayment(self, sequence, **kw):
+  def stepCreateSmallInvoiceWebUser(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
-    payment_transaction = self.portal.accounting_module.newContent(
-        source_section='organisation_module/vifib_internet',
-        destination_section=person.getRelativeUrl(),
-        resource='currency_module/EUR',
-        portal_type="Payment Transaction",
-        start_date=DateTime(),
-        # XXX More info needed
-        )
-    payment_transaction.newContent(
-        portal_type="Accounting Transaction Line",
-        quantity=1,
-        source='account_module/receivable',
-        )
-    payment_transaction.newContent(
-        portal_type="Accounting Transaction Line",
-        quantity=-1,
-        source='account_module/sales',
-        )
-    payment_transaction.confirm()
-    payment_transaction.start()
-    # XXX More info needed
-    payment_transaction.checkConsistency()
+    invoice = self.portal.accounting_module.newContent(
+      portal_type='Sale Invoice Transaction',
+      start_date=DateTime(),
+      resource='currency_module/EUR',
+      source_section='organisation_module/vifib_internet',
+      source='organisation_module/vifib_internet',
+      destination_section=person.getRelativeUrl(),
+      destination=person.getRelativeUrl(),
+      specialise='sale_trade_condition_module/vifib_trade_condition'
+    )
+    invoice.newContent(
+      portal_type='Invoice Line',
+      resource=self.portal.portal_preferences.getPreferredRegistrationResource(),
+      quantity=1,
+      price=1
+    )
+    sequence['invoice'] = invoice
+
+  def stepPlanInvoice(self, sequence, **kw):
+    sequence['invoice'].plan()
+
+  def stepConfirmInvoice(self, sequence, **kw):
+    sequence['invoice'].confirm()
+
+  def stepStartInvoice(self, sequence, **kw):
+    sequence['invoice'].start()
+
+  def stepCheckWebUserBalanceSmallAmount(self, sequence, **kw):
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
+      'web_user'])
+    self.assertEqual(-1.0,
+      self.portal.portal_simulation.getInventoryAssetPrice(
+      node_category='account_type/asset/receivable',
+      simulation_state=['started', 'stopped', 'delivered'],
+      section_uid=self.portal.restrictedTraverse(
+        'organisation_module/vifib_internet').getUid(),
+      mirror_section_uid=person.getUid())
+    )
+
+  create_small_registration_fee_invoice = """
+    LoginERP5TypeTestCase
+    CreateSmallInvoiceWebUser
+    Tic
+    PlanInvoice
+    Tic
+    ConfirmInvoice
+    StartInvoice
+    Tic
+    CheckWebUserBalanceSmallAmount
+    Logout
+  """
 
   def test_automated_person_small_not_paid_not_locking(self):
     """Test that a person is not automatically locked by an alarm if
@@ -245,12 +274,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       CheckPersonUnlockedState \
       Tic \
       Logout \
-      \
-      LoginERP5TypeTestCase \
-      CreateSmallPayment \
-      Tic \
-      Logout \
-      \
+      ' + self.create_small_registration_fee_invoice + '\
       TriggerLockPersonAlarm \
       Tic \
       Logout \
