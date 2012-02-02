@@ -138,13 +138,13 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepUnlockPerson(self, sequence, **kw):
+  def stepTriggerUnlockPersonAlarm(self, sequence, **kw):
     """
     Trigger global person unlocking
     """
     self.portal.portal_alarms.vifib_unlock_person.activeSense()
 
-  def stepLockPerson(self, sequence, **kw):
+  def stepTriggerLockPersonAlarm(self, sequence, **kw):
     """
     Trigger global person locking
     """
@@ -156,7 +156,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       \
@@ -178,7 +178,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       \
@@ -188,7 +188,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginERP5TypeTestCase \
-      LockPerson \
+      TriggerLockPersonAlarm \
       Tic \
       Logout \
       \
@@ -227,7 +227,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       \
@@ -241,7 +241,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       \
-      LockPerson \
+      TriggerLockPersonAlarm \
       Tic \
       Logout \
       \
@@ -280,7 +280,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       \
@@ -294,7 +294,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       \
-      LockPerson \
+      TriggerLockPersonAlarm \
       Tic \
       Logout \
       \
@@ -342,7 +342,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       \
@@ -356,7 +356,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       \
-      LockPerson \
+      TriggerLockPersonAlarm \
       Tic \
       Logout \
       \
@@ -386,7 +386,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       \
@@ -416,7 +416,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       \
@@ -446,7 +446,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       \
@@ -470,7 +470,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       self.prepare_installed_software_release_sequence_string + \
       self.register_new_user_sequence_string + '\
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       ' + \
@@ -479,7 +479,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       CreateHighBalanceNotPaidPayment \
       Tic \
       \
-      LockPerson \
+      TriggerLockPersonAlarm \
       Tic \
       CheckInstanceLocked \
       \
@@ -517,7 +517,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       self.prepare_installed_software_release_sequence_string + \
       self.register_new_user_sequence_string + '\
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       ' + \
@@ -528,7 +528,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       self.prepare_installed_computer_partition_sequence_string + \
       self.register_new_user_sequence_string + '\
       LoginERP5TypeTestCase \
-      UnlockPerson \
+      TriggerUnlockPersonAlarm \
       Tic \
       Logout \
       ' + \
@@ -540,7 +540,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       CreateHighBalanceNotPaidPayment \
       Tic \
       \
-      LockPerson \
+      TriggerLockPersonAlarm \
       Tic \
       Logout \
         '
