@@ -63,7 +63,7 @@ balance = context.portal_simulation.getInventoryAssetPrice(\n
 if maximum_balance > balance:\n
   # customer reached his balance, shall be locked\n
   if not locked and operation == \'lock\':\n
-      context.lock()\n
+      context.lock(comment="Balance value is %s" % balance)\n
       return\n
 \n
 # check ongoing payments and check that date if is acceptable, if not lock\n
@@ -76,7 +76,7 @@ if context.portal_catalog.countResults(\n
   })[0][0] > 0:\n
     # there are ongoing old payments, shall be locked\n
     if not locked and operation == \'lock\':\n
-        context.lock()\n
+        context.lock(comment="Payment transaction not paid for more than %s days" % maximum_due_date)\n
 else:\n
    # there are no ongoing payments and balance is acceptable\n
    if locked and operation == \'unlock\':\n
