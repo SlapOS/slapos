@@ -138,6 +138,10 @@
             <value> <string>portal_integrations/vifib_payzen_integration</string> </value>
         </item>
         <item>
+            <key> <string>preferred_registration_resource</string> </key>
+            <value> <string>service_module/vifib_registration</string> </value>
+        </item>
+        <item>
             <key> <string>preferred_software_setup_resource</string> </key>
             <value> <string>service_module/vifib_software_setup</string> </value>
         </item>
