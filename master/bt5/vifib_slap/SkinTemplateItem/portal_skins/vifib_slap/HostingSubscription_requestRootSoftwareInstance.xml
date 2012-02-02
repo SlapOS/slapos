@@ -147,14 +147,7 @@ if (request_software_instance is None):\n
       portal_type="Open Sale Order",\n
       validation_state="validated")\n
     if open_order is None:\n
-      person_slap_interface_state = person.getSlapState()\n
-      if person_slap_interface_state == \'open_order_created\':\n
-        open_order_url = context.portal_workflow.getInfoFor(\n
-          ob=person, name=\'open_order_url\',\n
-          wf_id=\'person_slap_interface_workflow\')\n
-        open_order = portal.restrictedTraverse(open_order_url)\n
-      else:\n
-        raise ValueError(\'Person has no open order created\')\n
+      raise ValueError(\'Person has no open order created\')\n
 \n
     now = DateTime()\n
     start_date = getClosestDate(target_date=now, precision=\'day\', before=1)\n
