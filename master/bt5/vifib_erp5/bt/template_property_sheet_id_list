@@ -8,4 +8,4 @@ VifibInternalPackingListLineConstraint
 VifibPurchasePackingListLineConstraint
 VifibPurchasePackingListConstraint
 VifibSoftwareReleaseConstraint
-VifibSaleOrderCosntraint
+VifibSaleOrderConstraint

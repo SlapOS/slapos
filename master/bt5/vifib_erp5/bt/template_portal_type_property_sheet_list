@@ -6,6 +6,6 @@ Internal Packing List | VifibInternalPackingListConstraint
 Person | VifibPersonConstraint
 Purchase Packing List Line | VifibPurchasePackingListLineConstraint
 Purchase Packing List | VifibPurchasePackingListConstraint
-Sale Order | VifibSaleOrderCosntraint
+Sale Order | VifibSaleOrderConstraint
 Software Product | VifibSoftwareProductConstraint
 Software Release | VifibSoftwareReleaseConstraint

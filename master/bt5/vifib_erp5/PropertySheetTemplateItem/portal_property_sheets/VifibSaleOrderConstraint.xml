@@ -32,7 +32,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibSaleOrderCosntraint</string> </value>
+            <value> <string>VifibSaleOrderConstraint</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>

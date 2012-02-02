@@ -24,7 +24,7 @@
   <item>VifibPurchasePackingListLineConstraint</item>
  </portal_type>
  <portal_type id="Sale Order">
-  <item>VifibSaleOrderCosntraint</item>
+  <item>VifibSaleOrderConstraint</item>
  </portal_type>
  <portal_type id="Software Product">
   <item>VifibSoftwareProductConstraint</item>
