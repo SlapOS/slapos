@@ -295,12 +295,11 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
     payment_transaction = self.portal.accounting_module.newContent(
-        source_section='organisation_module/vifib_internet',
-        destination_section=person.getRelativeUrl(),
+        destination_section='organisation_module/vifib_internet',
+        source_section=person.getRelativeUrl(),
         resource='currency_module/EUR',
         portal_type="Payment Transaction",
         start_date=DateTime()-90,
-        # XXX More info needed
         )
     payment_transaction.newContent(
         portal_type="Accounting Transaction Line",
