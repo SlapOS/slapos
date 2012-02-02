@@ -428,6 +428,10 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       \
+      LoginWebUser \
+      CheckPersonLockedState \
+      Logout \
+      \
       LoginERP5TypeTestCase \
       TriggerUnlockPersonAlarm \
       Tic \
@@ -458,6 +462,10 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       \
+      LoginWebUser \
+      CheckPersonLockedState \
+      Logout \
+      \
       LoginERP5TypeTestCase \
       TriggerUnlockPersonAlarm \
       Tic \
@@ -486,6 +494,10 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Tic \
       CancelPayment \
       Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonLockedState \
       Logout \
       \
       LoginERP5TypeTestCase \
