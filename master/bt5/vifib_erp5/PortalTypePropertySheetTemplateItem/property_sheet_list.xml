@@ -26,6 +26,9 @@
  <portal_type id="Sale Order">
   <item>VifibSaleOrderConstraint</item>
  </portal_type>
+ <portal_type id="Sale Order Line">
+  <item>VifibSaleOrderLineConstraint</item>
+ </portal_type>
  <portal_type id="Software Product">
   <item>VifibSoftwareProductConstraint</item>
  </portal_type>
