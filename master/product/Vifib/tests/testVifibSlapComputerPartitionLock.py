@@ -312,7 +312,6 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
         source='account_module/sales',
         )
     payment_transaction.confirm()
-    payment_transaction.start()
     # XXX More info needed
     payment_transaction.checkConsistency()
 
