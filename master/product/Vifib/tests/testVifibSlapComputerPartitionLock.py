@@ -141,13 +141,13 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     """
     Trigger global person unlocking
     """
-    self.portal.portal_alarms.unlock_person_XXX.activeSense()
+    self.portal.portal_alarms.vifib_unlock_person.activeSense()
 
   def stepLockPerson(self, sequence, **kw):
     """
     Trigger global person locking
     """
-    self.portal.portal_alarms.unlock_person_XXX.activeSense()
+    self.portal.portal_alarms.vifib_lock_person.activeSense()
 
   def test_automated_person_without_payment_unlocking(self):
     """Test that a person is automatically unlocked by an alarm if no payment
