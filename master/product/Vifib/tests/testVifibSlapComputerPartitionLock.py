@@ -208,13 +208,22 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
     payment_transaction = self.portal.accounting_module.newContent(
+        source_section='organisation_module/vifib_internet',
+        destination_section=person.getRelativeUrl(),
+        resource='currency_module/EUR',
         portal_type="Payment Transaction",
         start_date=DateTime(),
         # XXX More info needed
         )
-    payment_transaction_line = payment_transaction.newContent(
+    payment_transaction.newContent(
         portal_type="Accounting Transaction Line",
-        # XXX More info needed
+        quantity=1,
+        source='account_module/receivable',
+        )
+    payment_transaction.newContent(
+        portal_type="Accounting Transaction Line",
+        quantity=-1,
+        source='account_module/sales',
         )
     payment_transaction.confirm()
     # XXX More info needed
@@ -257,17 +266,26 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepCreatePastNotPaidPayment(self, sequence, **kw):
+  def stepCreatePastSmallPayment(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
     payment_transaction = self.portal.accounting_module.newContent(
+        source_section='organisation_module/vifib_internet',
+        destination_section=person.getRelativeUrl(),
+        resource='currency_module/EUR',
         portal_type="Payment Transaction",
-        start_date=DateTime()-15,
+        start_date=DateTime()-90,
         # XXX More info needed
         )
-    payment_transaction_line = payment_transaction.newContent(
+    payment_transaction.newContent(
         portal_type="Accounting Transaction Line",
-        # XXX More info needed
+        quantity=1,
+        source='account_module/receivable',
+        )
+    payment_transaction.newContent(
+        portal_type="Accounting Transaction Line",
+        quantity=-1,
+        source='account_module/sales',
         )
     payment_transaction.confirm()
     # XXX More info needed
@@ -316,7 +334,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     payment_transaction = self.portal.accounting_module.newContent(
         source_section='organisation_module/vifib_internet',
         destination_section=person.getRelativeUrl(),
-        currency_module='currency_module/EUR',
+        resource='currency_module/EUR',
         portal_type="Payment Transaction",
         start_date=DateTime(),
         # XXX More info needed
