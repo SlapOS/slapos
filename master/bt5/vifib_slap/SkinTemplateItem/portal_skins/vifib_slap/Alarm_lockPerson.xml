@@ -50,48 +50,33 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-locked = context.getSlapState() == \'locked\'\n
-customer_uid = context.getUid()\n
-balance = context.portal_simulation.getInventoryAssetPrice(\n
-  node_category=\'account_type/asset/receivable\',\n
-  simulation_state=simulation_state,\n
-  section_uid=section_uid,\n
-  mirror_section_uid=customer_uid)\n
-\n
-if maximum_balance > balance:\n
-  # customer reached his balance, shall be locked\n
-  if not locked and operation == \'lock\':\n
-      context.lock()\n
-      return\n
-\n
-# check ongoing payments and check that date if is acceptable, if not lock\n
-if context.portal_catalog.countResults(\n
-  portal_type=\'Payment Transaction\',\n
-  simulation_state=ongoing_simulation_state,\n
-  **{\n
-    \'delivery.destination_section_uid\': customer_uid,\n
-    \'delivery.start_date\': \'<= %s\' % maximum_due_date\n
-  })[0][0] > 0:\n
-    # there are ongoing old payments, shall be locked\n
-    if not locked and operation == \'lock\':\n
-        context.lock()\n
-else:\n
-   # there are no ongoing payments and balance is acceptable\n
-   if locked and operation == \'unlock\':\n
-     context.unlock()\n
-
-
-]]></string> </value>
+            <value> <string>portal_catalog = context.getPortalObject().portal_catalog\n
+from DateTime import DateTime\n
+method_kw = {}\n
+method_kw.update(\n
+  maximum_balance=context.portal_preferences.getPreferredMaximumBalance(),\n
+  maximum_due_date=(DateTime() - context.portal_preferences.getPreferredMaximumDueDay()).Date(),\n
+  simulation_state=context.getPortalCurrentInventoryStateList() + context.getPortalTransitInventoryStateList(),\n
+  ongoing_simulation_state=context.getPortalFutureInventoryStateList() + context.getPortalReservedInventoryStateList(),\n
+  section_uid=context.restrictedTraverse(\'organisation_module/vifib_internet\').getUid(),\n
+  operation=\'lock\'\n
+)\n
+portal_catalog.searchAndActivate(\n
+  method_id=\'Person_manageLockByBalance\',\n
+  payment_state=\'unlocked\',\n
+  portal_type=\'Person\',\n
+  activate_kw={\'tag\': tag},\n
+  method_kw=method_kw\n
+)\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>maximum_balance, maximum_due_date, simulation_state, section_uid, ongoing_simulation_state, operation</string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_manageLockByBalance</string> </value>
+            <value> <string>Alarm_lockPerson</string> </value>
         </item>
       </dictionary>
     </pickle>
