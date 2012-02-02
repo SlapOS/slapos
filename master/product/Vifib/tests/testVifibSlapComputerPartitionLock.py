@@ -39,12 +39,12 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
     self.assertEquals('locked', person.getSlapState())
 
-  def stepCheckPersonOpenOrderCreatedState(self, sequence, **kw):
+  def stepCheckPersonUnlockedState(self, sequence, **kw):
     """
     Check that person payment state is the same than slap state
     """
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
-    self.assertEquals('open_order_created', person.getSlapState())
+    self.assertEquals('unlocked', person.getSlapState())
 
   register_new_user_sequence_string = '\
       Logout \
@@ -160,7 +160,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginWebUser \
-      CheckPersonOpenOrderCreatedState \
+      CheckPersonUnlockedState \
       Tic \
       Logout \
       \
@@ -182,7 +182,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginWebUser \
-      CheckPersonOpenOrderCreatedState \
+      CheckPersonUnlockedState \
       Tic \
       Logout \
       \
@@ -192,7 +192,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginWebUser \
-      CheckPersonOpenOrderCreatedState \
+      CheckPersonUnlockedState \
       Tic \
       Logout \
       \
@@ -231,7 +231,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginWebUser \
-      CheckPersonOpenOrderCreatedState \
+      CheckPersonUnlockedState \
       Tic \
       Logout \
       \
@@ -245,7 +245,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginWebUser \
-      CheckPersonOpenOrderCreatedState \
+      CheckPersonUnlockedState \
       Tic \
       Logout \
       \
@@ -284,7 +284,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginWebUser \
-      CheckPersonOpenOrderCreatedState \
+      CheckPersonUnlockedState \
       Tic \
       Logout \
       \
@@ -338,7 +338,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginWebUser \
-      CheckPersonOpenOrderCreatedState \
+      CheckPersonUnlockedState \
       Tic \
       Logout \
       \
@@ -412,7 +412,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginWebUser \
-      CheckPersonOpenOrderCreatedState \
+      CheckPersonUnlockedState \
       Tic \
       Logout \
       \
@@ -442,7 +442,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginWebUser \
-      CheckPersonOpenOrderCreatedState \
+      CheckPersonUnlockedState \
       Tic \
       Logout \
       \
