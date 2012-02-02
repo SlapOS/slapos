@@ -42,7 +42,7 @@
         </item>
         <item>
             <key> <string>new_state_id</string> </key>
-            <value> <string>draft</string> </value>
+            <value> <string>unlocked</string> </value>
         </item>
         <item>
             <key> <string>script_name</string> </key>
