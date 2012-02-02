@@ -58,7 +58,7 @@ open_sale_order = portal.portal_catalog.getResultValue(\n
       validation_state="validated")\n
 \n
 tag = \'%s_createOpenOrder\' % person.getUid()\n
-kw = {\'activity_kw\': {\'tag\': tag}}\n
+kw = {\'activate_kw\': {\'tag\': tag}}\n
 if open_sale_order is None:\n
   if portal.portal_activities.countMessageWithTag(tag) == 0:\n
     open_order = portal.open_sale_order_module.newContent(\n
