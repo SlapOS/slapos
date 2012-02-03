@@ -30,4 +30,5 @@ person_module/test_vifib_user_developer
 person_module/test_vifib_user_developer/**
 service_module/computer_registration
 service_module/computer_registration/**
+service_module/vifib_discount
 service_module/vifib_registration

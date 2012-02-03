@@ -80,3 +80,4 @@ system_event_module
 tax_module
 transformation_module
 web_page_module
+service_module/vifib_discount
