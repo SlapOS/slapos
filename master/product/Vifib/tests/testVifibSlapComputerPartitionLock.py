@@ -35,17 +35,24 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
   def stepCheckPersonLockedState(self, sequence, **kw):
     """
-    Check that person payment state is the same than slap state
+    Check that person slap state is locked
     """
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
     self.assertEquals('locked', person.getSlapState())
 
   def stepCheckPersonUnlockedState(self, sequence, **kw):
     """
-    Check that person payment state is the same than slap state
+    Check that person slap state is unlocked
     """
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
     self.assertEquals('unlocked', person.getSlapState())
+
+  def stepCheckPersonUnlimitedState(self, sequence, **kw):
+    """
+    Check that person slap state is unlimited
+    """
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
+    self.assertEquals('unlimited', person.getSlapState())
 
   register_new_user_sequence_string = '\
       Logout \
@@ -149,6 +156,14 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     Trigger global person locking
     """
     self.portal.portal_alarms.vifib_lock_person.activeSense()
+
+  def stepUnlimitPerson(self, sequence, **kw):
+    """
+    Unlimit user access
+    """
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
+      'web_user'])
+    person.unlimit()
 
   def test_automated_person_without_payment_unlocking(self):
     """Test that a person is automatically unlocked by an alarm if no payment
@@ -377,6 +392,45 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_automated_unlimited_person_past_not_paid_locking(self):
+    """Test that an unlimited person is automatically locked by 
+    an alarm if payment has not been done for a long time.
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      TriggerUnlockPersonAlarm \
+      Tic \
+      UnlimitPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonUnlimitedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CreatePastSmallPayment \
+      Tic \
+      Logout \
+      \
+      TriggerLockPersonAlarm \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonLockedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def stepCreateHighBalanceInvoiceWebUser(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
@@ -411,6 +465,36 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       \
       LoginWebUser \
       CheckPersonUnlockedState \
+      Tic \
+      Logout \
+      ' + self.lock_user_string() + '\
+      LoginWebUser \
+      CheckPersonLockedState \
+      Tic \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_automated_unlimited_person_high_not_paid_locking(self):
+    """Test that an unlimited person is automatically locked by 
+    an alarm if payment has an high quantity
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginERP5TypeTestCase \
+      TriggerUnlockPersonAlarm \
+      Tic \
+      UnlimitPerson \
+      Tic \
+      Logout \
+      \
+      LoginWebUser \
+      CheckPersonUnlimitedState \
       Tic \
       Logout \
       ' + self.lock_user_string() + '\
