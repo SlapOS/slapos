@@ -522,6 +522,16 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepCheckInstanceLocked(self, sequence, **kw):
+    instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+    self.assertEqual('locked', instance.getSlapState())
+
+  def stepCheckInstanceNotLocked(self, sequence, **kw):
+    instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+    self.assertNotEqual('locked', instance.getSlapState())
+
   def test_automated_software_instance_unlock(self):
     """Locked person's instance are automatically locked
     """
