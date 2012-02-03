@@ -49,6 +49,8 @@ def run(args):
       os.environ['DISPLAY'] = config['display']
       xvfb = Xvfb(config['etc_directory'], config['xvfb_binary'])
       profile_dir = os.path.join(config['etc_directory'], 'profile')
+      # XXX-Cedric : change Firefox prefs.js generation so that it can take a
+      #              list of websites supposed to be reached instead of config['base_url']
       browser = Firefox(profile_dir, config['base_url'], config['browser_binary'])
       try:
         start = time.time()
