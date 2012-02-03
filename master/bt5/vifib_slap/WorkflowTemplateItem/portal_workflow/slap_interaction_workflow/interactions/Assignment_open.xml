@@ -34,7 +34,7 @@
             <key> <string>before_commit_script_name</string> </key>
             <value>
               <list>
-                <string>Person_fixConsistency</string>
+                <string>Assignment_fixPersonConsistency</string>
               </list>
             </value>
         </item>
@@ -50,13 +50,13 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_new</string> </value>
+            <value> <string>Assignment_open</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>manage_afterAdd</string>
+                <string>open</string>
               </list>
             </value>
         </item>
@@ -68,7 +68,7 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Person</string>
+                <string>Assignment</string>
               </list>
             </value>
         </item>
