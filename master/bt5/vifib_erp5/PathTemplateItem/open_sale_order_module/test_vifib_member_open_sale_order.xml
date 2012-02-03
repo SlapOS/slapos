@@ -71,7 +71,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>OSO-16</string> </value>
+            <value> <string>OSO-test_vifib_member</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

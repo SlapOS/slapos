@@ -71,7 +71,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>OSO-13</string> </value>
+            <value> <string>OSO-test_sale_agent</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
