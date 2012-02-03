@@ -331,6 +331,12 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
   def stepCancelPayment(self, sequence, **kw):
     sequence['payment_transaction'].cancel()
 
+  def stepStartPayment(self, sequence, **kw):
+    sequence['payment_transaction'].start()
+
+  def stepStopPayment(self, sequence, **kw):
+    sequence['payment_transaction'].stop()
+
   def stepDeliverPayment(self, sequence, **kw):
     sequence['payment_transaction'].deliver()
 
@@ -463,6 +469,8 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       LoginERP5TypeTestCase \
       CreatePastSmallPayment \
       Tic \
+      StartPayment \
+      StopPayment \
       DeliverPayment \
       Tic \
       Logout \
