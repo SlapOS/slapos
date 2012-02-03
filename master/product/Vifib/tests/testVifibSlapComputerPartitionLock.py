@@ -343,7 +343,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       \
       LoginERP5TypeTestCase \
-      CreatePastNotPaidPayment \
+      CreatePastSmallPayment \
       Tic \
       Logout \
       \
