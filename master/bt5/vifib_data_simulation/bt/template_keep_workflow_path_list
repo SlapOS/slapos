@@ -17,3 +17,4 @@ portal_rules/new_invoice_root_simulation_rule
 portal_rules/new_order_root_simulation_rule
 portal_rules/new_payment_simulation_rule
 portal_rules/default_subscription_item_rule
+portal_rules/new_trade_model_simulation_rule
