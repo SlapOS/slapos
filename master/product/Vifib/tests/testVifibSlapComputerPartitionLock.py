@@ -546,6 +546,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       ' + \
       self.create_new_user_instance_sequence_string + \
       self.lock_user_string() + '\
+      LoginERP5TypeTestCase \
       CheckInstanceLocked \
       \
       DeliverPayment \
