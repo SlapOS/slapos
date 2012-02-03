@@ -6,12 +6,6 @@
   <role id='G-COMPANY'>
    <item>Assignor</item>
   </role>
-  <role id='HOSTSUBS-0'>
-   <item>Auditor</item>
-  </role>
-  <role id='HOSTSUBS-1'>
-   <item>Auditor</item>
-  </role>
   <role id='test_vifib_customer'>
    <item>Assignee</item>
   </role>
