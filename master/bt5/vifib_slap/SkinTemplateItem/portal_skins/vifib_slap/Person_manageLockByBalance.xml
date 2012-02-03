@@ -67,13 +67,14 @@ if maximum_balance > balance:\n
       return\n
 \n
 # check ongoing payments and check that date if is acceptable, if not lock\n
-if context.portal_catalog.countResults(\n
-  portal_type=\'Payment Transaction\',\n
+if context.portal_simulation.getInventoryAssetPrice(\n
+  parent_portal_type=\'Payment Transaction\',\n
+  node_category=\'account_type/asset/receivable\',\n
   simulation_state=ongoing_simulation_state,\n
-  **{\n
-    \'delivery.destination_section_uid\': customer_uid,\n
-    \'delivery.start_date\': \'<= %s\' % maximum_due_date\n
-  })[0][0] > 0:\n
+  section_uid=section_uid,\n
+  mirror_section_uid=customer_uid,\n
+  at_date=maximum_due_date,\n
+  ) > 0:\n
     # there are ongoing old payments, shall be locked\n
     if not locked and operation == \'lock\':\n
         context.lock(comment="Payment transaction not paid for more than %s days" % maximum_due_date)\n
