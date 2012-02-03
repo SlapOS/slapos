@@ -63,7 +63,7 @@ method_kw.update(\n
 )\n
 portal_catalog.searchAndActivate(\n
   method_id=\'Person_manageLockByBalance\',\n
-  payment_state=\'unlocked\',\n
+  payment_state=\'!= locked\',\n
   portal_type=\'Person\',\n
   activate_kw={\'tag\': tag},\n
   method_kw=method_kw\n
