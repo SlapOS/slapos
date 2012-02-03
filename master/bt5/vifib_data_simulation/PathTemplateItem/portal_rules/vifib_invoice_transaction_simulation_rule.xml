@@ -134,7 +134,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>new_invoice_transaction_simulation_rule</string> </value>
+            <value> <string>vifib_invoice_transaction_simulation_rule</string> </value>
         </item>
         <item>
             <key> <string>index</string> </key>

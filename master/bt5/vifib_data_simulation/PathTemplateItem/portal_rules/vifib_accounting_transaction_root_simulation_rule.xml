@@ -56,7 +56,7 @@ This is not used anymore and is left only as an example.</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>new_accounting_transaction_root_simulation_rule</string> </value>
+            <value> <string>vifib_accounting_transaction_root_simulation_rule</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>

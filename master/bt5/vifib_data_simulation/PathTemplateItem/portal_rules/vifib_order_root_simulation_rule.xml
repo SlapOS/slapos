@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Delivery Simulation Rule" module="erp5.portal_type"/>
+      <global name="Order Root Simulation Rule" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -91,7 +91,7 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_phase/vifib/delivery</string>
+                <string>trade_phase/vifib/order</string>
               </tuple>
             </value>
         </item>
@@ -107,7 +107,7 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1321916400.0</float>
+                    <float>1322002800.0</float>
                     <string>GMT+1</string>
                   </tuple>
                 </state>
@@ -115,16 +115,8 @@
             </value>
         </item>
         <item>
-            <key> <string>criterion_property</string> </key>
-            <value>
-              <tuple>
-                <string>portal_type</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>default_delivering_rule</string> </value>
+            <value> <string>default_order_rule</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -134,34 +126,12 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>new_delivery_simulation_rule</string> </value>
-        </item>
-        <item>
-            <key> <string>int_index</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>vifib_order_root_simulation_rule</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
             <value>
               <none/>
-            </value>
-        </item>
-        <item>
-            <key> <string>membership_criterion_base_category</string> </key>
-            <value>
-              <tuple>
-                <string>trade_phase</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>membership_criterion_category</string> </key>
-            <value>
-              <tuple>
-                <string>trade_phase/vifib/order</string>
-              </tuple>
             </value>
         </item>
         <item>
@@ -183,25 +153,19 @@
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Delivery Simulation Rule</string> </value>
-        </item>
-        <item>
-            <key> <string>string_index</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>Order Root Simulation Rule</string> </value>
         </item>
         <item>
             <key> <string>test_method_id</string> </key>
             <value>
               <tuple>
-                <string>SimulationMovement_testDeliverySimulationRule</string>
+                <string>Rule_testFalse</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Vifib Delivery Simulation Rule</string> </value>
+            <value> <string>Vifib Order Root Simulation Rule</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -224,23 +188,17 @@
   </record>
   <record id="3" aka="AAAAAAAAAAM=">
     <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
     </pickle>
     <pickle>
       <dictionary>
         <item>
             <key> <string>data</string> </key>
             <value>
-              <dictionary>
-                <item>
-                    <key> <string>portal_type</string> </key>
-                    <value>
-                      <list>
-                        <string>Simulation Movement</string>
-                      </list>
-                    </value>
-                </item>
-              </dictionary>
+              <dictionary/>
             </value>
         </item>
       </dictionary>
@@ -256,14 +214,27 @@
   </record>
   <record id="5" aka="AAAAAAAAAAU=">
     <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
     </pickle>
     <pickle>
       <dictionary>
         <item>
             <key> <string>data</string> </key>
             <value>
-              <dictionary/>
+              <dictionary>
+                <item>
+                    <key> <string>start_date</string> </key>
+                    <value>
+                      <tuple>
+                        <none/>
+                        <none/>
+                      </tuple>
+                    </value>
+                </item>
+              </dictionary>
             </value>
         </item>
       </dictionary>
@@ -334,7 +305,7 @@
             </item>
             <item>
                 <key> <string>serial</string> </key>
-                <value> <string>914.38145.39074.39048</string> </value>
+                <value> <string>914.38207.13830.46660</string> </value>
             </item>
             <item>
                 <key> <string>state</string> </key>
@@ -352,142 +323,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1321978283.37</float>
-                        <string>GMT+1</string>
-                      </tuple>
-                    </state>
-                  </object>
-                </value>
-            </item>
-          </dictionary>
-          <dictionary>
-            <item>
-                <key> <string>action</string> </key>
-                <value> <string>edit</string> </value>
-            </item>
-            <item>
-                <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
-            </item>
-            <item>
-                <key> <string>comment</string> </key>
-                <value>
-                  <none/>
-                </value>
-            </item>
-            <item>
-                <key> <string>error_message</string> </key>
-                <value> <string></string> </value>
-            </item>
-            <item>
-                <key> <string>serial</string> </key>
-                <value> <string>914.38187.25536.60893</string> </value>
-            </item>
-            <item>
-                <key> <string>state</string> </key>
-                <value> <string>current</string> </value>
-            </item>
-            <item>
-                <key> <string>time</string> </key>
-                <value>
-                  <object>
-                    <klass> <reference id="8.1"/> </klass>
-                    <tuple>
-                      <none/>
-                    </tuple>
-                    <state>
-                      <tuple>
-                        <float>1321978355.42</float>
-                        <string>GMT+1</string>
-                      </tuple>
-                    </state>
-                  </object>
-                </value>
-            </item>
-          </dictionary>
-          <dictionary>
-            <item>
-                <key> <string>action</string> </key>
-                <value> <string>edit</string> </value>
-            </item>
-            <item>
-                <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
-            </item>
-            <item>
-                <key> <string>comment</string> </key>
-                <value>
-                  <none/>
-                </value>
-            </item>
-            <item>
-                <key> <string>error_message</string> </key>
-                <value> <string></string> </value>
-            </item>
-            <item>
-                <key> <string>serial</string> </key>
-                <value> <string>914.38188.38702.27392</string> </value>
-            </item>
-            <item>
-                <key> <string>state</string> </key>
-                <value> <string>current</string> </value>
-            </item>
-            <item>
-                <key> <string>time</string> </key>
-                <value>
-                  <object>
-                    <klass> <reference id="8.1"/> </klass>
-                    <tuple>
-                      <none/>
-                    </tuple>
-                    <state>
-                      <tuple>
-                        <float>1321978401.09</float>
-                        <string>GMT+1</string>
-                      </tuple>
-                    </state>
-                  </object>
-                </value>
-            </item>
-          </dictionary>
-          <dictionary>
-            <item>
-                <key> <string>action</string> </key>
-                <value> <string>edit</string> </value>
-            </item>
-            <item>
-                <key> <string>actor</string> </key>
-                <value> <string>zope</string> </value>
-            </item>
-            <item>
-                <key> <string>comment</string> </key>
-                <value>
-                  <none/>
-                </value>
-            </item>
-            <item>
-                <key> <string>error_message</string> </key>
-                <value> <string></string> </value>
-            </item>
-            <item>
-                <key> <string>serial</string> </key>
-                <value> <string>914.38189.38956.36778</string> </value>
-            </item>
-            <item>
-                <key> <string>state</string> </key>
-                <value> <string>current</string> </value>
-            </item>
-            <item>
-                <key> <string>time</string> </key>
-                <value>
-                  <object>
-                    <klass> <reference id="8.1"/> </klass>
-                    <tuple>
-                      <none/>
-                    </tuple>
-                    <state>
-                      <tuple>
-                        <float>1322042025.02</float>
+                        <float>1322042032.49</float>
                         <string>GMT+1</string>
                       </tuple>
                     </state>
@@ -532,97 +368,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1324291673.95</float>
-                        <string>GMT+1</string>
-                      </tuple>
-                    </state>
-                  </object>
-                </value>
-            </item>
-          </dictionary>
-          <dictionary>
-            <item>
-                <key> <string>action</string> </key>
-                <value> <string>edit</string> </value>
-            </item>
-            <item>
-                <key> <string>actor</string> </key>
-                <value> <string>superluke</string> </value>
-            </item>
-            <item>
-                <key> <string>comment</string> </key>
-                <value>
-                  <none/>
-                </value>
-            </item>
-            <item>
-                <key> <string>error_message</string> </key>
-                <value> <string></string> </value>
-            </item>
-            <item>
-                <key> <string>serial</string> </key>
-                <value> <string>915.12647.58940.22425</string> </value>
-            </item>
-            <item>
-                <key> <string>state</string> </key>
-                <value> <string>current</string> </value>
-            </item>
-            <item>
-                <key> <string>time</string> </key>
-                <value>
-                  <object>
-                    <klass> <reference id="8.1"/> </klass>
-                    <tuple>
-                      <none/>
-                    </tuple>
-                    <state>
-                      <tuple>
-                        <float>1324296132.81</float>
-                        <string>GMT+1</string>
-                      </tuple>
-                    </state>
-                  </object>
-                </value>
-            </item>
-          </dictionary>
-          <dictionary>
-            <item>
-                <key> <string>action</string> </key>
-                <value> <string>edit</string> </value>
-            </item>
-            <item>
-                <key> <string>actor</string> </key>
-                <value> <string>superluke</string> </value>
-            </item>
-            <item>
-                <key> <string>comment</string> </key>
-                <value>
-                  <none/>
-                </value>
-            </item>
-            <item>
-                <key> <string>error_message</string> </key>
-                <value> <string></string> </value>
-            </item>
-            <item>
-                <key> <string>serial</string> </key>
-                <value> <string>915.58652.61044.15803</string> </value>
-            </item>
-            <item>
-                <key> <string>state</string> </key>
-                <value> <string>current</string> </value>
-            </item>
-            <item>
-                <key> <string>time</string> </key>
-                <value>
-                  <object>
-                    <klass> <reference id="8.1"/> </klass>
-                    <tuple>
-                      <none/>
-                    </tuple>
-                    <state>
-                      <tuple>
-                        <float>1327588714.75</float>
+                        <float>1324291653.68</float>
                         <string>GMT+1</string>
                       </tuple>
                     </state>
@@ -671,7 +417,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1321978415.64</float>
+                        <float>1321979472.63</float>
                         <string>GMT+1</string>
                       </tuple>
                     </state>
@@ -710,7 +456,7 @@
                     </tuple>
                     <state>
                       <tuple>
-                        <float>1321978415.65</float>
+                        <float>1321979472.64</float>
                         <string>GMT+1</string>
                       </tuple>
                     </state>
