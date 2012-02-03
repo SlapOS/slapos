@@ -326,6 +326,14 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     payment_transaction.confirm()
     payment_transaction.checkConsistency()
 
+    sequence['payment_transaction'] = payment_transaction
+
+  def stepCancelPayment(self, sequence, **kw):
+    sequence['payment_transaction'].cancel()
+
+  def stepDeliverPayment(self, sequence, **kw):
+    sequence['payment_transaction'].deliver()
+
   def test_automated_person_past_not_paid_locking(self):
     """Test that a person is automatically locked by an alarm if payment has
     not been done for a long time.
