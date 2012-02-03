@@ -1,4 +1,5 @@
 service_module/vifib_registration
+service_module/computer_registration
 open_sale_order_module/test_hr_admin_open_sale_order
 open_sale_order_module/test_sale_agent_open_sale_order
 open_sale_order_module/test_updated_vifib_user_open_sale_order
