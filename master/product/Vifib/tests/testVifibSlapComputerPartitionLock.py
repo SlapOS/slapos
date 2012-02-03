@@ -316,15 +316,14 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     payment_transaction.newContent(
         portal_type="Accounting Transaction Line",
         quantity=1,
-        source='account_module/receivable',
+        destination='account_module/receivable',
         )
     payment_transaction.newContent(
         portal_type="Accounting Transaction Line",
         quantity=-1,
-        source='account_module/sales',
+        destination='account_module/sales',
         )
     payment_transaction.confirm()
-    # XXX More info needed
     payment_transaction.checkConsistency()
 
   def test_automated_person_past_not_paid_locking(self):
