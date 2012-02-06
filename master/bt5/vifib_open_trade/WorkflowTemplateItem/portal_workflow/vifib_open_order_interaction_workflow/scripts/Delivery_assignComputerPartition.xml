@@ -50,7 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>from zExceptions import Unauthorized\n
+portal = context.getPortalObject()\n
 \n
 order = state_change[\'object\']\n
 \n
@@ -63,7 +64,7 @@ for order_line in order.getMovementList():\n
     computer_partition = order_line.getAggregateValue(portal_type="Computer Partition")\n
     if computer_partition is None:\n
       if not order.Delivery_isDestinationSectionAllowedToRequest():\n
-        raise ValueError(\'Request disallowed\')\n
+        raise Unauthorized(\'Request disallowed\')\n
       software_release = order_line.getAggregateValue(portal_type="Software Release")\n
       software_instance = order_line.getAggregateValue(portal_type=instance_portal_type_list)\n
 \n
