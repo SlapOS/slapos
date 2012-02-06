@@ -66,14 +66,14 @@ for sale_order_line in portal.portal_catalog(\n
     except ValidationFailed:\n
       # order not ready yet\n
       continue\n
-    except Unauthorized:\n
-      # user has bad balance\n
-      continue\n
     else:\n
       try:\n
         sale_order.confirm()\n
       except ValueError:\n
         # It was not possible to find free Computer Partition\n
+        continue\n
+      except Unauthorized:\n
+        # user has bad balance\n
         continue\n
 </string> </value>
         </item>
