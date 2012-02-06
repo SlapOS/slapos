@@ -35,6 +35,7 @@
             <value>
               <list>
                 <string>Person_createOpenOrder</string>
+                <string>Person_createRegistrationInvoice</string>
               </list>
             </value>
         </item>

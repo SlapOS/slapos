@@ -1,0 +1,105 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>person = state_change[\'object\']\n
+portal = person.getPortalObject()\n
+\n
+invoice_line = portal.portal_catalog.getResultValue(\n
+  default_destination_section_uid=person.getUid(),\n
+  resource=self.portal.portal_preferences.getPreferredRegistrationResource(),\n
+  portal_type="Invoice Line",\n
+  # XXX Hardcoded\n
+  simulation_state=["stopped", "delivered"])\n
+\n
+if invoice_line is None:\n
+  tag = \'%s_createRegistrationInvoice\' % person.getUid()\n
+  kw = {\'activate_kw\': {\'tag\': tag}}\n
+\n
+  if portal.portal_activities.countMessageWithTag(tag) == 0:\n
+\n
+    invoice = portal.accounting_module.newContent(\n
+      portal_type=\'Sale Invoice Transaction\',\n
+      start_date=DateTime(),\n
+      resource=\'currency_module/EUR\',\n
+      source_section=\'organisation_module/vifib_internet\',\n
+      source=\'organisation_module/vifib_internet\',\n
+      destination_section=person.getRelativeUrl(),\n
+      destination=person.getRelativeUrl(),\n
+      specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
+      **kw\n
+    )\n
+    invoice.newContent(\n
+      portal_type=\'Invoice Line\',\n
+      resource=self.portal.portal_preferences.getPreferredRegistrationResource(),\n
+      quantity=1,\n
+      price=1\n
+      **kw,\n
+    )\n
+\n
+    invoice.plan(**kw)\n
+    invoice.confirm(**kw)\n
+    invoice.start(**kw)\n
+    invoice.stop(**kw)\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>state_change</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Person_createRegistrationInvoice</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
