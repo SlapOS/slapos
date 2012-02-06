@@ -55,7 +55,7 @@ portal = person.getPortalObject()\n
 \n
 invoice_line = portal.portal_catalog.getResultValue(\n
   default_destination_section_uid=person.getUid(),\n
-  resource=self.portal.portal_preferences.getPreferredRegistrationResource(),\n
+  resource=portal.portal_preferences.getPreferredRegistrationResource(),\n
   portal_type="Invoice Line",\n
   # XXX Hardcoded\n
   simulation_state=["stopped", "delivered"])\n
@@ -79,7 +79,7 @@ if invoice_line is None:\n
     )\n
     invoice.newContent(\n
       portal_type=\'Invoice Line\',\n
-      resource=self.portal.portal_preferences.getPreferredRegistrationResource(),\n
+      resource=portal.portal_preferences.getPreferredRegistrationResource(),\n
       quantity=1,\n
       price=1\n
       **kw,\n
