@@ -6,6 +6,7 @@ from random import random
 from slapos import slap
 from AccessControl import Unauthorized
 from DateTime import DateTime
+from Products.ERP5Type.tests.backportUnittest import skip
 
 class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
@@ -17,6 +18,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     self.assertEquals('open_order_created', person.getSlapState())
     self.assertEquals(person.getSlapState(), person.getPaymentState())
 
+  @skip('Dropped implementation')
   def test_person_payment_state(self):
     """Person payment state value is the same than slap state
     """
@@ -94,6 +96,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
       '
 
+  @skip('Dropped implementation')
   def test_person_locked_by_default(self):
     """Newly registered customer are locked by default
     """
@@ -125,7 +128,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       sla_xml=sequence.get('sla_xml'),
       **kw)
 
-  def test_locked_person_request(self):
+  def test_negative_person_balance_request(self):
     """Locked person can not request
     """
     sequence_list = SequenceList()
@@ -165,6 +168,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       'web_user'])
     person.unlimit()
 
+  @skip('Dropped implementation')
   def test_automated_person_without_payment_unlocking(self):
     """Test that a person is automatically unlocked by an alarm if no payment
     """
@@ -187,6 +191,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_automated_person_without_payment_not_locking(self):
     """Test that a person is not automatically locked by an alarm if no payment
     """
@@ -286,6 +291,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     Logout
   """
 
+  @skip('Dropped implementation')
   def test_automated_person_small_not_paid_not_locking(self):
     """Test that a person is not automatically locked by an alarm if
     recent small payment is not paid yet
@@ -355,6 +361,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
   def stepDeliverPayment(self, sequence, **kw):
     sequence['payment_transaction'].deliver()
 
+  @skip('Dropped implementation')
   def test_automated_person_past_not_paid_locking(self):
     """Test that a person is automatically locked by an alarm if payment has
     not been done for a long time.
@@ -392,6 +399,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_automated_unlimited_person_past_not_paid_locking(self):
     """Test that an unlimited person is automatically locked by 
     an alarm if payment has not been done for a long time.
@@ -452,6 +460,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     )
     sequence['invoice'] = invoice
 
+  @skip('Dropped implementation')
   def test_automated_person_high_not_paid_locking(self):
     """Test that a person is automatically locked by an alarm if payment has
     an high quantity
@@ -480,6 +489,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_automated_unlimited_person_high_not_paid_locking(self):
     """Test that an unlimited person is automatically locked by 
     an alarm if payment has an high quantity
@@ -510,6 +520,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_automated_person_with_ongoing_payment_unlocking(self):
     """Test that a person is can not be unlocked if there is an ongoing
     payment.
@@ -544,6 +555,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_automated_person_with_delivered_payment_unlocking(self):
     """Test that a person is can be unlocked if payment are delivered
     """
@@ -580,6 +592,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_automated_person_with_cancelled_payment_unlocking(self):
     """Test that a person is can be unlocked if payment are cancelled
     """
@@ -624,6 +637,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       uid=sequence['software_instance_uid'])
     self.assertNotEqual('locked', instance.getSlapState())
 
+  @skip('Dropped implementation')
   def test_automated_software_instance_unlock(self):
     """Locked person's instance are automatically locked
     """
@@ -708,6 +722,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       Logout \
         '
 
+  @skip('Dropped implementation')
   def test_locked_instance_request(self):
     """Locked person's instance can not request
     """
@@ -727,6 +742,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_requested(self):
     """Locked person's requested instance are automatically locked
     """
@@ -746,6 +762,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_building(self):
     """Locked person's building instance are automatically locked
     """
@@ -771,6 +788,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_installed(self):
     """Locked person's installed instance are automatically locked
     """
@@ -798,6 +816,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_starting(self):
     """Locked person's starting instance are automatically locked
     """
@@ -830,6 +849,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_started(self):
     """Locked person's started instance are automatically locked
     """
@@ -867,6 +887,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_stopping(self):
     """Locked person's stopping instance are automatically locked
     """
@@ -909,6 +930,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_stopped(self):
     """Locked person's stopped instance are automatically locked
     """
@@ -956,6 +978,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_update(self):
     """Locked person's updated instance are automatically locked
     """
@@ -998,6 +1021,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_destroying(self):
     """Locked person's destroying instance are not automatically locked
     """
@@ -1040,6 +1064,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_destroyed(self):
     """Locked person's destroyed instance are not automatically locked
     """
@@ -1087,6 +1112,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_software_instance_can_be_destroyed(self):
     """Locked person's instance can be destroyed
     """
@@ -1126,6 +1152,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_requested(self):
     """Locked person's requested instance are automatically locked
     """
@@ -1145,6 +1172,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_building(self):
     """Locked person's building instance are automatically locked
     """
@@ -1170,6 +1198,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_installed(self):
     """Locked person's installed instance are automatically locked
     """
@@ -1197,6 +1226,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_starting(self):
     """Locked person's starting instance are automatically locked
     """
@@ -1229,6 +1259,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_started(self):
     """Locked person's started instance are automatically locked
     """
@@ -1266,6 +1297,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_stopping(self):
     """Locked person's stopping instance are automatically locked
     """
@@ -1308,6 +1340,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_stopped(self):
     """Locked person's stopped instance are automatically locked
     """
@@ -1355,6 +1388,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_update(self):
     """Locked person's updated instance are automatically locked
     """
@@ -1397,6 +1431,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_destroying(self):
     """Locked person's destroying instance are not automatically locked
     """
@@ -1439,6 +1474,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_destroyed(self):
     """Locked person's destroyed instance are not automatically locked
     """
@@ -1486,6 +1522,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Dropped implementation')
   def test_lock_slave_instance_can_be_destroyed(self):
     """Locked person's instance can be destroyed
     """
