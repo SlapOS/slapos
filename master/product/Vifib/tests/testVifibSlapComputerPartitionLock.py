@@ -109,6 +109,33 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_negative_person_balance_request_slave(self):
+    """Locked person can not request
+    """
+    sequence_list = SequenceList()
+    sequence_string = \
+      self.prepare_install_requested_computer_partition_sequence_string + \
+      self.register_new_user_sequence_string + \
+      self.lock_user_string() + '\
+      LoginWebUser \
+      PersonRequestSlaveInstance \
+      Tic \
+      Logout \
+      \
+      LoginDefaultUser \
+      SoftwareInstanceSaleOrderConfirmRaisesUnauthorized \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      AssertNoComputerPartition \
+      Logout \
+      \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def stepCreateSmallInvoiceWebUser(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
