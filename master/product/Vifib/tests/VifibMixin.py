@@ -211,8 +211,6 @@ class testVifibMixin(ERP5TypeTestCase):
       person = person.getObject()
       if isTransitionPossible(person, 'validate'):
         person.validate()
-      if isTransitionPossible(person, 'unlock'):
-        person.unlock()
       for assignment in person.contentValues(portal_type='Assignment'):
         if isTransitionPossible(assignment, 'open'):
           assignment.open()
