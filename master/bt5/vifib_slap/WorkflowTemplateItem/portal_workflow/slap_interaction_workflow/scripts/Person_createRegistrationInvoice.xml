@@ -81,8 +81,8 @@ if invoice_line is None:\n
       portal_type=\'Invoice Line\',\n
       resource=portal.portal_preferences.getPreferredRegistrationResource(),\n
       quantity=1,\n
-      price=1\n
-      **kw,\n
+      price=1,\n
+      **kw\n
     )\n
 \n
     invoice.plan(**kw)\n
