@@ -22,8 +22,8 @@
             <key> <string>transitions</string> </key>
             <value>
               <tuple>
+                <string>draft</string>
                 <string>request_software_instance</string>
-                <string>unlock</string>
               </tuple>
             </value>
         </item>

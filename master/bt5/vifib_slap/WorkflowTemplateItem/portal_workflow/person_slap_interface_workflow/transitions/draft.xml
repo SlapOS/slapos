@@ -38,7 +38,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>unlock</string> </value>
+            <value> <string>draft</string> </value>
         </item>
         <item>
             <key> <string>new_state_id</string> </key>
