@@ -12,7 +12,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>locked</string> </value>
+            <value> <string>draft</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
@@ -22,7 +22,7 @@
             <key> <string>transitions</string> </key>
             <value>
               <tuple>
-                <string>unlock</string>
+                <string>request_software_instance</string>
               </tuple>
             </value>
         </item>

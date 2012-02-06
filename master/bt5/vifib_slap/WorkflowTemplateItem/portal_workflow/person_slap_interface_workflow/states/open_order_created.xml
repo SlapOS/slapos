@@ -16,12 +16,13 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string></string> </value>
+            <value> <string>Backward compatibility state</string> </value>
         </item>
         <item>
             <key> <string>transitions</string> </key>
             <value>
               <tuple>
+                <string>request_software_instance</string>
                 <string>unlock</string>
               </tuple>
             </value>
