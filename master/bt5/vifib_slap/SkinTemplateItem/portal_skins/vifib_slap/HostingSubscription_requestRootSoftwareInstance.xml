@@ -163,11 +163,11 @@ if (request_software_instance is None):\n
       stop_date=stop_date,\n
       quantity=1,\n
       quantity_unit="unit/piece",\n
-      price=1,\n
       price_currency="currency_module/EUR",\n
       specialise=sale_order.getSpecialise(portal_type="Sale Trade Condition"),\n
       # XXX Hardcoded values\\n\n
       resource=subscription_service_relative_url,\n
+      price=context.restrictedTraverse(subscription_service_relative_url).getSaleSupplyLineBasePrice(),\n
       destination=person_relative_url,\n
       destination_section=person_relative_url,\n
       source="organisation_module/vifib_internet",\n
