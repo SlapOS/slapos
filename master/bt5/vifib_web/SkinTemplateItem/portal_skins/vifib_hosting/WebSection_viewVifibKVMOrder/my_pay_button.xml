@@ -145,7 +145,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: not here.portal_membership.isAnonymousUser() and here.ERP5Site_getNextPlannedPaymentTransaction() is not None</string> </value>
+            <value> <string>python: not here.portal_membership.isAnonymousUser() and here.ERP5Site_getInitialPlannedPaymentTransaction() is not None</string> </value>
         </item>
       </dictionary>
     </pickle>
@@ -158,7 +158,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: here.ERP5Site_getNextPlannedPaymentTransaction().getRelativeUrl() + \'/AccountingTransaction_startPayment\'</string> </value>
+            <value> <string>python: here.ERP5Site_getInitialPlannedPaymentTransaction().getRelativeUrl() + \'/AccountingTransaction_startPayment\'</string> </value>
         </item>
       </dictionary>
     </pickle>

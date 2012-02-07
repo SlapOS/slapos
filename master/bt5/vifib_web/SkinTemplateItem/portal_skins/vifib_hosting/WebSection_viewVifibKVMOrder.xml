@@ -105,7 +105,6 @@
                     <value>
                       <list>
                         <string>my_description</string>
-                        <string>my_pay_button</string>
                       </list>
                     </value>
                 </item>
@@ -116,6 +115,9 @@
                         <string>my_login_button</string>
                         <string>my_join_button</string>
                         <string>my_order_button</string>
+                        <string>my_pay_button</string>
+                        <string>your_payment_preparation_js</string>
+                        <string>your_payment_in_progress_js</string>
                       </list>
                     </value>
                 </item>
