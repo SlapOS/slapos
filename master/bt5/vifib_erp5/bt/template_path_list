@@ -72,3 +72,4 @@ service_module/computer_registration
 service_module/computer_registration/**
 service_module/vifib_discount
 service_module/vifib_registration
+service_module/vifib_registration/default_ssl
