@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Business Link" module="erp5.portal_type"/>
+      <global name="Trade Model Path" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -22,27 +22,15 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
+                <string>trade_date/trade_phase/vifib/invoicing</string>
                 <string>trade_phase/vifib/discount</string>
-                <string>delivery_builder/portal_deliveries/vifib_sale_invoice_transaction_trade_model_builder</string>
-                <string>predecessor/trade_state/invoiced</string>
-                <string>successor/trade_state/accounted</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>completed_state</string> </key>
-            <value>
-              <tuple>
-                <string>confirmed</string>
-                <string>delivered</string>
-                <string>started</string>
-                <string>stopped</string>
+                <string>trade_phase/vifib/tax</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>discount</string> </value>
+            <value> <string>applied_trade_model_path</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -51,29 +39,24 @@
             </value>
         </item>
         <item>
-            <key> <string>frozen_state</string> </key>
-            <value>
-              <tuple>
-                <string>delivered</string>
-                <string>stopped</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
             <key> <string>id</string> </key>
-            <value> <string>discount</string> </value>
+            <value> <string>trade_model_path</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
             <value> <int>4</int> </value>
         </item>
         <item>
+            <key> <string>payment_end_of_month</string> </key>
+            <value> <int>0</int> </value>
+        </item>
+        <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Business Link</string> </value>
+            <value> <string>Trade Model Path</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>discount</string> </value>
+            <value> <string>Applied Trade Model Path</string> </value>
         </item>
       </dictionary>
     </pickle>
