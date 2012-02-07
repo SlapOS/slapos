@@ -78,7 +78,7 @@ possible_previous_id =  integration_site.getMappingFromCategory(\'causality/%s\'
 if possible_previous_id != \'Causality/%s\' % transaction.getRelativeUrl():\n
   previous_id = possible_previous_id.split(\'/\')[1]\n
 \n
-if previous_id is None: \n
+if previous_id is None:\n
   raise ValueError(\'Transaction %s had not defined payzen integration\' % previous_transaction.getRelativeUrl())\n
 \n
 previous_date, previous_id = previous_id.split(\'_\')\n
@@ -98,7 +98,7 @@ except ValueError:\n
   mapping = integration_site.Causality[mapping_id]\n
   mapping.setDestinationReference(\'causality/%s\' % transaction.getRelativeUrl())\n
 else:\n
-  raise ValueError(comment=\'Key %s already found!\' % mapping_id)\n
+  raise ValueError(\'Key %s already found.\' % mapping_id)\n
 \n
 # do causality mapping in integration_site between transaction.getRelativeUrl and today + transaction_id\n
 payzen_dict = {}\n
