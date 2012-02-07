@@ -94,16 +94,20 @@
                     <value>
                       <list>
                         <tuple>
-                          <string>title</string>
-                          <string>Title</string>
-                        </tuple>
-                        <tuple>
                           <string>reference</string>
-                          <string>Reference</string>
+                          <string>Invoice Number</string>
                         </tuple>
                         <tuple>
-                          <string>translated_simulation_state_title</string>
-                          <string>State</string>
+                          <string>total_price</string>
+                          <string>Total Price</string>
+                        </tuple>
+                        <tuple>
+                          <string>resource_title</string>
+                          <string>Currency</string>
+                        </tuple>
+                        <tuple>
+                          <string>AccountingTransaction_getPaymentState</string>
+                          <string>Payment</string>
                         </tuple>
                       </list>
                     </value>
@@ -167,7 +171,7 @@
       <dictionary>
         <item>
             <key> <string>method_name</string> </key>
-            <value> <string>portal_catalog</string> </value>
+            <value> <string>WebSection_getUserInvoiceList</string> </value>
         </item>
       </dictionary>
     </pickle>
