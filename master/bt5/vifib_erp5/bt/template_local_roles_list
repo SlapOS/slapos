@@ -90,8 +90,8 @@ sale_trade_condition_module/vifib_trade_condition
 service_module
 service_module/computer_registration
 service_module/vifib_discount
-service_module/vifib_tax
 service_module/vifib_registration
+service_module/vifib_tax
 software_instance_module
 software_product_module
 software_product_module/test_software_product

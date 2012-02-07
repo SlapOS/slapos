@@ -23,6 +23,9 @@
  <portal_type id="Purchase Packing List Line">
   <item>VifibPurchasePackingListLineConstraint</item>
  </portal_type>
+ <portal_type id="Sale Invoice Transaction">
+  <item>VifibSaleInvoiceConstraint</item>
+ </portal_type>
  <portal_type id="Sale Order">
   <item>VifibSaleOrderConstraint</item>
  </portal_type>
