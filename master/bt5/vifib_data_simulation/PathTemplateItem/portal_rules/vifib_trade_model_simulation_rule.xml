@@ -63,10 +63,7 @@
         <item>
             <key> <string>categories</string> </key>
             <value>
-              <tuple>
-                <string>trade_phase/vifib/discount</string>
-                <string>trade_phase/vifib/tax</string>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>
