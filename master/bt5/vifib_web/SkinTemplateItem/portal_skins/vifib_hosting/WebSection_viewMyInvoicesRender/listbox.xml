@@ -17,6 +17,7 @@
                 <string>select</string>
                 <string>selection_name</string>
                 <string>title</string>
+                <string>url_columns</string>
               </list>
             </value>
         </item>
@@ -156,6 +157,29 @@
                 <item>
                     <key> <string>title</string> </key>
                     <value> <string>My Invoices</string> </value>
+                </item>
+                <item>
+                    <key> <string>url_columns</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>reference</string>
+                          <string></string>
+                        </tuple>
+                        <tuple>
+                          <string>total_price</string>
+                          <string></string>
+                        </tuple>
+                        <tuple>
+                          <string>resource_title</string>
+                          <string></string>
+                        </tuple>
+                        <tuple>
+                          <string>AccountingTransaction_getPaymentState</string>
+                          <string></string>
+                        </tuple>
+                      </list>
+                    </value>
                 </item>
               </dictionary>
             </value>
