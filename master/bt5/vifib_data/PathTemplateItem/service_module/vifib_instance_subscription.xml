@@ -89,6 +89,7 @@
                 <string>product_line/cloud/subscription</string>
                 <string>base_contribution/base_amount/invoicing/discounted</string>
                 <string>base_contribution/base_amount/invoicing/taxable</string>
+                <string>use/trade/sale</string>
               </tuple>
             </value>
         </item>

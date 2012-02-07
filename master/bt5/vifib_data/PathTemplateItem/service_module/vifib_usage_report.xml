@@ -65,6 +65,7 @@
                 <string>quantity_unit/volume/cubic_meter</string>
                 <string>product_line/cloud/usage</string>
                 <string>base_contribution/base_amount/invoicing/discounted</string>
+                <string>use/trade/sale</string>
               </tuple>
             </value>
         </item>
