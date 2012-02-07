@@ -66,8 +66,6 @@ for sale_invoice_transaction in portal.portal_catalog(\n
   if sale_invoice_transaction.getSimulationState() == \'planned\' and sale_invoice_transaction.getStartDate() < this_month:\n
     # do not trust catalog\n
     sale_invoice_transaction.confirm()\n
-    sale_invoice_transaction.start()\n
-    sale_invoice_transaction.stop()\n
 
 
 ]]></string> </value>
@@ -78,7 +76,7 @@ for sale_invoice_transaction in portal.portal_catalog(\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_stopPlannedSaleInvoiceTransaction</string> </value>
+            <value> <string>Alarm_confirmPlannedSaleInvoiceTransaction</string> </value>
         </item>
       </dictionary>
     </pickle>

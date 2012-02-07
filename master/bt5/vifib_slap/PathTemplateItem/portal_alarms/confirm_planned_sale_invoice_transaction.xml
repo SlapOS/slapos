@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_stopPlannedSaleInvoiceTransaction</string> </value>
+            <value> <string>Alarm_confirmPlannedSaleInvoiceTransaction</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>stop_planned_sale_invoice_transaction</string> </value>
+            <value> <string>confirm_planned_sale_invoice_transaction</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
@@ -83,7 +83,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Stop planned Sale Invoices before current month</string> </value>
+            <value> <string>Confirm planned Sale Invoices before current month</string> </value>
         </item>
       </dictionary>
     </pickle>
