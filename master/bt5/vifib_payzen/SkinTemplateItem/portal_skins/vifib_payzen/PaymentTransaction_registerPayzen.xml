@@ -51,6 +51,8 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
+if context.getSimulationState() != \'planned\':\n
+  return\n
 service = portal.portal_secure_payments.find()\n
 portal.system_event_module.newContent(title=\'Transaction %s Payzen registration\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).registerPayzen()\n
 </string> </value>

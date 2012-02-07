@@ -51,18 +51,18 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-for payment_transaction in portal.portal_catalog(\n
+portal.portal_catalog.searchAndActivate(\n
       portal_type="Payment Transaction", \n
       simulation_state="confirmed",\n
-      ):\n
-  # do not trust catalog\n
-  if payment_transaction.getSimulationState() == \'confirmed\':\n
-    payment_transaction.activate().PaymentTransaction_updateStatus()\n
+      method_id=\'PaymentTransaction_updateStatus\',\n
+      packet_size=1, # just one to minimise errors\n
+      activate_kw={\'tag\': tag}\n
+      )\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

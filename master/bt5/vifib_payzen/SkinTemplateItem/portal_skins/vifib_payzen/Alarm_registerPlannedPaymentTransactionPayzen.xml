@@ -51,19 +51,18 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-for payment_transaction in portal.portal_catalog(\n
+portal.portal_catalog.searchAndActivate(\n
       portal_type="Payment Transaction", \n
       simulation_state="planned",\n
-      limit=10\n
-      ):\n
-  # do not trust catalog\n
-  if payment_transaction.getSimulationState() == \'planned\':\n
-    payment_transaction.PaymentTransaction_registerPayzen()\n
+      method_id=\'PaymentTransaction_registerPayzen\',\n
+      packet_size=1, # just one to minimise errors\n
+      activate_kw={\'tag\': tag}\n
+      )\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
