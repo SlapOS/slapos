@@ -52,30 +52,19 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import getClosestDate\n
-\n
-portal = context.getPortalObject()\n
-this_month = getClosestDate(target_date=DateTime())\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=\'Sale Invoice Transaction\',\n
-  simulation_state=\'planned\',\n
-  method_id=\'SaleInvoiceTransaction_confirmPlanned\',\n
-  method_kw={\'this_month\': this_month},\n
-  activate_kw={\'tag\': tag},\n
-  **{"delivery.start_date": \'< %s\' % this_month}\n
-)\n
+if context.getSimulationState() == \'planned\' and context.getStartDate() < this_month:\n
+  context.confirm()\n
 
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string>this_month</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_confirmPlannedSaleInvoiceTransaction</string> </value>
+            <value> <string>SaleInvoiceTransaction_confirmPlanned</string> </value>
         </item>
       </dictionary>
     </pickle>
