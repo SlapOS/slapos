@@ -75,6 +75,7 @@ if invoice_line is None:\n
       destination_section=person.getRelativeUrl(),\n
       destination=person.getRelativeUrl(),\n
       specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
+      created_by_builder=1 # XXX to prevent init script to create lines\n
       **kw\n
     )\n
     invoice.newContent(\n
