@@ -88,8 +88,6 @@ if invoice_line is None:\n
 \n
     invoice.plan(**kw)\n
     invoice.confirm(**kw)\n
-    invoice.start(**kw)\n
-    invoice.stop(**kw)\n
 </string> </value>
         </item>
         <item>
