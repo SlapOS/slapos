@@ -14,7 +14,9 @@
                 <string>Assignor</string>
                 <string>Associate</string>
                 <string>Auditor</string>
+                <string>Author</string>
                 <string>Manager</string>
+                <string>Owner</string>
               </tuple>
             </value>
         </item>
@@ -25,7 +27,9 @@
                 <string>Assignee</string>
                 <string>Assignor</string>
                 <string>Associate</string>
+                <string>Author</string>
                 <string>Manager</string>
+                <string>Owner</string>
               </tuple>
             </value>
         </item>
@@ -36,7 +40,9 @@
                 <string>Assignee</string>
                 <string>Assignor</string>
                 <string>Associate</string>
+                <string>Author</string>
                 <string>Manager</string>
+                <string>Owner</string>
               </tuple>
             </value>
         </item>
@@ -48,7 +54,9 @@
                 <string>Assignor</string>
                 <string>Associate</string>
                 <string>Auditor</string>
+                <string>Author</string>
                 <string>Manager</string>
+                <string>Owner</string>
               </tuple>
             </value>
         </item>
@@ -131,7 +139,7 @@
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>The adoption solver resets the value of the delivery movement to the total of the values of related simulations. It eventually updates the delivery_ratio in the simulations.</string> </value>
+            <value> <string>This is automatic quantity adopt solver, which reset Movement quantity to sum of delivered Simulation Movements. It eventually updates the delivery_ratio in the simulations.</string> </value>
         </item>
         <item>
             <key> <string>factory</string> </key>
@@ -147,7 +155,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Consolidating Sale Invoice Line</string> </value>
+            <value> <string>Automatic Quantity Adopt Solver</string> </value>
         </item>
         <item>
             <key> <string>init_script</string> </key>
@@ -179,7 +187,7 @@
         </item>
         <item>
             <key> <string>solver_action_title</string> </key>
-            <value> <string>Replace value</string> </value>
+            <value> <string>Update quantity from prevision</string> </value>
         </item>
         <item>
             <key> <string>tested_property</string> </key>

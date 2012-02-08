@@ -59,7 +59,7 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>solver/portal_solvers/Consolidating Sale Invoice Line</string>
+                <string>solver/portal_solvers/Automatic Quantity Adopt Solver</string>
               </tuple>
             </value>
         </item>
