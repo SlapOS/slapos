@@ -142,7 +142,7 @@ class Recipe(GenericBaseRecipe):
     path_list.append(innobackupex_full)
     backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
     path_list.append(backup_controller)
-    # maatkit installation
+    # percona toolkit (formerly known as maatkit) installation
     for pt_script_name in (
         'pt-archiver',
         'pt-config-diff',
