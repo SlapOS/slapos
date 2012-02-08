@@ -190,19 +190,6 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       mirror_section_uid=person.getUid())
     )
 
-  create_small_registration_fee_invoice = """
-    LoginERP5TypeTestCase
-    CreateSmallInvoiceWebUser
-    Tic
-    PlanInvoice
-    Tic
-    ConfirmInvoice
-    StartInvoice
-    Tic
-    CheckWebUserBalanceSmallAmount
-    Logout
-  """
-
   def stepCreatePastSmallPayment(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
@@ -286,15 +273,11 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
   def lock_user_string(self):
     return '\
       LoginERP5TypeTestCase \
-      CreateHighBalanceInvoiceWebUser \
+      TriggerBuild \
       Tic \
-      PlanInvoice \
+      TriggerStopConfirmedInvoiceAlarm \
       Tic \
-      ConfirmInvoice \
-      StartInvoice \
-      Tic \
-      CheckWebUserBalanceHighAmount \
-      TriggerLockPersonAlarm \
+      TriggerBuild \
       Tic \
       Logout'
 
