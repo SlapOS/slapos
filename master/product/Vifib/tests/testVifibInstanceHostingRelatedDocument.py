@@ -589,11 +589,19 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       uid=sequence['invoice_uid'])
     invoice.setStartDate(getClosestDate(target_date=DateTime())-1)
 
-  def stepTriggerStopInvoiceAlarm(self, sequence, **kw):
+  def stepTriggerConfirmPlannedInvoiceAlarm(self, sequence, **kw):
     sm = getSecurityManager()
     self.login()
     try:
-      self.portal.portal_alarms.stop_planned_sale_invoice_transaction.activeSense()
+      self.portal.portal_alarms.confirm_planned_sale_invoice_transaction.activeSense()
+    finally:
+      setSecurityManager(sm)
+
+  def stepTriggerStopConfirmedInvoiceAlarm(self, sequence, **kw):
+    sm = getSecurityManager()
+    self.login()
+    try:
+      self.portal.portal_alarms.stop_confirmed_sale_invoice_transaction.activeSense()
     finally:
       setSecurityManager(sm)
 
@@ -629,7 +637,9 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         CheckHostingSubscriptionStoppedDocumentCoverage
 
         # proff that alarm will ignore this month invoices
-        TriggerStopInvoiceAlarm
+        TriggerConfirmPlannedInvoiceAlarm
+        Tic
+        TriggerStopConfirmedInvoiceAlarm
         Tic
         CheckHostingSubscriptionStoppedDocumentCoverage
 
@@ -665,7 +675,9 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         SelectPlannedInvoice
         InvoiceSetStartDatePreviousMonth
         Tic
-        TriggerStopInvoiceAlarm
+        TriggerConfirmPlannedInvoiceAlarm
+        Tic
+        TriggerStopConfirmedInvoiceAlarm
         Tic
 
         # Payment should cover both invoices
