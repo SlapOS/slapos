@@ -40,6 +40,10 @@
             </value>
         </item>
         <item>
+            <key> <string>efficiency</string> </key>
+            <value> <float>-1.0</float> </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
             <value> <string>accounting_tax2</string> </value>
         </item>

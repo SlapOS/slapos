@@ -24,8 +24,8 @@
               <tuple>
                 <string>trade_phase/vifib/accounting</string>
                 <string>trade_date/trade_phase/vifib/invoicing</string>
-                <string>source/account_module/coll_vat</string>
                 <string>destination/account_module/refundable_vat</string>
+                <string>source/account_module/coll_vat</string>
               </tuple>
             </value>
         </item>
@@ -38,6 +38,10 @@
             <value>
               <none/>
             </value>
+        </item>
+        <item>
+            <key> <string>efficiency</string> </key>
+            <value> <float>1.0</float> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
