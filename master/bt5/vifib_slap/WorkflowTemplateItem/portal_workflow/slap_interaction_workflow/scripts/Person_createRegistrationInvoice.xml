@@ -87,6 +87,9 @@ if invoice_line is None:\n
       **kw\n
     )\n
 \n
+    # force tracking causality state\n
+    invoice.startBuilding()\n
+    invoice.updateCausalityState()\n
     invoice.plan(**kw)\n
     invoice.confirm(**kw)\n
 </string> </value>
