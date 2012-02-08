@@ -58,7 +58,7 @@ class Recipe(GenericBaseRecipe):
     )
 
     mysql_binary = self.options['mysql-binary']
-    socket = self.options['socket'],
+    socket = self.options['socket']
 
     mysql_conf_file = self.createFile(
       self.options['conf-file'],
