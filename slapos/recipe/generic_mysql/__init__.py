@@ -127,21 +127,23 @@ class Recipe(GenericBaseRecipe):
        )]
     )
     path_list.append(mysqld)
-    # backup configuration
-    full_backup = self.options['full-backup-directory']
-    incremental_backup = self.options['incremental-backup-directory']
-    innobackupex_argument_list = [self.options['perl-binary'],
-        self.options['innobackupex-binary'],
-        '--defaults-file=%s' % mysql_conf_file,
-        '--socket=%s' % socket.strip(), '--user=root',
-        '--ibbackup=%s'% self.options['xtrabackup-binary']]
-    environment = dict(PATH='%s' % self.options['bin-directory'])
-    innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
-    path_list.append(innobackupex_incremental)
-    innobackupex_full = self.createPythonScript(self.options['innobackupex-full'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list, environment])
-    path_list.append(innobackupex_full)
-    backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
-    path_list.append(backup_controller)
+    # TODO: move to a separate recipe (ack'ed by Cedric)
+    if 'backup-script' in self.options:
+      # backup configuration
+      full_backup = self.options['full-backup-directory']
+      incremental_backup = self.options['incremental-backup-directory']
+      innobackupex_argument_list = [self.options['perl-binary'],
+          self.options['innobackupex-binary'],
+          '--defaults-file=%s' % mysql_conf_file,
+          '--socket=%s' % socket.strip(), '--user=root',
+          '--ibbackup=%s'% self.options['xtrabackup-binary']]
+      environment = dict(PATH='%s' % self.options['bin-directory'])
+      innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
+      path_list.append(innobackupex_incremental)
+      innobackupex_full = self.createPythonScript(self.options['innobackupex-full'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list, environment])
+      path_list.append(innobackupex_full)
+      backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
+      path_list.append(backup_controller)
     # TODO: move to a separate recipe (ack'ed by Cedric)
     # percona toolkit (formerly known as maatkit) installation
     for pt_script_name in (
