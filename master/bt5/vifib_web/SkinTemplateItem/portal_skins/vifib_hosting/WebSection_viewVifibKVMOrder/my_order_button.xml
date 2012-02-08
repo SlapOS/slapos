@@ -145,7 +145,7 @@
             <key> <string>_text</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-python: not here.portal_membership.isAnonymousUser() and here.portal_catalog.countResults(portal_type=\'Payment Transaction\', default_destination_section_uid=here.ERP5Site_getAuthenticatedMemberPersonValue().getUid())[0][0] > 1 or (here.portal_catalog.countResults(portal_type=\'Payment Transaction\', default_destination_section_uid=here.ERP5Site_getAuthenticatedMemberPersonValue().getUid())[0][0] == 1 and here.portal_catalog.portal_catalog(portal_type=\'Payment Transaction\', default_destination_section_uid=here.ERP5Site_getAuthenticatedMemberPersonValue().getUid())[0].getSimulationState() not in [\'confirmed\', \'planned\'])
+python: not here.portal_membership.isAnonymousUser() and (here.portal_catalog.countResults(portal_type=\'Payment Transaction\', default_destination_section_uid=here.ERP5Site_getAuthenticatedMemberPersonValue().getUid())[0][0] > 1 or (here.portal_catalog.countResults(portal_type=\'Payment Transaction\', default_destination_section_uid=here.ERP5Site_getAuthenticatedMemberPersonValue().getUid())[0][0] == 1 and here.portal_catalog.portal_catalog(portal_type=\'Payment Transaction\', default_destination_section_uid=here.ERP5Site_getAuthenticatedMemberPersonValue().getUid())[0].getSimulationState() not in [\'confirmed\', \'planned\']))
 
 ]]></string> </value>
         </item>
