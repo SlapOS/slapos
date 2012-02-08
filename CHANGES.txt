@@ -4,7 +4,7 @@ Changes
 0.22 (unreleased)
 -----------------
 
- * No changes yet.
+ * slapformat : Add no-bridge feature. [Cedric de Saint Martin]
 
 0.21 (2011-12-23)
 -----------------
