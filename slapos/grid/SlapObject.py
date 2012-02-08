@@ -88,7 +88,8 @@ class Software(object):
       if download_network_cached(
           self.download_binary_cache_url,
           self.download_binary_dir_url,
-          self.url, self.software_url_hash,
+          self.url, self.software_root,
+          self.software_url_hash,
           tarpath, self.logger,
           self.signature_certificate_list):
         tar = tarfile.open(tarpath)

@@ -22,6 +22,7 @@ import urlparse
 import traceback
 import utils
 import json
+import platform
 
 try:
     try:
@@ -54,8 +55,8 @@ def fallback_call(function):
 
 
 @fallback_call
-def download_network_cached(cache_url, dir_url, software_url, key, path,
-                            logger, signature_certificate_list):
+def download_network_cached(cache_url, dir_url, software_url, software_root,
+                            key, path, logger, signature_certificate_list):
     """Downloads from a network cache provider
 
     return True if download succeeded.
@@ -77,27 +78,37 @@ def download_network_cached(cache_url, dir_url, software_url, key, path,
 
     logger.info('Downloading %s binary from network cache.' % software_url)
     try:
+        file_descriptor = None
         json_entry_list = nc.select_generic(key)
         for entry in json_entry_list:
             json_information, _ = entry
             try:
                 tags = json.loads(json_information)
+                if tags.get('machine') != platform.machine():
+                    continue
+                if tags.get('os') != str(platform.linux_distribution()):
+                    continue
+                if tags.get('software_url') != software_url:
+                    continue
+                if tags.get('software_root') != software_root:
+                    continue
                 sha512 = tags.get('sha512')
                 file_descriptor = nc.download(sha512)
                 break
             except Exception:
                 continue
-        f = open(path, 'w+b')
-        try:
-            shutil.copyfileobj(file_descriptor, f)
-        finally:
-            f.close()
-            file_descriptor.close()
+        if file_descriptor is not None:
+            f = open(path, 'w+b')
+            try:
+                shutil.copyfileobj(file_descriptor, f)
+            finally:
+                f.close()
+                file_descriptor.close()
+            return True
     except (IOError, DirectoryNotFound), e:
         logger.info('Failed to download from network cache %s: %s' % \
                                                        (software_url, str(e)))
-        return False
-    return True
+    return False
 
 
 @fallback_call
@@ -114,17 +125,14 @@ def upload_network_cached(software_root, software_url, cached_key,
 
     logger.info('Uploading %s binary into network cache.' % software_url)
 
+    # YXU: "file" and "urlmd5" should be removed when server side is ready
     kw = dict(
-      file=software_url,
-      urlmd5=cached_key,
+      file="file",
+      urlmd5="urlmd5",
       software_url=software_url,
-      gcc_version="gcc-version",
-      libc_version="libc-version",
-      libcxx_version="libcxx-version",
-      kernel_version="kernel-version",
       software_root=software_root,
-      arch="arch",
-      python_version="python-version"
+      machine=platform.machine(),
+      os=str(platform.linux_distrubution())
     )
 
     f = open(path, 'r')
