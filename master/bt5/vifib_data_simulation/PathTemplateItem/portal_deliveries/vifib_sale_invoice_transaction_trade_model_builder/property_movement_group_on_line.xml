@@ -38,8 +38,7 @@
             <value>
               <tuple>
                 <string>description</string>
-                <string>start_date</string>
-                <string>stop_date</string>
+                <string>price</string>
               </tuple>
             </value>
         </item>
