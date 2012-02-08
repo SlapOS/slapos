@@ -53,10 +53,7 @@
             <value> <string>invoice = context\n
 \n
 total_price = invoice.getTotalPrice()\n
-\n
-accounting = 0.0\n
-for line in invoice.getMovementList(portal_type=invoice.getPortalAccountingMovementTypeList()):\n
-  accounting += line.getSourceDebit()\n
+accounting_price = invoice.AccountingTransaction_getTotalCredit()\n
 \n
 return total_price == accounting\n
 </string> </value>
