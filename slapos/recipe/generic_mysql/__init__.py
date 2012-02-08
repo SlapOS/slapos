@@ -34,7 +34,7 @@ class Recipe(GenericBaseRecipe):
     if 'test-database' in options:
       options['test-password'] = self.generatePassword()
     options.setdefault('parallel-test-database-amount', '0')
-    for x in xrange(0, int(options['parallel-test-database-amount'])):
+    for x in xrange(int(options['parallel-test-database-amount'])):
       options['test-password-%s' % x] = self.generatePassword()
 
   def install(self):
@@ -88,7 +88,7 @@ class Recipe(GenericBaseRecipe):
         }
       ))
     # parallel test databases
-    for x in xrange(0, int(self.options['parallel-test-database-amount'])):
+    for x in xrange(int(self.options['parallel-test-database-amount'])):
       mysql_script_list.append(self.substituteTemplate(
         self.getTemplateFilename('initmysql.sql.in'),
         {
