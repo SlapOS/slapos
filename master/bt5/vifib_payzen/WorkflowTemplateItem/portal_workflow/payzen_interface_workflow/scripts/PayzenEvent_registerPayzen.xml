@@ -104,7 +104,7 @@ else:\n
 payzen_dict = {}\n
 payzen_dict.update(\n
   devise=integration_site.getMappingFromCategory(\'resource/currency_module/%s\' % transaction.getResourceReference()).split(\'/\')[-1],\n
-  amount=str(int(round((transaction.PaymentTransaction_getTotalPayablePrice() * 100), 0))),\n
+  amount=str(int(round((transaction.PaymentTransaction_getTotalPayablePrice() * -100), 0))),\n
   presentationDate=transaction.getStartDate().toZone(\'UTC\').asdatetime(),\n
   newTransactionId=transaction_id,\n
   transmissionDate=DateTime(previous_date).toZone(\'UTC\').asdatetime(),\n

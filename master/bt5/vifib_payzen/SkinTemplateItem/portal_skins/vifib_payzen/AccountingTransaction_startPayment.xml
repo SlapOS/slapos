@@ -85,7 +85,7 @@ context.activate().PaymentTransaction_confirm()\n
 payzen_dict = {}\n
 payzen_dict.update(\n
   vads_currency=integration_site.getMappingFromCategory(\'resource/currency_module/%s\' % context.getResourceReference()).split(\'/\')[-1],\n
-  vads_amount=str(int(round((context.PaymentTransaction_getTotalPayablePrice() * 100), 0))),\n
+  vads_amount=str(int(round((context.PaymentTransaction_getTotalPayablePrice() * -100), 0))),\n
   vads_trans_date=context.getStartDate().toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d%H%M%S\'),\n
   vads_trans_id=transaction_id,\n
   vads_language=\'en\',\n
