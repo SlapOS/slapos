@@ -70,6 +70,7 @@ if invoice_line is None:\n
       portal_type=\'Sale Invoice Transaction\',\n
       start_date=DateTime(),\n
       resource=\'currency_module/EUR\',\n
+      price_currency=\'currency_module/EUR\',\n
       source_section=\'organisation_module/vifib_internet\',\n
       source=\'organisation_module/vifib_internet\',\n
       destination_section=person.getRelativeUrl(),\n
