@@ -31,7 +31,8 @@ class Recipe(GenericBaseRecipe):
 
   def _options(self, options):
     options['password'] = self.generatePassword()
-    options['test-password'] = self.generatePassword()
+    if 'test-database' in options:
+      options['test-password'] = self.generatePassword()
     options.setdefault('parallel-test-database-amount', '0')
     for x in xrange(0, int(options['parallel-test-database-amount'])):
       options['test-password-%s' % x] = self.generatePassword()
@@ -77,14 +78,15 @@ class Recipe(GenericBaseRecipe):
       }
     ))
     # default test database
-    mysql_script_list.append(self.substituteTemplate(
-      self.getTemplateFilename('initmysql.sql.in'),
-      {
-        'mysql_database': self.options['test-database'],
-        'mysql_user': self.options['test-user'],
-        'mysql_password': self.options['test-password']
-      }
-    ))
+    if 'test-database' in self.options:
+      mysql_script_list.append(self.substituteTemplate(
+        self.getTemplateFilename('initmysql.sql.in'),
+        {
+          'mysql_database': self.options['test-database'],
+          'mysql_user': self.options['test-user'],
+          'mysql_password': self.options['test-password']
+        }
+      ))
     # parallel test databases
     for x in xrange(0, int(self.options['parallel-test-database-amount'])):
       mysql_script_list.append(self.substituteTemplate(
