@@ -132,7 +132,7 @@ def upload_network_cached(software_root, software_url, cached_key,
       software_url=software_url,
       software_root=software_root,
       machine=platform.machine(),
-      os=str(platform.linux_distrubution())
+      os=str(platform.linux_distribution())
     )
 
     f = open(path, 'r')
