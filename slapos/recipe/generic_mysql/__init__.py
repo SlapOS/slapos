@@ -142,6 +142,7 @@ class Recipe(GenericBaseRecipe):
     path_list.append(innobackupex_full)
     backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
     path_list.append(backup_controller)
+    # TODO: move to a separate recipe (ack'ed by Cedric)
     # percona toolkit (formerly known as maatkit) installation
     for pt_script_name in (
         'pt-archiver',
@@ -170,8 +171,11 @@ class Recipe(GenericBaseRecipe):
         'pt-variable-advisor',
         'pt-visual-explain',
         ):
+      option_name = pt_script_name + '-binary'
+      if option_name not in self.options:
+        continue
       pt_argument_list = [self.options['perl-binary'],
-          self.options['%s-binary' % pt_script_name],
+          self.options[option_name],
           '--defaults-file=%s' % mysql_conf_file,
           '--socket=%s' % socket.strip(), '--user=root',
           ]
