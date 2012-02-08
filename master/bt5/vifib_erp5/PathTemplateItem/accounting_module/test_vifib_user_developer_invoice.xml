@@ -82,6 +82,7 @@
                 <string>specialise/sale_trade_condition_module/vifib_trade_condition</string>
                 <string>source/organisation_module/vifib_internet</string>
                 <string>destination_section/person_module/test_vifib_user_developer</string>
+                <string>price_currency/currency_module/EUR</string>
                 <string>resource/currency_module/EUR</string>
               </tuple>
             </value>
