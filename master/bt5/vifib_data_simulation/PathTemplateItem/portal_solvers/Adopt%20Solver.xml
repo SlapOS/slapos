@@ -175,6 +175,10 @@
             <key> <string>solver_action_title</string> </key>
             <value> <string>Replace value</string> </value>
         </item>
+        <item>
+            <key> <string>type_class</string> </key>
+            <value> <string>AdoptSolver</string> </value>
+        </item>
       </dictionary>
     </pickle>
   </record>
