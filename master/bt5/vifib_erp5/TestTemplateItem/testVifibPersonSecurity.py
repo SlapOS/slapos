@@ -67,6 +67,9 @@ class TestVifibPersonSecurity(testVifibMixin):
                                           first_name='Test', 
                                           last_name='Invalidated Vifib User',
                                          )
+    # open assignment in order to trigger open order creation
+    assignment = new_person.newContent(portal_type='Assignment')
+    assignment.portal_workflow.doActionFor(assignment, "open_action")
     # tic to have open order created and indexed
     self.stepTic()
     new_person.edit(career_role='client', default_email_text="test@example.com")
