@@ -56,6 +56,14 @@
             </value>
         </item>
         <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>solver/portal_solvers/Automatic Quantity Adopt Solver</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>decimal_alignment_enabled</string> </key>
             <value> <int>1</int> </value>
         </item>
@@ -66,6 +74,12 @@
         <item>
             <key> <string>decimal_rounding_option</string> </key>
             <value> <string>ROUND_DOWN</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
