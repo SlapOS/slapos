@@ -79,11 +79,13 @@ if invoice_line is None:\n
       created_by_builder=1, # XXX to prevent init script to create lines\n
       **kw\n
     )\n
+    service = portal.restrictedTraverse(portal.portal_preferences.getPreferredRegistrationResource())\n
     invoice.newContent(\n
       portal_type=\'Invoice Line\',\n
-      resource=portal.portal_preferences.getPreferredRegistrationResource(),\n
+      resource=service.getRelativeUrl(),\n
       quantity=1,\n
-      price=1,\n
+      # XXX Hardcode price on service\n
+      price=service.getSaleSupplyLineBasePrice(),\n
       **kw\n
     )\n
 \n
