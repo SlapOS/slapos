@@ -195,7 +195,7 @@ class Computer(object):
       for address in partition.address_list:
         if netaddr.valid_ipv6(address['addr']):
           computer_partition_address_list.append(address['addr'])
-    # Going through addresses of the computer's interface interface
+    # Going through addresses of the computer's interface
     for address_dict in self.interface.getGlobalScopeAddressList():
       # Comparing with computer's partition addresses
       if address_dict['addr'] not in computer_partition_address_list:
@@ -631,7 +631,7 @@ class Interface(object):
     return address_list
 
   def getInterfaceList(self):
-    """Returns list of interfaces already present on interface"""
+    """Returns list of interfaces already present on bridge"""
     interface_list = []
     _, result = callAndRead(['brctl', 'show'])
     in_interface = False
