@@ -41,22 +41,21 @@ class Recipe(GenericBaseRecipe):
 
     template_filename = self.getTemplateFilename('my.cnf.in')
 
-    mysql_conf = dict(
-        ip=self.options['ip'],
-        data_directory=self.options['data-directory'],
-        tcp_port=self.options['port'],
-        pid_file=self.options['pid-file'],
-        socket=self.options['socket'],
-        error_log=self.options['error-log'],
-        slow_query_log=self.options['slow-query-log'],
-    )
-
     mysql_binary = self.options['mysql-binary']
     socket = self.options['socket']
 
     mysql_conf_file = self.createFile(
       self.options['conf-file'],
-      self.substituteTemplate(template_filename, mysql_conf)
+      self.substituteTemplate(template_filename, {
+        # TODO: drop ip & port
+        'ip': self.options['ip'],
+        'tcp_port': self.options['port'],
+        'data_directory': self.options['data-directory'],
+        'pid_file': self.options['pid-file'],
+        'socket': self.options['socket'],
+        'error_log': self.options['error-log'],
+        'slow_query_log': self.options['slow-query-log'],
+      })
     )
     path_list.append(mysql_conf_file)
 
