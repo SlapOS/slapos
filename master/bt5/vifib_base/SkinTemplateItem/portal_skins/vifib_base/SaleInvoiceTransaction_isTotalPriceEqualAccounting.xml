@@ -54,8 +54,8 @@
 \n
 total_price = invoice.getTotalPrice()\n
 accounting_price = invoice.AccountingTransaction_getTotalCredit()\n
-\n
-return total_price == accounting\n
+precision = invoice.getPriceCurrencyValue().getQuantityPrecision()\n
+return round(total_price, precision) == round(accounting_price, precision)\n
 </string> </value>
         </item>
         <item>
