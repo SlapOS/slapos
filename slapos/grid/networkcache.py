@@ -67,6 +67,7 @@ def download_network_cached(cache_url, dir_url, software_url, software_root,
     if not(cache_url and dir_url and software_url and software_root):
         return False
 
+    # In order to call nc nicely.
     if len(signature_certificate_list) == 0:
         signature_certificate_list = None
     try:
