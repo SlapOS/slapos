@@ -60,7 +60,7 @@ balance = context.portal_simulation.getInventoryAssetPrice(\n
   simulation_state=simulation_state,\n
   section_uid=section_uid,\n
   mirror_section_uid=customer_uid)\n
-return balance >= 0.\n
+return balance <= 0.\n
 
 
 ]]></string> </value>
