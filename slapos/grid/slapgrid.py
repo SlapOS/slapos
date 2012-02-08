@@ -204,6 +204,17 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   if not option_dict.get('supervisord_socket'):
     option_dict['supervisord_socket'] = \
       os.path.join(option_dict['instance_root'], 'supervisord.socket')
+
+  signature_certificate_list_string = \
+    option_dict.get('signature-certificate-list', None)
+  if signature_certificate_list_string is not None:
+    cert_marker = "-----BEGIN CERTIFICATE-----"
+    signature_certificate_list = [cert_marker + '\n' + q.strip() \
+      for q in signature_certificate_list_string.split(cert_marker) \
+        if q.strip()]
+  else:
+    signature_certificate_list = None
+
   # Returning new Slapgrid instance and options
   return ([Slapgrid(software_root=option_dict['software_root'],
             instance_root=option_dict['instance_root'],
@@ -218,7 +229,16 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             master_ca_file=master_ca_file,
             certificate_repository_path=certificate_repository_path,
             signature_private_key_file=signature_private_key_file,
+            signature_certificate_list=signature_certificate_list,
+            download_binary_cache_url=\
+              option_dict.get('download-binary-cache-url', None),
+            upload_binary_cache_url=\
+              option_dict.get('upload-binary-cache-url', None),
             upload_cache_url=option_dict.get('upload-cache-url', None),
+            download_binary_dir_url=\
+              option_dict.get('download-binary-dir-url', None),
+            upload_binary_dir_url=\
+              option_dict.get('upload-binary-dir-url', None),
             upload_dir_url=option_dict.get('upload-dir-url', None),
             console=option_dict['console'],
             buildout=option_dict.get('buildout'),
@@ -299,7 +319,12 @@ class Slapgrid(object):
                key_file=None,
                cert_file=None,
                signature_private_key_file=None,
+               signature_certificate_list=None,
+               download_binary_cache_url=None,
+               upload_binary_cache_url=None,
                upload_cache_url=None,
+               download_binary_dir_url=None,
+               upload_binary_dir_url=None,
                upload_dir_url=None,
                master_ca_file=None,
                certificate_repository_path=None,
@@ -323,7 +348,12 @@ class Slapgrid(object):
     self.master_ca_file = master_ca_file
     self.certificate_repository_path = certificate_repository_path
     self.signature_private_key_file = signature_private_key_file
+    self.signature_certificate_list = signature_certificate_list
+    self.download_binary_cache_url = download_binary_cache_url
+    self.upload_binary_cache_url = upload_binary_cache_url
     self.upload_cache_url = upload_cache_url
+    self.download_binary_dir_url = download_binary_dir_url
+    self.upload_binary_dir_url = upload_binary_dir_url
     self.upload_dir_url = upload_dir_url
     self.shacache_cert_file = shacache_cert_file
     self.shacache_key_file = shacache_key_file
@@ -403,7 +433,12 @@ class Slapgrid(object):
         Software(url=software_release_uri, software_root=self.software_root,
             console=self.console, buildout=self.buildout,
             signature_private_key_file=self.signature_private_key_file,
+            signature_certificate_list=self.signature_certificate_list,
+            download_binary_cache_url=self.download_binary_cache_url,
+            upload_binary_cache_url=self.upload_binary_cache_url,
             upload_cache_url=self.upload_cache_url,
+            download_binary_dir_url=self.download_binary_dir_url,
+            upload_binary_dir_url=self.upload_binary_dir_url,
             upload_dir_url=self.upload_dir_url,
             shacache_cert_file=self.shacache_cert_file,
             shacache_key_file=self.shacache_key_file,
