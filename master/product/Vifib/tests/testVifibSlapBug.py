@@ -1541,6 +1541,15 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
 
+      LoginERP5TypeTestCase
+      TriggerBuild
+      Tic
+      TriggerStopConfirmedInvoiceAlarm
+      Tic
+      TriggerBuild
+      Tic
+      Logout
+
       LoginWebUser
       CustomerRegisterNewComputer
       Tic
