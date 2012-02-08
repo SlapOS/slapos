@@ -59,7 +59,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         delivery_line.getQuantity())
       self.assertEquals("unit/piece",
         delivery_line.getQuantityUnit())
-      self.assertEquals(1,
+      self.assertEquals(0.83612040133800003,
         delivery_line.getPrice())
 
       # fetch open order, open order line and subscription

@@ -108,7 +108,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         simulation_movement.getQuantity())
       self.assertEquals("unit/piece",
         simulation_movement.getQuantityUnit())
-      self.assertEquals(1.0,
+      self.assertEquals(0.83612040133800003,
         simulation_movement.getPrice())
       self.assertEquals("currency_module/EUR",
         simulation_movement.getPriceCurrency())
