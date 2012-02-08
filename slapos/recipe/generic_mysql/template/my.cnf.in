@@ -9,8 +9,7 @@
 sql-mode="NO_ENGINE_SUBSTITUTION"
 
 skip-show-database
-port = %(tcp_port)s
-bind-address = %(ip)s
+%(networking)s
 socket = %(socket)s
 datadir = %(data_directory)s
 pid-file = %(pid_file)s

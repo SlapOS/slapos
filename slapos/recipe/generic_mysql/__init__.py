@@ -45,12 +45,18 @@ class Recipe(GenericBaseRecipe):
     mysql_binary = self.options['mysql-binary']
     socket = self.options['socket']
 
+    if 'ip' in self.options:
+      networking = 'port = %s\nbind-address = %s' % (
+        self.options['port'],
+        self.options['ip'],
+      )
+    else:
+      networking = 'skip-networking'
+
     mysql_conf_file = self.createFile(
       self.options['conf-file'],
       self.substituteTemplate(template_filename, {
-        # TODO: drop ip & port
-        'ip': self.options['ip'],
-        'tcp_port': self.options['port'],
+        'networking': networking,
         'data_directory': self.options['data-directory'],
         'pid_file': self.options['pid-file'],
         'socket': self.options['socket'],
