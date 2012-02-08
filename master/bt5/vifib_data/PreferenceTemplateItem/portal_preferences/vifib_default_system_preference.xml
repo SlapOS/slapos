@@ -114,6 +114,14 @@
             <value> <string>service_module/vifib_instance_update</string> </value>
         </item>
         <item>
+            <key> <string>preferred_maximum_balance</string> </key>
+            <value> <float>-50.0</float> </value>
+        </item>
+        <item>
+            <key> <string>preferred_maximum_due_day</string> </key>
+            <value> <int>15</int> </value>
+        </item>
+        <item>
             <key> <string>preferred_ooodoc_server_address</string> </key>
             <value> <string>10.0.1.228</string> </value>
         </item>
@@ -128,6 +136,10 @@
         <item>
             <key> <string>preferred_payzen_integration_site</string> </key>
             <value> <string>portal_integrations/vifib_payzen_integration</string> </value>
+        </item>
+        <item>
+            <key> <string>preferred_registration_resource</string> </key>
+            <value> <string>service_module/vifib_registration</string> </value>
         </item>
         <item>
             <key> <string>preferred_software_setup_resource</string> </key>

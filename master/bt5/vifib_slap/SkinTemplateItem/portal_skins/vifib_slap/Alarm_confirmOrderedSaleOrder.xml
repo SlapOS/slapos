@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
+from zExceptions import Unauthorized\n
+portal = context.getPortalObject()\n
 setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
 for sale_order_line in portal.portal_catalog(\n
       portal_type="Sale Order Line", \n
@@ -60,10 +62,19 @@ for sale_order_line in portal.portal_catalog(\n
   sale_order = sale_order_line.getParentValue()\n
   if sale_order.getSimulationState() == \'ordered\':\n
     try:\n
-      sale_order.confirm()\n
-    except ValueError:\n
-      # It was not possible to find free Computer Partition\n
+      sale_order.Base_checkConsistency()\n
+    except ValidationFailed:\n
+      # order not ready yet\n
       continue\n
+    else:\n
+      try:\n
+        sale_order.confirm()\n
+      except ValueError:\n
+        # It was not possible to find free Computer Partition\n
+        continue\n
+      except Unauthorized:\n
+        # user has bad balance\n
+        continue\n
 </string> </value>
         </item>
         <item>

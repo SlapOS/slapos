@@ -1,0 +1,13 @@
+<local_roles_item>
+ <local_roles>
+  <role id='G-COMPANY'>
+   <item>Assignor</item>
+  </role>
+  <role id='__erp5security-=__'>
+   <item>Owner</item>
+  </role>
+  <role id='test_updated_vifib_user'>
+   <item>Associate</item>
+  </role>
+ </local_roles>
+</local_roles_item>

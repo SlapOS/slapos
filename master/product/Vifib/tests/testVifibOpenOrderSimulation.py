@@ -30,7 +30,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     applied_rule = \
       hosting_subscription.getCausalityRelatedValue(portal_type="Applied Rule")
     self.assertEquals(
-      "portal_rules/default_subscription_item_rule",
+      "portal_rules/vifib_subscription_item_rule",
       applied_rule.getSpecialise())
 
     # check periodicity, should be first day of each month
@@ -182,7 +182,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     applied_rule = \
       hosting_subscription.getCausalityRelatedValue(portal_type="Applied Rule")
     self.assertEquals(
-      "portal_rules/default_subscription_item_rule",
+      "portal_rules/vifib_subscription_item_rule",
       applied_rule.getSpecialise())
     simulation_movement_list = self.portal.portal_catalog(
       portal_type='Simulation Movement',

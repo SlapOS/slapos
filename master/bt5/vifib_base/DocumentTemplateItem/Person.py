@@ -36,7 +36,3 @@ class Person(ERP5Person):
     """Revokes existing certificate"""
     self._checkCertificateRequest()
     self._revokeCertificate()
-
-  def getPaymentState(self):
-    """Allows to catalog slap_date in payment_state column"""
-    return self.getSlapState()

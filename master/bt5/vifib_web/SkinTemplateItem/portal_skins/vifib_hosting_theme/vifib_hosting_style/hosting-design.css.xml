@@ -72,6 +72,11 @@ color:#9C9C9C;\n
 color:#910000;\n
 }\n
 \n
+.my_invoices h1 {\n
+background:url(<tal:block tal:replace="img_folder"/>my_invoices_active.png) no-repeat scroll left center transparent;\n
+padding-left:100px;\n
+}\n
+\n
 .my_services h1 {\n
 background:url(<tal:block tal:replace="img_folder"/>my_services_active.png) no-repeat scroll left center transparent;\n
 padding-left:100px;\n

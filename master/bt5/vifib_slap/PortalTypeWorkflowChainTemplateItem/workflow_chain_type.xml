@@ -13,7 +13,7 @@
  </chain>
  <chain>
   <type>Person</type>
-  <workflow>person_slap_interface_workflow</workflow>
+  <workflow>person_slap_interface_workflow, slap_interaction_workflow</workflow>
  </chain>
  <chain>
   <type>Purchase Packing List</type>

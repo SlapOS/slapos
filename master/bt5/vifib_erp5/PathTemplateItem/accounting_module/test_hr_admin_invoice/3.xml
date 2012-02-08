@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Sale Invoice Transaction Line" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>source/account_module/sales</string>
+                <string>destination/account_module/purchase</string>
+                <string>specialise/sale_trade_condition_module/vifib_trade_condition</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>destination_total_asset_price</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>3</string> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Sale Invoice Transaction Line</string> </value>
+        </item>
+        <item>
+            <key> <string>price</string> </key>
+            <value> <float>1.0</float> </value>
+        </item>
+        <item>
+            <key> <string>quantity</string> </key>
+            <value> <float>-1.0</float> </value>
+        </item>
+        <item>
+            <key> <string>source_total_asset_price</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

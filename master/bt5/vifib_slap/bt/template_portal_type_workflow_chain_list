@@ -4,6 +4,7 @@ Computer Partition | slap_interaction_workflow
 Computer | computer_slap_interface_workflow
 Computer | slap_interaction_workflow
 Person | person_slap_interface_workflow
+Person | slap_interaction_workflow
 Purchase Packing List Line | slap_interaction_workflow
 Purchase Packing List | slap_interaction_workflow
 Sale Packing List Line | slap_interaction_workflow

@@ -70,6 +70,12 @@
   </a>\n
 </div>\n
 \n
+<div class="available_menu_option">\n
+  <a tal:attributes="href string:${website_url}/myspace/my_invoices">\n
+    <img tal:attributes="src string:${base_url}payment_active.png" alt="My Invoices" />\n
+    <br /><span i18n:translate="">My Invoices</span>\n
+  </a>\n
+</div>\n
 </tal:block>
 
 ]]></unicode> </value>

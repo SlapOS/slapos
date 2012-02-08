@@ -15,20 +15,14 @@
             <value> <string>open_order_created</string> </value>
         </item>
         <item>
-            <key> <string>permission_roles</string> </key>
-            <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
-            </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
-            <value> <string></string> </value>
+            <value> <string>Backward compatibility state</string> </value>
         </item>
         <item>
             <key> <string>transitions</string> </key>
             <value>
               <tuple>
-                <string>lock</string>
+                <string>draft</string>
                 <string>request_software_instance</string>
               </tuple>
             </value>
@@ -37,28 +31,6 @@
             <key> <string>type_list</string> </key>
             <value>
               <tuple/>
-            </value>
-        </item>
-      </dictionary>
-    </pickle>
-  </record>
-  <record id="2" aka="AAAAAAAAAAI=">
-    <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
-    </pickle>
-    <pickle>
-      <dictionary>
-        <item>
-            <key> <string>data</string> </key>
-            <value>
-              <dictionary>
-                <item>
-                    <key> <string>Modify portal content</string> </key>
-                    <value>
-                      <tuple/>
-                    </value>
-                </item>
-              </dictionary>
             </value>
         </item>
       </dictionary>

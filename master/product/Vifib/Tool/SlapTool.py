@@ -155,6 +155,29 @@ class SlapTool(BaseTool):
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
+    'getFullComputerInformation')
+  def getFullComputerInformation(self, computer_id):
+    """Returns marshalled XML of all needed information for computer
+
+    Includes Software Releases, which may contain Software Instances.
+
+    Reuses slap library for easy marshalling.
+    """
+    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+    slap_computer = Computer(computer_id)
+    parent_uid = self._getComputerUidByReference(computer_id)
+
+    slap_computer._computer_partition_list = []
+    slap_computer._software_release_list = \
+         self._getSoftwareReleaseValueListForComputer(computer_id, full=True)
+    for computer_partition in self.getPortalObject().portal_catalog(
+                    parent_uid=parent_uid,
+                    portal_type="Computer Partition"):
+      slap_computer._computer_partition_list.append(
+          self._getSlapPartitionByPackingList(computer_partition.getObject()))
+    return xml_marshaller.xml_marshaller.dumps(slap_computer)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
     'getComputerPartitionCertificate')
   def getComputerPartitionCertificate(self, computer_id, computer_partition_id):
     """Method to fetch certificate"""
@@ -940,7 +963,8 @@ class SlapTool(BaseTool):
     return merged_dict
 
   @UnrestrictedMethod
-  def _getSoftwareReleaseValueListForComputer(self, computer_reference):
+  def _getSoftwareReleaseValueListForComputer(self, computer_reference,
+                                              full=False):
     """Returns list of Software Releases documentsfor computer"""
     computer_document = self._getComputerDocument(computer_reference)
     portal = self.getPortalObject()
@@ -948,6 +972,8 @@ class SlapTool(BaseTool):
     state_list = []
     state_list.extend(portal.getPortalReservedInventoryStateList())
     state_list.extend(portal.getPortalTransitInventoryStateList())
+    if full:
+      state_list.extend(portal.getPortalCurrentInventoryStateList())
 
     software_release_list = []
     for software_release_url_string in computer_document\

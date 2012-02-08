@@ -147,14 +147,7 @@ if (request_software_instance is None):\n
       portal_type="Open Sale Order",\n
       validation_state="validated")\n
     if open_order is None:\n
-      person_slap_interface_state = person.getSlapState()\n
-      if person_slap_interface_state == \'open_order_created\':\n
-        open_order_url = context.portal_workflow.getInfoFor(\n
-          ob=person, name=\'open_order_url\',\n
-          wf_id=\'person_slap_interface_workflow\')\n
-        open_order = portal.restrictedTraverse(open_order_url)\n
-      else:\n
-        raise ValueError(\'Person has no open order created\')\n
+      raise ValueError(\'Person has no open order created\')\n
 \n
     now = DateTime()\n
     start_date = getClosestDate(target_date=now, precision=\'day\', before=1)\n
@@ -170,11 +163,11 @@ if (request_software_instance is None):\n
       stop_date=stop_date,\n
       quantity=1,\n
       quantity_unit="unit/piece",\n
-      price=1,\n
       price_currency="currency_module/EUR",\n
       specialise=sale_order.getSpecialise(portal_type="Sale Trade Condition"),\n
       # XXX Hardcoded values\\n\n
       resource=subscription_service_relative_url,\n
+      price=context.restrictedTraverse(subscription_service_relative_url).getSaleSupplyLineBasePrice(),\n
       destination=person_relative_url,\n
       destination_section=person_relative_url,\n
       source="organisation_module/vifib_internet",\n

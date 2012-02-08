@@ -4,7 +4,7 @@
  </portal_type>
  <portal_type id="Slave Instance">
   <item>Reference</item>
-  <item>SlaveInstanceContraint</item>
+  <item>SlaveInstanceConstraint</item>
   <item>SoftwareInstance</item>
   <item>TextDocument</item>
   <item>VariationRange</item>

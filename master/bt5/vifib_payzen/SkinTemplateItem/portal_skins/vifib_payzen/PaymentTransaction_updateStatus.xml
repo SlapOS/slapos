@@ -51,6 +51,8 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
+if context.getSimulationState() != \'confirmed\':\n
+  return\n
 service = portal.portal_secure_payments.find()\n
 portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).updateStatus()\n
 </string> </value>
