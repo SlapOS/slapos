@@ -64,7 +64,7 @@ def download_network_cached(cache_url, dir_url, software_url, software_root,
     if not LIBNETWORKCACHE_ENABLED:
         return False
 
-    if not(cache_url and dir_url):
+    if not(cache_url and dir_url and software_url and software_root):
         return False
 
     if len(signature_certificate_list) == 0:
