@@ -82,10 +82,8 @@ class Software(object):
     tarname = self.software_url_hash
     cache_dir = tempfile.mkdtemp()
     tarpath = os.path.join(cache_dir, tarname)
-    if os.path.exists(self.software_path):
-      self._install_from_buildout()
-    else:
-      if download_network_cached(
+    if (not os.path.exists(self.software_path)) \
+      and download_network_cached(
           self.download_binary_cache_url,
           self.download_binary_dir_url,
           self.url, self.software_root,
@@ -97,7 +95,7 @@ class Software(object):
           tar.extractall(path=self.software_root)
         finally:
           tar.close()
-      else:
+    else:
         self._install_from_buildout()
         tar = tarfile.open(tarpath, "w:gz")
         try:
