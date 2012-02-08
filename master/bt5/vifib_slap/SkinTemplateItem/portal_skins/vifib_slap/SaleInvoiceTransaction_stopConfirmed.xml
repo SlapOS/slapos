@@ -60,7 +60,7 @@ if context.getSimulationState() == \'confirmed\' and len(context.checkConsistenc
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>this_month</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
