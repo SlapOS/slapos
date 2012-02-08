@@ -589,22 +589,6 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       uid=sequence['invoice_uid'])
     invoice.setStartDate(getClosestDate(target_date=DateTime())-1)
 
-  def stepTriggerConfirmPlannedInvoiceAlarm(self, sequence, **kw):
-    sm = getSecurityManager()
-    self.login()
-    try:
-      self.portal.portal_alarms.confirm_planned_sale_invoice_transaction.activeSense()
-    finally:
-      setSecurityManager(sm)
-
-  def stepTriggerStopConfirmedInvoiceAlarm(self, sequence, **kw):
-    sm = getSecurityManager()
-    self.login()
-    try:
-      self.portal.portal_alarms.stop_confirmed_sale_invoice_transaction.activeSense()
-    finally:
-      setSecurityManager(sm)
-
   def test_OpenOrder_sale_packing_list(self):
     """
     Check that sale_packing_list is generated properly from simulation

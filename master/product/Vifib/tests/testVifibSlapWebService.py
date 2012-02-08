@@ -177,6 +177,22 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps -- scenarios
   ########################################
+  def stepTriggerConfirmPlannedInvoiceAlarm(self, sequence, **kw):
+    sm = getSecurityManager()
+    self.login()
+    try:
+      self.portal.portal_alarms.confirm_planned_sale_invoice_transaction.activeSense()
+    finally:
+      setSecurityManager(sm)
+
+  def stepTriggerStopConfirmedInvoiceAlarm(self, sequence, **kw):
+    sm = getSecurityManager()
+    self.login()
+    try:
+      self.portal.portal_alarms.stop_confirmed_sale_invoice_transaction.activeSense()
+    finally:
+      setSecurityManager(sm)
+
   def stepCheckComputerTradeConditionDestinationSectionTestVifibCustomer(
       self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
