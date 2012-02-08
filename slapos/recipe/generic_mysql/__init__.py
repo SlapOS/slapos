@@ -138,7 +138,7 @@ class Recipe(GenericBaseRecipe):
     innobackupex_argument_list = [self.options['perl-binary'],
         self.options['innobackupex-binary'],
         '--defaults-file=%s' % mysql_conf_file,
-        '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+        '--socket=%s' % socket.strip(), '--user=root',
         '--ibbackup=%s'% self.options['xtrabackup-binary']]
     environment = dict(PATH='%s' % self.options['bin-directory'])
     innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
@@ -178,7 +178,7 @@ class Recipe(GenericBaseRecipe):
       pt_argument_list = [self.options['perl-binary'],
           self.options['%s-binary' % pt_script_name],
           '--defaults-file=%s' % mysql_conf_file,
-          '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+          '--socket=%s' % socket.strip(), '--user=root',
           ]
       pt_exe = self.createPythonScript(os.path.join(self.options['bin-directory'], pt_script_name), 'slapos.recipe.librecipe.execute.executee', [pt_argument_list, environment])
       path_list.append(pt_exe)
