@@ -472,7 +472,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
     # this payment shall fully pay the invoice
     self.assertEqual(stopped_invoice.getTotalPrice(),
-      payment_transaction.PaymentTransaction_getTotalPayablePrice())
+      -1 * payment_transaction.PaymentTransaction_getTotalPayablePrice())
 
     # Stopped invoice shall have causality of two packing lists
     self.assertEqual(
@@ -570,7 +570,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     # this payment shall fully pay both invoices
     self.assertEqual(
       first_invoice.getTotalPrice() + second_invoice.getTotalPrice(),
-      payment_transaction.PaymentTransaction_getTotalPayablePrice())
+      -1 * payment_transaction.PaymentTransaction_getTotalPayablePrice())
 
     sequence.edit(payment_transaction_uid=payment_transaction.getUid())
 
