@@ -49,12 +49,6 @@ class Recipe(GenericBaseRecipe):
         socket=self.options['socket'],
         error_log=self.options['error-log'],
         slow_query_log=self.options['slow-query-log'],
-        mysql_database=self.options['database'],
-        mysql_user=self.options['user'],
-        mysql_password=self.options['password'],
-        mysql_test_database=self.options['test-database'],
-        mysql_test_user=self.options['test-user'],
-        mysql_test_password=self.options['test-password'],
     )
 
     mysql_binary = self.options['mysql-binary']
@@ -78,18 +72,18 @@ class Recipe(GenericBaseRecipe):
     mysql_script_list.append(self.substituteTemplate(
       self.getTemplateFilename('initmysql.sql.in'),
       {
-        'mysql_database': mysql_conf['mysql_database'],
-        'mysql_user': mysql_conf['mysql_user'],
-        'mysql_password': mysql_conf['mysql_password']
+        'mysql_database': self.options['database'],
+        'mysql_user': self.options['user'],
+        'mysql_password': self.options['password']
       }
     ))
     # default test database
     mysql_script_list.append(self.substituteTemplate(
       self.getTemplateFilename('initmysql.sql.in'),
       {
-        'mysql_database': mysql_conf['mysql_test_database'],
-        'mysql_user': mysql_conf['mysql_test_user'],
-        'mysql_password': mysql_conf['mysql_test_password']
+        'mysql_database': self.options['test-database'],
+        'mysql_user': self.options['test-user'],
+        'mysql_password': self.options['test-password']
       }
     ))
     # parallel test databases
@@ -125,7 +119,7 @@ class Recipe(GenericBaseRecipe):
       [dict(
         mysql_install_binary=self.options['mysql-install-binary'],
         mysqld_binary=mysqld_binary,
-        data_directory=mysql_conf['data_directory'],
+        data_directory=self.options['data-directory'],
         mysql_binary=mysql_binary,
         socket=socket,
         configuration_file=mysql_conf_file,
