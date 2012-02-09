@@ -67,7 +67,11 @@ root_hosting_subscription = root_software_instance.getPredecessorRelatedValue(\n
 # XXX-Antoine: As Romain wanted it, we raise an error if it\'s not attached to a\n
 #              root Hosting Subscription.\n
 if root_hosting_subscription is None:\n
-  raise ConsistencyError(("Software instance %s has no hosting "\n
+  # last resort: try to find root hosting subscription by packing list\n
+  instance_setup_line = root_software_instance.Item_getInstancePackingListLine()\n
+  root_hosting_subscription = instance_setup_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
+  if root_hosting_subscription is None:\n
+    raise ConsistencyError(("Software instance %s has no hosting "\n
                           "subscription as root.") % context.getReference())\n
 \n
 return root_hosting_subscription.getUid()\n
