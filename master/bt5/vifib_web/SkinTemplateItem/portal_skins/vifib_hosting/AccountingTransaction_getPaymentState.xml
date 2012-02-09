@@ -64,8 +64,9 @@ else:\n
   for line in context.getMovementList(context.getPortalObject().getPortalAccountingMovementTypeList()):\n
     node_value = line.getSourceValue(portal_type=\'Account\')\n
     if node_value.getAccountType() == \'asset/receivable\':\n
-      paid = False\n
-      break\n
+      if not line.hasGroupingReference():\n
+        paid = False\n
+        break\n
 \n
   if paid:\n
     result = "Paid"\n
