@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>assert( context.getPortalType() not in getPortalDeliveryMovementTypeList() )\n
+            <value> <string>assert( context.getPortalType() in context.getPortalDeliveryMovementTypeList() )\n
 price = context.getPrice()\n
 if price != 0.0:\n
   context.setPrice(0.0)\n
