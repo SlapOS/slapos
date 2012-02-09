@@ -71,6 +71,13 @@ if root_hosting_subscription is None:\n
   order_line = root_software_instance.getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
   if order_line is not None:\n
     root_hosting_subscription = order_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
+  else:\n
+    try:\n
+      instance_setup_line = root_software_instance.Item_getInstancePackingListLine()\n
+    except ValueError:\n
+      pass\n
+    else:\n
+      root_hosting_subscription = instance_setup_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
   if root_hosting_subscription is None:\n
     raise ConsistencyError(("Software instance %s has no hosting "\n
                           "subscription as root.") % context.getReference())\n
