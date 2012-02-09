@@ -1,10 +1,11 @@
 Changes
 =======
 
-0.22 (unreleased)
+0.22 (2012-02-09)
 -----------------
 
  * slapformat : Add no-bridge feature. [Cedric de Saint Martin]
+ * slapgrid : Add binary cache support. [Yingjie Xu]
 
 0.21 (2011-12-23)
 -----------------
