@@ -75,11 +75,14 @@ sale_packing_list = sale_packing_list_module.newContent(\n
   start_date=DateTime(),\n
   activate_kw=activate_kw)\n
 \n
+service = portal.restrictedTraverse(service_relative_url)\n
 instance_hosting_sale_packing_list_line = sale_packing_list.newContent(\n
   portal_type=\'Sale Packing List Line\',\n
   resource=service_relative_url,\n
   quantity=instance_setup_sale_packing_list_line.getQuantity(),\n
   aggregate_list=instance_setup_sale_packing_list_line.getAggregateList(),\n
+  # XXX Hardcode price on service\n
+  price=service.getSaleSupplyLineBasePrice(),\n
   activate_kw=activate_kw\n
 )\n
 return sale_packing_list\n
