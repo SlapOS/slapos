@@ -58,7 +58,7 @@ from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
 \n
 if stop_date is None:\n
   # generate expected next month\n
-  stop_date = addToDate(getClosestDate(target_date=DateTime(), precision=\'month\', before=1), month=2)\n
+  stop_date = addToDate(getClosestDate(target_date=DateTime(), precision=\'month\', before=1), month=1)\n
 \n
 context.portal_catalog.searchAndActivate(\n
   method_id=\'OpenSaleOrderLine_updateStopDate\',\n
