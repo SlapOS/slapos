@@ -376,8 +376,9 @@ class testVifibMixin(ERP5TypeTestCase):
       sm = getSecurityManager()
       self.login()
       try:
-        if 'vifib_trigger_build' in self.portal.portal_alarms.objectIds():
-          self.portal.portal_alarms.vifib_trigger_build.Alarm_buildVifibPath()
+        for alarm in self.portal.portal_alarms.contentValues():
+          if alarm.isEnabled() and (alarm.getId() != 'vifib_check_consistency'):
+            alarm.activeSense()
       finally:
         setSecurityManager(sm)
 
