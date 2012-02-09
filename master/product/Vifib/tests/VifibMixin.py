@@ -377,7 +377,10 @@ class testVifibMixin(ERP5TypeTestCase):
       self.login()
       try:
         for alarm in self.portal.portal_alarms.contentValues():
-          if alarm.isEnabled() and (alarm.getId() != 'vifib_check_consistency'):
+          if alarm.isEnabled() and (alarm.getId() not in \
+              ('vifib_check_consistency',
+              'register_planned_payment_transaction_payzen',
+              'payzen_update_confirmed_payment_transaction')):
             alarm.activeSense()
       finally:
         setSecurityManager(sm)
