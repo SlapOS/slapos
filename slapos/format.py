@@ -999,6 +999,7 @@ def run(config):
     computer.dump(config.computer_xml)
   config.logger.info('Posting information to %r' % config.master_url)
   computer.send(config)
+  config.logger.info('slapformat successfully prepared computer.')
 
 class Config(object):
   key_file = None
