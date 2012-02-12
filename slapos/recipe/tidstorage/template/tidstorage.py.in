@@ -1,0 +1,15 @@
+known_tid_storage_identifier_dict = %(known-tid-storage-identifier-dict)s
+base_url = '%(base-url)s'
+address = '%(ip)s'
+port = %(port)s
+
+#fork = False
+#setuid = None
+#setgid = None
+burst_period = 30
+full_dump_period = 300
+
+timestamp_file_path = '%(timestamp-file-path)s'
+logfile_name = '%(logfile-name)s'
+pidfile_name = '%(pidfile-name)s'
+status_file = '%(status-file)s'

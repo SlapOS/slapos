@@ -25,43 +25,34 @@
 #
 ##############################################################################
 import logging
-import os
 
 from slapos import slap as slapmodule
 
 class Recipe(object):
-
-  def parseMultiValues(self, string):
-    return dict([ [str(column).strip() for column in line.split('=', 1)]
-                 for line in str(string).splitlines() if '=' in line])
 
   def __init__(self, buildout, name, options):
     self.logger = logging.getLogger(name)
 
     slap = slapmodule.slap()
 
-    slap_connection = buildout['slap_connection']
-    self.software_release_url = slap_connection['software_release_url']
+    self.software_release_url = options['software-url']
 
-    # XXX: Dirty network interation stuff
-    slap.initializeConnection(slap_connection['server_url'],
-                              slap_connection.get('key_file'),
-                              slap_connection.get('cert_file'),
+    slap.initializeConnection(options['server-url'],
+                              options.get('key-file'),
+                              options.get('cert-file'),
                              )
     computer_partition = slap.registerComputerPartition(
-      slap_connection['computer_id'], slap_connection['partition_id'])
+      options['computer-id'], options['partition-id'])
     self.request = computer_partition.request
 
-    if 'software-url' not in options:
-      options['software-url'] = self.software_release_url
-
-    if 'name' not in options:
-      options['name'] = name
+    self.isSlave = False
+    if 'slave' in options:
+      self.isSlave = options['slave'].lower() in ['y', 'yes', 'true', '1']
 
     self.return_parameters = []
     if 'return' in options:
       self.return_parameters = [str(parameter).strip()
-                               for parameter in options['return'].splitlines()]
+                               for parameter in options['return'].split()]
     else:
       self.logger.warning("No parameter to return to main instance."
                           "Be careful about that...")
@@ -72,25 +63,31 @@ class Recipe(object):
 
     filter_kw = {}
     if 'sla' in options:
-      filter_kw = self.parseMultiValues(options['sla'])
+      for sla_parameter in options['sla'].split():
+        filter_kw[sla_parameter] = options['sla-%s' % sla_parameter]
 
     partition_parameter_kw = {}
     if 'config' in options:
-      partition_parameter_kw = self.parseMultiValues(options['config'])
+      for config_parameter in options['config'].split():
+        partition_parameter_kw[config_parameter] = \
+            options['config-%s' % config_parameter]
 
     instance = self.request(options['software-url'], software_type,
-      options['name'], partition_parameter_kw=partition_parameter_kw,
-        filter_kw=filter_kw)
+      options.get('name', name), partition_parameter_kw=partition_parameter_kw,
+      filter_kw=filter_kw, shared=self.isSlave)
 
-    result = {}
+    self.failed = None
     for param in self.return_parameters:
-      result[param] = instance.getConnectionParameter(param)
-
-    # Return the connections parameters in options dict
-    for key, value in result.items():
-      options['connection-%s' % key] = value
+      try:
+        options['connection-%s' % param] = str(instance.getConnectionParameter(param))
+      except slapmodule.NotFoundError:
+        options['connection-%s' % param] = ''
+        if self.failed is None:
+          self.failed = param
 
   def install(self):
+    if self.failed is not None:
+      raise KeyError("Connection parameter %r not found." % self.failed)
     return []
 
   update = install

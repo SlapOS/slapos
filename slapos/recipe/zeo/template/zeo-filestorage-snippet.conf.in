@@ -1,0 +1,4 @@
+<filestorage %(storage_name)s>
+  path %(path)s
+</filestorage>
+
