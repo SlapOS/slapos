@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,100 +24,53 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from slapos.recipe.librecipe import GenericBaseRecipe
+import binascii
 import os
 import sys
-from slapos.recipe.librecipe import BaseSlapRecipe
-import subprocess
-import binascii
-import random
-import zc.buildout
-import pkg_resources
-import ConfigParser
-import hashlib
 
-FALSE_VALUE_LIST = ['n', 'no', '0', 'false']
+class Recipe(GenericBaseRecipe):
+  """
+  kvm instance configuration.
+  """
 
-class Recipe(BaseSlapRecipe):
+  def __init__(self, buildout, name, options):
+    options['passwd'] = binascii.hexlify(os.urandom(4))
+    return GenericBaseRecipe.__init__(self, buildout, name, options)
 
-#   # To avoid magic numbers
-#   VNC_BASE_PORT = 5900
-
-  def _install(self):
-    """
-    Set the connection dictionnary for the computer partition and create a list
-    of paths to the different wrappers
-
-    Parameters : none
-
-    Returns    : List path_list
-    """
-    self.path_list = []
-
-    self.requirements, self.ws           = self.egg.working_set()
-    self.cron_d                          = self.installCrond()
-
-    self.ca_conf                         = self.installCertificateAuthority()
-    self.key_path, self.certificate_path = self.requestCertificate('noVNC')
-
-    # Install the socket_connection_attempt script
-    catcher = zc.buildout.easy_install.scripts(
-      [('check_port_listening', 'slapos.recipe.kvm.socket_connection_attempt',
-        'connection_attempt')],
-      self.ws,
-      sys.executable,
-      self.bin_directory,
-    )
-    # Save the check_port_listening script path
-    check_port_listening_script = catcher[0]
-    # Get the port_listening_promise template path, and save it
-    self.port_listening_promise_path = pkg_resources.resource_filename(
-      __name__, 'template/port_listening_promise.in')
-    self.port_listening_promise_conf = dict(
-     check_port_listening_script=check_port_listening_script,
+  def install(self):
+    config = dict(
+      tap_interface=self.options['tap'],
+      vnc_ip=self.options['vnc-ip'],
+      vnc_port=self.options['vnc-port'],
+      nbd_ip=self.options['nbd-ip'],
+      nbd_port=self.options['nbd-port'],
+      disk_path=self.options['disk-path'],
+      disk_size=self.options['disk-size'],
+      mac_address=self.options['mac-address'],
+      smp_count=self.options['smp-count'],
+      ram_size=self.options['ram-size'],
+      socket_path=self.options['socket-path'],
+      pid_file_path=self.options['pid-path'],
+      python_path=sys.executable,
+      shell_path=self.options['shell-path'],
+      qemu_path=self.options['qemu-path'],
+      qemu_img_path=self.options['qemu-img-path'],
+      # XXX Weak password
+      vnc_passwd=self.options['passwd']
     )
 
-    vnc_port = Recipe.VNC_BASE_PORT + kvm_conf['vnc_display']
+    # Runners
+    runner_path = self.createExecutable(
+      self.options['runner-path'],
+      self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
+                              config))
 
-    noVNC_conf = self.installNoVnc(source_ip   = self.getGlobalIPv6Address(),
-                                   source_port = 6080,
-                                   target_ip   = kvm_conf['vnc_ip'],
-                                   target_port = vnc_port)
+    controller_path = self.createExecutable(
+      self.options['controller-path'],
+      self.substituteTemplate(self.getTemplateFilename('kvm_controller_run.in'),
+                              config))
 
-    ipv6_url = 'https://[%s]:%s/vnc_auto.html?host=[%s]&port=%s&encrypt=1' % (
-      noVNC_conf['source_ip'], noVNC_conf['source_port'],
-      noVNC_conf['source_ip'], noVNC_conf['source_port'])
 
-    # Request frontend slave instance, unless contrary is specified
-    # XXX-Cedric : HARDCODE : during dev, request is OPT-IN
-    request_frontend = self.parameter_dict.get('frontend', 'false')
-    #request_frontend = self.parameter_dict.get('frontend', True)
-    if not request_frontend in FALSE_VALUE_LIST:
-      slave_frontend = self.request(
-        # XXX-Cedric : Use KVM Software Type to instantiate kvmfrontend.
-        #              kvmfrontend should be in KVM recipe but using different
-        #              software type.
-        software_release='/opt/slapdev/software/kvm-frontend/software.cfg',
-        software_type='RootSoftwareInstance',
-        partition_reference='frontend',
-        shared=True,
-        partition_parameter_kw={"host":noVNC_conf['source_ip'], 
-            "port":noVNC_conf['source_port']}
-      )
-      url = '%s/vnc_auto.html?host=%s&port=%s&encrypt=1&path=%s' % (
-        slave_frontend.getConnectionParameter('site_url'),
-        slave_frontend.getConnectionParameter('domainname'),
-        slave_frontend.getConnectionParameter('port'),
-        slave_frontend.getConnectionParameter('resource'))
-      connection_dict = dict(
-        url = url,
-        backend_url = ipv6_url,
-        password = kvm_conf['vnc_passwd'])
-    else:
-      # No frontend : just set raw IPv6
-      connection_dict = dict(
-          url = ipv6_url,
-          password = kvm_conf['vnc_passwd'])
+    return [runner_path, controller_path]
 
-    self.computer_partition.setConnectionDict(connection_dict)
-
-    return self.path_list
