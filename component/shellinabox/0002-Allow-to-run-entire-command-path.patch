@@ -1,0 +1,26 @@
+From eee6f7180dc5dd4523264e7ce0721945ab2b78a1 Mon Sep 17 00:00:00 2001
+From: Antoine Catton <acatton@tiolive.com>
+Date: Wed, 11 Jan 2012 17:32:15 +0100
+Subject: [PATCH 2/2] Allow to run entire command path.
+
+---
+ shellinabox/launcher.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/shellinabox/launcher.c b/shellinabox/launcher.c
+index fb8a133..e116a75 100644
+--- a/shellinabox/launcher.c
++++ b/shellinabox/launcher.c
+@@ -1226,8 +1226,7 @@ static void execService(int width, int height, struct Service *service,
+ 
+   extern char **environ;
+   environ                     = environment;
+-  char *cmd                   = strrchr(argv[0], '/');
+-  execvp(cmd ? cmd + 1: argv[0], argv);
++  execvp(argv[0], argv);
+ }
+ 
+ void setWindowSize(int pty, int width, int height) {
+-- 
+1.7.6.5
+

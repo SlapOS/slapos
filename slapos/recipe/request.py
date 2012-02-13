@@ -45,9 +45,6 @@ class Recipe(object):
       options['computer-id'], options['partition-id'])
     self.request = computer_partition.request
 
-    if 'name' not in options:
-      options['name'] = name
-
     self.isSlave = False
     if 'slave' in options:
       self.isSlave = options['slave'].lower() in ['y', 'yes', 'true', '1']
@@ -76,7 +73,7 @@ class Recipe(object):
             options['config-%s' % config_parameter]
 
     instance = self.request(options['software-url'], software_type,
-      options['name'], partition_parameter_kw=partition_parameter_kw,
+      options.get('name', name), partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=self.isSlave)
 
     self.failed = None

@@ -1,0 +1,34 @@
+[main]
+# Is the plugin disable ?
+disable = 0
+# Are dynamic group enable ?
+dynamic_enable = 1
+# Are profiles enable ?
+# profiles_enable = 0
+
+# Preselected module in the dynamic group creation page
+# default_module = 
+
+# Maximum number of elements in the static group creation list
+# max_elements_for_static_list = 2000
+
+[database]
+dbdriver = mysql
+dbhost = %(mysql_host)s
+dbport = %(mysql_port)s
+dbuser = %(mysql_user)s
+dbpasswd = %(mysql_password)s
+dbname = dyngroup
+# dbsslenable = 0
+# dbsslca =
+# dbsslcert =
+# dbsslkey =
+# Database connection lifetime
+# dbpoolrecycle = 60
+# Database connection pool size
+# dbpoolsize = 5
+
+[querymanager]
+# can we query on group names ?
+activate = 0
+                                                

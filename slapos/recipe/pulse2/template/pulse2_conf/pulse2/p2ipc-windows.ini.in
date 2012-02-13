@@ -1,0 +1,58 @@
+[main]
+server =
+port = 9999
+command_name = C:\Program Files\OCS Inventory Agent\OCSInventory.exe
+command_attr = /SERVER:127.0.0.1 /PNUM:9999
+enablessl = True
+verifypeer = False
+cacert = cacert.pem
+localcert = privkey.pem
+
+# [polling]
+# activate = 0
+# type = reg
+# time = 600
+# path = HKEY_LOCAL_MACHINE\Software\Mandriva\Inventory\Client\do_inventory
+
+[loggers]
+keys = root
+
+[handlers]
+keys = hand01
+
+[formatters]
+keys = form01
+
+[logger_root]
+level = NOTSET
+handlers = hand01
+
+[handler_hand01]
+class = handlers.NTEventLogHandler
+level = INFO
+formatter = form01
+args = ("Pulse 2 Proxy SSL",)
+
+# [handler_hand01]
+# class = handlers.RotatingFileHandler
+# level = DEBUG
+# formatter = form01
+# args = ("C:\\Program Files\\Mandriva\\Pulse2 Inventory SSL Proxy\\log.txt", "a", 100*1024, 5)
+
+[formatter_form01]
+format = %(asctime)s %(levelname)s %(message)s
+
+# Xml update add extra information to OCS XML output
+[xmlupdate]
+# execute the update
+enable = False
+# keep a local copy of the updated XML
+keepxmlupdate = False
+# notify software updates
+updatedetection = False
+# add software icons to XML output
+addicon = False
+
+# add OCS execution debug to OCS XML output
+[ocsdebug]
+enable = False
