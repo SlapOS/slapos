@@ -17,8 +17,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       causality_relative_url=hosting_subscription.getRelativeUrl(),
       sort_on=(('delivery.start_date', 'desc'),)
     )
-    # are next two months covered?
-    self.assertEqual(2, len(delivery_list))
+    # is next month covered?
+    self.assertEqual(1, len(delivery_list))
 
     # generate the expected time frames
     now = DateTime()
