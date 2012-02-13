@@ -1340,6 +1340,39 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         Logout
       """
 
+  register_new_user_sequence_string = '\
+      Logout \
+      RequestCredentialFromWebSite \
+      Tic \
+      LoginDefaultUser \
+      SubmitCredentialRequest \
+      Tic \
+      AcceptSubmittedCredentialsActiveSense \
+      Tic \
+      Logout \
+      LoginERP5TypeTestCase \
+      TriggerBuild \
+      Tic \
+      TriggerStopConfirmedInvoiceAlarm \
+      Tic \
+      TriggerBuild \
+      Tic \
+      Logout'
+
+  create_new_user_instance_sequence_string = '\
+      LoginWebUser \
+      PersonRequestSoftwareInstance \
+      Tic \
+      Logout \
+      \
+      LoginDefaultUser \
+      ConfirmOrderedSaleOrderActiveSense \
+      Tic \
+      SetSelectedComputerPartition \
+      SelectCurrentlyUsedSalePackingListUid \
+      Logout \
+      '
+
   ########################################
   # Steps
   ########################################

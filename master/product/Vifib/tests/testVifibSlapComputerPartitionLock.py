@@ -5,17 +5,6 @@ from zExceptions import Unauthorized
 
 class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
-  register_new_user_sequence_string = '\
-      Logout \
-      RequestCredentialFromWebSite \
-      Tic \
-      LoginDefaultUser \
-      SubmitCredentialRequest \
-      Tic \
-      AcceptSubmittedCredentialsActiveSense \
-      Tic \
-      Logout'
-
   lock_user_sequence_string = '\
       LoginERP5TypeTestCase \
       TriggerBuild \
