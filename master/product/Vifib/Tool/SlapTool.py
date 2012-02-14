@@ -574,7 +574,7 @@ class SlapTool(BaseTool):
        portal_preferences.getPreferredInstanceUpdateResource())
 
     global_query_kw = dict(aggregate_portal_type="Slave Instance",
-        aggregate_relative_url=computer_partition_document.getRelativeUrl(),)
+        default_aggregate_uid=computer_partition_document.getUid(),)
 
     hosting_query = ComplexQuery(Query(simulation_state=["confirmed", "stopped"]),
       Query(default_resource_uid=hosting_service.getUid()),
