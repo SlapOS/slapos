@@ -157,17 +157,10 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       idx += 1
 
   def stepIncreaseOpenOrderCoverage(self, sequence, **kw):
-    person = self.portal.person_module['test_vifib_customer']
-    open_order = \
-      person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
-    open_order_line_list = \
-      open_order.contentValues(portal_type="Open Sale Order Line")
-    self.assertEquals(1, len(open_order_line_list))
-    open_order_line = open_order_line_list[0]
-    self.portal.portal_alarms.vifib_update_open_sale_order_line.activeSense(
-      params={'stop_date': addToDate(getClosestDate(target_date=DateTime(),
+    self.portal.portal_alarms.vifib_update_open_sale_order_line.Alarm_updateOpenSaleOrderLine(
+      'test_tag', False,
+      {'stop_date': addToDate(getClosestDate(target_date=DateTime(),
         precision='month', before=1), month=3)})
-
 
   def stepCheckThreeTopLevelSimulationMovement(self, sequence, **kw):
     person = self.portal.person_module['test_vifib_customer']
