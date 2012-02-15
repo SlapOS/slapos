@@ -68,7 +68,7 @@ if obj is None:\n
 \n
 portal = obj.getPortalObject()\n
 \n
-state_list = [\'stopped\'] + \\\n
+state_list = (\'stopped\',) + \\\n
   portal.getPortalReservedInventoryStateList() + \\\n
   portal.getPortalTransitInventoryStateList()\n
 \n
