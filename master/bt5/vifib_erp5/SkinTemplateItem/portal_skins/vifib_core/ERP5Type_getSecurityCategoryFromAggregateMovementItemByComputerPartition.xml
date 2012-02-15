@@ -78,7 +78,8 @@ parent_url_list = []\n
 for movement in portal.portal_catalog(\n
   portal_type=movement_portal_type,\n
   aggregate_uid=obj.getUid(),\n
-  simulation_state=portal.getPortalCurrentInventoryStateList() + portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList(),\n
+  default_resource_uid=portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource()).getUid(),\n
+  simulation_state=[\'stopped\'] + portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList(),\n
   ):\n
   item = movement.getAggregateValue(portal_type=item_portal_type)\n
   if item is not None:\n
