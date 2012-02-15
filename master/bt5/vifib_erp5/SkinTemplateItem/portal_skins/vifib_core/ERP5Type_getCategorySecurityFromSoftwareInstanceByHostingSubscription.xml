@@ -68,7 +68,7 @@ if obj is None:\n
 \n
 portal = obj.getPortalObject()\n
 \n
-state_list = portal.getPortalCurrentInventoryStateList() + \\\n
+state_list = [\'stopped\'] + \\\n
   portal.getPortalReservedInventoryStateList() + \\\n
   portal.getPortalTransitInventoryStateList()\n
 \n
@@ -76,7 +76,7 @@ resource_list = [portal.portal_preferences.getPreferredInstanceSetupResource(),\
   portal.portal_preferences.getPreferredInstanceHostingResource()]\n
 \n
 sale_packing_list_line = portal.portal_catalog.getResultValue(\n
-      resource_relative_url=resource_list,\n
+      default_resource_uid=[portal.restrictedTraverse(x).getUid() for x in resource_list],\n
       aggregate_uid=obj.getUid(),\n
       portal_type="Sale Packing List Line",\n
       simulation_state=state_list)\n
