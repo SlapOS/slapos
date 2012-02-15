@@ -89,18 +89,11 @@ computer_partition = sale_packing_list_line.getAggregateValue(\n
 software_release = sale_packing_list_line.getAggregateValue(\n
   portal_type="Software Release")\n
 \n
-query = ComplexQuery(\n
-  Query(aggregate_relative_url=computer_partition.getRelativeUrl()),\n
-  Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
-  operator="AND",\n
-)\n
-\n
 catalog_result = portal.portal_catalog(portal_type="Sale Packing List Line",\n
   aggregate_portal_type="Slave Instance",\n
-  aggregate_relative_url=obj.getRelativeUrl(),\n
   simulation_state=state_list,\n
   limit=1,\n
-  query=query,\n
+  default_aggregate_uid=[computer_partition.getUid(), software_release.getUid(), obj.getuid()]\n
 )\n
 \n
 if len(catalog_result) == 0:\n
@@ -110,7 +103,7 @@ packing_list_line = portal.portal_catalog.getResultValue(\n
     portal_type="Sale Packing List Line",\n
     aggregate_portal_type="Software Instance",\n
     simulation_state=state_list,\n
-    query=query,)\n
+    default_aggregate_uid=[computer_partition.getUid(), software_release.getUid()])\n
 \n
 if packing_list_line is not None:\n
   software_instance = packing_list_line.getAggregateValue(\n
