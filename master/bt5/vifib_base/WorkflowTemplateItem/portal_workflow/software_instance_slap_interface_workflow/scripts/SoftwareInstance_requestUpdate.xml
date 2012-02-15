@@ -69,13 +69,14 @@ for tag in tag_list:\n
     return\n
 portal_preferences = portal.portal_preferences\n
 \n
-update_resource_relative_url = portal.restrictedTraverse(portal_preferences.getPreferredInstanceUpdateResource()).getUid()\n
+update_resource_uid = portal.restrictedTraverse(portal_preferences.getPreferredInstanceUpdateResource()).getUid()\n
 setup_resource_uid = portal.restrictedTraverse(portal_preferences.getPreferredInstanceSetupResource()).getUid()\n
 hosting_resource_uid = portal.restrictedTraverse(portal_preferences.getPreferredInstanceHostingResource()).getUid()\n
 \n
 service_uid_state_mapping = {\n
   setup_resource_uid: [\'stopped\'],\n
-  hosting_resource_uid: [\'started\', \'delivered\']\n
+  hosting_resource_uid: [\'started\', \'delivered\'],\n
+  update_resource_uid: [\'started\', \'stopped\', \'delivered\'],\n
 }\n
 try:\n
   previous_packing_list_line = context.SoftwareInstance_getInstancePackingListLine(state_change)\n
@@ -83,11 +84,15 @@ except ValueError:\n
   # no packing list yet, no need to update\n
   return\n
 \n
-if previous_packing_list_line.getResourceUid() == hosting_resource_uid:\n
+resource_uid = previous_packing_list_line.getResourceUid()\n
+if resource_uid == hosting_resource_uid:\n
   if previous_packing_list_line.getSimulationState() not in service_uid_state_mapping[hosting_resource_uid]:\n
     return\n
-elif previous_packing_list_line.getResourceUid() == setup_resource_uid:\n
+elif resource_uid == setup_resource_uid:\n
   if previous_packing_list_line.getSimulationState() not in service_uid_state_mapping[setup_resource_uid]:\n
+    return\n
+elif resource_uid == update_resource_uid:\n
+  if previous_packing_list_line.getSimulationState() not in service_uid_state_mapping[update_resource_uid]:\n
     return\n
 else:\n
   # not "supported" resource, eg. cleanup\n
