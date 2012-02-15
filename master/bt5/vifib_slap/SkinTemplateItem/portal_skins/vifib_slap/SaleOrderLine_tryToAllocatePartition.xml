@@ -50,25 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-setup_service = portal.portal_preferences.getPreferredInstanceSetupResource()\n
-\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=\'Sale Order Line\',\n
-  default_resource_uid=portal.restrictedTraverse(setup_service).getUid(),\n
-  simulation_state="ordered",\n
-  method_id=\'SaleOrderLine_tryToAllocatePartition\',\n
-  activate_kw={\'tag\': tag}\n
-)\n
+            <value> <string>sale_order = context.getParentValue()\n
+if sale_order.getSimulationState() == \'ordered\':\n
+  try:\n
+    sale_order.confirm()\n
+  except ValueError:\n
+    # It was not possible to find free Computer Partition\n
+    pass\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_confirmOrderedSaleOrder</string> </value>
+            <value> <string>SaleOrderLine_tryToAllocatePartition</string> </value>
         </item>
       </dictionary>
     </pickle>
