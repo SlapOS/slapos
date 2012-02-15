@@ -57,6 +57,9 @@ class Recipe(GenericSlapRecipe):
     known_tid_storage_identifier_dict = {}
     snippet_zeo = open(self.options['snippet-zeo']).read()
     for zeo_id, zeo_configuration_list in json_data['zeo'].iteritems():
+      if not type(zeo_configuration_list) in (type([]), type(set()), type(())):
+        raise ValueError('%s passed in json is not a list, json: %s.' % (
+          zeo_configuration_list, json_data))
       storage_list = []
       a = storage_list.append
       for zeo_slave in zeo_configuration_list:

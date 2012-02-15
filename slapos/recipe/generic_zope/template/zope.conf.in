@@ -20,6 +20,11 @@ zserver-threads %(thread_amount)s
 pid-filename %(pid-filename)s
 lock-filename %(lock-filename)s
 
+# Encoding
+rest-input-encoding utf-8
+rest-output-encoding utf-8
+default-zpublisher-encoding utf-8
+
 # Temporary storage database (for sessions)
 <zodb_db temporary>
      <temporarystorage>
