@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+# Check the creation date\n
+# XXX Could be done in catalog, but it is not indexed in Vifib currently\n
+movement = context\n
+if (DateTime() - movement.getCreationDate()) > 1:\n
+  # Instance is not done for more than one day. Search for explanation\n
+  # does the computer tries to instanciate? If so, recent error_log should be available in log\n
+  instance = movement.getAggregateValue(portal_type="Software Instance")\n
+\n
+  history = instance.portal_workflow.getInfoFor(instance, \'history\', wf_id=\'software_instance_slap_interface_workflow\')\n
+  error_report_found = False\n
+  for history_item in history[::-1]:\n
+    if history_item[\'action\'] == \'report_computer_partition_error\':\n
+      error_report_found = True\n
+      break\n
+    else:\n
+      date = history_item[\'time\']\n
+      if (DateTime() - date) > 1:\n
+        # No error reported for one day\n
+        # Computer seems dead/unresponsive: to be handle by another alarm\n
+        break\n
+\n
+  if error_report_found:\n
+    # Partition can not be installed for more than one day\n
+    # Destroy it by: cancelling the instance packing list and create destroy PL\n
+    try:\n
+      instance.requestDestroyComputerPartition(comment="Instance can not be instanciated for more than one day")\n
+    except ValueError:\n
+      # Under deletion already\n
+      pass\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SalePackingListLine_checkAndDestroyNonInstanciatedPartition</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
