@@ -1011,11 +1011,11 @@ class SlapTool(BaseTool):
     state_list.extend(portal.getPortalTransitInventoryStateList())
     if slave_reference is not None:
       query = ComplexQuery(Query(aggregate_reference=slave_reference),
-          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+          Query(default_aggregate_uid=computer_partition_document.getUid()),
           operator="AND")
     else:
       query = ComplexQuery(Query(aggregate_portal_type="Software Instance"),
-          Query(aggregate_relative_url=computer_partition_document.getRelativeUrl()),
+          Query(default_aggregate_uid=computer_partition_document.getUid()),
           operator="AND")
 
     # Use getTrackingList
