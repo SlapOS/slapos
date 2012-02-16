@@ -93,7 +93,7 @@ catalog_result = portal.portal_catalog(portal_type="Sale Packing List Line",\n
   aggregate_portal_type="Slave Instance",\n
   simulation_state=state_list,\n
   limit=1,\n
-  default_aggregate_uid=[computer_partition.getUid(), software_release.getUid(), obj.getuid()]\n
+  default_aggregate_uid=[computer_partition.getUid(), software_release.getUid(), obj.getUid()]\n
 )\n
 \n
 if len(catalog_result) == 0:\n
