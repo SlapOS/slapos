@@ -68,9 +68,21 @@ Examples
 =====
   >>> # Request instance
   >>> request(kvm, "myuniquekvm")
+
+  >>> # Request instance on specific computer
+  >>> request(kvm, "myotheruniquekvm",
+    filter_kw={ "computer_guid": "COMP-12345" })
+  
+  >>> # Request instance, specifying parameters (here nbd_ip and nbd_port)
+  >>> request(kvm, "mythirduniquekvm",
+    partition_parameter_kw={"nbd_ip":"2a01:e35:2e27:460:e2cb:4eff:fed9:48dc", 
+    "nbd_port":"1024"})
+
   >>> # Request software installation on owned computer
   >>> supply(kvm, "mycomputer")
-  >>> # Fetch instance status
+
+  >>> # Fetch existing instance status
   >>> request(kvm, "myuniquekvm").getState()
+
   >>> # Fetch instance informations on already launched instance
   >>> request(kvm, "myuniquekvm").getConnectionParameter("url")
