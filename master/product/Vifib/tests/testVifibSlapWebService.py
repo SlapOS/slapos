@@ -855,7 +855,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.login()
     try:
       self.portal.portal_alarms.confirm_ordered_sale_order\
-        .Alarm_confirmOrderedSaleOrder()
+        .activeSense()
     finally:
       setSecurityManager(sm)
 
