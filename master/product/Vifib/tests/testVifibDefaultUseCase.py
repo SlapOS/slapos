@@ -172,16 +172,6 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     self.assertEquals('account_module/bank', sale_line.getDestination())
     self.assertEquals('sale_trade_condition_module/vifib_trade_condition', sale_line.getSpecialise())
 
-  def stepPayRegistrationPayment(self, sequence, **kw):
-    """
-    """
-    payment = self.portal.portal_catalog.getResultValue(
-        portal_type="Payment Transaction",
-        simulation_state="planned")
-    payment.confirm()
-    payment.start()
-    payment.stop()
-
   def stepCheckPaidRegistrationAccounting(self, sequence, **kw):
     """
     """

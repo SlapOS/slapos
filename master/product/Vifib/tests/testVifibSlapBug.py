@@ -1548,6 +1548,8 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       TriggerBuild
       Tic
+      PayRegistrationPayment
+      Tic
       Logout
 
       LoginWebUser
