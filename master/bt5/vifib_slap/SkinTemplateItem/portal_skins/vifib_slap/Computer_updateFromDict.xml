@@ -100,6 +100,9 @@ for send_partition in computer_dict[\'partition_list\']:\n
     partition = context.newContent(portal_type=\'Computer Partition\')\n
     partition.validate()\n
     partition.markFree()\n
+  elif partition.getSlapState() == \'inactive\':\n
+    # Reactivate partition\n
+    partition.markFree()\n
   partition.edit(reference=send_partition[\'reference\'])\n
   network_interface = send_partition[\'tap\'][\'name\']\n
   compareAndUpdateAddressList(partition, send_partition[\'address_list\'], {\'network_interface\': network_interface})\n
