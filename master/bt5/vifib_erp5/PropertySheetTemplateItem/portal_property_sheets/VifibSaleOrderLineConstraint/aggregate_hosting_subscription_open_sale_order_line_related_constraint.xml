@@ -70,7 +70,7 @@
         </item>
         <item>
             <key> <string>test_tales_expression</string> </key>
-            <value> <string>python: context.getSimulationState() in context.getPortalPlannedOrderStateList() + context.getPortalReservedInventoryStateList() and context.getAggregateValue(portal_type=\'Hosting Subscription\') is not None</string> </value>
+            <value> <string>python: context.getSimulationState() in context.getPortalPlannedOrderStateList() and context.getAggregateValue(portal_type=\'Hosting Subscription\') is not None</string> </value>
         </item>
       </dictionary>
     </pickle>
