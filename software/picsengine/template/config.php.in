@@ -1,0 +1,12 @@
+<?php
+if(!defined("INDEX") || !INDEX)
+	header("location: index.php");
+
+$config = Array(
+	'dbHost'				=>	'%(mysql_host)s',
+	'dbUser'				=>	'%(mysql_user)s',
+	'dbPassword'				=>	'%(mysql_password)s',
+	'dbName'				=>	'%(mysql_database)s',
+	'dbPrefix'				=>	'pe_',
+);
+?>
