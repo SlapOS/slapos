@@ -50,29 +50,25 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>kw = {}\n
-select_dict= {\'delivery_uid\': None}\n
-kw.update(\n
-  portal_type=\'Simulation Movement\',\n
-  select_dict=select_dict,\n
-  left_join_list=select_dict.keys(),\n
-  delivery_uid=None\n
-)\n
+            <value> <string>explanation = context.getExplanationValue()\n
 \n
-context.getPortalObject().portal_catalog.searchAndActivate(\n
-  method_id=\'SimulationMovement_buildVifib\',\n
-  activate_kw={\'tag\': tag, \'priority\': 4},\n
-  **kw\n
-)\n
+if context.getDelivery() is not None:\n
+  # movement build but not indexed, so do nothing\n
+  return\n
+portal = context.getPortalObject()\n
+for business_process in [\n
+  portal.business_process_module.vifib_sale_business_process,\n
+  portal.business_process_module.vifib_purchase_business_process]:\n
+  business_process.build(explanation)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_buildVifibPath</string> </value>
+            <value> <string>SimulationMovement_buildVifib</string> </value>
         </item>
       </dictionary>
     </pickle>
