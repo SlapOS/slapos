@@ -4318,6 +4318,8 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Tic
       AcceptSubmittedCredentialsActiveSense
       Tic
+      PayRegistrationPayment
+      Tic
       Logout
 
       LoginWebUser
