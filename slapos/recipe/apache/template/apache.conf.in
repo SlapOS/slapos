@@ -38,10 +38,10 @@ CustomLog "%(access_log)s" common
 %(path_enable)s
 
 # Magic of Zope related rewrite
-#RewriteMap apachemapzope txt:%(apachemapzope_path)s
-#RewriteEngine On
+RewriteMap apachemapzope txt:%(apachemapzope_path)s
+RewriteEngine On
 # XXX-Cedric : apply only known apachemapzope rules.
-#RewriteRule ^/(\w+)($|/.*) ${apachemapzope:$1}/VirtualHostBase/https/%(apache_domain)s:%(port)s/VirtualHostRoot/_vh_$1$2 [L,P]
+RewriteRule ^/(\w+)($|/.*) ${apachemapzope:$1}/VirtualHostBase/https/%(apache_domain)s:%(port)s/VirtualHostRoot/_vh_$1$2 [L,P]
 
 # Sadly, Zope isn't used everywhere. So let's add a generic purpose rule
 RewriteMap apachemapgeneric txt:%(apachemap_path)s
