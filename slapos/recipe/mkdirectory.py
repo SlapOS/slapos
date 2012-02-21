@@ -41,7 +41,7 @@ class Recipe(GenericBaseRecipe):
       path = directory
 
       if not os.path.exists(path):
-        os.mkdir(path, self.mode)
+        os.makedirs(path, self.mode)
       elif not os.path.isdir(path):
         raise OSError("%s path exits, but it's not a directory.")
 
