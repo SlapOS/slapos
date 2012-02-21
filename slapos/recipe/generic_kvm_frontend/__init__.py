@@ -66,8 +66,7 @@ class Recipe(GenericBaseRecipe):
          self.getTemplateFilename('proxytable-resource-snippet.json.in'),
          rewrite_rule)
       proxy_table_content += "%s," % rewrite_part
-#     proxy_table_content = '%s%s' % (proxy_table_content,
-#          open(self.getTemplateFilename('proxytable-vifib-snippet.json.in')).read())
+
     proxy_table_content += '}\n'
     return proxy_table_content
 
