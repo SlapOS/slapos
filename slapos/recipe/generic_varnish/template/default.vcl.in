@@ -1,0 +1,124 @@
+#This is a basic VCL configuration file for varnish.  See the vcl(7)
+#man page for details on VCL syntax and semantics.
+#
+#Default backend definition.  Set this to point to your content
+#server.
+#
+backend default {
+  .host = "%(backend_ip)s";
+  .port = "%(backend_port)s";
+  .probe = {
+           .timeout = 30s;
+           .interval = 5s;
+           .window = 4;
+           .threshold = 3;
+           .request =
+             "OPTIONS /erp5/getId HTTP/1.1"
+             "Host: %(backend_server)s:%(backend_port)s"
+             "Accept-Encoding: identity"
+             "Connection: close"
+             "User-Agent: Varnish";
+  }
+}
+#
+#Below is a commented-out copy of the default VCL logic.  If you
+#redefine any of these subroutines, the built-in logic will be
+#appended to your code.
+#
+
+sub vcl_recv {
+  if (req.request != "GET" &&
+    req.request != "HEAD" &&
+    req.request != "PUT" &&
+    req.request != "POST" &&
+    req.request != "TRACE" &&
+    req.request != "OPTIONS" &&
+    req.request != "PURGE" &&
+    req.request != "DELETE") {
+      /* Non-RFC2616 or CONNECT which is weird. */
+      pipe;
+  }
+  if (req.request != "GET" && req.request != "HEAD" && req.request != "PURGE") {
+      /* We only deal with GET and HEAD by default */
+      pass;
+  }
+  remove req.http.Cookie;
+  remove req.http.Set-Cookie;
+  if (req.http.Accept-Encoding) {
+    if (req.http.Accept-Encoding ~ "gzip") {
+      set req.http.Accept-Encoding = "gzip";
+    } elsif (req.http.Accept-Encoding ~ "deflate") {
+      set req.http.Accept-Encoding = "deflate";
+    } else {
+      # unkown algorithm
+      remove req.http.Accept-Encoding;
+    }
+  }
+  # Force deflate
+  remove req.http.Accept-Encoding;
+  # We do not care about Accept-Language, this is url controlled
+  remove req.http.Accept-Language;
+  #if (req.request == "PURGE") {
+  #  if (!client.ip ~ purge) {
+  #    error 405 "Not allowed.";
+  #  }
+  #  purge_url(req.url);
+  #  error 200 "HASHPURGED";
+  #  unset req.http.x;
+  #}
+  set req.grace = 30d;
+  lookup;
+}
+
+sub vcl_hash {
+    set req.hash += req.url;
+    hash;
+}
+
+sub vcl_hit {
+   #if (req.request == "PURGE" && client.ip ~ purge) {
+   #  set obj.ttl = 0s;
+   #  error 200 "Purged.";
+   #}
+
+   #if (client.ip ~ purge){
+   #  # Force refresh from localhost
+   #  set obj.ttl = 0s;
+   #  return (restart);
+   #}
+   # According Vary Header do not return those headers
+   remove req.http.Accept-Language;
+   remove req.http.Accept-Encoding;
+   remove req.http.Cookie;
+   deliver;
+}
+
+sub vcl_miss {
+    fetch;
+}
+
+sub vcl_fetch {
+    /* Never send request to backend even if client ask refreshed content */
+    if (obj.cacheable) {
+       /* Setup grace period for 30days for all cacheable contents */
+      #set req.grace = 30d;
+      set obj.grace = 30d;
+      }
+   deliver;
+   }
+
+
+sub vcl_deliver {
+   if (obj.hits > 0) {
+     set resp.http.X-Cache = obj.hits;
+   } else {
+     set resp.http.X-Cache = "MISS";
+   }
+   #if (obj.hash) {
+   #  set resp.http.X-Hash = obj.hash;
+   #} else {
+   #  set resp.http.X-Hash = "No hash";
+   #}
+
+   deliver;
+}
