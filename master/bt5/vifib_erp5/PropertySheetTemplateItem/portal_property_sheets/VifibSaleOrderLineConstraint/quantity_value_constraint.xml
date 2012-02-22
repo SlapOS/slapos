@@ -24,7 +24,7 @@
         </item>
         <item>
             <key> <string>constraint_attribute_value</string> </key>
-            <value> <string>1.0</string> </value>
+            <value> <string>python: 1.0</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
