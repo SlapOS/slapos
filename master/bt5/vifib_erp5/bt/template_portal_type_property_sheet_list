@@ -10,5 +10,6 @@ Sale Invoice Transaction | VifibSaleInvoiceConstraint
 Sale Order Line | VifibSaleOrderLineConstraint
 Sale Order | VifibSaleOrderConstraint
 Sale Packing List Line | VifibSalePackingListLineConstraint
+Sale Packing List | VifibSalePackingListConstraint
 Software Product | VifibSoftwareProductConstraint
 Software Release | VifibSoftwareReleaseConstraint

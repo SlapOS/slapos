@@ -12,3 +12,4 @@ VifibSaleOrderConstraint
 VifibSaleOrderLineConstraint
 VifibSaleInvoiceConstraint
 VifibSalePackingListLineConstraint
+VifibSalePackingListConstraint

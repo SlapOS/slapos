@@ -32,6 +32,9 @@
  <portal_type id="Sale Order Line">
   <item>VifibSaleOrderLineConstraint</item>
  </portal_type>
+ <portal_type id="Sale Packing List">
+  <item>VifibSalePackingListConstraint</item>
+ </portal_type>
  <portal_type id="Sale Packing List Line">
   <item>VifibSalePackingListLineConstraint</item>
  </portal_type>
