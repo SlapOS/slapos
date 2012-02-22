@@ -54,6 +54,7 @@
 \n
 if context.getTitle() == \'ViFiB Custom Conditions\':\n
   assert(len(context.getSpecialiseRelatedValueList()) == 0)\n
+  assert(len(context.contentValues()) == 0)\n
   context.getParentValue().deleteContent(id=context.getId())\n
 </string> </value>
         </item>
