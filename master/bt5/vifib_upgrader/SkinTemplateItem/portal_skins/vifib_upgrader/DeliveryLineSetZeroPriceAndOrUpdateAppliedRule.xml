@@ -51,11 +51,12 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>assert( context.getPortalType() in context.getPortalDeliveryMovementTypeList() )\n
-if context.getSimulationState() == \'cancelled\':\n
-  return\n
-price = context.getPrice()\n
 context.setPrice(0.0)\n
-context.setQuantity(1.0)\n
+if context.getSimulationState() == \'cancelled\':\n
+  # force no simulation\n
+  context.setQuantity(0.0)\n
+else:\n
+  context.setQuantity(1.0)\n
 context.getParentValue().Delivery_updateAppliedRule()\n
 </string> </value>
         </item>
