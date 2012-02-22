@@ -54,12 +54,12 @@
 specialise_value = context.getSpecialiseValue()\n
 if specialise_value.getRelativeUrl() != common_specialise:\n
   context.setSpecialise(common_specialise)\n
-  specialise_value.getParentValue().deleteContent(specialise.getId())\n
+  specialise_value.getParentValue().activate(after_tag=tag).Module_deleteContentIfExists(specialise.getId())\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

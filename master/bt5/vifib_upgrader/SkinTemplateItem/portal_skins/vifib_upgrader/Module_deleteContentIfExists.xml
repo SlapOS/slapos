@@ -50,22 +50,17 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>tag = \'Delivery_saleTradeConditionMigration\'\n
-context.portal_catalog.searchAndActivate(\n
-  portal_type=[\'Sale Order\', \'Sale Packing List Line\'],\n
-  method_id=\'Delivery_migrateToCommonSaleTradeCondition\',\n
-  activity_kw={\'tag\': tag},\n
-  method_kw={\'tag\': tag}\n
-)\n
+            <value> <string>if id in context.objectIds():\n
+  context.deleteContent(id)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>id</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Site_migrateToCommonSaleTradeCondition</string> </value>
+            <value> <string>Module_deleteContentIfExists</string> </value>
         </item>
       </dictionary>
     </pickle>
