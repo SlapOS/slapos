@@ -53,10 +53,8 @@
             <value> <string>if context.getPortalType() != \'Sale Order Line\':\n
   raise ValueError(\'%s is not sale order line\' % context.getPath())\n
 price = context.getPrice()\n
-if price != 0.0:\n
-  context.setPrice(0.0)\n
-if quantity != 1.0:\n
-  context.setQuantity(1.0)\n
+context.setPrice(0.0)\n
+context.setQuantity(1.0)\n
 context.getParentValue().Delivery_updateAppliedRule()\n
 </string> </value>
         </item>
