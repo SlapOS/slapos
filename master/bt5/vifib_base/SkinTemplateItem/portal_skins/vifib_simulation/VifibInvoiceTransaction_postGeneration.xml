@@ -68,13 +68,15 @@ if not invoice.Invoice_isAdvanced():\n
 if invoice.getStartDate() is None:\n
   invoice.setStartDate(DateTime())\n
 \n
+tag = \'%s_plan\' % invoice.getPath()\n
 # initialize accounting_workflow to planned state\n
 if invoice.getSimulationState() == \'draft\':\n
-  invoice.plan()\n
+  invoice.plan(comment=translateString(\'Initialised by Delivery Builder.\'), activate_kw={\'tag\': tag})\n
 \n
 # Update causality workflow\n
 invoice.startBuilding()\n
-invoice.updateCausalityState()\n
+invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
+  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\'))).updateCausalityState()\n
 \n
 # update specialise from movements\n
 specialise_list = invoice.getSpecialiseList()\n
