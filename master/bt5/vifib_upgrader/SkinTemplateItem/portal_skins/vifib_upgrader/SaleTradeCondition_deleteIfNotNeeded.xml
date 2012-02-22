@@ -50,17 +50,19 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>if id in context.objectIds():\n
-  context.deleteContent(id)\n
+            <value> <string>assert(context.getPortalType() == \'Sale Trade Condition\')\n
+\n
+if context.getTitle() == \'ViFiB Custom Conditions\':\n
+  context.getParentValue().deleteContent(id=context.getId())\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>id</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Module_deleteContentIfExists</string> </value>
+            <value> <string>SaleTradeCondition_deleteIfNotNeeded</string> </value>
         </item>
       </dictionary>
     </pickle>
