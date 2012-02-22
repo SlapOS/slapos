@@ -88,27 +88,19 @@ invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list
   (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
   after_tag=plan_tag).updateCausalityState()\n
 \n
-# update casuality and specialise from movements\n
-causality_list = invoice.getCausalityList()\n
-causality_list.sort()\n
+# update specialise from movements\n
 specialise_list = invoice.getSpecialiseList()\n
 specialise_list.sort()\n
 \n
 modified = 0\n
 for movement in invoice.getMovementList(portal_type=\'Invoice Line\'):\n
-  movement_causality = movement.getCausality()\n
-  if movement_causality not in causality_list:\n
-    modified = 1\n
-    causality_list.append(movement_causality)\n
   movement_specialise = movement.getSpecialise()\n
   if movement_specialise not in specialise_list:\n
     modified = 1\n
     specialise_list.append(movement_specialise)\n
 \n
 if modified:\n
-  causality_list.sort()\n
   specialise_list.sort()\n
-  invoice.setCausalityList(causality_list)\n
   invoice.setSpecialiseList(specialise_list)\n
 </string> </value>
         </item>
