@@ -51,7 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>context.getPortalObject().portal_catalog.searchAndActivate(\n
-  portal_type=context.getPortalDeliveryMovementTypeList() + (\'Sale Order Line\',),\n
+  portal_type=context.getPortalDeliveryMovementTypeList(),\n
   method_id=\'DeliveryLineSetZeroPriceAndOrUpdateAppliedRule\'\n
 )\n
 </string> </value>

@@ -51,14 +51,11 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal_type = context.getPortalType()\n
-assert( portal_type in context.getPortalDeliveryMovementTypeList() + (\'Sale Order Line\',) )\n
+assert( portal_type in context.getPortalDeliveryMovementTypeList())\n
 common_specialise = \'sale_trade_condition_module/vifib_trade_condition\'\n
 specialise = context.getParentValue().getSpecialise()\n
 if common_specialise != specialise:\n
   context.getParentValue().setSpecialise(common_specialise)\n
-if portal_type == \'Sale Order Line\':\n
-  # nothing else to do\n
-  return\n
 context.setPrice(0.0)\n
 if context.getSimulationState() == \'cancelled\':\n
   # force no simulation\n

@@ -72,6 +72,11 @@ if delivery_simulation.getDelivery() == packing_list_line:\n
   return\n
 assert(delivery_simulation.getDelivery() is None)\n
 delivery_simulation.setDelivery(packing_list_line)\n
+delivery = packing_list_line.getParentValue()\n
+common_specialise = \'sale_trade_condition_module/vifib_trade_condition\'\n
+specialise = delivery.getSpecialise()\n
+if common_specialise != specialise:\n
+  delivery.setSpecialise(common_specialise)\n
 </string> </value>
         </item>
         <item>
