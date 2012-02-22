@@ -62,7 +62,6 @@ if context.getSimulationState() == \'cancelled\':\n
   context.setQuantity(0.0)\n
 else:\n
   context.setQuantity(1.0)\n
-context.getParentValue().Delivery_updateAppliedRule()\n
 </string> </value>
         </item>
         <item>
