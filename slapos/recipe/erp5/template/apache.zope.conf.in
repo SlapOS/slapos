@@ -2,6 +2,9 @@
 # Automatically generated
 
 # List of modules
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
 LoadModule authz_host_module modules/mod_authz_host.so
 LoadModule log_config_module modules/mod_log_config.so
 LoadModule setenvif_module modules/mod_setenvif.so
@@ -19,7 +22,6 @@ LoadModule antiloris_module modules/mod_antiloris.so
 
 # Basic server configuration
 PidFile "%(pid_file)s"
-LockFile "%(lock_file)s"
 Listen %(ip)s:%(port)s
 ServerAdmin %(server_admin)s
 TypesConfig conf/mime.types
