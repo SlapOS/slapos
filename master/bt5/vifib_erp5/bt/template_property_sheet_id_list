@@ -11,3 +11,4 @@ VifibSoftwareReleaseConstraint
 VifibSaleOrderConstraint
 VifibSaleOrderLineConstraint
 VifibSaleInvoiceConstraint
+VifibSalePackingListLineConstraint
