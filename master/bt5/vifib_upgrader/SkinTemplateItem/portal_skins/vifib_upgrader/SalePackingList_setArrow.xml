@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>source, destination, source_section, destination_section = context.getSource(), context.getDestination(), context.getSourceSection(), context.getDestinationSection()\n
+\n
+if not(source is None and destination is None and source_section is None and destination_section is None):\n
+  # nothing to do\n
+  return\n
+\n
+movement_list = context.getMovementList()\n
+assert len(movement_list) == 1\n
+software_instance = movement_list[0].getAggregateValue(portal_type=\'Software Instance\')\n
+\n
+sale_order_line = software_instance.getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
+if sale_order_line is None:\n
+  hosting_subscription = context.getPortalObject().portal_catalog.getResultValue(uid=software_instance.SoftwareInstance_getRootHostingSubscriptionUid())\n
+  sale_order_line = hosting_subscription.getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
+\n
+sale_order = sale_order_line.getParentValue()\n
+\n
+context.setSource(sale_order.getSource())\n
+context.setDestination(sale_order.getDestination())\n
+context.setSourceSection(sale_order.getSourceSection())\n
+context.setDestinationSection(sale_order.getDestinationSection())\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SalePackingList_setArrow</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
