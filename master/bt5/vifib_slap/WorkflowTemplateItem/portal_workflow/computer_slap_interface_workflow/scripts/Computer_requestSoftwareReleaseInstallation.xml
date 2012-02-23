@@ -79,6 +79,7 @@ module = portal.getDefaultModule(portal_type=packing_list_portal_type)\n
 packing_list = module.newContent(\n
   portal_type=packing_list_portal_type,\n
   start_date=DateTime(),\n
+  destination_value=person,\n
   destination_section_value=person,\n
   destination_decision_value=person,\n
   source_administration_value=person,\n
