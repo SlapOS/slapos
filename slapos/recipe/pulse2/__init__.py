@@ -267,7 +267,7 @@ class Recipe(BaseSlapRecipe):
         memcached_ip=config['memcached_ip'],
         memcached_port=config['memcached_port'])
   
-    def createHtdocs(self, source, document_root):
+  def createHtdocs(self, source, document_root):
     source = self.options['source'].strip()
     document_root = self.createDataDirectory('htdocs')
     for p in os.listdir(document_root):
