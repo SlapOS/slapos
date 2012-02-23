@@ -5,4 +5,4 @@ DAEMON_OPTS="-a %(varnish_ip)s:%(varnishd_server_port)s \
 
 # exporting PATH here so that it will pass the PATH variable to the subprocess
 export PATH
-%(varnishlog_binary)s ${DAEMON_OPTS}
+%(varnishlog_binary)s ${DAEMON_OPTS} $@
