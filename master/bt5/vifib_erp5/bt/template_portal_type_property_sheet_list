@@ -1,6 +1,7 @@
 Assignment | VifibAssignmentConstraint
 Computer | VifibComputerConstraint
 Email | VifibEmailConstraint
+Hosting Subscription | VifibHostingSubscriptionConstraint
 Internal Packing List Line | VifibInternalPackingListLineConstraint
 Internal Packing List | VifibInternalPackingListConstraint
 Open Sale Order Line | VifibOpenSaleOrderLineConstraint

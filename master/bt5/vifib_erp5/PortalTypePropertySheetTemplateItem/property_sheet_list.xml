@@ -8,6 +8,9 @@
  <portal_type id="Email">
   <item>VifibEmailConstraint</item>
  </portal_type>
+ <portal_type id="Hosting Subscription">
+  <item>VifibHostingSubscriptionConstraint</item>
+ </portal_type>
  <portal_type id="Internal Packing List">
   <item>VifibInternalPackingListConstraint</item>
  </portal_type>
