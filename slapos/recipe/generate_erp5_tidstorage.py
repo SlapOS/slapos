@@ -175,7 +175,7 @@ class Recipe(GenericSlapRecipe):
 
       if 'http' in scheme:
         part_list.append('apache-public-%(backend_name)s logrotate-entry-apache-public-%(backend_name)s' % dict(backend_name=backend_name))
-        publish_url_list.append('url-public-%(backend_name)s = https://[${apache-public-%(backend_name)s:ip}]:${apache-public-%(backend_name)s:port}' % dict(
+        publish_url_list.append('url-public-%(backend_name)s = http://[${apache-public-%(backend_name)s:ip}]:${apache-public-%(backend_name)s:port}' % dict(
           backend_name=backend_name))
       if 'https' in scheme:
         part_list.append('apache-%(backend_name)s ca-apache-%(backend_name)s logrotate-entry-apache-%(backend_name)s haproxy-%(backend_name)s' % dict(backend_name=backend_name))
