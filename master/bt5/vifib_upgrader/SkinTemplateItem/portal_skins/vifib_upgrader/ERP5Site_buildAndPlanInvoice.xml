@@ -54,7 +54,8 @@
 portal.portal_catalog.searchAndActivate(\n
   portal_type=\'Person\',\n
   method_id=\'Person_buildAndPlanInvoice\',\n
-  packet_size=1\n
+  packet_site=1,\n
+  activate_kw={\'priority\': 8}\n
 )\n
 </string> </value>
         </item>

@@ -60,7 +60,7 @@ kw.update(\n
   portal_type=\'Simulation Movement\',\n
   sort_on=((\'uid\', \'ASC\'),),\n
   uid=\'>= %s\' % uid,\n
-  limit=1000,\n
+  limit=69,\n
   select_dict=select_dict,\n
   left_join_list=select_dict.keys(),\n
   delivery_uid=None,\n
@@ -70,7 +70,7 @@ movement_list = context.portal_catalog(**kw)\n
 \n
 if len(movement_list) > 0:\n
   context.VifibSaleInvoiceBuilder_buildAndPlan(context.getPortalObject().portal_deliveries.vifib_sale_invoice_builder, movement_list=movement_list)\n
-  context.activate().Person_buildAndPlanInvoice(movement_list[-1].getUid())\n
+  context.activate(priority=8).Person_buildAndPlanInvoice(movement_list[-1].getUid())\n
 
 
 ]]></string> </value>
