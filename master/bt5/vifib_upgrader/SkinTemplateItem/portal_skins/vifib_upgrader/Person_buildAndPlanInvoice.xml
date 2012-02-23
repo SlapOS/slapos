@@ -58,7 +58,7 @@ kw = {}\n
 select_dict= {\'delivery_uid\': None}\n
 kw.update(\n
   portal_type=\'Simulation Movement\',\n
-  sort_on=(\'uid\', \'desc\'),\n
+  sort_on=((\'uid\', \'ASC\'),),\n
   uid=\'>= %s\' % uid,\n
   limit=69,\n
   select_dict=select_dict,\n
