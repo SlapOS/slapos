@@ -46,6 +46,7 @@ class Recipe(GenericBaseRecipe):
       required_path_list = [key, certificate]
       apache_conf['key'] = key
       apache_conf['certificate'] = certificate
+      apache_conf['ssl_session_cache'] = self.options['ssl-session-cache']
       apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
           'template/snippet.ssl.in') % apache_conf
     else:

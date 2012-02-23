@@ -14,6 +14,7 @@ LoadModule auth_digest_module "%(modules_dir)s/mod_auth_digest.so"
 LoadModule log_config_module "%(modules_dir)s/mod_log_config.so"
 LoadModule headers_module "%(modules_dir)s/mod_headers.so"
 LoadModule setenvif_module "%(modules_dir)s/mod_setenvif.so"
+LoadModule socache_shmcb_module modules/mod_socache_shmcb.so
 LoadModule ssl_module "%(modules_dir)s/mod_ssl.so"
 LoadModule mime_module "%(modules_dir)s/mod_mime.so"
 LoadModule dav_module "%(modules_dir)s/mod_dav.so"
