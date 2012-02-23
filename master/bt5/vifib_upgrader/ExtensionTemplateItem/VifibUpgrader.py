@@ -5,10 +5,15 @@ def DeliveryLineSetZeroPriceAndOrUpdateAppliedRule(self):
   portal_type = self.getPortalType()
   assert( portal_type in self.getPortalDeliveryMovementTypeList())
   common_specialise = 'sale_trade_condition_module/vifib_trade_condition'
-  specialise = self.getParentValue().getSpecialise()
-  if common_specialise != specialise:
-    self.getParentValue().setSpecialise(common_specialise)
-  self.getParentValue().SalePackingList_setArrow()
+  delivery = self.getParentValue()
+  price_currency = 'currency_module/EUR'
+  if delivery.getPortalType() in ['Purchase Packing List', 'Sale Packing List']:
+    specialise = delivery.getSpecialise()
+    if common_specialise != specialise:
+      self.getParentValue().setSpecialise(common_specialise)
+    delivery.SalePackingList_setArrow()
+    if delivery.getPriceCurrency() != price_currency:
+      delivery.setPriceCurrency(price_currency)
   self.setPrice(0.0)
   if self.getSimulationState() == 'cancelled':
     # force no simulation
