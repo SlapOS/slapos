@@ -70,7 +70,7 @@ movement_list = context.portal_catalog(**kw)\n
 \n
 if len(movement_list) > 0:\n
   context.VifibSaleInvoiceBuilder_buildAndPlan(context.getPortalObject().portal_deliveries.vifib_sale_invoice_builder, movement_list=movement_list)\n
-  context.activate(priority=8).Person_buildAndPlanInvoice(movement_list[-1].getUid())\n
+  context.activate().Person_buildAndPlanInvoice(movement_list[-1].getUid())\n
 
 
 ]]></string> </value>
