@@ -3,6 +3,7 @@ Computer | VifibComputerConstraint
 Email | VifibEmailConstraint
 Internal Packing List Line | VifibInternalPackingListLineConstraint
 Internal Packing List | VifibInternalPackingListConstraint
+Open Sale Order Line | VifibOpenSaleOrderLineConstraint
 Person | VifibPersonConstraint
 Purchase Packing List Line | VifibPurchasePackingListLineConstraint
 Purchase Packing List | VifibPurchasePackingListConstraint
