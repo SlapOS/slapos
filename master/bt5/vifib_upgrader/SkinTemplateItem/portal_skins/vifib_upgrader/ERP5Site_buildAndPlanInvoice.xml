@@ -51,10 +51,10 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-portal.portal_catalog(\n
+portal.portal_catalog.searchAndActivate(\n
   portal_type=\'Applied Rule\',\n
   parent_uid=portal.portal_simulation.getUid(),\n
-  method=\'AppliedRule_buildAndPlanInvoice\'\n
+  method_id=\'RootAppliedRule_buildAndPlanInvoice\'\n
 )\n
 </string> </value>
         </item>

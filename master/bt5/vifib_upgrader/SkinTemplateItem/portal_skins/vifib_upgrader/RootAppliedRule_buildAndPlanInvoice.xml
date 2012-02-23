@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().portal_deliveries.vifib_sale_invoice_builder.VifibInvoiceLineBuilder_buildAndPlan(explanation_uid=context.getUid)\n
+            <value> <string>context.VifibInvoiceLineBuilder_buildAndPlan(context.getPortalObject().portal_deliveries.vifib_sale_invoice_builder, explanation=context.getCausalityValue())\n
 </string> </value>
         </item>
         <item>
