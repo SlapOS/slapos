@@ -75,8 +75,7 @@ if invoice.getSimulationState() == \'draft\':\n
 \n
 # Update causality workflow\n
 invoice.startBuilding()\n
-invoice.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\'))).updateCausalityState()\n
+invoice.updateCausalityState()\n
 \n
 # update specialise from movements\n
 specialise_list = invoice.getSpecialiseList()\n
