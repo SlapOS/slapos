@@ -52,9 +52,11 @@
             <key> <string>_body</string> </key>
             <value> <string>portal_type = context.getDeliveryPortalType()\n
 simulation_state = \'planned\'\n
+\n
 # use catalog to prefetch, but check later in ZODB\n
 return [x.getObject() for x in context.getPortalObject().portal_catalog(\n
    portal_type=portal_type,\n
+   default_destination_section_uid=kw[\'movement_list\'][0].getDestinationSectionUid(),\n
    simulation_state=simulation_state) if x.getSimulationState() == simulation_state]\n
 </string> </value>
         </item>
