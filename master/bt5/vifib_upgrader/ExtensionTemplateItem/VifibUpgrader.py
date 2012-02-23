@@ -8,7 +8,7 @@ def DeliveryLineSetZeroPriceAndOrUpdateAppliedRule(self):
   specialise = self.getParentValue().getSpecialise()
   if common_specialise != specialise:
     self.getParentValue().setSpecialise(common_specialise)
-  self.SalePackingList_setArrow()
+  self.getParentValue().SalePackingList_setArrow()
   self.setPrice(0.0)
   if self.getSimulationState() == 'cancelled':
     # force no simulation
