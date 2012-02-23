@@ -50,16 +50,38 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.VifibInvoiceLineBuilder_buildAndPlan(context.getPortalObject().portal_deliveries.vifib_sale_invoice_builder, explanation=context.getCausalityValue())\n
-</string> </value>
+            <value> <string encoding="cdata"><![CDATA[
+
+person_uid = context.getUid()\n
+\n
+kw = {}\n
+select_dict= {\'delivery_uid\': None}\n
+kw.update(\n
+  portal_type=\'Simulation Movement\',\n
+  sort_on=(\'uid\', \'desc\'),\n
+  uid=\'>= %s\' % uid,\n
+  limit=69,\n
+  select_dict=select_dict,\n
+  left_join_list=select_dict.keys(),\n
+  delivery_uid=None,\n
+  **{\'movement.destination_uid\': person_uid}\n
+)\n
+movement_list = context.portal_catalog(**kw)\n
+\n
+if len(movement_list) > 0:\n
+  context.VifibSaleInvoiceBuilder_buildAndPlan(context.getPortalObject().portal_deliveries.vifib_sale_invoice_builder, movement_list=movement_list)\n
+  context.activate().Person_buildAndPlanInvoice(movement_list[-1].getUid())\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>uid=0</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>RootAppliedRule_buildAndPlanInvoice</string> </value>
+            <value> <string>Person_buildAndPlanInvoice</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -52,9 +52,8 @@
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
 portal.portal_catalog.searchAndActivate(\n
-  portal_type=\'Applied Rule\',\n
-  parent_uid=portal.portal_simulation.getUid(),\n
-  method_id=\'RootAppliedRule_buildAndPlanInvoice\'\n
+  portal_type=\'Person\',\n
+  method_id=\'Person_buildAndPlanInvoice\'\n
 )\n
 </string> </value>
         </item>

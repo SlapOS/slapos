@@ -43,8 +43,8 @@ def OpenSaleOrderLine_migrate(self):
   self.setPriceCurrency('currency_module/EUR')
 
 @WorkflowMethod.disable
-def VifibInvoiceLineBuilder_buildAndPlan(self, explanation):
-  delivery_list = self.build(explanation=explanation)
+def VifibSaleInvoiceBuilder_buildAndPlan(self, movement_list):
+  delivery_list = self.build(movement_list=movement_list)
   wf = self.getPortalObject().portal_workflow.accounting_workflow
   plan_tdef = wf.transitions.get("plan")
   for delivery in delivery_list:
