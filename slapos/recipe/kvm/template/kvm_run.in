@@ -10,6 +10,7 @@ fi
 # module
 exec %(qemu_path)s \
   -net nic,macaddr=%(mac_address)s \
+  -net tap,ifname=%(tap_interface)s,script=no,downscript=no \
   -smp %(smp_count)s \
   -m %(ram_size)s \
   -cdrom nbd:[%(nbd_ip)s]:%(nbd_port)s \
@@ -19,4 +20,3 @@ exec %(qemu_path)s \
   -qmp unix:%(socket_path)s,server \
   -pidfile %(pid_file_path)s \
   -no-kvm
- # -net tap,ifname=%(tap_interface)s,script=no,downscript=no \
