@@ -53,7 +53,8 @@
             <value> <string>portal = context.getPortalObject()\n
 portal.portal_catalog.searchAndActivate(\n
   portal_type=\'Person\',\n
-  method_id=\'Person_buildAndPlanInvoice\'\n
+  method_id=\'Person_buildAndPlanInvoice\',\n
+  packet_size=1\n
 )\n
 </string> </value>
         </item>
