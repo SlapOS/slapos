@@ -41,8 +41,10 @@ class Recipe(GenericSlapRecipe):
     config = dict(
       web_checker_mail_address = web_checker_mail_address,
       web_checker_smtp_host = web_checker_smtp_host,
+      web_checker_working_directory = web_checker_working_directory,
       frontend_url = self.options['frontend-url'],
       wget_binary_path = self.options['wget-binary-path'],
+      varnishlog_binary_path = self.options['varnishlog-binary-path'],
       web_checker_log = self.options['web-checker-log'],
     )
     path_list.append(self.createFile(self.options['web-checker-config'],

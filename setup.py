@@ -96,6 +96,7 @@ setup(name=name,
           'erp5.update = slapos.recipe.erp5_update:Recipe',
           'erp5.test = slapos.recipe.erp5_test:Recipe',
           'generic.varnish = slapos.recipe.generic_varnish:Recipe',
+          'webchecker = slapos.recipe.web_checker:Recipe',
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
