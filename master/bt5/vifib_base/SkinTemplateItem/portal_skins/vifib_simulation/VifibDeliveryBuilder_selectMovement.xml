@@ -324,6 +324,7 @@
 kw[\'select_dict\']=select_dict\n
 kw[\'left_join_list\']=select_dict.keys()\n
 kw[\'delivery_uid\']=None\n
+kw[\'group_by\']=(\'uid\',)\n
 if src__==0:\n
   return context.portal_catalog(**kw)\n
 else:\n

@@ -64,6 +64,7 @@ kw.update(\n
   select_dict=select_dict,\n
   left_join_list=select_dict.keys(),\n
   delivery_uid=None,\n
+  group_by=(\'uid\',),\n
   **{\'movement.destination_uid\': person_uid}\n
 )\n
 movement_list = context.portal_catalog(**kw)\n
