@@ -50,45 +50,16 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-person_uid = context.getUid()\n
-\n
-kw = {}\n
-select_dict= {\'delivery_uid\': None}\n
-kw.update(\n
-  portal_type=\'Simulation Movement\',\n
-  sort_on=((\'uid\', \'ASC\'),),\n
-  limit=69,\n
-  select_dict=select_dict,\n
-  left_join_list=select_dict.keys(),\n
-  delivery_uid=None,\n
-  group_by=(\'uid\',),\n
-  **{\'movement.destination_uid\': person_uid}\n
-)\n
-\n
-tag = \'Wrapper_%s\' % context.getUid()\n
-for i in range(1, 4):\n
-  movement_list = context.portal_catalog(uid=\'>%s\' % uid, **kw)\n
-  if len(movement_list) > 0:\n
-    context.activate(activity=\'SQLQueue\', tag=tag).WrapperVifibSaleInvoiceBuilder_buildAndPlan(\'portal_deliveries/vifib_sale_invoice_builder\', [q.getRelativeUrl() for q in movement_list])\n
-    uid = movement_list[-1].getUid()\n
-  else:\n
-   break\n
-\n
-if len(movement_list) > 0:  \n
-  context.activate(after_tag=tag).Person_buildAndPlanInvoice(movement_list[-1].getUid())\n
-
-
-]]></string> </value>
+            <value> <string>context.VifibSaleInvoiceBuilder_buildAndPlan(context.restrictedTraverse(builder_path), movement_list=[context.restrictedTraverse(m) for m in movement_path_list])\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>uid=0</string> </value>
+            <value> <string>builder_path, movement_path_list</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_buildAndPlanInvoice</string> </value>
+            <value> <string>WrapperVifibSaleInvoiceBuilder_buildAndPlan</string> </value>
         </item>
       </dictionary>
     </pickle>
