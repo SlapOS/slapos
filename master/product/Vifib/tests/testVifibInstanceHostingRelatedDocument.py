@@ -4,8 +4,6 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.ERP5Type.DateUtils import getClosestDate
 from DateTime import DateTime
 from testVifibOpenOrderSimulation import generateTimeFrameList
-from AccessControl.SecurityManagement import getSecurityManager, \
-  setSecurityManager
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
@@ -231,9 +229,6 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       .getCausalityList(), [])
 
   def stepSelectPlannedInvoice(self, sequence, **kw):
-    hosting_subscription = self.portal.portal_catalog.getResultValue(
-      uid=sequence['hosting_subscription_uid'])
-
     invoice_line = self.portal.portal_catalog.getResultValue(
       portal_type='Invoice Line',
       simulation_state='planned'
