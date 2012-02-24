@@ -2715,7 +2715,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     module = self.portal.getDefaultModule(
         portal_type=self.sale_packing_list_portal_type)
     order = module.newContent(
-        portal_type=self.sale_packing_list_portal_type)
+        portal_type=self.sale_packing_list_portal_type,
+        specialise='sale_trade_condition_module/vifib_trade_condition',
+        source='organisation_module/vifib_internet',
+        source_section='organisation_module/vifib_internet',
+        # XXX Hardcoded values
+        destination='person_module/test_vifib_customer',
+        destination_section='person_module/test_vifib_customer',
+        price_currency='currency_module/EUR',
+        start_date=DateTime(),
+        )
     sequence.edit(sale_packing_list_uid=order.getUid())
 
   def stepCreateSalePackingListLine(self, sequence, **kw):
@@ -2725,7 +2734,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     order = self.portal.portal_catalog.getResultValue(
         uid=sequence["sale_packing_list_uid"])
     line = order.newContent(
-        portal_type=self.sale_packing_list_line_portal_type)
+        portal_type=self.sale_packing_list_line_portal_type,
+        quantity=1,
+        )
     sequence.edit(sale_packing_list_line_uid=line.getUid())
 
   def stepSetSalePackingListLineSetupResource(self, sequence, **kw):
