@@ -32,15 +32,15 @@ if not os.path.exists(disk_path):
   subprocess.Popen(['%(qemu_img_path)s', 'create' ,'-f', 'qcow2',
       '%(disk_path)s', '%(disk_size)sG'])
 
-kvm_argument_list = ['-net' 'nic,macaddr=%(mac_address)s',
-  '-net' 'tap,ifname=%(tap_interface)s,script=no,downscript=no',
-  '-smp' '%(smp_count)s',
-  '-m' '%(ram_size)s',
-  '-drive' 'file=%(disk_path)s,if=virtio,boot=on',
-  '-vnc' '%(vnc_ip)s:1,ipv4,password',
-  '-boot' 'menu=on',
-  '-qmp' 'unix:%(socket_path)s,server',
-  '-pidfile' '%(pid_file_path)s',
+kvm_argument_list = ['-net', 'nic,macaddr=%(mac_address)s',
+  '-net', 'tap,ifname=%(tap_interface)s,script=no,downscript=no',
+  '-smp', '%(smp_count)s',
+  '-m', '%(ram_size)s',
+  '-drive', 'file=%(disk_path)s,if=virtio,boot=on',
+  '-vnc', '%(vnc_ip)s:1,ipv4,password',
+  '-boot', 'menu=on',
+  '-qmp', 'unix:%(socket_path)s,server',
+  '-pidfile', '%(pid_file_path)s',
   '-no-kvm']
 
 # Try to connect to NBD server
