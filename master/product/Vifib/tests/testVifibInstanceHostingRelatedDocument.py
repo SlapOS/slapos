@@ -143,11 +143,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     invoice =  setup_invoice_line_list[0].getParentValue()
     self.assertEqual('solved', invoice.getCausalityState())
 
-    # invoice shall have causality of one packing list
-    self.assertSameSet(
-      [setup_delivery_line_list[0].getParentValue().getUid(),
-      subscription_delivery_line_list[0].getParentValue().getUid()],
-      invoice.getCausalityUidList())
+    # invoice shall have no causality
+    self.assertEqual(invoice.getCausalityList(), [])
 
     # there shall be no payment transaction related
     self.assertEqual([], invoice.getCausalityRelatedList(
@@ -229,11 +226,9 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     # invoice shall be solved
     self.assertEqual('solved', setup_invoice_line_list[0].getCausalityState())
 
-    # invoice shall have causality of two packing lists
-    self.assertEqual(
-      sorted([setup_delivery_line_list[0].getParentValue().getUid()] +
-      [q.getParentValue().getUid() for q in subscription_delivery_line_list if q.getSimulationState() == 'delivered']),
-      sorted(setup_invoice_line_list[0].getParentValue().getCausalityUidList()))
+    # invoice shall have no causality
+    self.assertEqual(setup_invoice_line_list[0].getParentValue()\
+      .getCausalityList(), [])
 
   def stepSelectPlannedInvoice(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog.getResultValue(
@@ -339,20 +334,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEqual([], confirmed_invoice.getCausalityRelatedList(
       portal_type='Payment Transaction'))
 
-    # confirmed invoice shall have causality of two packing lists
-    self.assertEqual(
-      sorted([setup_delivery_line_list[0].getParentValue().getUid()] +
-      [q.getParentValue().getUid() for q in subscription_delivery_line_list \
-        if q.getSimulationState() == 'stopped' and \
-          q.getParentValue().getUid() != sequence['subscription_delivery_uid']]),
-      sorted(confirmed_invoice.getCausalityUidList()))
+    # confirmed invoice shall have no causality
+    self.assertEqual(confirmed_invoice.getCausalityList(), [])
 
-    # planned invoice shall have causality of one packing list
-    self.assertEqual(
-      [q.getParentValue().getUid() for q in subscription_delivery_line_list \
-        if q.getSimulationState() == 'stopped' and \
-          q.getParentValue().getUid() == sequence['subscription_delivery_uid']],
-      planned_invoice.getCausalityUidList())
+    # planned invoice shall have no causality
+    self.assertEqual(planned_invoice.getCausalityList(), [])
 
   def stepStartInvoice(self, sequence, **kw):
     self.portal.portal_catalog.getResultValue(
@@ -463,20 +449,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     self.assertEqual(stopped_invoice.getTotalPrice(),
       -1 * payment_transaction.PaymentTransaction_getTotalPayablePrice())
 
-    # Stopped invoice shall have causality of two packing lists
-    self.assertEqual(
-      sorted([setup_delivery_line_list[0].getParentValue().getUid()] +
-      [q.getParentValue().getUid() for q in subscription_delivery_line_list \
-        if q.getSimulationState() == 'stopped' and \
-          q.getParentValue().getUid() != sequence['subscription_delivery_uid']]),
-      sorted(stopped_invoice.getCausalityUidList()))
+    # Stopped invoice shall have no causality
+    self.assertEqual(stopped_invoice.getCausalityList(), [])
 
-    # planned invoice shall have causality of one packing list
-    self.assertEqual(
-      [q.getParentValue().getUid() for q in subscription_delivery_line_list \
-        if q.getSimulationState() == 'stopped' and \
-          q.getParentValue().getUid() == sequence['subscription_delivery_uid']],
-      planned_invoice.getCausalityUidList())
+    # planned invoice shall have no causality
+    self.assertEqual(planned_invoice.getCausalityList(), [])
 
   def stepCheckHostingSubscriptionTwoStoppedInvoiceDocumentCoverage(self,
     sequence, **kw):
