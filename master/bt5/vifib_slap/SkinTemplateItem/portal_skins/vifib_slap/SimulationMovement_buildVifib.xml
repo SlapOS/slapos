@@ -50,16 +50,18 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>explanation = context.getExplanationValue()\n
-\n
-if context.getDelivery() is not None:\n
+            <value> <string>if context.getDelivery() is not None:\n
   # movement build but not indexed, so do nothing\n
   return\n
+\n
+root_applied_rule = context.getRootAppliedRule()\n
 portal = context.getPortalObject()\n
-for business_process in [\n
-  portal.business_process_module.vifib_sale_business_process,\n
-  portal.business_process_module.vifib_purchase_business_process]:\n
-  business_process.build(explanation)\n
+portal.portal_catalog.searchAndActivate(\n
+  portal_type=\'Business Link\',\n
+  parent_uid=[portal.business_process_module.vifib_sale_business_process.getUid(),  portal.business_process_module.vifib_purchase_business_process.getUid()],\n
+  method_id=\'build\',\n
+  method_kw={\'path\': \'%s/%%\' % root_applied_rule.getPath()}\n
+)\n
 </string> </value>
         </item>
         <item>
