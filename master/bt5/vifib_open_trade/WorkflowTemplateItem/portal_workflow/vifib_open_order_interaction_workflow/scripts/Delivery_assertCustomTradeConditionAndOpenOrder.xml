@@ -55,7 +55,8 @@ order = state_change[\'object\']\n
 portal = order.getPortalObject()\n
 \n
 vifib_trade_condition = \'sale_trade_condition_module/vifib_trade_condition\'\n
-order.edit(specialise=vifib_trade_condition)\n
+if not order.hasSpecialise():
+  order.edit(specialise=vifib_trade_condition)
 \n
 # ### STEP 1: does this order have a client-specific Trade Condition\n
 # trade_condition = order.getSpecialiseValue(portal_type="Sale Trade Condition")\n
