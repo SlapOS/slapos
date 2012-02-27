@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>hosting_subscription = context\n
+assert(context.getPortalType() == \'Hosting Subscription\')\n
+sale_order_line_list = context.getAggregateRelatedValueList(portal_type=\'Sale Order Line\')\n
+assert(len(sale_order_line_list) == 1)\n
+sale_order_line = sale_order_line_list[0]\n
+software_instance = sale_order_line.getAggregateValue(portal_type=[\'Slave Instance\', \'Software Instance\'])\n
+\n
+hosting_subscription.setPredecessorValue(software_instance)\n
+hosting_subscription.setSourceReference(software_instance.getSourceReference())\n
+hosting_subscription.setTextContent(software_instance.getTextContent())\n
+hosting_subscription.setSlaXml(software_instance.getSlaXml())\n
+hosting_subscription.setPeriodicityHour((0,))\n
+hosting_subscription.setPeriodicityMinute((0,))\n
+hosting_subscription.setPeriodicityMonthDay((1,))\n
+slave = int(software_instance.getPortalType() == \'Slave Instance\')\n
+hosting_subscription.setRootSlave(slave)\n
+hosting_subscription.setRootSoftwareReleaseUrl(sale_order_line.getAggregateValue(portal_type=\'Software Release\').getUrlString())\n
+status_dict = {\n
+  \'Started\': \'started\',\n
+  \'Stopped\': \'stopped\',\n
+  \'Destroyed\': \'destroyed\',\n
+  \'Start in progress\': \'started\',\n
+  \'Stop in progress\': \'stopped\',\n
+  \'Destruction in progress\': \'destroyed\',\n
+  \'Under Approval\': \'started\',\n
+  \'Instanciation in progress\': \'started\',\n
+}\n
+hosting_subscription.setRootState(status_dict[software_instance.SoftwareInstance_getStatus()])\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>HostingSubscription_migrateFromSoftwareInstance</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
