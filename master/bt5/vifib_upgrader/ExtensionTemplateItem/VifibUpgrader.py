@@ -10,7 +10,7 @@ def DeliveryLineSetZeroPriceAndOrUpdateAppliedRule(self):
   if delivery.getPortalType() in ['Purchase Packing List', 'Sale Packing List']:
     specialise = delivery.getSpecialise()
     if common_specialise != specialise:
-      self.getParentValue().setSpecialise(common_specialise)
+      delivery.setSpecialise(common_specialise)
     delivery.SalePackingList_setArrow()
     if delivery.getPriceCurrency() != price_currency:
       delivery.setPriceCurrency(price_currency)
