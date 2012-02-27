@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="Category Related Membership Arity Constraint" module="erp5.portal_type"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_identity_criterion</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+        <item>
+            <key> <string>_range_criterion</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+            </value>
+        </item>
+        <item>
+            <key> <string>constraint_base_category</string> </key>
+            <value>
+              <tuple>
+                <string>aggregate</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value> <string>It is not possible to migrate an Instance on another Partition!\n
+The use case is: delete (rename) and create a new clone.</string> </value>
+        </item>
+        <item>
+            <key> <string>filter_parameter</string> </key>
+            <value> <string>python: {\'portal_type\': \'Sale Packing List Line\', \'default_resource_relative_url\': \'service_module/vifib_instance_setup\'}</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>setup_packing_list_constraint</string> </value>
+        </item>
+        <item>
+            <key> <string>max_arity</string> </key>
+            <value> <int>1</int> </value>
+        </item>
+        <item>
+            <key> <string>message_arity_not_in_range</string> </key>
+            <value> <string>At most one Setup Packing List must be defined</string> </value>
+        </item>
+        <item>
+            <key> <string>message_arity_too_small</string> </key>
+            <value> <string>At most one Setup Packing List must be defined</string> </value>
+        </item>
+        <item>
+            <key> <string>message_arity_with_portal_type_not_in_range</string> </key>
+            <value> <string>At most one Setup Packing List must be defined</string> </value>
+        </item>
+        <item>
+            <key> <string>message_arity_with_portal_type_too_small</string> </key>
+            <value> <string>At most one Setup Packing List must be defined</string> </value>
+        </item>
+        <item>
+            <key> <string>min_arity</string> </key>
+            <value> <int>0</int> </value>
+        </item>
+        <item>
+            <key> <string>portal_type</string> </key>
+            <value> <string>Category Related Membership Arity Constraint</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="PersistentMapping" module="Persistence.mapping"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
