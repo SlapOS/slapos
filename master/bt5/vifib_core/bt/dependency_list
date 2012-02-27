@@ -1,3 +1,11 @@
 erp5_base
-erp5_web
+erp5_dhtml_style
 erp5_dms
+erp5_payzen_secure_payment
+erp5_rss_style
+erp5_secure_payment
+erp5_system_event
+erp5_tiosafe_core
+erp5_ui_test
+erp5_ui_test_core
+erp5_web
