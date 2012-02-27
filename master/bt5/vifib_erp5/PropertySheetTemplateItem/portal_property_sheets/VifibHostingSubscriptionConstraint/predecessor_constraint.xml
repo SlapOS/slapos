@@ -28,7 +28,7 @@
         </item>
         <item>
             <key> <string>constraint_portal_type</string> </key>
-            <value> <string>python: (\'Software Instance\',)</string> </value>
+            <value> <string>python: (\'Software Instance\', \'Slave Instance\')</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
