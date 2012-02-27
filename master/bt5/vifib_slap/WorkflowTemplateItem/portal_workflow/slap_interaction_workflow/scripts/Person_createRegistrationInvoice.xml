@@ -74,6 +74,7 @@ if invoice_line is None:\n
       source_section=\'organisation_module/vifib_internet\',\n
       source=\'organisation_module/vifib_internet\',\n
       destination_section=person.getRelativeUrl(),\n
+      destination_decision=person.getRelativeUrl(),\n
       destination=person.getRelativeUrl(),\n
       specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
       created_by_builder=1, # XXX to prevent init script to create lines\n

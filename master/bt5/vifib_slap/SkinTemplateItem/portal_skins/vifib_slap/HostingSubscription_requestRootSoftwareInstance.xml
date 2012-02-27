@@ -170,11 +170,11 @@ if (request_software_instance is None):\n
       price=context.restrictedTraverse(subscription_service_relative_url).getSaleSupplyLineBasePrice(),\n
       destination=person_relative_url,\n
       destination_section=person_relative_url,\n
+      destination_decision=person_relative_url,\n
       source="organisation_module/vifib_internet",\n
       source_section="organisation_module/vifib_internet",\n
       activate_kw={\'tag\': tag},\n
     )\n
-\n
   hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
   hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
   hosting_subscription.edit(predecessor_list=hosting_subscription_predecessor_list)\n
