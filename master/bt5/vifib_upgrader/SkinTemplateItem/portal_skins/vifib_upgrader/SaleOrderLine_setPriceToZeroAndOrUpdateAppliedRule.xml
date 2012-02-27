@@ -59,6 +59,8 @@ sale_order = context.getParentValue()\n
 specialise = sale_order.getSpecialise()\n
 if common_specialise != specialise:\n
   sale_order.setSpecialise(common_specialise)\n
+if sale_order.getDestinationDecision() != sale_order.getDestinationSection():\n
+  sale_order.setDestinationDecision(sale_order.getDestinationSection())\n
 price_currency = \'currency_module/EUR\'\n
 if sale_order.getPriceCurrency() != price_currency:\n
   sale_order.setPriceCurrency(price_currency)\n

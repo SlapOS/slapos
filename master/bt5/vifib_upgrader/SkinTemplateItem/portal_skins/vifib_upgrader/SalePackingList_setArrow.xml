@@ -72,6 +72,8 @@ context.setSource(sale_order.getSource())\n
 context.setDestination(sale_order.getDestination())\n
 context.setSourceSection(sale_order.getSourceSection())\n
 context.setDestinationSection(sale_order.getDestinationSection())\n
+context.setSourceDecision(sale_order.getSourceDecision())\n
+context.setDestinationDecision(sale_order.getDestinationDecision())\n
 </string> </value>
         </item>
         <item>

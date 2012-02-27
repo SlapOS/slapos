@@ -40,6 +40,7 @@ def OpenSaleOrderLine_migrate(self):
   self.setSource('organisation_module/vifib_internet')
   self.setDestination(self.getParentValue().getDestinationSection())
   self.setDestinationSection(self.getParentValue().getDestinationSection())
+  self.setDestinationDecision(self.getParentValue().getDestinationDecision())
   self.setPriceCurrency('currency_module/EUR')
 
 @WorkflowMethod.disable
