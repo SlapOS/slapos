@@ -50,7 +50,10 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_order = context.getParentValue()\n
+            <value> <string>from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
+from zExceptions import Unauthorized\n
+\n
+sale_order = context.getParentValue()\n
 if sale_order.getSimulationState() == \'ordered\':\n
   try:\n
     sale_order.Base_checkConsistency()\n
