@@ -13,6 +13,8 @@ business_process_module/vifib_purchase_business_process
 business_process_module/vifib_purchase_business_process/**
 business_process_module/vifib_sale_business_process
 business_process_module/vifib_sale_business_process/**
+business_process_module/vifib_simple_sale_business_process
+business_process_module/vifib_simple_sale_business_process/**
 portal_categories/trade_phase/vifib
 portal_categories/trade_phase/vifib/**
 portal_categories/trade_state/**
@@ -70,3 +72,4 @@ portal_solvers/Trade Model Solver
 portal_solvers/Trade Model Solver/*
 portal_solvers/Unify Solver
 portal_solvers/Unify Solver/*
+sale_trade_condition_module/vifib_simple_trade_condition
