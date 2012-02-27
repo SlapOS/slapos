@@ -56,7 +56,7 @@ context.setPrice(0.0)\n
 context.setQuantity(1.0)\n
 common_specialise = \'sale_trade_condition_module/vifib_trade_condition\'\n
 sale_order = context.getParentValue()\n
-specialise = sale.getSpecialise()\n
+specialise = sale_order.getSpecialise()\n
 if common_specialise != specialise:\n
   sale_order.setSpecialise(common_specialise)\n
 price_currency = \'currency_module/EUR\'\n
