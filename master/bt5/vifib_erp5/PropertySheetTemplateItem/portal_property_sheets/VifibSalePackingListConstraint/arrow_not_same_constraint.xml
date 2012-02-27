@@ -26,7 +26,7 @@
         </item>
         <item>
             <key> <string>expression</string> </key>
-            <value> <string>python: context.getSource() != context.getDestination() and context.getSourceSection() != context.getDestinationSection()</string> </value>
+            <value> <string>python: context.getSource() != context.getDestination() and context.getSourceSection() != context.getDestinationSection() and context.getSourceDecision() != context.getDestinationDecision()</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
