@@ -26,11 +26,23 @@
         </item>
         <item>
             <key> <string>expression</string> </key>
-            <value> <string>python: object.getSpecialise() == "sale_trade_condition_module/vifib_trade_condition"</string> </value>
+            <value> <string>python: object.getSpecialise() in ["sale_trade_condition_module/vifib_trade_condition", "sale_trade_condition_module/vifib_simple_trade_condition"]</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
             <value> <string>specialise_value_constraint</string> </value>
+        </item>
+        <item>
+            <key> <string>int_index</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>membership_criterion_category</string> </key>
+            <value>
+              <tuple/>
+            </value>
         </item>
         <item>
             <key> <string>message_expression_false</string> </key>
@@ -39,6 +51,22 @@
         <item>
             <key> <string>portal_type</string> </key>
             <value> <string>TALES Constraint</string> </value>
+        </item>
+        <item>
+            <key> <string>string_index</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>test_method_id</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>test_tales_expression</string> </key>
+            <value> <string>python: context.getSpecialise() is not None</string> </value>
         </item>
       </dictionary>
     </pickle>
