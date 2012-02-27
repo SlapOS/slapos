@@ -199,12 +199,16 @@ class TestVifibUserAdmin(testVifibMixin):
     purchase_packing_list_module = self.portal.restrictedTraverse(purchase_packing_list_module_id)
     # Create PPL
     purchase_packing_list = purchase_packing_list_module.newContent(
-      portal_type='Purchase Packing List')
-    purchase_packing_list.edit(
       start_date=DateTime(),
+      specialise='sale_trade_condition_module/vifib_trade_condition',
+      source='organisation_module/vifib_internet',
+      source_section='organisation_module/vifib_internet',
+      # XXX Hardcoded values
+      destination_value=person_value,
+      destination_section_value=person_value,
       destination_decision_value=person_value,
-    )
-
+      price_currency='currency_module/EUR',
+      portal_type='Purchase Packing List')
     # Access service
     service_module_id = self.portal.getDefaultModuleId(portal_type='Service')
     service_module = self.portal.restrictedTraverse(service_module_id)
@@ -212,9 +216,9 @@ class TestVifibUserAdmin(testVifibMixin):
 
     # Create PPLL
     purchase_packing_list_line = purchase_packing_list.newContent(
-      portal_type='Purchase Packing List Line')
-    purchase_packing_list_line.edit(
+      portal_type='Purchase Packing List Line',
       resource_value=service_value,
       aggregate_value_list=[computer, software_release],
+      quantity=1
     )
     purchase_packing_list.portal_workflow.doActionFor(purchase_packing_list, 'confirm_action')
