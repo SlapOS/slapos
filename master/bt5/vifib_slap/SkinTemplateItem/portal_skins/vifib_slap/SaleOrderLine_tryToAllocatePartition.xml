@@ -53,10 +53,19 @@
             <value> <string>sale_order = context.getParentValue()\n
 if sale_order.getSimulationState() == \'ordered\':\n
   try:\n
-    sale_order.confirm()\n
-  except ValueError:\n
-    # It was not possible to find free Computer Partition\n
+    sale_order.Base_checkConsistency()\n
+  except ValidationFailed:\n
+    # order not ready yet\n
     pass\n
+  else:\n
+    try:\n
+      sale_order.confirm()\n
+    except ValueError:\n
+      # It was not possible to find free Computer Partition\n
+      pass\n
+    except Unauthorized:\n
+      # user has bad balance\n
+      pass\n
 </string> </value>
         </item>
         <item>
