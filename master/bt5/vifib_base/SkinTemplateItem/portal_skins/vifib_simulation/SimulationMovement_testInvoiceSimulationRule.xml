@@ -52,10 +52,7 @@
             <key> <string>_body</string> </key>
             <value> <string>movement = context\n
 \n
-business_link = movement.getCausalityValue(portal_type=\'Business Link\')\n
-\n
-if len(business_link.getParentValue().getBusinessLinkValueList(trade_phase=rule.getTradePhaseList())) == 0:\n
-  # If Business Process does not define invoicing do not apply\n
+if not movement.SimulationMovement_testCommonRule(rule):\n
   return False\n
 \n
 source_section = movement.getSourceSection()\n
@@ -64,10 +61,7 @@ if source_section == destination_section or source_section is None \\\n
     or destination_section is None:\n
   return False\n
 \n
-if movement.getSimulationState() in business_link.getCompletedStateList():\n
-  return True\n
-\n
-return False\n
+return True\n
 </string> </value>
         </item>
         <item>

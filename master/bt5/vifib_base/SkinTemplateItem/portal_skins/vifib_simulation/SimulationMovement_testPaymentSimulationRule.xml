@@ -52,15 +52,17 @@
             <key> <string>_body</string> </key>
             <value> <string>movement = context\n
 \n
+movement = context\n
+\n
+if not movement.SimulationMovement_testCommonRule(rule):\n
+  return False\n
+\n
 # XXX hardcoded\n
 receivable_account_type_list = (\'asset/receivable\',)\n
 payable_account_type_list = (\'liability/payable\',)\n
 \n
 if movement.getQuantity() == 0:\n
   # do not create empty payment movements\n
-  return False\n
-\n
-if movement.getSimulationState() not in movement.getCausalityValue(portal_type=\'Business Link\').getCompletedStateList():\n
   return False\n
 \n
 for account in (movement.getSourceValue(portal_type=\'Account\'),\n

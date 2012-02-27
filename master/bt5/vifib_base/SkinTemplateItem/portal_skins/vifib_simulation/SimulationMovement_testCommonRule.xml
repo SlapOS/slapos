@@ -52,16 +52,16 @@
             <key> <string>_body</string> </key>
             <value> <string>movement = context\n
 \n
-if not movement.SimulationMovement_testCommonRule(rule):\n
+business_link = movement.getCausalityValue(portal_type=\'Business Link\')\n
+\n
+if len(business_link.getParentValue().getBusinessLinkValueList(trade_phase=rule.getTradePhaseList())) == 0:\n
+  # If Business Process does not define invoicing do not apply\n
   return False\n
 \n
-delivery_movement = movement.getDeliveryValue()\n
-if delivery_movement is not None and (\n
-   delivery_movement.getPortalType() not in movement.getPortalInvoiceMovementTypeList()\n
-    and delivery_movement.getPortalType() not in movement.getPortalTaxMovementTypeList()):\n
-  return False\n
+if movement.getSimulationState() in business_link.getCompletedStateList():\n
+  return True\n
 \n
-return True\n
+return False\n
 </string> </value>
         </item>
         <item>
@@ -70,7 +70,7 @@ return True\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SimulationMovement_testInvoiceTransactionSimulationRule</string> </value>
+            <value> <string>SimulationMovement_testCommonRule</string> </value>
         </item>
       </dictionary>
     </pickle>

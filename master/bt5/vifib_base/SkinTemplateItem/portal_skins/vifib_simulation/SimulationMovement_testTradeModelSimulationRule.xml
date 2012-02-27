@@ -52,6 +52,9 @@
             <key> <string>_body</string> </key>
             <value> <string>movement = context\n
 \n
+if not movement.SimulationMovement_testCommonRule(rule):\n
+  return False\n
+\n
 parent = movement.getParentValue()\n
 if parent.getPortalType() != \'Applied Rule\':\n
   return False\n
@@ -61,10 +64,7 @@ if parent_rule.getPortalType() not in (\'Invoice Root Simulation Rule\',\n
                                        \'Invoice Simulation Rule\'):\n
   return False\n
 \n
-if movement.getSimulationState() in movement.getCausalityValue(portal_type=\'Business Link\').getCompletedStateList():\n
-  return True\n
-\n
-return False\n
+return True\n
 </string> </value>
         </item>
         <item>
