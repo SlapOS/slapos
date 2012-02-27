@@ -1,4 +1,5 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
@@ -36,6 +37,7 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @expectedFailure
   def test_ComputerPartition_error_SetupResource_CancelledState(self):
     """
     Check that calling ComputerPartition.error works in
