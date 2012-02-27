@@ -365,7 +365,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       # prepared delivered instance setup delivery
 
       LoginTestVifibCustomer
-      RequestSoftwareInstanceUpdate
+      RequestSoftwareInstanceUpdateRaisesValidationFailed
       Tic
       Logout
 
