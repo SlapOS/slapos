@@ -59,7 +59,7 @@ software_instance = state_change[\'object\']\n
 portal = software_instance.getPortalObject()\n
 \n
 if software_instance.SoftwareInstance_getStatus() == \'Destroyed\':\n
-  raise ValidationFailed\n
+  raise ValidationFailed, "%s state is %s" % (software_instance.getRelativeUrl(), software_instance.SoftwareInstance_getStatus())\n
 \n
 # avoid conflicting with "in progress" update tasks\n
 tag_list = ["%s_destroyInProgress" % software_instance.getUid(), "%s_startInProgress" % software_instance.getUid()]\n
