@@ -371,6 +371,9 @@ class testVifibMixin(ERP5TypeTestCase):
     self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
     self.checkDivergency()
 
+  def stepCleanTic(self, **kw):
+    super(testVifibMixin, self).stepTic(**kw)
+
   def stepTic(self, **kw):
     def build():
       sm = getSecurityManager()

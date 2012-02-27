@@ -909,7 +909,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance \
       SelectRequestedReferenceChildrenA \
       SelectEmptyRequestedParameterDict \
-      RequestComputerPartition \
+      RequestComputerPartitionNoTic \
+      CleanTic \
       SlapLogout \
       LoginDefaultUser \
       ConfirmSaleOrderOrderedToCheckSerializeCalledOnSelected \

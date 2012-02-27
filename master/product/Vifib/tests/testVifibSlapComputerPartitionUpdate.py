@@ -553,23 +553,6 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepRequestComputerPartitionNoTic(self, sequence, **kw):
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    slap_computer_partition = self.slap.registerComputerPartition(
-        sequence['computer_reference'],
-        sequence['computer_partition_reference'])
-    kw = dict(software_release=sequence['software_release_uri'],
-      software_type=sequence.get('requested_software_type',
-                                 'requested_software_type'),
-      partition_reference=sequence.get('requested_reference',
-        'requested_reference'),
-      partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
-      filter_kw=sequence.get('requested_filter_dict', {}),
-      state=sequence.get('instance_state'))
-
-    slap_computer_partition.request(**kw)
-
   def stepCheckActivityRequestInProgress(self, sequence, **kw):
     hosting_subscription_uid = sequence['hosting_subscription_uid']
     requested_partition_reference = sequence.get('software_type', 'requested_reference')
