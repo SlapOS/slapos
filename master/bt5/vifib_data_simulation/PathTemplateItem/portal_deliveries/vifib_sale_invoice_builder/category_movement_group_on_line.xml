@@ -46,8 +46,6 @@
                 <string>destination_function</string>
                 <string>source_account</string>
                 <string>destination_account</string>
-                <string>source_decision</string>
-                <string>destination_decision</string>
                 <string>source_administration</string>
                 <string>destination_administration</string>
                 <string>source_project</string>

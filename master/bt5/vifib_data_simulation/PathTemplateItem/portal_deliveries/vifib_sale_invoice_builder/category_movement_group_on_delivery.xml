@@ -42,6 +42,8 @@
                 <string>source_section</string>
                 <string>destination_section</string>
                 <string>price_currency</string>
+                <string>source_decision</string>
+                <string>destination_decision</string>
               </tuple>
             </value>
         </item>
