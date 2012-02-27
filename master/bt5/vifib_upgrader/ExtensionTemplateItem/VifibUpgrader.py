@@ -4,7 +4,7 @@ from Products.ERP5Type.Base import WorkflowMethod
 def DeliveryLineSetZeroPriceAndOrUpdateAppliedRule(self):
   portal_type = self.getPortalType()
   assert( portal_type in self.getPortalDeliveryMovementTypeList())
-  common_specialise = 'sale_trade_condition_module/vifib_trade_condition'
+  common_specialise = 'sale_trade_condition_module/vifib_simple_trade_condition'
   delivery = self.getParentValue()
   price_currency = 'currency_module/EUR'
   if delivery.getPortalType() in ['Purchase Packing List', 'Sale Packing List']:
@@ -35,7 +35,7 @@ def OpenSaleOrderLine_migrate(self):
   self.setBaseContributionList(resource_value.getBaseContributionList())
   self.setUseList(resource_value.getUseList())
   self.setQuantityUnit(resource_value.getQuantityUnit())
-  self.setSpecialise('sale_trade_condition_module/vifib_trade_condition')
+  self.setSpecialise('sale_trade_condition_module/vifib_simple_trade_condition')
   self.setSourceSection('organisation_module/vifib_internet')
   self.setSource('organisation_module/vifib_internet')
   self.setDestination(self.getParentValue().getDestinationSection())
