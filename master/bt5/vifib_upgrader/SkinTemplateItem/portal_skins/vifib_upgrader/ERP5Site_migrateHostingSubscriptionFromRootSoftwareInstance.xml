@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().portal_catalog(\n
+            <value> <string>context.getPortalObject().portal_catalog.searchAndActivate(\n
   portal_type=\'Hosting Subscription\',\n
   method_id=\'HostingSubscription_migrateFromSoftwareInstance\'\n
 )\n
