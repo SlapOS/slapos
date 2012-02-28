@@ -25,6 +25,17 @@ def DeliveryLineSetZeroPriceAndOrUpdateAppliedRule(self):
 from DateTime import DateTime
 @WorkflowMethod.disable
 def OpenSaleOrderLine_migrate(self):
+  open_sale_order = self.getParentValue()
+  if open_sale_order.getSpecialise() != 'sale_trade_condition_module/vifib_simple_trade_condition':
+    open_sale_order.setSpecialise('sale_trade_condition_module/vifib_simple_trade_condition')
+  if open_sale_order.getDestinationDecision() != open_sale_order.getDestination():
+    open_sale_order.setDestinationDecision(open_sale_order.getDestination())
+  if open_sale_order.getSource() != 'organisation_module/vifib_internet':
+    open_sale_order.setSource('organisation_module/vifib_internet')
+  if open_sale_order.getSourceSection() != 'organisation_module/vifib_internet':
+    open_sale_order.setSourceSection('organisation_module/vifib_internet')
+  if open_sale_order.getPriceCurrency() != 'currency_module/EUR':
+    open_sale_order.setPriceCurrency('currency_module/EUR')
   now = DateTime().earliestTime()
   self.setStartDate(now)
   self.setStopDate(now)
@@ -35,13 +46,6 @@ def OpenSaleOrderLine_migrate(self):
   self.setBaseContributionList(resource_value.getBaseContributionList())
   self.setUseList(resource_value.getUseList())
   self.setQuantityUnit(resource_value.getQuantityUnit())
-  self.setSpecialise('sale_trade_condition_module/vifib_simple_trade_condition')
-  self.setSourceSection('organisation_module/vifib_internet')
-  self.setSource('organisation_module/vifib_internet')
-  self.setDestination(self.getParentValue().getDestinationSection())
-  self.setDestinationSection(self.getParentValue().getDestinationSection())
-  self.setDestinationDecision(self.getParentValue().getDestinationDecision())
-  self.setPriceCurrency('currency_module/EUR')
 
 @WorkflowMethod.disable
 def VifibSaleInvoiceBuilder_buildAndPlan(self, movement_list):
