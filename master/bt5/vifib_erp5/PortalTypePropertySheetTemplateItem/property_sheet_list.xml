@@ -17,6 +17,9 @@
  <portal_type id="Internal Packing List Line">
   <item>VifibInternalPackingListLineConstraint</item>
  </portal_type>
+ <portal_type id="Open Sale Order">
+  <item>VifibOpenSaleOrderConstraint</item>
+ </portal_type>
  <portal_type id="Open Sale Order Line">
   <item>VifibOpenSaleOrderLineConstraint</item>
  </portal_type>

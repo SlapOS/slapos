@@ -5,6 +5,7 @@ Hosting Subscription | VifibHostingSubscriptionConstraint
 Internal Packing List Line | VifibInternalPackingListLineConstraint
 Internal Packing List | VifibInternalPackingListConstraint
 Open Sale Order Line | VifibOpenSaleOrderLineConstraint
+Open Sale Order | VifibOpenSaleOrderConstraint
 Person | VifibPersonConstraint
 Purchase Packing List Line | VifibPurchasePackingListLineConstraint
 Purchase Packing List | VifibPurchasePackingListConstraint
