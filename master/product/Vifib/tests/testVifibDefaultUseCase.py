@@ -1052,6 +1052,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         PayRegistrationPayment \
         Tic \
         CheckPaidInvoice \
+        LoginERP5TypeTestCase \
+        CheckSiteConsistency \
+        Logout \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
@@ -1347,6 +1350,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         PayRegistrationPayment \
         Tic \
         CheckComplexInvoice \
+        LoginERP5TypeTestCase \
+        CheckSiteConsistency \
+        Logout \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
