@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+"%(check_port_listening_script)s" "%(hostname)s" "%(port)s"
+exit $?
