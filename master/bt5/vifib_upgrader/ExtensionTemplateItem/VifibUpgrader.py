@@ -26,13 +26,15 @@ def DeliveryLineSetZeroPriceAndOrUpdateAppliedRule(self):
 @WorkflowMethod.disable
 def OpenSaleOrder_migrate(self):
   if self.getSpecialise() != 'sale_trade_condition_module/vifib_simple_trade_condition':
-    self.setSpecialise('sale_trade_condition_module/vifib_trade_simple_condition')
+    self.setSpecialise('sale_trade_condition_module/vifib_simple_trade_condition')
   destination = self.getDestination() or self.getDestinationDecision() or self.getDestinationSection()
   assert destination is not None
   if self.getDestinationDecision() != destination:
     self.setDestinationDecision(destination)
   if self.getDestinationSection() != destination:
     self.setDestinationSection(destination)
+  if self.getDestination() != destination:
+    self.setDestination(destination)
   if self.getSource() != 'organisation_module/vifib_internet':
     self.setSource('organisation_module/vifib_internet')
   if self.getSourceSection() != 'organisation_module/vifib_internet':
