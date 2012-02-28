@@ -64,6 +64,7 @@ if open_sale_order is None:\n
     open_order = portal.open_sale_order_module.newContent(\n
           destination_section=person.getRelativeUrl(),\n
           destination_decision=person.getRelativeUrl(),\n
+          destination=person.getRelativeUrl(),\n
           title="ViFiB Open Order", **kw)\n
     open_order.order(**kw)\n
     open_order.validate(**kw)\n
