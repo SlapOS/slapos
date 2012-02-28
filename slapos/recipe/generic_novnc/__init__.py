@@ -31,46 +31,24 @@ import sys
 
 class Recipe(GenericBaseRecipe):
   """
-  kvm instance configuration.
+  novnc instance configuration.
   """
 
-  def __init__(self, buildout, name, options):
-    options['passwd'] = binascii.hexlify(os.urandom(4))
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
-
   def install(self):
-    config = dict(
-      tap_interface=self.options['tap'],
-      vnc_ip=self.options['vnc-ip'],
-      vnc_port=self.options['vnc-port'],
-      nbd_ip=self.options['nbd-ip'],
-      nbd_port=self.options['nbd-port'],
-      disk_path=self.options['disk-path'],
-      disk_size=self.options['disk-size'],
-      mac_address=self.options['mac-address'],
-      smp_count=self.options['smp-count'],
-      ram_size=self.options['ram-size'],
-      socket_path=self.options['socket-path'],
-      pid_file_path=self.options['pid-path'],
-      python_path=sys.executable,
-      shell_path=self.options['shell-path'],
-      qemu_path=self.options['qemu-path'],
-      qemu_img_path=self.options['qemu-img-path'],
-      # XXX Weak password
-      vnc_passwd=self.options['passwd']
+    runner_path = self.createPythonScript(
+      self.options['path'],
+      'slapos.recipe.librecipe.execute.execute_wait',
+      [[
+        self.options['websockify-path'],
+        '--web',
+        self.options['novnc-location'],
+        '--key=%s' % self.options['ssl-key-path'],
+        '--cert=%s' % self.options['ssl-cert-path'],
+        '--ssl-only',
+        '%s:%s' % (self.options['ip'], self.options['port']),
+        '%s:%s' % (self.options['vnc-ip'], self.options['vnc-port']),
+      ],
+      [self.options['ssl-key-path'], self.options['ssl-cert-path']]],
     )
 
-    # Runners
-    runner_path = self.createExecutable(
-      self.options['runner-path'],
-      self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
-                              config))
-
-    controller_path = self.createExecutable(
-      self.options['controller-path'],
-      self.substituteTemplate(self.getTemplateFilename('kvm_controller_run.in'),
-                              config))
-
-
-    return [runner_path, controller_path]
-
+    return [runner_path]

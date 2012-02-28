@@ -1,0 +1,7 @@
+
+  "/hosting": {
+    "port": 15000,
+    "host": "2a01:e35:2e27:460:e2cb:4eff:fed9:ddd6",
+    "https": true
+  }
+
