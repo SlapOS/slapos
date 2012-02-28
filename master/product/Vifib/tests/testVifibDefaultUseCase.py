@@ -8,7 +8,7 @@ from zExceptions import Unauthorized
 from DateTime import DateTime
 from Products.ERP5Type.tests.backportUnittest import skip
 
-class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
+class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
 
   def stepCheckRegistrationAccounting(self, sequence, **kw):
     """
@@ -1353,5 +1353,5 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
 def test_suite():
   suite = unittest.TestSuite()
-  suite.addTest(unittest.makeSuite(TestVifibSlapComputerPartitionLock))
+  suite.addTest(unittest.makeSuite(TestVifibDefaultUseCase))
   return suite
