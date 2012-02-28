@@ -67,6 +67,8 @@ if open_sale_order is None:\n
           destination_section=person.getRelativeUrl(),\n
           destination_decision=person.getRelativeUrl(),\n
           destination=person.getRelativeUrl(),\n
+          price_currency=\'currency_module/EUR\',\n
+          specialise=\'sale_trade_condition/vifib_trade_condition\',\n
           title="ViFiB Open Order", **kw)\n
     open_order.order(**kw)\n
     open_order.validate(**kw)\n
