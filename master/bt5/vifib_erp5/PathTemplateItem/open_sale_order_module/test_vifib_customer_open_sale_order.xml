@@ -88,6 +88,7 @@
                 <string>source/organisation_module/vifib_internet</string>
                 <string>source_section/organisation_module/vifib_internet</string>
                 <string>price_currency/currency_module/EUR</string>
+                <string>destination/person_module/test_vifib_customer</string>
               </tuple>
             </value>
         </item>
