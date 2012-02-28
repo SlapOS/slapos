@@ -50,19 +50,26 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>movement = context\n
+            <value> <string encoding="cdata"><![CDATA[
+
+movement = context\n
 \n
 business_link = movement.getCausalityValue(portal_type=\'Business Link\')\n
 \n
-if len(business_link.getParentValue().getBusinessLinkValueList(trade_phase=rule.getTradePhaseList())) == 0:\n
-  # If Business Process does not define invoicing do not apply\n
-  return False\n
+rule_trade_phase_list = rule.getTradePhaseList()\n
+if len(rule_trade_phase_list) > 0:\n
+  # if rule defines trade phase check if there is sense to apply it\n
+  if len(business_link.getParentValue().getBusinessLinkValueList(trade_phase=rule_trade_phase_list)) == 0:\n
+    # If Business Process does not define trade phase do not apply\n
+    return False\n
 \n
 if movement.getSimulationState() in business_link.getCompletedStateList():\n
   return True\n
 \n
 return False\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
