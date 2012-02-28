@@ -1,0 +1,27 @@
+--- Makefile.orig	2011-12-11 20:54:02.000000000 +0100
++++ Makefile	2012-01-09 17:36:55.059392824 +0100
+@@ -17,7 +17,7 @@
+ 
+ install:
+ 	for dir in $(SUBDIRS); do \
+-	  mkdir $(DESTDIR)/$(CERTSDIR)/$$dir; \
++	  mkdir -p $(DESTDIR)/$(CERTSDIR)/$$dir; \
+ 	  $(MAKE) -C $$dir install CERTSDIR=$(DESTDIR)/$(CERTSDIR)/$$dir; \
+ 	done
+ 	for dir in sbin; do \
+--- sbin/Makefile.orig	2011-12-11 20:54:02.000000000 +0100
++++ sbin/Makefile	2012-01-09 17:31:45.207387898 +0100
+@@ -3,9 +3,12 @@
+ #
+ #
+ 
++SBINDIR=/usr/sbin
++
+ all:
+ 
+ clean:
+ 
+ install:
+-	install -m755 update-ca-certificates $(DESTDIR)/usr/sbin/
++	mkdir -p $(DESTDIR)/$(SBINDIR)
++	install -m755 update-ca-certificates $(DESTDIR)/$(SBINDIR)

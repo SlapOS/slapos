@@ -27,17 +27,16 @@ diff -ur xtrabackup-1.6.2.orig/utils/build.sh xtrabackup-1.6.2/utils/build.sh
      exit -1
  }
  
-@@ -79,7 +81,12 @@
+@@ -79,7 +81,11 @@
  {
      echo "Configuring the server"
      cd $server_dir
 -    BUILD/autorun.sh
-+    libtoolize -c -f
-+    aclocal -I $libtool_location/share/aclocal -I config/ac-macros
-+    autoheader
-+    automake -c -a -f
-+    autoconf
-+    touch sql/sql_yacc.yy
++    aclocal -I $libtool_location/share/aclocal -I config/ac-macros || die "Can't execute aclocal"
++    autoheader || die "Can't execute autoheader"
++    libtoolize --automake --force --copy || die "Can't execute libtoolize"
++    automake --add-missing --force  --copy || die "Can't execute automake"
++    autoconf || die "Can't execute autoconf"
      eval $configure_cmd
  
      echo "Building the server"
@@ -141,12 +140,3 @@ diff -ur xtrabackup-1.6.2.orig/utils/build.sh xtrabackup-1.6.2/utils/build.sh
  	;;
  
  "innodb55" | "5.5")
-@@ -230,7 +279,7 @@
- 
- 	build_server
- 
--	build_xtrabackup
-+	build_xtrabackup 
- 
- 	build_tar4ibd
- 	;;
