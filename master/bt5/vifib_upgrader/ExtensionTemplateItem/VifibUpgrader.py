@@ -1,3 +1,4 @@
+from DateTime import DateTime
 from Products.ERP5Type.Base import WorkflowMethod
 
 @WorkflowMethod.disable
@@ -22,20 +23,25 @@ def DeliveryLineSetZeroPriceAndOrUpdateAppliedRule(self):
     self.setQuantity(1.0)
     self.Delivery_updateAppliedRule()
 
-from DateTime import DateTime
+@WorkflowMethod.disable
+def OpenSaleOrder_migrate(self):
+  if self.getSpecialise() != 'sale_trade_condition_module/vifib_simple_trade_condition':
+    self.setSpecialise('sale_trade_condition_module/vifib_trade_simple_condition')
+  destination = self.getDestination() or self.getDestinationDecision() or self.getDestinationSection()
+  assert destination is not None
+  if self.getDestinationDecision() != destination:
+    self.setDestinationDecision(destination)
+  if self.getDestinationSection() != destination:
+    self.setDestinationSection(destination)
+  if self.getSource() != 'organisation_module/vifib_internet':
+    self.setSource('organisation_module/vifib_internet')
+  if self.getSourceSection() != 'organisation_module/vifib_internet':
+    self.setSourceSection('organisation_module/vifib_internet')
+  if self.getPriceCurrency() != 'currency_module/EUR':
+    self.setPriceCurrency('currency_module/EUR')
+
 @WorkflowMethod.disable
 def OpenSaleOrderLine_migrate(self):
-  open_sale_order = self.getParentValue()
-  if open_sale_order.getSpecialise() != 'sale_trade_condition_module/vifib_simple_trade_condition':
-    open_sale_order.setSpecialise('sale_trade_condition_module/vifib_simple_trade_condition')
-  if open_sale_order.getDestinationDecision() != open_sale_order.getDestination():
-    open_sale_order.setDestinationDecision(open_sale_order.getDestination())
-  if open_sale_order.getSource() != 'organisation_module/vifib_internet':
-    open_sale_order.setSource('organisation_module/vifib_internet')
-  if open_sale_order.getSourceSection() != 'organisation_module/vifib_internet':
-    open_sale_order.setSourceSection('organisation_module/vifib_internet')
-  if open_sale_order.getPriceCurrency() != 'currency_module/EUR':
-    open_sale_order.setPriceCurrency('currency_module/EUR')
   now = DateTime().earliestTime()
   self.setStartDate(now)
   self.setStopDate(now)
