@@ -62,6 +62,8 @@ kw = {\'activate_kw\': {\'tag\': tag}}\n
 if open_sale_order is None:\n
   if portal.portal_activities.countMessageWithTag(tag) == 0:\n
     open_order = portal.open_sale_order_module.newContent(\n
+          source=\'organisation_module/vifib_internet\',\n
+          source_section=\'organisation_module/vifib_internet\',\n
           destination_section=person.getRelativeUrl(),\n
           destination_decision=person.getRelativeUrl(),\n
           destination=person.getRelativeUrl(),\n
