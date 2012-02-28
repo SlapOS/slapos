@@ -1487,6 +1487,9 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout \
       SlapLoginCurrentSoftwareInstance \
       CheckConnectionXmlOfSlaveInstanceFromComputerPartition \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
