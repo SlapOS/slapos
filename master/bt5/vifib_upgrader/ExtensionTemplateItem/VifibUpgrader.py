@@ -46,6 +46,14 @@ def OpenSaleOrderLine_migrate(self):
   self.setBaseContributionList(resource_value.getBaseContributionList())
   self.setUseList(resource_value.getUseList())
   self.setQuantityUnit(resource_value.getQuantityUnit())
+  self.setSpecialise(None)
+  self.setDestination(None)
+  self.setDestinationSection(None)
+  self.setDestinationDecision(None)
+  self.setPriceCurrency(None)
+  self.setSource(None)
+  self.setSourceSection(None)
+  self.setSourceDecision(None)
 
 @WorkflowMethod.disable
 def VifibSaleInvoiceBuilder_buildAndPlan(self, movement_list):
