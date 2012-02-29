@@ -97,22 +97,25 @@ class Software(object):
           tar.close()
     else:
         self._install_from_buildout()
-        tar = tarfile.open(tarpath, "w:gz")
-        try:
-          tar.add(self.software_path, arcname=self.software_url_hash)
-        finally:
-          tar.close()
-        upload_network_cached(
-          self.software_root,
-          self.url, self.software_url_hash,
-          self.upload_binary_cache_url,
-          self.upload_binary_dir_url,
-          tarpath, self.logger,
-          self.signature_private_key_file,
-          self.shacache_cert_file,
-          self.shacache_key_file,
-          self.shadir_cert_file,
-          self.shadir_key_file)
+        if (self.software_root and self.url and self.software_url_hash \
+                               and self.upload_binary_cache_url \
+                               and self.upload_binary_dir_url):
+          tar = tarfile.open(tarpath, "w:gz")
+          try:
+            tar.add(self.software_path, arcname=self.software_url_hash)
+          finally:
+            tar.close()
+          upload_network_cached(
+            self.software_root,
+            self.url, self.software_url_hash,
+            self.upload_binary_cache_url,
+            self.upload_binary_dir_url,
+            tarpath, self.logger,
+            self.signature_private_key_file,
+            self.shacache_cert_file,
+            self.shacache_key_file,
+            self.shadir_cert_file,
+            self.shadir_key_file)
     shutil.rmtree(cache_dir)
       
   def _install_from_buildout(self):
