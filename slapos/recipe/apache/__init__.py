@@ -63,7 +63,10 @@ class Recipe(BaseSlapRecipe):
     rewrite_rule_list = []
     slave_dict = {}
     service_dict = {}
-    base_url = "%s:%s/" % (frontend_domain_name, frontend_port_number)
+    if frontend_port_number is 443:
+      base_url = "%s/" % frontend_domain_name
+    else:
+      base_url = "%s:%s/" % (frontend_domain_name, frontend_port_number)
     for slave_instance in slave_instance_list:
       url = slave_instance.get("url")
       if url is None:
