@@ -52,15 +52,18 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-section_uid = context.getSourceSectionUid()\n
-customer_uid = context.getDestinationSectionUid()\n
-simulation_state = context.getPortalCurrentInventoryStateList() + context.getPortalTransitInventoryStateList()\n
-balance = context.portal_simulation.getInventoryAssetPrice(\n
-  node_category_strict_membership=\'account_type/asset/receivable\',\n
-  simulation_state=simulation_state,\n
-  section_uid=section_uid,\n
-  mirror_section_uid=customer_uid)\n
-return balance <= 0.\n
+return True\n
+\n
+# Disabled functionality\n
+#section_uid = context.getSourceSectionUid()\n
+#customer_uid = context.getDestinationSectionUid()\n
+#simulation_state = context.getPortalCurrentInventoryStateList() + context.getPortalTransitInventoryStateList()\n
+#balance = context.portal_simulation.getInventoryAssetPrice(\n
+#  node_category_strict_membership=\'account_type/asset/receivable\',\n
+#  simulation_state=simulation_state,\n
+#  section_uid=section_uid,\n
+#  mirror_section_uid=customer_uid)\n
+#return balance <= 0.\n
 
 
 ]]></string> </value>
