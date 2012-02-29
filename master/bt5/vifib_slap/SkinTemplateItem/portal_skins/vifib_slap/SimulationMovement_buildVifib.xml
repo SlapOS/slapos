@@ -60,13 +60,14 @@ portal.portal_catalog.searchAndActivate(\n
   portal_type=\'Business Link\',\n
   parent_uid=[portal.business_process_module.vifib_sale_business_process.getUid(),  portal.business_process_module.vifib_purchase_business_process.getUid()],\n
   method_id=\'build\',\n
-  method_kw={\'path\': \'%s/%%\' % root_applied_rule.getPath()}\n
+  method_kw={\'path\': \'%s/%%\' % root_applied_rule.getPath()},\n
+  activity_kw={\'tag\': tag}\n
 )\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

@@ -61,6 +61,7 @@ kw.update(\n
 \n
 context.getPortalObject().portal_catalog.searchAndActivate(\n
   method_id=\'SimulationMovement_buildVifib\',\n
+  method_kw={\'tag\': tag},\n
   activate_kw={\'tag\': tag, \'priority\': 4},\n
   **kw\n
 )\n
