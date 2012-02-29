@@ -122,17 +122,11 @@ class Recipe:
       buildout.set('slap-parameter', parameter, value)
 
     buildout.add_section('slap-network-information')
-    if software_type in ('production', 'mariadb-prod'):
-      # XXX Hack for beteireflow production
-      buildout.set('slap-network-information', 'local-ipv4', 
-                   self.getLoopbackIPv4Address())
-      buildout.set('slap-network-information', 'global-ipv6', 
-                   self.getGlobalIPv4Address())
-    else:
-      buildout.set('slap-network-information', 'local-ipv4', 
-                   self.getLocalIPv4Address())
-      buildout.set('slap-network-information', 'global-ipv6', 
-                   self.getGlobalIPv6Address())
+    # XXX Hack for beteireflow production
+    buildout.set('slap-network-information', 'local-ipv4', 
+                 self.getLoopbackIPv4Address())
+    buildout.set('slap-network-information', 'global-ipv6', 
+                 self.getGlobalIPv4Address())
 
     # Copy/paste slap_connection
     buildout.add_section('slap-connection')
