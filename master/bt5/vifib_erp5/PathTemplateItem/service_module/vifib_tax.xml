@@ -57,6 +57,7 @@
             <value>
               <tuple>
                 <string>use/trade/tax</string>
+                <string>quantity_unit/unit/piece</string>
               </tuple>
             </value>
         </item>

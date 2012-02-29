@@ -57,6 +57,8 @@
             <value>
               <tuple>
                 <string>use/trade/discount</string>
+                <string>quantity_unit/unit/piece</string>
+                <string>base_contribution/base_amount/invoicing/taxable</string>
               </tuple>
             </value>
         </item>

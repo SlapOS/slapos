@@ -62,10 +62,11 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>quantity_unit/volume/cubic_meter</string>
                 <string>product_line/cloud/usage</string>
-                <string>base_contribution/base_amount/invoicing/discounted</string>
                 <string>use/trade/sale</string>
+                <string>quantity_unit/unit/piece</string>
+                <string>base_contribution/base_amount/invoicing/discounted</string>
+                <string>base_contribution/base_amount/invoicing/taxable</string>
               </tuple>
             </value>
         </item>
