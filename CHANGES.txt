@@ -1,10 +1,16 @@
 Changes
 =======
 
-0.23 (unreleased)
+0.24 (Unreleased)
 -----------------
 
- * No change yet
+ * No change yet.
+
+0.23 (2012-02-29)
+-----------------
+
+ * slapgrid : Don't create tarball of sofwtare release when shacache is not
+   configured. [Yingjie Xu]
 
 0.22 (2012-02-09)
 -----------------

@@ -21,7 +21,6 @@ def DeliveryLineSetZeroPriceAndOrUpdateAppliedRule(self):
     self.setQuantity(0.0)
   else:
     self.setQuantity(1.0)
-    self.Delivery_updateAppliedRule()
 
 @WorkflowMethod.disable
 def OpenSaleOrder_migrate(self):
