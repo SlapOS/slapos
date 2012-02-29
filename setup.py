@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.39-dev'
+version = '0.40-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -94,6 +94,7 @@ setup(name=name,
           'pwgen = slapos.recipe.pwgen:Recipe',
           'proactive = slapos.recipe.proactive:Recipe',
           'request = slapos.recipe.request:Recipe',
+          'seleniumrunner = slapos.recipe.seleniumrunner:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
           'shell = slapos.recipe.shell:Recipe',
           'shellinabox = slapos.recipe.shellinabox:Recipe',
