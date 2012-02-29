@@ -68,6 +68,8 @@ person_module/test_vifib_user_admin
 person_module/test_vifib_user_admin/**
 person_module/test_vifib_user_developer
 person_module/test_vifib_user_developer/**
+portal_caches/slap_cache_factory
+portal_caches/slap_cache_factory/persistent_cache_plugin
 service_module/computer_registration
 service_module/computer_registration/**
 service_module/vifib_discount
