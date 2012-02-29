@@ -92,6 +92,7 @@ class Software(object):
           self.signature_certificate_list):
         tar = tarfile.open(tarpath)
         try:
+          self.logger.info("Extracting archive of cached software release...")
           tar.extractall(path=self.software_root)
         finally:
           tar.close()
@@ -100,11 +101,13 @@ class Software(object):
         if (self.software_root and self.url and self.software_url_hash \
                                and self.upload_binary_cache_url \
                                and self.upload_binary_dir_url):
+          self.logger.info("Creating archive of software release...")
           tar = tarfile.open(tarpath, "w:gz")
           try:
             tar.add(self.software_path, arcname=self.software_url_hash)
           finally:
             tar.close()
+          self.logger.info("Trying to upload archive of software release...")
           upload_network_cached(
             self.software_root,
             self.url, self.software_url_hash,
