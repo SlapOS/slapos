@@ -69,8 +69,8 @@ class Recipe(BaseSlapRecipe):
       if url is None:
         continue
       reference = slave_instance.get("slave_reference")
-      slave_dict[reference] = "https://%s.%s" % (reference.replace("-", ""),
-          base_url)
+      subdomain = reference.replace("-", "").lower()
+      slave_dict[reference] = "https://%s.%s" % (subdomain, base_url)
 
       enable_cache = slave_instance.get("enable_cache", "")
       if enable_cache.upper() in ('1', 'TRUE'):
@@ -103,11 +103,13 @@ class Recipe(BaseSlapRecipe):
             public_port=stunnel_port,
             private_ip=slave_host.replace("[", "").replace("]", ""),
             private_port=slave_port)
-        rewrite_rule_list.append("%s http://%s:%s" % \
-            (reference.replace("-", ""), varnish_ip, base_varnish_port))
+        rewrite_rule_list.append("%s.%s http://%s:%s" % \
+            (reference.replace("-", ""), frontend_domain_name,
+            varnish_ip, base_varnish_port))
         base_varnish_port += 2
       else:
-        rewrite_rule_list.append("%s %s" % (reference.replace("-", ""), url))
+        rewrite_rule_list.append("%s.%s %s" % (subdomain, frontend_domain_name,
+            url))
 
     valid_certificate_str = self.parameter_dict.get("domain_ssl_ca_cert")
     valid_key_str = self.parameter_dict.get("domain_ssl_ca_key")
@@ -197,7 +199,6 @@ class Recipe(BaseSlapRecipe):
    crontabs = os.path.join(self.etc_directory, 'crontabs')
    self._createDirectory(cron_d)
    self._createDirectory(crontabs)
-   # Use execute from erp5.
    wrapper = zc.buildout.easy_install.scripts([('crond',
      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
      self.wrapper_directory, arguments=[
@@ -258,7 +259,7 @@ class Recipe(BaseSlapRecipe):
     self._writeFile(openssl_configuration, pkg_resources.resource_string(
       __name__, 'template/openssl.cnf.ca.in') % config)
     self.path_list.extend(zc.buildout.easy_install.scripts([
-      ('certificate_authority', 'slapos.recipe.erp5.certificate_authority',
+      ('certificate_authority', 'slapos.recipe.apache.certificate_authority',
          'runCertificateAuthority')],
         self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
           openssl_configuration=openssl_configuration,
@@ -291,6 +292,8 @@ class Recipe(BaseSlapRecipe):
         name + '.pid')
     apache_conf['lock_file'] = os.path.join(self.run_directory,
         name + '.lock')
+    apache_conf['document_root'] = os.path.join(self.data_root_directory,
+        'htdocs')
     apache_conf['ip_list'] = ip_list
     apache_conf['port'] = port
     apache_conf['server_admin'] = 'admin@'
@@ -377,15 +380,26 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(wrapper)
     return stunnel_conf
 
-  def installFrontendApache(self, ip_list, port, key, certificate,
-                            name, rewrite_rule_list, rewrite_rule_zope_list,
+  def installFrontendApache(self, ip_list, port, key, certificate, name,
+                            rewrite_rule_list=[], rewrite_rule_zope_list=[],
                             access_control_string=None):
+    # Create htdocs, populate it with default 404 document
+    htdocs_location = os.path.join(self.data_root_directory, 'htdocs')
+    self._createDirectory(htdocs_location)
+    notfound_file_location = os.path.join(htdocs_location, 'notfound.html')
+    notfound_template_file_location = self.getTemplateFilename(
+        'notfound.html')
+    notfound_file_content = open(notfound_template_file_location, 'r').read()
+    self._writeFile(notfound_file_location, notfound_file_content)
+
+    # Create configuration file and rewritemaps
     apachemap_name = "apachemap.txt"
     # XXX-Cedric : implement zope specific rewrites list. Current apachemap is
     #              generic and does not use VirtualHost Monster.
     apachemapzope_name = "apachemapzope.txt"
-
     self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
+    self.createConfigurationFile(apachemapzope_name,
+        "\n".join(rewrite_rule_zope_list))
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
@@ -400,6 +414,7 @@ class Recipe(BaseSlapRecipe):
     apache_conf.update(**dict(
       path_enable=path,
       apachemap_path=os.path.join(self.etc_directory, apachemap_name),
+      apachemapzope_path=os.path.join(self.etc_directory, apachemapzope_name),
       apache_domain=name,
       port=port,
     ))
@@ -409,6 +424,7 @@ class Recipe(BaseSlapRecipe):
 
     apache_config_file = self.createConfigurationFile(name + '.conf',
         apache_conf_string)
+
 
     self.path_list.append(apache_config_file)
     self.path_list.extend(zc.buildout.easy_install.scripts([(

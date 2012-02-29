@@ -5,6 +5,7 @@
 PidFile "%(pid_file)s"
 LockFile "%(lock_file)s"
 ServerName %(server_name)s
+DocumentRoot %(document_root)s
 
 %(listen)s
 
@@ -37,15 +38,24 @@ CustomLog "%(access_log)s" common
 
 %(path_enable)s
 
-# Magic of Zope related rewrite
-RewriteMap apachemapzope txt:%(apachemapzope_path)s
+# Rewrite part
 RewriteEngine On
-# XXX-Cedric : apply only known apachemapzope rules.
-RewriteRule ^/(\w+)($|/.*) ${apachemapzope:$1}/VirtualHostBase/https/%(apache_domain)s:%(port)s/VirtualHostRoot/_vh_$1$2 [L,P]
 
-# Sadly, Zope isn't used everywhere. So let's add a generic purpose rule
+# Define the two rewritemaps : one for zope, one generic
+RewriteMap apachemapzope txt:%(apachemapzope_path)s
 RewriteMap apachemapgeneric txt:%(apachemap_path)s
-RewriteRule ^/(\w+)($|/.*) ${apachemapgeneric:$1}/$2 [L,P]
+
+# First, we check if we have a zope backend server
+# If so, let's use Virtual Host Daemon rewrite
+#RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
+#RewriteRule ^/(\w+)($|/.*) ${apachemapzope:$1}/VirtualHostBase/https/%(apache_domain)s:%(port)s/VirtualHostRoot/_vh_$1$2 [L,P]
+
+# If we have generic backend server, let's rewrite without virtual host daemon
+RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
+RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
+
+# If nothing exist : put a nice error
+ErrorDocument 404 /notfound.html
 
 # List of modules
 LoadModule authz_host_module modules/mod_authz_host.so
