@@ -54,6 +54,10 @@
   # movement build but not indexed, so do nothing\n
   return\n
 \n
+if context.getResource() == \'service_module/vifib_instance_subscription\':\n
+  # XXX-Luke: Avoid building until Open Order logic is fixed\n
+  return\n
+\n
 root_applied_rule = context.getRootAppliedRule()\n
 \n
 context.getCausalityValue(portal_type=\'Business Link\').build(path=\'%s/%%\' % root_applied_rule.getPath(), activate_kw={\'tag\': tag})\n
