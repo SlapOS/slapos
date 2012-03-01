@@ -65,6 +65,10 @@ context.getPortalObject().portal_catalog.searchAndActivate(\n
   activate_kw={\'tag\': tag, \'priority\': 4},\n
   **kw\n
 )\n
+\n
+# register activity on alarm object waiting for own tag in order to have only one alarm\n
+# running in same time\n
+context.activate(after_tag=tag).serialize()\n
 </string> </value>
         </item>
         <item>
