@@ -41,8 +41,20 @@
             <value> <string>aggregate_category_membership_arity_constraint</string> </value>
         </item>
         <item>
+            <key> <string>int_index</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>max_arity</string> </key>
             <value> <int>1</int> </value>
+        </item>
+        <item>
+            <key> <string>membership_criterion_category</string> </key>
+            <value>
+              <tuple/>
+            </value>
         </item>
         <item>
             <key> <string>message_arity_not_in_range</string> </key>
@@ -69,8 +81,20 @@
             <value> <string>Category Membership Arity Constraint</string> </value>
         </item>
         <item>
+            <key> <string>string_index</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>test_method_id</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
             <key> <string>test_tales_expression</string> </key>
-            <value> <string>python: object.getValidationState() != \'draft\'</string> </value>
+            <value> <string>python: object.getValidationState() not in (\'draft\' , \'cancelled\')</string> </value>
         </item>
         <item>
             <key> <string>use_acquisition</string> </key>
