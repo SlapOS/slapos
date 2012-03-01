@@ -62,24 +62,17 @@ class Recipe(BaseSlapRecipe):
         ipv6_address=ipv6,
         proxy_host=ipv4,
         proxy_port=proxy_port,
-        proxy_database=os.path.join(workdir, 'proxy.db'),
-	git=self.options['git'],
-	ssh_client=self.options['ssh_client'],
-	public_key=self.options['public_key'],
-	private_key=self.options['private_key']
+        proxy_database=os.path.join(workdir, 'proxy.db')
     )
     config_file = self.createConfigurationFile('slapos.cfg',
         self.substituteTemplate(pkg_resources.resource_filename(__name__,
           'template/slapos.cfg.in'), configuration))
     self.path_list.append(config_file)
     
-    environment = dict(
-        PATH=os.path.dirname(self.options['git']) + ':' + os.environ['PATH'],
-        GIT_SSH=self.options['ssh_client']
-    )
-    launch_args = [self.options['slaprunner'].strip(), config_file, '--debug']
+    execute_arguments = dict(path = os.environ['PATH'],
+        launch_args = [self.options['slaprunner'].strip(), config_file])
     self.path_list.extend(zc.buildout.easy_install.scripts([('slaprunner',
-      'slapos.recipe.librecipe.execute', 'executee')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[launch_args, environment]))
+      'slapos.recipe.slaprunner.execute', 'execute')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=execute_arguments))
     self.setConnectionDict(dict(url='http://[%s]:%s' % (ipv6, runner_port)))
     return self.path_list

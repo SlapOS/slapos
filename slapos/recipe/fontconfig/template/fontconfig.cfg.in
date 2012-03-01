@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
-<fontconfig>
-%(font_folder_path_snippet)s
-</fontconfig>

@@ -1,0 +1,4 @@
+CREATE DATABASE IF NOT EXISTS xwiki;
+GRANT ALL PRIVILEGES ON %(database)s.* TO %(user)s@'%%' IDENTIFIED BY '%(password)s';
+EXIT
+
