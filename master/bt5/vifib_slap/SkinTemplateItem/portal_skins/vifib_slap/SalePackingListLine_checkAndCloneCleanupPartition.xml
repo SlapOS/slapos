@@ -79,7 +79,8 @@ if (newer_movement is not None) and (newer_movement.getSimulationState() == \'co
 newer_newest_movement = portal.portal_catalog.getResultValue(\n
   portal_type="Sale Packing List Line",\n
   default_aggregate_uid=instance.getUid(),\n
-  **{\'movement.start_date\': Query(**{\'movement.start_date\': movement.getStartDate(), \'range\': \'max\'})}\n
+  uid=NegatedQuery(Query(uid=movement.getUid())),\n
+  **{\'movement.start_date\': Query(**{\'movement.start_date\': movement.getStartDate(), \'range\': \'min\'})}\n
 )\n
 \n
 if newer_newest_movement is not None:\n
