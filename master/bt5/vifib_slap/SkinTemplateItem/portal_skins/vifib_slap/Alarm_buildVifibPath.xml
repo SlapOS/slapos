@@ -68,7 +68,7 @@ context.getPortalObject().portal_catalog.searchAndActivate(\n
 \n
 # register activity on alarm object waiting for own tag in order to have only one alarm\n
 # running in same time\n
-context.activate(after_tag=tag).serialize()\n
+context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
         <item>
