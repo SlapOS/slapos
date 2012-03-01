@@ -50,23 +50,40 @@ class SoftwareInstance(Item):
   security.declareObjectProtected(Permissions.AccessContentsInformation)
 
 
+  def _getXmlAsDict(self, xml):
+    result_dict = {}
+    if xml is None or xml == '':
+      return result_dict
+
+    tree = etree.fromstring(xml.encode('utf-8'))
+
+    for element in tree.findall('parameter'):
+      key = element.get('id')
+      value = result_dict.get(key, None)
+      if value is not None:
+        value = value + ' ' + element.text
+      else:
+        value = element.text
+      result_dict[key] = value
+    return result_dict
+
   security.declareProtected(Permissions.AccessContentsInformation,
     'getSlaXmlAsDict')
   def getSlaXmlAsDict(self):
     """Returns SLA XML as python dictionary"""
-    result_dict = {}
-    xml = self.getSlaXml()
-    if xml is not None and xml != '':
-      tree = etree.fromstring(xml.encode('utf-8'))
-      for element in tree.findall('parameter'):
-        key = element.get('id')
-        value = result_dict.get(key, None)
-        if value is not None:
-          value = value + ' ' + element.text
-        else:
-          value = element.text
-        result_dict[key] = value
-    return result_dict
+    return self._getXmlAsDict(self.getSlaXml())
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getInstanceXmlAsDict')
+  def getInstanceXmlAsDict(self):
+    """Returns Instance XML as python dictionary"""
+    return self._getXmlAsDict(self.getTextContent())
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getConnectionXmlAsDict')
+  def getConnectionXmlAsDict(self):
+    """Returns Connection XML as python dictionary"""
+    return self._getXmlAsDict(self.getConnectionXml())
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'checkNotCyclic')
