@@ -425,7 +425,7 @@ class Recipe(BaseSlapRecipe):
     apache_conf_string = self.substituteTemplate(
           self.getTemplateFilename('apache.conf.in'), apache_conf)
 
-    apache_config_file = self.createConfigurationFile(name + '.conf',
+    apache_config_file = self.createConfigurationFile('apache_frontend.conf',
         apache_conf_string)
 
 
