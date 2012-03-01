@@ -107,11 +107,7 @@ if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
   # As it is not possible to fetch informations, it is better to raise an error\n
   raise NotImplementedError(tag)\n
 \n
-root_software_instance = root_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag)\n
-\n
-# above query does not find root software instance, but as this case is easy\n
-# to find, just check if such request does not come and raise\n
-if root_software_instance.getTitle() == requested_partition_reference:\n
+if root_hosting_subscription.getTitle() == requested_partition_reference:\n
   raise ValueError(\'It is disallowed to request root software instance\')\n
 \n
 if (request_software_instance is None):\n
