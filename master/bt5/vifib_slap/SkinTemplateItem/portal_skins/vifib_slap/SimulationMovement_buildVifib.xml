@@ -55,14 +55,8 @@
   return\n
 \n
 root_applied_rule = context.getRootAppliedRule()\n
-portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=\'Business Link\',\n
-  parent_uid=[portal.business_process_module.vifib_sale_business_process.getUid(),  portal.business_process_module.vifib_purchase_business_process.getUid()],\n
-  method_id=\'build\',\n
-  method_kw={\'path\': \'%s/%%\' % root_applied_rule.getPath()},\n
-  activity_kw={\'tag\': tag}\n
-)\n
+\n
+context.getCausalityValue(portal_type=\'Business Link\').build(path=\'%s/%%\' % root_applied_rule.getPath(), activate_kw={\'tag\': tag})\n
 </string> </value>
         </item>
         <item>
