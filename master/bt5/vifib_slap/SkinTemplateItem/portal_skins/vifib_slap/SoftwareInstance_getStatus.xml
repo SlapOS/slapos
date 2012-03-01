@@ -68,7 +68,9 @@ simulation_state = sale_packing_list_line.getSimulationState()\n
 if service_url == portal_preferences.getPreferredInstanceSetupResource():\n
   if simulation_state == \'delivered\':\n
     return \'Destroyed\'\n
-  elif simulation_state in (\'confirmed\', \'started\'):\n
+  elif simulation_state in (\'confirmed\', ):\n
+    return \'Waiting for partition instanciation\'\n
+  elif simulation_state in (\'started\', ):\n
     return \'Instanciation in progress\'\n
   elif simulation_state in (\'ordered\', ):\n
     return \'Looking for a free partition\'\n
