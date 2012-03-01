@@ -172,11 +172,13 @@ class BaseRecipe(BaseSlapRecipe):
       argument = argument + ["-d", mysql_conf['mysql_database'],
                              "-H", mysql_conf['mysql_host'], "-P", mysql_conf['mysql_port'],
                              "-p", mysql_conf['mysql_password'], "-u", mysql_conf['mysql_user'],
+=======
     argument = [self.options['lampconfigure_directory'].strip(),
                              "-H", mysql_conf['mysql_host'], "-P", mysql_conf['mysql_port'],
                              "-p", mysql_conf['mysql_password'], "-u", mysql_conf['mysql_user']]
     if not self.options.has_key('file_token'):
       argument = argument + ["-d", mysql_conf['mysql_database'],
+>>>>>>> master
                              "--table", self.options['table_name'].strip(), "--cond",
                              self.options['constraint'].strip()]
     else:
@@ -238,6 +240,7 @@ class Simple(BaseRecipe):
       rename=renamed,
       **mysql_conf
     ))
+=======
     renamed = self.configureInstallation(document_root, url, mysql_conf)
     connectionDict = dict(
       url=url,      
@@ -246,6 +249,7 @@ class Simple(BaseRecipe):
     if not renamed == "":
       connectionDict['rename'] = renamed
     self.setConnectionDict(connectionDict)
+>>>>>>> master
     if self.options.has_key('template') and self.options.has_key('configuration'):
       self.createConfiguration(self.options['template'], document_root,
           self.options['configuration'], mysql_conf)

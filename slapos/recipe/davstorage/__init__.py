@@ -109,3 +109,4 @@ def promise(args):
   connection.getresponse()
 
   return 0
+>>>>>>> master

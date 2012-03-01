@@ -167,3 +167,4 @@ class GenericBaseRecipe(object):
     url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
 
     return url
+>>>>>>> master
