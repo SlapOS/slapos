@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.40 (Unreleased)
+0.40 (2012-03-01)
 -----------------
 
- * seleniumrunner initial release. [Cedric de Saint Martin]
+ * apache_frontend initial release. [Cedric de Saint Martin]
  
 0.39 (2012-02-20)
 -----------------
