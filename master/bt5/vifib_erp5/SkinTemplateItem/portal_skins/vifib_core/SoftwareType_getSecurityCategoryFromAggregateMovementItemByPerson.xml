@@ -67,7 +67,7 @@ category_list = []\n
 if obj is None:\n
   return []\n
 \n
-movement_portal_type = "Sale Order Line"\n
+movement_portal_type = ["Sale Packing List Line", "Sale Order Line"]\n
 \n
 portal = obj.getPortalObject()\n
 \n
@@ -77,7 +77,9 @@ parent_url_list = []\n
 for movement in portal.portal_catalog(\n
   portal_type=movement_portal_type,\n
   strict_aggregate_uid=obj.getUid(),\n
-  simulation_state=(\'ordered\', \'confirmed\'),\n
+  default_resource_uid=portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource()).getUid(),\n
+#   simulation_state=(\'ordered\', \'confirmed\', \'started\', \'stopped\'),\n
+  limit=1,\n
   ):\n
   item = movement.getDestinationSectionValue(portal_type="Person")\n
   if item is not None:\n

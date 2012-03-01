@@ -50,24 +50,19 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>kw = {}\n
-select_dict= {\'delivery_uid\': None}\n
-kw.update(\n
-  portal_type=\'Simulation Movement\',\n
-  select_dict=select_dict,\n
-  left_join_list=select_dict.keys(),\n
-  delivery_uid=None\n
+            <value> <string>portal = context.getPortalObject()\n
+cleanup_service = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
+\n
+portal.portal_catalog.searchAndActivate(\n
+  portal_type=\'Sale Packing List Line\',\n
+  default_resource_uid=portal.restrictedTraverse(cleanup_service).getUid(),\n
+  aggregate_portal_type="Software Instance",\n
+  simulation_state="confirmed",\n
+  method_id=\'SalePackingListLine_checkAndCloneCleanupPartition\',\n
+  activate_kw={\'tag\': tag}\n
 )\n
 \n
-context.getPortalObject().portal_catalog.searchAndActivate(\n
-  method_id=\'SimulationMovement_buildVifib\',\n
-  method_kw={\'tag\': tag},\n
-  activate_kw={\'tag\': tag, \'priority\': 4},\n
-  **kw\n
-)\n
-\n
-# register activity on alarm object waiting for own tag in order to have only one alarm\n
-# running in same time\n
+# Register activity in order to have only one alarm running in the same time\n
 context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
@@ -77,7 +72,7 @@ context.activate(after_tag=tag).getId()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_buildVifibPath</string> </value>
+            <value> <string>Alarm_cloneCleanupPartition</string> </value>
         </item>
       </dictionary>
     </pickle>

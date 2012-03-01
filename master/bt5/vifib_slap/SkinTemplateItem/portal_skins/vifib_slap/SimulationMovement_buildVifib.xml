@@ -54,19 +54,18 @@
   # movement build but not indexed, so do nothing\n
   return\n
 \n
+if context.getResource() == \'service_module/vifib_instance_subscription\':\n
+  # XXX-Luke: Avoid building until Open Order logic is fixed\n
+  return\n
+\n
 root_applied_rule = context.getRootAppliedRule()\n
-portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=\'Business Link\',\n
-  parent_uid=[portal.business_process_module.vifib_sale_business_process.getUid(),  portal.business_process_module.vifib_purchase_business_process.getUid()],\n
-  method_id=\'build\',\n
-  method_kw={\'path\': \'%s/%%\' % root_applied_rule.getPath()}\n
-)\n
+\n
+context.getCausalityValue(portal_type=\'Business Link\').build(path=\'%s/%%\' % root_applied_rule.getPath(), activate_kw={\'tag\': tag})\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
