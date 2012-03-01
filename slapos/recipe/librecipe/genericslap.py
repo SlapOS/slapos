@@ -24,23 +24,17 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import logging
 from slapos import slap
-import zc.buildout
-import zc.recipe.egg
 import time
-import re
-import urlparse
 
-class GenericSlapRecipe(object):
+from generic import GenericBaseRecipe
+
+class GenericSlapRecipe(GenericBaseRecipe):
   """Base class for all slap.recipe.*"""
 
   def __init__(self, buildout, name, options):
     """Default initialisation"""
-    self.name = name
-    options['eggs'] = 'slapos.cookbook'
-    self.options = options
-    self.logger = logging.getLogger(self.name)
+    GenericBaseRecipe.__init__(self, buildout, name, options)
     self.slap = slap.slap()
 
     # SLAP related information
@@ -51,21 +45,6 @@ class GenericSlapRecipe(object):
     self.software_release_url = slap_connection['software-release-url']
     self.key_file = slap_connection.get('key-file')
     self.cert_file = slap_connection.get('cert-file')
-
-    # setup egg to give possibility to generate scripts
-    self.egg = zc.recipe.egg.Egg(buildout, options['recipe'], options)
-
-    # Hook options
-    self._options(options)
-
-    # setup auto uninstall/install
-    self._setupAutoInstallUninstall()
-
-  def _setupAutoInstallUninstall(self):
-    """By default SlapOS recipes are reinstalled each time"""
-    # Note: It is possible to create in future subclass which will do no-op in
-    # this method
-    self.options['slapos-timestamp'] = str(time.time())
 
   def install(self):
     self.slap.initializeConnection(self.server_url, self.key_file,
@@ -88,42 +67,6 @@ class GenericSlapRecipe(object):
     """Hook which shall be implemented in children class"""
     raise NotImplementedError('Shall be implemented by subclass')
 
-  def _options(self, options):
-    """Hook which can be implemented in children class"""
-    pass
-
   def setConnectionUrl(self, *args, **kwargs):
-    url = self._unparseUrl(*args, **kwargs)
+    url = self.unparseUrl(*args, **kwargs)
     self.setConnectionDict(dict(url=url))
-
-  def _unparseUrl(self, scheme, host, path='', params='', query='',
-                  fragment='', port=None, auth=None):
-    """Join a url with auth, host, and port.
-
-    * auth can be either a login string or a tuple (login, password).
-    * if the host is an ipv6 address, brackets will be added to surround it.
-
-    """
-    # XXX-Antoine: I didn't find any standard module to join an url with
-    # login, password, ipv6 host and port.
-    # So instead of copy and past in every recipe I factorized it right here.
-    netloc = ''
-    if auth is not None:
-      auth = tuple(auth)
-      netloc = str(auth[0]) # Login
-      if len(auth) > 1:
-        netloc += ':%s' % auth[1] # Password
-      netloc += '@'
-
-    # host is an ipv6 address whithout brackets
-    if ':' in host and not re.match(r'^\[.*\]$', host):
-      netloc += '[%s]' % host
-    else:
-      netloc += str(host)
-
-    if port is not None:
-      netloc += ':%s' % port
-
-    url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
-
-    return url

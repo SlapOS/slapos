@@ -48,7 +48,7 @@ index 87e3c5e..adb2e8b 100644
 +	if (svr_opts.singleuser) {
 +		m_free(username);
 +		/* Get the current login of the user running dropbear */
-+		username = m_strdup(getlogin());
++		username = m_strdup(getpwuid(getuid())->pw_name);
 +	}
 +#endif /* ifdef ENABLE_SINGLEUSER */
  	servicename = buf_getstring(ses.payload, &servicelen);

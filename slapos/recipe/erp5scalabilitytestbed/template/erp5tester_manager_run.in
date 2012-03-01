@@ -1,0 +1,9 @@
+#!/bin/sh
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+exec %(scalability_tester_manager_binary)s %(plugin_name)s -a %(address)s \
+  -r %(report_path)s -m %(nb_tester_init)s -t %(nb_tester_max)s \
+  -i %(user_range_increment)s --erp5-publish-url "%(erp5_publish_url)s" \
+  --erp5-publish-project "%(erp5_publish_project)s" %(software_release_url)s \
+  %(server_url)s "%(key_file)s" "%(cert_file)s" %(computer_id)s \
+  %(computer_partition_id)s

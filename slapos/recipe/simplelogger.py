@@ -24,31 +24,25 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import shutil
-import os
 import sys
 import time
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 def log(args):
-  directory, suffix = args
-  filename = time.strftime('%Y-%m-%d.%H:%M.%s') + suffix
-  with open(os.path.join(directory, filename), 'aw') as logfile:
-    shutil.copyfileobj(sys.stdin, logfile)
+  prefix = time.strftime('%Y-%m-%d.%H:%M.%s:')
+  with open(args['filename'], 'aw') as logfile:
+    for line in sys.stdin:
+      print >> logfile, prefix, line,
+    print >> logfile, prefix, '------------------------'
 
 class Recipe(GenericBaseRecipe):
 
   def install(self):
-    self.logger.info("Simple logger installation")
-    binary = self.options['binary']
-    output = self.options['output']
-    suffix = self.options.get('suffix', '.log')
+    wrapper = self.options['wrapper']
+    log = self.options['log']
 
-    script = self.createPythonScript(binary,
-                                     'slapos.recipe.simplelogger.log',
-                                     arguments=[output, suffix])
-    self.logger.debug("Logger script created at : %r", script)
-    self.logger.info("Simple logger installed.")
-
+    script = self.createPythonScript(wrapper,
+                                     __name__ + '.log',
+                                     arguments=dict(filename=log))
     return [script]

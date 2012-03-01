@@ -24,22 +24,24 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import itertools
-
-import zc.buildout
+import os
+import signal
+import errno
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+def post_rotate(args):
+  pid_file = args['pid_file']
+
+  if os.path.exist(pid_file):
+    with open(pid_file, 'r') as file_:
+      pid = file_.read().strip()
+    os.kill(pid, signal.SIGUSR1)
+
 class Recipe(GenericBaseRecipe):
 
-  def _options(self, options):
-    self.types = ['local', 'remote']
-    self.datas = ['address', 'port']
-    for type_ in self.types:
-      for data in self.datas:
-        opt = '%s-%s' % (type_, data)
-        if opt not in options:
-          raise zc.buildout.UserError("No %s for %s connections." % (data, type_))
+  def install(self):
+    path_list = []
 
     self.isClient = self.optionIsTrue('client', default=False)
     if self.isClient:
@@ -47,25 +49,15 @@ class Recipe(GenericBaseRecipe):
     else:
       self.logger.info("Server mode")
 
-    if 'name' not in options:
-      options['name'] = self.name
-
-
-  def install(self):
-    path_list = []
     conf = {}
 
-    gathered_options = ['%s-%s' % option
-                       for option in itertools.product(self.types,
-                                                        self.datas)]
-    for option in gathered_options:
-      # XXX: Because the options are using dash and the template uses
-      # underscore
-      conf[option.replace('-', '_')] = self.options[option]
+    for type_ in ['remote', 'local']:
+      for data in ['host', 'port']:
+        confkey, opt = ['%s%s%s' % (type_, i, data) for i in ['_', '-']]
+        conf[confkey] = self.options[opt]
 
     pid_file = self.options['pid-file']
     conf.update(pid_file=pid_file)
-    path_list.append(pid_file)
 
     log_file = self.options['log-file']
     conf.update(log=log_file)
@@ -90,5 +82,22 @@ class Recipe(GenericBaseRecipe):
       [self.options['stunnel-binary'], conf_file]
     )
     path_list.append(wrapper)
+
+    if os.path.exists(pid_file):
+      with open(pid_file, 'r') as file_:
+        pid = file_.read().strip()
+      # Reload configuration
+      try:
+        os.kill(int(pid, 10), signal.SIGHUP)
+      except OSError, e:
+        if e.errno == errno.ESRCH: # No such process
+          os.unlink(pid_file)
+        else:
+          raise e
+
+    if 'post-rotate-script' in self.options:
+      self.createPythonScript(self.options['post-rotate-script'],
+                              __name__ + 'post_rotate',
+                              dict(pid_file=pid_file))
 
     return path_list

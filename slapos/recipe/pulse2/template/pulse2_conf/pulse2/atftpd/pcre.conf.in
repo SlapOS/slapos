@@ -1,0 +1,14 @@
+^/tftpboot/revoboot/bin/revoboot.pxe$   bootloader/pxe_boot
+^/bootloader/pxe_boot$                  bootloader/pxe_boot
+^/bootloader/bootsplash.xpm$            bootloader/bootsplash.xpm
+^/bootmenus/default                     bootmenus/default
+^/bootmenus/([0-9A-F]{12})              bootmenus/$1
+^/bootmenus/([0-9A-F]{8})               bootmenus/$1
+^/custom/(.+)                           custom/$1
+^/diskless/kernel$                      diskless/kernel
+^/diskless/initrd$                      diskless/initrd
+^/diskless/memtest$                     diskless/memtest
+^/tools/memtest$                        diskless/memtest
+^/masters/(.+)                          masters/$1
+^/(.*)$                                 ?
+.*                                      ?
