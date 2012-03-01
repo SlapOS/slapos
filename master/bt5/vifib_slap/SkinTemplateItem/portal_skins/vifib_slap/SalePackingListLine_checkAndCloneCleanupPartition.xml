@@ -86,7 +86,7 @@ if newer_newest_movement is not None:\n
   cleanup_delivery = movement.getParentValue()\n
   # setup new cleanup date to now, as it will be newer then any existing document\n
   now = DateTime()\n
-  if now < newer_newest_movement:\n
+  if now < newer_newest_movement.getStartDate():\n
     raise ValueError(\'The movement %s is newer then current time %s so it is impossible to move delivery %s as newer\' % (newer_newest_movement.getRelativeUrl(), now, cleanup_delivery.getRelativeUrl()))\n
   new_cleanup_delivery = cleanup_delivery.Base_createCloneDocument(batch_mode=1)\n
   new_cleanup_delivery.setStartDate(DateTime())\n
