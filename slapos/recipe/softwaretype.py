@@ -37,13 +37,13 @@ import logging
 import zc.buildout
 
 def validLoopBackAddress(ip):
-  if netaddr.IPAddress(ip).is_loopback():
+  if netaddr.IPAddress(ip).is_loopback() and netaddr.valid_ipv4(ip):
     return True
   else:
     return False
 
 def validPublicAddress(ip):
-  return not validLoopBackAddress(ip)
+  return (not validLoopBackAddress(ip)) and netaddr.valid_ipv4(ip):
 
 class Recipe:
 
