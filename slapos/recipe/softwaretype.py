@@ -43,7 +43,7 @@ def validLoopBackAddress(ip):
     return False
 
 def validPublicAddress(ip):
-  return (not validLoopBackAddress(ip)) and netaddr.valid_ipv4(ip):
+  return (not validLoopBackAddress(ip)) and netaddr.valid_ipv4(ip)
 
 class Recipe:
 
