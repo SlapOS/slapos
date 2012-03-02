@@ -49,6 +49,10 @@
             <value> <string>Connection XML is invalid: ${error}</string> </value>
         </item>
         <item>
+            <key> <string>message_expression_false</string> </key>
+            <value> <string>Connection XML expression was false</string> </value>
+        </item>
+        <item>
             <key> <string>portal_type</string> </key>
             <value> <string>TALES Constraint</string> </value>
         </item>
