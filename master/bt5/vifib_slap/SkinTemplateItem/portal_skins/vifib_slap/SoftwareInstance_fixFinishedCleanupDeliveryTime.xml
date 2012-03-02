@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+"""Sometimes it happens that finished (more then confirmed) deliveries are in wrong date order\n
+\n
+This can happen when system operator will edit such delivery in UI, which has lower date precision"""\n
+from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery\n
+\n
+\n
+if context.getPortalType() not in [\'Software Instance\', \'Slave Instance\']:\n
+  raise TypeError(\'%s is not instance\' % context.getPath())\n
+\n
+portal = context.getPortalObject()\n
+cleanup_service = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
+\n
+# check if there is related cleanup delivery\n
+cleanup_delivery_line = portal.portal_catalog.getResultValue(\n
+  portal_type="Sale Packing List Line",\n
+  default_resource_uid=portal.restrictedTraverse(cleanup_service).getUid(),\n
+  default_aggregate_uid=context.getUid(),\n
+  simulation_state=[\'started\', \'stopped\', \'delivered\']\n
+)\n
+\n
+if cleanup_delivery_line is None:\n
+  # nothing to do\n
+  return\n
+\n
+# check if there is related non cleanup delivery *older* then cleanup delivery\n
+other_delivery_line = portal.portal_catalog.getResultValue(\n
+  portal_type="Sale Packing List Line",\n
+  default_resource_uid=\'!= %s\' % portal.restrictedTraverse(cleanup_service).getUid(),\n
+  default_aggregate_uid=context.getUid(),\n
+  **{\'movement.start_date\': Query(**{\'movement.start_date\': cleanup_delivery_line.getStartDate(), \'range\': \'min\'})}\n
+)\n
+\n
+if other_delivery_line:\n
+  # The best guess: cleanup delivery start_date shall be set to its creation_date\n
+  cleanup_delivery = cleanup_delivery_line.getParentValue()\n
+  if cleanup_delivery.getCreationDate() > cleanup_delivery.getStartDate():\n
+    cleanup_delivery.setStartDate(cleanup_delivery.getCreationDate())\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SoftwareInstance_fixFinishedCleanupDeliveryTime</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
