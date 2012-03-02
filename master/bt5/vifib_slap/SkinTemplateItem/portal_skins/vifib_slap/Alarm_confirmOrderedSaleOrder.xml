@@ -60,6 +60,8 @@ portal.portal_catalog.searchAndActivate(\n
   method_id=\'SaleOrderLine_tryToAllocatePartition\',\n
   activate_kw={\'tag\': tag}\n
 )\n
+\n
+context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
         <item>

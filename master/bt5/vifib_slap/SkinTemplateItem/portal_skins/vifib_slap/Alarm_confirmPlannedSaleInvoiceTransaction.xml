@@ -65,6 +65,8 @@ portal.portal_catalog.searchAndActivate(\n
   activate_kw={\'tag\': tag},\n
   **{"delivery.start_date": \'< %s\' % this_month}\n
 )\n
+\n
+context.activate(after_tag=tag).getId()\n
 
 
 ]]></string> </value>
