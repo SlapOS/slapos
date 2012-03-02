@@ -1,9 +1,5 @@
 <workflow_chain>
  <chain>
-  <type>Computer</type>
-  <workflow>vifib_interaction_workflow</workflow>
- </chain>
- <chain>
   <type>Slave Instance</type>
   <workflow>edit_workflow, item_workflow, software_instance_slap_interface_workflow</workflow>
  </chain>
