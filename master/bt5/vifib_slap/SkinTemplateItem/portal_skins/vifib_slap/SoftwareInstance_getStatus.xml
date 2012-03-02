@@ -56,7 +56,11 @@ if context.getPortalType() == "Sale Order Line":\n
 \n
 sale_packing_list_line = context.SoftwareInstance_getInstancePackingListLine()\n
 if sale_packing_list_line is None:\n
-  return \'Destroyed\'\n
+  sale_packing_list_line = context.SoftwareInstance_getInstancePackingListLine(portal_type="Sale Order Line")\n
+  if sale_packing_list_line is None:\n
+    # Let\'s hope the sale order is not indexed yet\n
+    return \'Looking for a free partition\'\n
+\n
 service_url = sale_packing_list_line.getResource()\n
 \n
 portal_preferences = context.getPortalObject().portal_preferences\n
@@ -64,8 +68,12 @@ simulation_state = sale_packing_list_line.getSimulationState()\n
 if service_url == portal_preferences.getPreferredInstanceSetupResource():\n
   if simulation_state == \'delivered\':\n
     return \'Destroyed\'\n
-  elif simulation_state in (\'confirmed\', \'started\'):\n
+  elif simulation_state in (\'confirmed\', ):\n
+    return \'Waiting for partition instanciation\'\n
+  elif simulation_state in (\'started\', ):\n
     return \'Instanciation in progress\'\n
+  elif simulation_state in (\'ordered\', ):\n
+    return \'Looking for a free partition\'\n
   return \'Stopped\'\n
 elif service_url == portal_preferences.getPreferredInstanceCleanupResource():\n
   if simulation_state == \'delivered\':\n
@@ -80,8 +88,8 @@ elif service_url == portal_preferences.getPreferredInstanceHostingResource():\n
     return \'Stop in progress\'\n
   elif simulation_state == \'delivered\':\n
     return \'Stopped\'\n
-  else:\n
-    return \'Unknown\'\n
+\n
+return \'Unable to calculate the status...\'\n
 </string> </value>
         </item>
         <item>

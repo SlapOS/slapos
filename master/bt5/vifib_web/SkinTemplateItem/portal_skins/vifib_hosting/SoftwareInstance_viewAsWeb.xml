@@ -102,7 +102,7 @@
                     <key> <string>normal bis</string> </key>
                     <value>
                       <list>
-                        <string>your_connection_xml</string>
+                        <string>your_connection_listbox</string>
                       </list>
                     </value>
                 </item>

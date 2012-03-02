@@ -50,56 +50,32 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-"""Dirty copy&paste of portal_workflow.software_instance_slap_interface_workflow.scripts.SoftwareInstance_getInstancePackingListLine"""\n
-software_instance = context\n
+            <value> <string>from Products.ERP5Type.Document import newTempDocument\n
 \n
-portal = software_instance.getPortalObject()\n
+return_list = []\n
+try:\n
+  connection_dict = context.getConnectionXmlAsDict()\n
+except:\n
+  return return_list\n
 \n
-# Get services\n
-portal_preferences = portal.portal_preferences\n
-service_uid_list = []\n
+if connection_dict is None:\n
+  return return_list\n
 \n
-if service_relative_url is None:\n
-  for service_relative_url in \\\n
-    (portal_preferences.getPreferredInstanceSetupResource(),\n
-     portal_preferences.getPreferredInstanceHostingResource(),\n
-     portal_preferences.getPreferredInstanceCleanupResource(),\n
-     ):\n
-    service = portal.restrictedTraverse(service_relative_url)\n
-    service_uid_list.append(service.getUid())\n
-else:\n
-  service = portal.restrictedTraverse(service_relative_url)\n
-  service_uid_list.append(service.getUid())\n
-\n
-# Packing List valid state\n
-state_list = []\n
-state_list.extend(portal.getPortalReservedInventoryStateList())\n
-state_list.extend(portal.getPortalTransitInventoryStateList())\n
-state_list.extend(portal.getPortalCurrentInventoryStateList())\n
-\n
-packing_list_line = portal.portal_catalog.getResultValue(\n
-  portal_type=portal_type,\n
-  simulation_state=state_list,\n
-  aggregate_uid=software_instance.getUid(),\n
-  default_resource_uid=service_uid_list,\n
-  sort_on=((\'movement.start_date\', \'DESC\'),),\n
-  limit=1,\n
-)\n
-\n
-return packing_list_line\n
-
-
-]]></string> </value>
+portal = context.getPortalObject()\n
+for k, v in connection_dict.iteritems():\n
+  d = newTempDocument(portal, \'temp\')\n
+  d.edit(connection_key=k, connection_value=v)\n
+  return_list.append(d)\n
+return return_list\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>service_relative_url=None, portal_type="Sale Packing List Line"</string> </value>
+            <value> <string>*args, **kwargs</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_getInstancePackingListLine</string> </value>
+            <value> <string>SoftwareInstance_getConnectionParameterList</string> </value>
         </item>
       </dictionary>
     </pickle>

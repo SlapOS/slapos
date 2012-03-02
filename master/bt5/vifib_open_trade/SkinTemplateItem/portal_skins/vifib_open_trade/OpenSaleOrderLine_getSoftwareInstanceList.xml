@@ -50,26 +50,17 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>subscription_item = context.getAggregateValue(portal_type="Hosting Subscription")\n
+            <value> <string>portal = context.getPortalObject()\n
+subscription_item = context.getAggregateValue(portal_type="Hosting Subscription")\n
 \n
 line_list =  context.portal_catalog(\n
-  portal_type="Sale Packing List Line",\n
-  resource_relative_url=context.portal_preferences.getPreferredInstanceSetupResource(),\n
-  aggregate_uid=subscription_item.getUid())\n
-\n
-order_line_list =  context.portal_catalog( \n
-  portal_type="Sale Order Line",\n
-  resource_relative_url=context.portal_preferences.getPreferredInstanceSetupResource(),\n
-  aggregate_relative_url=subscription_item.getRelativeUrl(),\n
-  simulation_state="ordered")\n
-\n
-# XXX order line has to display (as order is under approval)\n
+  portal_type=["Sale Order Line", "Sale Packing List Line"],\n
+  default_resource_uid=portal.restrictedTraverse(context.portal_preferences.getPreferredInstanceSetupResource()).getUid(),\n
+  default_aggregate_uid=subscription_item.getUid())\n
 \n
 portal_type_list = ["Software Instance", "Slave Instance"]\n
-result = [x.getAggregateValue(portal_type=portal_type_list) for x in line_list]\n
-result.extend([x.getAggregateValue(portal_type=portal_type_list) for x in order_line_list])\n
-# result.extend([x.getObject() for x in order_line_list])\n
-return result\n
+instance_dict = dict([(x.getAggregate(portal_type=portal_type_list), 0) for x in line_list])\n
+return [portal.restrictedTraverse(x) for x in instance_dict.keys()]\n
 </string> </value>
         </item>
         <item>
