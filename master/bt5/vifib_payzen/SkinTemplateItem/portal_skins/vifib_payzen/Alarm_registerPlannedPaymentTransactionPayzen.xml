@@ -58,6 +58,7 @@ portal.portal_catalog.searchAndActivate(\n
       packet_size=1, # just one to minimise errors\n
       activate_kw={\'tag\': tag}\n
       )\n
+context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
         <item>

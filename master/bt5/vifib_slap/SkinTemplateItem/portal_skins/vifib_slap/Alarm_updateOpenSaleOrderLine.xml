@@ -65,6 +65,8 @@ context.portal_catalog.searchAndActivate(\n
   activate_kw={\'tag\':tag},\n
   method_kw={\'stop_date\': stop_date},\n
   portal_type=\'Open Sale Order Line\')\n
+\n
+context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
         <item>
