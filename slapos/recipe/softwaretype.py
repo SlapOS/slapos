@@ -123,10 +123,14 @@ class Recipe:
 
     buildout.add_section('slap-network-information')
     # XXX Hack for beteireflow production
-    buildout.set('slap-network-information', 'local-ipv4', 
-                 self.getLoopbackIPv4Address())
-    buildout.set('slap-network-information', 'global-ipv6', 
-                 self.getGlobalIPv4Address())
+    try:
+      local_ip = self.getLoopbackIPv4Address()
+      global_ip = self.getGlobalIPv4Address()
+    except AttributeError:
+      local_ip = self.getLocalIPv4Address()
+      global_ip = self.getGlobalIPv6Address()
+    buildout.set('slap-network-information', 'local-ipv4', global_ip)
+    buildout.set('slap-network-information', 'global-ipv6', global_ip)
 
     # Copy/paste slap_connection
     buildout.add_section('slap-connection')
