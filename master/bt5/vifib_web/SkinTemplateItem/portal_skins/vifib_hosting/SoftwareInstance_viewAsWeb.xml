@@ -110,6 +110,7 @@
                     <key> <string>right width100 alignr</string> </key>
                     <value>
                       <list>
+                        <string>your_system_message</string>
                         <string>my_text_content</string>
                         <string>my_update_button</string>
                       </list>
