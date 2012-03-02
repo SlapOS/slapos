@@ -47,9 +47,9 @@
 </div>\n
 \n
 <div class="available_menu_option">\n
-  <a tal:attributes="href string:${website_url}/myspace/help">\n
-    <img tal:attributes="src string:${base_url}help_active.png" alt="Help" />\n
-    <br /><span i18n:translate="">Help</span>\n
+  <a tal:attributes="href string:${website_url}/myspace/software">\n
+    <img tal:attributes="src string:${base_url}software_active.png" alt="Software" />\n
+    <br /><span i18n:translate="">Software</span>\n
   </a>\n
 </div>\n
 \n
