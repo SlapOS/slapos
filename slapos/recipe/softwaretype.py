@@ -129,7 +129,7 @@ class Recipe:
     except AttributeError:
       local_ip = self.getLocalIPv4Address()
       global_ip = self.getGlobalIPv6Address()
-    buildout.set('slap-network-information', 'local-ipv4', global_ip)
+    buildout.set('slap-network-information', 'local-ipv4', local_ip)
     buildout.set('slap-network-information', 'global-ipv6', global_ip)
 
     # Copy/paste slap_connection
