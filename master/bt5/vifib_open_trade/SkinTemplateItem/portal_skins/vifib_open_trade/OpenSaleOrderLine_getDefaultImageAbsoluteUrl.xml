@@ -51,28 +51,17 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>subscription_item = context.getAggregateValue(portal_type="Hosting Subscription")\n
+portal = context.getPortalObject()\n
 \n
-line_list =  context.portal_catalog(\n
-  portal_type="Sale Packing List Line",\n
-  resource_relative_url=context.portal_preferences.getPreferredInstanceSetupResource(),\n
-  default_aggregate_uid=subscription_item.getUid())\n
+release = portal.portal_catalog.getResultValue(\n
+  portal_type="Software Release",\n
+  url_string=subscription_item.getRootSoftwareReleaseUrl(),\n
+)\n
+if release is not None:\n
+  software_product = release.getAggregateValue()\n
+  return \'%s/index_html\' % software_product.getDefaultImageAbsoluteUrl()\n
 \n
-line_list = [x.getObject() for x in line_list]\n
-\n
-# Add also sale order under validation\n
-line_list.extend([x.getObject() for x in context.portal_catalog(\n
-  portal_type="Sale Order Line",\n
-  resource_relative_url=context.portal_preferences.getPreferredInstanceSetupResource(),\n
-  default_aggregate_uid=subscription_item.getUid())])\n
-\n
-for delivery_line in line_list:\n
-  software_instance = delivery_line.getAggregateValue(portal_type=\'Software Instance\')\n
-  if software_instance is not None:\n
-    if software_instance.getPredecessorRelatedValue() is None:\n
-      software_release = delivery_line.getAggregateValue(portal_type=\'Software Release\')\n
-      if software_release is not None:\n
-        software_product = software_release.getAggregateValue()\n
-        return \'%s/index_html\' % software_product.getDefaultImageAbsoluteUrl()\n
+return \'\'\n
 </string> </value>
         </item>
         <item>
