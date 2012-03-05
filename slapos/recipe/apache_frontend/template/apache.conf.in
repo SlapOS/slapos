@@ -1,0 +1,74 @@
+# Apache configuration file for Zope
+# Automatically generated
+
+# Basic server configuration
+PidFile "%(pid_file)s"
+LockFile "%(lock_file)s"
+ServerName %(server_name)s
+DocumentRoot %(document_root)s
+
+%(listen)s
+
+ServerAdmin %(server_admin)s
+DefaultType text/plain
+TypesConfig conf/mime.types
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+
+# As backend is trusting REMOTE_USER header unset it always
+RequestHeader unset REMOTE_USER
+
+# SSL Configuration
+%(ssl_snippet)s
+
+# Log configuration
+ErrorLog "%(error_log)s"
+LogLevel warn
+LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
+LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b" common
+CustomLog "%(access_log)s" common
+
+# Directory protection
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+</Directory>
+
+%(path_enable)s
+
+# Rewrite part
+RewriteEngine On
+
+# Define the two rewritemaps : one for zope, one generic
+RewriteMap apachemapzope txt:%(apachemapzope_path)s
+RewriteMap apachemapgeneric txt:%(apachemap_path)s
+
+# First, we check if we have a zope backend server
+# If so, let's use Virtual Host Daemon rewrite
+#RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
+#RewriteRule ^/(\w+)($|/.*) ${apachemapzope:$1}/VirtualHostBase/https/%(apache_domain)s:%(port)s/VirtualHostRoot/_vh_$1$2 [L,P]
+
+# If we have generic backend server, let's rewrite without virtual host daemon
+RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
+RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
+
+# If nothing exist : put a nice error
+ErrorDocument 404 /notfound.html
+
+# List of modules
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule version_module modules/mod_version.so
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule negotiation_module modules/mod_negotiation.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule antiloris_module modules/mod_antiloris.so

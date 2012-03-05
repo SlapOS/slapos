@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.39-dev'
+version = '0.40.1'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -40,6 +40,7 @@ setup(name=name,
       zip_safe=True,
       entry_points={
         'zc.buildout': [
+          'apache.frontend = slapos.recipe.apache_frontend:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
           'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
