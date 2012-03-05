@@ -48,6 +48,23 @@
   width: 180px;\n
 }\n
 \n
+div.listbox-page-navigation button span.image {\n
+    background-repeat: no-repeat;\n
+    display: block;\n
+    height: 22px;\n
+    width: 22px;\n
+}\n
+\n
+div.listbox-page-navigation button {\n
+  vertical-align: middle;\n
+}\n
+\n
+div.listbox-page-navigation button {\n
+    background-color: transparent;\n
+    border: medium none;\n
+    cursor: pointer;\n
+}\n
+\n
 .leftbar ul {\n
 list-style-image:none;\n
 }\n
