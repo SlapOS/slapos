@@ -133,54 +133,54 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(mysqld)
     # backup configuration
-    full_backup = self.options['full-backup-directory']
-    incremental_backup = self.options['incremental-backup-directory']
-    innobackupex_argument_list = [self.options['perl-binary'],
-        self.options['innobackupex-binary'],
-        '--defaults-file=%s' % mysql_conf_file,
-        '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
-        '--ibbackup=%s'% self.options['xtrabackup-binary']]
-    environment = dict(PATH='%s' % self.options['bin-directory'])
-    innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
-    path_list.append(innobackupex_incremental)
-    innobackupex_full = self.createPythonScript(self.options['innobackupex-full'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list, environment])
-    path_list.append(innobackupex_full)
-    backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
-    path_list.append(backup_controller)
-    # maatkit installation
-    for pt_script_name in (
-        'pt-archiver',
-        'pt-config-diff',
-        'pt-deadlock-logger',
-        'pt-duplicate-key-checker',
-        'pt-fifo-split',
-        'pt-find',
-        'pt-fk-error-logger',
-        'pt-heartbeat',
-        'pt-index-usage',
-        'pt-kill',
-        'pt-log-player',
-        'pt-online-schema-change',
-        'pt-query-advisor',
-        'pt-query-digest',
-        'pt-show-grants',
-        'pt-slave-delay',
-        'pt-slave-find',
-        'pt-slave-restart',
-        'pt-table-checksum',
-        'pt-table-sync',
-        'pt-tcp-model',
-        'pt-trend',
-        'pt-upgrade',
-        'pt-variable-advisor',
-        'pt-visual-explain',
-        ):
-      pt_argument_list = [self.options['perl-binary'],
-          self.options['%s-binary' % pt_script_name],
-          '--defaults-file=%s' % mysql_conf_file,
-          '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
-          ]
-      pt_exe = self.createPythonScript(os.path.join(self.options['bin-directory'], pt_script_name), 'slapos.recipe.librecipe.execute.executee', [pt_argument_list, environment])
-      path_list.append(pt_exe)
+#     full_backup = self.options['full-backup-directory']
+#     incremental_backup = self.options['incremental-backup-directory']
+#     innobackupex_argument_list = [self.options['perl-binary'],
+#         self.options['innobackupex-binary'],
+#         '--defaults-file=%s' % mysql_conf_file,
+#         '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+#         '--ibbackup=%s'% self.options['xtrabackup-binary']]
+#     environment = dict(PATH='%s' % self.options['bin-directory'])
+#     innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
+#     path_list.append(innobackupex_incremental)
+#     innobackupex_full = self.createPythonScript(self.options['innobackupex-full'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list, environment])
+#     path_list.append(innobackupex_full)
+#     backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
+#     path_list.append(backup_controller)
+#     # maatkit installation
+#     for pt_script_name in (
+#         'pt-archiver',
+#         'pt-config-diff',
+#         'pt-deadlock-logger',
+#         'pt-duplicate-key-checker',
+#         'pt-fifo-split',
+#         'pt-find',
+#         'pt-fk-error-logger',
+#         'pt-heartbeat',
+#         'pt-index-usage',
+#         'pt-kill',
+#         'pt-log-player',
+#         'pt-online-schema-change',
+#         'pt-query-advisor',
+#         'pt-query-digest',
+#         'pt-show-grants',
+#         'pt-slave-delay',
+#         'pt-slave-find',
+#         'pt-slave-restart',
+#         'pt-table-checksum',
+#         'pt-table-sync',
+#         'pt-tcp-model',
+#         'pt-trend',
+#         'pt-upgrade',
+#         'pt-variable-advisor',
+#         'pt-visual-explain',
+#         ):
+#       pt_argument_list = [self.options['perl-binary'],
+#           self.options['%s-binary' % pt_script_name],
+#           '--defaults-file=%s' % mysql_conf_file,
+#           '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+#           ]
+#       pt_exe = self.createPythonScript(os.path.join(self.options['bin-directory'], pt_script_name), 'slapos.recipe.librecipe.execute.executee', [pt_argument_list, environment])
+#       path_list.append(pt_exe)
 
     return path_list
