@@ -28,6 +28,7 @@
 ##############################################################################
 import unittest
 from VifibMixin import testVifibMixin
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 HTTP_OK = 200
 MOVED_TEMPORARILY = 302
@@ -70,6 +71,7 @@ class TestVifibWebSite(testVifibMixin):
                       response.getHeader('content-type'))
     self.assertTrue("Website is under construction..." in response.getBody())
 
+  @expectedFailure
   def test_04_checkHostingAccess(self):
     """
     Test Hosting Access

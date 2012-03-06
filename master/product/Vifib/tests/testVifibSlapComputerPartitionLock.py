@@ -2,6 +2,7 @@ from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from zExceptions import Unauthorized
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
@@ -47,6 +48,8 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
           portal_type=self.sale_packing_list_line_portal_type)]
     self.assertEqual(0, len(delivery_line_list))
 
+  @expectedFailure
+  # Balance check is disabled so test is irrelevant
   def test_negative_person_balance_request(self):
     """Locked person can not request
     """
@@ -74,6 +77,8 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @expectedFailure
+  # Balance check is disabled so test is irrelevant
   def test_negative_person_balance_request_slave(self):
     """Locked person can not request
     """

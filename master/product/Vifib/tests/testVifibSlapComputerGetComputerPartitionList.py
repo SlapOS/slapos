@@ -3,6 +3,7 @@ from Products.ERP5Type.tests.backportUnittest import skip
 import transaction
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
+from Products.DCWorkflow.DCWorkflow import ValidationFailed
 
 class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin):
   ########################################
@@ -690,11 +691,28 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
   def stepDamageSoftwareInstanceXml(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    software_instance.edit(text_content="""
-    DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""")
+    self.assertRaises(ValidationFailed, software_instance.edit,
+      text_content="""DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""")
+
+  def stepCheckDamageSoftwareInstanceSiteConsistency(self, sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+    self.portal.portal_alarms.vifib_check_consistency.activeSense()
+    transaction.commit()
+    self.tic()
+    consistency_error_list = self.portal.portal_alarms.vifib_check_consistency\
+        .Alarm_getConsistencyCheckReportLineList()
+    self.assertEqual(1, len(consistency_error_list))
+    consistency_error = consistency_error_list[0]
+    self.assertEqual(consistency_error.getObject().getPath(),
+      software_instance.getPath())
+    self.assertTrue('Sla XML is invalid' in str(consistency_error.getMessage()))
+    self.assertTrue(self.portal.portal_alarms.vifib_check_consistency.sense())
+    self.checkDivergency()
 
   def test_Computer_getComputerPartitionList_damaged_xml(self):
-    """Check that getComputerPartitionList works in case of damaged XML on instance."""
+    """Check that getComputerPartitionList works in case of trying to damag XML,
+    which is refused."""
     sequence_list = SequenceList()
     sequence_string = self\
       .prepare_install_requested_computer_partition_sequence_string + """
@@ -728,7 +746,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SlapLogout
 
       LoginERP5TypeTestCase
-      CheckSiteConsistency
+      CheckDamageSoftwareInstanceSiteConsistency
       Logout
     """
     sequence_list.addSequenceString(sequence_string)

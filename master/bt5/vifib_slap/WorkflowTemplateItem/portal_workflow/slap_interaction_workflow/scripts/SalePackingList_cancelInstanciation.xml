@@ -50,7 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_packing_list = state_change[\'object\']\n
+            <value> <string>from DateTime import DateTime\n
+sale_packing_list = state_change[\'object\']\n
 \n
 setup_service_relative_url = sale_packing_list.portal_preferences.getPreferredInstanceSetupResource()\n
 destroy_service_relative_url = sale_packing_list.portal_preferences.getPreferredInstanceCleanupResource()\n
@@ -61,6 +62,7 @@ for sale_packing_list_line in sale_packing_list.contentValues(\n
     # Slapgrid may be already handling this partition, so, create a destroy packing list\n
     # Clone the Packing List\n
     destroy_sale_packing_list = sale_packing_list.Base_createCloneDocument(batch_mode=1)\n
+    destroy_sale_packing_list.setStartDate(DateTime())\n
     # Delete all sub object except line clone\n
     destroy_sale_packing_list.deleteContent([x for x in destroy_sale_packing_list.contentIds() if x!=sale_packing_list_line.getId()])\n
     # Update the remaining line\n

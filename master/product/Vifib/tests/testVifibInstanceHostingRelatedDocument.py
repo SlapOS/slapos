@@ -4,6 +4,7 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.ERP5Type.DateUtils import getClosestDate
 from DateTime import DateTime
 from testVifibOpenOrderSimulation import generateTimeFrameList
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
@@ -550,6 +551,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       uid=sequence['invoice_uid'])
     invoice.setStartDate(getClosestDate(target_date=DateTime())-1)
 
+  @expectedFailure
+  # Subscription deliveries are not build for now.
   def test_OpenOrder_sale_packing_list(self):
     """
     Check that sale_packing_list is generated properly from simulation

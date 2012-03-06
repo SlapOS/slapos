@@ -6,7 +6,7 @@ from random import random
 from slapos import slap
 from zExceptions import Unauthorized
 from DateTime import DateTime
-from Products.ERP5Type.tests.backportUnittest import skip
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
 
@@ -386,25 +386,25 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       'planned',
       sale_invoice.getSimulationState())
     self.assertAlmostEquals(
-      0.836, sale_invoice.getTotalPrice(), 3)
+      0.0, sale_invoice.getTotalPrice(), 3)
 
     # 1 invoice line is expected
     invoice_line_list = sale_invoice.contentValues(
         portal_type="Invoice Line")
-    self.assertEquals(2, len(invoice_line_list))
+    self.assertEquals(1, len(invoice_line_list))
 
     service_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_setup'][0]
-    subscription_line = [x for x in invoice_line_list \
-        if x.getResource() == 'service_module/vifib_instance_subscription'][0]
+#    subscription_line = [x for x in invoice_line_list \
+#        if x.getResource() == 'service_module/vifib_instance_subscription'][0]
 
     self.assertEquals(True, service_line.hasPrice())
     self.assertAlmostEquals(0, service_line.getPrice(), 3)
     self.assertEquals(1, service_line.getQuantity())
 
-    self.assertEquals(True, subscription_line.hasPrice())
-    self.assertAlmostEquals(0.836, subscription_line.getPrice(), 3)
-    self.assertEquals(1, subscription_line.getQuantity())
+#    self.assertEquals(True, subscription_line.hasPrice())
+#    self.assertAlmostEquals(0.836, subscription_line.getPrice(), 3)
+#    self.assertEquals(1, subscription_line.getQuantity())
 
     # 0 transaction line
     transaction_line_list = sale_invoice.contentValues(
@@ -962,6 +962,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals('account_module/bank', sale_line.getSource())
     self.assertEquals('account_module/bank', sale_line.getDestination())
 
+  @expectedFailure
+  # Hosting subscription is disabled, so scenarios are irrelevant
   def test_default_use_case(self):
     """Test full default use case.
 
@@ -1049,15 +1051,23 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         LoginWebUser \
         CheckWaitingInvoice \
         Tic \
-        PayRegistrationPayment \
-        Tic \
-        CheckPaidInvoice \
+        CheckNoNewPayment \
         LoginERP5TypeTestCase \
         CheckSiteConsistency \
         Logout \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+#        PayRegistrationPayment \
+#        Tic \
+#        CheckPaidInvoice \
+
+  def stepCheckNoNewPayment(self, sequence, **kw):
+    """
+    """
+    self.assertEqual(None, self.portal.portal_catalog.getResultValue(
+        portal_type="Payment Transaction",
+        simulation_state="planned"))
 
   def stepCheckComplexInvoice(self, sequence, **kw):
     """
@@ -1240,6 +1250,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals('account_module/bank', sale_line.getSource())
     self.assertEquals('account_module/bank', sale_line.getDestination())
 
+  @expectedFailure
+  # Hosting subscription is disabled, so scenarios are irrelevant
   def test_aggregated_use_case(self):
     """Test a more complex use case with many packing list agregated
     """
