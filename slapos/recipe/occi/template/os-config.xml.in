@@ -1,0 +1,16 @@
+<os_configs>
+       <os_config
+             id="e1f892e3-0001-4326-8866-9354b95d3b17"
+             name="%(userid)s"
+             user="%(userid)s"
+             password="%(password)s"
+             namespace="%(domain)s"
+             description="ACCORDS rocks"
+             agent=’OpenStackClient/1.0a.0.01’
+             host=’http://94.143.114.137:5000/v2.0/’
+             version="v1.1"
+             authenticate=""
+             base=""
+             tls="0"
+             current="0" />
+</os_configs>

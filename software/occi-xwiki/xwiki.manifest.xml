@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF8"?>
+<manifest name="pocxwiki" xmlns="http://www.compatibleone.fr/schemes/cords.xsd">
+
+<description>This manifest describes the CompatibleOne XWIKI Proof of Concept, comprising
+two appliance nodes, a web application server front end connected to a backe end sql database engine and whilst allowing public access to service instances of the manifest restricts administration access to the list of persons described in the account section.</description> 
+	
+<node name="Sqldatabase">
+<infrastructure name="database">
+<compute name="FastDualCore" cores="2" speed="3GHz" architecture="x686" memory="8GB"/>
+<storage name="LargeDisk" size="1TB" type="SATA"/>
+<network name="EtherNet" vlan="true" label="database"/>
+</infrastructure>
+<image name="MySQL">
+<system name="debian squeeze"/>
+<package name="MySql"/>
+<package name="XwikiData"/>
+<package name="XwikiDataPatch"/>
+</image>	
+</node> 
+
+<node name="Xwiki">
+<infrastructure name="LAMPServer">
+<compute name="FastQuadCore" cores="4" speed="3GHz" architecture="x686" memory="32GB"/>
+<storage name="MediumDisk" size="160GB" type="SATA"/>
+<network name="EtherNet" vlan="true" label="database"/>
+</infrastructure>
+<image name="Xwiki">
+<system name="debian squeeze"/>
+<package name="Apache"/>
+<package name="Php" version="5"/>
+<package name="TomCat"/>
+<package name="XwikiApplication"/>
+<package name="XwikiCodePatch"/>
+</image>
+</node> 
+
+<configuration>
+<action type="cordscript" expression="Xwiki.configure(Sqldatabase.hostname);"/>
+</configuration>
+
+<security name="public" level="public"/>
+<account name="poc1">
+<user name="fabio"/>
+<user name="Jamie"/>
+<user name="stephane"/>
+<user name="brian"/>
+<user name="jean"/>
+</account>
+
+</manifest>
