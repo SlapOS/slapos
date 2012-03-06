@@ -26,7 +26,7 @@
 ##############################################################################
 import os
 from slapos.recipe.librecipe import GenericBaseRecipe
-form subprocess import Popen
+from subprocess import Popen
 
 class Recipe(GenericBaseRecipe):
   def install(self):
@@ -35,7 +35,6 @@ class Recipe(GenericBaseRecipe):
 
     # Generate os-config.xml
     os_config_parameters = dict(
-        userid=self.options['userid'],
         userid=self.options['userid'],
         password=self.options['password'],
         domain=self.options['domain'],
@@ -59,8 +58,8 @@ class Recipe(GenericBaseRecipe):
 
     # Generate wrapper
     # XXX create wrapper
-    path_list.append(self.createExecutable(self.options['server-wrapper'],
-      self.substituteTemplate(self.getTemplateFilename('accords.in'),
-        config)))
+    #path_list.append(self.createExecutable(self.options['server-wrapper'],
+    #  self.substituteTemplate(self.getTemplateFilename('accords.in'),
+    #    config)))
 
     return path_list
