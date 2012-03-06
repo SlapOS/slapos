@@ -1,0 +1,213 @@
+From 50ec7439e80bd6a77346dc6482895e481d8cd43a Mon Sep 17 00:00:00 2001
+From: Antoine Catton <acatton@tiolive.com>
+Date: Tue, 10 Jan 2012 18:30:20 +0100
+Subject: [PATCH] Switch to IPv6
+
+---
+ libhttp/http.h             |    4 ++--
+ libhttp/httpconnection.c   |   11 ++++++++++-
+ libhttp/server.c           |   33 +++++++++++++++++++--------------
+ libhttp/server.h           |    6 +++---
+ shellinabox/shellinaboxd.c |   14 +++++++-------
+ 5 files changed, 41 insertions(+), 27 deletions(-)
+
+diff --git a/libhttp/http.h b/libhttp/http.h
+index e7840fa..5cd61e3 100644
+--- a/libhttp/http.h
++++ b/libhttp/http.h
+@@ -66,8 +66,8 @@ typedef struct ServerConnection ServerConnection;
+ typedef struct Server Server;
+ typedef struct URL URL;
+ 
+-Server *newCGIServer(int localhostOnly, int portMin, int portMax, int timeout);
+-Server *newServer(int localhostOnly, int port);
++Server *newCGIServer(char *ipv6, int portMin, int portMax, int timeout);
++Server *newServer(char *ipv6, int port);
+ void deleteServer(Server *server);
+ int  serverGetListeningPort(Server *server);
+ int  serverGetFd(Server *server);
+diff --git a/libhttp/httpconnection.c b/libhttp/httpconnection.c
+index c8e69f6..cae467f 100644
+--- a/libhttp/httpconnection.c
++++ b/libhttp/httpconnection.c
+@@ -823,8 +823,17 @@ static int httpHandleCommand(struct HttpConnection *http,
+   const char *host                         = getFromHashMap(&http->header,
+                                                             "host");
+   if (host) {
++    int brackets = 0; // For IPv6 hosts
+     for (char ch; (ch = *host) != '\000'; host++) {
+-      if (ch == ':') {
++      if (ch == '[') {
++          brackets = 1;
++          break;
++      }
++      if (ch == ']') {
++          brackets = 0;
++          break;
++      }
++      if (!brackets && ch == ':') {
+         *(char *)host                      = '\000';
+         break;
+       }
+diff --git a/libhttp/server.c b/libhttp/server.c
+index f52a269..2c30bd8 100644
+--- a/libhttp/server.c
++++ b/libhttp/server.c
+@@ -170,19 +170,19 @@ static int serverQuitHandler(struct HttpConnection *http, void *arg) {
+   return HTTP_DONE;
+ }
+ 
+-struct Server *newCGIServer(int localhostOnly, int portMin, int portMax,
++struct Server *newCGIServer(char *ipv6, int portMin, int portMax,
+                             int timeout) {
+   struct Server *server;
+   check(server = malloc(sizeof(struct Server)));
+-  initServer(server, localhostOnly, portMin, portMax, timeout);
++  initServer(server, ipv6, portMin, portMax, timeout);
+   return server;
+ }
+ 
+-struct Server *newServer(int localhostOnly, int port) {
+-  return newCGIServer(localhostOnly, port, port, -1);
++struct Server *newServer(char *ipv6, int port) {
++  return newCGIServer(ipv6, port, port, -1);
+ }
+ 
+-void initServer(struct Server *server, int localhostOnly, int portMin,
++void initServer(struct Server *server, char *ipv6, int portMin,
+                 int portMax, int timeout) {
+   server->looping               = 0;
+   server->exitAll               = 0;
+@@ -192,14 +192,19 @@ void initServer(struct Server *server, int localhostOnly, int portMin,
+   server->numConnections        = 0;
+ 
+   int true                      = 1;
+-  server->serverFd              = socket(PF_INET, SOCK_STREAM, 0);
++  server->serverFd              = socket(PF_INET6, SOCK_STREAM, 0);
+   check(server->serverFd >= 0);
+   check(!setsockopt(server->serverFd, SOL_SOCKET, SO_REUSEADDR,
+                     &true, sizeof(true)));
+-  struct sockaddr_in serverAddr = { 0 };
+-  serverAddr.sin_family         = AF_INET;
+-  serverAddr.sin_addr.s_addr    = htonl(localhostOnly
+-                                        ? INADDR_LOOPBACK : INADDR_ANY);
++  struct sockaddr_in6 serverAddr = { 0 };
++  serverAddr.sin6_family         = AF_INET6;
++  if (ipv6 != NULL) {
++    if (!inet_pton(AF_INET6, ipv6, serverAddr.sin6_addr.s6_addr)) {
++        fatal("Bad ipv6 address");
++    }
++  } else {
++    serverAddr.sin6_addr = in6addr_any;
++  }
+ 
+   // Linux unlike BSD does not have support for picking a local port range.
+   // So, we have to randomly pick a port from our allowed port range, and then
+@@ -214,14 +219,14 @@ void initServer(struct Server *server, int localhostOnly, int portMin,
+     int portStart               = rand() % (portMax - portMin + 1) + portMin;
+     for (int p = 0; p <= portMax-portMin; p++) {
+       int port                  = (p+portStart)%(portMax-portMin+1)+ portMin;
+-      serverAddr.sin_port       = htons(port);
++      serverAddr.sin6_port       = htons(port);
+       if (!bind(server->serverFd, (struct sockaddr *)&serverAddr,
+                 sizeof(serverAddr))) {
+         break;
+       }
+-      serverAddr.sin_port       = 0;
++      serverAddr.sin6_port       = 0;
+     }
+-    if (!serverAddr.sin_port) {
++    if (!serverAddr.sin6_port) {
+       fatal("Failed to find any available port");
+     }
+   }
+@@ -231,7 +236,7 @@ void initServer(struct Server *server, int localhostOnly, int portMin,
+   check(!getsockname(server->serverFd, (struct sockaddr *)&serverAddr,
+                      &socklen));
+   check(socklen == sizeof(serverAddr));
+-  server->port                  = ntohs(serverAddr.sin_port);
++  server->port                  = ntohs(serverAddr.sin6_port);
+   info("Listening on port %d", server->port);
+ 
+   check(server->pollFds         = malloc(sizeof(struct pollfd)));
+diff --git a/libhttp/server.h b/libhttp/server.h
+index bb879fb..5ffb698 100644
+--- a/libhttp/server.h
++++ b/libhttp/server.h
+@@ -78,10 +78,10 @@ struct Server {
+   struct SSLSupport       ssl;
+ };
+ 
+-struct Server *newCGIServer(int localhostOnly, int portMin, int portMax,
++struct Server *newCGIServer(char *ipv6, int portMin, int portMax,
+                             int timeout);
+-struct Server *newServer(int localhostOnly, int port);
+-void initServer(struct Server *server, int localhostOnly, int portMin,
++struct Server *newServer(char *ipv6, int port);
++void initServer(struct Server *server, char *ipv6, int portMin,
+                 int portMax, int timeout);
+ void destroyServer(struct Server *server);
+ void deleteServer(struct Server *server);
+diff --git a/shellinabox/shellinaboxd.c b/shellinabox/shellinaboxd.c
+index dcf05ff..2d1d758 100644
+--- a/shellinabox/shellinaboxd.c
++++ b/shellinabox/shellinaboxd.c
+@@ -80,7 +80,7 @@
+ static int            port;
+ static int            portMin;
+ static int            portMax;
+-static int            localhostOnly = 0;
++static char           *ipv6 = NULL;
+ static int            noBeep        = 0;
+ static int            numericHosts  = 0;
+ static int            enableSSL     = 1;
+@@ -747,7 +747,7 @@ static void usage(void) {
+           "  -g, --group=GID             switch to this group (default: %s)\n"
+           "  -h, --help                  print this message\n"
+           "      --linkify=[none|normal|agressive] default is \"normal\"\n"
+-          "      --localhost-only        only listen on 127.0.0.1\n"
++          "      --ipv6                  listen on a specific ipv6\n"
+           "      --no-beep               suppress all audio output\n"
+           "  -n, --numeric               do not resolve hostnames\n"
+           "  -p, --port=PORT             select a port (default: %d)\n"
+@@ -839,7 +839,7 @@ static void parseArgs(int argc, char * const argv[]) {
+       { "static-file",      1, 0, 'f' },
+       { "group",            1, 0, 'g' },
+       { "linkify",          1, 0,  0  },
+-      { "localhost-only",   0, 0,  0  },
++      { "ipv6",             1, 0,  0  },
+       { "no-beep",          0, 0,  0  },
+       { "numeric",          0, 0, 'n' },
+       { "port",             1, 0, 'p' },
+@@ -1001,8 +1001,8 @@ static void parseArgs(int argc, char * const argv[]) {
+               "\"none\", \"normal\", or \"aggressive\".");
+       }
+     } else if (!idx--) {
+-      // Localhost Only
+-      localhostOnly        = 1;
++      // IPv6
++      ipv6 = optarg;
+     } else if (!idx--) {
+       // No Beep
+       noBeep               = 1;
+@@ -1197,7 +1197,7 @@ int main(int argc, char * const argv[]) {
+   // Create a new web server
+   Server *server;
+   if (port) {
+-    check(server  = newServer(localhostOnly, port));
++    check(server  = newServer(ipv6, port));
+     dropPrivileges();
+     setUpSSL(server);
+   } else {
+@@ -1217,7 +1217,7 @@ int main(int argc, char * const argv[]) {
+       _exit(0);
+     }
+     check(!NOINTR(close(fds[0])));
+-    check(server  = newCGIServer(localhostOnly, portMin, portMax,
++    check(server  = newCGIServer(ipv6, portMin, portMax,
+                                  AJAX_TIMEOUT));
+     cgiServer     = server;
+     setUpSSL(server);
+-- 
+1.7.6.5
+

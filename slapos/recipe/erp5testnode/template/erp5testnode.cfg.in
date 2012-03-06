@@ -1,0 +1,31 @@
+[testnode]
+slapos_directory = %(slapos_directory)s
+working_directory = %(slapos_directory)s
+test_suite_directory = %(test_suite_directory)s
+log_directory = %(log_directory)s
+run_directory = %(run_directory)s
+proxy_host = %(proxy_host)s
+proxy_port = %(proxy_port)s
+test_suite_title = %(test_suite_title)s
+test_suite = %(test_suite)s
+node_quantity = %(node_quantity)s
+test_node_title = %(test_node_title)s
+project_title= %(project_title)s
+ipv4_address = %(ipv4_address)s
+ipv6_address = %(ipv6_address)s
+test_suite_master_url = %(test_suite_master_url)s
+bt5_path = %(bt5_path)s
+
+# Binaries
+git_binary = %(git_binary)s
+slapgrid_partition_binary = %(slapgrid_partition_binary)s
+slapgrid_software_binary = %(slapgrid_software_binary)s
+slapproxy_binary = %(slapproxy_binary)s
+zip_binary = %(zip_binary)s
+
+[environment]
+PATH = %(PATH)s
+
+%(instance_dict)s
+
+%(repository_list)s

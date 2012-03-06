@@ -1,0 +1,18 @@
+[PHP]
+engine = On
+safe_mode = Off
+expose_php = Off
+error_reporting = E_ALL & ~(E_DEPRECATED|E_NOTICE|E_WARNING)
+display_errors = On
+display_startup_errors = Off
+log_errors = On
+log_errors_max_len = 1024
+ignore_repeated_errors = Off
+ignore_repeated_source = Off
+session.save_path = "%(tmp_directory)s"
+session.auto_start = 0
+date.timezone = Europe/Paris
+file_uploads = On
+upload_max_filesize = 8M
+post_max_size = 8M
+magic_quotes_gpc=0ff

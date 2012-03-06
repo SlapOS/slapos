@@ -1,0 +1,53 @@
+[main]
+disable = 0
+dbdriver = mysql
+dbhost = %(mysql_host)s
+dbport = %(mysql_port)s
+dbuser = %(mysql_user)s
+dbpasswd = %(mysql_password)s
+dbname = glpi
+# dbsslenable = 0
+# dbsslca =
+# dbsslcert =
+# dbsslkey =
+# Database connection lifetime
+# dbpoolrecycle = 60
+# Database connection pool size
+# dbpoolsize = 5
+
+# Allow users to filter computers list using an entity selector
+localisation = True
+# Accepted GLPI profiles. A user must have her/his GLPI profile in this list
+# else she/he can't display any computers from the GLPI inventory
+# active_profiles = profile1 profile2 profile3
+# Only display computers with the specified state
+# filter_on = state=3
+
+# Give the uri to link to for a computer inventory
+# glpi_computer_uri =
+# should be something like that :
+# glpi_computer_uri = http://localhost/glpi/front/computer.form.php?ID=
+
+# Tell whether the query manager of the dyngroup plugin can use this module
+[querymanager]
+activate = True
+
+# GLPI authentication configuration
+#[authentication_glpi]
+# URL to connect to the GLPI HTTP interface ?
+#baseurl = http://glpi-server/glpi/
+
+# GLPI provisioning configuration
+#[provisioning_glpi]
+# Users that will never be provisioned
+#exclude = root
+# Before provisioning, should we perform a GLPI authentication to create or
+# update the user informations in the GLPI database ?
+#doauth = 1
+# MMC web interface ACLs definition according to the user GLPI profile
+#profile_acl_profile1 = :##:base#main#default
+#profile_acl_profile2 =
+#profile_acl_profile3 =
+# If the user belong to more than one profile, the first profile of this list
+# will be used
+#profiles_order = profile1 profile2 profile3
