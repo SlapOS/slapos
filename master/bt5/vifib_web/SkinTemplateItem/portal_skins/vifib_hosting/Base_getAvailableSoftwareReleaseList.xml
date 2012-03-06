@@ -50,18 +50,10 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>subscription_item = context.getAggregateValue(portal_type="Hosting Subscription")\n
-portal = context.getPortalObject()\n
-\n
-release = portal.portal_catalog.getResultValue(\n
-  portal_type="Software Release",\n
-  url_string=subscription_item.getRootSoftwareReleaseUrl(),\n
+            <value> <string>kw[\'software_release.state\'] = [\'delivered\', \'stopped\']\n
+return context.portal_catalog(\n
+  **kw\n
 )\n
-if release is not None:\n
-  software_product = release.getAggregateValue()\n
-  return \'%s/index_html\' % software_product.getDefaultImageAbsoluteUrl()\n
-\n
-return \'\'\n
 </string> </value>
         </item>
         <item>
@@ -70,7 +62,7 @@ return \'\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>OpenSaleOrderLine_getDefaultImageAbsoluteUrl</string> </value>
+            <value> <string>Base_getAvailableSoftwareReleaseList</string> </value>
         </item>
       </dictionary>
     </pickle>

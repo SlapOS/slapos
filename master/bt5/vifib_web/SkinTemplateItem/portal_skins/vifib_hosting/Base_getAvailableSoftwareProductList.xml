@@ -50,18 +50,17 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>subscription_item = context.getAggregateValue(portal_type="Hosting Subscription")\n
-portal = context.getPortalObject()\n
+            <value> <string>from Products.ERP5Type.Cache import CachingMethod\n
 \n
-release = portal.portal_catalog.getResultValue(\n
-  portal_type="Software Release",\n
-  url_string=subscription_item.getRootSoftwareReleaseUrl(),\n
-)\n
-if release is not None:\n
-  software_product = release.getAggregateValue()\n
-  return \'%s/index_html\' % software_product.getDefaultImageAbsoluteUrl()\n
+def getSoftwareReleaseList(**kw):\n
+  software_product_list = []\n
+  for sr in context.Base_getAvailableSoftwareReleaseList(**kw):\n
+    sp = sr.getAggregateValue()\n
+    if sp not in software_product_list:\n
+      software_product_list.append(sp)\n
+  return software_product_list\n
 \n
-return \'\'\n
+return CachingMethod(getSoftwareReleaseList, id=\'getSoftwareReleaseList\', cache_factory=\'erp5_content_short\')(**kw)\n
 </string> </value>
         </item>
         <item>
@@ -70,7 +69,7 @@ return \'\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>OpenSaleOrderLine_getDefaultImageAbsoluteUrl</string> </value>
+            <value> <string>Base_getAvailableSoftwareProductList</string> </value>
         </item>
       </dictionary>
     </pickle>
