@@ -25,6 +25,7 @@
 #
 ##############################################################################
 import os
+import shutil
 from slapos.recipe.librecipe import GenericBaseRecipe
 from subprocess import Popen
 
@@ -50,16 +51,20 @@ class Recipe(GenericBaseRecipe):
     ).communicate()
 
     # Generate manifest
-    manifest_origin_location = self.options['manifest']
+    manifest_origin_location = self.options['manifest-source']
     manifest_location = self.options['manifest-destination']
     
-    self.createFile(manifest_origin_location, manifest_location)
+    shutil.copy(manifest_origin_location, manifest_location)
     path_list.append(manifest_location)
 
     # Generate wrapper
-    # XXX create wrapper
-    #path_list.append(self.createExecutable(self.options['server-wrapper'],
-    #  self.substituteTemplate(self.getTemplateFilename('accords.in'),
-    #    config)))
+    wrapper_config_dict = dict(
+        poc_location=poc_location,
+        manifest_name=self.options['manifest-name'],
+        # XXX this is workaround
+        accords_lib_directory=self.options['accords_lib_directory'])
+    path_list.append(self.createExecutable(self.options['accords'],
+      self.substituteTemplate(self.getTemplateFilename('accords.in'),
+        wrapper_config_dict)))
 
     return path_list
