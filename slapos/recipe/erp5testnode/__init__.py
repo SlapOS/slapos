@@ -58,7 +58,7 @@ class Recipe(GenericBaseRecipe):
       config_instance_dict.write(value)
       CONFIG['instance_dict'] = value.getvalue()
 
-    vcs_repository_list = json.loads(self.options['repository-list'])
+    vcs_repository_list = json.loads(self.options['vcs-repository-list'])
     config_repository_list = ConfigParser.ConfigParser()
     i = 0
     for repository in vcs_repository_list:
