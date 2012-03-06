@@ -386,25 +386,25 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       'planned',
       sale_invoice.getSimulationState())
     self.assertAlmostEquals(
-      0.836, sale_invoice.getTotalPrice(), 3)
+      0.0, sale_invoice.getTotalPrice(), 3)
 
     # 1 invoice line is expected
     invoice_line_list = sale_invoice.contentValues(
         portal_type="Invoice Line")
-    self.assertEquals(2, len(invoice_line_list))
+    self.assertEquals(1, len(invoice_line_list))
 
     service_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_setup'][0]
-    subscription_line = [x for x in invoice_line_list \
-        if x.getResource() == 'service_module/vifib_instance_subscription'][0]
+#    subscription_line = [x for x in invoice_line_list \
+#        if x.getResource() == 'service_module/vifib_instance_subscription'][0]
 
     self.assertEquals(True, service_line.hasPrice())
     self.assertAlmostEquals(0, service_line.getPrice(), 3)
     self.assertEquals(1, service_line.getQuantity())
 
-    self.assertEquals(True, subscription_line.hasPrice())
-    self.assertAlmostEquals(0.836, subscription_line.getPrice(), 3)
-    self.assertEquals(1, subscription_line.getQuantity())
+#    self.assertEquals(True, subscription_line.hasPrice())
+#    self.assertAlmostEquals(0.836, subscription_line.getPrice(), 3)
+#    self.assertEquals(1, subscription_line.getQuantity())
 
     # 0 transaction line
     transaction_line_list = sale_invoice.contentValues(
