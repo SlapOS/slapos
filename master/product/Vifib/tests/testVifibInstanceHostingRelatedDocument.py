@@ -62,8 +62,10 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
       # fetch open order, open order line and subscription
       person = self.portal.person_module['test_vifib_customer']
-      open_order = \
-        person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
+      open_order = self.portal.portal_catalog.getResultValue(
+        default_destination_decision_uid=person.getUid(),
+        portal_type="Open Sale Order",
+        validation_state='validated')
       open_order_line = \
         open_order.contentValues(portal_type="Open Sale Order Line")[0]
 

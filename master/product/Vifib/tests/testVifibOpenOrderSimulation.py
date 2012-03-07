@@ -19,8 +19,10 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     # find related documents: open order, open order line,
     # subscription item, etc.
     person = self.portal.person_module['test_vifib_customer']
-    open_order = \
-      person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
+    open_order = self.portal.portal_catalog.getResultValue(
+      default_destination_decision_uid=person.getUid(),
+      validation_state='validated',
+      portal_type="Open Sale Order")
     open_order_line_list = \
       open_order.contentValues(portal_type="Open Sale Order Line")
     self.assertEquals(1, len(open_order_line_list))
@@ -164,8 +166,10 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
 
   def stepCheckThreeTopLevelSimulationMovement(self, sequence, **kw):
     person = self.portal.person_module['test_vifib_customer']
-    open_order = \
-      person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
+    open_order = self.portal.portal_catalog.getResultValue(
+      default_destination_decision_uid=person.getUid(),
+      validation_state='validated',
+      portal_type="Open Sale Order")
     open_order_line_list = \
       open_order.contentValues(portal_type="Open Sale Order Line")
     self.assertEquals(1, len(open_order_line_list))
