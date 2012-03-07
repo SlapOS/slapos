@@ -3454,16 +3454,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition_uid = sequence["computer_partition_uid"]
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=computer_partition_uid)
-    hosting_date = DateTime()
-    setup_date = hosting_date + 1
+    hosting_date = DateTime() - 1
     for movement in computer_partition.getAggregateRelatedValueList(
         portal_type=self.sale_packing_list_line_portal_type):
       if movement.getResource() == \
           movement.portal_preferences.getPreferredInstanceHostingResource():
         movement.edit(start_date=hosting_date)
-      elif movement.getResource() == \
-          movement.portal_preferences.getPreferredInstanceSetupResource():
-        movement.edit(start_date=setup_date)
 
   def stepCheckPackingListAmountTwoComputerPartition(self, sequence, **kw):
     computer_partition_uid = sequence["computer_partition_uid"]
@@ -3479,16 +3475,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition_uid = sequence["computer_partition_uid"]
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=computer_partition_uid)
-    setup_date = DateTime()
-    hosting_date = setup_date + 1
+    hosting_date = DateTime() + 1
     for movement in computer_partition.getAggregateRelatedValueList(
         portal_type=self.sale_packing_list_line_portal_type):
       if movement.getResource() == \
           movement.portal_preferences.getPreferredInstanceHostingResource():
         movement.edit(start_date=hosting_date)
-      elif movement.getResource() == \
-          movement.portal_preferences.getPreferredInstanceSetupResource():
-        movement.edit(start_date=setup_date)
 
   def stepSetPurchasePackingListLineSetupResource(self, sequence, **kw):
     """
@@ -3508,16 +3500,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition_uid = sequence["computer_uid"]
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=computer_partition_uid)
-    hosting_date = DateTime()
-    setup_date = hosting_date + 1
+    hosting_date = DateTime() - 1
     service_uid = sequence['service_uid']
     for movement in computer_partition.getAggregateRelatedValueList(
         portal_type=self.purchase_packing_list_line_portal_type):
       if movement.getResourceUid() == service_uid:
         movement.edit(start_date=hosting_date)
-      elif movement.getResource() == \
-          movement.portal_preferences.getPreferredSoftwareSetupResource():
-        movement.edit(start_date=setup_date)
 
   def stepSetAccountingAfterSetupStartDate(self, sequence, **kw):
     """
@@ -3526,16 +3514,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition_uid = sequence["computer_uid"]
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=computer_partition_uid)
-    setup_date = DateTime()
-    hosting_date = setup_date + 1
+    hosting_date = DateTime() + 1
     service_uid = sequence['service_uid']
     for movement in computer_partition.getAggregateRelatedValueList(
         portal_type=self.sale_packing_list_line_portal_type):
       if movement.getResourceUid() == service_uid:
         movement.edit(start_date=hosting_date)
-      elif movement.getResource() == \
-          movement.portal_preferences.getPreferredSoftwareSetupResource():
-        movement.edit(start_date=setup_date)
 
   def _checkComputerPartitionAndRelatedSoftwareInstance(self,
       computer_partition):
