@@ -6,7 +6,7 @@ from random import random
 from slapos import slap
 from zExceptions import Unauthorized
 from DateTime import DateTime
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
+from Products.ERP5Type.tests.backportUnittest import skip
 
 class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
 
@@ -962,8 +962,6 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals('account_module/bank', sale_line.getSource())
     self.assertEquals('account_module/bank', sale_line.getDestination())
 
-  @expectedFailure
-  # Hosting subscription is disabled, so scenarios are irrelevant
   def test_default_use_case(self):
     """Test full default use case.
 
@@ -1250,8 +1248,6 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals('account_module/bank', sale_line.getSource())
     self.assertEquals('account_module/bank', sale_line.getDestination())
 
-  @expectedFailure
-  # Hosting subscription is disabled, so scenarios are irrelevant
   def test_aggregated_use_case(self):
     """Test a more complex use case with many packing list agregated
     """
