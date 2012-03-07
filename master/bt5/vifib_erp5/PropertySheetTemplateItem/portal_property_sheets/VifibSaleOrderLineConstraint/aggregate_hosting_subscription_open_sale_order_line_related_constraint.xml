@@ -26,7 +26,7 @@
         </item>
         <item>
             <key> <string>expression</string> </key>
-            <value> <string>python: len(context.getAggregateValue(portal_type=\'Hosting Subscription\').getAggregateRelatedList(portal_type=\'Open Sale Order Line\')) == 1</string> </value>
+            <value> <string>python: context.getPortalObject().portal_catalog.countResults(portal_type=\'Open Sale Order Line\', validation_state=\'validated\', default_aggregate_uid=context.getAggregateValue(portal_type=\'Hosting Subscription\').getUid())[0][0] == 1</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
