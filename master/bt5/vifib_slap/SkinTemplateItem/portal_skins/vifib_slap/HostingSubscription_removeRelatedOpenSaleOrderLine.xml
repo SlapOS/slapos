@@ -66,9 +66,13 @@ for sale_packing_list_line in portal.portal_catalog(\n
   simulation_state=NegatedQuery(Query(simulation_state="delivered")),\n
   ):\n
   if sale_packing_list_line.getSimulationState() != \'delivered\':\n
+    raise ValueError(sale_packing_list_line.getPath())\n
     all_delivered = False\n
 if all_delivered:\n
-  open_order_line = context.getAggregateRelatedValue(portal_type="Open Sale Order Line")\n
+  open_order_line = portal.portal_catalog.getResultValue(\n
+    default_aggregate_uid=context.getUid(),\n
+    portal_type=\'Open Sale Order Line\',\n
+    validation_state=\'validated\')\n
   if open_order_line is not None:\n
     # XXX: Mahybe system shall *NOT* work without Open Sale Orders\n
     open_order_line.getParentValue().getDestinationDecisionValue().Person_updateOpenOrder(remove_id=open_order_line.getId())\n
