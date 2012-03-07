@@ -50,18 +50,23 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>person = context\n
+            <value> <string encoding="cdata"><![CDATA[
+
+from DateTime import DateTime\n
+person = context\n
 portal = person.getPortalObject()\n
-open_sale_order = portal.portal_catalog.getResultValue(\n
+previous_open_sale_order = portal.portal_catalog.getResultValue(\n
       default_destination_section_uid=person.getUid(),\n
       portal_type="Open Sale Order",\n
       validation_state="validated")\n
 \n
+now = DateTime()\n
 tag = \'%s_updateOpenOrder\' % person.getUid()\n
 kw = {\'activate_kw\': {\'tag\': tag}}\n
-if open_sale_order is None:\n
-  if portal.portal_activities.countMessageWithTag(tag) == 0:\n
-    open_order = portal.open_sale_order_module.newContent(\n
+if portal.portal_activities.countMessageWithTag(tag) == 0:\n
+  open_sale_order = None\n
+  if previous_open_sale_order is None:\n
+    open_sale_order = portal.open_sale_order_module.newContent(\n
           source=\'organisation_module/vifib_internet\',\n
           source_section=\'organisation_module/vifib_internet\',\n
           destination_section=person.getRelativeUrl(),\n
@@ -69,14 +74,46 @@ if open_sale_order is None:\n
           destination=person.getRelativeUrl(),\n
           price_currency=\'currency_module/EUR\',\n
           specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
-          title="ViFiB Open Order", **kw)\n
+          title="ViFiB Open Order",\n
+          **kw)\n
+  if remove_id is not None:\n
+    if open_sale_order is not None:\n
+      open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
+    open_sale_order.deleteContent(remove_id, **kw)\n
+  if add_kw is not None:\n
+    add_kw.update(kw)\n
+    if open_sale_order is not None:\n
+      open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
+    open_sale_order.newContent(**add_kw)\n
+  if stop_date is not None:\n
+    # check if needed to update\n
+    need_update = False\n
+    for line in previous_open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
+      if line.getStopDate() < stop_date:\n
+        need_update = True\n
+        break\n
+    if need_update:\n
+      if open_sale_order is not None:\n
+        open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
+      for line in open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
+        if line.getStopDate() < stop_date:\n
+          line.setStopDate(stop_date, **kw)\n
+  if previous_open_sale_order is not None and open_sale_order is not None:\n
+    previous_open_sale_order.setExpirationDate(now, **kw)\n
+    previous_open_sale_order.archive(**kw)\n
+  if open_sale_order is not None:\n
+    open_order.setEffectiveDate(now, **kw)\n
     open_order.order(**kw)\n
     open_order.validate(**kw)\n
-</string> </value>
+elif remove_id is not None or add_kw is not None or stop_date is not None:\n
+  raise NotImplemnetedError(\'Person %s open sale order is already being modified\' % person.getPath())\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>remove_id=None, add_kw=None, stop_date=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
