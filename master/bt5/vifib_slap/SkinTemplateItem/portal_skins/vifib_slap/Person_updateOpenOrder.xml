@@ -79,7 +79,7 @@ if portal.portal_activities.countMessageWithTag(tag) == 0:\n
   if remove_id is not None:\n
     if open_sale_order is None:\n
       open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-    open_sale_order.deleteContent(remove_id, **kw)\n
+    open_sale_order.deleteContent(remove_id)\n
   if add_kw is not None:\n
     add_tag = add_kw.pop(\'tag\', None)\n
     add_kw.update(kw)\n
