@@ -2,7 +2,6 @@ import unittest
 from Products.ERP5Type.tests.Sequence import SequenceList
 from Products.ERP5Type.DateUtils import getClosestDate, addToDate
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 from DateTime.DateTime import DateTime
 
@@ -187,8 +186,6 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     self.assertEquals(3,
                       len(simulation_movement_list))
 
-  @expectedFailure
-  # Subscription deliveries are not build for now.
   def test_OpenOrder_request_changeSoftwareType(self):
     """
     Check that requesting the same instance with a different software type
