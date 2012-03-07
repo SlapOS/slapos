@@ -61,10 +61,11 @@ if stop_date is None:\n
   stop_date = addToDate(getClosestDate(target_date=DateTime(), precision=\'month\', before=1), month=1)\n
 \n
 context.portal_catalog.searchAndActivate(\n
-  method_id=\'OpenSaleOrderLine_updateStopDate\',\n
+  method_id=\'OpenSaleOrder_updateStopDate\',\n
   activate_kw={\'tag\':tag},\n
   method_kw={\'stop_date\': stop_date},\n
-  portal_type=\'Open Sale Order Line\')\n
+  portal_type=\'Open Sale Order\',\n
+  validation_state=\'validated\')\n
 \n
 context.activate(after_tag=tag).getId()\n
 </string> </value>
@@ -75,7 +76,7 @@ context.activate(after_tag=tag).getId()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_updateOpenSaleOrderLine</string> </value>
+            <value> <string>Alarm_updateOpenSaleOrderStopDateOnLineList</string> </value>
         </item>
       </dictionary>
     </pickle>
