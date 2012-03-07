@@ -155,7 +155,7 @@ if (request_software_instance is None):\n
     stop_date = addToDate(getClosestDate(target_date=now, precision=\'month\', before=1), month=1)\n
 \n
     subscription_service_relative_url = portal.portal_preferences.getPreferredInstanceSubscriptionResource()\n
-    open_order.newContent(\n
+    open_order.getDestinationDecisionValue().Person_updateOpenOrder(add_kw=dict(\n
       portal_type="Open Sale Order Line",\n
       title=hosting_subscription.getTitle(),\n
       aggregate_value=hosting_subscription,\n
@@ -166,8 +166,8 @@ if (request_software_instance is None):\n
       # XXX Hardcoded values\\n\n
       resource=subscription_service_relative_url,\n
       price=context.restrictedTraverse(subscription_service_relative_url).getSaleSupplyLineBasePrice(),\n
-      activate_kw={\'tag\': tag},\n
-    )\n
+      tag=tag\n
+    ))\n
   hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
   hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
   hosting_subscription.edit(predecessor_list=hosting_subscription_predecessor_list)\n

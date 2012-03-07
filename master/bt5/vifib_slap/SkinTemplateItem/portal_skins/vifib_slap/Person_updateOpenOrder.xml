@@ -81,10 +81,14 @@ if portal.portal_activities.countMessageWithTag(tag) == 0:\n
       open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
     open_sale_order.deleteContent(remove_id, **kw)\n
   if add_kw is not None:\n
+    add_tag = add_kw.pop(\'tag\', None)\n
     add_kw.update(kw)\n
     if open_sale_order is not None:\n
       open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
     open_sale_order.newContent(**add_kw)\n
+    if add_tag is not None:\n
+      # lock by passed tag\n
+      open_sale_order.activate(tag=add_tag, after_tag=kw[\'activate_kw\'][\'tag\']).getId()\n
   if stop_date is not None:\n
     # check if needed to update\n
     need_update = False\n
