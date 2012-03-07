@@ -71,7 +71,7 @@ if all_delivered:\n
   open_order_line = context.getAggregateRelatedValue(portal_type="Open Sale Order Line")\n
   if open_order_line is not None:\n
     # XXX: Mahybe system shall *NOT* work without Open Sale Orders\n
-    open_order_line.getParentValue().manage_delObjects(open_order_line.getId())\n
+    open_order_line.getParentValue().getDestinationDecisionValue().Person_updateOpenOrder(remove_id=open_order_line.getId())\n
 </string> </value>
         </item>
         <item>
