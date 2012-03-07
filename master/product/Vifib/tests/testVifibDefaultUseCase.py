@@ -1049,23 +1049,15 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         LoginWebUser \
         CheckWaitingInvoice \
         Tic \
-        CheckNoNewPayment \
+        PayRegistrationPayment \
+        Tic \
+        CheckPaidInvoice \
         LoginERP5TypeTestCase \
         CheckSiteConsistency \
         Logout \
       '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-#        PayRegistrationPayment \
-#        Tic \
-#        CheckPaidInvoice \
-
-  def stepCheckNoNewPayment(self, sequence, **kw):
-    """
-    """
-    self.assertEqual(None, self.portal.portal_catalog.getResultValue(
-        portal_type="Payment Transaction",
-        simulation_state="planned"))
 
   def stepCheckComplexInvoice(self, sequence, **kw):
     """
