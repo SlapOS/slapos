@@ -50,40 +50,40 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># As Open Sale Order codebase is unstable Assignor proxied role script is introduced\n
-# to cleanup finialised Open Sale Order Line\n
+            <value> <string encoding="cdata"><![CDATA[
+
+if params is None:\n
+  params = {}\n
+kw = {}\n
+last_active_process = context.getLastActiveProcess()\n
 \n
-if REQUEST is not None:\n
-  # protect against direct HTTP access, XML-RPC will still work\n
-  raise ValueError(\'Not available\')\n
-from Products.ZSQLCatalog.SQLCatalog import NegatedQuery, Query\n
+if last_active_process is not None and params.get(\'full\', False):\n
+  # fetch only objects modified since last alarm run\n
+  kw[\'indexation_timestamp\'] = \'>= %s\' % last_active_process.getStartDate().ISO()\n
 \n
-portal = context.getPortalObject()\n
-all_delivered = True\n
-for sale_packing_list_line in portal.portal_catalog(\n
-  portal_type="Sale Packing List Line", \n
-  default_aggregate_uid=context.getUid(),\n
-  simulation_state=NegatedQuery(Query(simulation_state="delivered")),\n
-  ):\n
-  if sale_packing_list_line.getSimulationState() != \'delivered\':\n
-    raise ValueError(sale_packing_list_line.getPath())\n
-    all_delivered = False\n
-if all_delivered:\n
-  for open_order_line in portal.portal_catalog(\n
-    default_aggregate_uid=context.getUid(),\n
-    portal_type=\'Open Sale Order Line\',\n
-    validation_state=\'validated\'):\n
-    if open_order_line.getValidationState() == \'validated\':\n
-      open_order_line.getParentValue().getDestinationDecisionValue().Person_updateOpenOrder(remove_id=open_order_line.getId())\n
-</string> </value>
+# register active process in order to have "windows" of last indexed objects\n
+context.newActiveProcess()\n
+\n
+context.getPortalObject().portal_catalog.searchAndActivate(\n
+  method_id=\'SalePackingListLine_removeNotNeededOpenSaleOrderLine\',\n
+  portal_type=\'Sale Packing List Line\',\n
+  simulation_state=\'delivered\',\n
+  default_resource_uid=context.restrictedTraverse(context.getPortalObject().portal_preferences.getPreferredInstanceCleanupResource()).getUid(),\n
+  activity_kw={\'tag\': tag},\n
+  **kw\n
+)\n
+context.activate(after_tag=tag).getId()\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>REQUEST=None</string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscription_removeRelatedOpenSaleOrderLine</string> </value>
+            <value> <string>Alarm_removeDestroyedOpenOrderLine</string> </value>
         </item>
       </dictionary>
     </pickle>
