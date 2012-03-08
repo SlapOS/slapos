@@ -40,11 +40,14 @@ class Recipe(GenericBaseRecipe):
         password=self.options['password'],
         domain=self.options['domain'],
     )
-    os_config_file = self.createFile(self.options['os-config'],
-        self.substituteTemplate(self.getTemplateFilename('os-config.xml.in'),
+    os_config_file = self.createFile(self.options['os_config'],
+        self.substituteTemplate(self.getTemplateFilename('os_config.xml.in'),
         os_config_parameters))
     path_list.append(os_config_file)
     
+    # Put modified accords configuration file
+    #XXX-TODO
+
     # Initiate configuration
     Popen('./accords-config',
           cwd=poc_location

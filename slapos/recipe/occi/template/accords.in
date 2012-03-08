@@ -1,0 +1,14 @@
+#!/bin/sh
+#Should be #!(dash_location)s
+
+#Workaround
+LD_LIBRARY_PATH=%(accords_lib_directory)s
+POC=%(poc_location)s
+MANIFEST=%(manifest_name)s
+
+cd $POC
+
+
+./co-start
+./co-parser $MANIFEST
+./co-broker $MANIFEST
