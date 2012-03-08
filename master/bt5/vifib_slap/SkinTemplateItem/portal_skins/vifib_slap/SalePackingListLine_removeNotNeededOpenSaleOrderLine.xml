@@ -54,7 +54,8 @@
 portal = context.getPortalObject()\n
 if not(context.getPortalType() == \'Sale Packing List Line\' \n
   and context.getSimulationState() == \'delivered\'\n
-  and context.getResource() == portal.portal_preferences.getPreferredInstanceCleanupResource()):\n
+  and context.getResource() == portal.portal_preferences.getPreferredInstanceCleanupResource()\n
+  and context.getAggregate(portal_type=\'Software Instance\') is not None):\n
   return\n
 all_delivered = True\n
 for sale_packing_list_line in portal.portal_catalog(\n
