@@ -1,5 +1,5 @@
 <type_roles>
-  <role id='Assignee'>
+  <role id='Auditor'>
    <property id='title'>Destination Decision</property>
    <property id='description'>Monovalued role</property>
    <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
