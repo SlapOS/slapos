@@ -53,6 +53,10 @@
             <value> <string encoding="cdata"><![CDATA[
 
 from DateTime import DateTime\n
+\n
+if remove_id_list is None:\n
+  remove_id_list = []\n
+\n
 person = context\n
 portal = person.getPortalObject()\n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n
@@ -76,7 +80,7 @@ if portal.portal_activities.countMessageWithTag(tag) == 0:\n
           specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
           title="ViFiB Open Order",\n
           **kw)\n
-  if remove_id is not None:\n
+  for remove_id in remove_id_list:\n
     if open_sale_order is None:\n
       open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
     open_sale_order.deleteContent(remove_id)\n
@@ -116,7 +120,7 @@ elif remove_id is not None or add_kw is not None or stop_date is not None:\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>remove_id=None, add_kw=None, stop_date=None</string> </value>
+            <value> <string>remove_id_list=None, add_kw=None, stop_date=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
