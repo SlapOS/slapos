@@ -82,14 +82,6 @@ if all_delivered:\n
             <value> <string>REQUEST=None</string> </value>
         </item>
         <item>
-            <key> <string>_proxy_roles</string> </key>
-            <value>
-              <tuple>
-                <string>Assignor</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
             <key> <string>id</string> </key>
             <value> <string>HostingSubscription_removeRelatedOpenSaleOrderLine</string> </value>
         </item>
