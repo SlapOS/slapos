@@ -166,17 +166,12 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         precision='month', before=1), month=3)})
 
   def stepCheckThreeTopLevelSimulationMovement(self, sequence, **kw):
-    person = self.portal.person_module['test_vifib_customer']
-    open_order = self.portal.portal_catalog.getResultValue(
-      default_destination_decision_uid=person.getUid(),
-      validation_state='validated',
-      portal_type="Open Sale Order")
-    open_order_line_list = \
-      open_order.contentValues(portal_type="Open Sale Order Line")
-    self.assertEquals(1, len(open_order_line_list))
-    open_order_line = open_order_line_list[0]
-    hosting_subscription = \
-      open_order_line.getAggregateValue(portal_type="Hosting Subscription")
+    hosting_subscription = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid'])
+    self.assertEqual(2, self.portal.portal_catalog.countResults(
+      default_aggregate_uid=sequence['hosting_subscription_uid'],
+      portal_type='Open Sale Order Line')[0][0]
+    )
     applied_rule = \
       hosting_subscription.getCausalityRelatedValue(portal_type="Applied Rule")
     self.assertEquals(
@@ -212,22 +207,28 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginTestVifibCustomer
-      RequestSoftwareInstanceStart
+      RequestSoftwareInstanceDestroy
       Tic
       Logout
+
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
+      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
       SlapLoginCurrentComputer
-      SoftwareInstanceStarted
+      SoftwareInstanceDestroyed
       Tic
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionIsFree
+      CheckOpenOrderLineRemoved
       Logout
 
       LoginERP5TypeTestCase
+      Tic # in order to call update simulation alarm of open order
+      Tic
+      CheckThreeTopLevelSimulationMovement
       CheckSiteConsistency
       Logout
     """
