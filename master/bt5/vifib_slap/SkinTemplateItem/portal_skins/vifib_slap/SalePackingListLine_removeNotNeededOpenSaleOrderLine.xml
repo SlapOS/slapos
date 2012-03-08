@@ -63,7 +63,6 @@ for sale_packing_list_line in portal.portal_catalog(\n
   simulation_state=NegatedQuery(Query(simulation_state=["delivered", "cancelled"])),\n
   ):\n
   if sale_packing_list_line.getSimulationState() not in [\'delivered\', \'cancelled\']:\n
-    raise ValueError(sale_packing_list_line.getPath())\n
     all_delivered = False\n
     break\n
 if all_delivered:\n
