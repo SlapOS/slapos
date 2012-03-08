@@ -177,6 +177,32 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps -- scenarios
   ########################################
+  def stepCheckOpenOrderLineRemoved(self, sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+    hosting_subscription = software_instance.getAggregateRelatedValue(
+      portal_type='Sale Packing List Line').getAggregateValue(
+        portal_type='Hosting Subscription')
+    # shall be not present on any validted open order
+    validated_open_order_line = self.portal.portal_catalog.getResultValue(
+      portal_type='Open Sale Order Line', validation_state='validated',
+      default_aggregate_uid=hosting_subscription.getUid())
+    self.assertEqual(None, validated_open_order_line)
+    # shall be present on the latest archived open order
+    reference = self.portal.portal_catalog.getResultValue(
+      portal_type='Open Sale Order Line',
+      default_aggregate_uid=hosting_subscription.getUid())\
+        .getParentValue().getReference()
+    open_sale_order = self.portal.portal_catalog.getResultValue(
+        portal_type='Open Sale Order',
+        reference=reference,
+        validation_state='archived',
+        sort_on=(('effective_date', 'descending'),)
+      )
+    self.assertTrue(hosting_subscription.getRelativeUrl() in \
+      [q.getAggregate(portal_type='Hosting Subscription') for q in \
+        open_sale_order.contentValues(portal_type='Open Sale Order Line')])
+
   def stepRequestComputerPartitionNoTic(self, sequence, **kw):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
@@ -1096,6 +1122,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       LoginDefaultUser \
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered \
       CheckComputerPartitionIsFree \
+      CheckOpenOrderLineRemoved \
       Logout \
       '
 
