@@ -405,7 +405,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       aggregate_relative_url=computer_partition.getRelativeUrl(),
       portal_type=self.sale_packing_list_line_portal_type,
       simulation_state=state,
-      resource_relative_url=resource)]
+      resource_relative_url=resource) if sequence['software_instance_uid']
+        in q.getAggregateUidList()]
     self.assertEqual(delivery_line_amount, len(delivery_line_list))
 
   def _checkComputerPartitionNoSalePackingList(self, resource, sequence):
