@@ -1036,6 +1036,13 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         SoftwareInstanceDestroyed \
         Tic \
         SlapLogout \
+        \
+        LoginDefaultUser \
+        CheckComputerPartitionInstanceCleanupSalePackingListDelivered \
+        CheckComputerPartitionIsFree \
+        CheckOpenOrderLineRemoved \
+        Logout \
+        \
         LoginWebUser \
         CheckDestroyOngoingInvoice \
         SlapLogout \
@@ -1305,6 +1312,13 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         SoftwareInstanceDestroyed \
         Tic \
         SlapLogout \
+        \
+        LoginDefaultUser \
+        CheckComputerPartitionInstanceCleanupSalePackingListDelivered \
+        CheckComputerPartitionIsFree \
+        CheckOpenOrderLineRemoved \
+        Logout \
+        \
         ' + \
       self.create_new_user_instance_sequence_string + '\
         SlapLoginCurrentComputer \
@@ -1339,6 +1353,11 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         SlapLogout \
         \
+        LoginDefaultUser \
+        CheckComputerPartitionInstanceCleanupSalePackingListDelivered \
+        CheckComputerPartitionIsFree \
+        CheckOpenOrderLineRemoved \
+        Logout \
         \
         LoginERP5TypeTestCase \
         ConfirmOngoingInvoice \
