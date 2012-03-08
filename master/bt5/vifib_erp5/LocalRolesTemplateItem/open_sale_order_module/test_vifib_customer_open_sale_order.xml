@@ -7,7 +7,7 @@
    <item>Assignor</item>
   </role>
   <role id='test_vifib_customer'>
-   <item>Assignee</item>
+   <item>Auditor</item>
   </role>
  </local_roles>
 </local_roles_item>
