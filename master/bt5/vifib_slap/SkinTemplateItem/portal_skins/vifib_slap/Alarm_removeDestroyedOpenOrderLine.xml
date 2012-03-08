@@ -69,7 +69,7 @@ context.getPortalObject().portal_catalog.searchAndActivate(\n
   portal_type=\'Sale Packing List Line\',\n
   simulation_state=\'delivered\',\n
   default_resource_uid=context.restrictedTraverse(context.getPortalObject().portal_preferences.getPreferredInstanceCleanupResource()).getUid(),\n
-  activity_kw={\'tag\': tag},\n
+  activate_kw={\'tag\': tag},\n
   **kw\n
 )\n
 context.activate(after_tag=tag).getId()\n
