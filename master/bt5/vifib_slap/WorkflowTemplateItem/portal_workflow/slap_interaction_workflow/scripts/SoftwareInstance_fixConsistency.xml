@@ -59,7 +59,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstnace_fixConsistency</string> </value>
+            <value> <string>SoftwareInstance_fixConsistency</string> </value>
         </item>
       </dictionary>
     </pickle>
