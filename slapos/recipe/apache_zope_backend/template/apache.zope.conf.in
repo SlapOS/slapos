@@ -32,6 +32,9 @@ ServerTokens Prod
 ServerSignature Off
 TraceEnable Off
 
+# Apache 2.4's default value (60 seconds) can be a bit too short
+TimeOut 300
+
 # As backend is trusting REMOTE_USER header unset it always
 RequestHeader unset REMOTE_USER
 
