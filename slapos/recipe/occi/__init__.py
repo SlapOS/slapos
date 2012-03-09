@@ -40,7 +40,7 @@ class Recipe(GenericBaseRecipe):
         password=self.options['password'],
         domain=self.options['domain'],
     )
-    os_config_file = self.createFile(self.options['os_config'],
+    os_config_file = self.createFile(self.options['os-config'],
         self.substituteTemplate(self.getTemplateFilename('os_config.xml.in'),
         os_config_parameters))
     path_list.append(os_config_file)
