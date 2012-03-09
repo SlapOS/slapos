@@ -88,7 +88,7 @@ common_add_kw = dict(\n
   )\n
 for order in catalog(\n
   portal_type=\'Sale Order\',\n
-  simulation_state=[\'planned\', \'confirmed\'],\n
+  simulation_state=[\'planned\', \'ordered\',\'confirmed\'],\n
   default_destination_decision_uid=person_uid,\n
   **kw\n
   ):\n
