@@ -118,6 +118,7 @@ if (request_software_instance is None):\n
     start_date=DateTime(),\n
     received_date=DateTime(),\n
     # XXX Hardcoded values\n
+    specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
     source="organisation_module/vifib_internet",\n
     source_section="organisation_module/vifib_internet",\n
     quantity_unit="unit/piece",\n
