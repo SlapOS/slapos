@@ -112,8 +112,6 @@ if portal.portal_activities.countMessageWithTag(tag) == 0:\n
     open_sale_order.setEffectiveDate(now, **kw)\n
     open_sale_order.order(**kw)\n
     open_sale_order.validate(**kw)\n
-elif remove_id is not None or add_kw is not None or stop_date is not None:\n
-  raise NotImplemnetedError(\'Person %s open sale order is already being modified\' % person.getPath())\n
 
 
 ]]></string> </value>
