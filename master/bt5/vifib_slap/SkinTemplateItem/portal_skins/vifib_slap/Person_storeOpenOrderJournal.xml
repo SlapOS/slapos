@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+person = context\n
+portal = context.getPortalObject()\n
+catalog = portal.portal_catalog\n
+\n
+cleanup_resource_uid = portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceCleanupResource()).getUid()\n
+setup_resource_uid = portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource()).getUid()\n
+\n
+person_uid = person.getUid()\n
+\n
+kw = {}\n
+if indexation_timestamp is not None:\n
+  kw[\'indexation_timestamp\'] = ">= %s" % indexation_timestamp\n
+\n
+remove_hosting_list = []\n
+add_kw_list = []\n
+start_date_tuple_list = []\n
+\n
+for cleanup_line in catalog(\n
+  portal_type=\'Sale Packing List Line\',\n
+  default_resource_uid=cleanup_resource_uid,\n
+  simulation_state=\'delivered\',\n
+  **{\'movement.destination_uid\': person_uid}):\n
+#  **kw):\n
+  remove_hosting_list.append(cleanup_line.getAggregate(portal_type=\'Hosting Subscription\'))\n
+\n
+subscription_service_relative_url=portal.portal_preferences.getPreferredInstanceSubscriptionResource()\n
+common_add_kw = dict(\n
+  portal_type="Open Sale Order Line",\n
+  quantity=1,\n
+  quantity_unit="unit/piece",\n
+  # XXX Hardcoded values\n
+  resource=subscription_service_relative_url,\n
+  price=portal.restrictedTraverse(subscription_service_relative_url).getSaleSupplyLineBasePrice()\n
+  )\n
+for order in catalog(\n
+  portal_type=\'Sale Order\',\n
+  simulation_state=[\'planned\', \'confirmed\'],\n
+  default_destination_decision_uid=person_uid,\n
+  **kw\n
+  ):\n
+  hosting_subscription = order.getMovementList()[0].getAggregate(portal_type=\'Hosting Subscription\')\n
+  add_kw = common_add_kw.copy()\n
+  add_kw.update(\n
+    title=portal.restrictedTraverse(hosting_subscription).getTitle(),\n
+    aggregate=hosting_subscription\n
+  )\n
+  add_kw_list.append(add_kw)\n
+\n
+for setup_line in catalog(\n
+  portal_type=\'Sale Packing List Line\',\n
+  default_resource_uid=setup_resource_uid,\n
+  simulation_state=[\'stopped\', \'delivered\'],\n
+  **{\'movement.destination_uid\': person_uid}\n
+#  **kw\n
+  ):\n
+  # start date shall be stopped state reach\n
+  start_date = setup_line.getCreationDate()\n
+  start_date_tuple_list.append((setup_line.getAggregate(portal_type=\'Hosting Subscription\'), start_date))\n
+\n
+person.Person_updateOpenOrder(remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list, start_date_tuple_list=start_date_tuple_list, stop_date=stop_date)\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>indexation_timestamp=None, tag=None, stop_date=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Person_storeOpenOrderJournal</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
