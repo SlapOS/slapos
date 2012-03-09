@@ -1,5 +1,4 @@
-#!/bin/sh
-#Should be #!(dash_location)s
+#!%(dash_location)s
 
 #Workaround
 LD_LIBRARY_PATH=%(accords_lib_directory)s
