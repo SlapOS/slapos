@@ -35,18 +35,25 @@ class Recipe(GenericBaseRecipe):
     poc_location = self.buildout['pocdirectory']['poc']
 
     # Generate os-config.xml
-    os_config_parameters = dict(
+    os_configuration_parameter_dict = dict(
         userid=self.options['userid'],
         password=self.options['password'],
         domain=self.options['domain'],
     )
     os_config_file = self.createFile(self.options['os-config'],
         self.substituteTemplate(self.getTemplateFilename('os_config.xml.in'),
-        os_config_parameters))
+        os_configuration_parameter_dict))
     path_list.append(os_config_file)
     
     # Put modified accords configuration file
-    #XXX-TODO
+    accords_configuration_parameter_dict = dict(
+        listen_ip = self.options['listen-ip']
+    )
+    accords_configuration_file_location = self.createFile(
+        self.options['accords-configuration-file'],
+        self.substituteTemplate(self.getTemplateFilename('accords.ini.in'),
+        accords_configuration_parameter_dict))
+    path_list.append(accords_configuration_file_location)
 
     # Initiate configuration
     Popen('./accords-config',
@@ -62,6 +69,7 @@ class Recipe(GenericBaseRecipe):
 
     # Generate wrapper
     wrapper_config_dict = dict(
+        dash_location=self.options['dash-location'],
         poc_location=poc_location,
         manifest_name=self.options['manifest-name'],
         # XXX this is workaround
