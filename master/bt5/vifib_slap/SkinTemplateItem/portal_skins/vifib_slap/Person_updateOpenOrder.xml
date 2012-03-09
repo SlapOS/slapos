@@ -105,10 +105,13 @@ for add_kw in add_kw_list:\n
     hosting_subscription_mapping[add_kw[\'aggregate\']] = id\n
     just_added_hosting_kw[add_kw[\'aggregate\']] = 1\n
 \n
-if open_sale_order is not None:\n
-  for start_date_tuple in start_date_tuple_list:\n
-    if start_date_tuple[0] in hosting_subscription_mapping:\n
-      open_sale_order[hosting_subscription_mapping[start_date_tuple[0]]].setStartDate(start_date_tuple[1])\n
+for start_date_tuple in start_date_tuple_list:\n
+  if start_date_tuple[0] in hosting_subscription_mapping:\n
+    if open_sale_order is None:\n
+      open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
+    line =  open_sale_order[hosting_subscription_mapping[start_date_tuple[0]]]\n
+    if line.getStartDate() != start_date_tuple[1]:\n
+      line.setStartDate(start_date_tuple[1])\n
 \n
 if stop_date is not None:\n
   # check if needed to update\n
