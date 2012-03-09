@@ -375,7 +375,7 @@ class testVifibMixin(ERP5TypeTestCase):
     super(testVifibMixin, self).stepTic(**kw)
 
   def stepTic(self, **kw):
-    def build():
+    def activateAlarm():
       sm = getSecurityManager()
       self.login()
       try:
@@ -391,17 +391,17 @@ class testVifibMixin(ERP5TypeTestCase):
     if kw.get('sequence', None) is None:
       # in case of using not in sequence commit transaction
       transaction.commit()
-    # trigger build before tic
-    build()
+    # trigger activateAlarm before tic
+    activateAlarm()
     transaction.commit()
 
     super(testVifibMixin, self).stepTic(**kw)
 
-    # retrigger build after tic
-    build()
+    # retrigger activateAlarm after tic
+    activateAlarm()
     transaction.commit()
 
-    # tic after build
+    # tic after activateAlarm
     super(testVifibMixin, self).stepTic(**kw)
 
     self.checkDivergency()
