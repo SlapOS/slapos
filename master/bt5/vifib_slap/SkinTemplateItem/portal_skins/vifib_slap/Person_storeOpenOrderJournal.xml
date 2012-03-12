@@ -113,8 +113,10 @@ for setup_line in catalog(\n
   default_resource_uid=setup_resource_uid,\n
   simulation_state=[\'stopped\', \'delivered\'],\n
   **movement_kw):\n
+  real_setup_line = catalog.getResultValue(portal_type=\'Sale Packing List Line\',\n
+    default_aggregate_uid=setup_line.getAggregateValue(portal_type=\'Hosting Subscription\').getPredecessorValue().getUid())\n
   # start date shall be stopped state reach\n
-  start_date = getWorkflowDate(setup_line.getParentValue(), \'stopped\')\n
+  start_date = getWorkflowDate(real_setup_line.getParentValue(), \'stopped\')\n
   start_date_tuple_list.append((setup_line.getAggregate(portal_type=\'Hosting Subscription\'), start_date))\n
 \n
 person.Person_updateOpenOrder(remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list, start_date_tuple_list=start_date_tuple_list, stop_date=stop_date)\n
