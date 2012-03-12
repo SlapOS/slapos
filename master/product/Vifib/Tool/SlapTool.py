@@ -873,13 +873,15 @@ class SlapTool(BaseTool):
 
       if shared:
         # XXX: Dirty hack
+        slave_instance = None
         for slave_instance in parameter_dict.get("slave_instance_list", []):
           if slave_instance['slave_title'] == partition_reference:
             break
-        software_instance._parameter_dict = self._instanceXmlToDict(
-          slave_instance.pop('xml'))
-        software_instance._connection_dict = self._instanceXmlToDict(
-          slave_instance.pop('connection_xml'))
+        if slave_instance is not None:
+          software_instance._parameter_dict = self._instanceXmlToDict(
+            slave_instance.pop('xml'))
+          software_instance._connection_dict = self._instanceXmlToDict(
+            slave_instance.pop('connection_xml'))
       return xml_marshaller.xml_marshaller.dumps(software_instance)
 
   ####################################################
