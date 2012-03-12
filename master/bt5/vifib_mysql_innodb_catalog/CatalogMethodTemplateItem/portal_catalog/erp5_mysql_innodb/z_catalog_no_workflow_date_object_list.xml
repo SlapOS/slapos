@@ -43,7 +43,8 @@ getDestinationReference\r\n
 getStringIndex\r\n
 getIntIndex\r\n
 getFloatIndex\r\n
-hasCellContent</string> </value>
+hasCellContent\r\n
+getModificationDate</string> </value>
         </item>
         <item>
             <key> <string>cache_time_</string> </key>
@@ -88,7 +89,7 @@ REPLACE INTO\n
   (`uid`, `security_uid`, `owner`, `viewable_owner`, `path`, `relative_url`, `parent_uid`, `id`, `description`, `title`, `meta_type`,\n
    `portal_type`, `opportunity_state`, `corporate_registration_code`, `ean13_code`, `validation_state`, `simulation_state`,\n
    `causality_state`, `invoice_state`, `payment_state`, `event_state`, `immobilisation_state`, `reference`, `grouping_reference`,\n
-   `source_reference`, `destination_reference`, `string_index`, `int_index`, `float_index`, `has_cell_content`)\n
+   `source_reference`, `destination_reference`, `string_index`, `int_index`, `float_index`, `has_cell_content`, `modification_date`)\n
 VALUES\n
 <dtml-in prefix="loop" expr="_.range(_.len(uid))">\n
 (\n
@@ -121,7 +122,8 @@ VALUES\n
   <dtml-sqlvar expr="getStringIndex[loop_item]" type="string" optional>,\n
   <dtml-sqlvar expr="getIntIndex[loop_item]" type="int" optional>,\n
   <dtml-sqlvar expr="getFloatIndex[loop_item]" type="float" optional>,\n
-  <dtml-sqlvar expr="hasCellContent[loop_item]" type="int" optional>\n
+  <dtml-sqlvar expr="hasCellContent[loop_item]" type="int" optional>,\n
+  <dtml-sqlvar expr="getModificationDate[loop_item]" type="datetime" optional>\n
 )\n
 <dtml-if sequence-end><dtml-else>,</dtml-if>\n
 </dtml-in>\n
