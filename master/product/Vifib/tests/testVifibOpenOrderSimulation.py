@@ -73,12 +73,6 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     stop_date = start_date + getNumberOfDayInMonth(start_date)
     self.assertEqual(stop_date, open_order_line.getStopDate())
 
-    # Calculate the list of time frames
-    expected_time_frame_list = generateTimeFrameList(start_date)
-
-    # test the test: have we generated 12th next months coverage?
-    self.assertEqual(13, len(expected_time_frame_list))
-
     simulation_movement_list = self.portal.portal_catalog(
       portal_type='Simulation Movement',
       parent_uid=applied_rule.getUid(),
@@ -91,8 +85,6 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     # Check the list of expected simulation
     idx = 0
     for simulation_movement in simulation_movement_list:
-      expected_start_date = expected_time_frame_list[idx]
-      expected_stop_date = expected_time_frame_list[idx+1]
       # Check simulation movement property
       self.assertEquals(1.0,
         simulation_movement.getQuantity())
@@ -130,8 +122,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       self.assertEquals(None,
                            simulation_movement.getAggregate(
                              portal_type="Software Release"))
-      self.assertEqual(expected_start_date, simulation_movement.getStartDate())
-      self.assertEqual(expected_stop_date, simulation_movement.getStopDate())
+      self.assertEqual(start_date, simulation_movement.getStartDate())
+      self.assertEqual(stop_date, simulation_movement.getStopDate())
 
       # delivered already
       self.assertNotEqual(None, simulation_movement.getDelivery())
