@@ -70,7 +70,7 @@ add_kw_list = []\n
 start_date_tuple_list = []\n
 \n
 movement_kw = kw.copy()\n
-movement_kw[\'movement.destination_uid\': person_uid]\n
+movement_kw[\'movement.destination_uid\'] = person_uid\n
 for cleanup_line in catalog(\n
   portal_type=\'Sale Packing List Line\',\n
   default_resource_uid=cleanup_resource_uid,\n
