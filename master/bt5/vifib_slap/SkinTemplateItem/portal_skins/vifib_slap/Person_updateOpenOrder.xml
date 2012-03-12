@@ -114,7 +114,7 @@ for start_date_tuple in start_date_tuple_list:\n
     if line.getStartDate() != start_date_tuple[1]:\n
       if open_sale_order is None:\n
         open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-      line.setStartDate(start_date_tuple[1])\n
+      open_sale_order[hosting_subscription_mapping[start_date_tuple[0]]].setStartDate(start_date_tuple[1])\n
 \n
 next_month = DateTime() + getNumberOfDayInMonth(DateTime())\n
 \n
