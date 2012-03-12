@@ -17,6 +17,7 @@
                 <string>select</string>
                 <string>selection_name</string>
                 <string>title</string>
+                <string>url_columns</string>
               </list>
             </value>
         </item>
@@ -101,6 +102,10 @@
                           <string>image</string>
                           <string>Image</string>
                         </tuple>
+                        <tuple>
+                          <string>status</string>
+                          <string>Status</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
@@ -108,6 +113,10 @@
                     <key> <string>editable_columns</string> </key>
                     <value>
                       <list>
+                        <tuple>
+                          <string>action_button</string>
+                          <string>Action</string>
+                        </tuple>
                         <tuple>
                           <string>image</string>
                           <string>image</string>
@@ -139,7 +148,7 @@
                 </item>
                 <item>
                     <key> <string>selection_name</string> </key>
-                    <value> <string>my_current_hosting_subscription_selection</string> </value>
+                    <value> <string>software_instance_selection</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -147,7 +156,26 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>My Services</string> </value>
+                    <value> <string>My Software Instances</string> </value>
+                </item>
+                <item>
+                    <key> <string>url_columns</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>start_button</string>
+                          <string>SoftwareInstance_getStartUrl</string>
+                        </tuple>
+                        <tuple>
+                          <string>stop_button</string>
+                          <string>SoftwareInstance_getStopUrl</string>
+                        </tuple>
+                        <tuple>
+                          <string>destroy_button</string>
+                          <string>SoftwareInstance_getDestroyUrl</string>
+                        </tuple>
+                      </list>
+                    </value>
                 </item>
               </dictionary>
             </value>
@@ -163,7 +191,7 @@
       <dictionary>
         <item>
             <key> <string>method_name</string> </key>
-            <value> <string>WebSection_getCurrentHostingSubscriptionList</string> </value>
+            <value> <string>HostingSubscription_getSoftwareInstanceList</string> </value>
         </item>
       </dictionary>
     </pickle>
