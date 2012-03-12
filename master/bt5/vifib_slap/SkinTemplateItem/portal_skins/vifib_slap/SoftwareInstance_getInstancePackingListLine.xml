@@ -74,7 +74,7 @@ else:\n
   service_uid_list.append(service.getUid())\n
 \n
 # Packing List valid state\n
-state_list = []\n
+state_list = ["ordered"]\n
 state_list.extend(portal.getPortalReservedInventoryStateList())\n
 state_list.extend(portal.getPortalTransitInventoryStateList())\n
 state_list.extend(portal.getPortalCurrentInventoryStateList())\n
