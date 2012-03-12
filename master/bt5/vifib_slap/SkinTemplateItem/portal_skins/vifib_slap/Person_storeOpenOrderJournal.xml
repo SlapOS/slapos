@@ -69,12 +69,13 @@ remove_hosting_list = []\n
 add_kw_list = []\n
 start_date_tuple_list = []\n
 \n
+movement_kw = kw.copy()\n
+movement_kw[\'movement.destination_uid\': person_uid]\n
 for cleanup_line in catalog(\n
   portal_type=\'Sale Packing List Line\',\n
   default_resource_uid=cleanup_resource_uid,\n
   simulation_state=\'delivered\',\n
-  **{\'movement.destination_uid\': person_uid}):\n
-#  **kw):\n
+  **movement_kw):\n
   remove_hosting_list.append(cleanup_line.getAggregate(portal_type=\'Hosting Subscription\'))\n
 \n
 subscription_service_relative_url=portal.portal_preferences.getPreferredInstanceSubscriptionResource()\n
@@ -111,8 +112,7 @@ for setup_line in catalog(\n
   portal_type=\'Sale Packing List Line\',\n
   default_resource_uid=setup_resource_uid,\n
   simulation_state=[\'stopped\', \'delivered\'],\n
-  **{\'movement.destination_uid\': person_uid}\n
-  ):\n
+  **movement_kw):\n
   # start date shall be stopped state reach\n
   start_date = getWorkflowDate(setup_line.getParentValue(), \'stopped\')\n
   start_date_tuple_list.append((setup_line.getAggregate(portal_type=\'Hosting Subscription\'), start_date))\n
