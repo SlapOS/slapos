@@ -3,6 +3,7 @@ import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 import random
 import transaction
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def test_bug_Person_request_more_then_one_instance(self):
@@ -1422,6 +1423,8 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
         portal_type='Slave Instance')
     sequence['software_instance_uid'] = slave_instance.getUid()
 
+  @expectedFailure
+  # Slave instances are disabled
   def test_catalog_slave_destruction(self):
     """Test that computer partition if correctly catalogged with slave destruction"""
     sequence_list = SequenceList()
