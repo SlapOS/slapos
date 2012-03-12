@@ -139,8 +139,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       idx += 1
 
   def stepIncreaseOpenOrderCoverage(self, sequence, **kw):
-    self.portal.portal_alarms.vifib_update_open_sale_order_line.\
-      Alarm_updateOpenSaleOrderStopDateOnLineList(
+    self.portal.portal_alarms.vifib_person_update_open_order.\
+      Alarm_updatePersonOpenOrder(
       tag='test_tag', fixit=False,
       params={'stop_date': addToDate(getClosestDate(target_date=DateTime(),
         precision='month', before=1), month=3)})
