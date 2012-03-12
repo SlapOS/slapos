@@ -20,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_order_button</string> </value>
+            <value> <string>go_to_software</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -99,11 +99,11 @@
               <dictionary>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string>nolabel validate alignr</string> </value>
+                    <value> <string>nolabel alignr</string> </value>
                 </item>
                 <item>
                     <key> <string>default</string> </key>
-                    <value> <string>Order your VM</string> </value>
+                    <value> <string>More softwares</string> </value>
                 </item>
                 <item>
                     <key> <string>enabled</string> </key>
@@ -119,7 +119,7 @@
                 </item>
                 <item>
                     <key> <string>href</string> </key>
-                    <value> <string>./WebSection_orderVifibKVM</string> </value>
+                    <value> <string>./myspace/software</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -127,7 +127,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Order your VM</string> </value>
+                    <value> <string>More softwares</string> </value>
                 </item>
               </dictionary>
             </value>

@@ -89,6 +89,7 @@
                       <list>
                         <string>listbox_getSummaryAsHTML</string>
                         <string>listbox_getDefaultImageAbsoluteUrl</string>
+                        <string>listbox_hardcoded_description</string>
                       </list>
                     </value>
                 </item>
