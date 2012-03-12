@@ -122,21 +122,26 @@ else:\n
 order = previous_open_sale_order or open_sale_order\n
 need_update = False\n
 for line in order.contentValues(portal_type=\'Open Sale Order Line\'):\n
-  if line.getStopDate() is not None and line.getStopDate() < next_month:\n
-    need_update = True\n
-    break\n
+  old_stop_date = line.getStopDate()\n
+  if old_stop_date is not None:\n
+    new_stop_date = stop_date\n
+    if new_stop_date is None:\n
+      new_stop_date = old_stop_date + getNumberOfDayInMonth(old_stop_date)\n
+    if new_stop_date < next_month:\n
+      need_update = True\n
+      break\n
 \n
 if need_update:\n
   if open_sale_order is None:\n
     open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
   for line in open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
     old_stop_date = line.getStopDate()\n
-    if old_stop_date is not None and old_stop_date < next_month:\n
-      if stop_date is not None:\n
-        new_stop_date = stop_date\n
-      else:\n
-        new_stop_date = old_stop_date + getNumberOfDayInMonth(old_stop_date) \n
-      line.setStopDate(new_stop_date, activate_kw=activate_kw)\n
+    if old_stop_date is not None:\n
+      new_stop_date = stop_date\n
+      if new_stop_date is None:\n
+        new_stop_date = old_stop_date + getNumberOfDayInMonth(old_stop_date)\n
+      if new_stop_date < next_month:\n
+        line.setStopDate(new_stop_date, activate_kw=activate_kw)\n
 \n
 for remove_hosting in remove_hosting_list:\n
   if remove_hosting in just_added_hosting_kw:\n
