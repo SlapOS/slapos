@@ -1,6 +1,6 @@
 import unittest
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.DateUtils import getClosestDate, addToDate
+from Products.ERP5Type.DateUtils import getClosestDate, addToDate, getNumberOfDayInMonth
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
 from DateTime.DateTime import DateTime
@@ -55,35 +55,23 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
 
     # check start date and stop date of the subscription item,
     # currently there is 1 month
-    now = DateTime()
-    start_date = \
-      getClosestDate(target_date=now, precision='day', before=1)
-    self.assertEquals(
-      start_date.year(), open_order_line.getStartDate().year())
-    self.assertEquals(
-      start_date.month(), open_order_line.getStartDate().month())
-    self.assertEquals(
-      start_date.day(), open_order_line.getStartDate().day())
-    self.assertEquals(
-      0, open_order_line.getStartDate().hour())
-    self.assertEquals(
-      0, open_order_line.getStartDate().minute())
-    self.assertEquals(
-      0.0, open_order_line.getStartDate().second())
-    stop_date = addToDate(
-      getClosestDate(target_date=now, precision='month', before=1), month=1)
-    self.assertEquals(
-      stop_date.year(), open_order_line.getStopDate().year())
-    self.assertEquals(
-      stop_date.month(), open_order_line.getStopDate().month())
-    self.assertEquals(
-      stop_date.day(), open_order_line.getStopDate().day())
-    self.assertEquals(
-      0, open_order_line.getStopDate().hour())
-    self.assertEquals(
-      0, open_order_line.getStopDate().minute())
-    self.assertEquals(
-      0.0, open_order_line.getStopDate().second())
+    instance_setup_delivery = self.portal.portal_catalog.getResultValue(
+      portal_type='Sale Packing List Line',
+      default_aggregate_uid=sequence['software_instance_uid'],
+      resource=self.portal.portal_preferences\
+        .getPreferredInstanceSetupResource()).getParentValue()
+
+    self.assertEqual('stopped', instance_setup_delivery.getSimulationState())
+    start_date = None
+    for item in self.portal.portal_workflow.getInfoFor(
+      ob=instance_setup_delivery, name='history', wf_id='packing_list_workflow'):
+      if item.get('simulation_state') == 'stopped':
+        start_date = item.get('time')
+        break
+
+    self.assertEqual(start_date, open_order_line.getStartDate())
+    stop_date = start_date + getNumberOfDayInMonth(start_date)
+    self.assertEqual(stop_date, open_order_line.getStopDate())
 
     # Calculate the list of time frames
     expected_time_frame_list = generateTimeFrameList(start_date)
