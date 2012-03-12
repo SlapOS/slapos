@@ -5,14 +5,6 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
 from DateTime.DateTime import DateTime
 
-def generateTimeFrameList(start_date):
-  expected_time_frame_list = [start_date]
-  current = \
-    getClosestDate(target_date=start_date, precision='month', before=0)
-  for m in range(0, 12):
-    expected_time_frame_list.append(addToDate(current, month=m))
-  return expected_time_frame_list
-
 class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
 
   def stepCheckSimulationMovement(self, sequence, **kw):

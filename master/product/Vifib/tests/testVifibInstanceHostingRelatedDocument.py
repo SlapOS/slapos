@@ -1,9 +1,8 @@
 import unittest
 from Products.ERP5Type.tests.Sequence import SequenceList
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-from Products.ERP5Type.DateUtils import getClosestDate
+from Products.ERP5Type.DateUtils import getClosestDate, getNumberOfDayInMonth
 from DateTime import DateTime
-from testVifibOpenOrderSimulation import generateTimeFrameList
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
@@ -18,20 +17,24 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     # is next month covered?
     self.assertEqual(1, len(delivery_list))
 
-    # generate the expected time frames
-    now = DateTime()
-    start_date = \
-      getClosestDate(target_date=now, precision='day', before=1)
+    instance_setup_delivery = self.portal.portal_catalog.getResultValue(
+      portal_type='Sale Packing List Line',
+      default_aggregate_uid=sequence['software_instance_uid'],
+      resource=self.portal.portal_preferences\
+        .getPreferredInstanceSetupResource()).getParentValue()
 
-    # Calculate the list of time frames
-    expected_time_frame_list = generateTimeFrameList(start_date)
-
+    self.assertEqual('stopped', instance_setup_delivery.getSimulationState())
+    start_date = None
+    for item in self.portal.portal_workflow.getInfoFor(
+      ob=instance_setup_delivery, name='history', wf_id='packing_list_workflow'):
+      if item.get('simulation_state') == 'stopped':
+        start_date = item.get('time')
+        break
+    stop_date = start_date + getNumberOfDayInMonth(start_date)
     idx = 0
     for delivery in delivery_list:
-      expected_start_date = expected_time_frame_list[idx]
-      expected_stop_date = expected_time_frame_list[idx+1]
-      self.assertEqual(expected_start_date, delivery.getStartDate())
-      self.assertEqual(expected_stop_date, delivery.getStopDate())
+      self.assertEqual(start_date, delivery.getStartDate())
+      self.assertEqual(stop_date, delivery.getStopDate())
 
       self.assertEqual(hosting_subscription.getRelativeUrl(),
         delivery.getCausality())
