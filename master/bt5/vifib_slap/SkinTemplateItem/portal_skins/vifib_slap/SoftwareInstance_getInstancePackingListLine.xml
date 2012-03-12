@@ -82,7 +82,7 @@ state_list.extend(portal.getPortalCurrentInventoryStateList())\n
 packing_list_line = portal.portal_catalog.getResultValue(\n
   portal_type=portal_type,\n
   simulation_state=state_list,\n
-  aggregate_uid=software_instance.getUid(),\n
+  default_aggregate_uid=software_instance.getUid(),\n
   default_resource_uid=service_uid_list,\n
   sort_on=((\'movement.start_date\', \'DESC\'),),\n
   limit=1,\n
