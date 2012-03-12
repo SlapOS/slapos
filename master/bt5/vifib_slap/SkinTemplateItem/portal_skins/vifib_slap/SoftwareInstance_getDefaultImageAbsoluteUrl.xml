@@ -53,7 +53,7 @@
             <value> <string>if context.getPortalType() == \'Sale Order Line\':\n
   delivery_line = context\n
 else:\n
-  delivery_line = context.SoftwareInstance_getInstancePackingListLine()\n
+  delivery_line = context.SoftwareInstance_getInstancePackingListLine(portal_type=["Sale Order Line", "Sale Packing List Line"])\n
 \n
 if delivery_line is not None:\n
   software_release = delivery_line.getAggregateValue(portal_type=\'Software Release\')\n
