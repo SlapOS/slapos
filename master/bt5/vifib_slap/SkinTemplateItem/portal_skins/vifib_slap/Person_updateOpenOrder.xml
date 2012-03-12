@@ -69,7 +69,8 @@ if add_kw_list is None:\n
   add_kw_list = []\n
 if start_date_tuple_list is None:\n
   start_date_tuple_list = []\n
-\n
+if stop_date is not None:\n
+  stop_date = DateTime(stop_date)\n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n
       default_destination_section_uid=person.getUid(),\n
       portal_type="Open Sale Order",\n
@@ -108,28 +109,28 @@ for add_kw in add_kw_list:\n
 \n
 for start_date_tuple in start_date_tuple_list:\n
   if start_date_tuple[0] in hosting_subscription_mapping:\n
-    if open_sale_order is None:\n
-      open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-    line =  open_sale_order[hosting_subscription_mapping[start_date_tuple[0]]]\n
+    order = previous_open_sale_order or open_sale_order\n
+    line = order[hosting_subscription_mapping[start_date_tuple[0]]]\n
     if line.getStartDate() != start_date_tuple[1]:\n
+      if open_sale_order is None:\n
+        open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
       line.setStartDate(start_date_tuple[1])\n
 \n
-if stop_date is not None:\n
-  next_month = stop_date\n
-else:\n
-  next_month = DateTime() + getNumberOfDayInMonth(DateTime())\n
+next_month = DateTime() + getNumberOfDayInMonth(DateTime())\n
 \n
 order = previous_open_sale_order or open_sale_order\n
 need_update = False\n
 for line in order.contentValues(portal_type=\'Open Sale Order Line\'):\n
   old_stop_date = line.getStopDate()\n
   if old_stop_date is not None:\n
-    new_stop_date = stop_date\n
-    if new_stop_date is None:\n
-      new_stop_date = old_stop_date + getNumberOfDayInMonth(old_stop_date)\n
-    if new_stop_date < next_month:\n
+    if stop_date is not None and old_stop_date < stop_date:\n
       need_update = True\n
       break\n
+    else:\n
+      new_stop_date = old_stop_date + getNumberOfDayInMonth(old_stop_date)\n
+      if new_stop_date < next_month:\n
+        need_update = True\n
+        break\n
 \n
 if need_update:\n
   if open_sale_order is None:\n
@@ -137,8 +138,9 @@ if need_update:\n
   for line in open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
     old_stop_date = line.getStopDate()\n
     if old_stop_date is not None:\n
-      new_stop_date = stop_date\n
-      if new_stop_date is None:\n
+      if stop_date is not None and old_stop_date < stop_date:\n
+        new_stop_date = stop_date\n
+      else:\n
         new_stop_date = old_stop_date + getNumberOfDayInMonth(old_stop_date)\n
       if new_stop_date < next_month:\n
         line.setStopDate(new_stop_date, activate_kw=activate_kw)\n
