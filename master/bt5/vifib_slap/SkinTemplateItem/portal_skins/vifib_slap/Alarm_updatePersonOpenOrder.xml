@@ -57,7 +57,7 @@ if params is None:\n
 kw = {}\n
 \n
 from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
+from Products.ERP5Type.DateUtils import getNumberOfDayInMonth\n
 \n
 last_active_process = context.getLastActiveProcess()\n
 if last_active_process is not None and params.get(\'full\', False):\n
@@ -67,8 +67,8 @@ if last_active_process is not None and params.get(\'full\', False):\n
 # register active process in order to have "windows" of last indexed objects\n
 context.newActiveProcess()\n
 \n
-\n
-params.setdefault(\'stop_date\', addToDate(getClosestDate(target_date=DateTime(), precision=\'month\', before=1), month=1))\n
+now = DateTime()\n
+params.setdefault(\'stop_date\', now + getNumberOfDayInMonth(now))\n
 \n
 context.getPortalObject().portal_catalog.searchAndActivate(\n
   method_id=\'Person_storeOpenOrderJournal\',\n
