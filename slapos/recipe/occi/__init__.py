@@ -24,12 +24,12 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import os
 import shutil
-from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.recipe.librecipe import GenericSlapRecipe
 from subprocess import Popen
+import sys
 
-class Recipe(GenericBaseRecipe):
+class Recipe(GenericSlapRecipe):
   def install(self):
     path_list = []
     poc_location = self.buildout['pocdirectory']['poc']
@@ -69,13 +69,15 @@ class Recipe(GenericBaseRecipe):
 
     # Generate wrapper
     wrapper_config_dict = dict(
-        dash_location=self.options['dash-location'],
+        python_location=sys.executable,
         poc_location=poc_location,
         manifest_name=self.options['manifest-name'],
         # XXX this is workaround
         accords_lib_directory=self.options['accords_lib_directory'])
-    path_list.append(self.createExecutable(self.options['accords'],
-      self.substituteTemplate(self.getTemplateFilename('accords.in'),
-        wrapper_config_dict)))
+
+    wrapper_location = self.createPythonScript(self.options['accords'],
+        '%s.accords.runAccords' % __name__,
+        wrapper_config_dict)
+    path_list.append(wrapper_location)
 
     return path_list
