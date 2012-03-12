@@ -148,7 +148,12 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
   def stepCheckThreeTopLevelSimulationMovement(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog.getResultValue(
       uid=sequence['hosting_subscription_uid'])
-    self.assertEqual(2, self.portal.portal_catalog.countResults(
+    # 4 open order lines:
+    #  * one without dates
+    #  * one with start date
+    #  * one with start date and stop date
+    #  * one with stop date extended by test
+    self.assertEqual(4, self.portal.portal_catalog.countResults(
       default_aggregate_uid=sequence['hosting_subscription_uid'],
       portal_type='Open Sale Order Line')[0][0]
     )
