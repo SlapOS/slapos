@@ -75,7 +75,7 @@ class Recipe(GenericSlapRecipe):
         # XXX this is workaround
         accords_lib_directory=self.options['accords_lib_directory'])
 
-    wrapper_location = self.createPythonScript(self.options['accords'],
+    wrapper_location = self.createPythonScript(self.options['accords-wrapper'],
         '%s.accords.runAccords' % __name__,
         wrapper_config_dict)
     path_list.append(wrapper_location)
