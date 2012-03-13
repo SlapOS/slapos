@@ -106,7 +106,7 @@ def getWorkflowDate(delivery, state):\n
   for item in workflow_item_list:\n
     if item.get(\'simulation_state\') == state:\n
       return item.get(\'time\')\n
-  return None\n
+  raise ValueError(\'Delivery %s has no state %s\' % (delivery.getPath(), state))\n
 \n
 for setup_line in catalog(\n
   portal_type=\'Sale Packing List Line\',\n
@@ -114,6 +114,7 @@ for setup_line in catalog(\n
   simulation_state=[\'stopped\', \'delivered\'],\n
   **movement_kw):\n
   real_setup_line = catalog.getResultValue(portal_type=\'Sale Packing List Line\', simulation_state=[\'stopped\', \'delivered\'],\n
+    default_resource_uid=setup_resource_uid,\n
     default_aggregate_uid=setup_line.getAggregateValue(portal_type=\'Hosting Subscription\').getPredecessorValue().getUid())\n
   # start date shall be stopped state reach\n
   start_date = getWorkflowDate(real_setup_line.getParentValue(), \'stopped\')\n
