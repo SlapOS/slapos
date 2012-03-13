@@ -29,15 +29,22 @@
 from slapos import slap
 import signal
 from subprocess import Popen
+import sys
 import time
 
-def runAccords(args):
+def runAccords(accords_conf):
   """Launch ACCORDS, parse manifest, broker manifest, send connection
      informations to SlapOS Master. Destroy instance and stops ACCORDS at
      SIGTERM."""
-  computer_id, computer_partition_id, server_url, software_release_url, \
-      key_file, cert_file, \
-      accords_lib_directory, poc_location, manifest_name = args
+  computer_id = accords_conf['computer_id']
+  computer_partition_id = accords_conf['computer_partition_id']
+  server_url = accords_conf['server_url']
+  software_release_url = accords_conf['software_release_url']
+  key_file = accords_conf['key_file']
+  cert_file = accords_conf['cert_file']
+  accords_lib_directory = accords_conf['accords_lib_directory']
+  poc_location = accords_conf['poc_location']
+  manifest_name = accords_conf['manifest_name']
 
   environment = dict(
      LD_LIBRARY_PATH=accords_lib_directory,
@@ -49,25 +56,30 @@ def runAccords(args):
         cwd=poc_location, env=environment).communicate()
     Popen(['./co-stop'],
         cwd=poc_location, env=environment).communicate()
+    sys.exit(0)
 
   signal.signal(signal.SIGTERM, sigtermHandler)
 
   # Launch ACCORDS, parse & broke manifest to deploy instance
   Popen(['./co-start'],cwd=poc_location, env=environment).communicate()
+  print 'Parsing manifest...'
   Popen(['./co-parser', manifest_name],
       cwd=poc_location, env=environment).communicate()
+  print 'Brokering manifest...'
   Popen(['./co-broker', manifest_name],
       cwd=poc_location, env=environment).communicate()
+  print 'Done.'
 
   # Parse answer
   # XXX
+  connection_dict = dict(connection='hardcoded')
   
   # Send information about published service to SlapOS Master
   slap_connection = slap.slap()
   slap_connection.initializeConnection(server_url, key_file, cert_file)
   computer_partition = slap_connection.registerComputerPartition(computer_id,
       computer_partition_id)
-  computer_partition.setConnectionDict()
+  computer_partition.setConnectionDict(connection_dict)
 
   # Go to sleep, wait kill
   while(True):

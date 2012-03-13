@@ -30,7 +30,7 @@ from subprocess import Popen
 import sys
 
 class Recipe(GenericSlapRecipe):
-  def install(self):
+  def _install(self):
     path_list = []
     poc_location = self.buildout['pocdirectory']['poc']
 
@@ -73,8 +73,13 @@ class Recipe(GenericSlapRecipe):
         poc_location=poc_location,
         manifest_name=self.options['manifest-name'],
         # XXX this is workaround
-        accords_lib_directory=self.options['accords_lib_directory'])
-
+        accords_lib_directory=self.options['accords_lib_directory'],
+        computer_id = self.computer_id,
+        computer_partition_id = self.computer_partition_id,
+        server_url = self.server_url,
+        software_release_url = self.software_release_url,
+        key_file = self.key_file,
+        cert_file = self.cert_file,)
     wrapper_location = self.createPythonScript(self.options['accords-wrapper'],
         '%s.accords.runAccords' % __name__,
         wrapper_config_dict)
