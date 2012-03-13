@@ -53,7 +53,6 @@
             <value> <string encoding="cdata"><![CDATA[
 
 from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import getNumberOfDayInMonth\n
 \n
 person = context\n
 portal = person.getPortalObject()\n
@@ -63,22 +62,22 @@ if portal.portal_activities.countMessageWithTag(tag) > 0:\n
   # nothing to do\n
   return\n
 \n
-if remove_hosting_list is None:\n
-  remove_hosting_list = []\n
-if add_kw_list is None:\n
-  add_kw_list = []\n
-if start_date_tuple_list is None:\n
-  start_date_tuple_list = []\n
-if stop_date is not None:\n
-  stop_date = DateTime(stop_date)\n
+add_kw_kw, modify_kw_kw, remove_id_list = context.Person_getOpenOrderDifference(\n
+  remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list,\n
+  stop_date=stop_date, start_date_tuple_list=start_date_tuple_list)\n
+\n
+if src__== 1:\n
+  return add_kw_kw, modify_kw_kw, remove_id_list\n
+\n
+if not(add_kw_kw or modify_kw_kw or remove_id_list):\n
+  return # nothing to do\n
+\n
+now = DateTime()\n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n
       default_destination_section_uid=person.getUid(),\n
       portal_type="Open Sale Order",\n
       validation_state="validated")\n
 \n
-now = DateTime()\n
-\n
-open_sale_order = None\n
 if previous_open_sale_order is None:\n
   open_sale_order = portal.open_sale_order_module.newContent(\n
         source=\'organisation_module/vifib_internet\',\n
@@ -90,83 +89,32 @@ if previous_open_sale_order is None:\n
         specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
         title="ViFiB Open Order",\n
         activate_kw=activate_kw)\n
+else:\n
+  open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
 \n
-hosting_subscription_mapping = {}\n
+for kw in add_kw_kw.itervalues():\n
+  open_sale_order.newContent(activate_kw=activate_kw, **kw)\n
+\n
+for hs, kw in modify_kw_kw.iteritems():\n
+  line = [q for q in open_sale_order.contentValues() if q.getAggregate(portal_type=\'Hosting Subscription\')][0]\n
+  line.edit(activate_kw=activate_kw, **kw)\n
+\n
+open_sale_order.deleteContent(remove_id_list)\n
 if previous_open_sale_order is not None:\n
-  for open_sale_order_line in previous_open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
-    hosting_subscription_mapping[open_sale_order_line.getAggregate(portal_type=\'Hosting Subscription\')] = open_sale_order_line.getId()\n
-\n
-just_added_hosting_kw = {}\n
-for add_kw in add_kw_list:\n
-  add_kw[\'activate_kw\'] = activate_kw\n
-  existing = portal.portal_catalog.countResults(portal_type=\'Open Sale Order Line\', default_aggregate_uid=portal.restrictedTraverse(add_kw[\'aggregate\']).getUid())[0][0] > 0\n
-  if add_kw[\'aggregate\'] not in hosting_subscription_mapping and not existing:\n
-    if open_sale_order is None:\n
-      open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-    id = open_sale_order.newContent(**add_kw).getId()\n
-    hosting_subscription_mapping[add_kw[\'aggregate\']] = id\n
-    just_added_hosting_kw[add_kw[\'aggregate\']] = 1\n
-\n
-for start_date_tuple in start_date_tuple_list:\n
-  if start_date_tuple[0] in hosting_subscription_mapping:\n
-    line_id = hosting_subscription_mapping[start_date_tuple[0]]\n
-    if line_id in previous_open_sale_order.objectIds():\n
-      line = previous_open_sale_order[line_id]\n
-    else:\n
-      line = open_sale_order[line_id]\n
-    if line.getStartDate() != start_date_tuple[1]:\n
-      if open_sale_order is None:\n
-        open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-      open_sale_order[hosting_subscription_mapping[start_date_tuple[0]]].setStartDate(start_date_tuple[1])\n
-\n
-next_month = DateTime() + getNumberOfDayInMonth(DateTime())\n
-\n
-order = previous_open_sale_order or open_sale_order\n
-for line in order.contentValues(portal_type=\'Open Sale Order Line\'):\n
-  old_stop_date = line.getStopDate()\n
-  if old_stop_date is not None:\n
-    if stop_date is not None and old_stop_date < stop_date:\n
-      if open_sale_order is None:\n
-        open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-        line = [q for q in open_sale_order.contentValues(portal_type=\'Open Sale Order Line\') if q.getAggregate(portal_type=\'Hosting Subscription\') == line.getAggregate(portal_type=\'Hosting Subscription\')][0]\n
-      line.setStopDate(stop_date, activate_kw=activate_kw)\n
-    else:\n
-      new_stop_date = old_stop_date + getNumberOfDayInMonth(old_stop_date)\n
-      if new_stop_date < next_month:\n
-        if open_sale_order is None:\n
-          open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-          line = [q for q in open_sale_order.contentValues(portal_type=\'Open Sale Order Line\') if q.getAggregate(portal_type=\'Hosting Subscription\') == line.getAggregate(portal_type=\'Hosting Subscription\')][0]\n
-        line.setStopDate(new_stop_date, activate_kw=activate_kw)        \n
-\n
-for remove_hosting in remove_hosting_list:\n
-  if remove_hosting in just_added_hosting_kw:\n
-    # just added, cannot remove yet\n
-    continue\n
-  remove_id = hosting_subscription_mapping.get(remove_hosting)\n
-  if remove_id is not None:\n
-    if open_sale_order is not None:\n
-      line = open_sale_order[remove_id]\n
-    elif previous_open_sale_order is not None:\n
-      line = previous_open_sale_order[remove_id]\n
-    if line.getStartDate() is not None and line.getStopDate() is not None and line.getStartDate() < line.getStopDate():\n
-      if open_sale_order is None:\n
-        open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-      open_sale_order.deleteContent(remove_id)\n
-      hosting_subscription_mapping.pop(remove_hosting)\n
-\n
-if previous_open_sale_order is not None and open_sale_order is not None:\n
   previous_open_sale_order.setExpirationDate(now, activate_kw=activate_kw)\n
 if open_sale_order is not None:\n
   open_sale_order.setEffectiveDate(now, activate_kw=activate_kw)\n
   open_sale_order.order(activate_kw=activate_kw)\n
   open_sale_order.validate(activate_kw=activate_kw)\n
+\n
+return add_kw_kw, modify_kw_kw, remove_id_list\n
 
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>remove_hosting_list=None, add_kw_list=None, stop_date=None, start_date_tuple_list=None</string> </value>
+            <value> <string>src__=0, remove_hosting_list=None, add_kw_list=None, stop_date=None, start_date_tuple_list=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

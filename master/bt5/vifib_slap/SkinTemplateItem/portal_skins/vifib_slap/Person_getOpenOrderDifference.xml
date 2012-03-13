@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+from Products.ERP5Type.DateUtils import getNumberOfDayInMonth\n
+from DateTime import DateTime\n
+\n
+person = context\n
+portal = person.getPortalObject()\n
+\n
+if remove_hosting_list is None:\n
+  remove_hosting_list = []\n
+if add_kw_list is None:\n
+  add_kw_list = []\n
+if start_date_tuple_list is None:\n
+  start_date_tuple_list = []\n
+if stop_date is not None:\n
+  stop_date = DateTime(stop_date)\n
+\n
+previous_open_sale_order = portal.portal_catalog.getResultValue(\n
+      default_destination_section_uid=person.getUid(),\n
+      portal_type="Open Sale Order",\n
+      validation_state="validated")\n
+\n
+hosting_subscription_mapping = {}\n
+if previous_open_sale_order is not None:\n
+  for open_sale_order_line in previous_open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
+    hosting_subscription_mapping[open_sale_order_line.getAggregate(portal_type=\'Hosting Subscription\')] = open_sale_order_line.getId()\n
+\n
+now = DateTime()\n
+\n
+add_kw_kw = {}\n
+for add_kw in add_kw_list:\n
+  existing = portal.portal_catalog.countResults(portal_type=\'Open Sale Order Line\', default_aggregate_uid=portal.restrictedTraverse(add_kw[\'aggregate\']).getUid())[0][0] > 0\n
+  if add_kw[\'aggregate\'] not in hosting_subscription_mapping and not existing:\n
+    add_kw_kw[add_kw[\'aggregate\']] = add_kw.copy()\n
+\n
+modify_kw_kw = {}\n
+for start_date_tuple in start_date_tuple_list:\n
+  if start_date_tuple[0] in hosting_subscription_mapping:\n
+    line_id = hosting_subscription_mapping[start_date_tuple[0]]\n
+    line = previous_open_sale_order[line_id]\n
+    if line.getStartDate() != start_date_tuple[1]:\n
+      modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')] = {\'start_date\': start_date_tuple[1]}\n
+  elif start_date_tuple[0] in add_kw_kw:\n
+    add_kw_kw[start_date_tuple[0]][\'start_date\'] = start_date_tuple[1]\n
+\n
+next_month = now + getNumberOfDayInMonth(now)\n
+if previous_open_sale_order is not None:\n
+  for line in previous_open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
+    old_stop_date = line.getStopDate()\n
+    if old_stop_date is not None:\n
+      if stop_date is not None and old_stop_date < stop_date:\n
+        modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'stop_date\'] = stop_date\n
+      else:\n
+        new_stop_date = old_stop_date + getNumberOfDayInMonth(old_stop_date)\n
+        while new_stop_date < now:\n
+          new_stop_date += getNumberOfDayInMonth(new_stop_date)\n
+        if new_stop_date < next_month and new_stop_date != stop_date:\n
+          hosting_id = line.getAggregate(portal_type=\'Hosting Subscription\')\n
+          modify_kw_kw.setdefault(hosting_id, {})\n
+          modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'stop_date\'] = new_stop_date\n
+\n
+for (key, value) in add_kw_kw.copy().iteritems():\n
+  if stop_date is not None:\n
+    add_kw_kw[key][\'stop_date\'] = stop_date\n
+  else:\n
+    start_date = add_kw_kw[key].get(\'start_date\')\n
+    if start_date is not None:\n
+      new_stop_date = start_date + getNumberOfDayInMonth(start_date)\n
+      while new_stop_date < now:\n
+        new_stop_date += getNumberOfDayInMonth(new_stop_date)\n
+      if new_stop_date < next_month:\n
+        add_kw_kw[key][\'stop_date\'] = new_stop_date\n
+\n
+remove_id_list = set()\n
+if previous_open_sale_order is not None:\n
+  for remove_hosting in remove_hosting_list:\n
+    if remove_hosting in add_kw_kw or remove_hosting in modify_kw_kw:\n
+      # just added, cannot remove yet\n
+      continue\n
+    if remove_hosting in hosting_subscription_mapping:\n
+      line = previous_open_sale_order[hosting_subscription_mapping.get(remove_hosting)]\n
+      if line.getStartDate() is not None and line.getStopDate() is not None and line.getStartDate() < line.getStopDate():\n
+        remove_id_list.add(line.getId())\n
+return add_kw_kw, modify_kw_kw, list(remove_id_list)\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>remove_hosting_list=None, add_kw_list=None, stop_date=None, start_date_tuple_list=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Person_getOpenOrderDifference</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
