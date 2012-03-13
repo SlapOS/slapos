@@ -44,9 +44,7 @@
         <item>
             <key> <string>edit_order</string> </key>
             <value>
-              <list>
-                <string>[]</string>
-              </list>
+              <list/>
             </value>
         </item>
         <item>
@@ -66,7 +64,6 @@
                 <string>center</string>
                 <string>bottom</string>
                 <string>hidden</string>
-                <string>left</string>
               </list>
             </value>
         </item>
@@ -89,14 +86,13 @@
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list/>
-                    </value>
-                </item>
-                <item>
-                    <key> <string>left</string> </key>
-                    <value>
                       <list>
-                        <string>your_description</string>
+                        <string>listbox_status</string>
+                        <string>listbox_start_button</string>
+                        <string>listbox_destroy_button</string>
+                        <string>listbox_stop_button</string>
+                        <string>listbox_image</string>
+                        <string>listbox_action_button</string>
                       </list>
                     </value>
                 </item>
@@ -104,22 +100,16 @@
                     <key> <string>normal</string> </key>
                     <value>
                       <list>
-                        <string>my_description</string>
+                        <string>my_title</string>
+                        <string>listbox</string>
+                        <string>last_event_listbox</string>
                       </list>
                     </value>
                 </item>
                 <item>
                     <key> <string>right</string> </key>
                     <value>
-                      <list>
-                        <string>my_login_button</string>
-                        <string>my_join_button</string>
-                        <string>my_order_button</string>
-                        <string>go_to_software</string>
-                        <string>my_pay_button</string>
-                        <string>your_payment_preparation_js</string>
-                        <string>your_payment_in_progress_js</string>
-                      </list>
+                      <list/>
                     </value>
                 </item>
               </dictionary>
@@ -127,7 +117,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_viewVifibKVMOrder</string> </value>
+            <value> <string>HostingSubscription_viewAsWeb</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -135,7 +125,7 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>WebSection_viewServiceChoiceDialog</string> </value>
+            <value> <string>OpenSaleOrderLine_viewAsWeb</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
@@ -151,7 +141,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Order</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>

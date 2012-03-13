@@ -50,17 +50,36 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>if context.getPortalType() == \'Sale Order Line\':\n
-  delivery_line = context\n
-else:\n
-  delivery_line = context.SoftwareInstance_getInstancePackingListLine(portal_type=["Sale Order Line", "Sale Packing List Line"])\n
+            <value> <string>from Products.ZSQLCatalog.SQLCatalog import NegatedQuery, Query\n
 \n
-if delivery_line is not None:\n
-  software_release = delivery_line.getAggregateValue(portal_type=\'Software Release\')\n
-  if software_release is not None:\n
-    software_product = software_release.getAggregateValue()\n
-    if software_product is not None:\n
-      return "%s/index_html" % software_product.getDefaultImageAbsoluteUrl()\n
+portal = context.getPortalObject()\n
+person_uid = portal.ERP5Site_getPropertyFromAuthenticatedMemberPersonValue(\'uid\')\n
+person_reference = portal.ERP5Site_getPropertyFromAuthenticatedMemberPersonValue(\'reference\')\n
+\n
+setup_service = portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource())\n
+\n
+# XXX Owner column should not be used to fetch the list!\n
+# Data model of hosting subscription should be fixed to allow direct query\n
+hosting_subscription_list = portal.portal_catalog(\n
+  portal_type="Hosting Subscription",\n
+  owner=person_reference,\n
+  )\n
+\n
+# Only return ongoing hosting subscription\n
+return [x for x in hosting_subscription_list if \\\n
+  (len(portal.portal_catalog(\n
+    portal_type="Sale Packing List Line",\n
+    simulation_state=NegatedQuery(Query(simulation_state="delivered")),\n
+    default_resource_uid=setup_service.getUid(),\n
+    default_aggregate_uid=x.getUid(),\n
+    limit=1,\n
+  )) == 1) or \\\n
+  (len(portal.portal_catalog(\n
+    portal_type="Sale Packing List Line",\n
+    default_resource_uid=setup_service.getUid(),\n
+    default_aggregate_uid=x.getUid(),\n
+    limit=1,\n
+  )) == 0)]\n
 </string> </value>
         </item>
         <item>
@@ -69,11 +88,7 @@ if delivery_line is not None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_getDefaultImageAbsoluteUrl</string> </value>
-        </item>
-        <item>
-            <key> <string>title</string> </key>
-            <value> <string>XXX Fix it</string> </value>
+            <value> <string>WebSection_getCurrentHostingSubscriptionList</string> </value>
         </item>
       </dictionary>
     </pickle>

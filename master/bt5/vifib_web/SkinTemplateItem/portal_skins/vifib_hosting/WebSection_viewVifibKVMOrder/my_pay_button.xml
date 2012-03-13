@@ -65,12 +65,6 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
-                    <key> <string>enabled</string> </key>
-                    <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
-                    </value>
-                </item>
-                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -81,7 +75,7 @@
                 <item>
                     <key> <string>href</string> </key>
                     <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
                     </value>
                 </item>
                 <item>
@@ -138,19 +132,6 @@
     </pickle>
   </record>
   <record id="2" aka="AAAAAAAAAAI=">
-    <pickle>
-      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
-    </pickle>
-    <pickle>
-      <dictionary>
-        <item>
-            <key> <string>_text</string> </key>
-            <value> <string>python: not here.portal_membership.isAnonymousUser() and here.ERP5Site_getInitialPlannedPaymentTransaction() is not None</string> </value>
-        </item>
-      </dictionary>
-    </pickle>
-  </record>
-  <record id="3" aka="AAAAAAAAAAM=">
     <pickle>
       <global name="TALESMethod" module="Products.Formulator.TALESField"/>
     </pickle>
