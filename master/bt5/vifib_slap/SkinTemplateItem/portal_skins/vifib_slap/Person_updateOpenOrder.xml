@@ -109,8 +109,11 @@ for add_kw in add_kw_list:\n
 \n
 for start_date_tuple in start_date_tuple_list:\n
   if start_date_tuple[0] in hosting_subscription_mapping:\n
-    order = previous_open_sale_order or open_sale_order\n
-    line = order[hosting_subscription_mapping[start_date_tuple[0]]]\n
+    line_id = hosting_subscription_mapping[start_date_tuple[0]]\n
+    if line_id in previous_open_sale_order.objectIds():\n
+      line = previous_open_sale_order[line_id]\n
+    else:\n
+      line = open_sale_order[line_id]\n
     if line.getStartDate() != start_date_tuple[1]:\n
       if open_sale_order is None:\n
         open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
