@@ -101,7 +101,11 @@ for start_date_tuple in start_date_tuple_list:\n
   hs = portal.restrictedTraverse(start_date_tuple[0])\n
   if hs.getPeriodicityMonthDayList() != [start_date.day()]:\n
     hs_modify_kw_kw.setdefault(start_date_tuple[0], {})\n
-    hs_modify_kw_kw[start_date_tuple[0]][\'periodicity_month_day_list\'] = [start_date.day()]\n
+    hs_modify_kw_kw[start_date_tuple[0]] = dict(\n
+      periodicity_month_day_list = [start_date.day()],\n
+      periodicity_hour_list=[0],\n
+      periodicity_minute_list=[0]\n
+    )\n
 \n
 if previous_open_sale_order is not None:\n
   for line in previous_open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
