@@ -32,6 +32,7 @@ class Recipe(GenericBaseRecipe):
   def _options(self, options):
     options['password'] = self.generatePassword()
     options['test-password'] = self.generatePassword()
+    options.setdefault('parallel-test-database-amount', '0')
     for x in xrange(0, int(options['parallel-test-database-amount'])):
       options['test-password-%s' % x] = self.generatePassword()
 
