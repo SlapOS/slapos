@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>if context.getPortalType() != \'Sale Order Line\':\n
+  raise TypeError(\'%s is not Sale Order Line\' % context.getPath())\n
+\n
+if context.getPrice() == 0:\n
+  return\n
+\n
+context.setPrice(0.0)\n
+\n
+order_simulation_movement = context.getDeliveryRelatedValue(portal_type=\'Simulation Movement\')\n
+\n
+for delivery_rule in order_simulation_movement.contentValues():\n
+  for delivery_simulation_movement in delivery_rule.contentValues():\n
+    delivery_line = delivery_simulation_movement.getDeliveryValue()\n
+    if delivery_line is not None:\n
+      delivery_line.setPrice(0.0)\n
+    for invoice_rule in delivery_simulation_movement.contentValues():\n
+      for invoice_simulation_movement in invoice_rule.contentValues():\n
+        invoice_line = invoice_simulation_movement.getDeliveryValue()\n
+        if invoice_line is not None:\n
+          if invoice_line.getSimulationState() == \'planned\':\n
+            invoice_line.getParentValue().deleteContent(invoice_line.getId())\n
+          else:\n
+            raise TypeError(\'%s is not planned\' % invoice_line.getPath())\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SaleOrderLine_migratePriceOne</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
