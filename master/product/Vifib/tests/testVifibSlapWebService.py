@@ -2793,6 +2793,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     line = order.newContent(
         portal_type=self.sale_packing_list_line_portal_type,
         quantity=1,
+        price=1
         )
     sequence.edit(sale_packing_list_line_uid=line.getUid())
 
