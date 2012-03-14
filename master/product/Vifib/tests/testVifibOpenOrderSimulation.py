@@ -27,24 +27,6 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       "portal_rules/vifib_subscription_item_rule",
       applied_rule.getSpecialise())
 
-    # check periodicity, should be first day of each month
-    self.assertEquals(
-      None, hosting_subscription.getPeriodicityMinuteFrequency())
-    self.assertEquals(
-      [0], hosting_subscription.getPeriodicityMinuteList())
-    self.assertEquals(
-      None, hosting_subscription.getPeriodicityHourFrequency())
-    self.assertEquals(
-      [0], hosting_subscription.getPeriodicityHourList())
-    self.assertEquals(
-      None, hosting_subscription.getPeriodicityDayFrequency())
-    self.assertEquals(
-      None, hosting_subscription.getPeriodicityMonthFrequency())
-    self.assertEquals(
-      [1], hosting_subscription.getPeriodicityMonthDayList())
-    self.assertEquals(
-      None, hosting_subscription.getPeriodicityWeekFrequency())
-
     # check start date and stop date of the subscription item,
     # currently there is 1 month
     instance_setup_delivery = self.portal.portal_catalog.getResultValue(
@@ -61,8 +43,29 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         start_date = item.get('time')
         break
 
+    start_date = getClosestDate(target_date=start_date, precision='day')
+    while start_date.day() >= 29:
+      start_date = addToDate(start_date, to_add={'day': -1})
+    stop_date = addToDate(start_date, to_add={'month': 1})
+    # check periodicity, should be first day of each month
+    self.assertEquals(
+      None, hosting_subscription.getPeriodicityMinuteFrequency())
+    self.assertEquals(
+      [0], hosting_subscription.getPeriodicityMinuteList())
+    self.assertEquals(
+      None, hosting_subscription.getPeriodicityHourFrequency())
+    self.assertEquals(
+      [0], hosting_subscription.getPeriodicityHourList())
+    self.assertEquals(
+      None, hosting_subscription.getPeriodicityDayFrequency())
+    self.assertEquals(
+      None, hosting_subscription.getPeriodicityMonthFrequency())
+    self.assertEquals(
+      [start_date.day()], hosting_subscription.getPeriodicityMonthDayList())
+    self.assertEquals(
+      None, hosting_subscription.getPeriodicityWeekFrequency())
+
     self.assertEqual(start_date, open_order_line.getStartDate())
-    stop_date = start_date + getNumberOfDayInMonth(start_date)
     self.assertEqual(stop_date, open_order_line.getStopDate())
 
     simulation_movement_list = self.portal.portal_catalog(
