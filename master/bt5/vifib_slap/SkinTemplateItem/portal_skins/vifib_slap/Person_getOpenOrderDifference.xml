@@ -95,7 +95,7 @@ for start_date_tuple in start_date_tuple_list:\n
     line_id = hosting_subscription_mapping[start_date_tuple[0]]\n
     line = previous_open_sale_order[line_id]\n
     if line.getStartDate() != start_date:\n
-      modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')] = {\'start_date\': start_date_tuple[1]}\n
+      modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')] = {\'start_date\': start_date}\n
   elif start_date_tuple[0] in add_kw_kw:\n
     add_kw_kw[start_date_tuple[0]][\'start_date\'] = start_date\n
   hs = portal.restrictedTraverse(start_date_tuple[0])\n
