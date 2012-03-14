@@ -112,6 +112,7 @@ if previous_open_sale_order is not None:\n
     old_stop_date = line.getStopDate()\n
     if old_stop_date is not None:\n
       if stop_date is not None and old_stop_date < stop_date:\n
+        modify_kw_kw.setdefault(line.getAggregate(portal_type=\'Hosting Subscription\'), {})\n
         modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'stop_date\'] = stop_date\n
       elif old_stop_date < now:\n
         new_stop_date = addToDate(old_stop_date, to_add={\'month\': 1})\n
