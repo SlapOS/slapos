@@ -84,11 +84,12 @@ def assignComputerPartition(order):\n
             software_instance.getPortalType(), software_instance.getSlaXmlAsDict()])\n
           order_line.edit(\n
             aggregate_list=order_line.getAggregateList()+[computer_partition_relative_url])\n
+          return computer_partition_relative_url\n
 \n
 sale_order = context.getParentValue()\n
 if sale_order.getSimulationState() == \'ordered\':\n
   try:\n
-    assignComputerPartition(sale_order)\n
+    computer_partition = getComputerPartition(sale_order)\n
   except ValueError:\n
     # It was not possible to find free Computer Partition\n
     pass\n
@@ -96,13 +97,14 @@ if sale_order.getSimulationState() == \'ordered\':\n
     # user has bad balance\n
     pass\n
   else:\n
-    try:\n
-      sale_order.Base_checkConsistency()\n
-    except ValidationFailed:\n
-      # order not ready yet\n
-      pass\n
-    else:\n
-      sale_order.confirm()\n
+    if computer_partition is not None:\n
+      try:\n
+        sale_order.Base_checkConsistency()\n
+      except ValidationFailed:\n
+        # order not ready yet\n
+        pass\n
+      else:\n
+        sale_order.confirm()\n
 </string> </value>
         </item>
         <item>

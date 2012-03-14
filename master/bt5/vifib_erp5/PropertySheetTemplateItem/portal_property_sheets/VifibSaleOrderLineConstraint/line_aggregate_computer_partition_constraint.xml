@@ -86,7 +86,7 @@
         </item>
         <item>
             <key> <string>test_tales_expression</string> </key>
-            <value> <string>python: object.getResourceValue() is not None and object.getResource() in [object.portal_preferences.getPreferredInstanceSetupResource(), object.portal_preferences.getPreferredInstanceHostingResource(), object.portal_preferences.getPreferredInstanceCleanupResource()]</string> </value>
+            <value> <string>python: object.getSimulationState() == \'confirmed\' and object.getResourceValue() is not None and object.getResource() in [object.portal_preferences.getPreferredInstanceSetupResource(), object.portal_preferences.getPreferredInstanceHostingResource(), object.portal_preferences.getPreferredInstanceCleanupResource()]</string> </value>
         </item>
         <item>
             <key> <string>use_acquisition</string> </key>
