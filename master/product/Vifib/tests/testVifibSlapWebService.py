@@ -402,11 +402,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=sequence['computer_partition_uid'])
     delivery_line_list = [q.getObject() for q in self.portal.portal_catalog(
-      aggregate_relative_url=computer_partition.getRelativeUrl(),
+      default_aggregate_uid=ComplexQuery(
+         Query(default_aggregate_uid=computer_partition.getUid()),
+         Query(default_aggregate_uid=sequence['software_instance_uid']),
+         operator="AND"),
       portal_type=self.sale_packing_list_line_portal_type,
       simulation_state=state,
-      resource_relative_url=resource) if sequence['software_instance_uid']
-        in q.getAggregateUidList()]
+      resource_relative_url=resource)]
     self.assertEqual(delivery_line_amount, len(delivery_line_list))
 
   def _checkComputerPartitionNoSalePackingList(self, resource, sequence):
