@@ -1120,6 +1120,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLoginCurrentComputer \
       SoftwareInstanceDestroyed \
       Tic \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \

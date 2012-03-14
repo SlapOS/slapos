@@ -197,6 +197,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
       Tic
+      Tic # in order to update Open Order
       SlapLogout
 
       LoginDefaultUser

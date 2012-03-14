@@ -1035,6 +1035,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         SlapLoginCurrentComputer \
         SoftwareInstanceDestroyed \
         Tic \
+        Tic \
         SlapLogout \
         \
         LoginDefaultUser \
@@ -1311,6 +1312,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         SlapLoginCurrentComputer \
         SoftwareInstanceDestroyed \
         Tic \
+        Tic \
         SlapLogout \
         \
         LoginDefaultUser \
@@ -1350,6 +1352,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Logout \
         SlapLoginCurrentComputer \
         SoftwareInstanceDestroyed \
+        Tic \
         Tic \
         SlapLogout \
         \
