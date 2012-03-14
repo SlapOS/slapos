@@ -89,7 +89,7 @@ def assignComputerPartition(order):\n
 sale_order = context.getParentValue()\n
 if sale_order.getSimulationState() == \'ordered\':\n
   try:\n
-    computer_partition = getComputerPartition(sale_order)\n
+    computer_partition = assignComputerPartition(sale_order)\n
   except ValueError:\n
     # It was not possible to find free Computer Partition\n
     pass\n
