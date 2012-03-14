@@ -1,7 +1,7 @@
 import unittest
 from Products.ERP5Type.tests.Sequence import SequenceList
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-from Products.ERP5Type.DateUtils import getClosestDate, getNumberOfDayInMonth
+from Products.ERP5Type.DateUtils import getClosestDate, addToDate
 from DateTime import DateTime
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
@@ -30,7 +30,10 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       if item.get('simulation_state') == 'stopped':
         start_date = item.get('time')
         break
-    stop_date = start_date + getNumberOfDayInMonth(start_date)
+    start_date = getClosestDate(target_date=start_date, precision='day')
+    while start_date.day() >= 29:
+      start_date = addToDate(start_date, to_add={'day': -1})
+    stop_date = addToDate(start_date, to_add={'month': 1})
     idx = 0
     for delivery in delivery_list:
       self.assertEqual(start_date, delivery.getStartDate())
