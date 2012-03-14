@@ -28,9 +28,6 @@
                 <string>root_software_release_url</string>
                 <string>root_state</string>
                 <string>title</string>
-                <string>periodicity_hour</string>
-                <string>periodicity_minute</string>
-                <string>periodicity_month_day</string>
               </tuple>
             </value>
         </item>
@@ -42,7 +39,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>reference_constraint</string> </value>
+            <value> <string>basic_property_constraint</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
