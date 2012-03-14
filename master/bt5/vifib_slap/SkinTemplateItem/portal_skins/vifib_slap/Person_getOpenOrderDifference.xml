@@ -88,9 +88,9 @@ for add_kw in add_kw_list:\n
 modify_kw_kw = {}\n
 hs_modify_kw_kw = {}\n
 for start_date_tuple in start_date_tuple_list:\n
-  start_date = getClosestDate(target_date=addToDate(start_date_tuple[1], to_add={\'day\': 1}), precision=\'day\')\n
-  if start_date.day() >= 29:\n
-    start_date = getClosestDate(target_date=addToDate(start_date, to_add={\'month\': 1}))\n
+  start_date = getClosestDate(target_date=start_date_tuple[1], precision=\'day\')\n
+  while start_date.day() >= 29:\n
+    start_date = addToDate(start_date, to_add={\'day\': -1})\n
   if start_date_tuple[0] in hosting_subscription_mapping:\n
     line_id = hosting_subscription_mapping[start_date_tuple[0]]\n
     line = previous_open_sale_order[line_id]\n
@@ -131,6 +131,17 @@ for (key, value) in add_kw_kw.copy().iteritems():\n
       while new_stop_date < now:\n
         new_stop_date = addToDate(new_stop_date, to_add={\'month\': 1})\n
       add_kw_kw[key][\'stop_date\'] = new_stop_date\n
+\n
+for (key, value) in modify_kw_kw.copy().iteritems():\n
+  if stop_date is not None:\n
+    modify_kw_kw[key][\'stop_date\'] = stop_date\n
+  else:\n
+    start_date = modify_kw_kw[key].get(\'start_date\')\n
+    if start_date is not None:\n
+      new_stop_date = addToDate(start_date, to_add={\'month\': 1})\n
+      while new_stop_date < now:\n
+        new_stop_date = addToDate(new_stop_date, to_add={\'month\': 1})\n
+      modify_kw_kw[key][\'stop_date\'] = new_stop_date\n
 \n
 remove_id_list = set()\n
 if previous_open_sale_order is not None:\n
