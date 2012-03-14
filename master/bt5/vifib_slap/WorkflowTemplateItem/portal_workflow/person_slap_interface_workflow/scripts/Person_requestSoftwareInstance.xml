@@ -111,9 +111,6 @@ if (request_hosting_subscription is None):\n
     root_software_release_url=software_release_url_string,\n
     root_slave=is_slave,\n
     root_state=state,\n
-    periodicity_hour_list=[0],\n
-    periodicity_minute_list=[0],\n
-    periodicity_month_day=[1],\n
     activate_kw={\'tag\': tag},\n
   )\n
   request_hosting_subscription.portal_workflow.doActionFor(request_hosting_subscription,\n
