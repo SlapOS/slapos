@@ -70,6 +70,8 @@ else:\n
 \n
   if paid:\n
     result = "Paid"\n
+  elif context.getTotalPrice() == 0:\n
+    result = "Free!"\n
   else:\n
     result = "Waiting for payment"\n
 \n
