@@ -70,7 +70,7 @@ if src__== 1:\n
   return add_kw_kw, modify_kw_kw, hs_modify_kw_kw, remove_id_list\n
 \n
 for hs, kw in hs_modify_kw_kw.iteritems():\n
-  portal.restrictedTraverse(hs).edit(**kw)\n
+  portal.restrictedTraverse(hs).edit(activate_kw=activate_kw, **kw)\n
 \n
 if not(add_kw_kw or modify_kw_kw or remove_id_list):\n
   return # nothing to do\n
