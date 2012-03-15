@@ -99,7 +99,7 @@ for kw in add_kw_kw.itervalues():\n
   open_sale_order.newContent(activate_kw=activate_kw, **kw)\n
 \n
 for hs, kw in modify_kw_kw.iteritems():\n
-  line = [q for q in open_sale_order.contentValues() if q.getAggregate(portal_type=\'Hosting Subscription\')][0]\n
+  line = [q for q in open_sale_order.contentValues() if q.getAggregate(portal_type=\'Hosting Subscription\').getRelativeUrl() == hs][0]\n
   line.edit(activate_kw=activate_kw, **kw)\n
 \n
 open_sale_order.deleteContent(remove_id_list)\n
