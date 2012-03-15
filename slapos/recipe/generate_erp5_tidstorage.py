@@ -168,7 +168,9 @@ class Recipe(GenericSlapRecipe):
         access_control_string=backend_configuration['access-control-string'],
         maxconn=backend_configuration['maxconn'],
         server_check_path='/%s/getId' % site_id,
-        haproxy_backend_list=' '.join(haproxy_backend_list)
+        haproxy_backend_list=' '.join(haproxy_backend_list),
+        ssl_authentication=backend_configuration.get('ssl-authentication',
+          False)
       )
       current_apache_port += 1
       output += snippet_backend % backend_dict
