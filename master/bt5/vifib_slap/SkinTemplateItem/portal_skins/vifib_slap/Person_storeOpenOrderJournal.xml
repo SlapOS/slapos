@@ -50,9 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-person = context\n
+            <value> <string>person = context\n
 portal = context.getPortalObject()\n
 catalog = portal.portal_catalog\n
 \n
@@ -62,8 +60,8 @@ setup_resource_uid = portal.restrictedTraverse(portal.portal_preferences.getPref
 person_uid = person.getUid()\n
 \n
 kw = {}\n
-if indexation_timestamp is not None:\n
-  kw[\'indexation_timestamp\'] = ">= %s" % indexation_timestamp\n
+if modification_date is not None:\n
+  kw[\'modification_date\'] = Query(modification_date=modification_date, range="min")\n
 \n
 remove_hosting_list = []\n
 add_kw_list = []\n
@@ -126,13 +124,11 @@ for setup_line in catalog(\n
 result = person.Person_updateOpenOrder(src__=src__, remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list, start_date_tuple_list=start_date_tuple_list, stop_date=stop_date)\n
 from pprint import pformat\n
 return pformat(result)\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>src__=0, indexation_timestamp=None, tag=None, stop_date=None</string> </value>
+            <value> <string>src__=0, modification_date=None, tag=None, stop_date=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

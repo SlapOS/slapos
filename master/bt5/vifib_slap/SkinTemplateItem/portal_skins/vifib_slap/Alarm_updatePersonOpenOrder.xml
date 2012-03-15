@@ -50,34 +50,31 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-if params is None:\n
+            <value> <string>if params is None:\n
   params = {}\n
 kw = {}\n
 \n
 from DateTime import DateTime\n
+from Products.ZSQLCatalog.SQLCatalog import Query\n
 \n
 last_active_process = context.getLastActiveProcess()\n
 if last_active_process is not None and params.get(\'full\', False):\n
   # fetch only objects modified since last alarm run\n
-  kw[\'indexation_timestamp\'] = \'>= %s\' % last_active_process.getStartDate().ISO()\n
+  kw[\'modification_date\'] = Query(modification_date=last_active_process.getStartDate(), range="min")\n
 \n
 # register active process in order to have "windows" of last indexed objects\n
 context.newActiveProcess()\n
 \n
 context.getPortalObject().portal_catalog.searchAndActivate(\n
   method_id=\'Person_storeOpenOrderJournal\',\n
-  method_kw={\'indexation_timestamp\': kw.get(\'indexation_timestamp\'), \'tag\': tag, \'stop_date\': params.get(\'stop_date\')},\n
+  method_kw={\'modification_date\': kw.get(\'modification_date\'), \'tag\': tag, \'stop_date\': params.get(\'stop_date\')},\n
   activate_kw={\'tag\': tag, \'priority\': 10},\n
   packet_size=1, # Person_storeOpenOrderJournal generates big transactions\n
   portal_type=\'Person\'\n
 )\n
 \n
 context.activate(after_tag=tag).getId()\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
