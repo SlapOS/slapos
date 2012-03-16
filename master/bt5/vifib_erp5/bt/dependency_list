@@ -1,2 +1,16 @@
-vifib_data_simulation
+vifib_base
+vifib_core
+vifib_crm
+vifib_data
+vifib_data_category
 vifib_data_payzen
+vifib_data_simulation
+vifib_data_web
+vifib_forge_release
+vifib_l10n_fr
+vifib_mysql_innodb_catalog
+vifib_open_trade
+vifib_payzen
+vifib_slap
+vifib_software_pdm
+vifib_web
