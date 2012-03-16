@@ -49,7 +49,8 @@ class Recipe(GenericBaseRecipe):
       apache_conf['ssl_session_cache'] = self.options['ssl-session-cache']
       apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
           'template/snippet.ssl.in') % apache_conf
-      if self.optionIsTrue('ssl-authentication'):
+      if 'ssl-authentication' in self.options and self.optionIsTrue(
+          'ssl-authentication'):
         apache_conf['ssl_snippet'] += pkg_resources.resource_string(__name__,
           'template/snippet.ssl.ca.in') % dict(
             ca_certificate=self.options['ssl-authentication-certificate'],
