@@ -36,15 +36,23 @@ class Recipe(GenericBaseRecipe):
     """Generate rewrite rules list from slaves list"""
     rewrite_rule_list = []
     for slave_instance in slave_instance_list:
+      # Check for mandatory fields
+      if slave_instance.get('host', None) is None:
+        self.logger.warn('No "host" parameter is defined for %s slave'\
+            'instance. Ignoring it.' % slave_instance['slave_reference'])
+        continue
+      if slave_instance.get('port', None) is None:
+        self.logger.warn('No "host" parameter is defined for %s slave'\
+            'instance. Ignoring it.' % slave_instance['slave_reference'])
+        continue
+
       current_slave_dict = dict()
+
       # Get host, and if IPv6 address, remove "[" and "]"
       current_slave_dict['host'] = current_slave_dict['host'].\
           replace('[', '').replace(']', '')
       current_slave_dict['port'] = slave_instance['port']
-      if current_slave_dict['host'] is None \
-          or current_slave_dict['port'] is None:
-        # XXX-Cedric: should raise warning because slave seems badly configured
-        continue
+
       # Check if target is https or http
       current_slave_dict['https'] = slave_instance.get('https', 'true')
       if current_slave_dict['https'] in FALSE_VALUE_LIST:
