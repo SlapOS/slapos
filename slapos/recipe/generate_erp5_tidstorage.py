@@ -187,13 +187,36 @@ class Recipe(GenericSlapRecipe):
     output += SECTION_BACKEND_PUBLISHER + '\n'
     output += '\n'.join(publish_url_list)
     part_list.append('publish-apache-backend-list')
+    master_dict = self.parameter_dict.copy()
+    if 'erp5-ca' in json_data:
+      erp5_ca = json_data['erp5-ca']
+      # Fetching exactly named parameters from json in order to raise proper
+      # error if required
+      master_dict.update(
+        erp5_ca_country_code = erp5_ca['country-code'],
+        erp5_ca_email = erp5_ca['email'],
+        erp5_ca_state = erp5_ca['state'],
+        erp5_ca_city = erp5_ca['city'],
+        erp5_ca_company = erp5_ca['company']
+      )
+    else:
+      master_dict.update(dict(
+        erp5_ca_country_code = 'XX',
+        erp5_ca_email = 'xx@example.com',
+        # XXX-BBB: State by mistake has been configured as string "('State',)"
+        #          string, so keep this for backward compatibility of existing
+        #          automatically setup CAs
+        erp5_ca_state = "('State',)",
+        erp5_ca_city = 'City',
+        erp5_ca_company = 'Company'
+      ))
     prepend = open(self.options['snippet-master']).read() % dict(
         part_list='  \n'.join(['  '+q for q in part_list]),
         known_tid_storage_identifier_dict=known_tid_storage_identifier_dict,
         haproxy_section="haproxy-%s" % backend_name,
         zope_section=zope_id,
         site_id=site_id,
-        **self.parameter_dict
+        **master_dict
         )
     output = prepend + output
     with open(self.options['output'], 'w') as f:
