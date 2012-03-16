@@ -25,6 +25,7 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+import json
 from json import loads as unjson
 
 class Recipe(GenericBaseRecipe):
@@ -70,14 +71,15 @@ class Recipe(GenericBaseRecipe):
 
   def _getProxyTableContent(self, rewrite_rule_list):
     """Generate proxy table file content from rewrite rules list"""
-    proxy_table_content = '{'
+    proxy_table = dict()
     for rewrite_rule in rewrite_rule_list:
-      rewrite_part = self.substituteTemplate(
-         self.getTemplateFilename('proxytable-resource-snippet.json.in'),
-         rewrite_rule)
-      proxy_table_content += "%s," % rewrite_part
+      proxy_table[rewrite_rule['resource']] = {
+          'port': rewrite_rule['port'],
+          'host': rewrite_rule['host'],
+          'https': rewrite_rule['https'],
+      }
 
-    proxy_table_content += '}\n'
+    proxy_table_content = json.dumps(proxy_table)
     return proxy_table_content
 
   def install(self):
