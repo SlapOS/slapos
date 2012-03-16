@@ -57,7 +57,7 @@ class Recipe(GenericBaseRecipe):
 
       # Check if target is https or http
       current_slave_dict['https'] = slave_instance.get('https', 'true')
-      if current_slave_dict['https'] in FALSE_VALUE_LIST:
+      if current_slave_dict['https'] in GenericBaseRecipe.FALSE_VALUES:
         current_slave_dict['https'] = 'false'
       # Set reference and resource url
       # Reference is raw reference from SlapOS Master, resource is
