@@ -36,6 +36,8 @@ class Recipe(GenericBaseRecipe):
     """Generate rewrite rules list from slaves list"""
     rewrite_rule_list = []
     for slave_instance in slave_instance_list:
+      self.logger.info("Processing slave instance %s..." %
+          slave_instance['slave_reference'])
       # Check for mandatory fields
       if slave_instance.get('host', None) is None:
         self.logger.warn('No "host" parameter is defined for %s slave'\
