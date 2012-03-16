@@ -339,14 +339,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
           portal_type='Sale Order Line').getAggregateValue(
             portal_type='Hosting Subscription').getUid())
 
-  def stepSoftwareInstanceSaleOrderConfirmRaisesValueError(self, sequence,
+  def stepSoftwareInstanceSaleOrderLineNoPartitionFound(self, sequence,
     **kw):
     """Checks that current software instance is realted only with sale order
-    
-    and that this sale order cannot be confirmed
-    
-    In Vifib implementation sale order which cannot find free computer partition
-    raises ValueError"""
+    and that no partition is found
+    """
     software_instance = self.portal.portal_catalog.getResultValue(
       uid=sequence['software_instance_uid'])
 
@@ -358,9 +355,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.assertTrue(self.sale_order_line_portal_type in [q.getPortalType() for\
         q in aggregate_value_list])
     sale_order_line = aggregate_value_list[0]
-    sale_order = sale_order_line.getParentValue()
 
-    self.assertRaises(ValueError, sale_order.confirm)
+    self.assertNotEqual('confirmed', sale_order_line.getSimulationState())
+    sale_order_line.SaleOrderLine_tryToAllocatePartition()
+    self.assertNotEqual('confirmed', sale_order_line.getSimulationState())
 
   def stepCheckViewCurrentSoftwareInstance(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(

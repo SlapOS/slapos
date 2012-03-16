@@ -1118,7 +1118,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         Tic
         LoginDefaultUser
         SelectSlaveInstanceFromSaleOrderOrdered
-        SoftwareInstanceSaleOrderConfirmRaisesValueError
+        SoftwareInstanceSaleOrderLineNoPartitionFound
         ConfirmOrderedSaleOrderActiveSense
         Tic
         CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
@@ -1244,7 +1244,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       SelectSlaveInstanceFromSaleOrderOrdered \
-      SoftwareInstanceSaleOrderConfirmRaisesValueError \
+      SoftwareInstanceSaleOrderLineNoPartitionFound \
       Tic \
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
       Logout \

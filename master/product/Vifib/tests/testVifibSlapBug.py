@@ -1193,7 +1193,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetCurrentPersonSlapRequestedSoftwareInstance
-      SoftwareInstanceSaleOrderConfirmRaisesValueError
+      SoftwareInstanceSaleOrderLineNoPartitionFound
       Logout
 
       SlapLoginTestVifibCustomer
@@ -1202,7 +1202,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      SoftwareInstanceSaleOrderConfirmRaisesValueError
+      SoftwareInstanceSaleOrderLineNoPartitionFound
       Logout
 
       LoginERP5TypeTestCase

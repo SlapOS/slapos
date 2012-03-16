@@ -63,7 +63,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetCurrentPersonSlapRequestedSoftwareInstance
-      SoftwareInstanceSaleOrderConfirmRaisesValueError
+      SoftwareInstanceSaleOrderLineNoPartitionFound
       Logout
 
       LoginERP5TypeTestCase
