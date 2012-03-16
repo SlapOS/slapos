@@ -26,7 +26,6 @@
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
 import json
-from json import loads as unjson
 
 class Recipe(GenericBaseRecipe):
   """
@@ -85,7 +84,7 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     # Generate rewrite rules
     rewrite_rule_list = self._getRewriteRuleContent(
-      unjson(self.options['slave-instance-list']))
+      json.loads(self.options['slave-instance-list']))
     # Create Map
     map_content = self._getProxyTableContent(rewrite_rule_list)
     map_file = self.createFile(self.options['map-path'], map_content)
