@@ -72,9 +72,6 @@ if src__== 1:\n
 for hs, kw in hs_modify_kw_kw.iteritems():\n
   portal.restrictedTraverse(hs).edit(activate_kw=activate_kw, **kw)\n
 \n
-if not(add_kw_kw or modify_kw_kw or remove_id_list):\n
-  return # nothing to do\n
-\n
 now = DateTime()\n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n
       default_destination_section_uid=person.getUid(),\n
@@ -91,9 +88,19 @@ if previous_open_sale_order is None:\n
         price_currency=\'currency_module/EUR\',\n
         specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
         title="ViFiB Open Order",\n
+        effective_date=now,\n
         activate_kw=activate_kw)\n
-else:\n
+  open_sale_order.order(activate_kw=activate_kw)\n
+  open_sale_order.validate(activate_kw=activate_kw)\n
+\n
+if not(add_kw_kw or modify_kw_kw or remove_id_list):\n
+  return # nothing to do\n
+\n
+if previous_open_sale_order is not None:\n
   open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
+  open_sale_order.setEffectiveDate(now, activate_kw=activate_kw)\n
+  open_sale_order.order(activate_kw=activate_kw)\n
+  open_sale_order.validate(activate_kw=activate_kw)\n
 \n
 for kw in add_kw_kw.itervalues():\n
   open_sale_order.newContent(activate_kw=activate_kw, **kw)\n
@@ -105,10 +112,6 @@ for hs, kw in modify_kw_kw.iteritems():\n
 open_sale_order.deleteContent(remove_id_list)\n
 if previous_open_sale_order is not None:\n
   previous_open_sale_order.setExpirationDate(now, activate_kw=activate_kw)\n
-if open_sale_order is not None:\n
-  open_sale_order.setEffectiveDate(now, activate_kw=activate_kw)\n
-  open_sale_order.order(activate_kw=activate_kw)\n
-  open_sale_order.validate(activate_kw=activate_kw)\n
 \n
 return add_kw_kw, modify_kw_kw, remove_id_list\n
 
