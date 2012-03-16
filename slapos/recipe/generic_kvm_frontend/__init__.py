@@ -51,7 +51,7 @@ class Recipe(GenericBaseRecipe):
       current_slave_dict = dict()
 
       # Get host, and if IPv6 address, remove "[" and "]"
-      current_slave_dict['host'] = current_slave_dict['host'].\
+      current_slave_dict['host'] = slave_instance['host'].\
           replace('[', '').replace(']', '')
       current_slave_dict['port'] = slave_instance['port']
 
