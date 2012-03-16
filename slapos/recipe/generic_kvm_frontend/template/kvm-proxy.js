@@ -92,13 +92,15 @@ var proxyServer = httpProxy.createServer(
   }}
 );
 
+console.log('HTTPS server starting and trying to listen on ' +
+            listenInterface + ':' + port);
 // Release the beast.
 proxyServer.listen(port, listenInterface);
-console.log('HTTPS server started and listening at ' + listenInterface + ':' +
-            port);
 
 // Dummy HTTP server redirecting to HTTPS. Only has sense if we can use port 80
 if (redirect === '1') {
+  console.log('HTTP redirect server starting and trying to listen on ' +
+              listenInterface + ':' + httpPort);
   try {
     var httpPort = 80;
     http.createServer(function(req, res) {
@@ -120,8 +122,6 @@ if (redirect === '1') {
       res.setHeader('Location', url);
       res.end();
     }).listen(httpPort, listenInterface);
-    console.log('HTTP redirect server started and listening at ' +
-                listenInterface + ':' + httpPort);
   } catch (error) {
     console.log('Couldn\'t start plain HTTP redirection server : ' + error)
   }
