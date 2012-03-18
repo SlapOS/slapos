@@ -24,11 +24,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.recipe.librecipe import GenericBaseRecipe, GenericSlapRecipe
 import json
 import zc.buildout
 
-class Recipe(GenericBaseRecipe):
+class Recipe(GenericSlapRecipe):
   """
   kvm frontend instance configuration.
   """
@@ -82,7 +82,7 @@ class Recipe(GenericBaseRecipe):
     proxy_table_content = json.dumps(proxy_table)
     return proxy_table_content
 
-  def install(self):
+  def _install(self):
     # Check for mandatory field
     if self.options.get('domain', None) is None:
       raise zc.buildout.UserError('No domain name specified. Please define '
@@ -117,5 +117,15 @@ class Recipe(GenericBaseRecipe):
       self.options['wrapper-path'],
       self.substituteTemplate(self.getTemplateFilename('nodejs_run.in'),
                               config))
+
+    # Send connection parameters of slave instances
+    site_url = "https://%s:%s/" % (self.options['domain'], self.options['port'])
+    for slave in rewrite_rule_list:
+      self.setConnectionDict(
+          dict(url="%s%s" % (site_url, slave['resource']),
+               domainname=self.options['domain'],
+               port=self.options['port'],
+               resource=slave['resource']),
+          slave['reference'])
 
     return [map_file, conf_file, runner_path]
