@@ -26,6 +26,7 @@
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
 import json
+import zc.buildout
 
 class Recipe(GenericBaseRecipe):
   """
@@ -82,6 +83,10 @@ class Recipe(GenericBaseRecipe):
     return proxy_table_content
 
   def install(self):
+    # Check for mandatory field
+    if self.options.get('domain', None) is None:
+      raise zc.buildout.UserError('No domain name specified. Please define '
+          'the "domain" instance parameter.')
     # Generate rewrite rules
     rewrite_rule_list = self._getRewriteRuleContent(
       json.loads(self.options['slave-instance-list']))
