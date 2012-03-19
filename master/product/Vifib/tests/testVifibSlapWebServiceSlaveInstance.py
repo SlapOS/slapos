@@ -348,7 +348,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SoftwareInstanceStarted
       Tic
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceHostingSalePackingListStarted
       Logout
 
@@ -383,7 +383,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SoftwareInstanceStopped
       Tic
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
       CheckComputerPartitionInstanceSetupSalePackingListStopped
 
@@ -421,7 +421,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceHostingSalePackingListStarted
       CheckComputerPartitionInstanceSetupSalePackingListStopped
       LoginTestVifibCustomer
@@ -500,7 +500,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginTestVifibCustomer
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
@@ -537,7 +537,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginTestVifibCustomer
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       SlapLoginCurrentComputer
@@ -575,7 +575,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginTestVifibCustomer
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       SlapLoginCurrentComputer
@@ -615,7 +615,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       SlapLoginCurrentComputer
