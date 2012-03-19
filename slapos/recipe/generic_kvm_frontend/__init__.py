@@ -99,6 +99,12 @@ class Recipe(GenericSlapRecipe):
     conf_file = self.createFile(self.options['conf-path'], conf.read())
     conf.close()
 
+    # Do we create http dummy server used to redirect to https?
+    if self.options['http-redirection'] in GenericBaseRecipe.TRUE_VALUES:
+      http_redirect_server = '1'
+    else:
+      http_redirect_server = ''
+
     config = dict(
       ip=self.options['ip'],
       port=self.options['port'],
@@ -110,7 +116,7 @@ class Recipe(GenericSlapRecipe):
       node_env=self.options['node-env'],
       conf_path=conf_file,
       map_path=map_file,
-      plain_http='',
+      plain_http=http_redirect_server,
     )
 
     runner_path = self.createExecutable(
