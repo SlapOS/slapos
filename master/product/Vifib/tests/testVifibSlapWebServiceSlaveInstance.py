@@ -294,10 +294,12 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       LoginAsCustomerA
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
 
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
 
       LoginDefaultUser
