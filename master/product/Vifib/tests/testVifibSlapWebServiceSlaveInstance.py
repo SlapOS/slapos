@@ -930,7 +930,6 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlaveInstanceStopped
       Tic
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
       SetDeliveryLineAmountEqualTwo
       CheckComputerPartitionInstanceSetupSalePackingListStopped
@@ -991,7 +990,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SoftwareInstanceAvailable
       Tic 
       LoginDefaultUser
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceSetupSalePackingListStopped
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed """ + \
       self.prepare_published_software_release + """
@@ -1038,7 +1037,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceSetupSalePackingListStopped
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
@@ -1047,7 +1046,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 

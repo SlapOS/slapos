@@ -1120,9 +1120,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         SoftwareInstanceSaleOrderLineNoPartitionFound
         ConfirmOrderedSaleOrderActiveSense
         Tic
-        CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
-        CheckComputerPartitionInstanceSetupSalePackingListStopped
-        CheckComputerPartitionInstanceHostingSalePackingListConfirmed
         SetDeliveryLineAmountEqualZero
         CheckComputerPartitionInstanceSetupSalePackingListConfirmed
 
@@ -1245,7 +1242,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SelectSlaveInstanceFromSaleOrderOrdered \
       SoftwareInstanceSaleOrderLineNoPartitionFound \
       Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
       Logout \
       SlapLoginCurrentSoftwareInstance \
       SetRequestedFilterParameterDict \
