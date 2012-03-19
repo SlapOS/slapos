@@ -2144,9 +2144,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     Base.serialize = verify_serialize_call
 
     try:
-      sale_order_ordered = self.portal.portal_catalog.getResultValue(
-          portal_type="Sale Order", simulation_state="ordered")
-      self.assertRaises(DummyTestException, sale_order_ordered.confirm)
+      sale_order_line_ordered = self.portal.portal_catalog.getResultValue(
+          portal_type="Sale Order Line", simulation_state="ordered")
+      self.assertRaises(DummyTestException,
+        sale_order_line_ordered.SaleOrderLine_tryToAllocatePartition)
     finally:
       Base.serialize = Base.serialize_call
 
