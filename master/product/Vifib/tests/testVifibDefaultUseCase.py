@@ -1,11 +1,6 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-from Products.DCWorkflow.DCWorkflow import ValidationFailed
-from random import random
-from slapos import slap
-from zExceptions import Unauthorized
-from DateTime import DateTime
 
 class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
 

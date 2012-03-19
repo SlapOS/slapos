@@ -4041,9 +4041,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sequence['requested_reference'] = self.id() + str(random())
 
   def stepRenameCurrentSoftwareInstanceDead(self, sequence, **kw):
-    hosting_subscription = self.portal.portal_catalog.getResultValue(
-      uid=sequence['hosting_subscription_uid'],
-    )
     software_instance = self.portal.portal_catalog.getResultValue(
       uid=sequence['software_instance_uid']
     )

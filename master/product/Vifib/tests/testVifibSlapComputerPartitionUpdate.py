@@ -3,7 +3,6 @@ import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from random import random
-from slapos import slap
 
 class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
   def stepRequestSoftwareInstanceUpdate(self, sequence, **kw):

@@ -26,7 +26,6 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from Testing.ZopeTestCase.PortalTestCase import PortalTestCase
 from Products.ERP5Type.tests.SecurityTestCase import SecurityTestCase
 from AccessControl import getSecurityManager
 from VifibMixin import testVifibMixin
