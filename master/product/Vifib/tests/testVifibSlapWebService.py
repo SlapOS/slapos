@@ -3832,7 +3832,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sale_order_line = slave_instance.getAggregateRelatedValue(
         portal_type=self.sale_order_line_portal_type)
     self.assertEquals("ordered", sale_order_line.getSimulationState())
-    self.assertRaises(ValueError, sale_order_line.confirm)
+    self.assertRaises(ValueError,
+      sale_order_line.SaleOrderLine_tryToAllocatePartition)
+    self.assertEquals("ordered", sale_order_line.getSimulationState())
     sale_packing_list_line = slave_instance.getAggregateRelatedValue(
         portal_type=self.sale_packing_list_line_portal_type)
     self.assertEquals(sale_packing_list_line, None)
