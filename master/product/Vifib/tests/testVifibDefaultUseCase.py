@@ -6,7 +6,6 @@ from random import random
 from slapos import slap
 from zExceptions import Unauthorized
 from DateTime import DateTime
-from Products.ERP5Type.tests.backportUnittest import skip
 
 class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
 

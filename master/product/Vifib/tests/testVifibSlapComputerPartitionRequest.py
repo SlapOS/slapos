@@ -1,5 +1,4 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
 from Products.ERP5Type.tests.backportUnittest import skip
 import urllib
 import urlparse
@@ -1390,8 +1389,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  @expectedFailure
-  # slave_instance_list is disabled in getInstanceParameterDict
   def test_SlaveInstance_request_SlaveInstance_From_SoftwareInstance_Fetch_Correct_Slave(self):
     """
       Check that existing Software Instance requesting new Slave Instance
