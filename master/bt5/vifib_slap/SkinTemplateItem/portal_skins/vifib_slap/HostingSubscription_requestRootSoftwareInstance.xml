@@ -94,6 +94,7 @@ new_one = False\n
 if (request_software_instance is None):\n
   new_one = True\n
   setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
+  service = portal.restrictedTraverse(setup_service_relative_url)\n
   request_software_instance = portal.getDefaultModule(portal_type=software_instance_portal_type).newContent(\n
           portal_type=software_instance_portal_type,\n
           source_reference=hosting_subscription.getSourceReference(),\n
@@ -118,6 +119,7 @@ if (request_software_instance is None):\n
     start_date=DateTime(),\n
     received_date=DateTime(),\n
     # XXX Hardcoded values\n
+    specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
     source="organisation_module/vifib_internet",\n
     source_section="organisation_module/vifib_internet",\n
     quantity_unit="unit/piece",\n
@@ -128,7 +130,7 @@ if (request_software_instance is None):\n
     portal_type=sale_order_line_portal_type,\n
     resource=setup_service_relative_url,\n
     quantity=1,\n
-    price=0,\n
+    price=service.getSaleSupplyLineBasePrice(),\n
     aggregate_value_list=[request_software_instance,\n
                           hosting_subscription,\n
                           software_release_document\n
@@ -139,35 +141,6 @@ if (request_software_instance is None):\n
   # XXX: Do not verify security\n
   sale_order.order()\n
 \n
-  if person is not None:\n
-    # Update Open Order\n
-    # does this order have a client-specific Open Order\n
-    open_order = portal.portal_catalog.getResultValue(\n
-      default_destination_section_uid=person.getUid(),\n
-      portal_type="Open Sale Order",\n
-      validation_state="validated")\n
-    if open_order is None:\n
-      raise ValueError(\'Person has no open order created\')\n
-\n
-    now = DateTime()\n
-    start_date = getClosestDate(target_date=now, precision=\'day\', before=1)\n
-    # 12 months of subscription by default\n
-    stop_date = addToDate(getClosestDate(target_date=now, precision=\'month\', before=1), month=1)\n
-\n
-    subscription_service_relative_url = portal.portal_preferences.getPreferredInstanceSubscriptionResource()\n
-    open_order.newContent(\n
-      portal_type="Open Sale Order Line",\n
-      title=hosting_subscription.getTitle(),\n
-      aggregate_value=hosting_subscription,\n
-      start_date=start_date,\n
-      stop_date=stop_date,\n
-      quantity=1,\n
-      quantity_unit="unit/piece",\n
-      # XXX Hardcoded values\\n\n
-      resource=subscription_service_relative_url,\n
-      price=context.restrictedTraverse(subscription_service_relative_url).getSaleSupplyLineBasePrice(),\n
-      activate_kw={\'tag\': tag},\n
-    )\n
   hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
   hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
   hosting_subscription.edit(predecessor_list=hosting_subscription_predecessor_list)\n

@@ -51,27 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>person = state_change[\'object\']\n
-portal = person.getPortalObject()\n
-open_sale_order = portal.portal_catalog.getResultValue(\n
-      default_destination_section_uid=person.getUid(),\n
-      portal_type="Open Sale Order",\n
-      validation_state="validated")\n
-\n
-tag = \'%s_createOpenOrder\' % person.getUid()\n
-kw = {\'activate_kw\': {\'tag\': tag}}\n
-if open_sale_order is None:\n
-  if portal.portal_activities.countMessageWithTag(tag) == 0:\n
-    open_order = portal.open_sale_order_module.newContent(\n
-          source=\'organisation_module/vifib_internet\',\n
-          source_section=\'organisation_module/vifib_internet\',\n
-          destination_section=person.getRelativeUrl(),\n
-          destination_decision=person.getRelativeUrl(),\n
-          destination=person.getRelativeUrl(),\n
-          price_currency=\'currency_module/EUR\',\n
-          specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
-          title="ViFiB Open Order", **kw)\n
-    open_order.order(**kw)\n
-    open_order.validate(**kw)\n
+person.Person_updateOpenOrder()\n
 </string> </value>
         </item>
         <item>

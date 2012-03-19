@@ -50,16 +50,27 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>state_change[\'object\'].SoftwareInstance_fixFinishedCleanupDeliveryTime()\n
+            <value> <string>subscription_item = context\n
+portal = context.getPortalObject()\n
+\n
+release = portal.portal_catalog.getResultValue(\n
+  portal_type="Software Release",\n
+  url_string=subscription_item.getRootSoftwareReleaseUrl(),\n
+)\n
+if release is not None:\n
+  software_product = release.getAggregateValue()\n
+  return \'%s/index_html\' % software_product.getDefaultImageAbsoluteUrl()\n
+\n
+return \'\'\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string>**kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstnace_fixConsistency</string> </value>
+            <value> <string>HostingSubscription_getDefaultImageAbsoluteUrl</string> </value>
         </item>
       </dictionary>
     </pickle>

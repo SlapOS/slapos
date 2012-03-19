@@ -325,6 +325,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       \
       LoginTestVifibCustomer \
       PersonRequestSlaveInstance \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \
@@ -353,6 +354,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       \
       LoginTestVifibCustomer \
       PersonRequestSlaveInstance \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \

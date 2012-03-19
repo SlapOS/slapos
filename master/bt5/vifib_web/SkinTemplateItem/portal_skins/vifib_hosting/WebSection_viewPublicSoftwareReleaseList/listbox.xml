@@ -94,6 +94,10 @@
                           <string>getDefaultImageAbsoluteUrl</string>
                           <string></string>
                         </tuple>
+                        <tuple>
+                          <string>hardcoded_description</string>
+                          <string>Price</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
@@ -147,6 +151,10 @@
                         </tuple>
                         <tuple>
                           <string>getDefaultImageAbsoluteUrl</string>
+                          <string></string>
+                        </tuple>
+                        <tuple>
+                          <string>hardcoded_description</string>
                           <string></string>
                         </tuple>
                       </list>

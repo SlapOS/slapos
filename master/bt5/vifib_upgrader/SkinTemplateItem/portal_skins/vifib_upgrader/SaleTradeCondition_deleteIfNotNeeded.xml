@@ -53,7 +53,7 @@
             <value> <string>assert(context.getPortalType() == \'Sale Trade Condition\')\n
 \n
 if context.getTitle() == \'ViFiB Custom Conditions\':\n
-  assert(len(context.getSpecialiseRelatedValueList()) == 0)\n
+  assert(len([q for q in context.getSpecialiseRelatedValueList() if q.getPortalType() in context.getPortalDeliveryTypeList()]) == 0)\n
   assert(len(context.contentValues()) == 0)\n
   context.getParentValue().deleteContent(id=context.getId())\n
 </string> </value>

@@ -10,6 +10,7 @@
             <key> <string>delegated_list</string> </key>
             <value>
               <list>
+                <string>css_class</string>
                 <string>description</string>
               </list>
             </value>
@@ -87,6 +88,10 @@
             <key> <string>values</string> </key>
             <value>
               <dictionary>
+                <item>
+                    <key> <string>css_class</string> </key>
+                    <value> <string>nolabel alignr</string> </value>
+                </item>
                 <item>
                     <key> <string>description</string> </key>
                     <value> <string>Get your own virtual machine for 1€ per month</string> </value>

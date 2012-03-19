@@ -1,10 +1,8 @@
 import unittest
 from Products.ERP5Type.tests.Sequence import SequenceList
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-from Products.ERP5Type.DateUtils import getClosestDate
+from Products.ERP5Type.DateUtils import getClosestDate, addToDate
 from DateTime import DateTime
-from testVifibOpenOrderSimulation import generateTimeFrameList
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
@@ -19,20 +17,27 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     # is next month covered?
     self.assertEqual(1, len(delivery_list))
 
-    # generate the expected time frames
-    now = DateTime()
-    start_date = \
-      getClosestDate(target_date=now, precision='day', before=1)
+    instance_setup_delivery = self.portal.portal_catalog.getResultValue(
+      portal_type='Sale Packing List Line',
+      default_aggregate_uid=sequence['software_instance_uid'],
+      resource=self.portal.portal_preferences\
+        .getPreferredInstanceSetupResource()).getParentValue()
 
-    # Calculate the list of time frames
-    expected_time_frame_list = generateTimeFrameList(start_date)
-
+    self.assertEqual('stopped', instance_setup_delivery.getSimulationState())
+    start_date = None
+    for item in self.portal.portal_workflow.getInfoFor(
+      ob=instance_setup_delivery, name='history', wf_id='packing_list_workflow'):
+      if item.get('simulation_state') == 'stopped':
+        start_date = item.get('time')
+        break
+    start_date = getClosestDate(target_date=start_date, precision='day')
+    while start_date.day() >= 29:
+      start_date = addToDate(start_date, to_add={'day': -1})
+    stop_date = addToDate(start_date, to_add={'month': 1})
     idx = 0
     for delivery in delivery_list:
-      expected_start_date = expected_time_frame_list[idx]
-      expected_stop_date = expected_time_frame_list[idx+1]
-      self.assertEqual(expected_start_date, delivery.getStartDate())
-      self.assertEqual(expected_stop_date, delivery.getStopDate())
+      self.assertEqual(start_date, delivery.getStartDate())
+      self.assertEqual(stop_date, delivery.getStopDate())
 
       self.assertEqual(hosting_subscription.getRelativeUrl(),
         delivery.getCausality())
@@ -63,8 +68,10 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 
       # fetch open order, open order line and subscription
       person = self.portal.person_module['test_vifib_customer']
-      open_order = \
-        person.getDestinationDecisionRelatedValue(portal_type="Open Sale Order")
+      open_order = self.portal.portal_catalog.getResultValue(
+        default_destination_decision_uid=person.getUid(),
+        portal_type="Open Sale Order",
+        validation_state='validated')
       open_order_line = \
         open_order.contentValues(portal_type="Open Sale Order Line")[0]
 
@@ -551,8 +558,6 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       uid=sequence['invoice_uid'])
     invoice.setStartDate(getClosestDate(target_date=DateTime())-1)
 
-  @expectedFailure
-  # Subscription deliveries are not build for now.
   def test_OpenOrder_sale_packing_list(self):
     """
     Check that sale_packing_list is generated properly from simulation

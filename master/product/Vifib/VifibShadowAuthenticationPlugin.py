@@ -198,6 +198,7 @@ class VifibShadowAuthenticationPlugin(BasePlugin):
         # get the loggable document from its reference - no security check needed
         catalog_result = self.portal_catalog.unrestrictedSearchResults(
             portal_type=self.loggable_portal_type_list,
+            validation_state='validated',
             reference=user_name)
         if len(catalog_result) != 1: # we won't proceed with groups
           if len(catalog_result) > 1: # configuration is screwed

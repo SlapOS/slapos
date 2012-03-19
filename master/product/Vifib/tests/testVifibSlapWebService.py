@@ -177,6 +177,32 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps -- scenarios
   ########################################
+  def stepCheckOpenOrderLineRemoved(self, sequence, **kw):
+    software_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid'])
+    hosting_subscription = software_instance.getAggregateRelatedValue(
+      portal_type='Sale Packing List Line').getAggregateValue(
+        portal_type='Hosting Subscription')
+    # shall be not present on any validted open order
+    validated_open_order_line = self.portal.portal_catalog.getResultValue(
+      portal_type='Open Sale Order Line', validation_state='validated',
+      default_aggregate_uid=hosting_subscription.getUid())
+    self.assertEqual(None, validated_open_order_line)
+    # shall be present on the latest archived open order
+    reference = self.portal.portal_catalog.getResultValue(
+      portal_type='Open Sale Order Line',
+      default_aggregate_uid=hosting_subscription.getUid())\
+        .getParentValue().getReference()
+    open_sale_order = self.portal.portal_catalog.getResultValue(
+        portal_type='Open Sale Order',
+        reference=reference,
+        validation_state='archived',
+        sort_on=(('effective_date', 'descending'),)
+      )
+    self.assertTrue(hosting_subscription.getRelativeUrl() in \
+      [q.getAggregate(portal_type='Hosting Subscription') for q in \
+        open_sale_order.contentValues(portal_type='Open Sale Order Line')])
+
   def stepRequestComputerPartitionNoTic(self, sequence, **kw):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
@@ -313,14 +339,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
           portal_type='Sale Order Line').getAggregateValue(
             portal_type='Hosting Subscription').getUid())
 
-  def stepSoftwareInstanceSaleOrderConfirmRaisesValueError(self, sequence,
+  def stepSoftwareInstanceSaleOrderLineNoPartitionFound(self, sequence,
     **kw):
     """Checks that current software instance is realted only with sale order
-    
-    and that this sale order cannot be confirmed
-    
-    In Vifib implementation sale order which cannot find free computer partition
-    raises ValueError"""
+    and that no partition is found
+    """
     software_instance = self.portal.portal_catalog.getResultValue(
       uid=sequence['software_instance_uid'])
 
@@ -332,9 +355,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.assertTrue(self.sale_order_line_portal_type in [q.getPortalType() for\
         q in aggregate_value_list])
     sale_order_line = aggregate_value_list[0]
-    sale_order = sale_order_line.getParentValue()
 
-    self.assertRaises(ValueError, sale_order.confirm)
+    self.assertNotEqual('confirmed', sale_order_line.getSimulationState())
+    sale_order_line.SaleOrderLine_tryToAllocatePartition()
+    self.assertNotEqual('confirmed', sale_order_line.getSimulationState())
 
   def stepCheckViewCurrentSoftwareInstance(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
@@ -376,7 +400,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=sequence['computer_partition_uid'])
     delivery_line_list = [q.getObject() for q in self.portal.portal_catalog(
-      aggregate_relative_url=computer_partition.getRelativeUrl(),
+      default_aggregate_uid=ComplexQuery(
+         Query(default_aggregate_uid=computer_partition.getUid()),
+         Query(default_aggregate_uid=sequence['software_instance_uid']),
+         operator="AND"),
       portal_type=self.sale_packing_list_line_portal_type,
       simulation_state=state,
       resource_relative_url=resource)]
@@ -1091,11 +1118,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLoginCurrentComputer \
       SoftwareInstanceDestroyed \
       Tic \
+      Tic \
       SlapLogout \
       \
       LoginDefaultUser \
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered \
       CheckComputerPartitionIsFree \
+      CheckOpenOrderLineRemoved \
       Logout \
       '
 
@@ -2115,9 +2144,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     Base.serialize = verify_serialize_call
 
     try:
-      sale_order_ordered = self.portal.portal_catalog.getResultValue(
-          portal_type="Sale Order", simulation_state="ordered")
-      self.assertRaises(DummyTestException, sale_order_ordered.confirm)
+      sale_order_line_ordered = self.portal.portal_catalog.getResultValue(
+          portal_type="Sale Order Line", simulation_state="ordered")
+      self.assertRaises(DummyTestException,
+        sale_order_line_ordered.SaleOrderLine_tryToAllocatePartition)
     finally:
       Base.serialize = Base.serialize_call
 
@@ -2765,6 +2795,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     line = order.newContent(
         portal_type=self.sale_packing_list_line_portal_type,
         quantity=1,
+        price=1
         )
     sequence.edit(sale_packing_list_line_uid=line.getUid())
 
@@ -3454,16 +3485,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition_uid = sequence["computer_partition_uid"]
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=computer_partition_uid)
-    hosting_date = DateTime()
-    setup_date = hosting_date + 1
+    hosting_date = DateTime() - 1
     for movement in computer_partition.getAggregateRelatedValueList(
         portal_type=self.sale_packing_list_line_portal_type):
       if movement.getResource() == \
           movement.portal_preferences.getPreferredInstanceHostingResource():
         movement.edit(start_date=hosting_date)
-      elif movement.getResource() == \
-          movement.portal_preferences.getPreferredInstanceSetupResource():
-        movement.edit(start_date=setup_date)
 
   def stepCheckPackingListAmountTwoComputerPartition(self, sequence, **kw):
     computer_partition_uid = sequence["computer_partition_uid"]
@@ -3479,16 +3506,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition_uid = sequence["computer_partition_uid"]
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=computer_partition_uid)
-    setup_date = DateTime()
-    hosting_date = setup_date + 1
+    hosting_date = DateTime() + 1
     for movement in computer_partition.getAggregateRelatedValueList(
         portal_type=self.sale_packing_list_line_portal_type):
       if movement.getResource() == \
           movement.portal_preferences.getPreferredInstanceHostingResource():
         movement.edit(start_date=hosting_date)
-      elif movement.getResource() == \
-          movement.portal_preferences.getPreferredInstanceSetupResource():
-        movement.edit(start_date=setup_date)
 
   def stepSetPurchasePackingListLineSetupResource(self, sequence, **kw):
     """
@@ -3508,16 +3531,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition_uid = sequence["computer_uid"]
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=computer_partition_uid)
-    hosting_date = DateTime()
-    setup_date = hosting_date + 1
+    hosting_date = DateTime() - 1
     service_uid = sequence['service_uid']
     for movement in computer_partition.getAggregateRelatedValueList(
         portal_type=self.purchase_packing_list_line_portal_type):
       if movement.getResourceUid() == service_uid:
         movement.edit(start_date=hosting_date)
-      elif movement.getResource() == \
-          movement.portal_preferences.getPreferredSoftwareSetupResource():
-        movement.edit(start_date=setup_date)
 
   def stepSetAccountingAfterSetupStartDate(self, sequence, **kw):
     """
@@ -3526,16 +3545,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition_uid = sequence["computer_uid"]
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=computer_partition_uid)
-    setup_date = DateTime()
-    hosting_date = setup_date + 1
+    hosting_date = DateTime() + 1
     service_uid = sequence['service_uid']
     for movement in computer_partition.getAggregateRelatedValueList(
         portal_type=self.sale_packing_list_line_portal_type):
       if movement.getResourceUid() == service_uid:
         movement.edit(start_date=hosting_date)
-      elif movement.getResource() == \
-          movement.portal_preferences.getPreferredSoftwareSetupResource():
-        movement.edit(start_date=setup_date)
 
   def _checkComputerPartitionAndRelatedSoftwareInstance(self,
       computer_partition):

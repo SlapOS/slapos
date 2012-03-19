@@ -90,9 +90,6 @@ for sale_packing_list_line in portal.portal_catalog(\n
     sale_packing_list.deliver()\n
   if sale_packing_list.getSimulationState() != \'delivered\':\n
     raise ValueError(\'It was not possible to deliver %r during destruction of %r\' % (sale_packing_list.getRelativeUrl(), software_instance.getRelativeUrl()))\n
-# Remove unused open sale order line\n
-subscription_item = sale_packing_list_line.getAggregateValue(portal_type="Hosting Subscription")\n
-subscription_item.HostingSubscription_removeRelatedOpenSaleOrderLine()\n
 </string> </value>
         </item>
         <item>

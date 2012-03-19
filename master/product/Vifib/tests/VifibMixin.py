@@ -91,8 +91,8 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_system_event',
       'erp5_secure_payment',
       'erp5_payzen_secure_payment',
-      'erp5_ui_test_core',
-      'erp5_ui_test',
+#      'erp5_ui_test_core',
+#      'erp5_ui_test',
       'vifib_mysql_innodb_catalog',
       'vifib_core',
       'vifib_base',
@@ -102,7 +102,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_forge_release',
       'vifib_software_pdm',
       'vifib_web',
-      'vifib_web_ui_test',
+#      'vifib_web_ui_test',
       'vifib_l10n_fr',
       'vifib_data',
       'vifib_data_category',
@@ -111,7 +111,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data_payzen',
       'vifib_data_simulation',
       'vifib_erp5',
-      'vifib_test',
+#      'vifib_test',
     ]
     return result
 
@@ -375,7 +375,7 @@ class testVifibMixin(ERP5TypeTestCase):
     super(testVifibMixin, self).stepTic(**kw)
 
   def stepTic(self, **kw):
-    def build():
+    def activateAlarm():
       sm = getSecurityManager()
       self.login()
       try:
@@ -391,17 +391,17 @@ class testVifibMixin(ERP5TypeTestCase):
     if kw.get('sequence', None) is None:
       # in case of using not in sequence commit transaction
       transaction.commit()
-    # trigger build before tic
-    build()
+    # trigger activateAlarm before tic
+    activateAlarm()
     transaction.commit()
 
     super(testVifibMixin, self).stepTic(**kw)
 
-    # retrigger build after tic
-    build()
+    # retrigger activateAlarm after tic
+    activateAlarm()
     transaction.commit()
 
-    # tic after build
+    # tic after activateAlarm
     super(testVifibMixin, self).stepTic(**kw)
 
     self.checkDivergency()

@@ -1,4 +1,5 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 from Products.ERP5Type.tests.backportUnittest import skip
 import urllib
 import urlparse
@@ -620,6 +621,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Slaves are disabled for now')
   def test_ComputerPartition_request_SlaveInstance_twiceDifferentParent(self):
     """
     Checks that requesting a Slave Instance twice with same arguments from
@@ -966,6 +968,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
   ########################################
   # ComputerPartition.request - slave
   ########################################
+  @skip('Slaves are disabled for now')
   def test_ComputerPartition_request_slave_simpleCase(self):
     """
     Check the most simple case of request. The behaviour should
@@ -996,6 +999,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Slaves are disabled for now')
   def test_ComputerPartition_request_slave_instantiate(self):
     """
       Check that one Slave Instance is instantiate correctly and the validate
@@ -1055,6 +1059,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Slaves are disabled for now')
   def test_ComputerPartition_request_slave_same_twice_SR(self):
     """
       Check that requesting the same slave instance twice, only one is created
@@ -1095,6 +1100,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Slaves are disabled for now')
   def test_ComputerPartition_request_slave_after_destroy_SlaveInstance(self):
     """
       Check that a Slave Instance will not be allocated when a Software
@@ -1117,7 +1123,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         Tic
         LoginDefaultUser
         SelectSlaveInstanceFromSaleOrderOrdered
-        SoftwareInstanceSaleOrderConfirmRaisesValueError
+        SoftwareInstanceSaleOrderLineNoPartitionFound
         ConfirmOrderedSaleOrderActiveSense
         Tic
         CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
@@ -1133,6 +1139,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Slaves are disabled for now')
   def test_ComputerPartition_request_slave_twice_different(self):
     """
      Check request 2 different slave instances on same Software 
@@ -1172,6 +1179,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Slaves are disabled for now')
   def test_ComputerPartition_request_slave_NotFound(self):
     """
     Check that requesting a Slave Instance works in system capable to fulfill
@@ -1201,6 +1209,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     self.stepDirectRequestComputerPartitionHttpRequestTimeoutResponseWithoutState(
        sequence, **kw)
 
+  @skip('Slaves are disabled for now')
   def test_ComputerPartition_request_slave_state_is_optional(self):
     """Checks that state is optional parameter on Slap Tool This ensures
     backward compatibility with old libraries."""
@@ -1223,6 +1232,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         sequence['requested_filter_dict'] = dict(
           computer_guid="COMP-99999999999999999999999")
 
+  @skip('Slaves are disabled for now')
   def test_ComputerPartition_request_filter_slave_computer_guid(self):
     """Check that requesting with filter computer_guid key works as expected.
 
@@ -1243,7 +1253,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       SelectSlaveInstanceFromSaleOrderOrdered \
-      SoftwareInstanceSaleOrderConfirmRaisesValueError \
+      SoftwareInstanceSaleOrderLineNoPartitionFound \
       Tic \
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
       Logout \
@@ -1298,6 +1308,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     self.assertEquals(sequence["slave_instance_site_url"],
                       slave_instance.getConnectionParameter("site_url"))
 
+  @skip('Slaves are disabled for now')
   def test_SlaveInstance_request_SlaveInstance_From_SoftwareInstance(self):
     """
       Check that existing Software Instance can request new Slave Instance
@@ -1389,6 +1400,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @expectedFailure
+  # slave_instance_list is disabled in getInstanceParameterDict
   def test_SlaveInstance_request_SlaveInstance_From_SoftwareInstance_Fetch_Correct_Slave(self):
     """
       Check that existing Software Instance requesting new Slave Instance

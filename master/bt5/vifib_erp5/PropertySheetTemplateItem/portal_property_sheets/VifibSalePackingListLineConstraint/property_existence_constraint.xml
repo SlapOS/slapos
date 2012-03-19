@@ -22,15 +22,8 @@
             <key> <string>constraint_property</string> </key>
             <value>
               <tuple>
-                <string>reference</string>
-                <string>source_reference</string>
-                <string>root_slave</string>
-                <string>root_software_release_url</string>
-                <string>root_state</string>
-                <string>title</string>
-                <string>periodicity_hour</string>
-                <string>periodicity_minute</string>
-                <string>periodicity_month_day</string>
+                <string>price</string>
+                <string>quantity</string>
               </tuple>
             </value>
         </item>
@@ -42,7 +35,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>reference_constraint</string> </value>
+            <value> <string>property_existence_constraint</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>

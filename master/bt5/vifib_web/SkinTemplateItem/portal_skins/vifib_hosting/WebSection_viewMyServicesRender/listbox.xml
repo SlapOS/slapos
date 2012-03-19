@@ -139,7 +139,7 @@
                 </item>
                 <item>
                     <key> <string>selection_name</string> </key>
-                    <value> <string>my_open_order_line_selection</string> </value>
+                    <value> <string>my_current_hosting_subscription_selection</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -163,7 +163,7 @@
       <dictionary>
         <item>
             <key> <string>method_name</string> </key>
-            <value> <string>WebSection_getPersonOpenSaleOrderLine</string> </value>
+            <value> <string>WebSection_getCurrentHostingSubscriptionList</string> </value>
         </item>
       </dictionary>
     </pickle>

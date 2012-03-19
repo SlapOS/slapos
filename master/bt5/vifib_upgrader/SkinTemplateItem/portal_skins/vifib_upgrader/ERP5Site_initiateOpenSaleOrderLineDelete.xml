@@ -50,48 +50,19 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
-portal = context.getPortalObject()\n
-\n
-order = state_change[\'object\']\n
-\n
-setup_service_relative_url = order.portal_preferences.getPreferredInstanceSetupResource()\n
-isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
-\n
-instance_portal_type_list = ["Software Instance","Slave Instance"]\n
-for order_line in order.getMovementList():\n
-  if order_line.getResource() == setup_service_relative_url:\n
-    computer_partition = order_line.getAggregateValue(portal_type="Computer Partition")\n
-    if computer_partition is None:\n
-      if not order.Delivery_isDestinationSectionAllowedToRequest():\n
-        raise Unauthorized(\'Request disallowed\')\n
-      software_release = order_line.getAggregateValue(portal_type="Software Release")\n
-      software_instance = order_line.getAggregateValue(portal_type=instance_portal_type_list)\n
-\n
-      hosting_subscription = order_line.getAggregateValue(portal_type="Hosting Subscription")\n
-      open_order_line = portal.portal_catalog.getResultValue(\n
-        portal_type="Open Sale Order Line",\n
-        validation_state="validated",\n
-        aggregate_relative_url=hosting_subscription.getRelativeUrl(),\n
-        destination_section_relative_url=order.getDestinationSection())\n
-      if open_order_line is not None:\n
-        open_order = open_order_line.getParentValue()\n
-        computer_partition_relative_url = open_order.OpenSaleOrder_restrictMethodAsShadowUser(\n
-          open_order=open_order,\n
-          callable_object=open_order.OpenSaleOrder_findPartition,\n
-          argument_list=[software_release.getUrlString(), software_instance.getSourceReference(),\n
-          software_instance.getPortalType(), software_instance.getSlaXmlAsDict()])\n
-        order_line.edit(\n
-          aggregate_list=order_line.getAggregateList()+[computer_partition_relative_url])\n
+            <value> <string>context.getPortalObject().portal_catalog.searchAndActivate(\n
+  portal_type=\'Open Sale Order\',\n
+  method_id=\'OpenSaleOrder_deleteContent\'\n
+)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change, **kw</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Delivery_assignComputerPartition</string> </value>
+            <value> <string>ERP5Site_initiateOpenSaleOrderLineDelete</string> </value>
         </item>
       </dictionary>
     </pickle>

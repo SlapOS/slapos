@@ -50,45 +50,25 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># As Open Sale Order codebase is unstable Assignor proxied role script is introduced\n
-# to cleanup finialised Open Sale Order Line\n
+            <value> <string>if context.getPortalType() != \'Applied Rule\' or context.getParentValue().getId() != \'portal_simulation\' or context.getSpecialise() != \'portal_rules/vifib_subscription_item_rule\':\n
+  raise TypeError(\'Applied Rule %s does not match constraint\' % context.getPath())\n
 \n
-if REQUEST is not None:\n
-  # protect against direct HTTP access, XML-RPC will still work\n
-  raise ValueError(\'Not available\')\n
-from Products.ZSQLCatalog.SQLCatalog import NegatedQuery, Query\n
+# check that all movements are not delivered\n
 \n
-portal = context.getPortalObject()\n
-all_delivered = True\n
-for sale_packing_list_line in portal.portal_catalog(\n
-  portal_type="Sale Packing List Line", \n
-  default_aggregate_uid=context.getUid(),\n
-  simulation_state=NegatedQuery(Query(simulation_state="delivered")),\n
-  ):\n
-  if sale_packing_list_line.getSimulationState() != \'delivered\':\n
-    all_delivered = False\n
-if all_delivered:\n
-  open_order_line = context.getAggregateRelatedValue(portal_type="Open Sale Order Line")\n
-  if open_order_line is not None:\n
-    # XXX: Mahybe system shall *NOT* work without Open Sale Orders\n
-    open_order_line.getParentValue().manage_delObjects(open_order_line.getId())\n
+for m in context.contentValues():\n
+  if m.getDelivery() is not None:\n
+    raise TypeError(\'Movement %s is already delivered\' % m.getPath())\n
+\n
+context.getParentValue().deleteContent(context.getId())\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>REQUEST=None</string> </value>
-        </item>
-        <item>
-            <key> <string>_proxy_roles</string> </key>
-            <value>
-              <tuple>
-                <string>Assignor</string>
-              </tuple>
-            </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscription_removeRelatedOpenSaleOrderLine</string> </value>
+            <value> <string>SubscriptionAppliedRule_delete</string> </value>
         </item>
       </dictionary>
     </pickle>

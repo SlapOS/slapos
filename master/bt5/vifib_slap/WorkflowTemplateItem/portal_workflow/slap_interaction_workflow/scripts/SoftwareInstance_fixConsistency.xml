@@ -50,21 +50,16 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-if context.getStopDate() < stop_date:\n
-  context.setStopDate(stop_date)\n
-
-
-]]></string> </value>
+            <value> <string>state_change[\'object\'].SoftwareInstance_fixFinishedCleanupDeliveryTime()\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>stop_date</string> </value>
+            <value> <string>state_change</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>OpenSaleOrderLine_updateStopDate</string> </value>
+            <value> <string>SoftwareInstance_fixConsistency</string> </value>
         </item>
       </dictionary>
     </pickle>

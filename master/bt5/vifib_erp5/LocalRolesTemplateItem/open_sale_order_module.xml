@@ -6,7 +6,6 @@
   </role>
   <role id='R-MEMBER'>
    <item>Auditor</item>
-   <item>Author</item>
   </role>
   <role id='devel'>
    <item>Owner</item>

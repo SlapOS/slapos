@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="TALES Constraint" module="erp5.portal_type"/>
+      <global name="Property Existence Constraint" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -19,18 +19,22 @@
             </value>
         </item>
         <item>
+            <key> <string>constraint_property</string> </key>
+            <value>
+              <tuple>
+                <string>expiration_date</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>description</string> </key>
             <value>
               <none/>
             </value>
         </item>
         <item>
-            <key> <string>expression</string> </key>
-            <value> <string>python: len(context.getAggregateValue(portal_type=\'Hosting Subscription\').getAggregateRelatedList(portal_type=\'Open Sale Order Line\')) == 1</string> </value>
-        </item>
-        <item>
             <key> <string>id</string> </key>
-            <value> <string>aggregate_hosting_subscription_open_sale_order_line_related_constraint</string> </value>
+            <value> <string>expiration_date_existence_constraint</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
@@ -45,16 +49,8 @@
             </value>
         </item>
         <item>
-            <key> <string>message_expression_error</string> </key>
-            <value> <string>Hosting Subscription related to Sale Order Line have to be related with exactly 1 Open Sale Order Line</string> </value>
-        </item>
-        <item>
-            <key> <string>message_expression_false</string> </key>
-            <value> <string>Hosting Subscription related to Sale Order Line have to be related with exactly 1 Open Sale Order Line</string> </value>
-        </item>
-        <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>TALES Constraint</string> </value>
+            <value> <string>Property Existence Constraint</string> </value>
         </item>
         <item>
             <key> <string>string_index</string> </key>
@@ -70,7 +66,7 @@
         </item>
         <item>
             <key> <string>test_tales_expression</string> </key>
-            <value> <string>python: context.getSimulationState() in context.getPortalPlannedOrderStateList() and context.getAggregateValue(portal_type=\'Hosting Subscription\') is not None</string> </value>
+            <value> <string>python: context.getValidationState() == \'archived\'</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -346,8 +346,10 @@ class ComputerPartition(SlapDocument):
         software_instance.slap_computer_partition_id.encode('UTF-8'))
       if shared:
         computer_partition._synced = True
-        computer_partition._connection_dict = software_instance._connection_dict
-        computer_partition._parameter_dict = software_instance._parameter_dict
+        computer_partition._connection_dict = getattr(software_instance,
+          '_connection_dict', None)
+        computer_partition._parameter_dict = getattr(software_instance,
+          '_parameter_dict', None)
       return computer_partition
 
   def building(self):
