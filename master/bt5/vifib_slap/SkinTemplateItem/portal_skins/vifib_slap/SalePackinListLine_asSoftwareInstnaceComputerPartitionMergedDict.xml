@@ -50,7 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_packing_list_line = context\n
+            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery, ComplexQuery\n
+sale_packing_list_line = context\n
 instance_type_list = [\'Software Instance\', \'Slave Instance\']\n
 \n
 hosting_service = context.restrictedTraverse(\n
@@ -75,26 +76,25 @@ if computer_partition.getPortalType() == \'Computer Partition\':\n
 if software_instance is not None and computer_partition is not None and software_release is not None:\n
   slave_instance_list = []\n
 \n
-#   sale_packing_list_line_list = computer_partition.portal_catalog(\n
-#     aggregate_uid=computer_partition.getUid(),\n
-#     portal_type="Sale Packing List Line",\n
-#     simulation_state=state_list,\n
-#     default_resource_uid=service_uid_list)\n
-#   for sale_packing_list_line in sale_packing_list_line_list:\n
-#     instance = sale_packing_list_line.getAggregateValue(portal_type=instance_type_list)\n
-#     if instance is None:\n
-#       raise NotImplementedError, "Unexpected Sale Packing List without Instance aggregated %s" % sale_packing_list_line.getRelativeUrl()\n
-#     elif instance.getPortalType() == "Slave Instance":\n
-#       slave_instance = dict(slave_title=instance.getTitle(),\n
-#                             slap_software_type=instance.getSourceReference(),\n
-#                             slave_reference=instance.getReference(),\n
-#                             xml=instance.getTextContent(),\n
-#                             connection_xml=instance.getConnectionXml(),\n
-#                             )\n
-#       if slave_instance not in slave_instance_list:\n
-#         slave_instance_list.append(slave_instance)\n
-#     elif instance.getPortalType() == "Software Instance":\n
-#       software_instance = instance\n
+  sale_packing_list_line_list = computer_partition.portal_catalog(\n
+    aggregate_uid=computer_partition.getUid(),\n
+    aggregate_portal_type=\'Slave Instance\',\n
+    portal_type="Sale Packing List Line",\n
+    simulation_state=state_list,\n
+    default_resource_uid=service_uid_list)\n
+\n
+  for sale_packing_list_line in sale_packing_list_line_list:\n
+    instance = sale_packing_list_line.getAggregateValue(portal_type=\'Slave Instance\')\n
+    if instance.getUid() == software_instance.getUid():\n
+      # ignore self\n
+      continue\n
+    slave_instance = dict(slave_title=instance.getTitle(),\n
+                            slap_software_type=instance.getSourceReference(),\n
+                            slave_reference=instance.getReference(),\n
+                            xml=instance.getTextContent(),\n
+                            connection_xml=instance.getConnectionXml(),\n
+                            )\n
+    slave_instance_list.append(slave_instance)\n
   return {\n
     \'xml\':software_instance.getTextContent(),\n
     \'connection_xml\':software_instance.getConnectionXml(),\n
