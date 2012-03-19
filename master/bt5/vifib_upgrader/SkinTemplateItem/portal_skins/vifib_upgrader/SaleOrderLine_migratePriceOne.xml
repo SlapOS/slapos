@@ -60,13 +60,16 @@ context.setPrice(0.0)\n
 \n
 order_simulation_movement = context.getDeliveryRelatedValue(portal_type=\'Simulation Movement\')\n
 \n
+order_simulation_movement.setPrice(0.0)\n
 for delivery_rule in order_simulation_movement.contentValues():\n
   for delivery_simulation_movement in delivery_rule.contentValues():\n
+    delivery_simulation_movement.setPrice(0.0)\n
     delivery_line = delivery_simulation_movement.getDeliveryValue()\n
     if delivery_line is not None:\n
       delivery_line.setPrice(0.0)\n
     for invoice_rule in delivery_simulation_movement.contentValues():\n
       for invoice_simulation_movement in invoice_rule.contentValues():\n
+        invoice_simulation_movement.setPrice(0.0)\n
         invoice_line = invoice_simulation_movement.getDeliveryValue()\n
         if invoice_line is not None:\n
           if invoice_line.getSimulationState() == \'planned\':\n
