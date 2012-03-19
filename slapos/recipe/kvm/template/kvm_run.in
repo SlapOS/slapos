@@ -32,7 +32,7 @@ if not os.path.exists(disk_path):
   subprocess.Popen(['%(qemu_img_path)s', 'create' ,'-f', 'qcow2',
       '%(disk_path)s', '%(disk_size)sG'])
 
-kvm_argument_list = ['-net', 'nic,macaddr=%(mac_address)s',
+kvm_argument_list = ['kvm', '-net', 'nic,macaddr=%(mac_address)s',
   '-net', 'tap,ifname=%(tap_interface)s,script=no,downscript=no',
   '-smp', '%(smp_count)s',
   '-m', '%(ram_size)s',
@@ -41,7 +41,7 @@ kvm_argument_list = ['-net', 'nic,macaddr=%(mac_address)s',
   '-boot', 'menu=on',
   '-qmp', 'unix:%(socket_path)s,server',
   '-pidfile', '%(pid_file_path)s',
-  '-no-kvm']
+]
 
 # Try to connect to NBD server
 s = getSocketStatus('%(nbd_ip)s', %(nbd_port)s)
@@ -51,5 +51,5 @@ if s is None:
   os.execv('%(qemu_path)s', kvm_argument_list)
 else:
   # NBD is available
-  kvm_argument_list.extend(['-cdrom' 'nbd:[%(nbd_ip)s]:%(nbd_port)s'])
+  kvm_argument_list.extend(['-cdrom', 'nbd:[%(nbd_ip)s]:%(nbd_port)s'])
   os.execv('%(qemu_path)s', kvm_argument_list)
