@@ -397,17 +397,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def _checkComputerPartitionSalePackingListState(self, state,
       resource, sequence):
     delivery_line_amount = sequence.get("delivery_line_amount", 1)
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=sequence['computer_partition_uid'])
-    delivery_line_list = [q.getObject() for q in self.portal.portal_catalog(
+    self.assertEqual(delivery_line_amount, self.portal.portal_catalog\
+      .countResults(
       default_aggregate_uid=ComplexQuery(
-         Query(default_aggregate_uid=computer_partition.getUid()),
+         Query(default_aggregate_uid=sequence['computer_partition_uid']),
          Query(default_aggregate_uid=sequence['software_instance_uid']),
          operator="AND"),
       portal_type=self.sale_packing_list_line_portal_type,
       simulation_state=state,
-      resource_relative_url=resource)]
-    self.assertEqual(delivery_line_amount, len(delivery_line_list))
+      resource_relative_url=resource)[0][0])
 
   def _checkComputerPartitionNoSalePackingList(self, resource, sequence):
     computer_partition = self.portal.portal_catalog.getResultValue(
