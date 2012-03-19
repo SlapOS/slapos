@@ -18,6 +18,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     LoginDefaultUser
     ConfirmOrderedSaleOrderActiveSense
     Tic
+    Tic # in order to call real build
     CheckComputerPartitionSaleOrderAggregatedList
     Logout
     LoginERP5TypeTestCase
@@ -1008,6 +1009,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginAsCustomerA
       PersonRequestSoftwareInstance
       Logout
+      Tic
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
       Tic
@@ -1021,6 +1023,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SelectEmptyRequestedParameterDict
       SetRandomRequestedReference
       RequestSlaveInstanceFromComputerPartition
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
