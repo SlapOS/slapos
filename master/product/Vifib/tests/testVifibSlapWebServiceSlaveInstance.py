@@ -14,6 +14,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     SlapLogout
     LoginAsCustomerA
     PersonRequestSlaveInstance
+    Tic
     Logout
     LoginDefaultUser
     ConfirmOrderedSaleOrderActiveSense
@@ -137,6 +138,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       ConfirmOrderedSaleOrderActiveSense
       Tic 
       SlapLoginCurrentComputer
@@ -172,6 +174,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       ConfirmOrderedSaleOrderActiveSense
       Tic
       SlapLoginCurrentComputer
@@ -253,6 +256,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       StoreSoftwareReleaseUri
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       ConfirmOrderedSaleOrderActiveSense
       Tic
       """ + self.prepare_published_software_release + """
@@ -272,6 +276,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SelectDifferentSoftwareReleaseUri
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       ConfirmOrderedSaleOrderActiveSense
       Tic
       CheckSlaveInstanceAssociationWithSoftwareInstance
@@ -333,6 +338,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_started_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
@@ -362,6 +368,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
@@ -396,6 +403,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
@@ -442,6 +450,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Logout
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
@@ -518,6 +527,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
 
       LoginDefaultUser
@@ -555,6 +565,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       LoginTestVifibCustomerA
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
 
       LoginDefaultUser
@@ -592,6 +603,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
 
       LoginDefaultUser
@@ -633,6 +645,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
@@ -690,6 +703,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
@@ -756,6 +770,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       CheckEmptySlaveInstanceListFromOneComputerPartition
       LoginAsCustomerA
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
@@ -783,6 +798,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       CheckEmptySlaveInstanceListFromOneComputerPartition
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
@@ -816,6 +832,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       CheckEmptySlaveInstanceListFromOneComputerPartition
       LoginAsCustomerA
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
