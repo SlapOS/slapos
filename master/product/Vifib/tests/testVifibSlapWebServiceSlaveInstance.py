@@ -100,6 +100,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_started_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
+      Tic
       SlapLogout
       LoginDefaultUser
       ConfirmOrderedSaleOrderActiveSense
