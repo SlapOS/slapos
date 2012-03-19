@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,78 +24,114 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.recipe.librecipe import BaseSlapRecipe
-import os
-import pkg_resources
-import hashlib
-import string
-import sys
+from slapos.recipe.librecipe import GenericBaseRecipe, GenericSlapRecipe
+import json
 import zc.buildout
-import zc.recipe.egg
-import ConfigParser
 
-TRUE_VALUE_LIST = ['y', 'yes', '1', 'true']
-FALSE_VALUE_LIST = ['n', 'no', '0', 'false']
+class Recipe(GenericSlapRecipe):
+  """
+  kvm frontend instance configuration.
+  """
 
-class Recipe(BaseSlapRecipe):
+  def _getRewriteRuleContent(self, slave_instance_list):
+    """Generate rewrite rules list from slaves list"""
+    rewrite_rule_list = []
+    for slave_instance in slave_instance_list:
+      self.logger.info("Processing slave instance %s..." %
+          slave_instance['slave_reference'])
+      # Check for mandatory fields
+      if slave_instance.get('host', None) is None:
+        self.logger.warn('No "host" parameter is defined for %s slave'\
+            'instance. Ignoring it.' % slave_instance['slave_reference'])
+        continue
+      if slave_instance.get('port', None) is None:
+        self.logger.warn('No "host" parameter is defined for %s slave'\
+            'instance. Ignoring it.' % slave_instance['slave_reference'])
+        continue
 
-  def getTemplateFilename(self, template_name):
-    return pkg_resources.resource_filename(__name__,
-        'template/%s' % template_name)
+      current_slave_dict = dict()
+
+      # Get host, and if IPv6 address, remove "[" and "]"
+      current_slave_dict['host'] = slave_instance['host'].\
+          replace('[', '').replace(']', '')
+      current_slave_dict['port'] = slave_instance['port']
+
+      # Check if target is https or http
+      current_slave_dict['https'] = slave_instance.get('https', 'true')
+      if current_slave_dict['https'] in GenericBaseRecipe.FALSE_VALUES:
+        current_slave_dict['https'] = 'false'
+      # Set reference and resource url
+      # Reference is raw reference from SlapOS Master, resource is
+      # URL-compatible name
+      reference = slave_instance.get('slave_reference')
+      current_slave_dict['reference'] = reference
+      current_slave_dict['resource'] = reference.replace('-', '')
+      rewrite_rule_list.append(current_slave_dict)
+    return rewrite_rule_list
+
+  def _getProxyTableContent(self, rewrite_rule_list):
+    """Generate proxy table file content from rewrite rules list"""
+    proxy_table = dict()
+    for rewrite_rule in rewrite_rule_list:
+      proxy_table[rewrite_rule['resource']] = {
+          'port': rewrite_rule['port'],
+          'host': rewrite_rule['host'],
+          'https': rewrite_rule['https'],
+      }
+
+    proxy_table_content = json.dumps(proxy_table)
+    return proxy_table_content
 
   def _install(self):
-    self.path_list = []
-    self.requirements, self.ws = self.egg.working_set()
+    # Check for mandatory field
+    if self.options.get('domain', None) is None:
+      raise zc.buildout.UserError('No domain name specified. Please define '
+          'the "domain" instance parameter.')
+    # Generate rewrite rules
+    rewrite_rule_list = self._getRewriteRuleContent(
+      json.loads(self.options['slave-instance-list']))
+    # Create Map
+    map_content = self._getProxyTableContent(rewrite_rule_list)
+    map_file = self.createFile(self.options['map-path'], map_content)
 
-#     frontend_port_number = self.parameter_dict.get("port", 4443)
-#     frontend_domain_name = self.parameter_dict.get("domain",
-#         "host.vifib.net")
+    # Create configuration
+    conf = open(self.getTemplateFilename('kvm-proxy.js'), 'r')
+    conf_file = self.createFile(self.options['conf-path'], conf.read())
+    conf.close()
 
-    # Create http server redirecting (302) to https proxy?
-    redirect_plain_http = self.parameter_dict.get("redirect_plain_http", '')
-    if redirect_plain_http in TRUE_VALUE_LIST:
-      redirect_plain_http = '1'
-    
-    # Cert stuffs
-    valid_certificate_str = self.parameter_dict.get('domain_ssl_ca_cert')
-    valid_key_str = self.parameter_dict.get('domain_ssl_ca_key')
-    if valid_certificate_str is None and valid_key_str is None:
-      ca_conf = self.installCertificateAuthority()
-      key, certificate = self.requestCertificate(frontend_domain_name)
+    # Do we create http dummy server used to redirect to https?
+    if self.options['http-redirection'] in GenericBaseRecipe.TRUE_VALUES:
+      http_redirect_server = '1'
     else:
-      ca_conf = self.installValidCertificateAuthority(
-          frontend_domain_name, valid_certificate_str, valid_key_str)
-      key = ca_conf.pop('key')
-      certificate = ca_conf.pop('certificate')
+      http_redirect_server = ''
 
-    # Install node + js script
-#     node_parameter_dict = self.installFrontendNode(
-#         ip=self.getGlobalIPv6Address(),
-#         port=frontend_port_number,
-#         plain_http=redirect_plain_http,
-#         name=frontend_domain_name,
-#         slave_instance_list=self.parameter_dict.get('slave_instance_list', []),
-#         key=key, certificate=certificate)
+    config = dict(
+      ip=self.options['ip'],
+      port=self.options['port'],
+      key=self.options['ssl-key-path'],
+      certificate=self.options['ssl-cert-path'],
+      name=self.options['domain'],
+      shell_path=self.options['shell-path'],
+      node_path=self.options['node-binary'],
+      node_env=self.options['node-env'],
+      conf_path=conf_file,
+      map_path=map_file,
+      plain_http=http_redirect_server,
+    )
 
-    # Send connection parameters of master instance
-    site_url = node_parameter_dict['site_url']
-    self.setConnectionDict(
-      dict(site_url=site_url,
-           domain_ipv6_address=self.getGlobalIPv6Address()))
+    runner_path = self.createExecutable(
+      self.options['wrapper-path'],
+      self.substituteTemplate(self.getTemplateFilename('nodejs_run.in'),
+                              config))
+
     # Send connection parameters of slave instances
-    for slave in node_parameter_dict['rewrite_rule_list']:
+    site_url = "https://%s:%s/" % (self.options['domain'], self.options['port'])
+    for slave in rewrite_rule_list:
       self.setConnectionDict(
-          dict(site_url="%s%s" % (site_url, slave['resource']),
-               domainname=frontend_domain_name,
-               port=frontend_port_number,
+          dict(url="%s%s" % (site_url, slave['resource']),
+               domainname=self.options['domain'],
+               port=self.options['port'],
                resource=slave['resource']),
           slave['reference'])
 
-    return self.path_list
-
-
-  def installFrontendNode(self, ip, port, key, certificate, plain_http,
-                            name, slave_instance_list):
-
-    return dict(site_url="https://%s:%s/" % (name, port),
-                rewrite_rule_list=rewrite_rule_list)
+    return [map_file, conf_file, runner_path]
