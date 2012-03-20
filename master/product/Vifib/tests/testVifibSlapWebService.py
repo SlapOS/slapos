@@ -1365,35 +1365,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     RestoreComputerReference
   """
 
-  prepare_started_slave_instance_sequence_string = \
-      prepare_started_computer_partition_sequence_string + """
-        LoginTestVifibCustomer
-        PersonRequestSlaveInstance
-        SlapLogout
-        LoginDefaultUser
-        ConfirmOrderedSaleOrderActiveSense
-        Tic
-        SlapLogout
-        SlapLoginCurrentComputer
-        SoftwareInstanceAvailable
-        Tic
-        LoginTestVifibCustomer
-        RequestStopSoftwareInstanceFromCurrentComputerPartition
-        Tic
-        SoftwareInstanceStopped
-        Tic
-        StartSoftwareInstanceFromCurrentComputerPartition
-        Tic
-        SoftwareInstanceStarted
-        Tic
-        Logout
-        LoginDefaultUser
-        SetDeliveryLineAmountEqualTwo
-        CheckComputerPartitionInstanceHostingSalePackingListStarted
-        CheckComputerPartitionInstanceSetupSalePackingListStopped
-        Logout
-      """
-
   register_new_user_sequence_string = '\
       Logout \
       RequestCredentialFromWebSite \
