@@ -1026,7 +1026,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
        SlapLogout
 
        LoginDefaultUser
-       SetDeliveryLineAmountEqualTwo
+       SetDeliveryLineAmountEqualOne
        CheckComputerPartitionInstanceSetupSalePackingListConfirmed
        SlapLogout
 
