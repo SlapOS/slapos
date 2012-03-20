@@ -373,7 +373,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SlapLogout \
       \
       LoginDefaultUser \
-      SetDeliveryLineAmountEqualThree \
+      SetDeliveryLineAmountEqualOne \
       CheckComputerPartitionInstanceHostingSalePackingListStarted \
       Logout \
       \
@@ -393,8 +393,6 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SlapLogout \
       \
       LoginDefaultUser \
-      SetDeliveryLineAmountEqualOne \
-      CheckComputerPartitionInstanceHostingSalePackingListStarted \
       SetDeliveryLineAmountEqualOne \
       CheckComputerPartitionInstanceHostingSalePackingListDelivered \
       Logout \
