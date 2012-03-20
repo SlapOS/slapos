@@ -1251,7 +1251,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       ConfirmOrderedSaleOrderActiveSense \
       Tic \
-      SetDeliveryLineAmountEqualTwo \
+      SetDeliveryLineAmountEqualOne \
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
       Logout \
       \
