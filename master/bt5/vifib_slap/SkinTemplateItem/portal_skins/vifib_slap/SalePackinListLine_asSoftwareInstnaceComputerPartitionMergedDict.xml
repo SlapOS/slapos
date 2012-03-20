@@ -85,9 +85,6 @@ if software_instance is not None and computer_partition is not None and software
 \n
   for sale_packing_list_line in sale_packing_list_line_list:\n
     instance = sale_packing_list_line.getAggregateValue(portal_type=\'Slave Instance\')\n
-    if instance.getUid() == software_instance.getUid():\n
-      # ignore self\n
-      continue\n
     slave_instance = dict(slave_title=instance.getTitle(),\n
                             slap_software_type=instance.getSourceReference(),\n
                             slave_reference=instance.getReference(),\n
