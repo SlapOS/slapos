@@ -68,7 +68,7 @@ context.newActiveProcess()\n
 context.getPortalObject().portal_catalog.searchAndActivate(\n
   method_id=\'Person_storeOpenOrderJournal\',\n
   method_kw={\'modification_date\': kw.get(\'modification_date\'), \'tag\': tag, \'stop_date\': params.get(\'stop_date\')},\n
-  activate_kw={\'tag\': tag, \'priority\': 10},\n
+  activate_kw={\'tag\': tag},\n
   packet_size=1, # Person_storeOpenOrderJournal generates big transactions\n
   portal_type=\'Person\'\n
 )\n
