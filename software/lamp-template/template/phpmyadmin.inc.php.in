@@ -1,7 +1,7 @@
 <?php
 $cfg['blowfish_secret'] = ''; /* YOU MUST FILL IN THIS FOR COOKIE AUTH! */
-$i = 0;
-$i++;
+$i = 1;
+
 /* Server parameters */
 $cfg['Servers'][$i]['host'] = 'Put here mysql host template key';
 $cfg['Servers'][$i]['port'] = 'Put here mysql port template key';

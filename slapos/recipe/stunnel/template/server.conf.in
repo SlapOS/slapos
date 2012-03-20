@@ -6,5 +6,5 @@ key = %(key)s
 cert = %(cert)s
 
 [service]
-accept = %(remote_address)s:%(remote_port)s
-connect = %(local_address)s:%(local_port)s
+accept = %(remote_host)s:%(remote_port)s
+connect = %(local_host)s:%(local_port)s

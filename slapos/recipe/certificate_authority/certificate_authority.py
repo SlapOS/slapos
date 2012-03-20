@@ -2,6 +2,7 @@ import os
 import subprocess
 import time
 import ConfigParser
+import uuid
 
 
 def popenCommunicate(command_list, input=None):
@@ -44,7 +45,7 @@ class CertificateAuthority:
       popenCommunicate([self.openssl_binary, 'req', '-nodes', '-config',
           self.openssl_configuration, '-new', '-x509', '-extensions',
           'v3_ca', '-keyout', self.key, '-out', self.certificate,
-          '-days', '10950'], 'Automatic Certificate Authority\n')
+          '-days', '10950'], 'Certificate Authority %s\n' % uuid.uuid1())
     except:
       try:
         for f in file_list:

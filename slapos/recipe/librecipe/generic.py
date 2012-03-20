@@ -28,6 +28,9 @@ import logging
 import os
 import sys
 import inspect
+import re
+import urllib
+import urlparse
 
 import pkg_resources
 import zc.buildout
@@ -39,11 +42,12 @@ class GenericBaseRecipe(object):
   def __init__(self, buildout, name, options):
     """Recipe initialisation"""
     self.name = name
-    self.options = options
     self.buildout = buildout
     self.logger = logging.getLogger(name)
 
+    self.options = options.copy() # If _options use self.optionIsTrue
     self._options(options) # Options Hook
+    self.options = options.copy() # Updated options dict
 
     self._ws = self.getWorkingSet()
 
@@ -98,9 +102,17 @@ class GenericBaseRecipe(object):
       path, arguments=arguments)[0]
     return script
 
+  def createDirectory(self, parent, name, mode=0700):
+    path = os.path.join(parent, name)
+    if not os.path.exists(path):
+      os.mkdir(path, mode)
+    elif not os.path.isdir(path):
+      raise OSError("%r exists but is not a directory." % name)
+    return path
+
   def substituteTemplate(self, template_location, mapping_dict):
     """Read from file template_location an substitute content with
-       mapping_dict douing a dummy python format."""
+       mapping_dict doing a dummy python format."""
     with open(template_location, 'r') as template:
       return template.read() % mapping_dict
 
@@ -123,3 +135,35 @@ class GenericBaseRecipe(object):
     if default is not None and optionname not in self.options:
       return default
     return self.isTrueValue(self.options[optionname])
+
+  def unparseUrl(self, scheme, host, path='', params='', query='',
+                 fragment='', port=None, auth=None):
+    """Join a url with auth, host, and port.
+
+    * auth can be either a login string or a tuple (login, password).
+    * if the host is an ipv6 address, brackets will be added to surround it.
+
+    """
+    # XXX-Antoine: I didn't find any standard module to join an url with
+    # login, password, ipv6 host and port.
+    # So instead of copy and past in every recipe I factorized it right here.
+    netloc = ''
+    if auth is not None:
+      auth = tuple(auth)
+      netloc = urllib.quote(str(auth[0])) # Login
+      if len(auth) > 1:
+        netloc += ':%s' % urllib.quote(auth[1]) # Password
+      netloc += '@'
+
+    # host is an ipv6 address whithout brackets
+    if ':' in host and not re.match(r'^\[.*\]$', host):
+      netloc += '[%s]' % host
+    else:
+      netloc += str(host)
+
+    if port is not None:
+      netloc += ':%s' % port
+
+    url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
+
+    return url

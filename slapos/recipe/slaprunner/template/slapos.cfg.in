@@ -23,3 +23,11 @@ ipv6_address = %(ipv6_address)s
 host = %(proxy_host)s
 port = %(proxy_port)s
 database_uri = %(proxy_database)s
+
+[sshkeys_authority]
+ssh_client = %(ssh_client)s
+public_key = %(public_key)s
+private_key = %(private_key)s
+
+[gitclient]
+git = %(git)s
