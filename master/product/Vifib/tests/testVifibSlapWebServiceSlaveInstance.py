@@ -905,6 +905,12 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetSoftwareInstanceAsCurrentRequestedSlave(self, sequence, **kw):
+    slave_instance = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_instance_uid']).getPredecessorValue(
+        portal_type='Slave Instance')
+    sequence['software_instance_uid'] = slave_instance.getUid()
+
   def test_SlaveInstance_change_parameter_dict_after_request(self):
     """
       Check that request to change the parameter dict from a Slave Instance
@@ -932,19 +938,26 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       SoftwareInstanceAvailable
       Tic
+      SlapLogout
+      SlapLoginCurrentComputer
       LoginDefaultUser
       StartSoftwareInstanceFromCurrentComputerPartition
-      Logout
       Tic
+      Logout
+      SlapLoginCurrentSoftwareInstance
       SoftwareInstanceStarted
       Tic
       CheckEmptyComputerGetComputerPartitionCall
       SlapLogout
+
       SlapLoginCurrentSoftwareInstance
       SelectRequestedParameterDictRequestedParameter
       RequestSlaveInstanceFromComputerPartition
+      Tic
       SlapLogout
+
       LoginDefaultUser
+      SetSoftwareInstanceAsCurrentRequestedSlave
       CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
       Logout
       SlapLoginCurrentComputer
