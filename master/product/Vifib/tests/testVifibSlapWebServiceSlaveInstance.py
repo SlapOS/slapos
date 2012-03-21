@@ -691,8 +691,6 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
   def test_SlaveInstance_request_stop(self):
     """
       Check that the Slave Instance will be stopped correctly
-      XXX - Review the sequence of steps to verify that the scenario is
-      validating the feature of stop a Instance Slave
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + """
@@ -729,13 +727,6 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
-      Logout
-      LoginTestVifibCustomer
-      RequestStopSoftwareInstanceFromCurrentComputerPartition
-      Tic
-      Logout
-      LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase
