@@ -223,8 +223,14 @@ class Computer(object):
     slap_computer = slap_instance.registerComputer(self.reference)
     if config.dry_run:
       return
-    return slap_computer.updateConfiguration(
-        xml_marshaller.dumps(_getDict(self)))
+    try:
+      response = slap_computer.updateConfiguration(
+          xml_marshaller.dumps(_getDict(self)))
+    except slap.NotFoundError as error:
+      raise slap.NotFoundError("%s\nERROR : This SlapOS node is not recognised by "
+          "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
+          "like 'COMP-123' and is correct.\nError is : 404 Not Found." % error)
+    return 
 
   def dump(self, path_to_xml):
     """
