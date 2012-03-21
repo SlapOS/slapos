@@ -129,7 +129,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
 
       # no invoice movements on this level
       self.assertEqual(0,
-        len(simulation_movement.contentValues(portal_type="Applied Rule"))
+        len(simulation_movement.contentValues(portal_type="Applied Rule")))
       # check next simulation movement
       idx += 1
 
