@@ -51,6 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>context.z_set_priority_one_message_table()\n
+context.z_set_priority_one_message_queue_table()\n
 </string> </value>
         </item>
         <item>
