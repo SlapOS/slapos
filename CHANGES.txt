@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.41 (2012-03-21)
+-----------------
+
+ * Release new "generic" version of KVM, includes frontend.
+   [Cedric de Saint Martin]
+
 0.40.1 (2012-03-01)
 -----------------
 
