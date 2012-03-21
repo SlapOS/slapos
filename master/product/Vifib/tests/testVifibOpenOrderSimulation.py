@@ -120,16 +120,23 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       self.assertEqual(start_date, simulation_movement.getStartDate())
       self.assertEqual(stop_date, simulation_movement.getStopDate())
 
-      # delivered already
+      # delivered already...
       self.assertNotEqual(None, simulation_movement.getDelivery())
       self.assertEqual('Sale Packing List Line',
         simulation_movement.getDeliveryValue().getPortalType())
-      # packing list shall be buildable
+      # ...so no buildable
       self.assertFalse(simulation_movement.isBuildable())
 
-      # no invoice movements on this level
-      self.assertEqual(0,
+      # stopped...
+      self.assertEqual('stopped', simulation_movement.getSimulationState())
+      # ...so invoice rule applied
+      self.assertEqual(1,
         len(simulation_movement.contentValues(portal_type="Applied Rule")))
+      # ...with one simulation movement
+      invoice_applied_rule = simulation_movement.contentValues(
+        portal_type="Applied Rule")[0]
+      self.assertEqual(1, len(invoice_applied_rule.contentValues()))
+
       # check next simulation movement
       idx += 1
 
