@@ -490,6 +490,30 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepStoreCurrentSoftwareInstanceBufferA(self, sequence, **kw):
+    sequence.edit(
+      software_instance_uid_buffer_a=sequence['software_instance_uid'],
+      software_instance_reference_buffer_a=sequence[
+        'software_instance_reference'])
+
+  def stepStoreCurrentSoftwareInstanceBufferB(self, sequence, **kw):
+    sequence.edit(
+      software_instance_uid_buffer_b=sequence['software_instance_uid'],
+      software_instance_reference_buffer_b=sequence[
+        'software_instance_reference'])
+
+  def stepRestoreCurrentSoftwareInstanceBufferA(self, sequence, **kw):
+    sequence.edit(
+      software_instance_uid=sequence['software_instance_uid_buffer_a'],
+      software_instance_reference=sequence[
+        'software_instance_reference_buffer_a'])
+
+  def stepRestoreCurrentSoftwareInstanceBufferB(self, sequence, **kw):
+    sequence.edit(
+      software_instance_uid=sequence['software_instance_uid_buffer_b'],
+      software_instance_reference=sequence[
+        'software_instance_reference_buffer_b'])
+
   def test_SlaveInstance_call_destroy_from_SoftwareInstance(self):
     """
       Check that the Slave Instance will be stopped correctly when
@@ -497,6 +521,8 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + """
+      StoreCurrentSoftwareInstanceBufferA
+
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       SlapLogout
@@ -507,6 +533,10 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       SoftwareInstanceAvailable
       Tic
+
+      StoreCurrentSoftwareInstanceBufferB
+      RestoreCurrentSoftwareInstanceBufferA
+
       LoginTestVifibCustomer
       RequestStopSoftwareInstanceFromCurrentComputerPartition
       Tic
