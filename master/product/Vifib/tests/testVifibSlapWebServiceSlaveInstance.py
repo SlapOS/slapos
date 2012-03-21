@@ -1020,7 +1020,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlaveInstanceStopped
       Tic
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
-      SetDeliveryLineAmountEqualTwo
+      SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceSetupSalePackingListStopped
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
