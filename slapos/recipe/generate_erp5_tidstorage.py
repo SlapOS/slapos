@@ -170,7 +170,10 @@ class Recipe(GenericSlapRecipe):
         server_check_path='/%s/getId' % site_id,
         haproxy_backend_list=' '.join(haproxy_backend_list),
         ssl_authentication=backend_configuration.get('ssl-authentication',
-          False)
+          False),
+        backend_path=backend_configuration.get('backend-path', '/') % {
+            'site-id': site_id}
+
       )
       current_apache_port += 1
       output += snippet_backend % backend_dict
