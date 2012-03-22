@@ -128,6 +128,72 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepCheckSoftwareInstanceNoDeliveryRelated(self, sequence, **kw):
+    self.assertEqual(None, self.portal.portal_catalog.getResultValue(
+      default_aggregate_uid=sequence['software_instance_uid'],
+      portal_type=self.sale_packing_list_line_portal_type
+    ))
+
+  def stepCheckSoftwareInstanceCancelledSaleOrderLine(self, sequence, **kw):
+    self.assertEqual('cancelled', self.portal.portal_catalog.getResultValue(
+      default_aggregate_uid=sequence['software_instance_uid'],
+      portal_type=self.sale_order_line_portal_type
+    ).getSimulationState())
+
+  def test_person_destroy_not_instanciable_software_instance(self):
+    """Check that if there is no way to instantiate software instance
+    on any partition person is able to destroy it"""
+    self.computer_partition_amount = 0
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SetRandomRequestedReference
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstancePrepare
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      ConfirmOrderedSaleOrderActiveSense
+      Tic
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      SetCurrentPersonSlapRequestedSoftwareInstance
+      CheckSoftwareInstanceNoDeliveryRelated
+      Logout
+
+      LoginTestVifibCustomer
+      RequestSoftwareInstanceDestroy
+      Tic
+      Logout
+
+      LoginDefaultUser
+      CheckSoftwareInstanceCancelledSaleOrderLine
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def stepSetFirstSoftwareType(self, sequence,
       **kw):
     sequence.edit(software_type="FirstSoftwareType")
