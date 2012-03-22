@@ -74,7 +74,8 @@ if invoice.getSimulationState() == \'draft\':\n
   invoice.plan(comment=translateString(\'Initialised by Delivery Builder.\'), activate_kw={\'tag\': tag})\n
 \n
 # Update causality workflow\n
-invoice.startBuilding()\n
+if invoice.getPortalObject().portal_workflow.isTransitionPossible(invoice, \'start_building\'):\n
+  invoice.startBuilding()\n
 invoice.updateCausalityState()\n
 \n
 # update specialise from movements\n
