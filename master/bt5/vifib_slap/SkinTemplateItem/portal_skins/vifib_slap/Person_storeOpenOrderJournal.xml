@@ -78,6 +78,15 @@ for cleanup_line in catalog(\n
   if aggregate not in remove_hosting_list:\n
     remove_hosting_list.append(aggregate)\n
 \n
+for cancelled_line in catalog(\n
+  portal_type=\'Sale Order Line\',\n
+  default_resource_uid=cleanup_resource_uid,\n
+  simulation_state=\'cancelled\',\n
+  **movement_kw):\n
+  aggregate = cancelled_line.getAggregate(portal_type=\'Hosting Subscription\')\n
+  if aggregate not in remove_hosting_list:\n
+    remove_hosting_list.append(aggregate)\n
+\n
 subscription_service_relative_url=portal.portal_preferences.getPreferredInstanceSubscriptionResource()\n
 common_add_kw = dict(\n
   portal_type="Open Sale Order Line",\n
