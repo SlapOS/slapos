@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.42-dev (Unreleased)
+-----------------
+
+ * Deprecate BaseSlapRecipe [Cedric de Saint Martin]
+
 0.41 (2012-03-21)
 -----------------
 
