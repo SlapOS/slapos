@@ -59,13 +59,20 @@ if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
   raise ValueError("Software Instance is currently being destroyed.")\n
 # lock software instance in transaction\n
 software_instance.serialize()\n
-service_relative_url = software_instance.portal_preferences.\\\n
-                            getPreferredInstanceCleanupResource()\n
-sale_packing_list = context.SoftwareInstance_createSalePackingList(state_change, service_relative_url, tag=tag)\n
-sale_packing_list.confirm(activate_kw={\'tag\':tag})\n
 \n
-if software_instance.getPortalType() == "Software Instance":\n
-  software_instance.SoftwareInstance_requestDestroySlaveInstanceRelated()\n
+sale_order_line = software_instance.getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
+\n
+if sale_order_line.getSimulationState() == \'ordered\':\n
+  # tries to destroy not yet even allocated one\n
+  sale_order_line.getParentValue().cancel()\n
+else:\n
+  service_relative_url = software_instance.portal_preferences.\\\n
+                              getPreferredInstanceCleanupResource()\n
+  sale_packing_list = context.SoftwareInstance_createSalePackingList(state_change, service_relative_url, tag=tag)\n
+  sale_packing_list.confirm(activate_kw={\'tag\':tag})\n
+\n
+  if software_instance.getPortalType() == "Software Instance":\n
+    software_instance.SoftwareInstance_requestDestroySlaveInstanceRelated()\n
 
 
 ]]></string> </value>
