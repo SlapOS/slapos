@@ -4,7 +4,7 @@ Changes
 0.24 (Unreleased)
 -----------------
 
- * No change yet.
+ * Handles different errors in a user friendly way [Cedric de Saint Martin]
 
 0.23 (2012-02-29)
 -----------------

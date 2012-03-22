@@ -465,9 +465,13 @@ class ComputerPartition(SlapDocument):
 #   return decorated 
 
 class ConnectionHelper:
-  error_message_connect_fail = "Couldn't connect to the server. Please double \
-check given master-url argument, and make sure that IPv6 is enabled on \
-your machine and that the server is available. The original error was:"
+  error_message_connect_fail = "Couldn't connect to the server. Please " \
+      "double check given master-url argument, and make sure that IPv6 is " \
+      "enabled on your machine and that the server is available. The " \
+      "original error was: "
+  ssl_error_message_connect_fail = "Couldn't authenticate computer. Please " \
+      "check that certificate and key defined in slapos.cfg exist and are " \
+      "valid. "
   def __init__(self, connection_wrapper, host, path, key_file=None,
       cert_file=None, master_ca_file=None, timeout=None):
     self.connection_wrapper = connection_wrapper
@@ -501,6 +505,9 @@ your machine and that the server is available. The original error was:"
         self.connect()
         self.connection.request('GET', self.path + path)
         self.response = self.connection.getresponse()
+      # If ssl error : must come from bad configuration
+      except ssl.SSLError, e:
+        raise ssl.SSLError(self.ssl_error_message_connect_fail + str(e))
       except socket.error, e:
         raise socket.error(self.error_message_connect_fail + str(e))
       # check self.response.status and raise exception early
@@ -528,6 +535,9 @@ your machine and that the server is available. The original error was:"
         header_dict = {'Content-type': content_type}
         self.connection.request("POST", self.path + path,
             urllib.urlencode(parameter_dict), header_dict)
+      # If ssl error : must come from bad configuration
+      except ssl.SSLError, e:
+        raise ssl.SSLError(self.ssl_error_message_connect_fail + str(e))
       except socket.error, e:
         raise socket.error(self.error_message_connect_fail + str(e))
       self.response = self.connection.getresponse()
