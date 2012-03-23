@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>"""Dirty script to return Software Instance state"""\n
+            <value> <string encoding="cdata"><![CDATA[
+
+"""Dirty script to return Software Instance state"""\n
 if context.getPortalType() == "Sale Order Line":\n
   return "Under Approval"\n
 \n
@@ -58,6 +60,13 @@ sale_packing_list_line = context.SoftwareInstance_getInstancePackingListLine()\n
 if sale_packing_list_line is None:\n
   sale_packing_list_line = context.SoftwareInstance_getInstancePackingListLine(portal_type="Sale Order Line")\n
   if sale_packing_list_line is None:\n
+    if context.getPortalObject().portal_catalog.countResults(\n
+      portal_type=\'Sale Order Line\',\n
+      simulation_state=\'cancelled\',\n
+      default_aggregate_uid=context.getUid(),\n
+      default_resource_uid=context.restrictedTraverse(context.getPortalObject().portal_preferences.getPreferredInstanceSetupResource()).getUid()\n
+    )[0][0] > 0:\n
+      return \'Destroyed\'\n
     # Let\'s hope the sale order is not indexed yet\n
     return \'Looking for a free partition\'\n
 \n
@@ -90,7 +99,9 @@ elif service_url == portal_preferences.getPreferredInstanceHostingResource():\n
     return \'Stopped\'\n
 \n
 return \'Unable to calculate the status...\'\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
