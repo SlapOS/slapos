@@ -4,15 +4,15 @@ import httplib
 import urllib
 import base64
 
-user = %(user)s
-password = %(password)s
-host = %(host)s
-site_id = %(site-id)s
+user = "%(user)s"
+password = "%(password)s"
+host = "%(host)s"
+site_id = "%(site_id)s"
 erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
-mysql_url = %(sql-connection-string)s
+mysql_url = "%(sql_connection_string)s"
 
-header_dict = {'Authorization': 'Basic %s' % \
-  base64.encodestring('%s:%s' % (user, password)).strip()}
+header_dict = {'Authorization': 'Basic %%s' %% \
+  base64.encodestring('%%s:%%s' %% (user, password)).strip()}
 zope_connection = httplib.HTTPConnection(host)
 
 # Check if an ERP5 site is already created, as ERP5 does support having

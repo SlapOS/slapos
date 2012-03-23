@@ -52,9 +52,9 @@ class Recipe(GenericBaseRecipe):
       python_path=sys.executable,
       user=zope_parsed.username,
       password=zope_parsed.password,
-      site-id=zope_parsed.split('/')[1],
+      site_id=zope_parsed.path.split('/')[1],
       host="%s:%s" % (zope_parsed.hostname, zope_parsed.port),
-      sql-connection-string=mysql_connection_string,
+      sql_connection_string=mysql_connection_string,
     )
 
     # Runners
