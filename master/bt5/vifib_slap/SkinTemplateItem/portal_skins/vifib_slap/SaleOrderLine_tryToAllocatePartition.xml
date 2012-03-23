@@ -50,7 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
+            <value> <string>from DateTime import DateTime\n
+from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
 from zExceptions import Unauthorized\n
 \n
 def assignComputerPartition(order):\n
@@ -104,6 +105,7 @@ if sale_order.getSimulationState() == \'ordered\':\n
         # order not ready yet\n
         pass\n
       else:\n
+        sale_order.setStartDate(DateTime())\n
         sale_order.confirm()\n
 </string> </value>
         </item>
