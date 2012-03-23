@@ -80,7 +80,7 @@ for cleanup_line in catalog(\n
 \n
 for cancelled_line in catalog(\n
   portal_type=\'Sale Order Line\',\n
-  default_resource_uid=cleanup_resource_uid,\n
+  default_resource_uid=setup_resource_uid,\n
   simulation_state=\'cancelled\',\n
   **movement_kw):\n
   aggregate = cancelled_line.getAggregate(portal_type=\'Hosting Subscription\')\n
