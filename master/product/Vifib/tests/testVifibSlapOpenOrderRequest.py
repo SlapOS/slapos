@@ -185,6 +185,8 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckSoftwareInstanceCancelledSaleOrderLine
+      Tic # in order to give chance to update Open Order
+      CheckOpenOrderLineRemoved
       Logout
 
       LoginERP5TypeTestCase
