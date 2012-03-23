@@ -181,7 +181,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid=sequence['software_instance_uid'])
     hosting_subscription = software_instance.getAggregateRelatedValue(
-      portal_type='Sale Packing List Line').getAggregateValue(
+      portal_type='Sale Order Line').getAggregateValue(
         portal_type='Hosting Subscription')
     # shall be not present on any validted open order
     validated_open_order_line = self.portal.portal_catalog.getResultValue(
