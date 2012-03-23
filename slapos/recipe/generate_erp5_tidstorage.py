@@ -95,7 +95,8 @@ class Recipe(GenericSlapRecipe):
     zeo_connection_string = '\n'.join(zeo_connection_list)
     zope_dict.update(
       timezone=json_data['timezone'],
-      zeo_connection_string=zeo_connection_string
+      zeo_connection_string=zeo_connection_string,
+      site_id=site_id,
     )
     # always one distribution node
     current_zope_port += 1
