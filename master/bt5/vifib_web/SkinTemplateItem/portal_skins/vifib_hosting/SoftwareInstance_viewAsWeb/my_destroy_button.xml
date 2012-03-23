@@ -153,7 +153,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.SoftwareInstance_getStatus() in ("Started", "Stopped", "Looking for a free partition")</string> </value>
+            <value> <string>python: context.SoftwareInstance_getStatus() not in (\'Destroyed\', \'Destruction in progress\')</string> </value>
         </item>
       </dictionary>
     </pickle>
