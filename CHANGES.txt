@@ -1,10 +1,15 @@
 Changes
 =======
 
-0.39 (unreleased)
+0.40 (Unreleased)
 -----------------
 
- * No changes yet.
+ * seleniumrunner initial release. [Cedric de Saint Martin]
+ 
+0.39 (2012-02-20)
+-----------------
+
+ * seleniumrunner initial release. [Cedric de Saint Martin]
 
 0.38 (2011-12-05)
 -----------------
