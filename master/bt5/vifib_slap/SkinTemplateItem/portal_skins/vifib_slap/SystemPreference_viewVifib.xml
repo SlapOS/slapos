@@ -103,6 +103,7 @@
                         <string>my_preferred_payzen_integration_site</string>
                         <string>my_preferred_maximum_balance</string>
                         <string>my_preferred_maximum_due_day</string>
+                        <string>my_preferred_software_cleanup_resource</string>
                       </list>
                     </value>
                 </item>
