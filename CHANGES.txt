@@ -1,10 +1,13 @@
 Changes
 =======
 
-0.42-dev (Unreleased)
+0.42 (2012-03-26)
 -----------------
 
- * Deprecate BaseSlapRecipe [Cedric de Saint Martin]
+ * erp5: Upgrade Libreoffice to 3.5.1. [Kazuhiko Shiozaki]
+ * erp5: Add initial profile to MariaDB 5.5 [Kazuhiko Shiozaki]
+ * erp5: Drop duplicate section [Vincent Pelletier]
+ * erp5: Version up to Apache 2.4.1 [Kazuhiko Shiozaki]
 
 0.41 (2012-03-21)
 -----------------
