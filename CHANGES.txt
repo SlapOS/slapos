@@ -4,10 +4,10 @@ Changes
 0.42 (2012-03-26)
 -----------------
 
- * erp5: Upgrade Libreoffice to 3.5.1. [Kazuhiko Shiozaki]
- * erp5: Add initial profile to MariaDB 5.5 [Kazuhiko Shiozaki]
- * erp5: Drop duplicate section [Vincent Pelletier]
- * erp5: Version up to Apache 2.4.1 [Kazuhiko Shiozaki]
+ * erp5: Add web_checker recipe. [Tatuya Kamada]
+ * erp5: Add generic_varnish recipe. [Tatuya Kamada]
+ * erp5: Simplify erp5_update to only create the ERP5 site. [Romain Courteaud]
+ * erp5: Allow to pass CA parameters from section. [Łukasz Nowak]
 
 0.41 (2012-03-21)
 -----------------
