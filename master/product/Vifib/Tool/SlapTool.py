@@ -220,11 +220,11 @@ class SlapTool(BaseTool):
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'supplySupply')
-  def supplySupply(self, url, computer_id):
+  def supplySupply(self, url, computer_id, state='available'):
     """
     Request Software Release installation
     """
-    return self._supplySupply(url, computer_id)
+    return self._supplySupply(url, computer_id, state)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'buildingSoftwareRelease')
@@ -610,13 +610,19 @@ class SlapTool(BaseTool):
     return len(catalog_result)
 
   @convertToREST
-  def _supplySupply(self, url, computer_id):
+  def _supplySupply(self, url, computer_id, state):
     """
     Request Software Release installation
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.requestSoftwareReleaseInstallation(
-      software_release_url=url)
+    if state == 'available':
+      computer_document.requestSoftwareReleaseInstallation(
+        software_release_url=url)
+    elif state == 'destroyed':
+      computer_document.requestSoftwareReleaseCleanup(
+        software_release_url=url)
+    else:
+      raise ValueError('State %s is not supported' % state)
 
   @convertToREST
   def _buildingSoftwareRelease(self, url, computer_id):
