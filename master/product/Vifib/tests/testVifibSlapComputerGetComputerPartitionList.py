@@ -416,6 +416,20 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
+      LoginTestVifibCustomer \
+      RequestSoftwareInstanceDestroy \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      SoftwareInstanceDestroyed \
+      Tic \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      CheckComputerPartitionInstanceCleanupSalePackingListDelivered \
+      CheckComputerPartitionIsFree \
+      CheckOpenOrderLineRemoved \
+      Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
