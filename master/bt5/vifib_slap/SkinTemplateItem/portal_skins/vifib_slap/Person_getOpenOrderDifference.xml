@@ -96,8 +96,9 @@ for start_date_tuple in start_date_tuple_list:\n
     line = previous_open_sale_order[line_id]\n
     if line.getStartDate() is None:\n
       modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')] = {\'start_date\': start_date}\n
-    # reset start_date to possibly already set up on Open Order Line\n
-    start_date = line.getStartDate()\n
+    else:\n
+      # reset start_date to possibly already set up on Open Order Line\n
+      start_date = line.getStartDate()\n
   elif start_date_tuple[0] in add_kw_kw:\n
     add_kw_kw[start_date_tuple[0]][\'start_date\'] = start_date\n
   hs = portal.restrictedTraverse(start_date_tuple[0])\n
