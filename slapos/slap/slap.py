@@ -108,6 +108,9 @@ class SoftwareRelease(SlapDocument):
       'url': self._software_release, 
       'computer_id': self._computer_guid})
 
+  def getState(self):
+    return getattr(self, '_requested_state', 'available')
+
 # XXX What is this SoftwareInstance class?
 class SoftwareInstance(SlapDocument):
   """
