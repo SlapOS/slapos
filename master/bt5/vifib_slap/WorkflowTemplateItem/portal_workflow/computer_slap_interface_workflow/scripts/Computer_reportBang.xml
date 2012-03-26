@@ -58,8 +58,8 @@ for computer_partition in [x for x in computer.contentValues(portal_type=\'Compu
     # no need to bang trees without any delivery line\n
     continue\n
   software_instance = packing_list_line.getAggregateValue(portal_type=\'Software Instance\')\n
-  software_instance.activate().SoftwareInstance_bangAsSelf(reference=software_instance.getReference(),\n
-    comment=state_change.kwargs.get(\'comment\', \'\'))\n
+  software_instance.activate().SoftwareInstance_bangAsSelf(relative_url=software_instance.getRelativeUrl(),\n
+    reference=software_instance.getReference(), comment=state_change.kwargs.get(\'comment\', \'\'))\n
 </string> </value>
         </item>
         <item>
