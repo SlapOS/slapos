@@ -82,10 +82,7 @@ setup(name=name,
           'notifier = slapos.recipe.notifier:Recipe',
           'notifier.callback = slapos.recipe.notifier:Callback',
           'notifier.notify = slapos.recipe.notifier:Notify',
-<<<<<<< HEAD
           'novnc = slapos.recipe.novnc:Recipe',
-=======
->>>>>>> origin/erp5
           'lamp = slapos.recipe.lamp:Request',
           'lamp.request = slapos.recipe.lamp:Request',
           'lamp.static = slapos.recipe.lamp:Static',
