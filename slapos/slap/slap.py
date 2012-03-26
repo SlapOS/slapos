@@ -108,6 +108,11 @@ class SoftwareRelease(SlapDocument):
       'url': self._software_release, 
       'computer_id': self._computer_guid})
 
+  def destroyed(self):
+    self._connection_helper.POST('/destroyedSoftwareRelease', {
+      'url': self._software_release, 
+      'computer_id': self._computer_guid})
+
   def getState(self):
     return getattr(self, '_requested_state', 'available')
 
