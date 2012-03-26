@@ -82,7 +82,10 @@ setup(name=name,
           'notifier = slapos.recipe.notifier:Recipe',
           'notifier.callback = slapos.recipe.notifier:Callback',
           'notifier.notify = slapos.recipe.notifier:Notify',
+<<<<<<< HEAD
           'novnc = slapos.recipe.novnc:Recipe',
+=======
+>>>>>>> origin/erp5
           'lamp = slapos.recipe.lamp:Request',
           'lamp.request = slapos.recipe.lamp:Request',
           'lamp.static = slapos.recipe.lamp:Static',
@@ -120,8 +123,12 @@ setup(name=name,
           'generate.cloudooo = slapos.recipe.generate_cloudooo:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',
+          'erp5.bootstrap = slapos.recipe.erp5_bootstrap:Recipe',
+          'erp5.promise = slapos.recipe.erp5_promise:Recipe',
           'erp5.update = slapos.recipe.erp5_update:Recipe',
           'erp5.test = slapos.recipe.erp5_test:Recipe',
+          'generic.varnish = slapos.recipe.generic_varnish:Recipe',
+          'webchecker = slapos.recipe.web_checker:Recipe',
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',

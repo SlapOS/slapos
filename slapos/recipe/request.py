@@ -54,7 +54,7 @@ class Recipe(object):
       self.return_parameters = [str(parameter).strip()
                                for parameter in options['return'].split()]
     else:
-      self.logger.warning("No parameter to return to main instance."
+      self.logger.debug("No parameter to return to main instance."
                           "Be careful about that...")
 
     software_type = 'RootInstanceSoftware'

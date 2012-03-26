@@ -33,10 +33,33 @@ class Recipe(GenericBaseRecipe):
     ip = self.options['ip']
     port = self.options['port']
     backend = self.options['backend']
-    key = self.options['key-file']
-    certificate = self.options['cert-file']
-    access_control_string = self.options['access-control-string']
+
     apache_conf = dict()
+
+    scheme = self.options['scheme']
+    if scheme == 'http':
+      required_path_list = []
+      apache_conf['ssl_snippet'] = ''
+    elif scheme == 'https':
+      key = self.options['key-file']
+      certificate = self.options['cert-file']
+      required_path_list = [key, certificate]
+      apache_conf['key'] = key
+      apache_conf['certificate'] = certificate
+      apache_conf['ssl_session_cache'] = self.options['ssl-session-cache']
+      apache_conf['ssl_snippet'] = pkg_resources.resource_string(__name__,
+          'template/snippet.ssl.in') % apache_conf
+      if 'ssl-authentication' in self.options and self.optionIsTrue(
+          'ssl-authentication'):
+        apache_conf['ssl_snippet'] += pkg_resources.resource_string(__name__,
+          'template/snippet.ssl.ca.in') % dict(
+            ca_certificate=self.options['ssl-authentication-certificate'],
+            ca_crl=self.options['ssl-authentication-crl']
+          )
+    else:
+      raise ValueError, "Unsupported scheme %s" % scheme
+
+    access_control_string = self.options['access-control-string']
     apache_conf['pid_file'] = self.options['pid-file']
     apache_conf['lock_file'] = self.options['lock-file']
     apache_conf['ip'] = ip
@@ -45,11 +68,10 @@ class Recipe(GenericBaseRecipe):
     apache_conf['error_log'] = self.options['error-log']
     apache_conf['access_log'] = self.options['access-log']
     apache_conf['server_name'] = '%s' % apache_conf['ip']
-    apache_conf['certificate'] = certificate
-    apache_conf['key'] = key
     apache_conf['path'] = '/'
     apache_conf['access_control_string'] = access_control_string
-    apache_conf['rewrite_rule'] = "RewriteRule (.*) %s$1 [L,P]" % backend
+    apache_conf['rewrite_rule'] = "RewriteRule (.*) %s%s [L,P]" % (backend,
+      self.options.get('backend-path', '/'))
     apache_conf_string = pkg_resources.resource_string(__name__,
           'template/apache.zope.conf.in') % apache_conf
     apache_config_file = self.createFile(self.options['configuration-file'],
@@ -58,7 +80,7 @@ class Recipe(GenericBaseRecipe):
     wrapper = self.createPythonScript(self.options['wrapper'], __name__ +
       '.apache.runApache', [
             dict(
-              required_path_list=[key, certificate],
+              required_path_list=required_path_list,
               binary=self.options['apache-binary'],
               config=apache_config_file
             )
