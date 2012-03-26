@@ -64,6 +64,11 @@ def restrictMethodAsShadowUser(self, open_order=None, callable_object=None,
 def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
   comment=None):
   """Call bang on self."""
+  # Caller check
+  if relative_url is None:
+    raise TypeError('relative_url has to be defined')
+  if reference is None:
+    raise TypeError('reference has to be defined')
   # micro security: can caller access software instance?
   software_instance = self.restrictedTraverse(relative_url)
   sm = getSecurityManager()
