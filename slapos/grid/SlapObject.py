@@ -173,11 +173,17 @@ class Software(object):
     finally:
       shutil.rmtree(extends_cache)
 
-  def remove(self):
-    """Removes the part that was installed.
-    """
+  def destroy(self):
+    """Removes software release."""
+    def retry(func, path, exc):
+      # inspired on slapos.buildout hard remover
+      if func == os.path.islink:
+        os.unlink(path)
+      else:
+        os.chmod (path, 0600)
+        func(path)
     try:
-      shutil.rmtree(self.software_path)
+      shutil.rmtree(self.software_path, onerror=retry)
     except IOError as error:
       error_string = "I/O error while removing software (%s): %s" % (self.url,
                                                                      error)

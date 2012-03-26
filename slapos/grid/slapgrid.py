@@ -427,10 +427,11 @@ class Slapgrid(object):
     logger.info("Processing software releases...")
     clean_run = True
     for software_release in self.computer.getSoftwareReleaseList():
+      state = software_release.getState()
       try:
-        software_release.building()
         software_release_uri = software_release.getURI()
-        Software(url=software_release_uri, software_root=self.software_root,
+        software = Software(url=software_release_uri,
+            software_root=self.software_root,
             console=self.console, buildout=self.buildout,
             signature_private_key_file=self.signature_private_key_file,
             signature_certificate_list=self.signature_certificate_list,
@@ -443,7 +444,12 @@ class Slapgrid(object):
             shacache_cert_file=self.shacache_cert_file,
             shacache_key_file=self.shacache_key_file,
             shadir_cert_file=self.shadir_cert_file,
-            shadir_key_file=self.shadir_key_file).install()
+            shadir_key_file=self.shadir_key_file)
+        if state == 'available':
+          software_release.building()
+          software.install()
+        elif state == 'destroyed':
+          software.destroy()
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         software_release.error(exception)
@@ -454,7 +460,10 @@ class Slapgrid(object):
         software_release.error(exception)
         clean_run = False
       else:
-        software_release.available()
+        if state == 'available':
+          software_release.available()
+        elif state == 'destroyed':
+          software_release.destroyed()
     logger.info("Finished software releases...")
     return clean_run
 
