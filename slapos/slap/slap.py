@@ -139,10 +139,11 @@ class Supply(SlapDocument):
 
   zope.interface.implements(interface.ISupply)
 
-  def supply(self, software_release, computer_guid=None):
+  def supply(self, software_release, computer_guid=None, state='available'):
     self._connection_helper.POST('/supplySupply', {
       'url': software_release,
-      'computer_id': computer_guid})
+      'computer_id': computer_guid,
+      'state': state})
 
 class OpenOrder(SlapDocument):
 

@@ -139,8 +139,8 @@ def init(config):
       state=None):
     return slap.registerOpenOrder().request(software_release, partition_reference,
       partition_parameter_kw, software_type, filter_kw, state)
-  def shorthandSupply(software_release, computer_guid=None):
-    return slap.registerSupply().supply(software_release, computer_guid)
+  def shorthandSupply(software_release, computer_guid=None, state='available'):
+    return slap.registerSupply().supply(software_release, computer_guid, state)
   local['request'] = shorthandRequest
   local['supply'] = shorthandSupply
 
