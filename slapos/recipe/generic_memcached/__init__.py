@@ -46,7 +46,6 @@ class Recipe(GenericBaseRecipe):
         memcached_binary=self.options['binary_path'],
         memcached_ip=self.options['ip'],
         memcached_port=self.options['port'],
-        shell_path=self.options['shell-path'],
     )
 
     executable_path = self.createExecutable(

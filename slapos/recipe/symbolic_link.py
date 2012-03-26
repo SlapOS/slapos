@@ -54,5 +54,3 @@ class Recipe:
       path_list.append(link)
 
     return path_list
-
-  update = install

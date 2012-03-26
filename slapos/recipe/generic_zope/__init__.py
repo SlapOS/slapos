@@ -128,13 +128,6 @@ class Recipe(GenericBaseRecipe):
     zope_conf_content = self.substituteTemplate(zope_wrapper_template_location,
       zope_config)
 
-    if ('promise-path' in self.options) and ('site-id' in self.options):
-      zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
-          'zope.conf.promise.in'), {
-            'site-id': self.options['site-id'],
-            'promise-path': self.options['promise-path'],
-            })
-
     zope_conf_path = self.createFile(self.options['configuration-file'], zope_conf_content)
     path_list.append(zope_conf_path)
     # Create init script

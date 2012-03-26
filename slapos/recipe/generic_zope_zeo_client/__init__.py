@@ -115,7 +115,7 @@ class Recipe(GenericBaseRecipe):
       TMPDIR=self.options['tmp-path'],
       HOME=self.options['tmp-path'],
       PATH=self.options['bin-path'],
-      TZ=self.options['timezone'],
+      TIMEZONE=self.options['timezone'],
     )
 
     # longrequestlogger product which requires environment settings
@@ -157,18 +157,6 @@ class Recipe(GenericBaseRecipe):
     if self.isTrueValue(self.options['timeserver']):
       zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
           'zope.conf.timeserver.in'), {})
-    if 'tidstorage-ip' in self.options:
-      zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
-          'zope.conf.tidstorage.in'), {
-            'tidstorage-ip': self.options['tidstorage-ip'],
-            'tidstorage-port': self.options['tidstorage-port'],
-            })
-    if ('promise-path' in self.options) and ('site-id' in self.options):
-      zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
-          'zope.conf.promise.in'), {
-            'site-id': self.options['site-id'],
-            'promise-path': self.options['promise-path'],
-            })
 
     zope_conf_path = self.createFile(self.options['configuration-file'], zope_conf_content)
     path_list.append(zope_conf_path)

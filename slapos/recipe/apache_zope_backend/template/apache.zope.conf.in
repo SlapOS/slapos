@@ -2,16 +2,12 @@
 # Automatically generated
 
 # List of modules
-LoadModule unixd_module modules/mod_unixd.so
-LoadModule access_compat_module modules/mod_access_compat.so
-LoadModule authz_core_module modules/mod_authz_core.so
 LoadModule authz_host_module modules/mod_authz_host.so
 LoadModule log_config_module modules/mod_log_config.so
 LoadModule setenvif_module modules/mod_setenvif.so
 LoadModule version_module modules/mod_version.so
 LoadModule proxy_module modules/mod_proxy.so
 LoadModule proxy_http_module modules/mod_proxy_http.so
-LoadModule socache_shmcb_module modules/mod_socache_shmcb.so
 LoadModule ssl_module modules/mod_ssl.so
 LoadModule mime_module modules/mod_mime.so
 LoadModule dav_module modules/mod_dav.so
@@ -22,23 +18,24 @@ LoadModule headers_module modules/mod_headers.so
 
 # Basic server configuration
 PidFile "%(pid_file)s"
+LockFile "%(lock_file)s"
 Listen %(ip)s:%(port)s
 ServerAdmin %(server_admin)s
 TypesConfig conf/mime.types
 AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
 
-ServerTokens Prod
-ServerSignature Off
-TraceEnable Off
-
-# Apache 2.4's default value (60 seconds) can be a bit too short
-TimeOut 300
-
 # As backend is trusting REMOTE_USER header unset it always
 RequestHeader unset REMOTE_USER
 
-%(ssl_snippet)s
+# SSL Configuration
+SSLEngine on
+SSLCertificateFile %(certificate)s
+SSLCertificateKeyFile %(key)s
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+
+SSLProxyEngine On
 
 # Log configuration
 ErrorLog "%(error_log)s"

@@ -31,14 +31,23 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 class Recipe(GenericBaseRecipe):
 
   def install(self):
+    logrotate_backup = self.options['backup']
     logrotate_d = self.options['logrotate-entries']
     logrotate_conf_file = self.options['conf']
 
     logrotate_conf = [
+      'daily',
+      'dateext',
+      'rotate 3650',
+      'compress',
       'compresscmd %s' % self.options['gzip-binary'],
       'compressoptions -9',
       'uncompresscmd %s' % self.options['gunzip-binary'],
+      'notifempty',
+      'sharedscripts',
+      'create',
       'include %s' % logrotate_d,
+      'olddir %s' % logrotate_backup,
     ]
 
     logrotate_conf_file = self.createFile(logrotate_conf_file, 
@@ -60,16 +69,7 @@ class Part(GenericBaseRecipe):
 
     logrotate_d = self.options['logrotate-entries']
 
-    conf = [
-      'daily',
-      'dateext',
-      'rotate 3650',
-      'compress',
-      'notifempty',
-      'sharedscripts',
-      'create',
-      'olddir %s' % self.options['backup'],
-    ]
+    conf = []
 
     if 'post' in self.options:
       conf.append("postrotate\n%s\nendscript" % self.options['post'])

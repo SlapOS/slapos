@@ -57,9 +57,6 @@ class Recipe(GenericSlapRecipe):
     known_tid_storage_identifier_dict = {}
     snippet_zeo = open(self.options['snippet-zeo']).read()
     for zeo_id, zeo_configuration_list in json_data['zeo'].iteritems():
-      if not type(zeo_configuration_list) in (type([]), type(set()), type(())):
-        raise ValueError('%s passed in json is not a list, json: %s.' % (
-          zeo_configuration_list, json_data))
       storage_list = []
       a = storage_list.append
       for zeo_slave in zeo_configuration_list:
@@ -95,8 +92,7 @@ class Recipe(GenericSlapRecipe):
     zeo_connection_string = '\n'.join(zeo_connection_list)
     zope_dict.update(
       timezone=json_data['timezone'],
-      zeo_connection_string=zeo_connection_string,
-      site_id=site_id,
+      zeo_connection_string=zeo_connection_string
     )
     # always one distribution node
     current_zope_port += 1
@@ -155,72 +151,32 @@ class Recipe(GenericSlapRecipe):
           longrequest_logger_interval=longrequest_logger_interval,
           **zope_dict)
         haproxy_backend_list.append('${%(part_name)s:ip}:${%(part_name)s:port}' % dict(part_name=part_name))
-
-      scheme = backend_configuration.get('scheme', ['https'])
-
       # now generate backend access
       current_apache_port += 1
       current_haproxy_port += 1
+      part_list.append('apache-%(backend_name)s ca-apache-%(backend_name)s logrotate-entry-apache-%(backend_name)s haproxy-%(backend_name)s' % dict(backend_name=backend_name))
       backend_dict = dict(
         backend_name=backend_name,
         apache_port=current_apache_port,
-        apache_public_port=current_apache_port+1,
         haproxy_port=current_haproxy_port,
         access_control_string=backend_configuration['access-control-string'],
         maxconn=backend_configuration['maxconn'],
         server_check_path='/%s/getId' % site_id,
-        haproxy_backend_list=' '.join(haproxy_backend_list),
-        ssl_authentication=backend_configuration.get('ssl-authentication',
-          False),
-        backend_path=backend_configuration.get('backend-path', '/') % {
-            'site-id': site_id}
-
+        haproxy_backend_list=' '.join(haproxy_backend_list)
       )
-      current_apache_port += 1
+      publish_url_list.append('url-%(backend_name)s = https://[${apache-%(backend_name)s:ip}]:${apache-%(backend_name)s:port}' % dict(
+        backend_name=backend_name))
       output += snippet_backend % backend_dict
-
-      if 'http' in scheme:
-        part_list.append('apache-public-%(backend_name)s logrotate-entry-apache-public-%(backend_name)s' % dict(backend_name=backend_name))
-        publish_url_list.append('url-public-%(backend_name)s = http://[${apache-public-%(backend_name)s:ip}]:${apache-public-%(backend_name)s:port}' % dict(
-          backend_name=backend_name))
-      if 'https' in scheme:
-        part_list.append('apache-%(backend_name)s ca-apache-%(backend_name)s logrotate-entry-apache-%(backend_name)s haproxy-%(backend_name)s' % dict(backend_name=backend_name))
-        publish_url_list.append('url-%(backend_name)s = https://[${apache-%(backend_name)s:ip}]:${apache-%(backend_name)s:port}' % dict(
-          backend_name=backend_name))
-
     output += SECTION_BACKEND_PUBLISHER + '\n'
     output += '\n'.join(publish_url_list)
     part_list.append('publish-apache-backend-list')
-    master_dict = self.parameter_dict.copy()
-    if 'erp5-ca' in json_data:
-      erp5_ca = json_data['erp5-ca']
-      # Fetching exactly named parameters from json in order to raise proper
-      # error if required
-      master_dict.update(
-        erp5_ca_country_code = erp5_ca['country-code'],
-        erp5_ca_email = erp5_ca['email'],
-        erp5_ca_state = erp5_ca['state'],
-        erp5_ca_city = erp5_ca['city'],
-        erp5_ca_company = erp5_ca['company']
-      )
-    else:
-      master_dict.update(dict(
-        erp5_ca_country_code = 'XX',
-        erp5_ca_email = 'xx@example.com',
-        # XXX-BBB: State by mistake has been configured as string "('State',)"
-        #          string, so keep this for backward compatibility of existing
-        #          automatically setup CAs
-        erp5_ca_state = "('State',)",
-        erp5_ca_city = 'City',
-        erp5_ca_company = 'Company'
-      ))
     prepend = open(self.options['snippet-master']).read() % dict(
         part_list='  \n'.join(['  '+q for q in part_list]),
         known_tid_storage_identifier_dict=known_tid_storage_identifier_dict,
         haproxy_section="haproxy-%s" % backend_name,
         zope_section=zope_id,
         site_id=site_id,
-        **master_dict
+        **self.parameter_dict
         )
     output = prepend + output
     with open(self.options['output'], 'w') as f:
