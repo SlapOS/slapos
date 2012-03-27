@@ -165,6 +165,7 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckStoppedPurchasePackingList \
       CheckSoftwareReleaseAvailableForRequest \
+      CheckSoftwareReleaseInPublicTable \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \

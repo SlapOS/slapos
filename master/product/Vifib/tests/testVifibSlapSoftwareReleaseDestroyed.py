@@ -31,6 +31,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckDeliveredPurchasePackingList \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -48,6 +49,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       CheckSiteConsistency \
       Logout \
     '
@@ -63,6 +65,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       self.prepare_software_release_cleanup_confirmed_packing_list + '\
       LoginDefaultUser \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       SetCurrentPurchasePackingListAsB \
       SlapLoginCurrentComputer \
       CheckSuccessSoftwareReleaseDestroyedCall \
@@ -71,6 +74,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       CheckDeliveredPurchasePackingListA \
       CheckDeliveredPurchasePackingListB \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       Logout \
       SlapLogout \
       LoginERP5TypeTestCase \
@@ -87,6 +91,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       StartPurchasePackingList \
       Tic \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       SetCurrentPurchasePackingListAsA \
       Logout' + \
       self.prepare_software_release_cleanup_confirmed_packing_list + '\
@@ -98,6 +103,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       CheckDeliveredPurchasePackingListA \
       CheckDeliveredPurchasePackingListB \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       Logout \
       SlapLogout \
       LoginERP5TypeTestCase \
@@ -115,6 +121,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       Tic \
       StopPurchasePackingList \
       Tic \
+      CheckSoftwareReleaseInPublicTable \
       CheckSoftwareReleaseAvailableForRequest \
       SetCurrentPurchasePackingListAsA \
       Logout' + \
@@ -127,6 +134,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       CheckDeliveredPurchasePackingListA \
       CheckDeliveredPurchasePackingListB \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       Logout \
       SlapLogout \
       LoginERP5TypeTestCase \
@@ -159,6 +167,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       CheckDeliveredPurchasePackingListA \
       CheckDeliveredPurchasePackingListB \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       Logout \
       SlapLogout \
       LoginERP5TypeTestCase \
@@ -175,6 +184,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       CancelPurchasePackingList \
       Tic \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       SetCurrentPurchasePackingListAsA \
       Logout' + \
       self.prepare_software_release_cleanup_confirmed_packing_list + '\
@@ -186,6 +196,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       CheckCancelledPurchasePackingListA \
       CheckDeliveredPurchasePackingListB \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       Logout \
       SlapLogout \
       LoginERP5TypeTestCase \
@@ -202,6 +213,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       CancelPurchasePackingList \
       Tic \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       Logout \
       SlapLoginCurrentComputer \
       CheckNotFoundSoftwareReleaseDestroyedCall \
@@ -210,6 +222,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckCancelledPurchasePackingList \
       CheckSoftwareReleaseUnavailableForRequest \
+      CheckSoftwareReleaseNotInPublicTable \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
