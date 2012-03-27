@@ -38,6 +38,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckStartedPurchasePackingList \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -50,6 +51,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_software_release_purchase_packing_list + '\
       LoginDefaultUser \
+      CheckSoftwareReleaseUnavailableForRequest \
       SetCurrentPurchasePackingListAsA \
       Logout \
       SlapLoginCurrentComputer \
@@ -65,6 +67,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
+      CheckSoftwareReleaseUnavailableForRequest \
       CheckStartedPurchasePackingListA \
       CheckConfirmedPurchasePackingListB \
       Logout \
@@ -75,6 +78,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
+      CheckSoftwareReleaseUnavailableForRequest \
       CheckDeliveredPurchasePackingListA \
       CheckDeliveredPurchasePackingListB \
       Logout \
@@ -109,12 +113,14 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CancelPurchasePackingList \
       Tic \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       SlapLoginCurrentComputer \
       CheckNotFoundSoftwareReleaseBuildingCall \
       SlapLogout \
       LoginDefaultUser \
       CheckCancelledPurchasePackingList \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -151,6 +157,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       StartPurchasePackingList \
       Tic \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       SlapLoginCurrentComputer \
       CheckSuccessSoftwareReleaseBuildingCall \
@@ -158,6 +165,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckStartedPurchasePackingList \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -195,6 +203,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       StartPurchasePackingList \
       StopPurchasePackingList \
       Tic \
+      CheckSoftwareReleaseAvailableForRequest \
       Logout \
       SlapLoginCurrentComputer \
       CheckNotFoundSoftwareReleaseBuildingCall \
@@ -202,6 +211,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckStoppedPurchasePackingList \
+      CheckSoftwareReleaseAvailableForRequest \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -242,6 +252,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       StopPurchasePackingList \
       DeliverPurchasePackingList \
       Tic \
+      CheckSoftwareReleaseUnvailableForRequest \
       Logout \
       SlapLoginCurrentComputer \
       CheckNotFoundSoftwareReleaseBuildingCall \
@@ -249,6 +260,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckDeliveredPurchasePackingList \
+      CheckSoftwareReleaseUnvailableForRequest \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
