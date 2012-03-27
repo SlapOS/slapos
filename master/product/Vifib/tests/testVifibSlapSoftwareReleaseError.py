@@ -154,6 +154,115 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SoftwareRelease_error_CleanupResource_ConfirmedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckSuccessSoftwareReleaseErrorCall \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      CheckPurchasePackingListErrorText \
+      CheckConfirmedPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SoftwareRelease_error_CleanupResource_CancelledState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      CancelPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckSoftwareReleaseErrorCall \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      CheckPurchasePackingListNoErrorText \
+      CheckCancelledPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SoftwareRelease_error_CleanupResource_StartedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckSuccessSoftwareReleaseErrorCall \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      CheckPurchasePackingListErrorText \
+      CheckStartedPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SoftwareRelease_error_CleanupResource_StoppedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      StopPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckSoftwareReleaseErrorCall \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      CheckPurchasePackingListNoErrorText \
+      CheckStoppedPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SoftwareRelease_error_CleanupResource_DeliveredState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      StopPurchasePackingList \
+      DeliverPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckSoftwareReleaseErrorCall \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      CheckPurchasePackingListNoErrorText \
+      CheckDeliveredPurchasePackingList \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_SoftwareRelease_error_twoPurchasePackingList(self):
     """
     Check that calling SoftwareRelease.error uses the latest purchase packing
