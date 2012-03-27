@@ -220,6 +220,19 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     slap_computer_partition.request(**kw)
 
+  def _getRequestBasedComputerPartitionCount(self, sequence):
+    return self.portal.portal_catalog.countResults(
+      portal_type='Computer Partition',
+      parent_uid=sequence['computer_uid'],
+      software_release_url=sequence['software_release_uri'],
+      free_for_request=1)[0][0]
+
+  def stepCheckSoftwareReleaseAvailableForRequest(self, sequence, **kw):
+    self.assertFalse(self._getRequestBasedComputerPartitionCount(sequence) == 0)
+
+  def stepCheckSoftwareReleaseUnavailableForRequest(self, sequence, **kw):
+    self.assertTrue(self._getRequestBasedComputerPartitionCount(sequence) == 0)
+
   def stepTriggerConfirmPlannedInvoiceAlarm(self, sequence, **kw):
     sm = getSecurityManager()
     self.login()
