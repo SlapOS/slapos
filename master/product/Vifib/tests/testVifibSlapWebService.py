@@ -1354,6 +1354,24 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
                   CheckConfirmedPurchasePackingListB \
                   Logout'
 
+  prepare_two_cleanup_purchase_packing_list = \
+                  prepare_software_release_cleanup_purchase_packing_list + '\
+                  LoginDefaultUser \
+                  SetCurrentPurchasePackingListAsA \
+                  StartPurchasePackingList \
+                  StopPurchasePackingList \
+                  Tic \
+                  Logout \
+                  SlapLoginCurrentComputer \
+                  CheckEmptyComputerGetSoftwareReleaseListCall \
+                  SlapLogout ' + \
+                  prepare_software_release_cleanup_confirmed_packing_list + '\
+                  LoginDefaultUser \
+                  SetCurrentPurchasePackingListAsB \
+                  CheckStoppedPurchasePackingListA \
+                  CheckConfirmedPurchasePackingListB \
+                  Logout'
+
   prepare_another_computer_sequence_string = """
     StoreComputerReference
     LoginTestVifibAdmin
@@ -2536,6 +2554,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release._computer_guid = computer_guid
     self.assertRaises(slap.NotFoundError, software_release.available)
 
+  def stepCheckNotFoundSoftwareReleaseDestroyedCall(self, sequence, **kw):
+    computer_guid = sequence["computer_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    software_release = self.slap.registerSoftwareRelease(
+        sequence['software_release_uri'])
+    # Note: Hackish
+    software_release._computer_guid = computer_guid
+    self.assertRaises(slap.NotFoundError, software_release.destroyed)
+
   def stepCheckTicAndNotFoundSoftwareReleaseAvailableCall(self, sequence, **kw):
     """
     Check that calling SoftwareRelease.available raises NotFound
@@ -2594,6 +2622,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     self.assertRaises(slap.NotFoundError, software_release.error, "ErrorLog")
 
+  def stepCheckNotFoundSoftwareReleaseDestroyedAfterRegisterCall(self, sequence,
+      **kw):
+    url = sequence["software_release_uri"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    software_release = self.slap.registerSoftwareRelease(url)
+
+    self.assertRaises(slap.NotFoundError, software_release.destroyed)
+
   def stepCheckNotFoundSoftwareReleaseAvailableAfterRegisterCall(self, sequence,
       **kw):
     """
@@ -2618,6 +2655,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release = computer.getSoftwareReleaseList()[0]
 
     software_release.available()
+
+  def stepCheckSuccessSoftwareReleaseDestroyedCall(self, sequence, **kw):
+    computer_guid = sequence["computer_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    computer = self.slap.registerComputer(computer_guid)
+    software_release = computer.getSoftwareReleaseList()[0]
+
+    software_release.destroyed()
 
   def stepCheckUnauthorizedSoftwareReleaseAvailableCall(self, sequence, **kw):
     """
@@ -3754,6 +3800,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def stepCheckStoppedPurchasePackingListB(self, sequence):
     self.assertEqual('stopped',
+        self.portal.portal_catalog.getResultValue(uid=sequence[
+          'purchase_packing_list_b_uid']).getSimulationState())
+
+  def stepCheckDeliveredPurchasePackingListA(self, sequence):
+    self.assertEqual('delivered',
+        self.portal.portal_catalog.getResultValue(uid=sequence[
+          'purchase_packing_list_a_uid']).getSimulationState())
+
+  def stepCheckDeliveredPurchasePackingListB(self, sequence):
+    self.assertEqual('delivered',
         self.portal.portal_catalog.getResultValue(uid=sequence[
           'purchase_packing_list_b_uid']).getSimulationState())
 
