@@ -104,6 +104,10 @@
                           <string>version</string>
                           <string>Version</string>
                         </tuple>
+                        <tuple>
+                          <string>installation_state</string>
+                          <string>State</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
@@ -151,6 +155,10 @@
                         </tuple>
                         <tuple>
                           <string>image</string>
+                          <string></string>
+                        </tuple>
+                        <tuple>
+                          <string>installation_state</string>
                           <string></string>
                         </tuple>
                       </list>
