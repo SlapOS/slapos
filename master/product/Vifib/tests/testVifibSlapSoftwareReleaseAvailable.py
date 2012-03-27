@@ -46,6 +46,45 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_Computer_available_SetupResource_ConfirmedState_CleanupResource_ConfirmedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_purchase_packing_list + '\
+      LoginDefaultUser \
+      SetCurrentPurchasePackingListAsA \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      SlapLogout ' + self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      LoginDefaultUser \
+      SetCurrentPurchasePackingListAsB \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      CheckDestroyedStateGetSoftwareReleaseListCall \
+      CheckSuccessSoftwareReleaseAvailableCall \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      CheckStoppedPurchasePackingListA \
+      CheckConfirmedPurchasePackingListB \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      CheckDestroyedStateGetSoftwareReleaseListCall \
+      CheckSuccessSoftwareReleaseDestroyedCall \
+      Tic \
+      SlapLogout \
+      LoginDefaultUser \
+      CheckDeliveredPurchasePackingListA \
+      CheckDeliveredPurchasePackingListB \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_SoftwareRelease_available_CleanupResource_ConfirmedState(self):
     sequence_list = SequenceList()
     sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
