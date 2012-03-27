@@ -39,7 +39,6 @@ import urlparse
 # Use to do from slapos.recipe.librecipe import GenericBaseRecipe
 from generic import GenericBaseRecipe
 from genericslap import GenericSlapRecipe
-from filehash import filehash
 
 class BaseSlapRecipe:
   """Base class for all slap.recipe.*"""
