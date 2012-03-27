@@ -222,10 +222,6 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
     sequence_list.play(self)
 
   def test_Computer_getSoftwareReleaseList_CleanupResource_ConfirmedState(self):
-    """
-    Check that calling Computer.getSoftwareReleaseList works in 
-    delivered state with the setup resource
-    """
     sequence_list = SequenceList()
     sequence_string = self.prepare_published_software_release + \
       self.prepare_formated_computer + \
@@ -242,10 +238,6 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
     sequence_list.play(self)
 
   def test_Computer_getSoftwareReleaseList_CleanupResource_StartedState(self):
-    """
-    Check that calling Computer.getSoftwareReleaseList works in 
-    delivered state with the setup resource
-    """
     sequence_list = SequenceList()
     sequence_string = self.prepare_published_software_release + \
       self.prepare_formated_computer + \
@@ -266,10 +258,6 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
     sequence_list.play(self)
 
   def test_Computer_getSoftwareReleaseList_CleanupResource_StoppedState(self):
-    """
-    Check that calling Computer.getSoftwareReleaseList works in 
-    delivered state with the setup resource
-    """
     sequence_list = SequenceList()
     sequence_string = self.prepare_published_software_release + \
       self.prepare_formated_computer + \
@@ -291,10 +279,6 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
     sequence_list.play(self)
 
   def test_Computer_getSoftwareReleaseList_CleanupResource_DeliveredState(self):
-    """
-    Check that calling Computer.getSoftwareReleaseList works in 
-    delivered state with the setup resource
-    """
     sequence_list = SequenceList()
     sequence_string = self.prepare_published_software_release + \
       self.prepare_formated_computer + \
@@ -318,10 +302,6 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
     sequence_list.play(self)
 
   def test_Computer_getSoftwareReleaseList_CleanupResource_CancelledState(self):
-    """
-    Check that calling Computer.getSoftwareReleaseList works in 
-    delivered state with the setup resource
-    """
     sequence_list = SequenceList()
     sequence_string = self.prepare_published_software_release + \
       self.prepare_formated_computer + \
