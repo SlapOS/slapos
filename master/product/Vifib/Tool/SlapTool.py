@@ -243,6 +243,14 @@ class SlapTool(BaseTool):
     return self._availableSoftwareRelease(url, computer_id)
 
   security.declareProtected(Permissions.AccessContentsInformation,
+    'destroyedSoftwareRelease')
+  def destroyedSoftwareRelease(self, url, computer_id):
+    """
+    Reports that Software Release is available
+    """
+    return self._destroyedSoftwareRelease(url, computer_id)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
     'softwareReleaseError')
   def softwareReleaseError(self, url, computer_id, error_log):
     """
@@ -640,6 +648,14 @@ class SlapTool(BaseTool):
     """
     computer_document = self._getComputerDocument(computer_id)
     computer_document.stopSoftwareReleaseInstallation(software_release_url=url)
+
+  @convertToREST
+  def _destroyedSoftwareRelease(self, url, computer_id):
+    """
+    Reports that Software Release is available
+    """
+    computer_document = self._getComputerDocument(computer_id)
+    computer_document.cleanupSoftwareReleaseInstallation(software_release_url=url)
 
   @convertToREST
   def _softwareReleaseError(self, url, computer_id, error_log):
