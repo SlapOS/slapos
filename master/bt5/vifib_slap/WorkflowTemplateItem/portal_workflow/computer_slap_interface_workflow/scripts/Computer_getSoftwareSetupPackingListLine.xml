@@ -58,7 +58,7 @@ packing_list_line_list = context.Computer_getSoftwarePackingListLineList(\n
   service_uid_list=[portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource()).getUid()],\n
   limit=1)\n
 if len(packing_list_line_list) == 0:\n
-  raise ValueError("No purchase packing list line found for %s %s" % (computer.getRelativeUrl(), software_release_document.getRelativeUrl()))\n
+  raise ValueError("No purchase packing list line found for %s %s" % (state_change[\'object\'].getRelativeUrl(), state_change.kwargs["software_release_url"]))\n
 else:\n
   return packing_list_line_list[0].getObject()\n
 </string> </value>
