@@ -46,6 +46,20 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SoftwareRelease_building_CleanupResource_ConfirmedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseBuildingCall \
+      Tic \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_SoftwareRelease_building_SetupResource_CancelledState(self):
     """
     Check that calling SoftwareRelease.building works in 
@@ -63,6 +77,24 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckCancelledPurchasePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SoftwareRelease_building_CleanupResource_CancelledState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      CancelPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseBuildingCall \
+      Tic \
+      SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
@@ -88,6 +120,24 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckStartedPurchasePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SoftwareRelease_building_CleanupResource_StartedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseBuildingCall \
+      Tic \
+      SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
@@ -121,6 +171,26 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SoftwareRelease_building_CleanupResource_StoppedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      StopPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseBuildingCall \
+      Tic \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_SoftwareRelease_building_SetupResource_DeliveredState(self):
     """
     Check that calling SoftwareRelease.building works in 
@@ -141,6 +211,28 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckDeliveredPurchasePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SoftwareRelease_building_CleanupResource_DeliveredState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      StopPurchasePackingList \
+      Tic \
+      DeliverPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseBuildingCall \
+      Tic \
+      SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
