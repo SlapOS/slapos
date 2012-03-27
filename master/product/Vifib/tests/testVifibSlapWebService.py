@@ -1027,11 +1027,17 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   prepare_software_release_purchase_packing_list = \
       prepare_published_software_release + prepare_formated_computer + \
-      prepare_software_release_confirmed_packing_list
+      prepare_software_release_confirmed_packing_list + '\
+        LoginDefaultUser \
+        CheckSoftwareReleaseUnavailableForRequest \
+        Logout'
 
   prepare_software_release_cleanup_purchase_packing_list = \
       prepare_published_software_release + prepare_formated_computer + \
-      prepare_software_release_cleanup_confirmed_packing_list
+      prepare_software_release_cleanup_confirmed_packing_list + '\
+        LoginDefaultUser \
+        CheckSoftwareReleaseUnavailableForRequest \
+        Logout'
 
   prepare_software_release_purchase_packing_list_accounting_resource = \
       prepare_published_software_release + prepare_formated_computer + """
@@ -1045,6 +1051,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SetPurchasePackingListLineAggregate
       ConfirmPurchasePackingList
       Tic
+      Logout
+      LoginDefaultUser
+      CheckSoftwareReleaseUnavailableForRequest
       Logout
   """
 

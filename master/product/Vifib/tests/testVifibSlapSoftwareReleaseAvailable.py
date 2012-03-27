@@ -32,9 +32,6 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_software_release_purchase_packing_list + '\
-      LoginDefaultUser \
-      CheckSoftwareReleaseUnavailableForRequest \
-      Logout \
       SlapLoginCurrentComputer \
       CheckSuccessSoftwareReleaseAvailableCall \
       Tic \
@@ -53,9 +50,6 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
   def test_Computer_available_SetupResource_ConfirmedState_CleanupResource_ConfirmedState(self):
     sequence_list = SequenceList()
     sequence_string = self.prepare_software_release_purchase_packing_list + '\
-      LoginDefaultUser \
-      CheckSoftwareReleaseUnavailableForRequest \
-      Logout \
       LoginDefaultUser \
       SetCurrentPurchasePackingListAsA \
       Logout \
