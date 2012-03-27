@@ -46,6 +46,20 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SoftwareRelease_available_CleanupResource_ConfirmedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseAvailableCall \
+      Tic \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_SoftwareRelease_available_SetupResource_CancelledState(self):
     """
     Check that calling SoftwareRelease.available works in 
@@ -71,6 +85,24 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SoftwareRelease_available_CleanupResource_CancelledState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      CancelPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseAvailableCall \
+      Tic \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_SoftwareRelease_available_SetupResource_StartedState(self):
     """
     Check that calling SoftwareRelease.available works in 
@@ -89,6 +121,24 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckStoppedPurchasePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SoftwareRelease_available_CleanupResource_StartedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseAvailableCall \
+      Tic \
+      SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
@@ -122,6 +172,26 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_SoftwareRelease_available_CleanupResource_StoppedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      StopPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseAvailableCall \
+      Tic \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_SoftwareRelease_available_SetupResource_DeliveredState(self):
     """
     Check that calling SoftwareRelease.available works in 
@@ -142,6 +212,28 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckDeliveredPurchasePackingList \
       Logout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_SoftwareRelease_available_CleanupResource_DeliveredState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_cleanup_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      StopPurchasePackingList \
+      Tic \
+      DeliverPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckNotFoundSoftwareReleaseAvailableCall \
+      Tic \
+      SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
