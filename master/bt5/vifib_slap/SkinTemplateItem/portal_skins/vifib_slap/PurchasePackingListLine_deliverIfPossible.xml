@@ -50,54 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
-\n
-packing_list_line = context.Computer_getSoftwareCleanupPackingListLine(state_change)\n
-portal = packing_list_line.getPortalObject()\n
-packing_list = packing_list_line.getParentValue()\n
+            <value> <string>packing_list = context.getParentValue()\n
 if packing_list.getPortalObject().portal_workflow.isTransitionPossible(packing_list, \'start\'):\n
   packing_list.start()\n
 if packing_list.getPortalObject().portal_workflow.isTransitionPossible(packing_list, \'stop\'):\n
   packing_list.stop()\n
 if packing_list.getPortalObject().portal_workflow.isTransitionPossible(packing_list, \'deliver\'):\n
   packing_list.deliver()\n
-\n
-# cleanup all other deliveries\n
-computer = state_change[\'object\']\n
-# Get required arguments\n
-kwargs = state_change.kwargs\n
-software_release_url = state_change.kwargs["software_release_url"]\n
-\n
-portal = computer.getPortalObject()\n
-\n
-# Only get one software release\n
-software_release_document_result = computer.portal_catalog(\n
-  portal_type=\'Software Release\', # validation_state=(\'shared\', \'released\', \'published\', \'shared_alive\', \'released_alive\', \'published_alive\'),\n
-  url_string=software_release_url, limit=2)\n
-if len(software_release_document_result) != 1:\n
-  raise ValueError("No software release found for %s %s" % (computer.getRelativeUrl(), software_release_url))\n
-else:\n
-  software_release_document = software_release_document_result[0]\n
-\n
-portal.portal_catalog.searchAndActivate(\n
-  method_id=\'PurchasePackingListLine_deliverIfPossible\',\n
-  simulation_state=portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList() + (\'stopped\',),\n
-  default_service_uid=[portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareCleanupResource()).getUid(), portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource()).getUid()],\n
-  aggregate_relative_url=ComplexQuery(\n
-    Query(aggregate_relative_url=software_release_document.getRelativeUrl()),\n
-    Query(aggregate_relative_url=computer.getRelativeUrl()),\n
-    operator="AND"),\n
-  \n
-)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_cleanupSoftwareReleaseInstallation</string> </value>
+            <value> <string>PurchasePackingListLine_deliverIfPossible</string> </value>
         </item>
       </dictionary>
     </pickle>
