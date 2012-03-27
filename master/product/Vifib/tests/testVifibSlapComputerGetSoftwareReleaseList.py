@@ -131,6 +131,23 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_Computer_getSoftwareReleaseList_SetupResource_ConfirmedState_CleanupResource_ConfirmedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_purchase_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      SlapLogout ' + self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      CheckDestroyedStateGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_Computer_getSoftwareReleaseList_SetupResource_CancelledState(self):
     """
     Check that calling Computer.getSoftwareReleaseList works in 
@@ -152,6 +169,27 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_Computer_getSoftwareReleaseList_SetupResource_CancelledState_CleanupResource_ConfirmedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_purchase_packing_list + '\
+      LoginDefaultUser \
+      CancelPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetSoftwareReleaseListCall \
+      SlapLogout' + self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      CheckDestroyedStateGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_Computer_getSoftwareReleaseList_SetupResource_StartedState(self):
     """
     Check that calling Computer.getSoftwareReleaseList works in 
@@ -165,6 +203,27 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       Logout \
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Computer_getSoftwareReleaseList_SetupResource_StartedState_CleanupResource_ConfirmedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      SlapLogout' + self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      CheckDestroyedStateGetSoftwareReleaseListCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -196,6 +255,29 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_Computer_getSoftwareReleaseList_SetupResource_StoppedState_CleanupResource_ConfirmedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      StopPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetSoftwareReleaseListCall \
+      SlapLogout' + self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      CheckDestroyedStateGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_Computer_getSoftwareReleaseList_SetupResource_DeliveredState(self):
     """
     Check that calling Computer.getSoftwareReleaseList works in 
@@ -213,6 +295,31 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       Logout \
       SlapLoginCurrentComputer \
       CheckEmptyComputerGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Computer_getSoftwareReleaseList_SetupResource_DeliveredState_CleanupResource_ConfirmedState(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_software_release_purchase_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      StopPurchasePackingList \
+      Tic \
+      DeliverPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetSoftwareReleaseListCall \
+      SlapLogout' + self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      CheckDestroyedStateGetSoftwareReleaseListCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
