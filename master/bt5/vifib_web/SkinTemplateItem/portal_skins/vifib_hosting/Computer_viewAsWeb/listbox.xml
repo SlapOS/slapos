@@ -108,6 +108,10 @@
                           <string>installation_state</string>
                           <string>State</string>
                         </tuple>
+                        <tuple>
+                          <string>usage</string>
+                          <string>Usage</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>
@@ -159,6 +163,10 @@
                         </tuple>
                         <tuple>
                           <string>installation_state</string>
+                          <string></string>
+                        </tuple>
+                        <tuple>
+                          <string>usage</string>
                           <string></string>
                         </tuple>
                       </list>
