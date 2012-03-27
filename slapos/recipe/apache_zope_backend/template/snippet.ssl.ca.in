@@ -1,0 +1,4 @@
+SSLVerifyClient require
+RequestHeader set REMOTE_USER %%{SSL_CLIENT_S_DN_CN}s
+SSLCACertificateFile %(ca_certificate)s
+SSLCARevocationPath %(ca_crl)s

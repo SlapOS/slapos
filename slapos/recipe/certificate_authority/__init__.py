@@ -45,13 +45,14 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     path_list = []
 
-    # XXX: We gotta find better a way to get these options
-    ca_country_code = 'XX'
-    ca_email = 'xx@example.com'
-    ca_state = 'State',
-    ca_city = 'City'
-    ca_company = 'Company'
-    # XXX: end
+    ca_country_code = self.options.get('country-code', 'XX')
+    ca_email = self.options.get('email', 'xx@example.com')
+    # XXX-BBB: State by mistake has been configured as string "('State',)"
+    #          string, so keep this for backward compatibility of existing
+    #          automatically setup CAs
+    ca_state = self.options.get('state', "('State',)")
+    ca_city = self.options.get('city', 'City')
+    ca_company = self.options.get('company', 'Company')
 
     self.setPath()
 
@@ -117,7 +118,7 @@ class Request(Recipe):
       if os.path.islink(link):
         os.unlink(link)
       elif os.path.exists(link):
-        raise OSError("%r file should be a symbolic link.")
+        raise OSError("%r file should be a symbolic link." % link)
 
     os.symlink(key, key_file)
     os.symlink(certificate, cert_file)

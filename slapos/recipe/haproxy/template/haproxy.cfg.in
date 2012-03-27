@@ -1,0 +1,41 @@
+global
+  maxconn 4096
+
+defaults
+  log global
+  mode  http
+  option  httplog
+  option  dontlognull
+  retries 1
+  option redispatch
+  maxconn 2000
+  # it is useless to have timeout much bigger than the one of apache.
+  # By default apache use 300s, so we set slightly more in order to
+  # make sure that apache will first stop the connection.
+  timeout server 305s
+  # Stop waiting in queue for a zope to become available.
+  # If no zope can be reached after one minute, consider the request will
+  # never succeed.
+  timeout queue 60s
+  # The connection should be immediate on LAN,
+  # so we should not set more than 5 seconds, and it could be already too much
+  timeout connect 5s
+  # As requested in haproxy doc, make this "at least equal to timeout server".
+  timeout client 305s
+  # Use "option forceclose" to not preserve client & server persistent connections
+  # while handling every incoming request individually, dispatching them one after
+  # another to servers, in HTTP close mode. This is really needed when haproxy
+  # is configured with maxconn to 1, without this options browser are unable
+  # to render a page
+  option forceclose
+
+listen %(name)s %(ip)s:%(port)s
+  cookie  SERVERID insert
+  balance roundrobin
+
+%(server_text)s
+
+  option httpchk GET %(server_check_path)s
+
+  stats uri /haproxy
+  stats realm Global\ statistics

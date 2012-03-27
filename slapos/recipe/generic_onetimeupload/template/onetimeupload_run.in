@@ -1,0 +1,4 @@
+#!%(shell_path)s
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+exec %(onetimeupload_path)s -l %(log_path)s %(ip)s %(port)s %(image)s %(key)s 

@@ -1,0 +1,73 @@
+[main]
+disable = 0
+displayLocalisationBar = 0
+# Example of software filter when querying a computer inventory.
+# All softwares containing the KB string will be excluded
+# software_filter = %KB%
+
+[inventory]
+dbdriver = mysql
+dbhost = %(mysql_host)s
+dbport = %(mysql_port)s
+dbuser = %(mysql_user)s
+dbpasswd = %(mysql_password)s
+dbname = inventory
+dbsslenable = 0
+dbsslca = %(inventory_ssl_cacert)s
+dbsslcert = %(inventory_ssl_cert)s
+dbsslkey = %(inventory_ssl_key)s
+# Database connection lifetime
+# dbpoolrecycle = 60
+# Database connection pool size
+# dbpoolsize = 5
+
+[computers]
+# display = cn::Computer Name||displayName::Description
+# content = 
+
+[expert_mode]
+Bios = BiosVersion|ChipSerial|BiosVendor|SmbManufacturer|SmbProduct|SmbVersion|SmbSerial|SmbUUID|SmbType|DateFirstSwitchOn
+Network = CardType|MIB|Bandwidth|NetworkType|SubnetMask|State
+Hardware = Build|Version|ProcessorCount|SwapSpace|User|Date|Workgroup|RegisteredName|RegisteredCompany|OSSerialNumber|Type|OsSerialKey|ProcessorFrequency|Host
+Software = ProductPath|Type|Icon|UninstallPath|ExecutableSize|Application
+Controller = ExpandedType|HardwareVersion|StandardType
+Drive = DriveType|FileCount|FileSystem
+Input = StandardDescription|ExpandedDescription|Connector
+Memory = ExtendedDescription|SlotCount
+Monitor = Stamp|Type|Serial|Manuf
+Pci =
+Port = Stamp
+Printer =
+Slot =
+Sound = Description
+Storage = ExtendedType|VolumeName|Media
+VideoCard =
+
+[graph]
+Network = Gateway
+Hardware = OperatingSystem|ProcessorType
+Memory = Size
+
+# [querymanager]
+# list = Entity/Label||Software/ProductName||Hardware/ProcessorType||Hardware/OperatingSystem||Drive/TotalSpace||Inventory/Date
+# double = Software/Products::Software/ProductName##Software/ProductVersion
+# halfstatic = Registry/Value/display name::Path##DisplayName
+# extended = Inventory/Date||Drive/TotalSpace
+
+# [provisioning_inventory]
+# Users that will never be provisioned
+# exclude = root
+# A user can be automatically linked to a list of entities according to his
+# profile.
+# What is the LDAP field name that defines its profile name ?
+# profile_attr = 
+# Here are the possible notations for profile to entities mapping:
+# A simple list of the entities names
+# profile_entity_profile1 = entityA entityB
+# The dot char is the root entity
+# profile_entity_profile2 = .
+# In this example the content of the multi-valued 'pulse2entity' LDAP attribute
+# will be used
+# profile_entity_profile3 = %pulse2entity%
+# Here the provisioning plugin 'network_to_entity' will be used
+# profile_entity_profile4 = plugin:network_to_entity

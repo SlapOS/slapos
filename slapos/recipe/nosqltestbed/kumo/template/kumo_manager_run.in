@@ -1,0 +1,5 @@
+#!/bin/sh
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+exec %(manager_binary)s -a -l %(manager_address)s:%(manager_port)s \
+  --verbose -o %(manager_log)s

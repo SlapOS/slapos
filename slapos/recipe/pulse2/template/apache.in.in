@@ -1,0 +1,60 @@
+# Apache static configuration
+# Automatically generated
+
+# Basic server configuration
+PidFile "%(pid_file)s"
+Listen %(ip)s:%(port)s
+PHPINIDir %(php_ini_dir)s
+ServerAdmin someone@email
+DefaultType text/plain
+TypesConfig conf/mime.types
+AddType application/x-compress .Z
+AddType application/x-gzip .gz .tgz
+AddType application/x-httpd-php .php .phtml .php5 .php4
+AddType application/x-httpd-php-source .phps
+
+# Log configuration
+ErrorLog "%(error_log)s"
+LogLevel warn
+LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
+LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b" common
+CustomLog "%(access_log)s" common
+
+# Directory protection
+<Directory />
+    Options FollowSymLinks
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+</Directory>
+
+Alias /mmc %(document_root)s
+### Allow access to lmc web directory to everyone 
+<Directory %(document_root)s>
+  AllowOverride None
+  Order allow,deny
+  allow from all
+  php_flag short_open_tag on
+  php_flag magic_quotes_gpc on
+</Directory>
+DocumentRoot %(document_root)s
+DirectoryIndex index.html index.php
+
+# List of modules
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule version_module modules/mod_version.so
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule negotiation_module modules/mod_negotiation.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule php5_module modules/libphp5.so

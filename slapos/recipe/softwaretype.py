@@ -29,6 +29,7 @@ import os
 import sys
 import copy
 from ConfigParser import ConfigParser
+import json
 import subprocess
 import slapos.slap
 import netaddr
@@ -63,6 +64,15 @@ class Recipe:
     # XXX: Lack checking for globality of address
     return self._getIpAddress(netaddr.valid_ipv6)
 
+  def getNetworkInterface(self):
+    """Returns the network interface available on partition"""
+    if not 'ip_list' in self.parameter_dict:
+      raise AttributeError
+    for name, ip in self.parameter_dict['ip_list']:
+      if name:
+        return name
+    raise AttributeError, "Not network interface found"
+
   def install(self):
     slap = slapos.slap.slap()
     slap_connection = self.buildout['slap_connection']
@@ -82,31 +92,36 @@ class Recipe:
       if 'default' in self.options:
         software_type = 'default'
       else:
-        raise zc.buildout.UserError("This software type isn't mapped. And"
+        raise zc.buildout.UserError("This software type isn't mapped. And "
                                     "there's no default software type.")
 
     instance_file_path = self.options[software_type]
 
     if not os.path.exists(instance_file_path):
-      raise zc.buildout.UserError("The specified buildout config file does not"
-                                  "exist.")
+      raise zc.buildout.UserError("The specified buildout config file %r does "
+                                  "not exist." % instance_file_path)
 
     buildout = ConfigParser()
     with open(instance_file_path) as instance_path:
       buildout.readfp(instance_path)
 
-    buildout.set('buildout', 'installed',
-                 '.installed-%s.cfg' % software_type)
+    buildout.set('buildout', 'installed', '.installed-%s.cfg' % self.name)
 
-    buildout.add_section('slap-parameter')
+    if not buildout.has_section('slap-parameter'):
+      buildout.add_section('slap-parameter')
     for parameter, value in self.parameter_dict.items():
-      buildout.set('slap-parameter', parameter, value)
+      if isinstance(value, str):
+        buildout.set('slap-parameter', parameter, value)
+      else:
+        buildout.set('slap-parameter', parameter, json.dumps(value))
 
     buildout.add_section('slap-network-information')
-    buildout.set('slap-network-information', 'local-ipv4', 
+    buildout.set('slap-network-information', 'local-ipv4',
                  self.getLocalIPv4Address())
-    buildout.set('slap-network-information', 'global-ipv6', 
+    buildout.set('slap-network-information', 'global-ipv6',
                  self.getGlobalIPv6Address())
+    buildout.set('slap-network-information', 'network-interface', 
+                 self.getNetworkInterface())
 
     # Copy/paste slap_connection
     buildout.add_section('slap-connection')
@@ -117,7 +132,7 @@ class Recipe:
     work_directory = os.path.abspath(self.buildout['buildout'][
       'directory'])
     buildout_filename = os.path.join(work_directory,
-                                     'buildout-%s.cfg' % software_type)
+                                     'buildout-%s.cfg' % self.name)
     with open(buildout_filename, 'w') as buildout_file:
       buildout.write(buildout_file)
 

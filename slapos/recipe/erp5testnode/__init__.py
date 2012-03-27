@@ -24,136 +24,80 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.recipe.librecipe import BaseSlapRecipe
+import ConfigParser
+import json
 import os
-import pkg_resources
-import zc.buildout
-import zc.recipe.egg
-import sys
+import StringIO
 
-CONFIG = dict(
-  proxy_port='5000',
-  computer_id='COMPUTER',
-  partition_reference='test0',
-)
+from slapos.recipe.librecipe import GenericBaseRecipe
 
-class Recipe(BaseSlapRecipe):
-  def __init__(self, buildout, name, options):
-    self.egg = zc.recipe.egg.Egg(buildout, options['recipe'], options)
-    BaseSlapRecipe.__init__(self, buildout, name, options)
+class Recipe(GenericBaseRecipe):
+  def install(self):
+    path_list = []
+    options = self.options.copy()
+    del options['recipe']
+    CONFIG = {k.replace('-', '_'): v for k, v in options.iteritems()}
+    CONFIG['PATH'] = os.environ['PATH']
 
-  def installSlapOs(self):
-    CONFIG['slapos_directory'] = self.createDataDirectory('slapos')
-    CONFIG['working_directory'] = self.createDataDirectory('testnode')
-    CONFIG['software_root'] = os.path.join(CONFIG['slapos_directory'],
-        'software')
-    CONFIG['instance_root'] = os.path.join(CONFIG['slapos_directory'],
-        'instance')
-    CONFIG['proxy_database'] = os.path.join(CONFIG['slapos_directory'],
-        'proxy.db')
-    CONFIG['proxy_host'] = self.getLocalIPv4Address()
-    CONFIG['master_url'] = 'http://%s:%s' % (CONFIG['proxy_host'],
-        CONFIG['proxy_port'])
-    self._createDirectory(CONFIG['software_root'])
-    self._createDirectory(CONFIG['instance_root'])
-    CONFIG['slapos_config'] = self.createConfigurationFile('slapos.cfg',
-        self.substituteTemplate(pkg_resources.resource_filename(__name__,
-          'template/slapos.cfg.in'), CONFIG))
-    self.path_list.append(CONFIG['slapos_config'])
+    if CONFIG['bt5_path']:
+      additional_bt5_repository_id_list = CONFIG['bt5_path'].split(",")
+      CONFIG['bt5_path'] = ''
+      for bt5_repository_id in additional_bt5_repository_id_list:
+        id_path = os.path.join(CONFIG['slapos_directory'], bt5_repository_id)
+        bt_path = os.path.join(id_path, "bt5")
+        CONFIG['bt5_path'] += "%s,%s," % (id_path, bt_path)
 
-  def setupRunningWrapper(self):
-    self.path_list.extend(zc.buildout.easy_install.scripts([(
-      'testnode',
-        __name__+'.testnode', 'run')], self.ws,
-          sys.executable, self.wrapper_directory, arguments=[
-            dict(
-              computer_id=CONFIG['computer_id'],
-              instance_dict=eval(self.parameter_dict.get('instance_dict', '{}')),
-              instance_root=CONFIG['instance_root'],
-              ipv4_address=self.getLocalIPv4Address(),
-              ipv6_address=self.getGlobalIPv6Address(),
-              master_url=CONFIG['master_url'],
-              profile_path=self.parameter_dict['profile_path'],
-              proxy_database=CONFIG['proxy_database'],
-              proxy_port=CONFIG['proxy_port'],
-              slapgrid_partition_binary=self.options['slapgrid_partition_binary'],
-              slapgrid_software_binary=self.options['slapgrid_software_binary'],
-              slapos_config=CONFIG['slapos_config'],
-              slapproxy_binary=self.options['slapproxy_binary'],
-              git_binary=self.options['git_binary'],
-              software_root=CONFIG['software_root'],
-              working_directory=CONFIG['working_directory'],
-              vcs_repository_list=eval(self.parameter_dict.get('vcs_repository_list'),),
-              node_quantity=self.parameter_dict.get('node_quantity', '1'),
-              test_suite_master_url=self.parameter_dict.get(
-                                'test_suite_master_url', None),
-              test_suite=self.parameter_dict.get('test_suite'),
-              test_suite_title=self.parameter_dict.get('test_suite_title'),
-              test_node_title=self.parameter_dict.get('test_node_title'),
-              project_title=self.parameter_dict.get('project_title'),
-              bin_directory=self.bin_directory,
-              # botenvironemnt is splittable string of key=value to substitute
-              # environment of running bot
-              bot_environment=self.parameter_dict.get('bot_environment', ''),
-              partition_reference=CONFIG['partition_reference'],
-              environment=dict(PATH=os.environ['PATH']),
-              vcs_authentication_list=eval(self.parameter_dict.get(
-                     'vcs_authentication_list', 'None')),
-            )
-          ]))
+    if self.options['instance-dict']:
+      config_instance_dict = ConfigParser.ConfigParser()
+      config_instance_dict.add_section('instance_dict')
+      instance_dict = json.loads(self.options['instance-dict'])
 
-  def installLocalGit(self):
-    git_dict = dict(git_binary = self.options['git_binary'])
-    git_dict.update(self.parameter_dict)
-    double_slash_end_position = 1
-    # XXX, this should be provided by slapos
-    print "bin_directory : %r" % self.bin_directory
-    home_directory = os.path.join(*os.path.split(self.bin_directory)[0:-1])
-    print "home_directory : %r" % home_directory
-    git_dict.setdefault("git_server_name", "git.erp5.org")
-    if git_dict.get('vcs_authentication_list', None) is not None:
-      vcs_authentication_list = eval(git_dict['vcs_authentication_list'])
-      netrc_file = open(os.path.join(home_directory, '.netrc'), 'w')
-      for vcs_authentication_dict in vcs_authentication_list:
-        netrc_file.write("""
-machine %(host)s
-login %(user_name)s
-password %(password)s
-""" % vcs_authentication_dict)
-      netrc_file.close()
+      for k ,v in instance_dict.iteritems():
+        config_instance_dict.set('instance_dict', k, v)
+      value = StringIO.StringIO()
+      config_instance_dict.write(value)
+      CONFIG['instance_dict'] = value.getvalue()
 
-  def installLocalRepository(self):
-    self.installLocalGit()
+    vcs_repository_list = json.loads(self.options['repository-list'])
+    config_repository_list = ConfigParser.ConfigParser()
+    i = 0
+    for repository in vcs_repository_list:
+      section_name = 'vcs_repository_%d' % i
+      config_repository_list.add_section(section_name)
+      config_repository_list.set(section_name, 'url', repository['url'])
+      if 'branch' in repository:
+        config_repository_list.set(section_name, 'branch', repository['branch'])
+      if 'profile_path' in repository:
+        config_repository_list.set(section_name, 'profile_path',
+                                   repository['profile_path'])
+      if 'buildout_section_id' in repository:
+        config_repository_list.set(section_name, 'buildout_section_id',
+                                   repository['buildout_section_id'])
+      i += 1
+    value = StringIO.StringIO()
+    config_repository_list.write(value)
+    CONFIG['repository_list'] = value.getvalue()
 
-  def installLocalZip(self):
-    zip = os.path.join(self.bin_directory, 'zip')
-    if os.path.lexists(zip):
-      os.unlink(zip)
-    os.symlink(self.options['zip_binary'], zip)
-
-  def installLocalPython(self):
-    """Installs local python fully featured with eggs"""
-    self.path_list.extend(zc.buildout.easy_install.scripts([], self.ws,
-          sys.executable, self.bin_directory, scripts=None,
-          interpreter='python'))
-
-  def installLocalRunUnitTest(self):
-    link = os.path.join(self.bin_directory, 'runUnitTest')
-    destination = os.path.join(CONFIG['instance_root'],
-        CONFIG['partition_reference'], 'bin', 'runUnitTest')
-    if os.path.lexists(link):
-      if not os.readlink(link) != destination:
-        os.unlink(link)
-    if not os.path.lexists(link):
-      os.symlink(destination, link)
-
-  def _install(self):
-    self.requirements, self.ws = self.egg.working_set()
-    self.path_list = []
-    self.installSlapOs()
-    self.setupRunningWrapper()
-    self.installLocalRepository()
-    self.installLocalZip()
-    self.installLocalPython()
-    self.installLocalRunUnitTest()
-    return self.path_list
+    configuration_file = self.createFile(
+      self.options['configuration-file'],
+      self.substituteTemplate(
+        self.getTemplateFilename('erp5testnode.cfg.in'),
+        CONFIG
+      ),
+    )
+    path_list.append(configuration_file)
+    path_list.append(
+      self.createPythonScript(
+        self.options['wrapper'],
+        'slapos.recipe.librecipe.execute.executee',
+        [ # Executable
+          [ self.options['testnode'], '-l', self.options['log-file'],
+            configuration_file],
+          # Environment
+          {
+            'GIT_SSL_NO_VERIFY': '1',
+          }
+        ],
+      )
+    )
+    return path_list

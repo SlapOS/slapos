@@ -147,7 +147,10 @@ class Recipe(slapos.recipe.erp5.Recipe):
         conversion_server_conf,
       # as installERP5Site is not trusted (yet) and this recipe is production
       # ready expose more information
-      mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
+      # XXX Use socket access to prevent unwanted connections to original MySQL
+      #     server when cloning an existing ERP5 instance.
+      #     TCP will be required if MySQL is in a different partition/server.
+      mysql_url='%(mysql_database)s %(mysql_user)s %(mysql_password)s %(socket)s' % mysql_conf,
     ))
     return self.path_list
 
@@ -200,7 +203,10 @@ class Recipe(slapos.recipe.erp5.Recipe):
         conversion_server_conf,
       # as installERP5Site is not trusted (yet) and this recipe is production
       # ready expose more information
-      mysql_url='%(mysql_database)s@%(ip)s:%(tcp_port)s %(mysql_user)s %(mysql_password)s' % mysql_conf,
+      # XXX Use socket access to prevent unwanted connections to original MySQL
+      #     server when cloning an existing ERP5 instance.
+      #     TCP will be required if MySQL is in a different partition/server.
+      mysql_url='%(mysql_database)s %(mysql_user)s %(mysql_password)s %(socket)s' % mysql_conf,
     ))
     return self.path_list
 

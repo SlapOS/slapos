@@ -1,0 +1,8 @@
+#!/bin/sh
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+exec %(nosqltester_manager_binary)s %(plugin_name)s -a %(address)s \
+  -r %(report_path)s -s %(max_server)s -t %(max_tester)s \
+  --erp5-publish-url "%(erp5_publish_url)s" --erp5-publish-project "%(erp5_publish_project)s" \
+  %(software_release_url)s %(server_url)s "%(key_file)s" "%(cert_file)s" %(computer_id)s %(computer_partition_id)s \
+  %(nb_thread)s %(nb_request)s

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec %(mmc_core_binary)s -f %(mmc_core_config_file)s
