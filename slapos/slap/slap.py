@@ -148,6 +148,8 @@ class Supply(SlapDocument):
   zope.interface.implements(interface.ISupply)
 
   def supply(self, software_release, computer_guid=None, state='available'):
+    # Note: Zope accepts additional arguments, so state in case of older
+    #       servers will be just ignored.
     self._connection_helper.POST('/supplySupply', {
       'url': software_release,
       'computer_id': computer_guid,
