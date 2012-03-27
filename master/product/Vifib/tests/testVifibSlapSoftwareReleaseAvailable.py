@@ -118,6 +118,7 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
+      CheckSoftwareReleaseUnavailableForRequest \
       CheckCancelledPurchasePackingList \
       Logout \
       LoginERP5TypeTestCase \
@@ -155,6 +156,7 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       StartPurchasePackingList \
       Tic \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       SlapLoginCurrentComputer \
       CheckSuccessSoftwareReleaseAvailableCall \
@@ -162,6 +164,7 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckStoppedPurchasePackingList \
+      CheckSoftwareReleaseAvailableForRequest \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -199,6 +202,7 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       StartPurchasePackingList \
       StopPurchasePackingList \
       Tic \
+      CheckSoftwareReleaseAvailableForRequest \
       Logout \
       SlapLoginCurrentComputer \
       CheckNotFoundSoftwareReleaseAvailableCall \
@@ -206,6 +210,7 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckStoppedPurchasePackingList \
+      CheckSoftwareReleaseAvailableForRequest \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -246,6 +251,7 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       StopPurchasePackingList \
       DeliverPurchasePackingList \
       Tic \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       SlapLoginCurrentComputer \
       CheckNotFoundSoftwareReleaseAvailableCall \
@@ -253,6 +259,7 @@ class TestVifibSlapSoftwareReleaseAvailable(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckDeliveredPurchasePackingList \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
