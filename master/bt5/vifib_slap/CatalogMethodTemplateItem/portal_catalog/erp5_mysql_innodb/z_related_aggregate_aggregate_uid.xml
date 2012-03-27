@@ -38,7 +38,7 @@ catalog.uid = <dtml-var table_2>.category_uid AND\n
 \n
 <dtml-var table_1>.base_category_uid = <dtml-var "portal_categories.resource.getUid()"> AND\n
 <dtml-var table_0>.uid = <dtml-var table_1>.uid AND\n
-<dtml-var table_1>.category_uid = <dtml-var "portal_categories.restrictedTraverse(portal_categories.portal_preferences.getPreferredSoftwareSetupResource()).getUid()">
+<dtml-var table_1>.category_uid IN (<dtml-var "portal_categories.restrictedTraverse(portal_categories.portal_preferences.getPreferredSoftwareSetupResource()).getUid()">, <dtml-var "portal_categories.restrictedTraverse(portal_categories.portal_preferences.getPreferredSoftwareCleanupResource()).getUid()">)
 
 ]]></string> </value>
         </item>
