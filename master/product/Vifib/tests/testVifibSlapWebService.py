@@ -998,6 +998,20 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout
   """
 
+  prepare_software_release_cleanup_confirmed_packing_list = """
+      LoginDefaultUser
+      CreatePurchasePackingList
+      Tic
+      CreatePurchasePackingListLine
+      Tic
+      SetPurchasePackingListLineCleanupResource
+      SetPurchasePackingListLineAggregate
+      ConfirmPurchasePackingList
+      Tic
+      CheckConfirmedPurchasePackingList
+      Logout
+  """
+
   prepare_software_release_purchase_packing_list = \
       prepare_published_software_release + prepare_formated_computer + \
       prepare_software_release_confirmed_packing_list
@@ -2328,6 +2342,19 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer = self.slap.registerComputer(computer_guid)
     self.assertEquals([], computer.getSoftwareReleaseList())
 
+  def stepCheckDestroyedStateGetSoftwareReleaseListCall(self, sequence, **kw):
+    """
+    Check that Computer.getSoftwareReleaseList returns software release
+    associated to the computer.
+    """
+    computer_guid = sequence["computer_reference"]
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    computer = self.slap.registerComputer(computer_guid)
+    self.assertEquals(1, len(computer.getSoftwareReleaseList()))
+    software_release = computer.getSoftwareReleaseList()[0]
+    self.assertEqual('destroyed', software_release.getState())
+
   def stepCheckSuccessComputerGetSoftwareReleaseListCall(self, sequence, **kw):
     """
     Check that Computer.getSoftwareReleaseList returns software release
@@ -3492,6 +3519,17 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         quantity=1,
         resource=self.portal.portal_preferences.\
             getPreferredSoftwareSetupResource())
+
+  def stepSetPurchasePackingListLineCleanupResource(self, sequence, **kw):
+    """
+    Associate the setup service to the purchase packing list line.
+    """
+    line = self.portal.portal_catalog.getResultValue(
+        uid=sequence["purchase_packing_list_line_uid"])
+    line.edit(
+        quantity=1,
+        resource=self.portal.portal_preferences.\
+            getPreferredSoftwareCleanupResource())
 
   def stepSetAccountingBeforeSetupStartDate(self, sequence, **kw):
     """

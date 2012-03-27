@@ -221,6 +221,125 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def test_Computer_getSoftwareReleaseList_CleanupResource_ConfirmedState(self):
+    """
+    Check that calling Computer.getSoftwareReleaseList works in 
+    delivered state with the setup resource
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + \
+      self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      CheckDestroyedStateGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Computer_getSoftwareReleaseList_CleanupResource_StartedState(self):
+    """
+    Check that calling Computer.getSoftwareReleaseList works in 
+    delivered state with the setup resource
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + \
+      self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
+      CheckDestroyedStateGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Computer_getSoftwareReleaseList_CleanupResource_StoppedState(self):
+    """
+    Check that calling Computer.getSoftwareReleaseList works in 
+    delivered state with the setup resource
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + \
+      self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      StopPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Computer_getSoftwareReleaseList_CleanupResource_DeliveredState(self):
+    """
+    Check that calling Computer.getSoftwareReleaseList works in 
+    delivered state with the setup resource
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + \
+      self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      LoginDefaultUser \
+      StartPurchasePackingList \
+      Tic \
+      StopPurchasePackingList \
+      Tic \
+      DeliverPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Computer_getSoftwareReleaseList_CleanupResource_CancelledState(self):
+    """
+    Check that calling Computer.getSoftwareReleaseList works in 
+    delivered state with the setup resource
+    """
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + \
+      self.prepare_software_release_cleanup_confirmed_packing_list + '\
+      LoginDefaultUser \
+      CancelPurchasePackingList \
+      Tic \
+      Logout \
+      SlapLoginCurrentComputer \
+      CheckEmptyComputerGetSoftwareReleaseListCall \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
   def test_Computer_getSoftwareReleaseList_AccountingResource_ConfirmedState(self):
     """
     Check that calling Computer.getSoftwareReleaseList works in 
