@@ -52,24 +52,48 @@
             <key> <string>_body</string> </key>
             <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
 \n
-portal = context.getPortalObject()\n
-packing_list_line_list = context.Computer_getSoftwarePackingListLineList(\n
-  state_change,\n
-  service_uid_list=[portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource()).getUid()],\n
-  limit=1)\n
-if len(packing_list_line_list) == 0:\n
-  raise ValueError("No purchase packing list line found for %s %s" % (computer.getRelativeUrl(), software_release_document.getRelativeUrl()))\n
+computer = state_change[\'object\']\n
+# Get required arguments\n
+kwargs = state_change.kwargs\n
+software_release_url = state_change.kwargs["software_release_url"]\n
+\n
+portal = computer.getPortalObject()\n
+\n
+# Only get one software release\n
+software_release_document_result = computer.portal_catalog(\n
+  portal_type=\'Software Release\', # validation_state=(\'shared\', \'released\', \'published\', \'shared_alive\', \'released_alive\', \'published_alive\'),\n
+  url_string=software_release_url, limit=2)\n
+if len(software_release_document_result) != 1:\n
+  raise ValueError("No software release found for %s %s" % (computer.getRelativeUrl(), software_release_url))\n
 else:\n
-  return packing_list_line_list[0].getObject()\n
+  software_release_document = software_release_document_result[0]\n
+\n
+# Packing List valid state\n
+if state_list is None:\n
+  state_list = []\n
+  state_list.extend(portal.getPortalReservedInventoryStateList())\n
+  state_list.extend(portal.getPortalTransitInventoryStateList())\n
+\n
+return portal.portal_catalog(\n
+  portal_type=\'Purchase Packing List Line\',\n
+  simulation_state=state_list,\n
+  default_resource_uid=service_uid_list,\n
+  sort_on=((\'movement.start_date\', \'DESC\'),),\n
+  aggregate_relative_url=ComplexQuery(\n
+    Query(aggregate_relative_url=software_release_document.getRelativeUrl()),\n
+    Query(aggregate_relative_url=computer.getRelativeUrl()),\n
+    operator="AND"),\n
+  limit=limit\n
+)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string>state_change, service_uid_list, state_list=None, limit=1</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_getSoftwareSetupPackingListLine</string> </value>
+            <value> <string>Computer_getSoftwarePackingListLineList</string> </value>
         </item>
       </dictionary>
     </pickle>
