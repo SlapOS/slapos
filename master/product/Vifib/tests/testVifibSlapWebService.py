@@ -4196,26 +4196,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     raise NotImplementedError
 
   ########################################
-  # slap.registerSupply
-  ########################################
-
-  @skip('Not implemented')
-  def test_slap_registerSupply(self):
-    """
-    """
-    raise NotImplementedError
-
-  ########################################
-  # Supply.supply
-  ########################################
-
-  @skip('Not implemented')
-  def test_Supply_supply(self):
-    """
-    """
-    raise NotImplementedError
-
-  ########################################
   # ComputerPartition.getId
   ########################################
 
