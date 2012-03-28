@@ -27,12 +27,30 @@ class TestVifibSlapSupply(TestVifibSlapWebServiceMixin):
     supply.supply(sequence['software_release_uri'],
       sequence['computer_reference'], 'available')
 
+  def stepSupplyComputerSoftwareReleaseAvailableRaisesNotImplementedError(self,
+    sequence, **kw):
+    # slap not used to raise on server side
+    computer = self.portal.portal_catalog.getResultValue(
+      uid=sequence['computer_uid'])
+    self.assertRaises(NotImplementedError,
+      computer.requestSoftwareReleaseInstallation,
+      software_release_url=sequence['software_release_uri'])
+
   def stepSupplyComputerSoftwareReleaseDestroyed(self, sequence, **kw):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
     supply = self.slap.registerSupply()
     supply.supply(sequence['software_release_uri'],
       sequence['computer_reference'], 'destroyed')
+
+  def stepSupplyComputerSoftwareReleaseDestroyedRaisesNotImplementedError(self,
+    sequence, **kw):
+    # slap not used to raise on server side
+    computer = self.portal.portal_catalog.getResultValue(
+      uid=sequence['computer_uid'])
+    self.assertRaises(NotImplementedError,
+      computer.requestSoftwareReleaseCleanup,
+      software_release_url=sequence['software_release_uri'])
 
   def test_Supply_supply(self):
     sequence_list = SequenceList()
@@ -118,6 +136,53 @@ class TestVifibSlapSupply(TestVifibSlapWebServiceMixin):
       SupplyComputerSoftwareReleaseDestroyed
       Tic
       SupplyComputerSoftwareReleaseDestroyed
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentComputer
+      CheckDestroyedStateGetSoftwareReleaseListCall
+      SlapLogout
+
+      LoginDefaultUser
+      CheckOneConfirmedCleanupPurchasePackingListLineComputerSoftwareRelease
+      Logout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_Supply_lock(self):
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_formated_computer + \
+      self.prepare_published_software_release + """
+      SlapLoginCurrentComputer
+      CheckEmptyComputerGetSoftwareReleaseListCall
+      SlapLogout
+
+      SlapLoginTestVifibAdmin
+      LoginTestVifibAdmin
+      SupplyComputerSoftwareReleaseAvailable
+      SupplyComputerSoftwareReleaseAvailableRaisesNotImplementedError
+      SupplyComputerSoftwareReleaseDestroyedRaisesNotImplementedError
+      Tic
+      SlapLogout
+
+      SlapLoginCurrentComputer
+      CheckSuccessComputerGetSoftwareReleaseListCall
+      SlapLogout
+
+      LoginDefaultUser
+      CheckOneConfirmedSetupPurchasePackingListLineComputerSoftwareRelease
+      Logout
+
+      SlapLoginTestVifibAdmin
+      LoginTestVifibAdmin
+      SupplyComputerSoftwareReleaseDestroyed
+      SupplyComputerSoftwareReleaseDestroyedRaisesNotImplementedError
+      SupplyComputerSoftwareReleaseAvailableRaisesNotImplementedError
       Tic
       SlapLogout
 
