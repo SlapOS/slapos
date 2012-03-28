@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.44 (Unreleased)
+0.44 (2012-03-28)
 -----------------
 
-  * No change yet
+  * minor: apachephp: update apache configuration to work with Apache2.4
 
 0.43 (2012-03-28)
 -----------------
