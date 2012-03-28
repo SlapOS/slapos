@@ -449,7 +449,9 @@ class Slapgrid(object):
           software_release.building()
           software.install()
         elif state == 'destroyed':
+          logger.info('Destroying %r...' % software_release_uri)
           software.destroy()
+          logger.info('Destroyed %r.' % software_release_uri)
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         software_release.error(exception)

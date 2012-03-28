@@ -184,7 +184,11 @@ class Software(object):
         func(path)
     try:
       if os.path.exists(self.software_path):
+        self.logger.info('Removing path %r' % self.software_path)
         shutil.rmtree(self.software_path, onerror=retry)
+      else:
+        self.logger.info('Path %r does not exists, no need to remove.' %
+            self.software_path)
     except IOError as error:
       error_string = "I/O error while removing software (%s): %s" % (self.url,
                                                                      error)
