@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.43 (Unreleased)
+0.43 (2012-03-28)
 -----------------
 
-  * No change yet
+  * minor: erp5: add missing .zcml files into egg. [Cedric de Saint Martin]
 
 0.42 (2012-03-26)
 -----------------
