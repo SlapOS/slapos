@@ -49,7 +49,7 @@ class Recipe(BaseSlapRecipe):
         instance_root=instance_root,
         master_url='http://%s:%s/' % (ipv4, proxy_port),
         computer_id='slaprunner',
-        partition_amount=2,
+        partition_amount=7,
         slapgrid_sr=self.options['slapgrid_sr'],
         slapgrid_cp=self.options['slapgrid_cp'],
         slapproxy=self.options['slapproxy'],
