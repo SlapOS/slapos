@@ -183,7 +183,8 @@ class Software(object):
         os.chmod (path, 0600)
         func(path)
     try:
-      shutil.rmtree(self.software_path, onerror=retry)
+      if os.path.exists(self.software_path):
+        shutil.rmtree(self.software_path, onerror=retry)
     except IOError as error:
       error_string = "I/O error while removing software (%s): %s" % (self.url,
                                                                      error)
