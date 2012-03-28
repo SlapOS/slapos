@@ -154,7 +154,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       Tic \
       DeliverPurchasePackingList \
       Tic \
-      CheckSoftwareReleaseAvailableForRequest \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       SetCurrentPurchasePackingListAsA \
       Logout' + \
