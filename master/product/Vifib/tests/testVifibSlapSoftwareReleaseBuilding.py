@@ -252,7 +252,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       StopPurchasePackingList \
       DeliverPurchasePackingList \
       Tic \
-      CheckSoftwareReleaseUnvailableForRequest \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       SlapLoginCurrentComputer \
       CheckNotFoundSoftwareReleaseBuildingCall \
@@ -260,7 +260,7 @@ class TestVifibSlapSoftwareReleaseBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginDefaultUser \
       CheckDeliveredPurchasePackingList \
-      CheckSoftwareReleaseUnvailableForRequest \
+      CheckSoftwareReleaseUnavailableForRequest \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
