@@ -69,15 +69,15 @@ if len(software_release_document_result) != 1:\n
 else:\n
   software_release_document = software_release_document_result[0]\n
 \n
+tag = \'Computer_%s_software_release_%s_change\' % (computer.getUid(), software_release_document.getUid())\n
+if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+  raise NotImplementedError(\'In progress\')\n
+activate_kw = {\'tag\': tag}\n
+\n
 if len(context.Computer_getSoftwarePackingListLineList(state_change, service_uid_list=[service_uid])) > 0:\n
   # change installation in progress\n
   return\n
 \n
-tag = \'Computer_%s_software_release_%s_change\' % (computer.getUid(), software_release_document.getUid())\n
-if portal.portal_activities.countMessageWithTag(tag) > 0:\n
-  raise NotImplementedError(\'In progress\')\n
-\n
-activate_kw = {\'tag\': tag}\n
 # XXX Hardcoded values\n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
