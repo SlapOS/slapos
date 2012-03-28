@@ -235,6 +235,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def _getSoftwareReleasePublicTableAmount(self, sequence, **kw):
     self.getPortal().portal_skins.changeSkin("Hosting")
+    request = self.app.REQUEST
     request.set('portal_skin', "Hosting")
     amount = len(self.portal.Base_getAvailableSoftwareReleaseList(
       **{'software_release.url': sequence['software_release_uri']}))
