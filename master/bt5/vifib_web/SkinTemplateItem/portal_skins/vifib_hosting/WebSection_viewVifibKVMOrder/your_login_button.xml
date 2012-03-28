@@ -226,7 +226,6 @@ Use Vifib\n
 <div class="alignr" style="background-color: white; float: right; width: 280px;">\n
 <h2>Get a Virtual Machine from Vifib</h2>\n
 <img src="vifib.kvm?format=png&display=xsmall"><br/>\n
-<h2>Join Vifib</h2>\n
 <div class="input">\n
 <a class="nolabel validate alignr" href="./login_form">Login to Order your VM</a>\n
 </div>\n
