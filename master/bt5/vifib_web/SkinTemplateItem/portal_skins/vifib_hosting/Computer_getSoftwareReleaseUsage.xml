@@ -50,19 +50,26 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>computer = context.REQUEST.get(\'here\')\n
-software_release = context\n
+            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+portal = context.getPortalObject()\n
 \n
-return computer.Computer_getSoftwareReleaseUsage(software_release.getUid())\n
+computer = context\n
+\n
+return portal.portal_catalog.countResults(\n
+  portal_type=\'Computer Partition\',\n
+  parent_uid=computer.getUid(),\n
+  free_for_request=0,\n
+  software_release_url=portal.portal_catalog.getResultValue(uid=software_release_uid).getUrlString()\n
+)[0][0]\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>*args, **kwargs</string> </value>
+            <value> <string>software_release_uid</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_getSoftwareReleaseUsageOnComputer</string> </value>
+            <value> <string>Computer_getSoftwareReleaseUsage</string> </value>
         </item>
       </dictionary>
     </pickle>

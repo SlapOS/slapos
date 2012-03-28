@@ -50,42 +50,10 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
-portal = context.getPortalObject()\n
-\n
-computer = context.REQUEST.get(\'here\')\n
+            <value> <string>computer = context.REQUEST.get(\'here\')\n
 software_release = context\n
 \n
-delivery_line = portal.portal_catalog.getResultValue(\n
-  portal_type=\'Purchase Packing List Line\',\n
-  default_resource_uid=[portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource()).getUid(), portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareCleanupResource()).getUid()],\n
-  default_aggregate_uid=ComplexQuery(\n
-    Query(default_aggregate_uid=computer.getUid()),\n
-    Query(default_aggregate_uid=software_release.getUid()),\n
-    operator=\'AND\'\n
-  ),\n
-  simulation_state=portal.getPortalCurrentInventoryStateList() + portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList(),\n
-  limit=1,\n
-  sort_on=((\'movement.start_date\', \'DESC\'),),\n
-)\n
-\n
-resource = delivery_line.getResource()\n
-state = delivery_line.getSimulationState()\n
-\n
-if resource == portal.portal_preferences.getPreferredSoftwareSetupResource():\n
-  if state == \'confirmed\':\n
-    return \'Installation requested\'\n
-  elif state == \'started\':\n
-    return \'Installation in progress\'\n
-  elif state == \'stopped\':\n
-    return \'Installed\'\n
-  else:\n
-    return \'Destroyed\'\n
-elif resource == portal.portal_preferences.getPreferredSoftwareCleanupResource():\n
-  if state == \'confirmed\':\n
-    return \'Destruction requested\'\n
-  else:\n
-    return \'Destroyed\'\n
+return context.Computer_getSoftwareReleaseState(software_release.getUid())\n
 </string> </value>
         </item>
         <item>

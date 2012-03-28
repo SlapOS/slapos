@@ -164,7 +164,7 @@ input.validate, a.validate, input.cancel,#dialog_submit_button,#dialog_cancel_bu
   font-weight:bold;height:30px;-moz-border-radius:10px;cursor:pointer;}\n
 input.validate, a.validate, #dialog_submit_button,.login_button input{\n
   background:url(<tal:block tal:replace="images_path"/>button_validate_bg.png) repeat-x top left;color:#bae2e9}\n
-input.cancel,#dialog_cancel_button{\n
+input.cancel,a.cancel,#dialog_cancel_button{\n
   background:url(<tal:block tal:replace="images_path"/>button_cancel_bg.png) repeat-x top left;color:#eba4a4}\n
 #dialog_submit_button{float:right;}\n
 a.validate {display:inline-block;line-height:30px;text-decoration:none;}\n

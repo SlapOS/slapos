@@ -50,19 +50,17 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>computer = context.REQUEST.get(\'here\')\n
-software_release = context\n
-\n
-return computer.Computer_getSoftwareReleaseUsage(software_release.getUid())\n
+            <value> <string>context.requestSoftwareReleaseCleanup(software_release_url=context.portal_catalog.getResultValue(uid=software_release_uid).getUrlString())\n
+context.Base_redirect(\'Computer_viewSoftwareReleaseManageDialog\', keep_items={\'portal_status_message\': \'Requested Destruction\', \'software_release_uid\': software_release_uid})\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>*args, **kwargs</string> </value>
+            <value> <string>software_release_uid</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_getSoftwareReleaseUsageOnComputer</string> </value>
+            <value> <string>Computer_requestSoftwareReleaseDestruction</string> </value>
         </item>
       </dictionary>
     </pickle>

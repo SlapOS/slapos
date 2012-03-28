@@ -151,23 +151,23 @@
                       <list>
                         <tuple>
                           <string>aggregate_title</string>
-                          <string></string>
+                          <string>Base_getComputerSoftwarReleaseManageUrlString</string>
                         </tuple>
                         <tuple>
                           <string>version</string>
-                          <string></string>
+                          <string>Base_getComputerSoftwarReleaseManageUrlString</string>
                         </tuple>
                         <tuple>
                           <string>image</string>
-                          <string></string>
+                          <string>Base_getComputerSoftwarReleaseManageUrlString</string>
                         </tuple>
                         <tuple>
                           <string>installation_state</string>
-                          <string></string>
+                          <string>Base_getComputerSoftwarReleaseManageUrlString</string>
                         </tuple>
                         <tuple>
                           <string>usage</string>
-                          <string></string>
+                          <string>Base_getComputerSoftwarReleaseManageUrlString</string>
                         </tuple>
                       </list>
                     </value>

@@ -51,9 +51,8 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>computer = context.REQUEST.get(\'here\')\n
-software_release = context\n
-\n
-return computer.Computer_getSoftwareReleaseUsage(software_release.getUid())\n
+software_release = kwargs[\'brain\'].getObject()\n
+return \'./Computer_viewSoftwareReleaseManageDialog?software_release_uid=%s\' % software_release.getUid()\n
 </string> </value>
         </item>
         <item>
@@ -62,7 +61,7 @@ return computer.Computer_getSoftwareReleaseUsage(software_release.getUid())\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_getSoftwareReleaseUsageOnComputer</string> </value>
+            <value> <string>Base_getComputerSoftwarReleaseManageUrlString</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -50,19 +50,51 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>computer = context.REQUEST.get(\'here\')\n
-software_release = context\n
+            <value> <string>computer = context\n
 \n
-return computer.Computer_getSoftwareReleaseUsage(software_release.getUid())\n
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+portal = context.getPortalObject()\n
+delivery_line = portal.portal_catalog.getResultValue(\n
+  portal_type=\'Purchase Packing List Line\',\n
+  default_resource_uid=[portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource()).getUid(), portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareCleanupResource()).getUid()],\n
+  default_aggregate_uid=ComplexQuery(\n
+    Query(default_aggregate_uid=computer.getUid()),\n
+    Query(default_aggregate_uid=software_release_uid),\n
+    operator=\'AND\'\n
+  ),\n
+  simulation_state=portal.getPortalCurrentInventoryStateList() + portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList(),\n
+  limit=1,\n
+  sort_on=((\'movement.start_date\', \'DESC\'),),\n
+)\n
+\n
+resource = delivery_line.getResource()\n
+state = delivery_line.getSimulationState()\n
+\n
+if resource == portal.portal_preferences.getPreferredSoftwareSetupResource():\n
+  if state == \'confirmed\':\n
+    return \'Installation requested\'\n
+  elif state == \'started\':\n
+    return \'Installation in progress\'\n
+  elif state == \'stopped\':\n
+    return \'Installed\'\n
+  else:\n
+    script.log(delivery_line.getPath())\n
+    return \'Destroyed\'\n
+elif resource == portal.portal_preferences.getPreferredSoftwareCleanupResource():\n
+  if state == \'confirmed\':\n
+    return \'Destruction requested\'\n
+  else:\n
+    script.log(delivery_line.getPath())\n
+    return \'Destroyed\'\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>*args, **kwargs</string> </value>
+            <value> <string>software_release_uid</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_getSoftwareReleaseUsageOnComputer</string> </value>
+            <value> <string>Computer_getSoftwareReleaseState</string> </value>
         </item>
       </dictionary>
     </pickle>
