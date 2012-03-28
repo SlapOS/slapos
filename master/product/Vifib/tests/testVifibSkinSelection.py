@@ -306,11 +306,11 @@ zpt_generic
 """
 custom
 vifib_upgrader
+vifib_hosting
 vifib_base
 vifib_core
 vifib_crm
 vifib_forge_release
-vifib_hosting
 vifib_hosting_theme
 vifib_jauks_theme
 vifib_jauks_widget_library
