@@ -5,6 +5,7 @@ Changes
 -----------------
 
  * Handles different errors in a user friendly way [Cedric de Saint Martin]
+ * slapgrid: Supports software destruction.
 
 0.23 (2012-02-29)
 -----------------
