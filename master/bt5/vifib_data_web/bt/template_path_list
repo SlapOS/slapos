@@ -1,3 +1,5 @@
+image_module/vifib.cloud
+image_module/vifib.rack
 web_page_module/vifib*
 web_site_module/cash
 web_site_module/cash/**

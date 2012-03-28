@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>your_description</string> </value>
+            <value> <string>your_login_button</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -146,7 +146,9 @@
                 </item>
                 <item>
                     <key> <string>enabled</string> </key>
-                    <value> <string></string> </value>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                    </value>
                 </item>
                 <item>
                     <key> <string>external_validator</string> </key>
@@ -213,24 +215,23 @@
                 </item>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string>nolabel align</string> </value>
+                    <value> <string>nolabel alignr</string> </value>
                 </item>
                 <item>
                     <key> <string>default</string> </key>
                     <value> <string encoding="cdata"><![CDATA[
 
-<h1>Enjoy cloud computing with Vifib</h1>\n
-\n
-<table cellpadding=0 cellspacing=0 border=0>\n
-<tr>\n
-<td width=50%><h2>Order online applications that are hosted in Vifib\'s distributed cloud.</h2></td>\n
-<td width=50%><img src="./vifib.cloud?format=png&display=xsmall" alt="Vifib Cloud" title="Vifib Cloud"></td>\n
-</tr>\n
-<tr>\n
-<td width=50%><img src="./vifib.rack?format=png&display=xsmall"></td>\n
-<td width=50%><h2>Bring your own servers to the clouds and extend Vifib\'s distributed cloud with your own machines.</h2></td>\n
-</tr>\n
-</table>
+<div style="float: right; width: 280px; text-align: left;">\n
+Use Vifib\n
+<div class="alignr" style="background-color: white; float: right; width: 280px;">\n
+<h2>Get a Virtual Machine from Vifib</h2>\n
+<img src="vifib.kvm?format=png&display=xsmall"><br/>\n
+<h2>Join Vifib</h2>\n
+<div class="input">\n
+<a class="nolabel validate alignr" href="./login_form">Login to Order your VM</a>\n
+</div>\n
+</div>\n
+</div>
 
 ]]></string> </value>
                 </item>
@@ -240,7 +241,7 @@
                 </item>
                 <item>
                     <key> <string>editable</string> </key>
-                    <value> <int>0</int> </value>
+                    <value> <int>1</int> </value>
                 </item>
                 <item>
                     <key> <string>enabled</string> </key>
@@ -284,7 +285,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Description</string> </value>
+                    <value> <string>your_order_button</string> </value>
                 </item>
                 <item>
                     <key> <string>unicode</string> </key>
@@ -300,6 +301,19 @@
                 </item>
               </dictionary>
             </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <string>python: here.portal_membership.isAnonymousUser()</string> </value>
         </item>
       </dictionary>
     </pickle>
