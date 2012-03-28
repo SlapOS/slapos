@@ -5,7 +5,9 @@ Changes
 -----------------
 
  * Handles different errors in a user friendly way [Cedric de Saint Martin]
- * slapgrid: Supports software destruction.
+ * slapgrid: Supports software destruction. [Łukasz Nowak]
+ * slap: added support to Supply.supply state parameter (available, destroyed)
+   [Łukasz Nowak]
 
 0.23 (2012-02-29)
 -----------------
