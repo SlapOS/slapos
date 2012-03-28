@@ -239,8 +239,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     request.set('portal_skin', "Hosting")
     amount = len(self.portal.Base_getAvailableSoftwareReleaseList(
       **{'software_release.url': sequence['software_release_uri']}))
-    self.portal.web_site_module.hosting.WebSection_registerNewComputer(
-      title=sequence['computer_title'])
     self.getPortal().portal_skins.changeSkin("View")
     request.set('portal_skin', "View")
     return amount
