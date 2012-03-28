@@ -59,6 +59,7 @@ software_release_url = state_change.kwargs["software_release_url"]\n
 \n
 portal = computer.getPortalObject()\n
 \n
+\n
 # Only get one software release\n
 software_release_document_result = portal.portal_catalog(\n
   portal_type=\'Software Release\', # validation_state=(\'shared\', \'released\', \'published\', \'shared_alive\', \'released_alive\', \'published_alive\'),\n
@@ -72,6 +73,11 @@ if len(context.Computer_getSoftwarePackingListLineList(state_change, service_uid
   # change installation in progress\n
   return\n
 \n
+tag = \'Computer_%s_software_release_%s_change\' % (computer.getUid(), software_release_document.getUid())\n
+if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+  raise NotImplementedError(\'In progress\')\n
+\n
+activate_kw = {\'tag\': tag}\n
 # XXX Hardcoded values\n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
@@ -88,15 +94,17 @@ packing_list = module.newContent(\n
   source="organisation_module/vifib_internet",\n
   source_section="organisation_module/vifib_internet",\n
   price_currency="currency_module/EUR",\n
+  activate_kw=activate_kw\n
 )\n
 packing_list.newContent(\n
   portal_type="Purchase Packing List Line",\n
   resource_uid=service_uid,\n
   aggregate_value_list=[software_release_document, computer],\n
-  quantity=1\n
+  quantity=1,\n
+  activate_kw=activate_kw\n
 )\n
 \n
-portal.portal_workflow.doActionFor(packing_list, "confirm_action")\n
+packing_list.confirm(activate_kw=activate_kw)\n
 
 
 ]]></string> </value>
