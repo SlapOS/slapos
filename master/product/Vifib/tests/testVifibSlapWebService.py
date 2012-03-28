@@ -228,10 +228,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       free_for_request=1)[0][0]
 
   def stepCheckSoftwareReleaseAvailableForRequest(self, sequence, **kw):
-    self.assertFalse(self._getRequestBasedComputerPartitionCount(sequence) == 0)
+    self.assertNotEqual(0, self._getRequestBasedComputerPartitionCount(sequence))
 
   def stepCheckSoftwareReleaseUnavailableForRequest(self, sequence, **kw):
-    self.assertTrue(self._getRequestBasedComputerPartitionCount(sequence) == 0)
+    self.assertEqual(0, self._getRequestBasedComputerPartitionCount(sequence))
 
   def _getSoftwareReleasePublicTableAmount(self, sequence, **kw):
     self.getPortal().portal_skins.changeSkin("Hosting")
@@ -244,10 +244,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     return amount
 
   def stepCheckSoftwareReleaseInPublicTable(self, sequence, **kw):
-    self.assertFalse(0, self._getSoftwareReleasePublicTableAmount(sequence))
+    self.assertNotEqual(0, self._getSoftwareReleasePublicTableAmount(sequence))
 
   def stepCheckSoftwareReleaseNotInPublicTable(self, sequence, **kw):
-    self.assertTrue(0, self._getSoftwareReleasePublicTableAmount(sequence))
+    self.assertEqual(0, self._getSoftwareReleasePublicTableAmount(sequence))
 
   def stepTriggerConfirmPlannedInvoiceAlarm(self, sequence, **kw):
     sm = getSecurityManager()
