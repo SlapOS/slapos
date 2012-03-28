@@ -3823,6 +3823,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       'purchase_packing_list_b_uid'])
     b.setStartDate(a.getStartDate() - 2)
 
+  def stepCheckStartedPurchasePackingListA(self, sequence):
+    self.assertEqual('stopped',
+        self.portal.portal_catalog.getResultValue(uid=sequence[
+          'purchase_packing_list_a_uid']).getSimulationState())
+
   def stepCheckStoppedPurchasePackingListA(self, sequence):
     self.assertEqual('stopped',
         self.portal.portal_catalog.getResultValue(uid=sequence[
