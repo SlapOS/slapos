@@ -163,8 +163,11 @@ for (key, value) in modify_kw_kw.copy().iteritems():\n
 remove_id_list = set()\n
 if previous_open_sale_order is not None:\n
   for (remove_hosting, explanation) in remove_hosting_list:\n
-    if remove_hosting in add_kw_kw or remove_hosting in modify_kw_kw:\n
-      # just added, cannot remove yet\n
+    if remove_hosting in add_kw_kw:\n
+      add_kw_kw[remove_hosting][\'explanation\'].append(\'Not removed because just added\')\n
+      continue\n
+    if remove_hosting in modify_kw_kw:\n
+      modify_kw_kw[remove_hosting][\'explanation\'].append(\'Not removed because just modified\')\n
       continue\n
     if remove_hosting in hosting_subscription_mapping:\n
       line = previous_open_sale_order[hosting_subscription_mapping.get(remove_hosting)]\n
@@ -174,7 +177,7 @@ if previous_open_sale_order is not None:\n
         if order_line.getSimulationState() == \'cancelled\':\n
           order_line_cancelled = True\n
       if order_line_cancelled or (line.getStartDate() is not None and line.getStopDate() is not None and line.getStartDate() < line.getStopDate()):\n
-        remove_id_list.add(line.getId())\n
+        remove_id_list.add((line.getId(), \'Removed %s\' % line.getPath()))\n
 return add_kw_kw, modify_kw_kw, hs_modify_kw_kw, list(remove_id_list)\n
 
 

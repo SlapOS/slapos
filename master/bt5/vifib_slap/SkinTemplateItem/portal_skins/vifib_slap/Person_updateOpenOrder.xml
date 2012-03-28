@@ -118,7 +118,10 @@ for hs, kw in modify_kw_kw.iteritems():\n
   for explanation in explanation_list:\n
     storeWorkflowComment(line, explanation)\n
 \n
-open_sale_order.deleteContent(remove_id_list)\n
+open_sale_order.deleteContent([q[0] for q in remove_id_list])\n
+for explanation in remove_id_list:\n
+  storeWorkflowComment(open_sale_order, explanation[1])\n
+\n
 if previous_open_sale_order is not None:\n
   previous_open_sale_order.setExpirationDate(now, activate_kw=activate_kw)\n
 \n
