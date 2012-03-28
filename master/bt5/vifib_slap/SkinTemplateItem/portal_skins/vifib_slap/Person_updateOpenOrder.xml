@@ -62,6 +62,9 @@ if portal.portal_activities.countMessageWithTag(tag) > 0:\n
   # nothing to do\n
   return\n
 \n
+def storeWorkflowComment(document, comment):\n
+  portal.portal_workflow.doActionFor(document, \'edit_action\', comment=comment)\n
+\n
 add_kw_kw, modify_kw_kw, hs_modify_kw_kw, remove_id_list = context.Person_getOpenOrderDifference(\n
   remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list,\n
   stop_date=stop_date, start_date_tuple_list=start_date_tuple_list)\n
@@ -103,11 +106,17 @@ if previous_open_sale_order is not None:\n
   open_sale_order.validate(activate_kw=activate_kw)\n
 \n
 for kw in add_kw_kw.itervalues():\n
-  open_sale_order.newContent(activate_kw=activate_kw, **kw)\n
+  explanation_list = kw.pop(\'explanation\', [])\n
+  line = open_sale_order.newContent(activate_kw=activate_kw, **kw)\n
+  for explanation in explanation_list:\n
+    storeWorkflowComment(line, explanation)\n
 \n
 for hs, kw in modify_kw_kw.iteritems():\n
   line = [q for q in open_sale_order.contentValues() if q.getAggregate(portal_type=\'Hosting Subscription\') == hs][0]\n
+  explanation_list = kw.pop(\'explanation\', [])\n
   line.edit(activate_kw=activate_kw, **kw)\n
+  for explanation in explanation_list:\n
+    storeWorkflowComment(line, explanation)\n
 \n
 open_sale_order.deleteContent(remove_id_list)\n
 if previous_open_sale_order is not None:\n
