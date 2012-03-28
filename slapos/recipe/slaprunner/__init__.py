@@ -40,6 +40,7 @@ class Recipe(BaseSlapRecipe):
     ipv6 = self.getGlobalIPv6Address()
     proxy_port = '50000'
     runner_port = '50000'
+    cloud9_port = '30000'
     workdir = self.createDataDirectory('runner')
     software_root = os.path.join(workdir, 'software')
     instance_root = os.path.join(workdir, 'instance')
@@ -64,22 +65,33 @@ class Recipe(BaseSlapRecipe):
         proxy_port=proxy_port,
         proxy_database=os.path.join(workdir, 'proxy.db'),
 	git=self.options['git'],
+	cloud9_url='http://[%s]:%s' % (ipv6, cloud9_port),
 	ssh_client=self.options['ssh_client'],
 	public_key=self.options['public_key'],
-	private_key=self.options['private_key']
+	private_key=self.options['private_key'],
+
     )
     config_file = self.createConfigurationFile('slapos.cfg',
         self.substituteTemplate(pkg_resources.resource_filename(__name__,
           'template/slapos.cfg.in'), configuration))
     self.path_list.append(config_file)
-    
+
     environment = dict(
         PATH=os.path.dirname(self.options['git']) + ':' + os.environ['PATH'],
         GIT_SSH=self.options['ssh_client']
     )
+    workdir = os.path.join(workdir, 'project')
+    if not os.path.exists(workdir):
+      os.mkdir(workdir)
     launch_args = [self.options['slaprunner'].strip(), config_file, '--debug']
+    cloud9_args = [self.options['node-bin'].strip(), self.options['cloud9'].strip(),
+                   '-l', ipv6, '-p', cloud9_port, '-w', workdir]
     self.path_list.extend(zc.buildout.easy_install.scripts([('slaprunner',
       'slapos.recipe.librecipe.execute', 'executee')], self.ws, sys.executable,
       self.wrapper_directory, arguments=[launch_args, environment]))
-    self.setConnectionDict(dict(url='http://[%s]:%s' % (ipv6, runner_port)))
+    self.path_list.extend(zc.buildout.easy_install.scripts([('cloud9IDE',
+      'slapos.recipe.librecipe.execute', 'executee')], self.ws, sys.executable,
+      self.wrapper_directory, arguments=[cloud9_args, environment]))
+    self.setConnectionDict(dict(slaprunner_url='http://[%s]:%s' % (ipv6, runner_port),
+                            cloud9_url='http://[%s]:%s' % (ipv6, cloud9_port)))
     return self.path_list
