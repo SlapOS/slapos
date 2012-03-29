@@ -4,7 +4,10 @@ Changes
 0.25 (Unreleased)
 -----------------
 
- * No change yet.
+ * Bugfix: Remove CONFIG_SITE from environment variables. On some platforms, it
+   can change any software's libdir name (to things like lib64) and thus
+   break all other software trying to fetch libraries.
+   [Cedric de Saint Martin]
 
 0.24 (2012-03-29)
 -----------------

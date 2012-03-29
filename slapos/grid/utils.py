@@ -65,7 +65,7 @@ SYSTEM_ENVIRONMENT_REMOVE_LIST = [
   'CONFIG_SITE',
 ]
 
-LOCALE_ENVIRONEMNT_REMOVE_LIST = [
+LOCALE_ENVIRONMENT_REMOVE_LIST = [
   'LANG',
   'LANGUAGE',
   'LC_ADDRESS',
@@ -108,7 +108,7 @@ def getCleanEnvironment(home_path='/tmp'):
   env = os.environ.copy()
   # Clean python related environment variables
   for k in PYTHON_ENVIRONMENT_REMOVE_LIST + SYSTEM_ENVIRONMENT_REMOVE_LIST \
-      + LOCALE_ENVIRONEMNT_REMOVE_LIST:
+      + LOCALE_ENVIRONMENT_REMOVE_LIST:
     old = env.pop(k, None)
     if old is not None:
       removed_env.append(k)
