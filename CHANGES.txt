@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.45 (2012-03-29)
+-----------------
+
+  * slaprunner: change number of available partitions to 7 [Alain Takoudjou]
+
 0.44 (2012-03-28)
 -----------------
 
