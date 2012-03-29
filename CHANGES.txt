@@ -1,10 +1,54 @@
 Changes
 =======
 
-0.39 (unreleased)
+0.46 (Unreleased)
 -----------------
 
- * No changes yet.
+  * No change yet.
+
+0.45 (2012-03-29)
+-----------------
+
+  * slaprunner: change number of available partitions to 7 [Alain Takoudjou]
+
+0.44 (2012-03-28)
+-----------------
+
+  * minor: apachephp: update apache configuration to work with Apache2.4
+
+0.43 (2012-03-28)
+-----------------
+
+  * minor: erp5: add missing .zcml files into egg. [Cedric de Saint Martin]
+
+0.42 (2012-03-26)
+-----------------
+
+ * erp5: Add web_checker recipe. [Tatuya Kamada]
+ * erp5: Add generic_varnish recipe. [Tatuya Kamada]
+ * erp5: Simplify erp5_update to only create the ERP5 site. [Romain Courteaud]
+ * erp5: Allow to pass CA parameters from section. [Łukasz Nowak]
+
+0.41 (2012-03-21)
+-----------------
+
+ * Release new "generic" version of KVM, includes frontend.
+   [Cedric de Saint Martin]
+
+0.40.1 (2012-03-01)
+-----------------
+
+ * Fix manifest to include files needed for apache. [Cedric de Saint Martin]
+
+0.40 (2012-03-01)
+-----------------
+
+ * apache_frontend initial release. [Cedric de Saint Martin]
+ 
+0.39 (2012-02-20)
+-----------------
+
+ * seleniumrunner initial release. [Cedric de Saint Martin]
 
 0.38 (2011-12-05)
 -----------------
@@ -190,8 +234,9 @@ Changes
 -----------------
 
  * Add PHPMyAdmin software release used in SlapOS tutorials
-   [Cedric de Saint Martin]
+ [Cedric de Saint Martin]
  * Add slaprunner software release [Cedric de Saint Martin]
+
 
 0.9 (2011-06-24)
 ----------------

@@ -3,6 +3,9 @@ ServerRoot "%(server_root)s"
 Listen [%(ip)s]:%(port)s
 
 # Needed modules
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
 LoadModule authn_file_module "%(modules_dir)s/mod_authn_file.so"
 LoadModule authz_host_module "%(modules_dir)s/mod_authz_host.so"
 LoadModule authz_user_module "%(modules_dir)s/mod_authz_user.so"
@@ -11,6 +14,7 @@ LoadModule auth_digest_module "%(modules_dir)s/mod_auth_digest.so"
 LoadModule log_config_module "%(modules_dir)s/mod_log_config.so"
 LoadModule headers_module "%(modules_dir)s/mod_headers.so"
 LoadModule setenvif_module "%(modules_dir)s/mod_setenvif.so"
+LoadModule socache_shmcb_module modules/mod_socache_shmcb.so
 LoadModule ssl_module "%(modules_dir)s/mod_ssl.so"
 LoadModule mime_module "%(modules_dir)s/mod_mime.so"
 LoadModule dav_module "%(modules_dir)s/mod_dav.so"
@@ -25,7 +29,6 @@ ServerTokens ProductOnly
 
 DocumentRoot "%(document_root)s"
 PidFile "%(pid_file)s"
-LockFile "%(lock_file)s"
 DavLockDB "%(davlock_db)s"
 
 <Directory />
