@@ -3831,6 +3831,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         self.portal.portal_catalog.getResultValue(uid=sequence[
           'purchase_packing_list_a_uid']).getSimulationState())
 
+  def stepCheckCancelledPurchasePackingListA(self, sequence):
+    self.assertEqual('cancelled',
+        self.portal.portal_catalog.getResultValue(uid=sequence[
+          'purchase_packing_list_a_uid']).getSimulationState())
+
   def stepCheckConfirmedPurchasePackingListB(self, sequence):
     self.assertEqual('confirmed',
         self.portal.portal_catalog.getResultValue(uid=sequence[
