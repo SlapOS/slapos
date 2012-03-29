@@ -53,7 +53,7 @@
             <value> <string>computer = context.REQUEST.get(\'here\')\n
 software_release = context\n
 \n
-return context.Computer_getSoftwareReleaseState(software_release.getUid())\n
+return computer.Computer_getSoftwareReleaseState(software_release.getUid())\n
 </string> </value>
         </item>
         <item>
