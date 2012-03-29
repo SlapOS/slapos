@@ -221,14 +221,20 @@
                     <key> <string>default</string> </key>
                     <value> <string encoding="cdata"><![CDATA[
 
-<div style="float: right; width: 280px; text-align: left;">\n
-Use Vifib\n
-<div class="alignr" style="background-color: white; float: right; width: 280px;">\n
-<h2>Get a Virtual Machine from Vifib</h2>\n
-<img src="vifib.kvm?format=png&display=xsmall"><br/>\n
-<div class="input">\n
-<a class="nolabel validate alignr" href="./login_form">Login to Order your VM</a>\n
-</div>\n
+<div style="float: right; width: 250px; text-align: left;">\n
+<br>\n
+<br>\n
+<span style="color: #a4eef5">Use Vifib</span>\n
+<div class="alignr" style="background-color: white; float: right; width: 250px;">\n
+<table cellpadding=0 cellspacing=0 width=100% align=center>\n
+<tr><td align=center><br></td></tr>\n
+<tr><td align=center><h2>Get a Virtual Machine from Vifib</h2></td></tr>\n
+<tr><td align=center><br></td></tr>\n
+<tr><td align=center><img src="vifib.kvm?format=png&display=xsmall"></td></tr>\n
+<tr><td align=center><br></td></tr>\n
+<tr><td align=center><a class="nolabel validate alignr" href="./login_form">Login to Order your VM</a></td></tr>\n
+<tr><td align=center><br></td></tr>\n
+</table>\n
 </div>\n
 </div>
 

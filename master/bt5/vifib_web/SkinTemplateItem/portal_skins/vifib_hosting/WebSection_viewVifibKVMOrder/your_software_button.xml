@@ -221,13 +221,17 @@
                     <key> <string>default</string> </key>
                     <value> <string encoding="cdata"><![CDATA[
 
-<div style="float: right; width: 280px; text-align: left;">\n
-Browse software\n
-<div class="alignr" style="background-color: white; float: right; width: 280px;">\n
-<h2>Explore the world of Vifib provided software</h2>\n
-<div class="input">\n
-<a class="nolabel validate alignr" href="./myspace/software">Browse the Software</a>\n
-</div>\n
+<div style="float: right; width: 250px; text-align: left;">\n
+<br><br>\n
+<span style="color: #a4eef5">Browse software</span>\n
+<div class="alignr" style="background-color: white; float: right; width: 250px;">\n
+<table cellpadding=0 cellspacing=0 width=100% align=center>\n
+<tr><td align=center><br></td></tr>\n
+<tr><td align=center><h2>Explore the world of Vifib provided software</h2></td></tr>\n
+<tr><td align=center><br></td></tr>\n
+<tr><td align=center><a class="nolabel validate alignr" href="./myspace/software">Browse the Software</a></td></tr>\n
+<tr><td align=center><br></td></tr>\n
+</table>\n
 </div>\n
 </div>
 

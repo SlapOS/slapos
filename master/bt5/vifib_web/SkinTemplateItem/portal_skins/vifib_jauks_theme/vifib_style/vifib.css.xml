@@ -70,7 +70,7 @@ a img{border : 0 none;cursor : pointer;}\n
 /*    Global Class    */\n
 /**********************/\n
 \n
-.left{width:49%;display:inline;float:left;background:url(<tal:block tal:replace="images_path"/>separation_contenu.png) no-repeat top right}\n
+.left{width:49%;display:inline;float:left;background:url(<tal:block tal:replace="images_path"/>separation_contenu.png) no-repeat center right}\n
 .right{width:48%;display:inline;float:right}\n
 .clear, .bottom{clear:both;}\n
 .center, .bottom{text-align:center}\n
@@ -129,6 +129,7 @@ a img{border : 0 none;cursor : pointer;}\n
 /* Div for 2 column design*/\n
 #right_content{display:inline;float:right;width:78%}\n
 #left_menu{display:inline;float:left;width:20%;background:url(<tal:block tal:replace="images_path"/>separation_contenu.png) no-repeat center right}\n
+.right_decorator {background:url(<tal:block tal:replace="images_path"/>separation_contenu.png) repeat-y scroll right center transparent}\n
 #left_menu ul{list-style:none}\n
 #left_menu li{cursor:pointer}\n
 #left_menu a{vertical-align:super;color:#9C9C9C;text-decoration:none;}\n

@@ -219,6 +219,7 @@
                     <key> <string>default</string> </key>
                     <value> <string encoding="cdata"><![CDATA[
 
+<div class="right_decorator" style="padding-right: 20px">\n
 <h1>Enjoy cloud computing with Vifib</h1>\n
 \n
 <table cellpadding=0 cellspacing=0 border=0>\n
@@ -230,7 +231,8 @@
 <td width=50%><img src="./vifib.rack?format=png&display=xsmall"></td>\n
 <td width=50%><h2>Bring your own servers to the clouds and extend Vifib\'s distributed cloud with your own machines.</h2></td>\n
 </tr>\n
-</table>
+</table>\n
+</div>
 
 ]]></string> </value>
                 </item>
