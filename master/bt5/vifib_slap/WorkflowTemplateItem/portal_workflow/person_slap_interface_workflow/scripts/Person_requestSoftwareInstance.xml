@@ -126,6 +126,7 @@ else:\n
     activate_kw={\'tag\': tag},\n
   )\n
 \n
+context.REQUEST.set(\'request_hosting_subscription\', request_hosting_subscription)\n
 request_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag, person=person)\n
 
 
