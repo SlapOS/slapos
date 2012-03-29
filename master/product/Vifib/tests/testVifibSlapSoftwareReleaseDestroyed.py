@@ -408,7 +408,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckSuccessSoftwareReleaseAvailableCall \
+      CheckSuccessSoftwareReleaseDestroyedCall \
       Tic \
       SlapLogout \
       LoginDefaultUser \
