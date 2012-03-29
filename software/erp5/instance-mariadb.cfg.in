@@ -132,7 +132,7 @@ command = ${logrotate:wrapper}
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${rootdirectory:bin}
-link-binary = 
+link-binary =
   {{ coreutils_location }}/bin/basename
   {{ coreutils_location }}/bin/cat
   {{ coreutils_location }}/bin/cp

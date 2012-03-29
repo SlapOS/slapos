@@ -142,7 +142,7 @@ logrotate-entries = ${rootdirectory:etc}/logrotate.d
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${rootdirectory:bin}
-link-binary = 
+link-binary =
   {{ parameter_dict['coreutils'] }}/bin/basename
   {{ parameter_dict['coreutils'] }}/bin/cat
   {{ parameter_dict['coreutils'] }}/bin/cp
