@@ -94,6 +94,7 @@
                         <string>listbox_image</string>
                         <string>listbox_parent_state</string>
                         <string>listbox_software_release</string>
+                        <string>listbox_installation_state</string>
                       </list>
                     </value>
                 </item>

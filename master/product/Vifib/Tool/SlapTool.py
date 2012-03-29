@@ -1014,7 +1014,7 @@ class SlapTool(BaseTool):
           software_release=software_release_url_string,
           computer_guid=computer_reference)
       software_release_response._requested_state = \
-        computer_document.Computer_getSoftwareReleaseState(
+        computer_document.Computer_getSoftwareReleaseRequestedState(
           software_release_url_string)
       software_release_list.append(software_release_response)
     return software_release_list

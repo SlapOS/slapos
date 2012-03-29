@@ -86,7 +86,7 @@ else:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_getSoftwareReleaseState</string> </value>
+            <value> <string>Computer_getSoftwareReleaseRequestedState</string> </value>
         </item>
       </dictionary>
     </pickle>

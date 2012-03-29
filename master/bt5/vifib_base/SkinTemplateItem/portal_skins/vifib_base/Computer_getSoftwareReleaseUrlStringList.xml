@@ -52,8 +52,8 @@
             <key> <string>_body</string> </key>
             <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
 computer = context\n
-\n
 portal = context.getPortalObject()\n
+script.log(state_list)\n
 if len(state_list) == 1:\n
   state_string = "= \'%s\'" % state_list[0]\n
 else:\n
