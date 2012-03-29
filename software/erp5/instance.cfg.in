@@ -16,7 +16,6 @@ cert = ${slap-connection:cert-file}
 
 [jinja2-template-base]
 recipe = slapos.recipe.template:jinja2
-template = {{ profile_base_location }}/${:filename}.in
 rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extra-context =
 context =
@@ -48,8 +47,8 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 
 [dynamic-template-tidstorage]
 < = jinja2-template-base
+template = {{ template_tidstorage }}
 filename = instance-tidstorage.cfg
-md5sum = 5c3e834bf60819cf52995630e563227c
 extensions = jinja2.ext.do
 extra-context =
     section parameter_dict dynamic-template-tidstorage-parameters
@@ -81,8 +80,8 @@ buildout-bin-directory = {{ buildout_bin_directory }}
 
 [dynamic-template-cloudooo]
 < = jinja2-template-base
+template = {{ template_cloudooo }}
 filename = instance-cloudoo.cfg
-md5sum = aea927d5d3363177fd1017c4b89838d7
 extra-context =
     section parameter_dict dynamic-template-cloudooo-parameters
     import json_module json
