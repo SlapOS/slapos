@@ -52,15 +52,24 @@
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
 \n
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+\n
 software_release_document = portal.portal_catalog.getResultValue(portal_type=\'Software Release\', url_string=software_release_url)\n
 \n
 software_setup_resource = portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource())\n
 software_cleanup_resource = portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareCleanupResource())\n
 \n
 current_delivery_line = portal.portal_catalog.getResultValue(\n
+  default_resource_uid=[\n
+    software_setup_resource.getUid(),\n
+    software_cleanup_resource.getUid(),\n
+  ],\n
+  default_aggregate_uid=ComplexQuery(\n
+    Query(default_aggregate_uid=software_release_document.getUid()),\n
+    Query(default_aggregate_uid=context.getUid()),\n
+    operator="AND",\n
+  ),\n
   portal_type=\'Purchase Packing List Line\',\n
-  default_resource_uid=[software_setup_resource.getUid(), software_cleanup_resource.getUid()],\n
-  default_aggregate_uid=[software_release_document.getUid(), context.getUid()],\n
   sort_on=((\'movement.start_date\', \'DESC\'),),\n
   limit=1\n
 )\n
