@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.24 (Unreleased)
+0.24 (2012-03-29)
 -----------------
 
  * Handles different errors in a user friendly way [Cedric de Saint Martin]
