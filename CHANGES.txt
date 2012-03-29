@@ -1,6 +1,40 @@
 Changes
 =======
 
+0.46 (Unreleased)
+-----------------
+
+  * No change yet.
+
+0.45 (2012-03-29)
+-----------------
+
+  * slaprunner: change number of available partitions to 7 [Alain Takoudjou]
+
+0.44 (2012-03-28)
+-----------------
+
+  * minor: apachephp: update apache configuration to work with Apache2.4
+
+0.43 (2012-03-28)
+-----------------
+
+  * minor: erp5: add missing .zcml files into egg. [Cedric de Saint Martin]
+
+0.42 (2012-03-26)
+-----------------
+
+ * erp5: Add web_checker recipe. [Tatuya Kamada]
+ * erp5: Add generic_varnish recipe. [Tatuya Kamada]
+ * erp5: Simplify erp5_update to only create the ERP5 site. [Romain Courteaud]
+ * erp5: Allow to pass CA parameters from section. [Łukasz Nowak]
+
+0.41 (2012-03-21)
+-----------------
+
+ * Release new "generic" version of KVM, includes frontend.
+   [Cedric de Saint Martin]
+
 0.40.1 (2012-03-01)
 -----------------
 

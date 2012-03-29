@@ -25,52 +25,24 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
-import binascii
-import os
 import sys
 
 class Recipe(GenericBaseRecipe):
   """
-  kvm instance configuration.
+  Check listening port promise
   """
-
-  def __init__(self, buildout, name, options):
-    options['passwd'] = binascii.hexlify(os.urandom(4))
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
 
   def install(self):
     config = dict(
-      tap_interface=self.options['tap'],
-      vnc_ip=self.options['vnc-ip'],
-      vnc_port=self.options['vnc-port'],
-      nbd_ip=self.options['nbd-ip'],
-      nbd_port=self.options['nbd-port'],
-      disk_path=self.options['disk-path'],
-      disk_size=self.options['disk-size'],
-      mac_address=self.options['mac-address'],
-      smp_count=self.options['smp-count'],
-      ram_size=self.options['ram-size'],
-      socket_path=self.options['socket-path'],
-      pid_file_path=self.options['pid-path'],
+      hostname=self.options['hostname'],
+      port=self.options['port'],
       python_path=sys.executable,
-      shell_path=self.options['shell-path'],
-      qemu_path=self.options['qemu-path'],
-      qemu_img_path=self.options['qemu-img-path'],
-      # XXX Weak password
-      vnc_passwd=self.options['passwd']
     )
 
-    # Runners
-    runner_path = self.createExecutable(
-      self.options['runner-path'],
-      self.substituteTemplate(self.getTemplateFilename('kvm_run.in'),
-                              config))
+    vnc_promise = self.createExecutable(
+      self.options['path'],
+      self.substituteTemplate(
+        self.getTemplateFilename('socket_connection_attempt.py.in'),
+        config))
 
-    controller_path = self.createExecutable(
-      self.options['controller-path'],
-      self.substituteTemplate(self.getTemplateFilename('kvm_controller_run.in'),
-                              config))
-
-
-    return [runner_path, controller_path]
-
+    return [vnc_promise]

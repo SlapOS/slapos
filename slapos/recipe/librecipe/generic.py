@@ -38,6 +38,7 @@ import zc.buildout
 class GenericBaseRecipe(object):
 
   TRUE_VALUES = ['y', 'yes', '1', 'true']
+  FALSE_VALUES = ['n', 'no', '0', 'false']
 
   def __init__(self, buildout, name, options):
     """Recipe initialisation"""
