@@ -47,8 +47,8 @@ RewriteMap apachemapgeneric txt:%(apachemap_path)s
 
 # First, we check if we have a zope backend server
 # If so, let's use Virtual Host Daemon rewrite
-#RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
-#RewriteRule ^/(\w+)($|/.*) ${apachemapzope:$1}/VirtualHostBase/https/%(apache_domain)s:%(port)s/VirtualHostRoot/_vh_$1$2 [L,P]
+RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
+RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:%%{SERVER_PORT}/VirtualHostRoot/$1 [L,P]
 
 # If we have generic backend server, let's rewrite without virtual host daemon
 RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""

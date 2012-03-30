@@ -51,72 +51,59 @@ class Recipe(BaseSlapRecipe):
     self.killpidfromfile = zc.buildout.easy_install.scripts(
         [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-
     self.path_list.append(self.killpidfromfile)
 
     frontend_port_number = self.parameter_dict.get("port", 4443)
-    frontend_domain_name = self.parameter_dict.get("domain",
-        "host.vifib.net")
-
+    frontend_domain_name = self.parameter_dict["domain"]
     base_varnish_port = 26009
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
+
     rewrite_rule_list = []
+    rewrite_rule_zope_list = []
     slave_dict = {}
     service_dict = {}
+
+    # Check if default port
     if frontend_port_number is 443:
       base_url = "%s/" % frontend_domain_name
     else:
       base_url = "%s:%s/" % (frontend_domain_name, frontend_port_number)
+
     for slave_instance in slave_instance_list:
-      url = slave_instance.get("url")
-      if url is None:
-        continue
+      url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
+
+      # Check for mandatory slave fields
+      if url is None:
+        self.logger.warn('No "url" parameter is defined for %s slave'\
+            'instance. Ignoring it.' % reference)
+        continue
+
       subdomain = reference.replace("-", "").lower()
       slave_dict[reference] = "https://%s.%s" % (subdomain, base_url)
 
-      enable_cache = slave_instance.get("enable_cache", "")
-      if enable_cache.upper() in ('1', 'TRUE'):
-        # Varnish should use stunnel to connect to the backend
-        base_varnish_control_port = base_varnish_port
-        base_varnish_port += 1
-        # Use regex
-        host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9]+)"
-        slave_host = re.search(host_regex, url).group(0)
-        port_regex = "\w+(\/|)$"
-        matcher = re.search(port_regex, url)
-        if matcher is not None:
-          slave_port = matcher.group(0)
-          slave_port = slave_port.replace("/", "")
-        elif url.startswith("https://"):
-          slave_port = 443
-        else:
-          slave_port = 80
-        service_name = "varnish_%s" % reference
-        varnish_ip = self.getLocalIPv4Address()
-        stunnel_port = base_varnish_port + 1
-        self.installVarnishCache(service_name,
-          ip=varnish_ip,
-          port=base_varnish_port,
-          control_port=base_varnish_control_port,
-          backend_host=varnish_ip,
-          backend_port=stunnel_port,
-          size="1G")
-        service_dict[service_name] = dict(public_ip=varnish_ip,
-            public_port=stunnel_port,
-            private_ip=slave_host.replace("[", "").replace("]", ""),
-            private_port=slave_port)
-        rewrite_rule_list.append("%s.%s http://%s:%s" % \
-            (reference.replace("-", ""), frontend_domain_name,
-            varnish_ip, base_varnish_port))
+      if slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE'):
+        # XXX-Cedric : need to refactor to clean code? (to many variables)
+        rewrite_rule = self.configureVarnishSlave(
+            base_varnish_port, url, slave_instance, frontend_domain_name)
         base_varnish_port += 2
       else:
-        rewrite_rule_list.append("%s.%s %s" % (subdomain, frontend_domain_name,
-            url))
+        rewrite_rule = "%s.%s %s" % (subdomain, frontend_domain_name, url)
 
+      # Finally, if successful, we add the rewrite rule to our list of rules
+      if rewrite_rule:
+        # We check if we have a zope slave. It requires different rewrite
+        # rule structure.
+        # So we will have one RewriteMap for normal websites, and one
+        # RewriteMap for Zope Virtual Host Monster websites.
+        if slave_instance.get("zope", "").upper() in ('1', 'TRUE'):
+          rewrite_rule_zope_list.append(rewrite_rule)
+        else:
+          rewrite_rule_list.append(rewrite_rule)
+
+    # Certificate stuff
     valid_certificate_str = self.parameter_dict.get("domain_ssl_ca_cert")
     valid_key_str = self.parameter_dict.get("domain_ssl_ca_key")
-
     if valid_certificate_str is None and valid_key_str is None:
       ca_conf = self.installCertificateAuthority()
       key, certificate = self.requestCertificate(frontend_domain_name)
@@ -125,7 +112,6 @@ class Recipe(BaseSlapRecipe):
           frontend_domain_name, valid_certificate_str, valid_key_str)
       key = ca_conf.pop("key")
       certificate = ca_conf.pop("certificate")
-
     if service_dict != {}:
       if valid_certificate_str is not None and valid_key_str is not None:
         self.installCertificateAuthority()
@@ -144,16 +130,55 @@ class Recipe(BaseSlapRecipe):
         port=frontend_port_number,
         name=frontend_domain_name,
         rewrite_rule_list=rewrite_rule_list,
+        rewrite_rule_zope_list=rewrite_rule_zope_list,
         key=key, certificate=certificate)
 
+    # Send connection informations about each slave
     for reference, url in slave_dict.iteritems():
       self.setConnectionDict(dict(site_url=url), reference)
 
+    # Then set it for master instance
     self.setConnectionDict(
       dict(site_url=apache_parameter_dict["site_url"],
            domain_ipv6_address=self.getGlobalIPv6Address(),
            domain_ipv4_address=self.getLocalIPv4Address()))
     return self.path_list
+
+  def configureVarnishSlave(self, base_varnish_port, url, slave_instance,
+      service_dict, frontend_domain_name):
+    reference = slave_instance.get("slave_reference")
+    # Varnish should use stunnel to connect to the backend
+    base_varnish_control_port = base_varnish_port
+    base_varnish_port += 1
+    # Use regex
+    host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9]+)"
+    slave_host = re.search(host_regex, url).group(0)
+    port_regex = "\w+(\/|)$"
+    matcher = re.search(port_regex, url)
+    if matcher is not None:
+      slave_port = matcher.group(0)
+      slave_port = slave_port.replace("/", "")
+    elif url.startswith("https://"):
+      slave_port = 443
+    else:
+      slave_port = 80
+    service_name = "varnish_%s" % reference
+    varnish_ip = self.getLocalIPv4Address()
+    stunnel_port = base_varnish_port + 1
+    self.installVarnishCache(service_name,
+      ip=varnish_ip,
+      port=base_varnish_port,
+      control_port=base_varnish_control_port,
+      backend_host=varnish_ip,
+      backend_port=stunnel_port,
+      size="1G")
+    service_dict[service_name] = dict(public_ip=varnish_ip,
+        public_port=stunnel_port,
+        private_ip=slave_host.replace("[", "").replace("]", ""),
+        private_port=slave_port)
+    return "%s.%s http://%s:%s" % \
+        (reference.replace("-", ""), frontend_domain_name,
+        varnish_ip, base_varnish_port)
 
   def installLogrotate(self):
     """Installs logortate main configuration file and registers its to cron"""
@@ -397,8 +422,6 @@ class Recipe(BaseSlapRecipe):
 
     # Create configuration file and rewritemaps
     apachemap_name = "apachemap.txt"
-    # XXX-Cedric : implement zope specific rewrites list. Current apachemap is
-    #              generic and does not use VirtualHost Monster.
     apachemapzope_name = "apachemapzope.txt"
     self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
     self.createConfigurationFile(apachemapzope_name,
