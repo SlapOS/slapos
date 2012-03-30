@@ -56,12 +56,12 @@
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
-  <td>//img[@alt="My Services"]</td>\n
+  <td>link=Order a KVM now</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>clickAndWait</td>\n
-  <td>//img[@alt="My Services"]</td>\n
+  <td>link=Order a KVM now</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
@@ -71,257 +71,97 @@
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
-  <td>link=New service</td>\n
+  <td>//div[text()="Your instance is under creation. Please wait few minutes for partitions to appear."]</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
-  <td>clickAndWait</td>\n
-  <td>link=New service</td>\n
+  <td>storeLocation</td>\n
+  <td>hosting_subscription_url</td>\n
   <td></td>\n
 </tr>\n
+<!--\n
+Unfortunately there is currently now way to do good client-server waiting for reindexation\n
+of Software Instance, so just wait 10s.\n
+\n
+It shall be maximum of reindexation.\n
+\n
+-->\n
 <tr>\n
-  <td>assertElementPresent</td>\n
-  <td>//td[contains(.,"KVM")]/input</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>storeAttribute</td>\n
-  <td>//td[contains(.,"KVM")]/input@value</td>\n
-  <td>value</td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>id=listbox_cb_${value}</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>name=field_your_service_title</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>id=dialog_submit_button</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>click</td>\n
-  <td>id=listbox_cb_${value}</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>store</td>\n
-  <td>javascript{"kvm_test_" + new Date().getTime();}</td>\n
-  <td>kvm</td>\n
-</tr>\n
-<tr>\n
-  <td>type</td>\n
-  <td>name=field_your_service_title</td>\n
-  <td>${kvm}</td>\n
-</tr>\n
-<tr>\n
-  <td>phantomRender</td>\n
-  <td>webrequest3.png</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>clickAndWait</td>\n
-  <td>id=dialog_submit_button</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>//td[contains(.,"KVM")]/input</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>storeAttribute</td>\n
-  <td>//td[contains(.,"KVM")]/input@value</td>\n
-  <td>value</td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>id=listbox_cb_${value}</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>id=dialog_submit_button</td>\n
-  <td></td>\n
-</tr>\n
-<!-- XXX : vifib UI should automatically propose the latest version of KVM.-->\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>//tr[contains(.,"001")][last()]/td[contains(.,"KVM")]/input</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>storeAttribute</td>\n
-  <td>//tr[contains(.,"001")][last()]/td[contains(.,"KVM")]/input@value</td>\n
-  <td>value</td>\n
-</tr>\n
-<tr>\n
-  <td>click</td>\n
-  <td>id=listbox_cb_${value}</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>phantomRender</td>\n
-  <td>webrequest4.png</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>clickAndWait</td>\n
-  <td>id=dialog_submit_button</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>name=field_your_last_name</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>name=field_your_first_name</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>name=field_your_default_email_text</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>name=field_your_default_address_city</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>name=field_your_default_address_zip_code</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>name=field_your_default_address_street_address</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>assertElementPresent</td>\n
-  <td>id=dialog_submit_button</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>type</td>\n
-  <td>name=field_your_last_name</td>\n
-  <td>Last Name</td>\n
-</tr>\n
-<tr>\n
-  <td>type</td>\n
-  <td>name=field_your_first_name</td>\n
-  <td>First Name</td>\n
-</tr>\n
-<tr>\n
-  <td>type</td>\n
-  <td>name=field_your_default_email_text</td>\n
-  <td>email@domain.com</td>\n
-</tr>\n
-<tr>\n
-  <td>type</td>\n
-  <td>name=field_your_default_address_city</td>\n
-  <td>City</td>\n
-</tr>\n
-<tr>\n
-  <td>type</td>\n
-  <td>name=field_your_default_address_zip_code</td>\n
-  <td>12345</td>\n
-</tr>\n
-<tr>\n
-  <td>type</td>\n
-  <td>name=field_your_default_address_street_address</td>\n
-  <td>Address</td>\n
-</tr>\n
-<tr>\n
-  <td>phantomRender</td>\n
-  <td>webrequest5.png</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>clickAndWait</td>\n
-  <td>id=dialog_submit_button</td>\n
+  <td>pause</td>\n
+  <td>10000</td>\n
   <td></td>\n
 </tr>\n
 \n
 <tr>\n
-  <td>phantomRender</td>\n
-  <td>webrequest6.png</td>\n
+  <td>open</td>\n
+  <td>${hosting_subscription_url}</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
-  <td>//img[@alt="My Services"]</td>\n
-  <td></td>\n
-</tr>\n
-<!-- Here we wait 15 minutes too see if vifib has calculated everything and\n
-     instance is "instantiation in progress" or better. -->\n
-<tr>\n
-  <td>pause</td>\n
-  <td>900000</td>\n
+  <td>link=Vifib KVM*</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>clickAndWait</td>\n
-  <td>//img[@alt="My Services"]</td>\n
+  <td>link=Vifib KVM*</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
-  <td>phantomRender</td>\n
-  <td>webrequest7.png</td>\n
+  <td>storeLocation</td>\n
+  <td>software_instance_url</td>\n
+  <td></td>\n
+</tr>\n
+<!-- Allows to fetch clean instance status -->\n
+<tr>\n
+  <td>storeEval</td>\n
+  <td>window.location.pathname</td>\n
+  <td>software_instance_path</td>\n
+</tr>\n
+<tr>\n
+  <td>echo</td>\n
+  <td>${software_instance_path}</td>\n
+  <td></td>\n
+</tr>\n
+\n
+<!-- Hackish, but there is no other way to fetch software instance status -->\n
+<!-- XXX: It is hammering server, needs to make it a bit nicer -->\n
+<tr>\n
+  <td>waitForCondition</td>\n
+  <td>new\n
+Ajax.Request(\'${software_instance_path}/SoftwareInstance_getStatus\',\n
+{asynchronous: false}).transport.responseText === "Started"; var i;\n
+for (i = 0; i < 10000000; i++) { };</td>\n
+  <td>600000</td>\n
+</tr>\n
+<tr>\n
+  <td>open</td>\n
+  <td>${software_instance_url}</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
-  <td>link=${kvm}</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>clickAndWait</td>\n
-  <td>link=${kvm}</td>\n
+  <td>css=span:contains("Started")</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>assertElementPresent</td>\n
-  <td>link=${kvm}</td>\n
+  <td>css=td:contains("url")</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
-  <td>clickAndWait</td>\n
-  <td>link=${kvm}</td>\n
-  <td></td>\n
-</tr>\n
-<tr>\n
-  <td>phantomRender</td>\n
-  <td>webrequest8.png</td>\n
-  <td></td>\n
-</tr>\n
-<span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/check_for_started_instance" />\n
-<tr>\n
-  <td>pause</td>\n
-  <td>90000</td>\n
+  <td>assertElementPresent</td>\n
+  <td>css=td:contains("password")</td>\n
   <td></td>\n
 </tr>\n
 <tr>\n
   <td>storeText</td>\n
-  <td>//div[@class=&quot;inline&quot;]</td>\n
-  <td>xml</td>\n
-</tr>\n
-<tr>\n
-  <td>store</td>\n
-  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter id=&quot;url&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
+  <td>css=td:contains(\'url\') + td</td>\n
   <td>ip</td>\n
 </tr>\n
 <tr>\n
-  <td>store</td>\n
-  <td>javascript{storedVars[\'xml\'].split(\'&lt;parameter id=&quot;password&quot;&gt;\')[1].split(\'&lt;/parameter&gt;\')[0];}</td>\n
+  <td>storeText</td>\n
+  <td>css=td:contains(\'password\') + td</td>\n
   <td>password</td>\n
 </tr>\n
 <tr>\n
@@ -377,7 +217,7 @@
 </tr>\n
 <tr>\n
   <td>openAndWait</td>\n
-  <td>${address}</td>\n
+  <td>${software_instance_url}</td>\n
   <td></td>\n
 </tr>\n
 <span metal:use-macro="container/Zuite_vifib_instanciation_macro_library/macros/destroy_instance" />\n
