@@ -112,6 +112,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data_simulation',
       'vifib_erp5',
       'vifib_test',
+      'vifib_agent',
     ]
     return result
 
