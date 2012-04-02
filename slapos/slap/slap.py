@@ -476,11 +476,12 @@ class ComputerPartition(SlapDocument):
 #   return decorated 
 
 class ConnectionHelper:
+  error_message_timeout = "\nThe connection timed out. Please try again later."
   error_message_connect_fail = "Couldn't connect to the server. Please " \
       "double check given master-url argument, and make sure that IPv6 is " \
       "enabled on your machine and that the server is available. The " \
       "original error was: "
-  ssl_error_message_connect_fail = "Couldn't authenticate computer. Please " \
+  ssl_error_message_connect_fail = "\nCouldn't authenticate computer. Please "\
       "check that certificate and key defined in slapos.cfg exist and are " \
       "valid. "
   def __init__(self, connection_wrapper, host, path, key_file=None,
@@ -516,9 +517,11 @@ class ConnectionHelper:
         self.connect()
         self.connection.request('GET', self.path + path)
         self.response = self.connection.getresponse()
-      # If ssl error : must come from bad configuration
+      # If ssl error : may come from bad configuration
       except ssl.SSLError, e:
-        raise ssl.SSLError(self.ssl_error_message_connect_fail + str(e))
+        if e.message == "The read operation timed out":
+          raise socket.error(str(e) + self.error_message_timeout)
+        raise ssl.SSLError(str(e) + self.ssl_error_message_connect_fail)
       except socket.error, e:
         raise socket.error(self.error_message_connect_fail + str(e))
       # check self.response.status and raise exception early
