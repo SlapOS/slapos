@@ -86,12 +86,12 @@ bt5-repository-list =
 promise-path = ${erp5-promise:promise-path}
 site-id = {{ site_id }}
 
-[{{ section('logrotate-entry-' + name) }}]
+[{{ section('logrotate-entry-' ~ name) }}]
 < = logrotate-base
 recipe = slapos.cookbook:logrotate.d
 name = {{ name }}
-log = {{ '${' + name + ':event-log}' }} {{ '${' + name + ':z2-log}' }}
-post = {{ bin_directory }}/killpidfromfile {{ '${' + name + ':pid-file}' }} SIGUSR2
+log = {{ '${' ~ name ~ ':event-log}' }} {{ '${' ~ name ~ ':z2-log}' }}
+post = {{ bin_directory }}/killpidfromfile {{ '${' ~ name ~ ':pid-file}' }} SIGUSR2
 {% endmacro -%}
 #############################
 # Directory creation
@@ -301,7 +301,7 @@ binary-path = {{ bin_directory }}/runzeo
         'storage-name': zeo_slave['storage-name'],
         'server': '${zeo-instance-%(zeo-id)s:ip}:${zeo-instance-%(zeo-id)s:port}' % {'zeo-id': zeo_id},
     }) -%}
-{%     set zodb_path = '${directory:zodb}/' + zeo_slave['storage-name'] + '.fs' -%}
+{%     set zodb_path = '${directory:zodb}/' ~ zeo_slave['storage-name'] ~ '.fs' -%}
 {%     do storage_list.append('storage-name=%(storage-name)s zodb-path=%(zodb-path)s' % {'zodb-path': zodb_path, 'storage-name': zeo_slave['storage-name']}) -%}
 {%     do known_tid_storage_identifier_dict.__setitem__("((('%(ip)s', %(port)s),), '%(storage_name)s')" % {
         'ip': '${zeo-instance-%s:ip}' % zeo_id,
