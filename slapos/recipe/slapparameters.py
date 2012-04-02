@@ -111,3 +111,4 @@ class Recipe(object):
   def install(self):
       return []
 
+  update = install
