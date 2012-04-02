@@ -34,57 +34,21 @@ backward compatibility with existing automatically setup CAs.
   longrequest_logger_interval=''
 ) -%}
 [{{ section(name) }}]
-recipe = slapos.cookbook:generic.zope.zeo.client
-
-# XXX: products won't be needed as soon as all ERP5 (and products-deps)
-# products will be eggified so then it will be possible to use them thanks to
-# availability in software's eggs
-products = {{ parameter_dict['products'] }}
-
-# Options
-user = zope
+< = zope-base
 {% do zope_dummy_list.append(None) %}
 {% set offset = zope_dummy_list | length %}
 port = {{ zope_port_base + offset }}
-ip = ${slap-network-information:local-ipv4}
 thread-amount = {{ thread_amount }}
-deadlock-path = /manage_debug_threads
-timezone = {{ json['timezone'] }}
-zeo-connection-string =
-  {{ zodb_connection_string }}
-
 timeserver = {{ timeserver }}
-tidstorage-ip = ${tidstorage:ip}
-tidstorage-port = ${tidstorage:port}
-
-# long request
 longrequest-logger-file = {{ longrequest_logger_file }}
 longrequest-logger-timeout = {{ longrequest_logger_timeout }}
 longrequest-logger-interval = {{ longrequest_logger_interval }}
-
-# Paths
 wrapper = ${basedirectory:services}/{{ name }}
-instance-path = ${directory:instance}
-instance-etc = ${directory:instance-etc}
-instance-products = ${directory:instance-products}
-bt5-repository = ${rootdirectory:var}/bt5_repository
-tmp-path = ${rootdirectory:tmp}
-bin-path = ${rootdirectory:bin}
-site-zcml = ${:instance-etc}/site.zcml
 pid-file = ${basedirectory:run}/{{ name }}.pid
 lock-file = ${basedirectory:run}/{{ name }}.lock
 event-log = ${basedirectory:log}/{{ name }}-event.log
 z2-log = ${basedirectory:log}/{{ name }}-Z2.log
 configuration-file = ${rootdirectory:etc}/{{ name }}.conf
-inituser = ${:instance-path}/inituser
-# Binary information
-runzope-binary = {{ bin_directory }}/runzope
-
-# BT5 Configuration
-bt5-repository-list =
-
-promise-path = ${erp5-promise:promise-path}
-site-id = {{ site_id }}
 
 [{{ section('logrotate-entry-' ~ name) }}]
 < = logrotate-base
@@ -326,8 +290,35 @@ recipe = slapos.cookbook:logrotate.d
 name = zeo-{{ zeo_id }}
 log = ${zeo-instance-{{ zeo_id }}:log-path}
 post = {{ bin_directory }}/killpidfromfile ${zeo-instance-{{ zeo_id }}:pid-path} SIGUSR2
-{% endfor %}
-{% set zodb_connection_string = zodb_connection_list | join('\n  ') -%}
+
+{% endfor -%}
+[zope-base]
+recipe = slapos.cookbook:generic.zope.zeo.client
+# XXX: products won't be needed as soon as all ERP5 (and products-deps)
+# products will be eggified so then it will be possible to use them thanks to
+# availability in software's eggs
+products = {{ parameter_dict['products'] }}
+user = zope
+ip = ${slap-network-information:local-ipv4}
+deadlock-path = /manage_debug_threads
+timezone = {{ json['timezone'] }}
+zeo-connection-string =
+  {{ zodb_connection_list | join('\n  ') }}
+tidstorage-ip = ${tidstorage:ip}
+tidstorage-port = ${tidstorage:port}
+instance-path = ${directory:instance}
+instance-etc = ${directory:instance-etc}
+instance-products = ${directory:instance-products}
+bt5-repository = ${rootdirectory:var}/bt5_repository
+tmp-path = ${rootdirectory:tmp}
+bin-path = ${rootdirectory:bin}
+site-zcml = ${:instance-etc}/site.zcml
+inituser = ${:instance-path}/inituser
+runzope-binary = {{ bin_directory }}/runzope
+bt5-repository-list =
+promise-path = ${erp5-promise:promise-path}
+site-id = {{ site_id }}
+
 #############################
 # Zope
 #############################
