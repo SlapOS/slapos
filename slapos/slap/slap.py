@@ -482,8 +482,7 @@ class ConnectionHelper:
       "enabled on your machine and that the server is available. The " \
       "original error was: "
   ssl_error_message_connect_fail = "\nCouldn't authenticate computer. Please "\
-      "check that certificate and key defined in slapos.cfg exist and are " \
-      "valid. "
+      "check that certificate and key exist and are valid. "
   def __init__(self, connection_wrapper, host, path, key_file=None,
       cert_file=None, master_ca_file=None, timeout=None):
     self.connection_wrapper = connection_wrapper
