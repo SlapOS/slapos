@@ -83,7 +83,6 @@ if offset >= SQL_WINDOW_SIZE:\n
 else:\n
   limit = (0, SQL_WINDOW_SIZE)\n
 \n
-script.log(query_kw)\n
 for computer_partition_candidate in context.portal_catalog(\n
                                          limit=limit, **query_kw):\n
   computer_partition_candidate = computer_partition_candidate.getObject()    \n

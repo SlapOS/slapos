@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_registerPlannedPaymentTransactionPayzen</string> </value>
+            <value> <string>Alarm_updatePayzenPaymentTransaction</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>register_planned_payment_transaction_payzen</string> </value>
+            <value> <string>payzen_update_payment_transaction</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
@@ -89,7 +89,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Register planned Payment Transaction in payzen</string> </value>
+            <value> <string>Updates Payment Transactions accorind with PayZen interface</string> </value>
         </item>
       </dictionary>
     </pickle>

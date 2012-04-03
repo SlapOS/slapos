@@ -50,31 +50,24 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
-\n
-payment_amount = context.portal_catalog.countResults(\n
-  portal_type=\'Payment Transaction\',\n
-  default_destination_section_uid=person.getUid()\n
-)[0][0]\n
-\n
-payment_transaction = context.portal_catalog.getResultValue(\n
-  portal_type=\'Payment Transaction\',\n
-  simulation_state=\'planned\',\n
-  default_destination_section_uid=person.getUid()\n
-)\n
-\n
-if payment_amount == 1 and payment_transaction is not None and payment_transaction.getSimulationState() == \'planned\':\n
-  return payment_transaction\n
-return None\n
+            <value> <string>portal = context.getPortalObject()\n
+portal.portal_catalog.searchAndActivate(\n
+      portal_type="Payment Transaction", \n
+      simulation_state=["planned", "confirmed"],\n
+      method_id=\'PaymentTransaction_updateStatus\',\n
+      packet_size=1, # just one to minimise errors\n
+      activate_kw={\'tag\': tag}\n
+      )\n
+context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Site_getInitialPlannedPaymentTransaction</string> </value>
+            <value> <string>Alarm_updatePayzenPaymentTransaction</string> </value>
         </item>
       </dictionary>
     </pickle>

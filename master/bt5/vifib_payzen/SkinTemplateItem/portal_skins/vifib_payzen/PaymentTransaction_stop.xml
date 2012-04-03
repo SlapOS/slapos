@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().portal_workflow.doActionFor(context, \'start_action\', comment=\'Started automatically on Payzen Update\')\n
+            <value> <string>portal_workflow = context.getPortalObject().portal_workflow\n
+if portal_workflow.isTransitionPossible(context, \'stopAction\'):\n
+  portal_workflow.doActionFor(context, \'stop_action\', comment=\'Transaction considered as paid by PayZen\')\n
 </string> </value>
         </item>
         <item>
@@ -59,7 +61,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>PaymentTransaction_start</string> </value>
+            <value> <string>PaymentTransaction_stop</string> </value>
         </item>
       </dictionary>
     </pickle>

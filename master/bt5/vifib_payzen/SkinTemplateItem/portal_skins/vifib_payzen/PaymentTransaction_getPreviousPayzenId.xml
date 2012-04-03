@@ -50,11 +50,28 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-if context.getSimulationState() != \'planned\':\n
-  return\n
-service = portal.portal_secure_payments.find()\n
-portal.system_event_module.newContent(title=\'Transaction %s Payzen registration\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).registerPayzen()\n
+            <value> <string>from DateTime import DateTime\n
+transaction = context\n
+portal = transaction.getPortalObject()\n
+integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
+state_list = portal.getPortalCurrentInventoryStateList() + portal.getPortalTransitInventoryStateList()\n
+previous_transaction = portal.portal_catalog.getResultValue(\n
+  destination_section_uid = transaction.getDestinationSectionUid(),\n
+  portal_type=transaction.getPortalType(),\n
+  simulation_state=state_list,\n
+  sort_on=((\'delivery.start_date\', \'DESC\'),),\n
+  limit=1,\n
+)\n
+\n
+if previous_transaction is None:\n
+  return None\n
+\n
+previous_id = None\n
+possible_previous_id =  integration_site.getMappingFromCategory(\'causality/%s\' % previous_transaction.getRelativeUrl())\n
+if possible_previous_id != \'Causality/%s\' % transaction.getRelativeUrl():\n
+  previous_id = possible_previous_id.split(\'/\')[1]\n
+\n
+return previous_id\n
 </string> </value>
         </item>
         <item>
@@ -63,7 +80,7 @@ portal.system_event_module.newContent(title=\'Transaction %s Payzen registration
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>PaymentTransaction_registerPayzen</string> </value>
+            <value> <string>PaymentTransaction_getPreviousPayzenId</string> </value>
         </item>
       </dictionary>
     </pickle>

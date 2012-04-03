@@ -50,24 +50,24 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-      portal_type="Payment Transaction", \n
-      simulation_state="planned",\n
-      method_id=\'PaymentTransaction_registerPayzen\',\n
-      packet_size=1, # just one to minimise errors\n
-      activate_kw={\'tag\': tag}\n
-      )\n
-context.activate(after_tag=tag).getId()\n
+            <value> <string>if simulation_state_list is None:\n
+  simulation_state_list = [\'planned\', \'confirmed\', \'started\', \'stopped\', \'delivered\']\n
+person = context\n
+\n
+return context.portal_catalog.countResults(\n
+  portal_type=\'Payment Transaction\',\n
+  simulation_state=simulation_state_list,\n
+  default_destination_section_uid=person.getUid(),\n
+)[0][0]\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string>simulation_state_list=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_registerPlannedPaymentTransactionPayzen</string> </value>
+            <value> <string>Person_countPayment</string> </value>
         </item>
       </dictionary>
     </pickle>

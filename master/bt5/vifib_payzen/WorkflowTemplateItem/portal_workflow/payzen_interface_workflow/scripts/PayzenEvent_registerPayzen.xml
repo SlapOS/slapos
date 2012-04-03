@@ -60,26 +60,11 @@ payzen_event = state_change[\'object\']\n
 transaction = payzen_event.getDestinationValue()\n
 portal = transaction.getPortalObject()\n
 integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
-state_list = portal.getPortalCurrentInventoryStateList() + portal.getPortalTransitInventoryStateList()\n
 service = portal.portal_secure_payments.find()\n
-previous_transaction = portal.portal_catalog.getResultValue(\n
-  destination_section_uid = transaction.getDestinationSectionUid(),\n
-  portal_type=transaction.getPortalType(),\n
-  simulation_state=state_list,\n
-  sort_on=((\'delivery.start_date\', \'DESC\'),),\n
-  limit=1,\n
-)\n
 \n
-if previous_transaction is None:\n
-  raise ValueError(\'It was not possible to find any previous transaction\')\n
-\n
-previous_id = None\n
-possible_previous_id =  integration_site.getMappingFromCategory(\'causality/%s\' % previous_transaction.getRelativeUrl())\n
-if possible_previous_id != \'Causality/%s\' % transaction.getRelativeUrl():\n
-  previous_id = possible_previous_id.split(\'/\')[1]\n
-\n
+previous_id = transaction.PaymentTransaction_getPreviousPayzenId()\n
 if previous_id is None:\n
-  raise ValueError(\'Transaction %s had not defined payzen integration\' % previous_transaction.getRelativeUrl())\n
+  raise ValueError(\'No previous id found\')\n
 \n
 previous_date, previous_id = previous_id.split(\'_\')\n
 today = DateTime().toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d\')\n

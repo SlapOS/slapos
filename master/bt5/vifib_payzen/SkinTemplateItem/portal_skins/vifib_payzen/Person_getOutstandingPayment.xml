@@ -50,24 +50,28 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-      portal_type="Payment Transaction", \n
-      simulation_state="confirmed",\n
-      method_id=\'PaymentTransaction_updateStatus\',\n
-      packet_size=1, # just one to minimise errors\n
-      activate_kw={\'tag\': tag}\n
-      )\n
-context.activate(after_tag=tag).getId()\n
+            <value> <string>person = context\n
+\n
+payment_transaction = context.portal_catalog.getResultValue(\n
+  portal_type=\'Payment Transaction\',\n
+  simulation_state=\'planned\',\n
+  causality_state=\'solved\',\n
+  default_destination_section_uid=person.getUid(),\n
+  sort_on=((\'creation_date\', \'ASC\'), )\n
+)\n
+\n
+if payment_transaction is not None and payment_transaction.getSimulationState() in [\'planned\'] and payment_transaction.getCausalityState() in [\'solved\']:\n
+  return payment_transaction\n
+return None\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_updatePayzenConfirmedPaymentTransaction</string> </value>
+            <value> <string>Person_getOutstandingPayment</string> </value>
         </item>
       </dictionary>
     </pickle>
