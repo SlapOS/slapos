@@ -332,9 +332,9 @@ class Recipe(BaseSlapRecipe):
     apache_conf['port'] = port
     apache_conf['server_admin'] = 'admin@'
     apache_conf['error_log'] = os.path.join(self.log_directory,
-        name + '-error.log')
+        'frontend-apache-error.log')
     apache_conf['access_log'] = os.path.join(self.log_directory,
-        name + '-access.log')
+        'frontend-apache-access.log')
     self.registerLogRotation(name, [apache_conf['error_log'],
       apache_conf['access_log']], self.killpidfromfile + ' ' +
       apache_conf['pid_file'] + ' SIGUSR1')
@@ -456,11 +456,10 @@ class Recipe(BaseSlapRecipe):
 
     apache_config_file = self.createConfigurationFile('apache_frontend.conf',
         apache_conf_string)
-
-
     self.path_list.append(apache_config_file)
+
     self.path_list.extend(zc.buildout.easy_install.scripts([(
-      name, 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
+      'frontend_apache', 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
           sys.executable, self.wrapper_directory, arguments=[
             dict(
               required_path_list=[key, certificate],
