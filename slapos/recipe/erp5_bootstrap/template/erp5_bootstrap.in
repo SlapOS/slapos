@@ -1,0 +1,35 @@
+#!%(python_path)s
+
+import httplib
+import urllib
+import base64
+
+user = "%(user)s"
+password = "%(password)s"
+host = "%(host)s"
+site_id = "%(site_id)s"
+erp5_catalog_storage = 'erp5_mysql_innodb_catalog'
+mysql_url = "%(sql_connection_string)s"
+
+header_dict = {'Authorization': 'Basic %%s' %% \
+  base64.encodestring('%%s:%%s' %% (user, password)).strip()}
+zope_connection = httplib.HTTPConnection(host)
+
+# Check if an ERP5 site is already created, as ERP5 does support having
+# 2 instances in the same zope, and this script should not destroy user data
+zope_connection.request('GET', '/isERP5SitePresent', headers=header_dict)
+result = zope_connection.getresponse()
+
+if result.status == 204: # and (result.read() == "False"):
+
+  # Create the expected ERP5 instance
+  zope_connection.request(
+    'POST', '/manage_addProduct/ERP5/manage_addERP5Site',
+    urllib.urlencode({
+      'id': site_id,
+      'erp5_catalog_storage': erp5_catalog_storage,
+      'erp5_sql_connection_string': mysql_url,
+      'cmf_activity_sql_connection_string': mysql_url,
+    }),
+    headers=header_dict)
+

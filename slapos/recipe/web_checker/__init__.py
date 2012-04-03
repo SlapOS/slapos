@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,21 +24,30 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.recipe.librecipe import BaseSlapRecipe
+import os
+import re
+from slapos.recipe.librecipe import GenericSlapRecipe
 
-class Recipe(BaseSlapRecipe):
-
+class Recipe(GenericSlapRecipe):
+  """
+    Create web checker configuration.
+  """
   def _install(self):
-    parameter_dict = self.computer_partition.getInstanceParameterDict()
-    dummy_wrapper = self.createRunningWrapper('dummy', """#!/bin/sh
-while [ true ]
-do
-   sleep 10
-   echo "Hello World!"
-done""")
-
-    self.computer_partition.setConnectionDict(dict(
-      hello_world="Hello World!",
-      ))
-    return [dummy_wrapper]
-    
+    path_list = []
+    web_checker_mail_address = self.parameter_dict['web-checker-mail-address']
+    web_checker_smtp_host = self.parameter_dict['web-checker-smtp-host']
+    web_checker_working_directory = \
+      self.options['web-checker-working-directory']
+    config = dict(
+      web_checker_mail_address = web_checker_mail_address,
+      web_checker_smtp_host = web_checker_smtp_host,
+      web_checker_working_directory = web_checker_working_directory,
+      frontend_url = self.options['frontend-url'],
+      wget_binary_path = self.options['wget-binary-path'],
+      varnishlog_binary_path = self.options['varnishlog-binary-path'],
+      web_checker_log = self.options['web-checker-log'],
+    )
+    path_list.append(self.createFile(self.options['web-checker-config'],
+      self.substituteTemplate(self.getTemplateFilename('web_checker.cfg.in'),
+        config)))
+    return path_list
