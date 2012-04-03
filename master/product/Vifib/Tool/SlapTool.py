@@ -492,14 +492,18 @@ class SlapTool(BaseTool):
     slap_partition._requested_state = 'destroyed'
     slap_partition._need_modification = 0
 
-    update_movement = self._getSalePackingListLineForComputerPartition(
-      computer_partition_document, service_uid_list=[portal.restrictedTraverse(portal_preferences.getPreferredInstanceUpdateResource()).getUid()])
+    if computer_partition_document.getSlapState() != 'busy':
+      update_movement = None
+      movement = None
+    else:
+      update_movement = self._getSalePackingListLineForComputerPartition(
+        computer_partition_document, service_uid_list=[portal.restrictedTraverse(portal_preferences.getPreferredInstanceUpdateResource()).getUid()])
+      movement = self._getSalePackingListLineForComputerPartition(
+                                           computer_partition_document)
     if update_movement is not None:
       if update_movement.getSimulationState() != 'confirmed':
         # only confirmed update movements are interesting
         update_movement = None
-    movement = self._getSalePackingListLineForComputerPartition(
-                                           computer_partition_document)
     if movement is not None:
       software_release_document = \
               movement.getAggregateValue(portal_type='Software Release')
