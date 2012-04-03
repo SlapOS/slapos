@@ -42,6 +42,17 @@ class Recipe(BaseSlapRecipe):
         'template/%s' % template_name)
 
   def _install(self):
+    # Check for mandatory arguments
+    frontend_domain_name = self.parameter_dict.get("domain")
+    if frontend_domain_name is None:
+      raise zc.buildout.UserError('No domain name specified. Please define '
+          'the "domain" instance parameter.')
+
+    # Define optional arguments
+    frontend_port_number = self.parameter_dict.get("port", 4443)
+    base_varnish_port = 26009
+    slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
+
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
 
@@ -52,11 +63,6 @@ class Recipe(BaseSlapRecipe):
         [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
     self.path_list.append(self.killpidfromfile)
-
-    frontend_port_number = self.parameter_dict.get("port", 4443)
-    frontend_domain_name = self.parameter_dict["domain"]
-    base_varnish_port = 26009
-    slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
 
     rewrite_rule_list = []
     rewrite_rule_zope_list = []
