@@ -42,3 +42,17 @@ class Recipe(GenericBaseRecipe):
     options['password'] = password
 
   update = install = lambda self: []
+
+class StablePasswordGeneratorRecipe(GenericBaseRecipe):
+  """
+  The purpose of this class is to generate a password which doesn't change
+  from one execution to the next (hence "stable"), so the generated password
+  doesn't change on each slapgrid-sr execution.
+
+  See GenericBaseRecipe.generatePassword .
+  """
+
+  def _options(self, options):
+    options['password'] = self.generatePassword()
+
+  update = install = lambda self: []
