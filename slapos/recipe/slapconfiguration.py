@@ -86,13 +86,13 @@ class Recipe(object):
   def __init__(self, buildout, name, options):
       slap = slapos.slap.slap()
       slap.initializeConnection(
-        options['url'],
-        options.get('key'),
-        options.get('cert'),
+          options['url'],
+          options.get('key'),
+          options.get('cert'),
       )
       parameter_dict = slap.registerComputerPartition(
-        options['computer'],
-        options['partition'],
+          options['computer'],
+          options['partition'],
       ).getInstanceParameterDict()
       allow_unsafe = bool(int(options.get('unsafe', '0')))
       match = self.OPTCRE.match
