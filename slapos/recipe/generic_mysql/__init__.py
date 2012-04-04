@@ -124,6 +124,7 @@ class Recipe(GenericBaseRecipe):
       self.options['wrapper'],
       '%s.mysql.runMysql' % __name__,
       [dict(
+        mysql_base_directory=self.options['mysql-base-directory'],
         mysql_install_binary=self.options['mysql-install-binary'],
         mysqld_binary=mysqld_binary,
         data_directory=self.options['data-directory'],
