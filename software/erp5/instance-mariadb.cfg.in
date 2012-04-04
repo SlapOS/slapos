@@ -57,7 +57,7 @@ innobackupex-full = ${rootdirectory:bin}/innobackupex-full
 # Binary information
 innobackupex-binary = {{ xtrabackup_location }}/bin/innobackupex
 mysql-binary = {{ mariadb_location }}/bin/mysql
-mysql-install-binary = {{ mariadb_location }}/bin/mysql_install_db
+mysql-install-binary = {{ mariadb_location }}/scripts/mysql_install_db
 mysql-upgrade-binary = {{ mariadb_location }}/bin/mysql_upgrade
 mysqld-binary = {{ mariadb_location }}/bin/mysqld
 pt-archiver-binary = {{ perl_siteprefix }}/bin/pt-archiver
