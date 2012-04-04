@@ -41,5 +41,4 @@ class Recipe(GenericBaseRecipe):
         password = password_file.read()
     options['password'] = password
 
-  def install(self):
-    return []
+  update = install = lambda self: []
