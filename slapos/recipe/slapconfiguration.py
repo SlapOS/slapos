@@ -108,7 +108,4 @@ class Recipe(object):
                   continue
               options[name + '.' + key] = cast(value)
 
-  def install(self):
-      return []
-
-  update = install
+  install = update = lambda self: []
