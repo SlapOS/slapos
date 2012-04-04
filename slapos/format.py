@@ -1080,18 +1080,19 @@ class Config(object):
       self.logger.addHandler(logging.StreamHandler())
 
     # Convert strings to booleans
-    root_needed = False
-    for o in ['alter_network', 'alter_user']:
-      if getattr(self, o).lower() == 'true':
-        root_needed = True
-        setattr(self, o, True)
-      elif getattr(self, o).lower() == 'false':
-        setattr(self, o, False)
-      else:
-        message = 'Option %r needs to be "True" or "False", wrong value: ' \
-            '%r' % (o, getattr(self, o))
-        self.logger.error(message)
-        raise UsageError(message)
+    for o in ['alter_network', 'alter_user', 'no_bridge']:
+      attr = getattr(self, o)
+      if isinstance(attr, str):
+        if attr.lower() == 'true':
+          root_needed = True
+          setattr(self, o, True)
+        elif attr.lower() == 'false':
+          setattr(self, o, False)
+        else:
+          message = 'Option %r needs to be "True" or "False", wrong value: ' \
+              '%r' % (o, getattr(self, o))
+          self.logger.error(message)
+          raise UsageError(message)
 
     if not self.dry_run:
       if self.alter_user:
@@ -1102,7 +1103,10 @@ class Config(object):
     if self.alter_network:
       self.checkRequiredBinary(['brctl'])
 
-    if self.dry_run:
+    # Check if root is needed
+    if (self.alter_network or self.alter_user) and not self.dry_run:
+      root_needed = True
+    else:
       root_needed = False
     
     # check root
