@@ -74,6 +74,11 @@ else:\n
 tag = "%s_%s_inProgress" % (person.getUid(), \n
                                software_title)\n
 \n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  # The software instance is already under creation but can not be fetched from catalog\n
+  # As it is not possible to fetch informations, it is better to raise an error\n
+  raise NotImplementedError(tag)\n
+\n
 # Check if it already exists\n
 cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
 request_hosting_subscription = None\n
@@ -94,11 +99,6 @@ for hs in portal.portal_catalog(\n
     if cleanup_delivery_line.getSimulationState() != \'delivered\':\n
       request_hosting_subscription = hs\n
       break\n
-\n
-if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
-  # The software instance is already under creation but can not be fetched from catalog\n
-  # As it is not possible to fetch informations, it is better to raise an error\n
-  raise NotImplementedError(tag)\n
 \n
 if (request_hosting_subscription is None):\n
   hosting_subscription_reference = "HOSTSUBS-%s" % context.getPortalObject().portal_ids\\\n
