@@ -1,0 +1,36 @@
+--- libxcb-1.7/src/xcb_util.c.back	2012-04-03 13:30:36.000000000 +0200
++++ libxcb-1.7/src/xcb_util.c	2012-04-03 14:47:00.000000000 +0200
+@@ -147,11 +147,31 @@
+ static int _xcb_open_abstract(char *protocol, const char *file, size_t filelen);
+ #endif
+ 
++char *
++_xcb_getandappendcompatibleenv(const char *name, const char *compatible, const char *suffix)
++{
++  static char path_list[1][PATH_MAX];
++  char *dir;
++
++  if (path_list[0][0])
++  {
++    return path_list[0];
++  }
++
++  dir = getenv(name);
++  if (dir == NULL) {
++    strncpy(path_list[0], compatible, PATH_MAX);
++  } else {
++    strncpy(path_list[0], dir, PATH_MAX);
++  }
++  return strncat(path_list[0], suffix, PATH_MAX);
++}
++
+ static int _xcb_open(const char *host, char *protocol, const int display)
+ {
+     int fd;
+-    static const char unix_base[] = "/tmp/.X11-unix/X";
+-    const char *base = unix_base;
++    char *base;
++    base = _xcb_getandappendcompatibleenv("TMPDIR", "/tmp", "/.X11-unix/X");
+     size_t filelen;
+     char *file = NULL;
+     int actual_filelen;
