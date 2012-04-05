@@ -57,6 +57,8 @@ import tempfile
 from time import strftime
 import StringIO
 from lxml import etree
+from time import sleep
+from random import random
 
 
 MANDATORY_PARAMETER_LIST = [
@@ -114,6 +116,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
                       help="Promise timeout in seconds.")
   parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
       help="SlapOS configuration file.")
+  parser.add_argument("--maximal_delay", help="The maximal delay value in seconds. " \
+                    "A negative value leads start immediately.")
 
   # Parses arguments
   if argument_tuple == ():
@@ -214,6 +218,13 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
         if q.strip()]
   else:
     signature_certificate_list = None
+
+  maximal_delay = float(option_dict.get("maximal_delay", "300"))
+  if maximal_delay > 0:
+    duration = maximal_delay * random()
+    logging.info("Sleeping for %s seconds. To disable this feature, " \
+                    "check maximal_delay parameter in manual." % duration)
+    time.sleep(duration)
 
   # Returning new Slapgrid instance and options
   return ([Slapgrid(software_root=option_dict['software_root'],
