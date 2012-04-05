@@ -177,6 +177,24 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps -- scenarios
   ########################################
+  def stepCheckSoftwareInstanceNoDeliveryRelated(self, sequence, **kw):
+    self.assertEqual(None, self.portal.portal_catalog.getResultValue(
+      default_aggregate_uid=sequence['software_instance_uid'],
+      portal_type=self.sale_packing_list_line_portal_type
+    ))
+
+  def stepCheckSoftwareInstanceCancelledSaleOrderLine(self, sequence, **kw):
+    self.assertEqual('cancelled', self.portal.portal_catalog.getResultValue(
+      default_aggregate_uid=sequence['software_instance_uid'],
+      portal_type=self.sale_order_line_portal_type
+    ).getSimulationState())
+
+  def stepCheckSoftwareInstanceOrderedSaleOrderLine(self, sequence, **kw):
+    self.assertEqual('ordered', self.portal.portal_catalog.getResultValue(
+      default_aggregate_uid=sequence['software_instance_uid'],
+      portal_type=self.sale_order_line_portal_type
+    ).getSimulationState())
+
   def stepCheckOpenOrderLineRemoved(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid=sequence['software_instance_uid'])
