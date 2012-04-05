@@ -86,8 +86,10 @@ for hs in portal.portal_catalog(\n
   try:\n
     cleanup_delivery_line = si.Item_getInstancePackingListLine(cleanup_resource)\n
   except ValueError:\n
-    request_hosting_subscription = hs\n
-    break\n
+    order_line = si.getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
+    if order_line.getSimulationState() != \'cancelled\':\n
+      request_hosting_subscription = hs\n
+      break\n
   else:\n
     if cleanup_delivery_line.getSimulationState() != \'delivered\':\n
       request_hosting_subscription = hs\n
