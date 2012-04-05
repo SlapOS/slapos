@@ -68,7 +68,7 @@ CREATE TABLE `computer_partition` (\n
   `free_for_request` INT(1),\n
   `software_type` VARCHAR(255),\n
   PRIMARY KEY (`uid`, `software_release_url`)\n
-) TYPE=InnoDB;\n
+) ENGINE=InnoDB;\n
 </string> </value>
         </item>
         <item>

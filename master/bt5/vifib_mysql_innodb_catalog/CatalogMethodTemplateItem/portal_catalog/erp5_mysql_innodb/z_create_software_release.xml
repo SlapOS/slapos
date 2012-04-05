@@ -65,7 +65,7 @@
   `url` varchar(255),\n
   `state` varchar(255),\n
   PRIMARY KEY (`uid`, `delivery_line_uid`)\n
-) TYPE=InnoDB;\n
+) ENGINE=InnoDB;\n
 </string> </value>
         </item>
         <item>

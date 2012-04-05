@@ -66,7 +66,7 @@ CREATE TABLE `software_instance_tree` (\n
   `uid` BIGINT UNSIGNED NOT NULL,\n
   `root_uid` BIGINT UNSIGNED NOT NULL,\n
   PRIMARY KEY (`uid`, `root_uid`)\n
-) TYPE=InnoDB;\n
+) ENGINE=InnoDB;\n
 </string> </value>
         </item>
         <item>
