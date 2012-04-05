@@ -372,9 +372,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         portal_type=self.software_instance_portal_type,
         title=sequence['requested_reference']):
       # only not yet destroyed ones
-      try:
-        software_instance.Item_getInstancePackingListLine(cleanup_resource)
-      except ValueError:
+      if software_instance.SoftwareInstance_getStatus() != 'Destroyed':
         software_instance_list.append(software_instance)
 
     self.assertEqual(1, len(software_instance_list))
