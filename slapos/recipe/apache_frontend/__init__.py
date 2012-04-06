@@ -148,6 +148,36 @@ class Recipe(BaseSlapRecipe):
       dict(site_url=apache_parameter_dict["site_url"],
            domain_ipv6_address=self.getGlobalIPv6Address(),
            domain_ipv4_address=self.getLocalIPv4Address()))
+
+    # Promises
+    promise_config = dict(
+      hostname=self.getGlobalIPv6Address(),
+      port=frontend_port_number,
+      python_path=sys.executable,
+    )
+    promise_v6 = self.createPromiseWrapper(
+      'apache_ipv6',
+      self.substituteTemplate(
+          pkg_resources.resource_filename(
+              'slapos.recipe.check_port_listening',
+          'template/socket_connection_attempt.py.in'),
+        promise_config))
+    self.path_list.append(promise_v6)
+
+    promise_config = dict(
+      hostname=self.getLocalIPv4Address(),
+      port=frontend_port_number,
+      python_path=sys.executable,
+    )
+    promise_v4 = self.createPromiseWrapper(
+      'apache_ipv4',
+      self.substituteTemplate(
+          pkg_resources.resource_filename(
+              'slapos.recipe.check_port_listening',
+          'template/socket_connection_attempt.py.in'),
+        promise_config))
+    self.path_list.append(promise_v4)
+
     return self.path_list
 
   def configureVarnishSlave(self, base_varnish_port, url, slave_instance,
