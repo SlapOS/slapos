@@ -1,0 +1,19 @@
+*** pixelpost1.7.3/includes/create_tables.php	2012-04-07 11:57:49.000000000 +0000
+--- pixelpost_for_mysql5/includes/create_tables.php	2012-04-07 12:01:30.000000000 +0000
+***************
+*** 123,129 ****
+  	// Make future upgrade scripts easier by adding a version table
+  	mysql_query("CREATE TABLE IF NOT EXISTS `{$prefix}version` (
+  				 `id` INT(10) unsigned NOT NULL auto_increment,
+! 				 `upgrade_date` TIMESTAMP(14) NOT NULL,
+  				 `version` FLOAT NOT NULL DEFAULT '0',
+  				 PRIMARY KEY  (`id`),
+  				 KEY `version` (`version`))")or die("MySQL Error: ". mysql_error());
+--- 123,129 ----
+  	// Make future upgrade scripts easier by adding a version table
+  	mysql_query("CREATE TABLE IF NOT EXISTS `{$prefix}version` (
+  				 `id` INT(10) unsigned NOT NULL auto_increment,
+! 				 `upgrade_date` TIMESTAMP NOT NULL,
+  				 `version` FLOAT NOT NULL DEFAULT '0',
+  				 PRIMARY KEY  (`id`),
+  				 KEY `version` (`version`))")or die("MySQL Error: ". mysql_error());
