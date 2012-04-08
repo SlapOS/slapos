@@ -1,0 +1,9 @@
+<?php
+$databaseinfo = mysql_connect("%(mysql_host)s", "%(mysql_user)s", "%(mysql_password)s") or die ("Could not connect to server");
+mysql_select_db("%(mysql_database)s");
+
+//Make sure that superglobals are loaded for PHP5 compatibility
+include('superglobals.inc.php');
+
+
+?>
