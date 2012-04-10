@@ -72,6 +72,12 @@ for q in portal.Base_getNotCategoryRelatedList(**kw):\n
 for q in portal.Base_getNotSynchronisedSimulationStateCategoryRelatedList(**kw):\n
   uid_list.add(q.UID)\n
 \n
+# and all invoice lines and and transcation lines in confirmed state\n
+# XXX: We do simple version, and in Vifib confirmed ones can be often expanded, as it is short living state\n
+\n
+for q in portal.portal_catalog(portal_type=\'Invoice Line\', simulation_state=\'confirmed\'):\n
+  if q.getSimulationState() == \'confirmed\':\n
+    uid_list.add(q.UID)\n
 uid_list = list(uid_list)\n
 \n
 if len(uid_list) > 0:\n
