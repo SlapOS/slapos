@@ -65,6 +65,7 @@ if len(uid_list) > 0:\n
   portal.portal_catalog.searchAndActivate(\n
     uid=uid_list,\n
     activate_kw=activate_kw,\n
+    packet_size=1, # Separate calls to many transactions\n
     method_id=\'DeliveryLine_updateAppliedRule\',\n
     method_kw={\'activate_kw\': activate_kw, \'kw\': {\'activate_kw\': activate_kw}},\n
   )\n
