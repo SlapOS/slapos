@@ -127,6 +127,7 @@ link-binary =
   {{ parameter_dict['poppler'] }}/bin/pdfinfo
   {{ parameter_dict['poppler'] }}/bin/pdftotext
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
+  {{ parameter_dict['dmtx-utils'] }}/bin/dmtxwrite
 
 #############################
 # CA

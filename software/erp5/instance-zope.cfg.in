@@ -173,6 +173,7 @@ link-binary =
   {{ poppler_location }}/bin/pdfinfo
   {{ poppler_location }}/bin/pdftotext
   {{ poppler_location }}/bin/pdftohtml
+  {{ dmtx_utils_location }}/bin/dmtxwrite
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = {{ openssl_location }}/bin/openssl
