@@ -35,15 +35,29 @@ class Recipe(GenericSlapRecipe):
     path_list = []
     poc_location = self.buildout['pocdirectory']['poc']
 
-    # Generate os-config.xml
-    os_configuration_parameter_dict = dict(
+    parameter_dict = dict(
         userid=self.options['userid'],
         password=self.options['password'],
         domain=self.options['domain'],
+        openstack_url=self.options['openstack_url'],
+        python_location=sys.executable,
+        poc_location=poc_location,
+        manifest_name=self.options['manifest-name'],
+        # XXX this is workaround
+        accords_lib_directory=self.options['accords_lib_directory'],
+        computer_id = self.computer_id,
+        computer_partition_id = self.computer_partition_id,
+        server_url = self.server_url,
+        software_release_url = self.software_release_url,
+        key_file = self.key_file,
+        cert_file = self.cert_file,
+        path = '%s:%s' % (self.options['accords_bin_directory'],
+            os.environ.get('PATH', '')),
     )
+    # Generate os-config.xml
     os_config_file = self.createFile(self.options['os-config'],
         self.substituteTemplate(self.getTemplateFilename('os_config.xml.in'),
-        os_configuration_parameter_dict))
+        parameter_dict))
     path_list.append(os_config_file)
 
     # Put modified accords configuration file
@@ -69,24 +83,16 @@ class Recipe(GenericSlapRecipe):
     path_list.append(manifest_location)
 
     # Generate wrapper
-    wrapper_config_dict = dict(
-        python_location=sys.executable,
-        poc_location=poc_location,
-        manifest_name=self.options['manifest-name'],
-        # XXX this is workaround
-        accords_lib_directory=self.options['accords_lib_directory'],
-        computer_id = self.computer_id,
-        computer_partition_id = self.computer_partition_id,
-        server_url = self.server_url,
-        software_release_url = self.software_release_url,
-        key_file = self.key_file,
-        cert_file = self.cert_file,
-        path = '%s:%s' % (self.options['accords_bin_directory'],
-            os.environ.get('PATH', '')),
-    )
     wrapper_location = self.createPythonScript(self.options['accords-wrapper'],
         '%s.accords.runAccords' % __name__,
-        wrapper_config_dict)
+        parameter_dict)
     path_list.append(wrapper_location)
+
+    # Generate helper for debug
+    self.createExecutable(
+        self.options['testos-wrapper'],
+        self.substituteTemplate(self.getTemplateFilename('testos.in'),
+            parameter_dict)
+    )
 
     return path_list
