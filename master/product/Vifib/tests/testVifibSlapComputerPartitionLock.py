@@ -8,11 +8,11 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
   lock_user_sequence_string = '\
       LoginERP5TypeTestCase \
-      TriggerBuild \
+      CallVifibTriggerBuildAlarm \
       Tic \
-      TriggerStopConfirmedInvoiceAlarm \
+      CallStopConfirmedSaleInvoiceTransactionAlarm \
       Tic \
-      TriggerBuild \
+      CallVifibTriggerBuildAlarm \
       Tic \
       Logout'
 
@@ -65,7 +65,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       \
       LoginDefaultUser \
       SoftwareInstanceSaleOrderConfirmRaisesUnauthorized \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       AssertNoComputerPartition \
       Logout \
@@ -94,7 +94,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       \
       LoginDefaultUser \
       SoftwareInstanceSaleOrderConfirmRaisesUnauthorized \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       AssertNoComputerPartition \
       Logout \

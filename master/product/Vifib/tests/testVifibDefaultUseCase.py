@@ -973,8 +973,6 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       self.register_new_user_sequence_string + '\
         LoginWebUser \
         CheckRegistrationAccounting \
-        Logout \
-        LoginDefaultUser \
         PayRegistrationPayment \
         Tic \
         Logout \
@@ -987,14 +985,20 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         SoftwareInstanceAvailable \
         Tic \
         SlapLogout \
-        LoginERP5TypeTestCase \
-        TriggerBuild \
-        Tic \
-        TriggerStopConfirmedInvoiceAlarm \
-        Tic \
-        TriggerBuild \
-        Tic \
-        Logout \
+        \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm\
+        CleanTic \
+        CallDeliverSubscriptionSalePackingListAlarm \
+        CleanTic \
+        CallVifibExpandDeliveryLineAlarm \
+        CleanTic \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        \
         LoginWebUser \
         CheckSetupOngoingInvoice \
         RequestSoftwareInstanceStart \
@@ -1012,14 +1016,14 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         SoftwareInstanceStopped \
         Tic \
         Logout \
-        LoginERP5TypeTestCase \
-        TriggerBuild \
-        Tic \
-        TriggerStopConfirmedInvoiceAlarm \
-        Tic \
-        TriggerBuild \
-        Tic \
-        Logout \
+        \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallStopConfirmedSaleInvoiceTransactionAlarm \
+        CleanTic \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        \
         LoginWebUser \
         CheckHostingOngoingInvoice \
         \
@@ -1029,7 +1033,6 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         SlapLoginCurrentComputer \
         SoftwareInstanceDestroyed \
         Tic \
-        Tic \
         SlapLogout \
         \
         LoginDefaultUser \
@@ -1038,6 +1041,11 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CheckOpenOrderLineRemoved \
         Logout \
         \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        \
         LoginWebUser \
         CheckDestroyOngoingInvoice \
         SlapLogout \
@@ -1045,9 +1053,20 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         LoginERP5TypeTestCase \
         ConfirmOngoingInvoice \
         Tic \
-        Tic \
+        \
         SlapLogout \
         Tic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        CallStopConfirmedSaleInvoiceTransactionAlarm \
+        CleanTic \
+        CallVifibExpandDeliveryLineAlarm \
+        CleanTic \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm\
+        CleanTic \
+        \
         LoginWebUser \
         CheckWaitingInvoice \
         Tic \

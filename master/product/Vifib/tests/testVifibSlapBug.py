@@ -276,7 +276,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -377,7 +377,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
@@ -649,7 +649,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -768,7 +768,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -786,7 +786,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -816,7 +816,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -933,7 +933,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -950,7 +950,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -980,7 +980,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -1105,7 +1105,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -1122,7 +1122,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -1236,7 +1236,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
 
@@ -1304,7 +1304,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
 
@@ -1347,7 +1347,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
 
@@ -1392,7 +1392,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -1463,7 +1463,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -1509,7 +1509,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -1604,16 +1604,16 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       SubmitCredentialRequest
       Tic
-      AcceptSubmittedCredentialsActiveSense
+      CallAcceptSubmittedCredentialsAlarm
       Tic
       Logout
 
       LoginERP5TypeTestCase
-      TriggerBuild
+      CallVifibTriggerBuildAlarm
       Tic
-      TriggerStopConfirmedInvoiceAlarm
+      CallStopConfirmedSaleInvoiceTransactionAlarm
       Tic
-      TriggerBuild
+      CallVifibTriggerBuildAlarm
       Tic
       PayRegistrationPayment
       Tic
@@ -1648,7 +1648,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
 

@@ -45,7 +45,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -327,7 +327,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid

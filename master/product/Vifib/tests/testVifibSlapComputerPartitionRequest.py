@@ -46,7 +46,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
@@ -89,7 +89,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
@@ -160,7 +160,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
@@ -241,7 +241,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
@@ -253,7 +253,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       CheckRequestedComputerPartitionCleanParameterList \
       SlapLogout \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       LoginDefaultUser \
       SetCurrentSoftwareInstanceRequested \
@@ -471,7 +471,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
@@ -506,7 +506,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       CheckSoftwareInstanceAndRelatedComputerPartition \
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition \
@@ -580,7 +580,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       RequestComputerPartition
@@ -613,7 +613,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       RequestComputerPartition
@@ -676,7 +676,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       RequestSlaveInstanceFromComputerPartition
@@ -708,7 +708,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       RequestSlaveInstanceFromComputerPartition
@@ -804,7 +804,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
 
@@ -826,7 +826,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       RequestComputerPartition
@@ -997,7 +997,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
        Tic \
        SlapLogout
        LoginDefaultUser
-       ConfirmOrderedSaleOrderActiveSense
+       CallConfirmOrderedSaleOrderAlarm
        Tic
        SlapLoginCurrentComputer
        CheckSlaveInstanceListFromOneComputerPartition
@@ -1031,7 +1031,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
        Tic
        SlapLogout
        LoginDefaultUser
-       ConfirmOrderedSaleOrderActiveSense
+       CallConfirmOrderedSaleOrderAlarm
 
        Tic
        SlapLoginCurrentSoftwareInstance
@@ -1085,7 +1085,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
          Tic
          SlapLogout
          LoginDefaultUser
-         ConfirmOrderedSaleOrderActiveSense
+         CallConfirmOrderedSaleOrderAlarm
          Tic
          SlapLoginCurrentComputer
          CheckSlaveInstanceListFromOneComputerPartition
@@ -1096,7 +1096,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
          Tic
          SlapLogout
          LoginDefaultUser
-         ConfirmOrderedSaleOrderActiveSense
+         CallConfirmOrderedSaleOrderAlarm
          Tic
          SlapLoginCurrentComputer
          CheckSlaveInstanceListFromOneComputerPartition
@@ -1132,7 +1132,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         LoginDefaultUser
         SelectSlaveInstanceFromSaleOrderOrdered
         SoftwareInstanceSaleOrderLineNoPartitionFound
-        ConfirmOrderedSaleOrderActiveSense
+        CallConfirmOrderedSaleOrderAlarm
         Tic
         SetDeliveryLineAmountEqualZero
         CheckComputerPartitionInstanceSetupSalePackingListConfirmed
@@ -1157,7 +1157,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
          Tic \
          SlapLogout
          LoginDefaultUser
-         ConfirmOrderedSaleOrderActiveSense
+         CallConfirmOrderedSaleOrderAlarm
          Tic
          """
 
@@ -1263,7 +1263,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       SetDeliveryLineAmountEqualOne \
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
@@ -1276,7 +1276,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
       Logout \
@@ -1347,7 +1347,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       Logout \
       SlapLoginTestVifibCustomer \
@@ -1374,7 +1374,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       RequestSlaveInstanceFromComputerPartition \
       Tic \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       Logout \
       RequestSlaveInstanceFromComputerPartition \
@@ -1434,7 +1434,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       SlapLoginCurrentComputer \
       CheckSlaveInstanceListFromOneComputerPartition \
@@ -1452,7 +1452,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       Logout \
       SlapLoginTestVifibCustomer \
@@ -1479,7 +1479,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       RequestSlaveInstanceFromComputerPartition \
       Tic \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       Logout \
       RequestSlaveInstanceFromComputerPartition \
@@ -1575,7 +1575,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       RequestComputerPartition \
       Tic \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       Logout \
       RequestComputerPartition \
@@ -1585,7 +1585,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       RequestComputerPartitionWithAnotherSoftwareType \
       Tic \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       Logout \
       CheckRequestComputerPartitionWithAnotherSoftwareType \

@@ -567,11 +567,11 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         self.prepare_installed_computer_partition_sequence_string  + \
         """
         LoginDefaultUser
-        TriggerBuild
+        CallVifibTriggerBuildAlarm
         Tic
         CheckSubscriptionSalePackingListCoverage
 
-        TriggerBuild
+        CallVifibTriggerBuildAlarm
         Tic
         # Nothing shall change
         CheckHostingSubscriptionInitialDocumentCoverage
@@ -582,15 +582,15 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         SelectNextSubscriptionDelivery
         Tic
 
-        TriggerBuild
+        CallVifibTriggerBuildAlarm
         Tic
 
         CheckHostingSubscriptionStoppedDocumentCoverage
 
         # proff that alarm will ignore this month invoices
-        TriggerConfirmPlannedInvoiceAlarm
+        CallConfirmPlannedSaleInvoiceTransactionAlarm
         Tic
-        TriggerStopConfirmedInvoiceAlarm
+        CallStopConfirmedSaleInvoiceTransactionAlarm
         Tic
         CheckHostingSubscriptionStoppedDocumentCoverage
 
@@ -609,7 +609,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 #         SelectNextSubscriptionDelivery
 #         Tic
 # 
-#         TriggerBuild
+#         CallVifibTriggerBuildAlarm
 #         Tic
 # 
 #         CheckHostingSubscriptionConfirmedInvoiceDocumentCoverage
@@ -620,7 +620,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 #         StopInvoice
 #         Tic
 # 
-#         TriggerBuild
+#         CallVifibTriggerBuildAlarm
 #         Tic
 # 
 #         CheckHostingSubscriptionStoppedInvoiceDocumentCoverage
@@ -629,13 +629,13 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 #         SelectPlannedInvoice
 #         InvoiceSetStartDatePreviousMonth
 #         Tic
-#         TriggerConfirmPlannedInvoiceAlarm
+#         CallConfirmPlannedSaleInvoiceTransactionAlarm
 #         Tic
-#         TriggerStopConfirmedInvoiceAlarm
+#         CallStopConfirmedSaleInvoiceTransactionAlarm
 #         Tic
 # 
 #         # Payment should cover both invoices
-#         TriggerBuild
+#         CallVifibTriggerBuildAlarm
 #         Tic
 # 
 #         CheckHostingSubscriptionTwoStoppedInvoiceDocumentCoverage

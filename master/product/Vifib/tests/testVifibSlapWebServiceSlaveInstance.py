@@ -17,7 +17,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     Tic
     Logout
     LoginDefaultUser
-    ConfirmOrderedSaleOrderActiveSense
+    CallConfirmOrderedSaleOrderAlarm
     Tic
     Tic # in order to call real build
     CheckComputerPartitionSaleOrderAggregatedList
@@ -49,7 +49,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
         Tic
         Logout
         LoginDefaultUser
-        ConfirmOrderedSaleOrderActiveSense
+        CallConfirmOrderedSaleOrderAlarm
         Tic
         CheckSlaveInstanceNotReady
         Logout
@@ -74,7 +74,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     Logout
 
     LoginDefaultUser
-    ConfirmOrderedSaleOrderActiveSense
+    CallConfirmOrderedSaleOrderAlarm
     Tic
     
     SetSelectedComputerPartition
@@ -104,7 +104,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
       LoginTestVifibCustomer
@@ -139,7 +139,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       Tic
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic 
       SlapLoginCurrentComputer
       SoftwareInstanceAvailable
@@ -170,12 +170,12 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       LoginTestVifibCustomer
       PersonRequestSoftwareInstance
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       Tic
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLoginCurrentComputer
       SoftwareInstanceAvailable
@@ -202,7 +202,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       Tic
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       CheckSlaveInstanceNotReady
       Logout
@@ -231,7 +231,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     LoginTestVifibCustomer
     PersonRequestSlaveInstance
     Tic
-    ConfirmOrderedSaleOrderActiveSense
+    CallConfirmOrderedSaleOrderAlarm
     Tic
     CheckSlaveInstanceReady
     CheckSlaveInstanceAllocationWithTwoDifferentSoftwareInstance
@@ -257,7 +257,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       Tic
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       """ + self.prepare_published_software_release + """
       Tic
@@ -271,13 +271,13 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginTestVifibCustomer
       PersonRequestSoftwareInstance
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SelectDifferentSoftwareReleaseUri
       LoginTestVifibCustomer
       PersonRequestSlaveInstance
       Tic
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       CheckSlaveInstanceAssociationWithSoftwareInstance
       SlapLogout
@@ -308,7 +308,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       CheckTwoSlaveInstanceRequest
       SlapLogout
@@ -341,7 +341,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLoginCurrentComputer
       SoftwareInstanceAvailable
@@ -371,7 +371,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLoginCurrentComputer
       SoftwareInstanceAvailable
@@ -406,7 +406,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
       SlapLoginCurrentComputer
@@ -453,7 +453,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
       SlapLoginCurrentComputer
@@ -527,7 +527,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       PersonRequestSlaveInstance
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
       SlapLoginCurrentComputer
@@ -587,7 +587,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       LoginTestVifibCustomer
@@ -625,7 +625,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       LoginTestVifibCustomer
@@ -663,7 +663,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       LoginTestVifibCustomer
@@ -702,7 +702,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentComputer
@@ -753,7 +753,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       LoginTestVifibCustomer
       RequestSoftwareInstanceDestroy
@@ -782,7 +782,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
       LoginAsCustomerA
@@ -791,7 +791,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       SlapLogout
       LoginTestVifibCustomer
       CheckSlaveInstanceSecurityWithDifferentCustomer
@@ -820,7 +820,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLoginCurrentComputer
       CheckSlaveInstanceListFromOneComputerPartition
@@ -848,7 +848,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       StoreSalePackingListLineFromSlaveInstance
       StoreSaleOrderFromSlaveInstance
@@ -882,7 +882,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLoginSoftwareInstanceFromCurrentSoftwareInstance
       SetConnectionXmlToSlaveInstance
@@ -920,7 +920,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       RequestSlaveInstanceFromComputerPartition
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -987,7 +987,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       RequestSlaveInstanceFromComputerPartition
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -1060,7 +1060,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       RequestSlaveInstanceFromComputerPartition
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -1090,7 +1090,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Logout
       Tic
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -1105,7 +1105,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance

@@ -41,7 +41,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
 
@@ -97,7 +97,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
 
@@ -152,7 +152,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
 
@@ -248,7 +248,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
 

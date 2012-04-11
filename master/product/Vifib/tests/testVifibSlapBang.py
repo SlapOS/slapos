@@ -25,7 +25,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     root_software_instance.requestSoftwareInstance(partition_reference=S1,
       **common_kw)
     self.stepTic()
-    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
 
     S1_instance = self.portal.portal_catalog.getResultValue(
@@ -33,13 +33,13 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     S1_instance.requestSoftwareInstance(partition_reference=S2, **common_kw)
     self.stepTic()
     S1_instance.requestSoftwareInstance(partition_reference=S3, **common_kw)
-    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
 
     root_software_instance.requestSoftwareInstance(partition_reference=S4,
       **common_kw)
     self.stepTic()
-    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
 
     S2_instance = self.portal.portal_catalog.getResultValue(
@@ -390,7 +390,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         </instance>""" % sequence['computer_reference_c1'],
       **common_kw)
     self.stepTic()
-    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
     self.logout()
 
@@ -408,7 +408,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         </instance>""" % sequence['computer_reference_c0'],
       **common_kw)
     self.stepTic()
-    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
     self.logout()
 
@@ -430,7 +430,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.logout()
 
     self.stepLoginDefaultUser()
-    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
     S3_instance = self.portal.portal_catalog.getResultValue(
       portal_type='Software Instance', title=S3)
@@ -531,7 +531,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -661,7 +661,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       partition_reference=S1,
       **common_kw)
     self.stepTic()
-    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
     self.logout()
 
@@ -782,7 +782,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
       SlapLoginCurrentSoftwareInstance
       Bang
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       SlapLogout
       Tic
       LoginTestVifibCustomer
@@ -874,7 +874,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       RenameCurrentSoftwareInstanceDead
       Tic
       Bang
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLogout
@@ -898,7 +898,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
 
@@ -910,7 +910,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
 
@@ -996,7 +996,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       CheckRaisesNotFoundComputerPartitionParameterDict
       Tic
       RequestComputerPartition
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
 
@@ -1006,7 +1006,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       RenameCurrentSoftwareInstanceDead
       Tic
       Bang
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       SlapLogout
@@ -1020,7 +1020,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
 
@@ -1031,7 +1031,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
 
@@ -1043,7 +1043,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SlapLogout
 

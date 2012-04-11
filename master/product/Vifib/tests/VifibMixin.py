@@ -33,6 +33,7 @@ from AccessControl.SecurityManagement import newSecurityManager, \
 from Products.ERP5Type.tests.utils import DummyMailHost
 import os
 from DateTime import DateTime
+from Products.ERP5Type.Utils import convertToUpperCase
 
 class testVifibMixin(ERP5TypeTestCase):
   """
@@ -157,6 +158,22 @@ class testVifibMixin(ERP5TypeTestCase):
         '01')
     open(os.path.join(os.environ['TEST_CA_PATH'], 'index.txt'), 'w').write('')
 
+  def createAlarmStep(self):
+    def makeCallAlarm(alarm):
+      def callAlarm(*args, **kwargs):
+        sm = getSecurityManager()
+        self.login()
+        try:
+          alarm.activeSense()
+          transaction.commit()
+        finally:
+          setSecurityManager(sm)
+      return callAlarm
+    for alarm in self.portal.portal_alarms.contentValues():
+      if alarm.isEnabled():
+        setattr(self, 'stepCall' + convertToUpperCase(alarm.getId()) \
+          + 'Alarm', makeCallAlarm(alarm))
+
   def afterSetUp(self, quiet=1, run=run_all_test):
     """
     Create ERP5 user.
@@ -176,6 +193,7 @@ class testVifibMixin(ERP5TypeTestCase):
     self.portal.portal_caches._p_changed = 1
     transaction.commit()
     self.portal.portal_caches.updateCache()
+    self.createAlarmStep()
     if getattr(self.portal, 'set_up_once_called', 0):
       return
     else:
@@ -342,14 +360,6 @@ class testVifibMixin(ERP5TypeTestCase):
 
   def stepLogout(self, **kw):
     self.logout()
-
-  def stepTriggerBuild(self, **kw):
-    sm = getSecurityManager()
-    self.login()
-    try:
-      self.portal.portal_alarms.vifib_trigger_build.activeSense()
-    finally:
-      setSecurityManager(sm)
 
   def checkDivergency(self):
     # there shall be no divergency

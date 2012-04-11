@@ -55,7 +55,7 @@ class TestVifibSlapComputerPartitionConnection(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       CheckGetSetConnectionDict
 

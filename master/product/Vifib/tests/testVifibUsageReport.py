@@ -58,7 +58,7 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
     Logout \
     \
     LoginDefaultUser \
-    ConfirmOrderedSaleOrderActiveSense \
+    CallConfirmOrderedSaleOrderAlarm \
     Tic \
     SetSelectedComputerPartition \
     SelectCurrentlyUsedSalePackingListUid \

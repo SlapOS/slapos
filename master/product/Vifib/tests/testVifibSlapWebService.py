@@ -29,7 +29,7 @@
 ##############################################################################
 from DateTime import DateTime
 from AccessControl.SecurityManagement import newSecurityManager, \
-  getSecurityManager, setSecurityManager
+  getSecurityManager
 from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 from Products.ERP5Type.tests.Sequence import SequenceList
 from Products.ERP5Type.tests.backportUnittest import skip
@@ -267,22 +267,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepCheckSoftwareReleaseNotInPublicTable(self, sequence, **kw):
     self.assertEqual(0, self._getSoftwareReleasePublicTableAmount(sequence))
 
-  def stepTriggerConfirmPlannedInvoiceAlarm(self, sequence, **kw):
-    sm = getSecurityManager()
-    self.login()
-    try:
-      self.portal.portal_alarms.confirm_planned_sale_invoice_transaction.activeSense()
-    finally:
-      setSecurityManager(sm)
-
-  def stepTriggerStopConfirmedInvoiceAlarm(self, sequence, **kw):
-    sm = getSecurityManager()
-    self.login()
-    try:
-      self.portal.portal_alarms.stop_confirmed_sale_invoice_transaction.activeSense()
-    finally:
-      setSecurityManager(sm)
-
   def stepCheckComputerTradeConditionDestinationSectionTestVifibCustomer(
       self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
@@ -365,8 +349,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         software_instance_reference=software_instance.getReference())
 
   def stepSetCurrentPersonSlapRequestedSoftwareInstance(self, sequence, **kw):
-    cleanup_resource = self.portal.portal_preferences\
-      .getPreferredInstanceCleanupResource()
     software_instance_list = []
     for software_instance in self.portal.portal_catalog(
         portal_type=self.software_instance_portal_type,
@@ -937,15 +919,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         sequence['computer_partition_reference'])
     computer_partition.building()
 
-  def stepConfirmOrderedSaleOrderActiveSense(self, **kw):
-    sm = getSecurityManager()
-    self.login()
-    try:
-      self.portal.portal_alarms.confirm_ordered_sale_order\
-        .activeSense()
-    finally:
-      setSecurityManager(sm)
-
   def stepPayRegistrationPayment(self, sequence, **kw):
     """
     """
@@ -1124,7 +1097,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_install_requested_computer_partition_sequence_string = \
       prepare_person_requested_software_instance + """
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -1301,7 +1274,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict \
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       RequestComputerPartition \
@@ -1319,7 +1292,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       Logout
       RequestComputerPartition
@@ -1462,16 +1435,22 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       LoginDefaultUser \
       SubmitCredentialRequest \
       Tic \
-      AcceptSubmittedCredentialsActiveSense \
+      CallAcceptSubmittedCredentialsAlarm \
       Tic \
       Logout \
       LoginERP5TypeTestCase \
-      TriggerBuild \
+      CallVifibTriggerBuildAlarm \
       Tic \
-      TriggerStopConfirmedInvoiceAlarm \
+      CallStopConfirmedSaleInvoiceTransactionAlarm \
       Tic \
-      TriggerBuild \
+      CallVifibTriggerBuildAlarm \
       Tic \
+      CallVifibExpandDeliveryLineAlarm \
+      CleanTic \
+      CallVifibTriggerBuildAlarm \
+      CleanTic \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
       Logout'
 
   create_new_user_instance_sequence_string = '\
@@ -1481,7 +1460,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout \
       \
       LoginDefaultUser \
-      ConfirmOrderedSaleOrderActiveSense \
+      CallConfirmOrderedSaleOrderAlarm \
       Tic \
       SetSelectedComputerPartition \
       SelectCurrentlyUsedSalePackingListUid \
@@ -1981,7 +1960,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         software_type, software_type + str(2))
     self.stepLoginDefaultUser()
     self.stepTic()
-    self.stepConfirmOrderedSaleOrderActiveSense()
+    self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
     self.stepLogout()
     first = slap_computer_partition.request(software_release,
@@ -4230,9 +4209,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       )
     credential_request.submit()
 
-  def stepAcceptSubmittedCredentialsActiveSense(self, **kw):
-    self.portal.portal_alarms.accept_submitted_credentials.activeSense()
-
   def stepLoginWebUser(self, sequence, **kw):
     self.login(sequence['web_user'])
 
@@ -4374,7 +4350,6 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   ########################################
 
   def _safe_revoke_certificate(self, person):
-    from AccessControl import getSecurityManager
     user = getSecurityManager().getUser().getId()
     try:
       self.login('ERP5TypeTestCase')
@@ -4481,7 +4456,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       SubmitCredentialRequest
       Tic
-      AcceptSubmittedCredentialsActiveSense
+      CallAcceptSubmittedCredentialsAlarm
       Tic
       PayRegistrationPayment
       Tic
@@ -4493,7 +4468,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      ConfirmOrderedSaleOrderActiveSense
+      CallConfirmOrderedSaleOrderAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -4533,7 +4508,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       SubmitCredentialRequest
       Tic
-      AcceptSubmittedCredentialsActiveSense
+      CallAcceptSubmittedCredentialsAlarm
       Tic
       Logout
 
@@ -4543,7 +4518,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      AcceptSubmittedCredentialsActiveSense
+      CallAcceptSubmittedCredentialsAlarm
       Tic
 
       LoginWebUser
