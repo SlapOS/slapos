@@ -33,21 +33,12 @@ class Recipe(GenericBaseRecipe):
   def _options(self, options):
     self.directory = options.copy()
     del self.directory['recipe']
-
-    str_mode = '0700'
-    if 'mode' in self.directory:
-      str_mode = self.directory['mode']
-      del self.directory['mode']
-    self.mode = int(str_mode, 8)
+    self.mode = int(self.directory.pop('mode', '700'), 8)
 
   def install(self):
-
-    for directory in sorted(self.directory.values()):
-      path = directory
-
+    for path in sorted(self.directory.values()):
       if not os.path.exists(path):
         os.makedirs(path, self.mode)
       elif not os.path.isdir(path):
         raise OSError("%s path exits, but it's not a directory.")
-
     return []

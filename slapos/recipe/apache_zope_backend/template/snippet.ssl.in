@@ -1,0 +1,12 @@
+
+# SSL Configuration
+SSLEngine on
+SSLCertificateFile %(certificate)s
+SSLCertificateKeyFile %(key)s
+SSLRandomSeed startup builtin
+SSLRandomSeed connect builtin
+SSLProtocol -ALL +SSLv3 +TLSv1
+SSLHonorCipherOrder On
+SSLCipherSuite RC4-SHA:HIGH:!ADH
+SSLSessionCache shmcb:%(ssl_session_cache)s(512000)
+SSLProxyEngine On

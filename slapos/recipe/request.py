@@ -54,7 +54,7 @@ class Recipe(object):
       self.return_parameters = [str(parameter).strip()
                                for parameter in options['return'].split()]
     else:
-      self.logger.warning("No parameter to return to main instance."
+      self.logger.debug("No parameter to return to main instance."
                           "Be careful about that...")
 
     software_type = 'RootInstanceSoftware'
@@ -72,14 +72,15 @@ class Recipe(object):
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
 
-    instance = self.request(options['software-url'], software_type,
+    self.instance = self.request(options['software-url'], software_type,
       options.get('name', name), partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=self.isSlave)
 
     self.failed = None
     for param in self.return_parameters:
       try:
-        options['connection-%s' % param] = str(instance.getConnectionParameter(param))
+        options['connection-%s' % param] = str(
+            self.instance.getConnectionParameter(param))
       except slapmodule.NotFoundError:
         options['connection-%s' % param] = ''
         if self.failed is None:
@@ -87,7 +88,16 @@ class Recipe(object):
 
   def install(self):
     if self.failed is not None:
-      raise KeyError("Connection parameter %r not found." % self.failed)
+      # Check instance status to know if instance has been deployed
+      try:
+        status = self.instance.getState()
+      except slapmodule.NotFoundError:
+        status = "not ready yet, please try again"
+      # XXX-Cedric : currently raise an error. So swallow it...
+      except AttributeError:
+        status = "unknown"
+      raise KeyError("Connection parameter %s not found. "
+          "Status of requested instance is : %s." % (self.failed, status))
     return []
 
   update = install

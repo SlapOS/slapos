@@ -1,0 +1,5 @@
+
+# ERP5 promise
+<product-config /%(site-id)s>
+  promise_path %(promise-path)s
+</product-config>
