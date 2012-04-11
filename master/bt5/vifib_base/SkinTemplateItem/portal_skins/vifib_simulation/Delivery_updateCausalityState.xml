@@ -51,7 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>delivery = context\n
-if delivery.getCausalityState() != \'calculating\':\n
+if delivery.getCausalityState() not in (\'building\', \'calculating\'):\n
   return\n
 \n
 if context.getPortalObject().portal_activities.countMessage(path=delivery.getPath()) == 0:\n
