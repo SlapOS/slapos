@@ -50,43 +50,21 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from Products.ERP5Type.Message import translateString\n
-from DateTime import DateTime\n
+            <value> <string>delivery = context\n
+if delivery.getCausalityState() != \'calculating\':\n
+  return\n
 \n
-payment_transaction = context\n
-\n
-# initialize accounting_workflow to planned state\n
-if payment_transaction.getSimulationState() == "draft":\n
-  payment_transaction.plan(comment=translateString("Initialised by Delivery Builder."))\n
-\n
-if payment_transaction.getStartDate() is None:\n
-  payment_transaction.setStartDate(DateTime())\n
-\n
-# First set the payment transaction in the building state on the causality workflow\n
-payment_transaction.startBuilding()\n
-\n
-# update casuality from movements\n
-causality_list = payment_transaction.getCausalityList()\n
-causality_list.sort()\n
-modified = 0\n
-for movement in payment_transaction.getMovementList():\n
-  movement_causality = movement.getCausality()\n
-  if movement_causality not in causality_list:\n
-    modified = 1\n
-    causality_list.append(movement_causality)\n
-\n
-if modified:\n
-  causality_list.sort()\n
-  payment_transaction.setCausalityList(causality_list)\n
+if context.getPortalObject().portal_activities.countMessage(path=delivery.getPath()) == 0:\n
+  delivery.updateCausalityState()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>related_simulation_movement_path_list=None, **kw</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibPaymentTransaction_postGeneration</string> </value>
+            <value> <string>Delivery_updateCausalityState</string> </value>
         </item>
       </dictionary>
     </pickle>

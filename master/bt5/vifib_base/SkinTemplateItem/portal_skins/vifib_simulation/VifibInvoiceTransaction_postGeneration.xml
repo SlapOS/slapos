@@ -88,10 +88,8 @@ if modified:\n
   specialise_list.sort()\n
   invoice.setSpecialiseList(specialise_list)\n
 \n
-# Update causality workflow\n
 if invoice.getPortalObject().portal_workflow.isTransitionPossible(invoice, \'start_building\'):\n
   invoice.startBuilding()\n
-invoice.updateCausalityState()\n
 </string> </value>
         </item>
         <item>
