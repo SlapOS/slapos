@@ -24,6 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import os
 import shutil
 from slapos.recipe.librecipe import GenericSlapRecipe
 from subprocess import Popen
@@ -44,7 +45,7 @@ class Recipe(GenericSlapRecipe):
         self.substituteTemplate(self.getTemplateFilename('os_config.xml.in'),
         os_configuration_parameter_dict))
     path_list.append(os_config_file)
-    
+
     # Put modified accords configuration file
     accords_configuration_parameter_dict = dict(
         listen_ip = self.options['listen-ip']
@@ -63,7 +64,7 @@ class Recipe(GenericSlapRecipe):
     # Generate manifest
     manifest_origin_location = self.options['manifest-source']
     manifest_location = self.options['manifest-destination']
-    
+
     shutil.copy(manifest_origin_location, manifest_location)
     path_list.append(manifest_location)
 
@@ -79,7 +80,10 @@ class Recipe(GenericSlapRecipe):
         server_url = self.server_url,
         software_release_url = self.software_release_url,
         key_file = self.key_file,
-        cert_file = self.cert_file,)
+        cert_file = self.cert_file,
+        path = '%s:%s' % (self.options['accords_bin_directory'],
+            os.environ.get('PATH', '')),
+    )
     wrapper_location = self.createPythonScript(self.options['accords-wrapper'],
         '%s.accords.runAccords' % __name__,
         wrapper_config_dict)

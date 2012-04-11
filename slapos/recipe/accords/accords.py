@@ -26,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import os
 from slapos import slap
 import signal
 from subprocess import Popen
@@ -48,8 +49,9 @@ def runAccords(accords_conf):
 
   environment = dict(
      LD_LIBRARY_PATH=accords_lib_directory,
+     PATH= accords_conf['path'],
   )
-  
+
   # Set handler to stop ACCORDS when end of world comes
   def sigtermHandler(signum, frame):
     Popen(['./co-command', 'stop', '/service/*'],
@@ -73,7 +75,7 @@ def runAccords(accords_conf):
   # Parse answer
   # XXX
   connection_dict = dict(connection='hardcoded')
-  
+
   # Send information about published service to SlapOS Master
   slap_connection = slap.slap()
   slap_connection.initializeConnection(server_url, key_file, cert_file)
