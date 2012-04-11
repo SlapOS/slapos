@@ -1270,8 +1270,6 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       self.register_new_user_sequence_string + '\
         LoginWebUser \
         CheckRegistrationAccounting \
-        Logout \
-        LoginDefaultUser \
         PayRegistrationPayment \
         Tic \
         Logout \
@@ -1283,6 +1281,19 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         SoftwareInstanceAvailable \
         Tic \
         SlapLogout \
+        \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm\
+        CleanTic \
+        CallDeliverSubscriptionSalePackingListAlarm \
+        CleanTic \
+        CallVifibExpandDeliveryLineAlarm \
+        CleanTic \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
         \
         LoginWebUser \
         RequestSoftwareInstanceStart \
