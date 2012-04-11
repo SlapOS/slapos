@@ -608,7 +608,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     transaction_list = self.portal.portal_catalog(
       portal_type="Sale Invoice Transaction",
       destination_section_relative_url=person.getRelativeUrl(),
-      sort_on=(('uid', 'DESC')),
+      sort_on=(('uid', 'DESC'),),
       )
     self.assertEquals(2, len(transaction_list))
 
@@ -786,7 +786,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     transaction_list = self.portal.portal_catalog(
       portal_type="Sale Invoice Transaction",
       destination_section_relative_url=person.getRelativeUrl(),
-      sort_on=(('uid', 'DESC')),
+      sort_on=(('uid', 'DESC'),),
       )
     self.assertEquals(2, len(transaction_list))
 
@@ -1090,7 +1090,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     transaction_list = self.portal.portal_catalog(
       portal_type="Sale Invoice Transaction",
       destination_section_relative_url=person.getRelativeUrl(),
-      sort_on=(('uid', 'DESC')),
+      sort_on=(('uid', 'DESC'),),
       )
     self.assertEquals(2, len(transaction_list))
 
