@@ -57,6 +57,7 @@ portal = context.getPortalObject()\n
 portal.portal_catalog.searchAndActivate(\n
   portal_type=\'Sale Invoice Transaction\',\n
   simulation_state=\'confirmed\',\n
+  causality_state=\'solved\',\n
   method_id=\'SaleInvoiceTransaction_stopConfirmed\',\n
   activate_kw={\'tag\': tag}\n
 )\n
