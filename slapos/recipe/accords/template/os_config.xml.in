@@ -7,7 +7,7 @@
     password="%(password)s" 
     authenticate=""
     agent="CompatibleOne/OpenStackClient/1.0a.0.01"
-    host=" http://beta.enocloud.com:5000/v2.0/"
+    host="http://beta.enocloud.com:5000/v2.0/"
     version="v1.1"
     namespace="%(domain)s"
     base=""
