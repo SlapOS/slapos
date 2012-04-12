@@ -1392,6 +1392,11 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         \
         SlapLogout \
         Tic \
+        \
+        CallVifibExpandDeliveryLineAlarm \
+        CleanTic \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallStopConfirmedSaleInvoiceTransactionAlarm \
@@ -1399,8 +1404,6 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CallVifibExpandDeliveryLineAlarm \
         CleanTic \
         CallVifibTriggerBuildAlarm \
-        CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm\
         CleanTic \
         \
         LoginWebUser \
