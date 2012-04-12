@@ -594,18 +594,18 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         Tic
         CheckHostingSubscriptionStoppedDocumentCoverage
 
-        # Confirm current invoice and stop next delivery. After triggering build
-        # new planned invoice shall be available.
-
-        SelectPlannedInvoice
-        ConfirmInvoice
-        Tic
-
         LoginERP5TypeTestCase
         CheckSiteConsistency
         Logout
         """
 
+#        # Confirm current invoice and stop next delivery. After triggering build
+#        # new planned invoice shall be available.
+#
+#        SelectPlannedInvoice
+#        ConfirmInvoice
+#        Tic
+#
 #         SelectNextSubscriptionDelivery
 #         Tic
 # 
