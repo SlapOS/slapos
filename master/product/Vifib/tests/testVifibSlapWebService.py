@@ -1439,15 +1439,25 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic \
       Logout \
       LoginERP5TypeTestCase \
+      CallVifibExpandDeliveryLineAlarm \
+      CleanTic \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
       CallVifibTriggerBuildAlarm \
-      Tic \
-      CallStopConfirmedSaleInvoiceTransactionAlarm \
-      Tic \
-      CallVifibTriggerBuildAlarm \
-      Tic \
+      CleanTic \
       CallVifibExpandDeliveryLineAlarm \
       CleanTic \
       CallVifibTriggerBuildAlarm \
+      CleanTic \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
+      CallStopConfirmedSaleInvoiceTransactionAlarm \
+      CleanTic \
+      CallVifibExpandDeliveryLineAlarm \
+      CleanTic \
+      CallVifibTriggerBuildAlarm \
+      CleanTic \
+      CallVifibExpandDeliveryLineAlarm \
       CleanTic \
       CallVifibUpdateDeliveryCausalityStateAlarm \
       CleanTic \
