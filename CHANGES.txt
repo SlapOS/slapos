@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.46 (Unreleased)
+0.46 (2012/04/12)
 -----------------
 
-  * No change yet.
+  * xvfb and firefox initial release [Romain Courteaud]
 
 0.45 (2012-03-29)
 -----------------
