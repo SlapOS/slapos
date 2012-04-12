@@ -1389,9 +1389,20 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         LoginERP5TypeTestCase \
         ConfirmOngoingInvoice \
         Tic \
-        Tic \
+        \
         SlapLogout \
         Tic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        CallStopConfirmedSaleInvoiceTransactionAlarm \
+        CleanTic \
+        CallVifibExpandDeliveryLineAlarm \
+        CleanTic \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm\
+        CleanTic \
+        \
         LoginWebUser \
         PayRegistrationPayment \
         Tic \
