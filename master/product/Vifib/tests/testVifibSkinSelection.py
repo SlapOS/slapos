@@ -111,6 +111,7 @@ class TestVifibSkinSelection(testVifibMixin):
 """
 custom
 vifib_upgrader
+vifib_agent
 vifib_base
 vifib_cash
 vifib_core
@@ -208,6 +209,7 @@ zpt_generic
 """
 custom
 vifib_upgrader
+vifib_agent
 vifib_base
 vifib_core
 vifib_crm
@@ -307,6 +309,7 @@ zpt_generic
 custom
 vifib_upgrader
 vifib_hosting
+vifib_agent
 vifib_base
 vifib_core
 vifib_crm
@@ -404,6 +407,7 @@ zpt_generic
 """
 custom
 vifib_upgrader
+vifib_agent
 vifib_base
 vifib_core
 vifib_crm
@@ -495,6 +499,7 @@ zpt_generic
 """
 custom
 vifib_upgrader
+vifib_agent
 vifib_base
 vifib_core
 vifib_crm
@@ -586,6 +591,7 @@ zpt_generic
 """
 custom
 vifib_upgrader
+vifib_agent
 vifib_base
 vifib_core
 vifib_crm
@@ -681,6 +687,7 @@ zpt_generic
 """
 custom
 vifib_upgrader
+vifib_agent
 vifib_base
 vifib_core
 vifib_crm
@@ -775,6 +782,7 @@ zpt_generic
 """
 custom
 vifib_upgrader
+vifib_agent
 vifib_base
 vifib_core
 vifib_crm
@@ -866,6 +874,7 @@ zpt_generic
 """
 custom
 vifib_upgrader
+vifib_agent
 vifib_base
 vifib_core
 vifib_crm
@@ -956,6 +965,7 @@ zpt_generic
 """
 custom
 vifib_upgrader
+vifib_agent
 vifib_base
 vifib_core
 vifib_crm
