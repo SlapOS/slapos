@@ -33,6 +33,8 @@ import sys
 import zc.recipe.egg
 import urlparse
 
+# Warning : this recipe is deprecated and has been replaced by apachephp.
+
 class BaseRecipe(BaseSlapRecipe):
   def getTemplateFilename(self, template_name):
     return pkg_resources.resource_filename(__name__,
