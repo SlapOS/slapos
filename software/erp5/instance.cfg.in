@@ -48,6 +48,7 @@ aspell = {{ aspell_location }}
 poppler = {{ poppler_location }}
 dmtx-utils = {{ dmtx_utils_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
+zope-conf-template = {{ template_zope_conf }}
 
 [dynamic-template-tidstorage]
 < = jinja2-template-base

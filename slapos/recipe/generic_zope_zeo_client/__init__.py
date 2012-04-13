@@ -43,7 +43,6 @@ def Zope2InitUser(path, username, password):
 class Recipe(GenericBaseRecipe):
   def _options(self, options):
     options['password'] = self.generatePassword()
-    options['deadlock-password'] = self.generatePassword()
 
   def install(self):
     """
@@ -91,25 +90,6 @@ class Recipe(GenericBaseRecipe):
         # Always provide a URL-Type
         append("file://" + link)
 
-    # Generate Zeo connections
-    zeo_snippet_template = open(self.getTemplateFilename('zope.zeo.entry.conf.in'
-      )).read()
-    zeo_snippet_list = []
-    for zeo_line in self.options['zeo-connection-string'].splitlines():
-      zeo_line.strip()
-      if not zeo_line:
-        continue
-      d = dict()
-      for param in zeo_line.split():
-        k, v = param.split('=')
-        d[k.strip()] = v.strip()
-      zeo_snippet_list.append(zeo_snippet_template % d)
-    # Create zope configuration file
-    zope_config = dict(
-        products=self.options['products'],
-        thread_amount=self.options['thread-amount'],
-        zodb_configuration='\n'.join(zeo_snippet_list)
-    )
     zope_environment = dict(
       TMP=self.options['tmp-path'],
       TMPDIR=self.options['tmp-path'],
@@ -134,44 +114,7 @@ class Recipe(GenericBaseRecipe):
     # configure default Zope2 zcml
     open(self.options['site-zcml'], 'w').write(open(self.getTemplateFilename(
         'site.zcml')).read())
-    zope_config['instance'] = self.options['instance-path']
-    zope_config['event_log'] = self.options['event-log']
-    zope_config['z2_log'] = self.options['z2-log']
-    zope_config['pid-filename'] = self.options['pid-file']
-    zope_config['lock-filename'] = self.options['lock-file']
-    prefixed_products = []
-    for product in reversed(zope_config['products'].split()):
-      product = product.strip()
-      if product:
-        prefixed_products.append('products %s' % product)
-    prefixed_products.insert(0, 'products %s' % self.options[
-      'instance-products'])
-    zope_config['products'] = '\n'.join(prefixed_products)
-    zope_config['address'] = '%s:%s' % (self.options['ip'], self.options['port'])
-    zope_config.update(dump_url=self.options['deadlock-path'],
-      secret=self.options['deadlock-password'])
 
-    zope_wrapper_template_location = self.getTemplateFilename('zope.conf.in')
-    zope_conf_content = self.substituteTemplate(zope_wrapper_template_location,
-      zope_config)
-    if self.isTrueValue(self.options['timeserver']):
-      zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
-          'zope.conf.timeserver.in'), {})
-    if 'tidstorage-ip' in self.options:
-      zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
-          'zope.conf.tidstorage.in'), {
-            'tidstorage-ip': self.options['tidstorage-ip'],
-            'tidstorage-port': self.options['tidstorage-port'],
-            })
-    if ('promise-path' in self.options) and ('site-id' in self.options):
-      zope_conf_content += self.substituteTemplate(self.getTemplateFilename(
-          'zope.conf.promise.in'), {
-            'site-id': self.options['site-id'],
-            'promise-path': self.options['promise-path'],
-            })
-
-    zope_conf_path = self.createFile(self.options['configuration-file'], zope_conf_content)
-    path_list.append(zope_conf_path)
     # Create init script
-    path_list.append(self.createPythonScript(self.options['wrapper'], 'slapos.recipe.librecipe.execute.executee', [[self.options['runzope-binary'].strip(), '-C', zope_conf_path], zope_environment]))
+    path_list.append(self.createPythonScript(self.options['wrapper'], 'slapos.recipe.librecipe.execute.executee', [[self.options['runzope-binary'].strip(), '-C', self.options['configuration-file']], zope_environment]))
     return path_list
