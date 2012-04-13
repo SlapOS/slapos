@@ -1,4 +1,4 @@
-{% if software_type == slapparameter_dict['slap_software_type'] -%}
+{% if software_type == slap_software_type -%}
 {% set json = json_module.loads(parameter_dict.get('cloudooo-json', '{}')) -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 [buildout]
