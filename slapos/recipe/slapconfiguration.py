@@ -26,6 +26,7 @@
 ##############################################################################
 import slapos.slap
 from ConfigParser import RawConfigParser
+from netaddr import valid_ipv4, valid_ipv6
 
 class Recipe(object):
   """
@@ -33,6 +34,8 @@ class Recipe(object):
   buildout section in various ways, and in various encodings.
   Populates the buildout section it is used in with all slap partition
   parameters.
+  Also provides access to partition properties: all IPv4, IPv6 and tap
+  interfaces it is allowed to use.
 
   Input:
     url
@@ -57,6 +60,12 @@ class Recipe(object):
   Output:
     slap-software-type
       Current partition's software type.
+    ipv4
+      Set of IPv4 addresses.
+    ipv6
+      Set of IPv6 addresses.
+    tap
+      Set of TAP interfaces.
     configuration
       Dict of all parameters.
     configuration.<key>
@@ -85,7 +94,22 @@ class Recipe(object):
       # Discard them, and make them available as separate section keys.
       options['slap-software-type'] = parameter_dict.pop(
           'slap_software_type')
-      del parameter_dict['ip_list']
+      ipv4_set = set()
+      v4_add = ipv4_set.add
+      ipv6_set = set()
+      v6_add = ipv6_set.add
+      tap_set = set()
+      tap_add = tap_set.add
+      for tap, ip in parameter_dict.pop('ip_list'):
+          tap_add(tap)
+          if valid_ipv4(ip):
+              v4_add(ip)
+          elif valid_ipv6(ip):
+              v6_add(ip)
+          # XXX: emit warning on unknown address type ?
+      options['ipv4'] = ipv4_set
+      options['ipv6'] = ipv6_set
+      options['tap'] = tap_set
       options['configuration'] = parameter_dict
       match = self.OPTCRE_match
       for key, value in parameter_dict.iteritems():
