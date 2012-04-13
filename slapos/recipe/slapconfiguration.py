@@ -25,13 +25,7 @@
 #
 ##############################################################################
 import slapos.slap
-import json
 from ConfigParser import RawConfigParser
-
-cast_dict = {
-    'json': (True, json.dumps),
-    'str': (False, str),
-}
 
 class Recipe(object):
   """
@@ -59,33 +53,22 @@ class Recipe(object):
       Partition identifier.
       Example:
         ${slap-connection:partition-id}
-    unsafe (optional, 0 by default)
-      Enables formats which are unsafe when represented back into a buildout
-      text file. Set to 0 to explicitly disable unsafe formats, any other
-      integer value to enable them.
 
   Output:
-    slap-software-type.<format>
-      Current partition's software type, serialised in each available format.
-    <format>
-      All partition parameters serialised in that format as values.
-      Example:
-        json = {"foo": "bar"}
-    <format>.key
-      One key per partition parameter, prefixed with serialisation format
-      followed by a dot. Example:
-        json.foo = "bar"
-
-  Supported serialisation formats:
-    json (safe)
-      JavaScript Object Notation
-    str (unsafe)
-      Python string representation.
+    slap-software-type
+      Current partition's software type.
+    configuration
+      Dict of all parameters.
+    configuration.<key>
+      One key per partition parameter.
+      Partition parameter whose name cannot be represented unambiguously in
+      buildout syntax are ignored. They cannot be accessed from buildout syntax
+      anyway, and are available through "configuration" output key.
   """
 
   # XXX: used to detect if a configuration key is a valid section key. This
   # assumes buildout uses ConfigParser - which is currently the case.
-  OPTCRE = RawConfigParser.OPTCRE
+  OPTCRE_match = RawConfigParser.OPTCRE.match
 
   def __init__(self, buildout, name, options):
       slap = slapos.slap.slap()
@@ -100,21 +83,14 @@ class Recipe(object):
       ).getInstanceParameterDict()
       # XXX: those are not partition parameters, strictly speaking.
       # Discard them, and make them available as separate section keys.
-      slap_software_type = parameter_dict.pop('slap_software_type')
+      options['slap-software-type'] = parameter_dict.pop(
+          'slap_software_type')
       del parameter_dict['ip_list']
-      allow_unsafe = bool(int(options.get('unsafe', '0')))
-      match = self.OPTCRE.match
-      for name, (safe, cast) in cast_dict.iteritems():
-          if not safe and not allow_unsafe:
+      options['configuration'] = parameter_dict
+      match = self.OPTCRE_match
+      for key, value in parameter_dict.iteritems():
+          if match(key) is not None:
               continue
-          options['slap-software-type.' + name] = cast(slap_software_type)
-          options[name] = cast(parameter_dict)
-          for key, value in parameter_dict.iteritems():
-              if match(key) is not None:
-                  # It should be OK to skip silently and unconditionally: such
-                  # parameter cannot be accessed in a well-formed buildout
-                  # config.
-                  continue
-              options[name + '.' + key] = cast(value)
+          options['configuration.' + key] = value
 
   install = update = lambda self: []
