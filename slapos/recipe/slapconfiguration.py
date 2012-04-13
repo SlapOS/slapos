@@ -65,14 +65,18 @@ class Recipe(object):
       integer value to enable them.
 
   Output:
-    One key per supported serialisation format, with all partition parameters
-    serialised in that format as values and format's name.
-    Also, one key per partition parameter, prefixed with serialisation format
-    followed by a dot. Example:
-      json = {"foo": "bar"}
-      json.foo = "bar"
+    slap-software-type.<format>
+      Current partition's software type, serialised in each available format.
+    <format>
+      All partition parameters serialised in that format as values.
+      Example:
+        json = {"foo": "bar"}
+    <format>.key
+      One key per partition parameter, prefixed with serialisation format
+      followed by a dot. Example:
+        json.foo = "bar"
 
-  Supported serailisation formats:
+  Supported serialisation formats:
     json (safe)
       JavaScript Object Notation
     str (unsafe)
@@ -94,11 +98,16 @@ class Recipe(object):
           options['computer'],
           options['partition'],
       ).getInstanceParameterDict()
+      # XXX: those are not partition parameters, strictly speaking.
+      # Discard them, and make them available as separate section keys.
+      slap_software_type = parameter_dict.pop('slap_software_type')
+      del parameter_dict['ip_list']
       allow_unsafe = bool(int(options.get('unsafe', '0')))
       match = self.OPTCRE.match
       for name, (safe, cast) in cast_dict.iteritems():
           if not safe and not allow_unsafe:
               continue
+          options['slap-software-type.' + name] = cast(slap_software_type)
           options[name] = cast(parameter_dict)
           for key, value in parameter_dict.iteritems():
               if match(key) is not None:

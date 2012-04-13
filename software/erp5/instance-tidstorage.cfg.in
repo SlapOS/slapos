@@ -1,4 +1,4 @@
-{% if software_type == slapparameter_dict['slap_software_type'] -%}
+{% if software_type == slap_software_type -%}
 {#
 Note: all port counters are pre-incremented. No idea why base port is skipped.
 -#}
