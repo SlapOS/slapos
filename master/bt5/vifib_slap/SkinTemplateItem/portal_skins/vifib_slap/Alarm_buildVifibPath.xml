@@ -61,6 +61,7 @@ kw.update(\n
 \n
 context.getPortalObject().portal_catalog.searchAndActivate(\n
   method_id=\'SimulationMovement_buildVifib\',\n
+  packet_size=1, # Separate calls to many transactions\n
   method_kw={\'tag\': tag},\n
   activate_kw={\'tag\': tag},\n
   **kw\n

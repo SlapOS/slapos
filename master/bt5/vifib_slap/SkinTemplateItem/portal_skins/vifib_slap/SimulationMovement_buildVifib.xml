@@ -50,13 +50,23 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>if context.getDelivery() is not None:\n
+            <value> <string>"""\n
+Take care!\n
+\n
+This method does not lock in same transaction, as it locks on two different documents (and only on those two)\n
+"""\n
+if context.getDelivery() is not None:\n
   # movement build but not indexed, so do nothing\n
   return\n
 \n
 root_applied_rule = context.getRootAppliedRule()\n
 \n
-context.getCausalityValue(portal_type=\'Business Link\').build(path=\'%s/%%\' % root_applied_rule.getPath(), activate_kw={\'tag\': tag})\n
+business_link = context.getCausalityValue(portal_type=\'Business Link\')\n
+explanation = context.getImmediateExplanationValue()\n
+lock_tag = \'build_in_progress_%s_%s\' % (explanation.getUid(), business_link.getUid())\n
+if context.getPortalObject().portal_activities.countMessageWithTag(lock_tag) == 0:\n
+  business_link.build(explanation=explanation, activate_kw={\'tag\': tag})\n
+  explanation.activate(activity=\'SQLQueue\', after_tag=tag, tag=lock_tag).getId()\n
 </string> </value>
         </item>
         <item>
