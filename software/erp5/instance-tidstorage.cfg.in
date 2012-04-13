@@ -10,6 +10,12 @@ Note: all port counters are pre-incremented. No idea why base port is skipped.
 {% set json = json_module.loads(slapparameter_dict['json']) -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {#
+XXX: This template only supports exactly one IPv4 and one IPv6 per
+partition. No more (undefined result), no less (IndexError).
+-#}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
+{#
 BBB: erp5-ca['state'] has been configured as string by mistake. Keep this for
 backward compatibility with existing automatically setup CAs.
 -#}
@@ -251,7 +257,7 @@ bt5-repository-url = ${slap-parameter:bt5-repository-url}
 #############################
 [zeo-instance-entry-common]
 recipe = slapos.cookbook:zeo
-ip = ${slap-network-information:local-ipv4}
+ip = {{ ipv4 }}
 binary-path = {{ bin_directory }}/runzeo
 
 {% for zeo_id, zeo_configuration_list in json['zeo'].iteritems() -%}
@@ -300,7 +306,7 @@ recipe = slapos.cookbook:generic.zope.zeo.client
 # availability in software's eggs
 products = {{ parameter_dict['products'] }}
 user = zope
-ip = ${slap-network-information:local-ipv4}
+ip = {{ ipv4 }}
 deadlock-path = /manage_debug_threads
 timezone = {{ json['timezone'] }}
 zeo-connection-string =
@@ -369,7 +375,7 @@ site-id = {{ site_id }}
 [{{ section(section_name) }}]
 recipe = slapos.cookbook:apache.zope.backend
 backend = http://${haproxy-{{ backend_name }}:ip}:${haproxy-{{ backend_name }}:port}
-ip = ${slap-network-information:global-ipv6}
+ip = {{ ipv6 }}
 port = {{ current_apache_port }}
 scheme = http
 wrapper = ${basedirectory:services}/apache-public-{{ backend_name }}
@@ -398,7 +404,7 @@ post = {{ bin_directory }}/killpidfromfile ${apache-public-{{ backend_name }}:pi
 [{{ section(section_name) }}]
 recipe = slapos.cookbook:apache.zope.backend
 backend = http://${haproxy-{{ backend_name }}:ip}:${haproxy-{{ backend_name }}:port}
-ip = ${slap-network-information:global-ipv6}
+ip = {{ ipv6 }}
 port = {{ current_apache_port - 1 }}
 wrapper = ${rootdirectory:bin}/apache-{{ backend_name }}
 scheme = https
@@ -437,7 +443,7 @@ post = {{ bin_directory }}/killpidfromfile ${apache-{{ backend_name }}:pid-file}
 recipe = slapos.cookbook:haproxy
 name = {{ backend_name }}
 conf-path = ${rootdirectory:etc}/haproxy-{{ backend_name }}.cfg
-ip = ${slap-network-information:local-ipv4}
+ip = {{ ipv4 }}
 port = {{ current_haproxy_port }}
 maxconn = {{ backend_configuration['maxconn'] }}
 server-check-path = /{{ site_id }}/getId
@@ -459,7 +465,7 @@ recipe = slapos.cookbook:tidstorage
 known-tid-storage-identifier-dict = {{ known_tid_storage_identifier_dict }}
 base-url = http://${zope-admin:ip}:${zope-admin:port}/%s/serialize
 configuration-path = ${rootdirectory:etc}/tidstorage.py
-ip = ${slap-network-information:local-ipv4}
+ip = {{ ipv4 }}
 port = 6001
 timestamp-file-path = ${directory:tidstorage}/repozo_tidstorage_timestamp.log
 logfile-name = ${basedirectory:log}/tidstorage.log
