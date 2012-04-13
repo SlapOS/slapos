@@ -182,9 +182,17 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     sequence_string = \
         self.prepare_installed_computer_partition_sequence_string + """
       LoginERP5TypeTestCase
-      Tic # in order to update simulation
+
+      CallVifibTriggerBuildAlarm
+      CleanTic
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallDeliverSubscriptionSalePackingListAlarm
+      CleanTic
+      CallVifibExpandDeliveryLineAlarm
+      CleanTic
+
       CheckSimulationMovement
-      Tic
       SlapLogout
 
       LoginERP5TypeTestCase
