@@ -369,7 +369,14 @@ class testVifibMixin(ERP5TypeTestCase):
       # clear cache
       self.clearCache()
       self.changeSkin('RSS')
-      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist())
+      diverged_document_list = self.portal.portal_catalog(
+        portal_type=self.portal.getPortalDeliveryTypeList(),
+        causality_state='!= solved'
+      )
+      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist(),
+        'There are unsolved deliveries: %s' % ','.join([
+          ' '.join((q.getTitle(), q.getPath(), q.getCausalityState())) \
+          for q in diverged_document_list]))
     finally:
       self.changeSkin(current_skin)
 
