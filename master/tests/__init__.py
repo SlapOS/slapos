@@ -1,6 +1,15 @@
 from test_suite import SavedTestSuite, ProjectTestSuite
-class VIFIB(SavedTestSuite, ProjectTestSuite):
+
+class SLAPOS_MASTER(SavedTestSuite, ProjectTestSuite):
   _bt_list = [
+#     'vifib_slapos_core',
+#     'vifib_slapos_master',
+  ]
+  _product_list = ['Vifib']
+  _saved_test_id = 'Products.Vifib.tests.VifibMixin'
+
+class VIFIB(SLAPOS_MASTER):
+  _bt_list = SLAPOS_MASTER._bt_list + [
     'vifib_base',
     'vifib_core',
     'vifib_crm',
@@ -17,5 +26,3 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
     'vifib_upgrader',
     'vifib_web',
   ]
-  _product_list = ['Vifib']
-  _saved_test_id = 'Products.Vifib.tests.VifibMixin'
