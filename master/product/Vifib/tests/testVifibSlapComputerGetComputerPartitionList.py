@@ -232,6 +232,9 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_installed_computer_partition_sequence_string + '\
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
+      \
       LoginDefaultUser \
       DeliverSalePackingList \
       Tic \
