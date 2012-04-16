@@ -1,0 +1,21 @@
+#!%(python_path)s
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+import socket
+import sys
+
+hostname = "%(hostname)s"
+port = %(port)s
+
+connection_okay = False
+
+try:
+  s = socket.create_connection((hostname, port))
+  connection_okay = True
+  s.close()
+except (socket.error, socket.timeout):
+  connection_okay = False
+
+if not connection_okay:
+  print >> sys.stderr, "%(port)s on %(hostname)s isn't listening"
+  sys.exit(127)
