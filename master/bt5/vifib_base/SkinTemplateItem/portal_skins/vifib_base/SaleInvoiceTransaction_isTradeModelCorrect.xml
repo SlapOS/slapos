@@ -55,6 +55,8 @@ amount_list = specialise.getAggregatedAmountList(context)\n
 if len(amount_list) != 1:\n
   return False\n
 \n
+precision = context.getPriceCurrencyValue().getQuantityPrecision()\n
+\n
 amount = amount_list[0]\n
 \n
 total_price = amount.getTotalPrice()\n
@@ -64,7 +66,7 @@ for line in context.getMovementList(context.getPortalInvoiceMovementTypeList()):
   if line.getUse() == \'trade/tax\':\n
     invoice_tax += line.getTotalPrice()\n
 \n
-return total_price == invoice_tax\n
+return round(total_price, precision) == round(invoice_tax, precision)\n
 </string> </value>
         </item>
         <item>
