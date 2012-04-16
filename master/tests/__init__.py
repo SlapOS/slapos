@@ -12,7 +12,6 @@ class VIFIB(SLAPOS_MASTER):
   _bt_list = SLAPOS_MASTER._bt_list + [
     'vifib_base',
     'vifib_core',
-    'vifib_crm',
     'vifib_data',
     'vifib_data_category',
     'vifib_data_web',

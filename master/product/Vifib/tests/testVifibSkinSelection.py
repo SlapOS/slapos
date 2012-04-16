@@ -115,7 +115,6 @@ vifib_agent
 vifib_base
 vifib_cash
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_jauks_theme
 vifib_jauks_widget_library
@@ -212,7 +211,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_fiber_theme
 vifib_forge_release
 vifib_jauks_theme
@@ -312,7 +310,6 @@ vifib_hosting
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_hosting_theme
 vifib_jauks_theme
@@ -410,7 +407,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -502,7 +498,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -594,7 +589,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -690,7 +684,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -785,7 +778,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -877,7 +869,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -968,7 +959,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen

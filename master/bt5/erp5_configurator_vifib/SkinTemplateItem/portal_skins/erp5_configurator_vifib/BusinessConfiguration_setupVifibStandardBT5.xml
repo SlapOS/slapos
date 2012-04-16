@@ -98,7 +98,6 @@ bt5_installation_list = (\n
       \'vifib_core\',\n
       \'vifib_base\',\n
       \'vifib_slap\',\n
-      \'vifib_crm\',\n
       \'vifib_forge_release\',\n
       \'vifib_software_pdm\',\n
       \'vifib_web\',\n
