@@ -100,7 +100,7 @@ class Recipe(BaseSlapRecipe):
       if slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE'):
         # XXX-Cedric : need to refactor to clean code? (to many variables)
         rewrite_rule = self.configureVarnishSlave(
-            base_varnish_port, backend_url, reference, domain)
+            base_varnish_port, backend_url, reference, service_dict, domain)
         base_varnish_port += 2
       else:
         rewrite_rule = "%s %s" % (domain, backend_url)
@@ -133,7 +133,7 @@ class Recipe(BaseSlapRecipe):
         stunnel_key, stunnel_certificate = \
             self.requestCertificate(frontend_domain_name)
       else:
-        stunnel_key, stunnet_certificate = key, certificate
+        stunnel_key, stunnel_certificate = key, certificate
       self.installStunnel(service_dict,
         stunnel_certificate, stunnel_key,
         ca_conf["ca_crl"],
