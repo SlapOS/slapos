@@ -395,7 +395,7 @@ It\'s the lowest priority one; ie. managers can create higher priority preferenc
         </item>
         <item>
             <key> <string>priority</string> </key>
-            <value> <int>3</int> </value>
+            <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>rights</string> </key>
