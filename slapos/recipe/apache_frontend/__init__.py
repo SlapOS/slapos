@@ -79,6 +79,8 @@ class Recipe(BaseSlapRecipe):
       url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
 
+      self.logger.info('processing slave instance: %s' % reference)
+
       # Check for mandatory slave fields
       if url is None:
         self.logger.warn('No "url" parameter is defined for %s slave'\
