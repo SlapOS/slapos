@@ -1,5 +1,5 @@
 USE mysql;
 DROP FUNCTION IF EXISTS last_insert_grn_id;
-CREATE FUNCTION last_insert_grn_id RETURNS INTEGER SONAME 'ha_mroonga.so';
+%(last_insert_grn_id)s
 DROP FUNCTION IF EXISTS sphinx_snippets;
 #CREATE FUNCTION sphinx_snippets RETURNS STRING SONAME 'ha_sphinx.so';
