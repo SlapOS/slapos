@@ -70,33 +70,40 @@ class Recipe(BaseSlapRecipe):
     service_dict = {}
 
     # Check if default port
-    if frontend_port_number is 443:
-      base_url = "%s/" % frontend_domain_name
+    if frontend_port_number is 443 or frontend_port_number is 80:
+      port_snippet = ""
     else:
-      base_url = "%s:%s/" % (frontend_domain_name, frontend_port_number)
+      port_snippet = ":%s" % frontend_port_number
 
     for slave_instance in slave_instance_list:
-      url = slave_instance.get("url", None)
+      backend_url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
+      # Set scheme (http? https?)
+      # Future work may allow to choose between http and https (or both?)
+      scheme = 'https://'
 
       self.logger.info('processing slave instance: %s' % reference)
 
       # Check for mandatory slave fields
-      if url is None:
+      if backend_url is None:
         self.logger.warn('No "url" parameter is defined for %s slave'\
             'instance. Ignoring it.' % reference)
         continue
 
-      subdomain = reference.replace("-", "").lower()
-      slave_dict[reference] = "https://%s.%s" % (subdomain, base_url)
+      # Check for custom domain (like mypersonaldomain.com)
+      # If no custom domain, use generated one
+      domain = slave_instance.get('custom_domain', 
+          "%s.%s" % (reference.replace("-", "").lower(), frontend_domain_name))
+      slave_dict[reference] = "%s%s%s/" % (scheme, domain, port_snippet)
 
+      # Check if we want varnish+stunnel cache.
       if slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE'):
         # XXX-Cedric : need to refactor to clean code? (to many variables)
         rewrite_rule = self.configureVarnishSlave(
-            base_varnish_port, url, slave_instance, frontend_domain_name)
+            base_varnish_port, backend_url, reference, domain)
         base_varnish_port += 2
       else:
-        rewrite_rule = "%s.%s %s" % (subdomain, frontend_domain_name, url)
+        rewrite_rule = "%s %s" % (domain, backend_url)
 
       # Finally, if successful, we add the rewrite rule to our list of rules
       if rewrite_rule:
@@ -182,9 +189,8 @@ class Recipe(BaseSlapRecipe):
 
     return self.path_list
 
-  def configureVarnishSlave(self, base_varnish_port, url, slave_instance,
-      service_dict, frontend_domain_name):
-    reference = slave_instance.get("slave_reference")
+  def configureVarnishSlave(self, base_varnish_port, url, reference,
+      service_dict, domain):
     # Varnish should use stunnel to connect to the backend
     base_varnish_control_port = base_varnish_port
     base_varnish_port += 1
@@ -214,9 +220,8 @@ class Recipe(BaseSlapRecipe):
         public_port=stunnel_port,
         private_ip=slave_host.replace("[", "").replace("]", ""),
         private_port=slave_port)
-    return "%s.%s http://%s:%s" % \
-        (reference.replace("-", ""), frontend_domain_name,
-        varnish_ip, base_varnish_port)
+    return "%s http://%s:%s" % \
+        (domain, varnish_ip, base_varnish_port)
 
   def installLogrotate(self):
     """Installs logortate main configuration file and registers its to cron"""
