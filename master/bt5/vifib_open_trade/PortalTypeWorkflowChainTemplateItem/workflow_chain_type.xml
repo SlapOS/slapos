@@ -1,7 +1,7 @@
 <workflow_chain>
  <chain>
   <type>Hosting Subscription</type>
-  <workflow>edit_workflow, hosting_subscription_workflow</workflow>
+  <workflow>hosting_subscription_workflow</workflow>
  </chain>
  <chain>
   <type>Purchase Packing List</type>

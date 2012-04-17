@@ -1,5 +1,9 @@
 <workflow_chain>
  <chain>
+  <type>Hosting Subscription</type>
+  <workflow>edit_workflow</workflow>
+ </chain>
+ <chain>
   <type>Slave Instance</type>
   <workflow>edit_workflow, item_workflow</workflow>
  </chain>
