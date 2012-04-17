@@ -36,11 +36,11 @@ sub vcl_recv {
     req.request != "PURGE" &&
     req.request != "DELETE") {
       /* Non-RFC2616 or CONNECT which is weird. */
-      pipe;
+      return(pipe);
   }
   if (req.request != "GET" && req.request != "HEAD" && req.request != "PURGE") {
       /* We only deal with GET and HEAD by default */
-      pass;
+      return(pass);
   }
   remove req.http.Cookie;
   remove req.http.Set-Cookie;
@@ -67,12 +67,12 @@ sub vcl_recv {
   #  unset req.http.x;
   #}
   set req.grace = 30d;
-  lookup;
+  return(lookup);
 }
 
 sub vcl_hash {
-    set req.hash += req.url;
-    hash;
+    hash_data(req.url);
+    return(hash);
 }
 
 sub vcl_hit {
@@ -90,21 +90,21 @@ sub vcl_hit {
    remove req.http.Accept-Language;
    remove req.http.Accept-Encoding;
    remove req.http.Cookie;
-   deliver;
+   return(deliver);
 }
 
 sub vcl_miss {
-    fetch;
+    return(fetch);
 }
 
 sub vcl_fetch {
     /* Never send request to backend even if client ask refreshed content */
-    if (obj.cacheable) {
+    if (beresp.ttl > 0s) {
        /* Setup grace period for 30days for all cacheable contents */
       #set req.grace = 30d;
-      set obj.grace = 30d;
+      set beresp.grace = 30d;
       }
-   deliver;
+   return(deliver);
    }
 
 
@@ -120,5 +120,5 @@ sub vcl_deliver {
    #  set resp.http.X-Hash = "No hash";
    #}
 
-   deliver;
+   return(deliver);
 }
