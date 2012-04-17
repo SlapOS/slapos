@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.46-dev'
+version = '0.47-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -62,6 +62,7 @@ setup(name=name,
           'generic.onetimeupload = slapos.recipe.generic_onetimeupload:Recipe',
           'helloworld = slapos.recipe.helloworld:Recipe',
           'generic.cloudooo = slapos.recipe.generic_cloudooo:Recipe',
+          'firefox = slapos.recipe.firefox:Recipe',
           'fontconfig = slapos.recipe.fontconfig:Recipe',
           'java = slapos.recipe.java:Recipe',
           'kumofs = slapos.recipe.kumofs:Recipe',
@@ -112,6 +113,7 @@ setup(name=name,
           'urlparse = slapos.recipe._urlparse:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'waitfor = slapos.recipe.waitfor:Recipe',
+          'xvfb = slapos.recipe.xvfb:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'generic.zope = slapos.recipe.generic_zope:Recipe',
