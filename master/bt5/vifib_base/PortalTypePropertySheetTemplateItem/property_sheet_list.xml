@@ -3,17 +3,11 @@
   <item>VariationRange</item>
  </portal_type>
  <portal_type id="Slave Instance">
-  <item>Reference</item>
   <item>SlaveInstanceConstraint</item>
   <item>SoftwareInstance</item>
-  <item>TextDocument</item>
-  <item>VariationRange</item>
  </portal_type>
  <portal_type id="Software Instance">
-  <item>Reference</item>
   <item>SoftwareInstance</item>
   <item>SoftwareInstanceConstraint</item>
-  <item>TextDocument</item>
-  <item>VariationRange</item>
  </portal_type>
 </property_sheet_list>
