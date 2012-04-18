@@ -75,7 +75,7 @@
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
-                    <value> <string>Base_viewForgeReleaseFieldLibrary</string> </value>
+                    <value> <string>erp5_forge_release/SoftwareRelease_view</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
