@@ -112,6 +112,8 @@ class Recipe(GenericBaseRecipe):
       # Reload apache configuration
       with open(self.options['pid-file']) as pid_file:
         pid = int(pid_file.read().strip(), 10)
-      os.kill(pid, signal.SIGUSR1) # Graceful restart
-
+      try:
+        os.kill(pid, signal.SIGUSR1) # Graceful restart
+      except OSError:
+        pass
     return path_list
