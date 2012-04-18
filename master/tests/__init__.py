@@ -2,7 +2,7 @@ from test_suite import SavedTestSuite, ProjectTestSuite
 
 class SLAPOS_MASTER(SavedTestSuite, ProjectTestSuite):
   _bt_list = [
-#     'vifib_slapos_core',
+    'vifib_slapos_core',
 #     'vifib_slapos_master',
   ]
   _product_list = ['Vifib']
