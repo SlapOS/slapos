@@ -66,11 +66,6 @@ state = kwargs.get(\'state\') or \'started\'\n
 \n
 hosting_subscription_portal_type = "Hosting Subscription"\n
 \n
-if is_slave == True:\n
-  software_instance_portal_type = "Slave Instance"\n
-else:\n
-  software_instance_portal_type = "Software Instance"\n
-\n
 tag = "%s_%s_inProgress" % (person.getUid(), \n
                                software_title)\n
 \n
