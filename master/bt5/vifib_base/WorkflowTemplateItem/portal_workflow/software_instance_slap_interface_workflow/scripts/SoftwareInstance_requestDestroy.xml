@@ -62,7 +62,7 @@ software_instance.serialize()\n
 \n
 sale_order_line = software_instance.getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
 \n
-if sale_order_line.getSimulationState() == \'ordered\':\n
+if sale_order_line is not None and sale_order_line.getSimulationState() == \'ordered\':\n
   # tries to destroy not yet even allocated one\n
   sale_order_line.getParentValue().cancel()\n
 else:\n
