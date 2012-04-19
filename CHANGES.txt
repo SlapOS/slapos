@@ -1,11 +1,10 @@
 Changes
 =======
 
-0.47 (Unreleased)
+0.47 (2012-04-19)
 -----------------
 
-  * No change yet.
-
+  * Slap Test Agent [Yingjie Xu]
 
 0.46 (2012/04/12)
 -----------------
