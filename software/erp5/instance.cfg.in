@@ -37,6 +37,7 @@ git = {{ git_location }}
 graphviz = {{ graphviz_location }}
 grep = {{ grep_location }}
 imagemagick = {{ imagemagick_location }}
+librsvg = {{ librsvg_location }}
 mariadb = {{ mariadb_location }}
 pdftk = {{ pdftk_location }}
 sed = {{ sed_location }}
