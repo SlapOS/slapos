@@ -55,6 +55,7 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
     configuration.add_section("agent")
     configuration.set("agent", "portal_url", self.parameter_dict["portal_url"])
     configuration.set("agent", "master_url", self.parameter_dict["master_url"])
+    configuration.set("agent", "report_url", self.parameter_dict["report_url"])
     key_filepath = os.path.join(self.work_directory, "key")
     key_file = open(key_filepath, "w")
     key_file.write(self.parameter_dict["key"])
@@ -78,11 +79,11 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
     state = open(self.options["state_file"], "w")
     state.write('')
     state.close()
+    configuration.set("agent", "path_file", self.options["path_file"])
     configuration.add_section("software_uri")
     software_list = json.loads(self.parameter_dict["software_list"])
     for software in software_list:
       configuration.set("software_uri", software, self.parameter_dict[software])
-
     configuration.write(open(configuration_path, "w"))
 
     agent_crond_path = os.path.join(self.crond, "agent")
