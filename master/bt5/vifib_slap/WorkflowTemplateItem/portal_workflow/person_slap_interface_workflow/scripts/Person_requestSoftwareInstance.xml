@@ -86,25 +86,19 @@ if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
   raise NotImplementedError(tag)\n
 \n
 # Check if it already exists\n
-cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
-request_hosting_subscription = None\n
-for hs in portal.portal_catalog(\n
+request_hosting_subscription_list = portal.portal_catalog(\n
   portal_type=hosting_subscription_portal_type,\n
   title=software_title,\n
-  ):\n
-  si = hs.portal_catalog.getResultValue(title=software_title,\n
-                                        root_uid=hs.getUid())\n
-  try:\n
-    cleanup_delivery_line = si.Item_getInstancePackingListLine(cleanup_resource)\n
-  except ValueError:\n
-    order_line = si.getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
-    if order_line.getSimulationState() != \'cancelled\':\n
-      request_hosting_subscription = hs\n
-      break\n
-  else:\n
-    if cleanup_delivery_line.getSimulationState() != \'delivered\':\n
-      request_hosting_subscription = hs\n
-      break\n
+  validation_state="validated",\n
+  default_destination_section=person.getRelativeUrl(),\n
+  limit=2,\n
+  )\n
+if len(request_hosting_subscription_list) > 1:\n
+  raise NotImplementedError, "Too many hosting subscription %s found" % software_title\n
+elif len(request_hosting_subscription_list) == 1:\n
+  request_hosting_subscription = request_hosting_subscription_list[0].getObject()\n
+else:\n
+  request_hosting_subscription = None\n
 \n
 if (request_hosting_subscription is None):\n
   hosting_subscription_reference = "HOSTSUBS-%s" % context.getPortalObject().portal_ids\\\n
@@ -119,6 +113,7 @@ if (request_hosting_subscription is None):\n
     root_software_release_url=software_release_url_string,\n
     root_slave=is_slave,\n
     root_state=state,\n
+    destination_section=person.getRelativeUrl(),\n
     activate_kw={\'tag\': tag},\n
   )\n
   request_hosting_subscription.portal_workflow.doActionFor(request_hosting_subscription,\n

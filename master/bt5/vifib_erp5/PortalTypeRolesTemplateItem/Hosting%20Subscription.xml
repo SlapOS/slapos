@@ -6,7 +6,8 @@
   </role>
   <role id='Auditor'>
    <property id='title'>Customer of the Hosting Subscription</property>
-   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromAggregateMovementItemByPerson</property>
+   <property id='description'>ERP5Type_getSecurityCategoryFromAggregateMovementItemByPerson</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
    <multi_property id='base_category'>destination_section</multi_property>
   </role>
   <role id='Assignor'>
