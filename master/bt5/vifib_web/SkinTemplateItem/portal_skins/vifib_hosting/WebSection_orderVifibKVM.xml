@@ -69,7 +69,11 @@ request_kw = {}\n
 request_kw.update(\n
   software_release=url,\n
   software_title="Vifib KVM %i" % portal.portal_ids.generateNewId(id_group=("vifib", "kvm"), default=1),\n
+  software_type="RootSoftwareInstance",\n
   instance_xml=instance_xml,\n
+  sla_xml="",\n
+  shared=False,\n
+  state="started",\n
 )\n
 \n
 person.requestSoftwareInstance(**request_kw)\n

@@ -602,9 +602,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
       software_title=software_title,
+      software_type="RootSoftwareInstance",
       instance_xml=self.minimal_correct_xml,
       sla_xml=sequence.get('sla_xml'),
-      **kw)
+      shared=False,
+      state="started")
     transaction.commit()
     self.tic()
     # Note: This is tricky part. Workflow methods does not return nothing

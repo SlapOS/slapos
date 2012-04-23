@@ -81,8 +81,11 @@ request_kw = {}\n
 request_kw.update(\n
   software_release=software_release.getUrlString(),\n
   software_title=service_title,\n
+  software_type="RootSoftwareInstance",\n
   instance_xml=instance_xml,\n
-  shared=shared,\n
+  sla_xml="",\n
+  shared=False,\n
+  state="started",\n
 )\n
 \n
 if computer:\n
