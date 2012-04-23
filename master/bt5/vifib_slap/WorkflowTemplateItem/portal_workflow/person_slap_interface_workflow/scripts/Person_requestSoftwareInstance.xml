@@ -97,6 +97,8 @@ if len(request_hosting_subscription_list) > 1:\n
   raise NotImplementedError, "Too many hosting subscription %s found" % software_title\n
 elif len(request_hosting_subscription_list) == 1:\n
   request_hosting_subscription = request_hosting_subscription_list[0].getObject()\n
+  if request_hosting_subscription.getRootState() == "deleted":\n
+    raise NotImplementedError, "The system was not able to filter deleted hosting subscription"\n
 else:\n
   request_hosting_subscription = None\n
 \n
