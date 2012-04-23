@@ -55,6 +55,7 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
     configuration.add_section("agent")
     configuration.set("agent", "portal_url", self.parameter_dict["portal_url"])
     configuration.set("agent", "master_url", self.parameter_dict["master_url"])
+    configuration.set("agent", "report_url", self.parameter_dict["report_url"])
     key_filepath = os.path.join(self.work_directory, "key")
     key_file = open(key_filepath, "w")
     key_file.write(self.parameter_dict["key"])
