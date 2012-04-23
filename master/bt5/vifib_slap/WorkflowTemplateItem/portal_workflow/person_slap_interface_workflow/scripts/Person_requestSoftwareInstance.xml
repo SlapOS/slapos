@@ -70,9 +70,7 @@ try:\n
 except KeyError:\n
   raise TypeError, "Person_requestSoftwareInstance takes exactly 7 arguments"\n
 \n
-if state not in ["started", "stopped", "destroyed"]:\n
-  raise ValueError, "state should be started, stopped or destroyed"\n
-elif is_slave not in [True, False]:\n
+if is_slave not in [True, False]:\n
   raise ValueError, "shared should be a boolean"\n
 \n
 hosting_subscription_portal_type = "Hosting Subscription"\n
@@ -97,7 +95,7 @@ if len(request_hosting_subscription_list) > 1:\n
   raise NotImplementedError, "Too many hosting subscription %s found" % software_title\n
 elif len(request_hosting_subscription_list) == 1:\n
   request_hosting_subscription = request_hosting_subscription_list[0].getObject()\n
-  if request_hosting_subscription.getRootState() == "destroyed":\n
+  if request_hosting_subscription.getSlapState() == "destroyed":\n
     raise NotImplementedError, "The system was not able to filter destroyed hosting subscription"\n
 else:\n
   request_hosting_subscription = None\n
@@ -114,7 +112,6 @@ if (request_hosting_subscription is None):\n
     sla_xml=sla_xml,\n
     root_software_release_url=software_release_url_string,\n
     root_slave=is_slave,\n
-    root_state=state,\n
     destination_section=person.getRelativeUrl(),\n
     activate_kw={\'tag\': tag},\n
   )\n
@@ -127,9 +124,18 @@ else:\n
     sla_xml=sla_xml,\n
     root_software_release_url=software_release_url_string,\n
     root_slave=is_slave,\n
-    root_state=state,\n
     activate_kw={\'tag\': tag},\n
   )\n
+\n
+# Change desired state\n
+if (root_state == "started"):\n
+  request_hosting_subscription.requestStart()\n
+elif (root_state == "stopped"):\n
+  request_hosting_subscription.requestStop()\n
+elif (root_state == "destroyed"):\n
+  request_hosting_subscription.requestDestroy()\n
+else:\n
+  raise ValueError, "state should be started, stopped or destroyed"\n
 \n
 context.REQUEST.set(\'request_hosting_subscription\', request_hosting_subscription)\n
 request_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag, person=person)\n

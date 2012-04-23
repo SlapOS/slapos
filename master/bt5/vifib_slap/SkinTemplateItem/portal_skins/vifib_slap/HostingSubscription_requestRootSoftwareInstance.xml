@@ -164,11 +164,11 @@ else:\n
   hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
   hosting_subscription.setPredecessorList(hosting_subscription_predecessor_list)\n
 \n
-if hosting_subscription.getRootState() == \'started\':\n
+if hosting_subscription.getSlapState() == \'started\':\n
   request_software_instance.startRequested()\n
   if not new_one:\n
     request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
-elif hosting_subscription.getRootState() == \'stopped\':\n
+elif hosting_subscription.getSlapState() == \'stopped\':\n
   request_software_instance.stopRequested()\n
   if not new_one:\n
     request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
