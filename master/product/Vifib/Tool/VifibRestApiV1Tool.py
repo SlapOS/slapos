@@ -79,20 +79,13 @@ class InstancePublisher(GenericPublisher):
 
     portal = self.getPortalObject()
     person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
-    instance = portal.portal_catalog.getResultValue(
-      portal_type=['Software Instance', 'Slave Instance'],
-      reference=instance_id)
-    if instance is None:
-      response.setStatus(404)
-      return response
-    delivery_line = instance.Item_getInstancePackingListLine()
     person.requestSoftwareInstance(
-      software_release=delivery_line.getAggregateValue(
-        portal_type='Software Release').getUrlString(),
-      software_title=instance.getTitle(),
-      shared=instance.getPortalType() == 'Slave Instance',
-      instance_xml=instance.getTextContent(),
-      sla_xml=instance.getSlaXml(),
+      software_release='',
+      software_title=instance_id,
+      software_type='',
+      shared='',
+      instance_xml='',
+      sla_xml='',
       state='destroyed'
     )
     response.setStatus(202)
