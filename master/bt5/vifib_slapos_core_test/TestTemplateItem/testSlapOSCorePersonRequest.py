@@ -159,7 +159,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="started",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("started", hosting_subscription.getRootState())
+    self.assertEquals("started", hosting_subscription.getSlapState())
 
     person.requestSoftwareInstance(
       software_release=software_release,
@@ -171,7 +171,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="stopped",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("stopped", hosting_subscription.getRootState())
+    self.assertEquals("stopped", hosting_subscription.getSlapState())
 
     person.requestSoftwareInstance(
       software_release=software_release,
@@ -183,7 +183,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="destroyed",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("destroyed", hosting_subscription.getRootState())
+    self.assertEquals("destroyed", hosting_subscription.getSlapState())
 
   def test_Person_requestSoftwareInstance_returnHostingSubscriptionUrl(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
@@ -241,7 +241,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     self.assertEquals(instance_xml, hosting_subscription.getTextContent())
     self.assertEquals(sla_xml, hosting_subscription.getSlaXml())
     self.assertEquals(shared, hosting_subscription.getRootSlave())
-    self.assertEquals(state, hosting_subscription.getRootState())
+    self.assertEquals(state, hosting_subscription.getSlapState())
     self.assertEquals("HOSTSUBS-%s" % (previous_id+1),
                       hosting_subscription.getReference())
     self.assertEquals("validated", hosting_subscription.getValidationState())
@@ -334,7 +334,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     self.assertEquals(instance_xml2, hosting_subscription.getTextContent())
     self.assertEquals(sla_xml2, hosting_subscription.getSlaXml())
     self.assertEquals(shared2, hosting_subscription.getRootSlave())
-    self.assertEquals(state2, hosting_subscription.getRootState())
+    self.assertEquals(state2, hosting_subscription.getSlapState())
     self.assertEquals("validated", hosting_subscription.getValidationState())
 
   def test_Person_requestSoftwareInstance_duplicatedHostingSubscription(self):
@@ -432,7 +432,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     self.assertEquals(instance_xml2, hosting_subscription2.getTextContent())
     self.assertEquals(sla_xml2, hosting_subscription2.getSlaXml())
     self.assertEquals(shared2, hosting_subscription2.getRootSlave())
-    self.assertEquals(state2, hosting_subscription2.getRootState())
+    self.assertEquals(state2, hosting_subscription2.getSlapState())
     self.assertEquals("validated", hosting_subscription2.getValidationState())
 
   def test_Person_requestSoftwareInstance_noConflictWithDeletedHostingSubscription(self):
@@ -455,7 +455,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="destroyed",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("destroyed", hosting_subscription.getRootState())
+    self.assertEquals("destroyed", hosting_subscription.getSlapState())
     transaction.commit()
     self.tic()
 
@@ -469,6 +469,6 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="started",
     )
     hosting_subscription2 = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("started", hosting_subscription2.getRootState())
+    self.assertEquals("started", hosting_subscription2.getSlapState())
     self.assertNotEquals(hosting_subscription.getRelativeUrl(), 
                          hosting_subscription2.getRelativeUrl())
