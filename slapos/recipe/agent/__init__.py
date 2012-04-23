@@ -88,7 +88,7 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
 
     agent_crond_path = os.path.join(self.crond, "agent")
     agent_crond = open(agent_crond_path, "w")
-    agent_crond.write("*/1 * * * * %s -S %s" % \
+    agent_crond.write("*/3 * * * * %s -S %s" % \
       (self.options["python_binary"],
         "%s --pidfile=%s %s" % \
           (self.options["agent_binary"], self.options["pidfile"],
