@@ -138,7 +138,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     shared = True
     state = "started"
 
-    # Only started, stopped, deleted
+    # Only started, stopped, destroyed
     self.assertRaises(ValueError, person.requestSoftwareInstance,
       software_release=software_release,
       software_title=software_title,
@@ -175,15 +175,15 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
 
     person.requestSoftwareInstance(
       software_release=software_release,
-      software_title="deleted",
+      software_title="destroyed",
       software_type=software_type,
       instance_xml=instance_xml,
       sla_xml=sla_xml,
       shared=shared,
-      state="deleted",
+      state="destroyed",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("deleted", hosting_subscription.getRootState())
+    self.assertEquals("destroyed", hosting_subscription.getRootState())
 
   def test_Person_requestSoftwareInstance_returnHostingSubscriptionUrl(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
@@ -452,10 +452,10 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       instance_xml=instance_xml,
       sla_xml=sla_xml,
       shared=shared,
-      state="deleted",
+      state="destroyed",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("deleted", hosting_subscription.getRootState())
+    self.assertEquals("destroyed", hosting_subscription.getRootState())
     transaction.commit()
     self.tic()
 
