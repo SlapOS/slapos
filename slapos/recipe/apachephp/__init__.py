@@ -37,9 +37,9 @@ class Recipe(GenericBaseRecipe):
     path_list = []
 
     # Copy application
-    shutil.rmtree(self.options['htdocs'])
-    shutil.copytree(self.options['source'],
-                    self.options['htdocs'])
+    if not os.path.exists(self.options['htdocs']):
+      shutil.copytree(self.options['source'],
+                      self.options['htdocs'])
 
     # Install php.ini
     php_ini = self.createFile(os.path.join(self.options['php-ini-dir'],
