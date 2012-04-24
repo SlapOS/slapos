@@ -27,9 +27,11 @@ Success
 ``POST`` requests which perform some other action such as sending a campaign
 will return a ``"200 OK"`` response if successful.
 
-``PUT`` requests will return a ``"200 OK"`` response if the resource is successfully updated.
+``PUT`` requests will return a ``"200 OK"`` response if the resource is successfully updated and ``"204 No Content"`` in case if no modification was applied..
 
 ``DELETE`` requests will return a ``"200 OK"`` response if the resource is successfully deleted.
+
+``OPTIONS`` requests will return ``"200 OK"`` response with allowed method on given url.
 
 Common Error Responses
 ++++++++++++++++++++++
