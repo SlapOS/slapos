@@ -127,31 +127,6 @@ The request has been accepted for processing
 * ``409 Conflict`` The request can not be process because of the current status of the instance (sla changed, instance is under deletion, software release can not be changed, ...).
 
 
-Deleting an instance
---------------------
-
-Request the deletion of an instance.
-
-`Request`::
-
-  DELETE http://example.com/api/v1/instance/{instance_id} HTTP/1.1
-  Content-Type: application/json; charset=utf-8
-
-`Route values`:
-
-* ``instance_id``: the ID of the instance
-
-`No Expected Request Body`
-
-`Expected Response`::
-
-  HTTP/1.1 202 Accepted
-  Content-Type: application/json; charset=utf-8
-
-`Error Responses`:
-
-* ``409 Conflict`` The request can not be process because of the current status of the instance.
-
 Get instance information
 ------------------------
 
@@ -174,7 +149,7 @@ Request all instance information.
   Content-Type: application/json; charset=utf-8
 
   {
-    "instance_id": "azevrvtrbt",
+    "title": "The Instance Title",
     "status": "start", # one of: start, stop, destroy
     "software_release": "http://example.com/example.cfg",
     "software_type": "type_provided_by_the_software",
@@ -273,6 +248,7 @@ Modify the instance information and status.
 `Expected Request Body`::
 
   {
+    "title": "The New Instance Title",
     "status": "started", # one of: started, stopped, updating, error
     "log": "explanation of the status",
     "connection": {
@@ -281,12 +257,30 @@ Modify the instance information and status.
     }
   }
 
-Where `status` is required with `log`, `connection` is optional and its existence allow to not send `status` and `log`.
+Where `status` is required with `log`, `connection` and `title` are optional and their existence allow to not send `status` and `log`.
+
+Setting different.
 
 `Expected Response`::
 
   HTTP/1.1 200 OK
   Content-Type: application/json; charset=utf-8
+
+  {
+    'action': ['Action description', 'Action description', ...]
+  }
+
+Where `action` describes what happened:
+
+ * 'Renamed' (where title was different)
+ * 'Updated status' (where status changed)
+ * 'Updated connection information' (where connection changed)
+
+`Additional Responses`::
+
+  HTTP/1.1 204 No Content
+
+When nothing was modified.
 
 `Error Responses`:
 
