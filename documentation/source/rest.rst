@@ -12,7 +12,7 @@ Exchange format
 
 SlapOS master will support both XML and JSON formats for input and output.
 
-The Content Type header is required and responsible for format selection.
+The Accept header is required and responsible for format selection.
 
 Response status code
 --------------------
@@ -39,7 +39,7 @@ Common Error Responses
 The request body does not follow the API (one argument is missing or malformed). The full information is available as text body::
 
   HTTP/1.1 400 Bad Request
-  Content-Type: application/json; charset=utf-8
+  Content-Type: application/json
 
   {
     "computer_id": "Parameter is missing"
@@ -73,6 +73,7 @@ Request a new instantiation of a software.
 `Request`::
 
   POST http://example.com/api/v1/request HTTP/1.1
+  Accept: application/json
   Content-Type: application/json; charset=utf-8
 
 `Expected Request Body`::
@@ -157,7 +158,7 @@ Request all instance information.
 `Request`::
 
   GET http://example.com/api/v1/instance/{instance_id} HTTP/1.1
-  Content-Type: application/json; charset=utf-8
+  Accept: application/json
 
 `Route values`:
 
@@ -208,7 +209,7 @@ Request the instance certificates.
 `Request`::
 
   GET http://example.com/api/v1/instance/{instance_id}/certificate HTTP/1.1
-  Content-Type: application/json; charset=utf-8
+  Accept: application/json
 
 `Route values`:
 
@@ -238,6 +239,7 @@ Trigger the re-instantiation of all partitions in the instance tree
 `Request`::
 
   POST http://example.com/api/v1/instance/{instance_id}/bang HTTP/1.1
+  Accept: application/json
   Content-Type: application/json; charset=utf-8
 
 `Route values`:
@@ -263,6 +265,7 @@ Modify the instance information and status.
 `Request`::
 
   PUT http://example.com/api/v1/instance/{instance_id} HTTP/1.1
+  Accept: application/json
   Content-Type: application/json; charset=utf-8
 
 `Expected Request Body`::
@@ -298,6 +301,7 @@ Add a new computer in the system.
 `Request`::
 
   POST http://example.com/api/v1/computer HTTP/1.1
+  Accept: application/json
   Content-Type: application/json; charset=utf-8
 
 `Expected Request Body`::
@@ -329,7 +333,7 @@ Get the status of a computer
 `Request`::
 
   GET http://example.com/api/v1/computer/{computer_id} HTTP/1.1
-  Content-Type: application/json; charset=utf-8
+  Accept: application/json
 
 `Route values`:
 
@@ -374,6 +378,7 @@ Modify computer information in the system
 `Request`::
 
   PUT http://example.com/api/v1/computer/{computer_id} HTTP/1.1
+  Accept: application/json
   Content-Type: application/json; charset=utf-8
 
 `Route values`:
@@ -415,6 +420,7 @@ Request to supply a new software release on a computer
 `Request`::
 
   POST http://example.com/api/v1/computer/{computer_id}/supply HTTP/1.1
+  Accept: application/json
   Content-Type: application/json; charset=utf-8
 
 `Route values`:
@@ -439,7 +445,8 @@ Request update on all partitions
 
 `Request`::
 
-  POSThttp://example.com/api/v1/computer/{computer_id}/bang HTTP/1.1
+  POST http://example.com/api/v1/computer/{computer_id}/bang HTTP/1.1
+  Accept: application/json
   Content-Type: application/json; charset=utf-8
 
 `Route values`:
@@ -465,6 +472,7 @@ Report computer usage
 `Request`::
 
   POST http://example.com/api/v1/computer/{computer_id}/report HTTP/1.1
+  Accept: application/json
   Content-Type: application/json; charset=utf-8
 
 `Route values`:
