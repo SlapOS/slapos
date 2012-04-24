@@ -100,9 +100,9 @@ Request a new instantiation of a software.
 
   HTTP/1.1 201 Created
   Content-Type: application/json; charset=utf-8
+  Location: http://maybeother.example.com/some/url/instance_id
 
   {
-    "instance_id": "azevrvtrbt",
     "status": "started",
     "connection": {
       "custom_connection_parameter_1": "foo",
@@ -114,9 +114,9 @@ Request a new instantiation of a software.
 
   HTTP/1.1 202 Accepted
   Content-Type: application/json; charset=utf-8
+  Location: http://maybeother.example.com/some/url/instance_id
 
   {
-    "instance_id": "azevrvtrbt",
     "status": "processing"
   }
 
@@ -316,9 +316,9 @@ Add a new computer in the system.
 
   HTTP/1.1 201 Created
   Content-Type: application/json; charset=utf-8
+  Location: http://maybeother.example.com/some/url/computer_id-0
 
   {
-    "computer_id": "COMP-0",
     "ssl_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADAN...h2VSZRlSN\n-----END PRIVATE KEY-----",
     "ssl_certificate": "-----BEGIN CERTIFICATE-----\nMIIEAzCCAuugAwIBAgICHQI...ulYdXJabLOeCOA=\n-----END CERTIFICATE-----",
   }
