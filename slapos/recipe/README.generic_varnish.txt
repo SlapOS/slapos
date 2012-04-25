@@ -13,6 +13,7 @@ instance = request(
   software_type='varnish',
   partition_parameter_kw={
      'tidstorage-url':'http://[your tidstrage address]:your tid strage port',
+     'web-checker-frontend-url':'http://www.example.com',
      'web-checker-mail-address':'web-checker-result@example.com',
      'web-checker-smtp-host':'mail.example.com',
   }
@@ -20,6 +21,9 @@ instance = request(
 
 tidstrage-url is the backend url that varnish will cache. It is expected that
 the backend is created by tidstorage recipe.
+
+web-checker-frontend-url is the entry-point-url that web checker will check
+the HTTP headers of all the pages in the web site.
 
 web-checker-mail-address is the email address where web checker will send
 the HTTP Cache cheking result.
