@@ -37,9 +37,8 @@ class Recipe(GenericSlapRecipe):
     web_checker_mail_address = self.parameter_dict['web-checker-mail-address']
     web_checker_smtp_host = self.parameter_dict['web-checker-smtp-host']
     web_checker_frontend_url = self.parameter_dict.get(
-                                'web-checker-frontend-url')
-    if web_checker_frontend_url is None:
-      web_checker_frontend_url = self.options['frontend-url']
+                                 'web-checker-frontend-url',
+                                 self.options['frontend-url'])
     web_checker_working_directory = \
       self.options['web-checker-working-directory']
     config = dict(
