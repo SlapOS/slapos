@@ -53,7 +53,10 @@
             <value> <string>from Products.ZSQLCatalog.SQLCatalog import NegatedQuery, Query\n
 \n
 portal = context.getPortalObject()\n
-person_reference = portal.restrictedTraverse(\'person_module/20120411-A56ED\').getReference()\n
+person = portal.restrictedTraverse(\'person_module/20120411-A56ED\', None)\n
+if person is None:\n
+  return\n
+person_reference = person.getReference()\n
 \n
 setup_service = portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource())\n
 \n
