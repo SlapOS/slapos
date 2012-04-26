@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.43-dev'
+version = '0.46-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -93,6 +93,7 @@ setup(name=name,
           'publish = slapos.recipe.publish:Recipe',
           'publishurl = slapos.recipe.publishurl:Recipe',
           'pwgen = slapos.recipe.pwgen:Recipe',
+          'pwgen.stable = slapos.recipe.pwgen:StablePasswordGeneratorRecipe',
           'proactive = slapos.recipe.proactive:Recipe',
           'request = slapos.recipe.request:Recipe',
           'seleniumrunner = slapos.recipe.seleniumrunner:Recipe',
@@ -118,8 +119,6 @@ setup(name=name,
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'generic.zope = slapos.recipe.generic_zope:Recipe',
           'generic.zope.zeo.client = slapos.recipe.generic_zope_zeo_client:Recipe',
-          'generate.erp5.tidstorage = slapos.recipe.generate_erp5_tidstorage:Recipe',
-          'generate.cloudooo = slapos.recipe.generate_cloudooo:Recipe',
           'zeo = slapos.recipe.zeo:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',
           'erp5.bootstrap = slapos.recipe.erp5_bootstrap:Recipe',
@@ -128,6 +127,7 @@ setup(name=name,
           'erp5.test = slapos.recipe.erp5_test:Recipe',
           'generic.varnish = slapos.recipe.generic_varnish:Recipe',
           'webchecker = slapos.recipe.web_checker:Recipe',
+          'slapparameters = slapos.recipe.slapparameters:Recipe',
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',

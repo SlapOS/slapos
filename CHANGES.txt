@@ -1,10 +1,25 @@
 Changes
 =======
 
-0.43 (Unreleased)
+0.46 (Unreleased)
 -----------------
 
-  * No change yet
+  * No change yet.
+
+0.45 (2012-03-29)
+-----------------
+
+  * slaprunner: change number of available partitions to 7 [Alain Takoudjou]
+
+0.44 (2012-03-28)
+-----------------
+
+  * minor: apachephp: update apache configuration to work with Apache2.4
+
+0.43 (2012-03-28)
+-----------------
+
+  * minor: erp5: add missing .zcml files into egg. [Cedric de Saint Martin]
 
 0.42 (2012-03-26)
 -----------------
