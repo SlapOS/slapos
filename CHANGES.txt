@@ -1,10 +1,17 @@
 Changes
 =======
 
-0.48 (Unreleased)
+0.48 (2012-04-26)
 -----------------
 
-  * No change yet.
+  * New utility recipe: slapos.recipe.generate_output_if_input_not_null.
+    [Cedric de Saint Martin]
+  * New promise recipe: slapos.recipe.url_available: check if url returns http
+    code 200. [Cedric de Saint Martin]
+  * Fix: slapos.recipe.request won't raise anymore if instance is not ready.
+    [Cedric de Saint Martin]
+  * Fix: slapos.recipe.request won't assume instance reference if not
+    specified. [Cedric de Saint Martin]
 
 0.47 (2012-04-19)
 -----------------
