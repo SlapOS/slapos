@@ -56,7 +56,7 @@ service = None\n
 try:\n
   service = portal.portal_secure_payments.find()\n
 except ValueError, e:\n
-  portal.system_event_module.newContent(title=\'Transaction %s cannot be updated, because of service error: %s\' % (context.getTitle(), e), portal_type=\'Payzen Event\', source_value=service, destination_value=context).submit()\n
+  portal.system_event_module.newContent(title=\'Transaction %s cannot be updated, because of service error: %s\' % (context.getTitle(), e), portal_type=\'Payzen Event\', source_value=service, destination_value=context).confirm()\n
   return\n
   \n
 if context.getSimulationState() not in [\'planned\', \'confirmed\']:\n
