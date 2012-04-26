@@ -96,7 +96,7 @@ class Recipe(object):
       # XXX-Cedric : currently raise an error. So swallow it...
       except AttributeError:
         status = "unknown"
-      raise KeyError("Connection parameter %s not found. "
+      self.logger.error("Connection parameter %s not found. "
           "Status of requested instance is : %s." % (self.failed, status))
     return []
 
