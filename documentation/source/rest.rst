@@ -117,19 +117,22 @@ Request a new instantiation of a software.
 `Expected Request Body`::
 
   {
+    "status": "started",
+    "slave": false,
     "title": "My unique instance",
     "software_release": "http://example.com/example.cfg",
     "software_type": "type_provided_by_the_software",
-    "slave": False, # one of: True or False
-    "status": "started", # one of: started, stopped
     "parameter": {
       "Custom1": "one string",
       "Custom2": "one float",
-      "Custom3": ["abc", "def"],
-      },
+      "Custom3": [
+        "abc",
+        "def"
+      ]
+    },
     "sla": {
-      "computer_id": "COMP-0",
-      }
+      "computer_id": "COMP-0"
+    }
   }
 
 `Expected Response`::
