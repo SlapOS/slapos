@@ -150,7 +150,6 @@ Request a new instantiation of a software.
 
   HTTP/1.1 202 Accepted
   Content-Type: application/json; charset=utf-8
-  Location: http://maybeother.example.com/some/url/instance_id
 
   {
     "status": "processing"
