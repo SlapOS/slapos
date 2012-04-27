@@ -25,7 +25,7 @@ The ``"Host"`` header is required in order to avoid to token leakage.
 
 Example of using Bearer token::
 
-  GET http://example.com/api/v1/instance/{instance_id} HTTP/1.1
+  GET /api/v1/instance/{instance_id} HTTP/1.1
   Host: example.com
   Accept: application/json
   Authorization: Bearer 7Fjfp0ZBr1KtDRbnfVdmIw
@@ -109,7 +109,8 @@ Request a new instantiation of a software.
 
 `Request`::
 
-  POST http://example.com/api/v1/instance HTTP/1.1
+  POST /api/v1/instance HTTP/1.1
+  Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
 
@@ -169,7 +170,8 @@ Request all instance information.
 
 `Request`::
 
-  GET http://example.com/api/v1/instance/{instance_id} HTTP/1.1
+  GET /api/v1/instance/{instance_id} HTTP/1.1
+  Host: example.com
   Accept: application/json
 
 `Route values`:
@@ -220,7 +222,8 @@ Request the instance certificates.
 
 `Request`::
 
-  GET http://example.com/api/v1/instance/{instance_id}/certificate HTTP/1.1
+  GET /api/v1/instance/{instance_id}/certificate HTTP/1.1
+  Host: example.com
   Accept: application/json
 
 `Route values`:
@@ -250,7 +253,8 @@ Trigger the re-instantiation of all partitions in the instance tree
 
 `Request`::
 
-  POST http://example.com/api/v1/instance/{instance_id}/bang HTTP/1.1
+  POST /api/v1/instance/{instance_id}/bang HTTP/1.1
+  Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
 
@@ -276,7 +280,8 @@ Modify the instance information and status.
 
 `Request`::
 
-  PUT http://example.com/api/v1/instance/{instance_id} HTTP/1.1
+  PUT /api/v1/instance/{instance_id} HTTP/1.1
+  Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
 
@@ -331,7 +336,8 @@ Add a new computer in the system.
 
 `Request`::
 
-  POST http://example.com/api/v1/computer HTTP/1.1
+  POST /api/v1/computer HTTP/1.1
+  Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
 
@@ -363,7 +369,8 @@ Get the status of a computer
 
 `Request`::
 
-  GET http://example.com/api/v1/computer/{computer_id} HTTP/1.1
+  GET /api/v1/computer/{computer_id} HTTP/1.1
+  Host: example.com
   Accept: application/json
 
 `Route values`:
@@ -408,7 +415,8 @@ Modify computer information in the system
 
 `Request`::
 
-  PUT http://example.com/api/v1/computer/{computer_id} HTTP/1.1
+  PUT /api/v1/computer/{computer_id} HTTP/1.1
+  Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
 
@@ -450,7 +458,8 @@ Request to supply a new software release on a computer
 
 `Request`::
 
-  POST http://example.com/api/v1/computer/{computer_id}/supply HTTP/1.1
+  POST /api/v1/computer/{computer_id}/supply HTTP/1.1
+  Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
 
@@ -476,7 +485,8 @@ Request update on all partitions
 
 `Request`::
 
-  POST http://example.com/api/v1/computer/{computer_id}/bang HTTP/1.1
+  POST /api/v1/computer/{computer_id}/bang HTTP/1.1
+  Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
 
@@ -502,7 +512,8 @@ Report computer usage
 
 `Request`::
 
-  POST http://example.com/api/v1/computer/{computer_id}/report HTTP/1.1
+  POST /api/v1/computer/{computer_id}/report HTTP/1.1
+  Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
 
