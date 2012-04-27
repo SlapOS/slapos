@@ -73,6 +73,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_computer_immobilisation',
       'erp5_accounting',
       'erp5_accounting_l10n_fr',
+      'erp5_bearer_token',
       'erp5_tax_resource',
       'erp5_discount_resource',
       'erp5_invoicing',
