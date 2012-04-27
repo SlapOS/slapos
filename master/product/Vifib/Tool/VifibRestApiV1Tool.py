@@ -34,6 +34,16 @@ from AccessControl import ClassSecurityInfo, getSecurityManager
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type import Permissions
 from ComputedAttribute import ComputedAttribute
+from zLOG import LOG, INFO
+import json
+import transaction
+
+def jsonResponse(fn):
+  def wrapper(self, *args, **kwargs):
+    self.REQUEST.response.setHeader('Content-Type', 'application/json')
+    return fn(self, *args, **kwargs)
+  wrapper.__doc__ = fn.__doc__
+  return wrapper
 
 def responseSupport(fn):
   def wrapper(self, *args, **kwargs):
@@ -72,29 +82,64 @@ class GenericPublisher(Implicit):
 class InstancePublisher(GenericPublisher):
   """Instance publisher"""
 
-  @responseSupport
-  def DELETE(self, *args, **kwargs):
-    """HTTP DELETE implementation"""
+  @jsonResponse
+  def __request(self):
     response = self.REQUEST.response
+    self.REQUEST.stdin.seek(0)
     try:
-      instance_id = self.REQUEST['traverse_subpath'][0]
-    except IndexError:
+      jbody = json.load(self.REQUEST.stdin)
+    except Exception:
       response.setStatus(400)
+      response.setBody(json.dumps({'error': 'Data is not json object.'}))
       return response
 
-    portal = self.getPortalObject()
-    person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
-    person.requestSoftwareInstance(
-      software_release='',
-      software_title=instance_id,
-      software_type='',
-      shared='',
-      instance_xml='',
-      sla_xml='',
-      state='destroyed'
-    )
+    person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
+    if person is None:
+      response.setStatus(404)
+      response.setBody(json.dumps({'error': 'User does not exists.'}))
+
+    request_dict = {}
+    error_dict = {}
+    for k_j, k_i in (
+        ('software_release', 'software_release'),
+        ('title', 'software_title'),
+        ('software_type', 'software_type'),
+        ('parameter', 'instance_xml'),
+        ('sla', 'sla_xml'),
+        ('slave', 'shared'),
+        ('status', 'state')
+      ):
+      try:
+        request_dict[k_i] = jbody[k_j]
+      except KeyError:
+        error_dict[k_j] = 'Missing.'
+
+    if error_dict:
+      response.setStatus(400)
+      response.setBody(json.dumps(error_dict))
+      return response
+
+    try:
+      person.requestSoftwareInstance(**request_dict)
+    except Exception:
+      transaction.abort()
+      LOG('VifibRestApiV1Tool', INFO, 'Problem with request.',
+          error=True)
+      response.setStatus(500)
+      response.setBody(json.dumps({'error':
+        'There is system issue, please try again later'}))
+      return response
+
     response.setStatus(202)
+    response.setBody(json.dumps({'status':'processing'}))
     return response
+
+  @responseSupport
+  def __call__(self):
+    """Instance GET/POST support"""
+    if self.REQUEST['REQUEST_METHOD'] == 'POST':
+      self.__request()
+
 
 class VifibRestApiV1Tool(BaseTool):
   """SlapOS REST API V1 Tool"""
