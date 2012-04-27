@@ -107,25 +107,20 @@ if (request_hosting_subscription is None):\n
     portal_type=hosting_subscription_portal_type,\n
     reference=hosting_subscription_reference,\n
     title=software_title,\n
-    source_reference=software_type,\n
-    text_content=instance_xml,\n
-    sla_xml=sla_xml,\n
-    root_software_release_url=software_release_url_string,\n
-    root_slave=is_slave,\n
     destination_section=person.getRelativeUrl(),\n
     activate_kw={\'tag\': tag},\n
   )\n
   request_hosting_subscription.portal_workflow.doActionFor(request_hosting_subscription,\n
                                            \'validate_action\')\n
-else:\n
-  request_hosting_subscription.edit(\n
-    text_content=instance_xml,\n
-    source_reference=software_type,\n
-    sla_xml=sla_xml,\n
-    root_software_release_url=software_release_url_string,\n
-    root_slave=is_slave,\n
-    activate_kw={\'tag\': tag},\n
-  )\n
+\n
+request_hosting_subscription.edit(\n
+  text_content=instance_xml,\n
+  source_reference=software_type,\n
+  sla_xml=sla_xml,\n
+  root_software_release_url=software_release_url_string,\n
+  root_slave=is_slave,\n
+  activate_kw={\'tag\': tag},\n
+)\n
 \n
 # Change desired state\n
 if (root_state == "started"):\n
