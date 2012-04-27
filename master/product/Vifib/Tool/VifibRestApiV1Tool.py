@@ -30,14 +30,29 @@
 
 from Acquisition import Implicit
 from Products.ERP5Type.Tool.BaseTool import BaseTool
-from AccessControl import ClassSecurityInfo
+from AccessControl import ClassSecurityInfo, getSecurityManager
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type import Permissions
 from ComputedAttribute import ComputedAttribute
 
+def responseSupport(fn):
+  def wrapper(self, *args, **kwargs):
+    response = self.REQUEST.response
+    response.setHeader('Access-Control-Allow-Origin', '*')
+    response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
+      'GET, OPTIONS')
+    if getSecurityManager().getUser().getId() is None:
+      # force login
+      response.setStatus(401)
+      response.setHeader('WWW-Authenticate', 'Bearer realm="%s"' % self.absolute_url())
+      response.setHeader('Location', self.getPortalObject()\
+        .portal_preferences.getPreferredRestApiV1TokenServerUrl())
+      return response
+    return fn(self, *args, **kwargs)
+  wrapper.__doc__ = fn.__doc__
+  return wrapper
+
 class GenericPublisher(Implicit):
-  security = ClassSecurityInfo()
-  security.declarePublic('OPTIONS')
   def OPTIONS(self, *args, **kwargs):
     """HTTP OPTIONS implementation"""
     response = self.REQUEST.response
@@ -64,10 +79,8 @@ class GenericPublisher(Implicit):
 
 class InstancePublisher(GenericPublisher):
   """Instance publisher"""
-  security = ClassSecurityInfo()
-  security.declareObjectPublic()
 
-  security.declarePublic('DELETE')
+  @responseSupport
   def DELETE(self, *args, **kwargs):
     """HTTP DELETE implementation"""
     response = self.prepareResponse()
