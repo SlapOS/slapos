@@ -1,11 +1,34 @@
 SlapOS Master REST API (v1)
 ***************************
 
-Find your SSL keys
-------------------
+Authentication
+--------------
 
-You can find  X509 key/certificate to authenticate to the SlapOS Master.
-Visit https://www.vifib.net/.
+In order to authenticate into API X509 key/certificate can be used. It is
+possible to obtain them from SlapOS Master, like https:///www.vifib.net
+
+As API is going to be used in environments which support TLS communication
+channel, but do not, or support is cumbersome, support X509 keys OAuth-2 will
+be proposed by library.
+
+Token based authentication
+++++++++++++++++++++++++++
+
+In case if client of API does not fulfill X509 authentication it has a chance
+to use token based authentication (after obtaining proper token).
+
+Client application HAVE TO use ``"Authorization"`` header, even if OAuth-2
+allows other types. They were not implemented as begin fragile from security
+point of view.
+
+The ``"Host"`` header is required in order to avoid to token leakage.
+
+Example of using Bearer token::
+
+  GET http://example.com/api/v1/instance/{instance_id} HTTP/1.1
+  Host: example.com
+  Accept: application/json
+  Authorization: Bearer 7Fjfp0ZBr1KtDRbnfVdmIw
 
 Exchange format
 ---------------
@@ -46,6 +69,18 @@ The request body does not follow the API (one argument is missing or malformed).
   {
     "computer_id": "Parameter is missing"
   }
+
+401 Unauthorized
+~~~~~~~~~~~~~~~~
+
+The request is not authorised. The response will contain location to a server
+which is capable to provide access credentials.
+
+For servers using Bearer token authentication::
+
+  HTTP/1.1 401 Unauthorized
+  WWW-Authenticate: Bearer realm="example.com"
+  Location: https://authserv.example.com/path-to-auth
 
 402 Payment Required
 ~~~~~~~~~~~~~~~~~~~~
