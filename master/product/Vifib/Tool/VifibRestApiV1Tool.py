@@ -69,21 +69,13 @@ class GenericPublisher(Implicit):
     subpath.reverse()
     request.set('traverse_subpath', subpath)
 
-  def prepareResponse(self):
-    response = self.REQUEST.response
-    response.setHeader('Content-Type', 'application/json; charset=utf-8')
-    response.setHeader('Access-Control-Allow-Origin', '*')
-    response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
-      'GET, OPTIONS')
-    return response
-
 class InstancePublisher(GenericPublisher):
   """Instance publisher"""
 
   @responseSupport
   def DELETE(self, *args, **kwargs):
     """HTTP DELETE implementation"""
-    response = self.prepareResponse()
+    response = self.REQUEST.response
     try:
       instance_id = self.REQUEST['traverse_subpath'][0]
     except IndexError:
