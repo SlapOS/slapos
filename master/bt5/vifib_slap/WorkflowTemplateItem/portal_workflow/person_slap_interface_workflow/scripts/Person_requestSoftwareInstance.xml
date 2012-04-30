@@ -110,8 +110,6 @@ if (request_hosting_subscription is None):\n
     destination_section=person.getRelativeUrl(),\n
     activate_kw={\'tag\': tag},\n
   )\n
-  request_hosting_subscription.portal_workflow.doActionFor(request_hosting_subscription,\n
-                                           \'validate_action\')\n
 \n
 request_hosting_subscription.edit(\n
   text_content=instance_xml,\n
@@ -134,6 +132,11 @@ else:\n
 \n
 context.REQUEST.set(\'request_hosting_subscription\', request_hosting_subscription)\n
 request_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag, person=person)\n
+\n
+# Change the state at the end to allow to execute updateLocalRoles only once in the transaction\n
+if request_hosting_subscription.getValidationState() == \'draft\':\n
+  request_hosting_subscription.portal_workflow.doActionFor(request_hosting_subscription,\n
+                                           \'validate_action\')\n
 
 
 ]]></string> </value>
