@@ -6,6 +6,7 @@ Changes
 
  * Fix support for no_bridge option in configuration files for some values:
    no_bridge = false was stated as true. [Cedric de Saint Martin]
+ * Delay a randomized period of time before calling slapgrid. [Yingjie Xu]
 
 0.24 (2012-03-29)
 -----------------
