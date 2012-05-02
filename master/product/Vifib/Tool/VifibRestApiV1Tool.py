@@ -106,6 +106,9 @@ class InstancePublisher(GenericPublisher):
 
     request_dict = {}
     error_dict = {}
+    if 'slave' in jbody:
+      if not isinstance(jbody['slave'], bool):
+        error_dict['slave'] = 'Not boolean.'
     for k_j, k_i in (
         ('software_release', 'software_release'),
         ('title', 'software_title'),
