@@ -254,7 +254,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.assertResponseCode(500)
     self.assertResponseJson()
     self.assertEqual({
-        "error": "There is system issue, please try again later",
+        "error": "There is system issue, please try again later.",
         },
       self.json_response)
     self.assertSimulatorEmpty()
