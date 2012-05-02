@@ -216,3 +216,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.assertResponseCode(202)
     self.assertResponseJson()
     self.assertSimulator((), kwargs)
+    self.assertEqual({
+        "status": "processing",
+        },
+      self.json_response)
