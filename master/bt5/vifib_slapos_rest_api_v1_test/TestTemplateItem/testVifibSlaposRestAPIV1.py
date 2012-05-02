@@ -116,6 +116,9 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.assertEqual(open(self.simulator).read(), '')
 
   def assertSimulator(self, args, kwargs):
+    # fillup magic
+    recargs = ()
+    reckwargs = {}
     exec(open(self.simulator).read())
     # do the same translation magic as in tool
     kwargs = kwargs.copy()
