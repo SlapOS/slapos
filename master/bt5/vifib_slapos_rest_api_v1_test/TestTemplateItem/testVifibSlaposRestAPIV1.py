@@ -14,6 +14,14 @@ class Person_requestSoftwareInstanceSimulator:
     """Simulation Method"""
     open(self.outfile, 'a').write('recargs = %r\nreckwargs = %r' % (args, kwargs))
 
+class Person_requestSoftwareInstanceRaisingSimulator(Person_requestSoftwareInstanceSimulator):
+  def __init__(self, exception):
+    self.exception = exception
+
+  def __call__(self, *args, **kwargs):
+    """Simulation Method"""
+    raise self.exception
+
 class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
   def generateNewId(self):
     return str(self.getPortalObject().portal_ids.generateNewId(
@@ -220,3 +228,33 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
         "status": "processing",
         },
       self.json_response)
+
+  def test_request_correct_server_side_raise(self):
+    self.customer.requestSoftwareInstance = \
+      Person_requestSoftwareInstanceRaisingSimulator(AttributeError)
+    transaction.commit()
+    kwargs = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'started',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': True}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(500)
+    self.assertResponseJson()
+    self.assertEqual({
+        "error": "There is system issue, please try again later",
+        },
+      self.json_response)
+    self.assertSimulatorEmpty()
