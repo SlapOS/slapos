@@ -22,6 +22,17 @@ class Person_requestSoftwareInstanceRaisingSimulator(Person_requestSoftwareInsta
     """Simulation Method"""
     raise self.exception
 
+class CustomHeaderHTTPConnection(httplib.HTTPConnection):
+  def __init__(self, custom_header, *args, **kwargs):
+    self._custom_header = custom_header
+    httplib.HTTPConnection.__init__(self, *args, **kwargs)
+
+  def request(self, *args, **kwargs):
+    headers = kwargs.get('headers', {})
+    headers.update(self._custom_header)
+    kwargs['headers'] = headers
+    return httplib.HTTPConnection.request(self, *args, **kwargs)
+
 class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
   def generateNewId(self):
     return str(self.getPortalObject().portal_ids.generateNewId(
@@ -42,6 +53,9 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
 
   def afterSetUp(self):
     self.test_random_id = self.generateNewId()
+    self.access_control_allow_headers = 'some, funny, headers, ' \
+      'always, expected, %s' % self.test_random_id
+
     self.document_list = []
     self.portal = self.getPortalObject()
     self.customer = self.cloneByPath('person_module/template_member')
@@ -57,7 +71,10 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.api_scheme, self.api_netloc, self.api_path, self.api_query, \
       self.api_fragment = urlparse.urlsplit(self.api_url)
 
-    self.connection = httplib.HTTPConnection(self.api_netloc)
+    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
+      custom_header={
+        'Access-Control-Allow-Headers': self.access_control_allow_headers
+      })
     self.reindexAndUpdateLocalRoles()
     self.simulator = tempfile.mkstemp()[1]
     self.customer.requestSoftwareInstance = Person_requestSoftwareInstanceSimulator(
@@ -83,6 +100,8 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       '*')
     self.assertEqual(self.response.getheader('access-control-allow-methods'),
       'DELETE, PUT, POST, GET, OPTIONS')
+    self.assertEqual(self.response.getheader('access-control-allow-headers'),
+      self.access_control_allow_headers)
 
   def assertResponseCode(self, code):
     self.assertEqual(self.response.status, code,
