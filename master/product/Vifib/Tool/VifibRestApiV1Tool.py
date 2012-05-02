@@ -133,7 +133,7 @@ class InstancePublisher(GenericPublisher):
           error=True)
       response.setStatus(500)
       response.setBody(json.dumps({'error':
-        'There is system issue, please try again later'}))
+        'There is system issue, please try again later.'}))
       return response
 
     response.setStatus(202)
