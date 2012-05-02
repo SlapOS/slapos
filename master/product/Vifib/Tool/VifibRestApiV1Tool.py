@@ -35,6 +35,7 @@ from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type import Permissions
 from ComputedAttribute import ComputedAttribute
 from zLOG import LOG, ERROR
+import xml_marshaller
 import json
 import transaction
 
@@ -119,7 +120,10 @@ class InstancePublisher(GenericPublisher):
         ('status', 'state')
       ):
       try:
-        request_dict[k_i] = jbody[k_j]
+        if k_j in ('sla', 'parameter'):
+          request_dict[k_i] = xml_marshaller.xml_marshaller.dumps(jbody[k_j])
+        else:
+          request_dict[k_i] = jbody[k_j]
       except KeyError:
         error_dict[k_j] = 'Missing.'
 
