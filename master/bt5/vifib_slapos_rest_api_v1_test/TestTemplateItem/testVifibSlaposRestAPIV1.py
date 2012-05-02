@@ -307,3 +307,6 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
         },
       self.json_response)
     self.assertSimulatorEmpty()
+
+  def test_OPTIONS(self):
+    raise NotImplementedError
