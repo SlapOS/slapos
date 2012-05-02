@@ -49,6 +49,8 @@ def jsonResponse(fn):
 def responseSupport(fn):
   def wrapper(self, *args, **kwargs):
     response = self.REQUEST.response
+    response.setHeader('Access-Control-Allow-Headers',
+      self.REQUEST.getHeader('Access-Control-Allow-Headers'))
     response.setHeader('Access-Control-Allow-Origin', '*')
     response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
       'GET, OPTIONS')
@@ -67,6 +69,8 @@ class GenericPublisher(Implicit):
   def OPTIONS(self, *args, **kwargs):
     """HTTP OPTIONS implementation"""
     response = self.REQUEST.response
+    response.setHeader('Access-Control-Allow-Headers',
+      self.REQUEST.get('Access-Control-Allow-Headers'))
     response.setHeader('Access-Control-Allow-Origin', '*')
     response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
       'GET, OPTIONS')
