@@ -34,7 +34,7 @@ from AccessControl import ClassSecurityInfo, getSecurityManager
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type import Permissions
 from ComputedAttribute import ComputedAttribute
-from zLOG import LOG, INFO
+from zLOG import LOG, ERROR
 import json
 import transaction
 
@@ -96,7 +96,7 @@ class InstancePublisher(GenericPublisher):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     if person is None:
       transaction.abort()
-      LOG('VifibRestApiV1Tool', INFO,
+      LOG('VifibRestApiV1Tool', ERROR,
         'Currenty logged in user %r has no Person document.'%
           self.getPortalObject().getAuthenticatedMember())
       response.setStatus(500)
@@ -129,7 +129,7 @@ class InstancePublisher(GenericPublisher):
       person.requestSoftwareInstance(**request_dict)
     except Exception:
       transaction.abort()
-      LOG('VifibRestApiV1Tool', INFO, 'Problem with request.',
+      LOG('VifibRestApiV1Tool', ERROR, 'Problem with request.',
           error=True)
       response.setStatus(500)
       response.setBody(json.dumps({'error':
