@@ -57,7 +57,8 @@ def responseSupport(fn):
     if getSecurityManager().getUser().getId() is None:
       # force login
       response.setStatus(401)
-      response.setHeader('WWW-Authenticate', 'Bearer realm="%s"' % self.absolute_url())
+      response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
+        self.absolute_url())
       response.setHeader('Location', self.getPortalObject()\
         .portal_preferences.getPreferredRestApiV1TokenServerUrl())
       return response
