@@ -95,8 +95,14 @@ class InstancePublisher(GenericPublisher):
 
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     if person is None:
-      response.setStatus(404)
-      response.setBody(json.dumps({'error': 'User does not exists.'}))
+      transaction.abort()
+      LOG('VifibRestApiV1Tool', INFO,
+        'Currenty logged in user %r has no Person document.'%
+          self.getPortalObject().getAuthenticatedMember())
+      response.setStatus(500)
+      response.setBody(json.dumps({'error':
+        'There is system issue, please try again later.'}))
+      return response
 
     request_dict = {}
     error_dict = {}
