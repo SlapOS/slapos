@@ -202,6 +202,33 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       self.json_response)
     self.assertSimulatorEmpty()
 
+  def test_request_slave_not_bool(self):
+    kwargs = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'started',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': "True"}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({
+        "slave": "Not boolean.",
+        },
+      self.json_response)
+    self.assertSimulatorEmpty()
+
   def test_request_correct(self):
     kwargs = {
       'parameter': {
