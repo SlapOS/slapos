@@ -113,6 +113,9 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.assertEqual(self.response.getheader('Content-Type'), 'application/json')
     self.json_response = json.loads(self.response_data)
 
+  def assertResponseNoContentType(self):
+    self.assertEqual(self.response.getheader('Content-Type'), None)
+
   def assertSimulatorEmpty(self):
     self.assertEqual(open(self.simulator).read(), '')
 
@@ -311,5 +314,11 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       self.json_response)
     self.assertSimulatorEmpty()
 
-  def test_OPTIONS(self):
-    raise NotImplementedError
+  def test_instance_OPTIONS_not_logged_in(self):
+    self.connection.request(method='OPTIONS',
+      url='/'.join([self.api_path, 'instance']))
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertResponseNoContentType()
+    self.assertSimulatorEmpty()
