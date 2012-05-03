@@ -45,9 +45,7 @@ class Recipe(object):
       options['computer-id'], options['partition-id'])
     self.request = computer_partition.request
 
-    self.isSlave = False
-    if 'slave' in options:
-      self.isSlave = options['slave'].lower() in ['y', 'yes', 'true', '1']
+    self.isSlave = options.get('slave', '').lower() in ['y', 'yes', 'true', '1']
 
     self.return_parameters = []
     if 'return' in options:
@@ -57,9 +55,7 @@ class Recipe(object):
       self.logger.debug("No parameter to return to main instance."
                           "Be careful about that...")
 
-    software_type = 'RootInstanceSoftware'
-    if 'software-type' in options:
-      software_type = options['software-type']
+    software_type = options.get('software-type', 'RootInstanceSoftware')
 
     filter_kw = {}
     if 'sla' in options:
