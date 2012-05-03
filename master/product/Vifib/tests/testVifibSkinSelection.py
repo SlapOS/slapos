@@ -141,6 +141,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -239,6 +240,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -337,6 +339,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -430,6 +433,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -521,6 +525,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -613,6 +618,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -707,6 +713,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -801,6 +808,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -892,6 +900,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -982,6 +991,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
