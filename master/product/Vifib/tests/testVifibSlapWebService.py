@@ -924,6 +924,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepPayRegistrationPayment(self, sequence, **kw):
     """
     """
+    payment.setStartDate(DateTime())
     payment = self.portal.portal_catalog.getResultValue(
         portal_type="Payment Transaction",
         simulation_state="planned")
