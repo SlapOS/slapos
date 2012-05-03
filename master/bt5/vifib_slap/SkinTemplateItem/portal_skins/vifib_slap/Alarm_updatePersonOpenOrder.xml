@@ -53,7 +53,7 @@
             <value> <string>if params is None:\n
   params = {}\n
 kw = {}\n
-\n
+search_kw = {}\n
 from DateTime import DateTime\n
 from Products.ZSQLCatalog.SQLCatalog import Query\n
 from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
@@ -62,7 +62,7 @@ last_active_process = context.getLastActiveProcess()\n
 if last_active_process is not None and params.get(\'full\', False):\n
   # fetch only objects modified since last alarm run\n
   kw[\'modification_date\'] = Query(modification_date=last_active_process.getStartDate(), range="min")\n
-\n
+  search_kw[\'modification_date\'] = Query(modification_date=addToDate(last_active_process.getStartDate(), to_add={\'hour\': -1}), range="min")\n
 # register active process in order to have "windows" of last indexed objects\n
 context.newActiveProcess()\n
 \n
@@ -72,7 +72,7 @@ context.getPortalObject().portal_catalog.searchAndActivate(\n
   activate_kw={\'tag\': tag},\n
   packet_size=1, # Person_storeOpenOrderJournal generates big transactions\n
   portal_type=\'Person\',\n
-  modification_date=Query(modification_date=addToDate(last_active_process.getStartDate(), to_add={\'hour\': -1}), range="min")\n
+  **search_kw\n
 )\n
 \n
 context.activate(after_tag=tag).getId()\n
