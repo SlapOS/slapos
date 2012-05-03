@@ -130,6 +130,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   # Assertions
   ########################################
   def assertSameDict(self, expected, got):
+    got = got.copy()
     issue_list = []
     for k, v in expected.items():
       if k not in got:
