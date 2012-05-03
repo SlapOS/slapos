@@ -360,7 +360,9 @@ class Computer(object):
           old_partition_address_list = partition.address_list
           partition.address_list = []
           if len(old_partition_address_list) != 2:
-            raise ValueError('There should be exactly 2 stored addresses')
+            raise ValueError(
+              'There should be exactly 2 stored addresses. Got: %r' %
+              (old_partition_address_list,))
           if not any([netaddr.valid_ipv6(q['addr'])
               for q in old_partition_address_list]):
             raise ValueError('Not valid ipv6 addresses loaded')
