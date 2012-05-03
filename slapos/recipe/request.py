@@ -31,29 +31,28 @@ from slapos import slap as slapmodule
 class Recipe(object):
 
   def __init__(self, buildout, name, options):
-    self.logger = logging.getLogger(name)
+    logger = logging.getLogger(name)
 
     slap = slapmodule.slap()
 
-    self.software_release_url = options['software-url']
+    software_url = options['software-url']
 
     slap.initializeConnection(options['server-url'],
                               options.get('key-file'),
                               options.get('cert-file'),
                              )
-    computer_partition = slap.registerComputerPartition(
-      options['computer-id'], options['partition-id'])
-    self.request = computer_partition.request
+    request = slap.registerComputerPartition(
+      options['computer-id'], options['partition-id']).request
 
-    self.isSlave = options.get('slave', '').lower() in ['y', 'yes', 'true', '1']
+    isSlave = options.get('slave', '').lower() in ['y', 'yes', 'true', '1']
 
-    self.return_parameters = []
+    return_parameters = []
     if 'return' in options:
-      self.return_parameters = [str(parameter).strip()
-                               for parameter in options['return'].split()]
+      return_parameters = [str(parameter).strip()
+        for parameter in options['return'].split()]
     else:
-      self.logger.debug("No parameter to return to main instance."
-                          "Be careful about that...")
+      logger.debug("No parameter to return to main instance."
+        "Be careful about that...")
 
     software_type = options.get('software-type', 'RootInstanceSoftware')
 
@@ -68,15 +67,15 @@ class Recipe(object):
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
 
-    self.instance = self.request(options['software-url'], software_type,
+    self.instance = instance = request(software_url, software_type,
       options.get('name', name), partition_parameter_kw=partition_parameter_kw,
-      filter_kw=filter_kw, shared=self.isSlave)
+      filter_kw=filter_kw, shared=isSlave)
 
     self.failed = None
-    for param in self.return_parameters:
+    for param in return_parameters:
       try:
         options['connection-%s' % param] = str(
-            self.instance.getConnectionParameter(param))
+          instance.getConnectionParameter(param))
       except slapmodule.NotFoundError:
         options['connection-%s' % param] = ''
         if self.failed is None:
