@@ -29,6 +29,7 @@ import logging
 from slapos import slap as slapmodule
 
 class Recipe(object):
+  failed = None
 
   def __init__(self, buildout, name, options):
     logger = logging.getLogger(name)
@@ -71,7 +72,6 @@ class Recipe(object):
       options.get('name', name), partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=isSlave)
 
-    self.failed = None
     for param in return_parameters:
       try:
         options['connection-%s' % param] = str(
