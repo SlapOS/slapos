@@ -39,44 +39,35 @@ import xml_marshaller
 import json
 import transaction
 
-def jsonResponse(fn):
-  def wrapper(self, *args, **kwargs):
-    self.REQUEST.response.setHeader('Content-Type', 'application/json')
-    return fn(self, *args, **kwargs)
-  wrapper.__doc__ = fn.__doc__
-  return wrapper
-
-def responseSupport(fn):
-  def wrapper(self, *args, **kwargs):
-    response = self.REQUEST.response
-    response.setHeader('Access-Control-Allow-Headers',
-      self.REQUEST.getHeader('Access-Control-Allow-Headers'))
-    response.setHeader('Access-Control-Allow-Origin', '*')
-    response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
-      'GET, OPTIONS')
-    if getSecurityManager().getUser().getId() is None:
-      # force login
-      response.setStatus(401)
-      response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
-        self.absolute_url())
-      response.setHeader('Location', self.getPortalObject()\
-        .portal_preferences.getPreferredRestApiV1TokenServerUrl())
-      return response
-    return fn(self, *args, **kwargs)
-  wrapper.__doc__ = fn.__doc__
-  return wrapper
+def responseSupport(anonymous=False):
+  def outer(fn):
+    def wrapper(self, *args, **kwargs):
+      response = self.REQUEST.response
+      response.setHeader('Content-Type', 'application/json')
+      response.setHeader('Access-Control-Allow-Headers',
+        self.REQUEST.getHeader('Access-Control-Allow-Headers'))
+      response.setHeader('Access-Control-Allow-Origin', '*')
+      response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
+        'GET, OPTIONS')
+      if not anonymous and getSecurityManager().getUser().getId() is None:
+        # force login
+        response.setStatus(401)
+        response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
+          self.absolute_url())
+        response.setHeader('Location', self.getPortalObject()\
+          .portal_preferences.getPreferredRestApiV1TokenServerUrl())
+        return response
+      return fn(self, *args, **kwargs)
+    wrapper.__doc__ = fn.__doc__
+    return wrapper
+  return outer
 
 class GenericPublisher(Implicit):
+  @responseSupport(True)
   def OPTIONS(self, *args, **kwargs):
     """HTTP OPTIONS implementation"""
-    response = self.REQUEST.response
-    response.setHeader('Access-Control-Allow-Headers',
-      self.REQUEST.get('Access-Control-Allow-Headers'))
-    response.setHeader('Access-Control-Allow-Origin', '*')
-    response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
-      'GET, OPTIONS')
-    response.setStatus(200)
-    return response
+    self.REQUEST.response.setStatus(204)
+    return self.REQUEST.response
 
   def __before_publishing_traverse__(self, self2, request):
     path = request['TraversalRequestNameStack']
@@ -88,7 +79,6 @@ class GenericPublisher(Implicit):
 class InstancePublisher(GenericPublisher):
   """Instance publisher"""
 
-  @jsonResponse
   def __request(self):
     response = self.REQUEST.response
     self.REQUEST.stdin.seek(0)
@@ -152,7 +142,7 @@ class InstancePublisher(GenericPublisher):
     response.setBody(json.dumps({'status':'processing'}))
     return response
 
-  @responseSupport
+  @responseSupport()
   def __call__(self):
     """Instance GET/POST support"""
     if self.REQUEST['REQUEST_METHOD'] == 'POST':
