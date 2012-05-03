@@ -114,15 +114,6 @@ software-type = memcached
 name = KumoFS
 software-type = kumofs
 
-# rest of parts are candidates for some generic stuff
-[basedirectory]
-recipe = slapos.cookbook:mkdirectory
-services = ${rootdirectory:etc}/run
-
-[rootdirectory]
-recipe = slapos.cookbook:mkdirectory
-etc = ${buildout:directory}/etc
-
 [directory]
 test-ca-dir = ${rootdirectory:srv}/test-ca
 test-instance-path = ${rootdirectory:srv}/test-instance
