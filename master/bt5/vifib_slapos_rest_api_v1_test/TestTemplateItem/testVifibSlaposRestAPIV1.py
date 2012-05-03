@@ -140,7 +140,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       kwargs[k_i] = kwargs.pop(k_j)
     self.assertEqual(args, recargs)
     self.assertEqual(kwargs, reckwargs)
-    
+
   def test_request_not_logged_in(self):
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance']))
