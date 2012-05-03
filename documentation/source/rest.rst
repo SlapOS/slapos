@@ -18,10 +18,8 @@ In case if client of API does not fulfill X509 authentication it has a chance
 to use token based authentication (after obtaining proper token).
 
 Client application HAVE TO use ``"Authorization"`` header, even if OAuth-2
-allows other types. They were not implemented as begin fragile from security
-point of view.
-
-The ``"Host"`` header is required in order to avoid to token leakage.
+allows other ways (like hvaing token in GET parameter or as form one).
+They were not implemented as begin fragile from security point of view.
 
 Example of using Bearer token::
 
