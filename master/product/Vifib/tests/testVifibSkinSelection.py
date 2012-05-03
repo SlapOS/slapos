@@ -64,6 +64,7 @@ class TestVifibSkinSelection(testVifibMixin):
           'Multiflex',
           'ODS',
           'ODT',
+          'Outdated',
           'RSS',
           'View',
         ]
