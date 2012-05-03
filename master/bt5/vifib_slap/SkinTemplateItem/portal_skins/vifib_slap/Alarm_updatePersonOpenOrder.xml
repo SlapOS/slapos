@@ -56,6 +56,7 @@ kw = {}\n
 \n
 from DateTime import DateTime\n
 from Products.ZSQLCatalog.SQLCatalog import Query\n
+from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
 \n
 last_active_process = context.getLastActiveProcess()\n
 if last_active_process is not None and params.get(\'full\', False):\n
@@ -70,7 +71,8 @@ context.getPortalObject().portal_catalog.searchAndActivate(\n
   method_kw={\'modification_date\': kw.get(\'modification_date\'), \'tag\': tag, \'stop_date\': params.get(\'stop_date\')},\n
   activate_kw={\'tag\': tag},\n
   packet_size=1, # Person_storeOpenOrderJournal generates big transactions\n
-  portal_type=\'Person\'\n
+  portal_type=\'Person\',\n
+  modification_date=Query(modification_date=addToDate(last_active_process.getStartDate(), to_add={\'hour\': -1}), range="min")\n
 )\n
 \n
 context.activate(after_tag=tag).getId()\n
