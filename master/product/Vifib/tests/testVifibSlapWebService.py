@@ -598,16 +598,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       kw['software_type'] = sequence.get('requested_software_type',
                                          'requested_software_type')
     if 'state' not in kw:
-      kw['state'] = sequence.get('software_instance_state')
+      kw['state'] = sequence.get('software_instance_state', 'started')
 
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
       software_title=software_title,
-      software_type="RootSoftwareInstance",
+      software_type=kw['software_type'],
       instance_xml=self.minimal_correct_xml,
       sla_xml=sequence.get('sla_xml'),
-      shared=False,
-      state="started")
+      shared=kw.get('shared', False),
+      state=kw['state'])
     transaction.commit()
     self.tic()
     # Note: This is tricky part. Workflow methods does not return nothing
