@@ -5,6 +5,7 @@ import urlparse
 import json
 import tempfile
 import os
+import xml_marshaller
 
 class Person_requestSoftwareInstanceSimulator:
   def __init__(self, outfile):
@@ -131,6 +132,8 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
         ('slave', 'shared'),
         ('status', 'state')
       ):
+      if k_j in ('sla', 'parameter'):
+        reckwargs[k_i] = xml_marshaller.xml_marshaller.loads(reckwargs.pop(k_i))
       kwargs[k_i] = kwargs.pop(k_j)
     self.assertEqual(args, recargs)
     self.assertEqual(kwargs, reckwargs)
