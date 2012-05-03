@@ -52,7 +52,8 @@ will return a ``"200 OK"`` response if successful.
 
 ``DELETE`` requests will return a ``"200 OK"`` response if the resource is successfully deleted.
 
-``OPTIONS`` requests will return ``"200 OK"`` response with allowed method on given url.
+``OPTIONS`` requests will return ``"204 No Content"`` response with headers
+informing about possible method usage.
 
 Common Error Responses
 ++++++++++++++++++++++
