@@ -1099,10 +1099,12 @@ class Config(object):
     if not self.dry_run:
       if self.alter_user:
         self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
+      if not self.no_bridge:
+        self.checkRequiredBinary(['tunctl'])
       if self.alter_network:
-        self.checkRequiredBinary(['ip', 'tunctl'])
+        self.checkRequiredBinary(['ip'])
     # Required, even for dry run
-    if self.alter_network:
+    if self.alter_network and not self.no_bridge:
       self.checkRequiredBinary(['brctl'])
 
     # Check if root is needed
