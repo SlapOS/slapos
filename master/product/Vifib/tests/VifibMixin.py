@@ -103,18 +103,18 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_slap',
       'vifib_forge_release',
       'vifib_software_pdm',
+      'vifib_payzen',
       'vifib_web',
       'vifib_web_ui_test',
       'vifib_l10n_fr',
       'vifib_data',
       'vifib_data_category',
       'vifib_data_web',
-      'vifib_payzen',
       'vifib_data_payzen',
       'vifib_data_simulation',
+      'vifib_agent',
       'vifib_erp5',
       'vifib_test',
-      'vifib_agent',
     ]
     return result
 
