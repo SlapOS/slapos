@@ -8,9 +8,10 @@ class SLAPOS_MASTER(SavedTestSuite, ProjectTestSuite):
     'vifib_slapos_rest_api_v1_test',
   ]
   _product_list = ['Vifib']
-  _saved_test_id = 'Products.Vifib.tests.VifibMixin'
+  _saved_test_id = 'Products.Vifib.tests.VifibMixin.testVifibMixinSlaposCore'
 
 class VIFIB(SLAPOS_MASTER):
+  _saved_test_id = 'Products.Vifib.tests.VifibMixin.testVifibMixin'
   _bt_list = SLAPOS_MASTER._bt_list + [
     'vifib_base',
     'vifib_core',

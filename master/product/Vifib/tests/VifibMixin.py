@@ -413,3 +413,16 @@ class testVifibMixin(ERP5TypeTestCase):
     super(testVifibMixin, self).stepTic(**kw)
 
     self.checkDivergency()
+
+class testVifibMixinSlaposCore(testVifibMixin):
+  def getBusinessTemplateList(self):
+    result = super(testVifibMixinSlaposCore, self
+      ).getBusinessTemplateList()
+    result.extended([
+      'vifib_slapos_core',
+      'vifib_slapos_rest_api_v1',
+      'vifib_slapos_core_test',
+      'vifib_slapos_rest_api_v1_test'
+    ])
+    return result
+
