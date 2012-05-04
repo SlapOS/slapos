@@ -82,14 +82,6 @@ request_software_instance = hosting_subscription.portal_catalog.getResultValue(\
   root_uid=hosting_subscription.getUid(),\n
 )\n
 \n
-if person is None:\n
-  open_sale_order_line = hosting_subscription.portal_catalog.getResultValue(\n
-    portal_type=\'Open Sale Order Line\', strict_aggregate_uid=hosting_subscription.getUid())\n
-  open_sale_order = open_sale_order_line.getParentValue()\n
-  person_relative_url = open_sale_order.getDestinationSection()\n
-else:\n
-  person_relative_url = person.getRelativeUrl()\n
-\n
 new_one = False\n
 if (request_software_instance is None):\n
   new_one = True\n
@@ -180,7 +172,7 @@ return request_software_instance\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, person=None</string> </value>
+            <value> <string>tag, person_relative_url</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

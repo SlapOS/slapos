@@ -136,7 +136,7 @@ elif (root_state == "destroyed"):\n
 else:\n
   raise ValueError, "state should be started, stopped or destroyed"\n
 \n
-request_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag, person=person)\n
+request_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag, person.getRelativeUrl())\n
 \n
 # Change the state at the end to allow to execute updateLocalRoles only once in the transaction\n
 validation_state = request_hosting_subscription.getValidationState()\n
