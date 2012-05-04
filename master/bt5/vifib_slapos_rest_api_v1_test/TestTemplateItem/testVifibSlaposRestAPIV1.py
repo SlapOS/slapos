@@ -41,7 +41,7 @@ class VifibSlaposRestAPIV1Mixin(ERP5TypeTestCase):
 
   def createPerson(self):
     customer = self.cloneByPath('person_module/template_member')
-    customer_reference = 'P' + self.test_random_id
+    customer_reference = 'P' + self.generateNewId()
     customer.edit(
       reference=customer_reference,
       default_email_url_string=customer_reference+'@example.com')
@@ -364,6 +364,38 @@ class TestVifibSlaposRestAPIV1InstanceRequest(VifibSlaposRestAPIV1Mixin):
     # and with correct ones are set by default
 
 class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
+  def afterSetUp(self):
+    VifibSlaposRestAPIV1Mixin.afterSetUp(self)
+    self.software_instance = self.createSoftwareInstance(self.customer)
+
+  def createSoftwareInstance(self, person):
+    software_instance = self.cloneByPath(
+      'software_instance_module/template_software_instance')
+    hosting_subscription = self.cloneByPath(
+      'hosting_subscription_module/template_hosting_subscription')
+    software_instance.edit(
+      reference='SI' + self.test_random_id,
+      ssl_key='SSL Key',
+      ssl_certificate='SSL Certificate'
+    )
+    software_instance.validate()
+    hosting_subscription.edit(
+      reference='HS' + self.test_random_id,
+      predecessor=software_instance.getRelativeUrl(),
+      destination_section=person.getRelativeUrl()
+    )
+    hosting_subscription.validate()
+    transaction.commit()
+    hosting_subscription.updateLocalRolesOnSecurityGroups()
+    transaction.commit()
+    hosting_subscription.recursiveImmediateReindexObject()
+    transaction.commit()
+    software_instance.manage_setLocalRoles(person.getReference(),
+      ['Assignee'])
+    transaction.commit()
+    software_instance.recursiveImmediateReindexObject()
+    return software_instance
+
   def test_OPTIONS_not_logged_in(self):
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
       custom_header={
@@ -376,3 +408,120 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     self.assertResponseCode(204)
     self.assertResponseNoContentType()
     self.assertSimulatorEmpty()
+
+  def test_software_instance_GET_non_existing(self):
+    non_existing = 'software_instance_module/' + self.generateNewId()
+    try:
+      self.portal.restrictedTraverse(non_existing)
+    except KeyError:
+      pass
+    else:
+      raise AssertionError('It was impossible to test')
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      non_existing]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_software_instance_GET_something_else(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_software_instance_GET(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({
+      "status": "draft",
+      "connection": {
+        "parameter1": "valueof1",
+        "parameter2": "https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5"},
+      "partition": {
+        "public_ip": [],
+        "tap_interface": "",
+        "private_ip": []},
+      "slave": False,
+      "children_list": [],
+      "title": "Template Software Instance",
+      "software_type": "RootSoftwareInstance",
+      "parameter": {
+        "parameter1": "valueof1",
+        "parameter2": "valueof2"},
+      "software_release": "",
+      "sla": {"computer_guid": "SOMECOMP"}},
+      self.json_response)
+
+  def test_software_instance_GET_other_one(self):
+    person, person_reference = self.createPerson()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': person_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_software_instance_GET_certificate(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl(), 'certificate']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({
+      "ssl_key": "SSL Key",
+      "ssl_certificate": "SSL Certificate"
+      },
+      self.json_response)
+
+  def test_software_instance_GET_certificate_non_existing(self):
+    non_existing = 'software_instance_module/' + self.generateNewId()
+    try:
+      self.portal.restrictedTraverse(non_existing)
+    except KeyError:
+      pass
+    else:
+      raise AssertionError('It was impossible to test')
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      non_existing, 'certificate']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_software_instance_GET_certificate_something_else(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'certificate']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_software_instance_GET_certificate_other_one(self):
+    person, person_reference = self.createPerson()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'certificate']),
+      headers={'REMOTE_USER': person_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+
