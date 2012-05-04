@@ -102,6 +102,73 @@ class InstancePublisher(GenericPublisher):
 
   @requireHeader({'Accept': 'application/json',
     'Content-Type': 'application/json'})
+  def __bang(self):
+    self.REQUEST.stdin.seek(0)
+    try:
+      jbody = json.load(self.REQUEST.stdin)
+    except Exception:
+      self.REQUEST.response.setStatus(400)
+      self.REQUEST.response.setBody(json.dumps(
+        {'error': 'Data is not json object.'}))
+      return self.REQUEST.response
+
+    person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
+    if person is None:
+      transaction.abort()
+      LOG('VifibRestApiV1Tool', ERROR,
+        'Currenty logged in user %r has no Person document.'%
+          self.getPortalObject().getAuthenticatedMember())
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(json.dumps({'error':
+        'There is system issue, please try again later.'}))
+      return self.REQUEST.response
+    instance_path = '/'.join(self.REQUEST['traverse_subpath'][:-1])
+    error_dict = {}
+    if 'log' not in jbody:
+      error_dict['log'] = "Missing."
+    elif not isinstance(jbody['log'], unicode):
+      error_dict['log'] = 'Not a string.'
+    else:
+      log = str(jbody['log'])
+
+    if error_dict:
+      self.REQUEST.response.setStatus(400)
+      self.REQUEST.response.setBody(json.dumps(error_dict))
+      return self.REQUEST.response
+
+    try:
+      software_instance = self.restrictedTraverse(instance_path)
+      if getattr(software_instance, 'getPortalType', None) is None or \
+        software_instance.getPortalType() not in ('Software Instance',
+          'Slave Instance'):
+        raise WrongRequest('%r is not an instance' % instance_path)
+    except WrongRequest:
+      LOG('VifibRestApiV1Tool', ERROR,
+        'Problem while trying to find instance:', error=True)
+      self.REQUEST.response.setStatus(404)
+    except (Unauthorized, KeyError):
+      self.REQUEST.response.setStatus(404)
+    except Exception:
+      LOG('VifibRestApiV1Tool', ERROR,
+        'Problem while trying to find instance:', error=True)
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(json.dumps({'error':
+        'There is system issue, please try again later.'}))
+    else:
+      try:
+        software_instance.reportComputerPartitionBang(comment=log)
+      except Exception:
+        LOG('VifibRestApiV1Tool', ERROR,
+          'Problem while trying to generate instance dict:', error=True)
+        self.REQUEST.response.setStatus(500)
+        self.REQUEST.response.setBody(json.dumps({'error':
+          'There is system issue, please try again later.'}))
+      else:
+        self.REQUEST.response.setStatus(204)
+    return self.REQUEST.response
+
+  @requireHeader({'Accept': 'application/json',
+    'Content-Type': 'application/json'})
   def __request(self):
     response = self.REQUEST.response
     self.REQUEST.stdin.seek(0)
@@ -230,7 +297,10 @@ class InstancePublisher(GenericPublisher):
   def __call__(self):
     """Instance GET/POST support"""
     if self.REQUEST['REQUEST_METHOD'] == 'POST':
-      self.__request()
+      if self.REQUEST['traverse_subpath'][-1] == 'bang':
+        self.__bang()
+      else:
+        self.__request()
     elif self.REQUEST['REQUEST_METHOD'] == 'GET' and \
       self.REQUEST['traverse_subpath']:
       self.__instance_info()
