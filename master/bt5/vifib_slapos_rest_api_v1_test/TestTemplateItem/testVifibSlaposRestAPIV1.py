@@ -34,23 +34,31 @@ class CustomHeaderHTTPConnection(httplib.HTTPConnection):
     kwargs['headers'] = headers
     return httplib.HTTPConnection.request(self, *args, **kwargs)
 
-class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
+class VifibSlaposRestAPIV1Mixin(ERP5TypeTestCase):
   def generateNewId(self):
     return str(self.getPortalObject().portal_ids.generateNewId(
                                      id_group=('slapos_rest_api_v1_test')))
 
-  def reindexAndUpdateLocalRoles(self):
-    # reindex and update roles for all, and reindex again to update catalog
+  def createPerson(self):
+    customer = self.cloneByPath('person_module/template_member')
+    customer_reference = 'P' + self.test_random_id
+    customer.edit(
+      reference=customer_reference,
+      default_email_url_string=customer_reference+'@example.com')
+    customer.validate()
+    for assignment in customer.contentValues(portal_type='Assignment'):
+      assignment.open()
+
+    customer.requestSoftwareInstance = Person_requestSoftwareInstanceSimulator(
+      self.simulator)
+
     transaction.commit()
-    for o in self.document_list:
-      o.recursiveImmediateReindexObject()
-      transaction.commit()
-    for o in self.document_list:
-      o.updateLocalRolesOnSecurityGroups()
-      transaction.commit()
-    for o in self.document_list:
-      o.recursiveImmediateReindexObject()
-      transaction.commit()
+    customer.recursiveImmediateReindexObject()
+    transaction.commit()
+    customer.updateLocalRolesOnSecurityGroups()
+    transaction.commit()
+    customer.recursiveImmediateReindexObject()
+    return customer, customer_reference
 
   def afterSetUp(self):
     self.test_random_id = self.generateNewId()
@@ -59,14 +67,6 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
 
     self.document_list = []
     self.portal = self.getPortalObject()
-    self.customer = self.cloneByPath('person_module/template_member')
-    self.customer_reference = 'P' + self.test_random_id
-    self.customer.edit(
-      reference=self.customer_reference,
-      default_email_url_string=self.customer_reference+'@example.com')
-    self.customer.validate()
-    for assignment in self.customer.contentValues(portal_type='Assignment'):
-      assignment.open()
 
     self.api_url = self.portal.portal_vifib_rest_api_v1.absolute_url()
     self.api_scheme, self.api_netloc, self.api_path, self.api_query, \
@@ -78,10 +78,9 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       })
-    self.reindexAndUpdateLocalRoles()
+
     self.simulator = tempfile.mkstemp()[1]
-    self.customer.requestSoftwareInstance = Person_requestSoftwareInstanceSimulator(
-      self.simulator)
+    self.customer, self.customer_reference = self.createPerson()
     transaction.commit()
 
   def beforeTearDown(self):
@@ -89,10 +88,8 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       os.unlink(self.simulator)
 
   def cloneByPath(self, path):
-    o = self.portal.restrictedTraverse(path).Base_createCloneDocument(
+    return self.portal.restrictedTraverse(path).Base_createCloneDocument(
       batch_mode=1)
-    self.document_list.append(o)
-    return o
 
   def prepareResponse(self):
     self.response = self.connection.getresponse()
@@ -143,7 +140,8 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.assertEqual(args, recargs)
     self.assertEqual(kwargs, reckwargs)
 
-  def test_request_not_logged_in(self):
+class TestVifibSlaposRestAPIV1InstanceRequest(VifibSlaposRestAPIV1Mixin):
+  def test_not_logged_in(self):
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance']))
     self.prepareResponse()
@@ -155,7 +153,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.assertTrue('Bearer realm="' in auth)
     self.assertSimulatorEmpty()
 
-  def test_request_no_json(self):
+  def test_no_json(self):
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance']),
       headers={'REMOTE_USER': self.customer_reference})
@@ -167,7 +165,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.assertEqual("Data is not json object.", self.json_response['error'])
     self.assertSimulatorEmpty()
 
-  def test_request_bad_json(self):
+  def test_bad_json(self):
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance']),
       body='This is not JSON',
@@ -180,7 +178,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.assertEqual("Data is not json object.", self.json_response['error'])
     self.assertSimulatorEmpty()
 
-  def test_request_empty_json(self):
+  def test_empty_json(self):
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance']),
       body='{}',
@@ -200,7 +198,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       self.json_response)
     self.assertSimulatorEmpty()
 
-  def test_request_status_slave_missing_json(self):
+  def test_status_slave_missing_json(self):
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance']),
       body="""
@@ -232,7 +230,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       self.json_response)
     self.assertSimulatorEmpty()
 
-  def test_request_slave_not_bool(self):
+  def test_slave_not_bool(self):
     kwargs = {
       'parameter': {
         'Custom1': 'one string',
@@ -259,7 +257,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       self.json_response)
     self.assertSimulatorEmpty()
 
-  def test_request_correct(self):
+  def test_correct(self):
     kwargs = {
       'parameter': {
         'Custom1': 'one string',
@@ -286,7 +284,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
         },
       self.json_response)
 
-  def test_request_correct_server_side_raise(self):
+  def test_correct_server_side_raise(self):
     self.customer.requestSoftwareInstance = \
       Person_requestSoftwareInstanceRaisingSimulator(AttributeError)
     transaction.commit()
@@ -316,7 +314,7 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       self.json_response)
     self.assertSimulatorEmpty()
 
-  def test_request_no_content_negotiation_headers(self):
+  def test_content_negotiation_headers(self):
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
       custom_header={
         'Access-Control-Allow-Headers': self.access_control_allow_headers
@@ -365,7 +363,8 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
     self.assertSimulatorEmpty()
     # and with correct ones are set by default
 
-  def test_instance_OPTIONS_not_logged_in(self):
+class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
+  def test_OPTIONS_not_logged_in(self):
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
       custom_header={
         'Access-Control-Allow-Headers': self.access_control_allow_headers
