@@ -53,10 +53,8 @@
             <value> <string encoding="cdata"><![CDATA[
 
 from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
 \n
 portal = context.getPortalObject()\n
-cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
 \n
 # copy and paste from\n
 # portal_workflow/person_slap_interface_workflow/scripts/Person_requestSoftwareInstance\n
