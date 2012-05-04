@@ -98,6 +98,7 @@ class Recipe(object):
         status = "unknown"
       self.logger.error("Connection parameter %s not found. "
           "Status of requested instance is : %s." % (self.failed, status))
+      raise KeyError("Connection parameter %s not found. " % self.failed)
     return []
 
   update = install
