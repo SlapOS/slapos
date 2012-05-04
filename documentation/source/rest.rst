@@ -267,8 +267,7 @@ Trigger the re-instantiation of all partitions in the instance tree
 
 `Expected Response`::
 
-  HTTP/1.1 200 OK
-  Content-Type: application/json; charset=utf-8
+  HTTP/1.1 204 No Content
 
 Modifying instance
 ------------------
@@ -499,8 +498,7 @@ Request update on all partitions
 
 `Expected Response`::
 
-  HTTP/1.1 200 OK
-  Content-Type: application/json; charset=utf-8
+  HTTP/1.1 204 No Content
 
 Report usage
 ------------
