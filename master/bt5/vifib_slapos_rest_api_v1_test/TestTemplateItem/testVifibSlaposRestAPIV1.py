@@ -74,7 +74,8 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
 
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
       custom_header={
-        'Access-Control-Allow-Headers': self.access_control_allow_headers
+        'Access-Control-Allow-Headers': self.access_control_allow_headers,
+        'Accept': 'application/json'
       })
     self.reindexAndUpdateLocalRoles()
     self.simulator = tempfile.mkstemp()[1]
