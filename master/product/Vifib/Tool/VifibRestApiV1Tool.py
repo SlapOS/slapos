@@ -131,8 +131,8 @@ class InstancePublisher(GenericPublisher):
       person.requestSoftwareInstance(**request_dict)
     except Exception:
       transaction.abort()
-      LOG('VifibRestApiV1Tool', ERROR, 'Problem with request.',
-          error=True)
+      LOG('VifibRestApiV1Tool', ERROR,
+        'Problem with person.requestSoftwareInstance:', error=True)
       response.setStatus(500)
       response.setBody(json.dumps({'error':
         'There is system issue, please try again later.'}))
