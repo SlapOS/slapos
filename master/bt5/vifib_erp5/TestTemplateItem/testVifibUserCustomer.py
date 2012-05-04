@@ -64,7 +64,11 @@ class TestVifibUserCustomer(testVifibMixin):
     person_value.requestSoftwareInstance(
       software_release=software_release_value.getUrlString(),
       software_title=software_title,
-      instance_xml='<?xml version="1.0" encoding="utf-8"?><instance/>')
+      instance_xml='<?xml version="1.0" encoding="utf-8"?><instance/>',
+      sla_xml='<?xml version="1.0" encoding="utf-8"?><instance/>',
+      software_type='RootSoftwareInstance',
+      shared=False,
+      state='started')
     transaction.commit()
     self.tic()
     # Note: This is tricky part. Workflow methods does not return nothing
