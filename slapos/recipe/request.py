@@ -29,6 +29,53 @@ import logging
 from slapos import slap as slapmodule
 
 class Recipe(object):
+  """
+  Request a partition to a slap master.
+  Can provide parameters to that partition and fetches its connection
+  parameters.
+
+  Input:
+    server-url
+    key-file (optional)
+    cert-file (optional)
+      Used to contact slap master.
+
+    computer-id
+    partition-id
+      Current partition's identifiers.
+      Must match key's credentials if given.
+
+    name (optional, defaults to section name)
+      Name (reference) of requested partition.
+
+    software-url
+      URL of a software definition to request an instance of.
+
+    slave (optional, defaults to false)
+      Set to "true" when requesting a slave instance, ie just setting a set of
+      parameters in an existing instance.
+
+    sla (optional)
+      Whitespace-separated list of Service Level Agreement names.
+      Each name must correspond to a "sla-<name>" option.
+      Used to specify what a suitable partition would be.
+      Possible names depend on master's capabilities.
+
+    config (optional)
+      Whitespace-separated list of partition parameter names.
+      Each name must correspond to a "config-<name>" option.
+      Possible names depend on requested partition's software type.
+
+    return (optional)
+      Whitespace-separated list of expected partition-published value names.
+      Options will be created from them, in the form of "connection-<name>"
+      As long as requested partition doesn't publish all those values,
+      installation of request section will fail.
+      Possible names depend on requested partition's software type.
+
+    Output:
+      See "return" input key.
+  """
   failed = None
 
   def __init__(self, buildout, name, options):
