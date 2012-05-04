@@ -39,18 +39,23 @@ import xml_marshaller
 import json
 import transaction
 
-def requireAcceptApplicationJson(fn):
-  def wrapperRequireAcceptApplicationJson(self, *args, **kwargs):
-    accept = self.REQUEST.getHeader('Accept')
-    if accept is not None and accept == 'application/json':
-      return fn(self, *args, **kwargs)
-    else:
-      self.REQUEST.response.setStatus(400)
-      self.REQUEST.response.setBody(json.dumps({"error":
-      "Accept: application/json header is required"}))
-      return self.REQUEST.response
-  wrapperRequireAcceptApplicationJson.__doc__ = fn.__doc__
-  return wrapperRequireAcceptApplicationJson
+def requireHeader(header_dict):
+  def outer(fn):
+    def wrapperRequireHeader(self, *args, **kwargs):
+      problem_dict = {}
+      for header, value in header_dict.iteritems():
+        if self.REQUEST.getHeader(header) != value:
+          problem_dict[header] = 'Header with value %r is required.' % value
+      if not problem_dict:
+        return fn(self, *args, **kwargs)
+      else:
+        self.REQUEST.response.setStatus(400)
+        self.REQUEST.response.setBody(json.dumps(problem_dict))
+        return self.REQUEST.response
+
+    wrapperRequireHeader.__doc__ = fn.__doc__
+    return wrapperRequireHeader
+  return outer
 
 def responseSupport(anonymous=False):
   def outer(fn):
@@ -156,7 +161,8 @@ class InstancePublisher(GenericPublisher):
     return response
 
   @responseSupport()
-  @requireAcceptApplicationJson
+  @requireHeader({'Accept': 'application/json',
+    'Content-Type': 'application/json'})
   def __call__(self):
     """Instance GET/POST support"""
     if self.REQUEST['REQUEST_METHOD'] == 'POST':
