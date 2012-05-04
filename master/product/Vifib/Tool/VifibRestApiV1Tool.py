@@ -97,6 +97,8 @@ class GenericPublisher(Implicit):
 class InstancePublisher(GenericPublisher):
   """Instance publisher"""
 
+  @requireHeader({'Accept': 'application/json',
+    'Content-Type': 'application/json'})
   def __request(self):
     response = self.REQUEST.response
     self.REQUEST.stdin.seek(0)
@@ -161,8 +163,6 @@ class InstancePublisher(GenericPublisher):
     return response
 
   @responseSupport()
-  @requireHeader({'Accept': 'application/json',
-    'Content-Type': 'application/json'})
   def __call__(self):
     """Instance GET/POST support"""
     if self.REQUEST['REQUEST_METHOD'] == 'POST':
