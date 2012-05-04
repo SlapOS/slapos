@@ -95,12 +95,16 @@ if len(request_hosting_subscription_list) > 1:\n
   raise NotImplementedError, "Too many hosting subscription %s found" % software_title\n
 elif len(request_hosting_subscription_list) == 1:\n
   request_hosting_subscription = request_hosting_subscription_list[0].getObject()\n
-  if request_hosting_subscription.getSlapState() == "destroyed":\n
-    raise NotImplementedError, "The system was not able to filter destroyed hosting subscription"\n
+  if (request_hosting_subscription.getSlapState() == "destroy_requested") or \\\n
+     (request_hosting_subscription.getTitle() != software_title) or \\\n
+     (request_hosting_subscription.getValidationState() != "validated") or \\\n
+     (request_hosting_subscription.getDestinationSection() != person.getRelativeUrl()):\n
+    raise NotImplementedError, "The system was not able to get the expected hosting subscription"\n
 else:\n
-  request_hosting_subscription = None\n
-\n
-if (request_hosting_subscription is None):\n
+  if (root_state == "destroyed"):\n
+    # No need to create destroyed subscription.\n
+    context.REQUEST.set(\'request_hosting_subscription\', None)\n
+    return\n
   hosting_subscription_reference = "HOSTSUBS-%s" % context.getPortalObject().portal_ids\\\n
       .generateNewId(id_group=\'slap_hosting_subscription_reference\', id_generator=\'uid\')\n
   request_hosting_subscription = portal.getDefaultModule(portal_type=hosting_subscription_portal_type).newContent(\n
@@ -120,6 +124,7 @@ request_hosting_subscription.edit(\n
   activate_kw={\'tag\': tag},\n
 )\n
 \n
+context.REQUEST.set(\'request_hosting_subscription\', request_hosting_subscription)\n
 # Change desired state\n
 if (root_state == "started"):\n
   request_hosting_subscription.requestStart()\n
@@ -127,16 +132,22 @@ elif (root_state == "stopped"):\n
   request_hosting_subscription.requestStop()\n
 elif (root_state == "destroyed"):\n
   request_hosting_subscription.requestDestroy()\n
+  context.REQUEST.set(\'request_hosting_subscription\', None)\n
 else:\n
   raise ValueError, "state should be started, stopped or destroyed"\n
 \n
-context.REQUEST.set(\'request_hosting_subscription\', request_hosting_subscription)\n
 request_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag, person=person)\n
 \n
 # Change the state at the end to allow to execute updateLocalRoles only once in the transaction\n
-if request_hosting_subscription.getValidationState() == \'draft\':\n
+validation_state = request_hosting_subscription.getValidationState()\n
+slap_state = request_hosting_subscription.getSlapState()\n
+if validation_state == \'draft\':\n
   request_hosting_subscription.portal_workflow.doActionFor(request_hosting_subscription,\n
                                            \'validate_action\')\n
+if (validation_state != \'archived\') and \\\n
+   (slap_state == \'destroy_requested\'):\n
+  # XXX TODO do not use validation workflow to filter destroyed subscription\n
+  request_hosting_subscription.archive()\n
 
 
 ]]></string> </value>
