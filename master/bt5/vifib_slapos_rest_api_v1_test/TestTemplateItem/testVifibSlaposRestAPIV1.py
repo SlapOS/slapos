@@ -1,4 +1,5 @@
 from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
+from Products.ERP5Type.Base import WorkflowMethod
 import transaction
 import httplib
 import urlparse
@@ -434,6 +435,27 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(404)
 
+  # needed to avoid calling interaction and being able to destroy XML
+  @WorkflowMethod.disable
+  def _destroySoftwareInstanceTextContentXml(self, software_instance):
+    software_instance.setTextContent('This is bad XML')
+    transaction.commit()
+    software_instance.recursiveImmediateReindexObject()
+
+  def test_software_instance_GET_bad_xml(self):
+    self._destroySoftwareInstanceTextContentXml(self.software_instance)
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(500)
+    self.assertResponseJson()
+    self.assertEqual({
+      "error": "There is system issue, please try again later."},
+      self.json_response)
+
   def test_software_instance_GET(self):
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
@@ -474,6 +496,22 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     self.assertResponseCode(404)
 
   def test_software_instance_GET_certificate(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl(), 'certificate']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({
+      "ssl_key": "SSL Key",
+      "ssl_certificate": "SSL Certificate"
+      },
+      self.json_response)
+
+  def test_software_instance_GET_certificate_bad_xml(self):
+    self._destroySoftwareInstanceTextContentXml(self.software_instance)
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
         self.software_instance.getRelativeUrl(), 'certificate']),
