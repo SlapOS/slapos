@@ -4539,6 +4539,9 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       CheckPersonUpdatedCredential
       Logout
 
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+
       LoginERP5TypeTestCase
       CheckSiteConsistency
       Logout
