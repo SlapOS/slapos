@@ -418,7 +418,7 @@ class testVifibMixinSlaposCore(testVifibMixin):
   def getBusinessTemplateList(self):
     result = super(testVifibMixinSlaposCore, self
       ).getBusinessTemplateList()
-    result.extended([
+    result.extend([
       'vifib_slapos_core',
       'vifib_slapos_rest_api_v1',
       'vifib_slapos_core_test',
