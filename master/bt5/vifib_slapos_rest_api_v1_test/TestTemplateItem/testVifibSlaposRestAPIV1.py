@@ -8,7 +8,7 @@ import tempfile
 import os
 import xml_marshaller
 
-class Person_requestSoftwareInstanceSimulator:
+class Simulator:
   def __init__(self, outfile):
     self.outfile = outfile
 
@@ -16,7 +16,7 @@ class Person_requestSoftwareInstanceSimulator:
     """Simulation Method"""
     open(self.outfile, 'a').write('recargs = %r\nreckwargs = %r' % (args, kwargs))
 
-class Person_requestSoftwareInstanceRaisingSimulator(Person_requestSoftwareInstanceSimulator):
+class RaisingSimulator(Simulator):
   def __init__(self, exception):
     self.exception = exception
 
@@ -50,8 +50,7 @@ class VifibSlaposRestAPIV1Mixin(ERP5TypeTestCase):
     for assignment in customer.contentValues(portal_type='Assignment'):
       assignment.open()
 
-    customer.requestSoftwareInstance = Person_requestSoftwareInstanceSimulator(
-      self.simulator)
+    customer.requestSoftwareInstance = Simulator(self.person_request_simulator)
 
     transaction.commit()
     customer.recursiveImmediateReindexObject()
@@ -80,13 +79,13 @@ class VifibSlaposRestAPIV1Mixin(ERP5TypeTestCase):
         'Content-Type': 'application/json',
       })
 
-    self.simulator = tempfile.mkstemp()[1]
+    self.person_request_simulator = tempfile.mkstemp()[1]
     self.customer, self.customer_reference = self.createPerson()
     transaction.commit()
 
   def beforeTearDown(self):
-    if os.path.exists(self.simulator):
-      os.unlink(self.simulator)
+    if os.path.exists(self.person_request_simulator):
+      os.unlink(self.person_request_simulator)
 
   def cloneByPath(self, path):
     return self.portal.restrictedTraverse(path).Base_createCloneDocument(
@@ -116,14 +115,14 @@ class VifibSlaposRestAPIV1Mixin(ERP5TypeTestCase):
   def assertResponseNoContentType(self):
     self.assertEqual(self.response.getheader('Content-Type'), None)
 
-  def assertSimulatorEmpty(self):
-    self.assertEqual(open(self.simulator).read(), '')
+  def assertPersonRequestSimulatorEmpty(self):
+    self.assertEqual(open(self.person_request_simulator).read(), '')
 
-  def assertSimulator(self, args, kwargs):
+  def assertPersonRequestSimulator(self, args, kwargs):
     # fillup magic
     recargs = ()
     reckwargs = {}
-    exec(open(self.simulator).read())
+    exec(open(self.person_request_simulator).read())
     # do the same translation magic as in tool
     kwargs = kwargs.copy()
     for k_j, k_i in (
@@ -152,7 +151,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     auth = self.response.getheader('WWW-Authenticate')
     self.assertTrue(auth is not None)
     self.assertTrue('Bearer realm="' in auth)
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
 
   def test_no_json(self):
     self.connection.request(method='POST',
@@ -164,7 +163,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertResponseJson()
     self.assertTrue('error' in self.json_response)
     self.assertEqual("Data is not json object.", self.json_response['error'])
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
 
   def test_bad_json(self):
     self.connection.request(method='POST',
@@ -177,7 +176,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertResponseJson()
     self.assertTrue('error' in self.json_response)
     self.assertEqual("Data is not json object.", self.json_response['error'])
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
 
   def test_empty_json(self):
     self.connection.request(method='POST',
@@ -197,7 +196,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
         "parameter": "Missing.",
         "sla": "Missing."},
       self.json_response)
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
 
   def test_status_slave_missing_json(self):
     self.connection.request(method='POST',
@@ -229,7 +228,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
         "slave": "Missing."
         },
       self.json_response)
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
 
   def test_slave_not_bool(self):
     kwargs = {
@@ -256,7 +255,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
         "slave": "Not boolean.",
         },
       self.json_response)
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
 
   def test_correct(self):
     kwargs = {
@@ -279,7 +278,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(202)
     self.assertResponseJson()
-    self.assertSimulator((), kwargs)
+    self.assertPersonRequestSimulator((), kwargs)
     self.assertEqual({
         "status": "processing",
         },
@@ -287,7 +286,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
 
   def test_correct_server_side_raise(self):
     self.customer.requestSoftwareInstance = \
-      Person_requestSoftwareInstanceRaisingSimulator(AttributeError)
+      RaisingSimulator(AttributeError)
     transaction.commit()
     kwargs = {
       'parameter': {
@@ -313,7 +312,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
         "error": "There is system issue, please try again later.",
         },
       self.json_response)
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
 
   def test_content_negotiation_headers(self):
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
@@ -344,7 +343,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
       'Content-Type': "Header with value 'application/json' is required.",
       'Accept': "Header with value 'application/json' is required."},
       self.json_response)
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
 
     # now check with incorrect headers
     self.connection.request(method='POST',
@@ -361,7 +360,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
       'Content-Type': "Header with value 'application/json' is required.",
       'Accept': "Header with value 'application/json' is required."},
       self.json_response)
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
     # and with correct ones are set by default
 
 class TestInstanceOPTIONS(VifibSlaposRestAPIV1Mixin):
@@ -376,7 +375,7 @@ class TestInstanceOPTIONS(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(204)
     self.assertResponseNoContentType()
-    self.assertSimulatorEmpty()
+    self.assertPersonRequestSimulatorEmpty()
 
 class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
   def afterSetUp(self):
@@ -564,3 +563,108 @@ class TestInstanceGETcertificate(VifibSlaposRestAPIV1InstanceMixin):
     self.prepareResponse()
     self.assertBasicResponse()
     self.assertResponseCode(404)
+
+class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
+  def afterSetUp(self):
+    super(VifibSlaposRestAPIV1BangMixin, self).afterSetUp()
+    self.instance_bang_simulator = tempfile.mkstemp()[1]
+    self.software_instance.reportComputerPartitionBang = Simulator(
+      self.instance_bang_simulator)
+    transaction.commit()
+
+  def beforeTearDown(self):
+    super(VifibSlaposRestAPIV1BangMixin, self).beforeTearDown()
+    if os.path.exists(self.instance_bang_simulator):
+      os.unlink(self.instance_bang_simulator)
+
+  def assertInstanceBangSimulatorEmpty(self):
+    self.assertEqual(open(self.instance_bang_simulator).read(), '')
+
+  def assertInstanceBangSimulator(self, args, kwargs):
+    # fillup magic
+    recargs = ()
+    reckwargs = {}
+    exec(open(self.instance_bang_simulator).read())
+    # do the same translation magic as in workflow
+    kwargs['comment'] = kwargs.pop('log')
+    self.assertEqual(args, recargs)
+    self.assertEqual(kwargs, reckwargs)
+    
+class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
+  def test(self):
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'bang']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstanceBangSimulator((), kwargs)
+
+  def test_bad_xml(self):
+    self._destroySoftwareInstanceTextContentXml(self.software_instance)
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'bang']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(500)
+    self.assertResponseJson()
+    self.assertEqual({
+      "error": "There is system issue, please try again later."},
+      self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
+
+  def test_non_existing(self):
+    non_existing = 'software_instance_module/' + self.generateNewId()
+    try:
+      self.portal.restrictedTraverse(non_existing)
+    except KeyError:
+      pass
+    else:
+      raise AssertionError('It was impossible to test')
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'bang']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+    self.assertInstanceBangSimulatorEmpty()
+
+  def test_something_else(self):
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+    self.assertInstanceBangSimulator((), kwargs)
+
+  def test_other_one(self):
+    raise NotImplementedError
+
+  def test_no_json(self):
+    raise NotImplementedError
+
+  def test_bad_json(self):
+    raise NotImplementedError
+
+  def test_empty_json(self):
+    raise NotImplementedError
+
+  def test_additional_key_json(self):
+    raise NotImplementedError
+
+  def test_log_not_string(self):
+    raise NotImplementedError
