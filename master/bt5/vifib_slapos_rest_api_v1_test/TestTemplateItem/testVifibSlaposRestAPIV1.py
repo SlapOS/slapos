@@ -141,7 +141,7 @@ class VifibSlaposRestAPIV1Mixin(ERP5TypeTestCase):
     self.assertEqual(args, recargs)
     self.assertEqual(kwargs, reckwargs)
 
-class TestVifibSlaposRestAPIV1InstanceRequest(VifibSlaposRestAPIV1Mixin):
+class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
   def test_not_logged_in(self):
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance']))
@@ -364,7 +364,21 @@ class TestVifibSlaposRestAPIV1InstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertSimulatorEmpty()
     # and with correct ones are set by default
 
-class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
+class TestInstanceOPTIONS(VifibSlaposRestAPIV1Mixin):
+  def test_OPTIONS_not_logged_in(self):
+    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
+      custom_header={
+        'Access-Control-Allow-Headers': self.access_control_allow_headers
+      })
+    self.connection.request(method='OPTIONS',
+      url='/'.join([self.api_path, 'instance']))
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertResponseNoContentType()
+    self.assertSimulatorEmpty()
+
+class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
   def afterSetUp(self):
     VifibSlaposRestAPIV1Mixin.afterSetUp(self)
     self.software_instance = self.createSoftwareInstance(self.customer)
@@ -397,20 +411,15 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     software_instance.recursiveImmediateReindexObject()
     return software_instance
 
-  def test_OPTIONS_not_logged_in(self):
-    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
-      custom_header={
-        'Access-Control-Allow-Headers': self.access_control_allow_headers
-      })
-    self.connection.request(method='OPTIONS',
-      url='/'.join([self.api_path, 'instance']))
-    self.prepareResponse()
-    self.assertBasicResponse()
-    self.assertResponseCode(204)
-    self.assertResponseNoContentType()
-    self.assertSimulatorEmpty()
+  # needed to avoid calling interaction and being able to destroy XML
+  @WorkflowMethod.disable
+  def _destroySoftwareInstanceTextContentXml(self, software_instance):
+    software_instance.setTextContent('This is bad XML')
+    transaction.commit()
+    software_instance.recursiveImmediateReindexObject()
 
-  def test_software_instance_GET_non_existing(self):
+class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
+  def test_non_existing(self):
     non_existing = 'software_instance_module/' + self.generateNewId()
     try:
       self.portal.restrictedTraverse(non_existing)
@@ -426,7 +435,7 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(404)
 
-  def test_software_instance_GET_something_else(self):
+  def test_something_else(self):
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
       self.software_instance.getPredecessorRelatedValue().getRelativeUrl()]),
@@ -435,14 +444,7 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(404)
 
-  # needed to avoid calling interaction and being able to destroy XML
-  @WorkflowMethod.disable
-  def _destroySoftwareInstanceTextContentXml(self, software_instance):
-    software_instance.setTextContent('This is bad XML')
-    transaction.commit()
-    software_instance.recursiveImmediateReindexObject()
-
-  def test_software_instance_GET_bad_xml(self):
+  def test_bad_xml(self):
     self._destroySoftwareInstanceTextContentXml(self.software_instance)
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
@@ -456,7 +458,7 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
       "error": "There is system issue, please try again later."},
       self.json_response)
 
-  def test_software_instance_GET(self):
+  def test(self):
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
       self.software_instance.getRelativeUrl()]),
@@ -485,7 +487,7 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
       "sla": {"computer_guid": "SOMECOMP"}},
       self.json_response)
 
-  def test_software_instance_GET_other_one(self):
+  def test_other_one(self):
     person, person_reference = self.createPerson()
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
@@ -495,7 +497,8 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(404)
 
-  def test_software_instance_GET_certificate(self):
+class TestInstanceGETcertificate(VifibSlaposRestAPIV1InstanceMixin):
+  def test(self):
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
         self.software_instance.getRelativeUrl(), 'certificate']),
@@ -510,7 +513,7 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
       },
       self.json_response)
 
-  def test_software_instance_GET_certificate_bad_xml(self):
+  def test_bad_xml(self):
     self._destroySoftwareInstanceTextContentXml(self.software_instance)
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
@@ -526,7 +529,7 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
       },
       self.json_response)
 
-  def test_software_instance_GET_certificate_non_existing(self):
+  def test_non_existing(self):
     non_existing = 'software_instance_module/' + self.generateNewId()
     try:
       self.portal.restrictedTraverse(non_existing)
@@ -542,7 +545,7 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(404)
 
-  def test_software_instance_GET_certificate_something_else(self):
+  def test_something_else(self):
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
       self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
@@ -552,7 +555,7 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(404)
 
-  def test_software_instance_GET_certificate_other_one(self):
+  def test_other_one(self):
     person, person_reference = self.createPerson()
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
@@ -561,5 +564,3 @@ class TestVifibSlaposRestAPIV1Instance(VifibSlaposRestAPIV1Mixin):
     self.prepareResponse()
     self.assertBasicResponse()
     self.assertResponseCode(404)
-
-
