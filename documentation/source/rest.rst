@@ -86,10 +86,6 @@ For servers using Bearer token authentication::
 
 The request can not be fulfilled because account is locked.
 
-403 Forbidden
-~~~~~~~~~~~~~
-Wrong SSL key used or access to invalid ID.
-
 404 Not Found
 ~~~~~~~~~~~~~
 Request to non existing resource made.
