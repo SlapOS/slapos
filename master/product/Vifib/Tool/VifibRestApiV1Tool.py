@@ -39,9 +39,22 @@ import xml_marshaller
 import json
 import transaction
 
+def requireAcceptApplicationJson(fn):
+  def wrapperRequireAcceptApplicationJson(self, *args, **kwargs):
+    accept = self.REQUEST.getHeader('Accept')
+    if accept is not None and accept == 'application/json':
+      return fn(self, *args, **kwargs)
+    else:
+      self.REQUEST.response.setStatus(400)
+      self.REQUEST.response.setBody(json.dumps({"error":
+      "Accept: application/json header is required"}))
+      return self.REQUEST.response
+  wrapperRequireAcceptApplicationJson.__doc__ = fn.__doc__
+  return wrapperRequireAcceptApplicationJson
+
 def responseSupport(anonymous=False):
   def outer(fn):
-    def wrapper(self, *args, **kwargs):
+    def wrapperResponseSupport(self, *args, **kwargs):
       response = self.REQUEST.response
       response.setHeader('Content-Type', 'application/json')
       response.setHeader('Access-Control-Allow-Headers',
@@ -58,8 +71,8 @@ def responseSupport(anonymous=False):
           .portal_preferences.getPreferredRestApiV1TokenServerUrl())
         return response
       return fn(self, *args, **kwargs)
-    wrapper.__doc__ = fn.__doc__
-    return wrapper
+    wrapperResponseSupport.__doc__ = fn.__doc__
+    return wrapperResponseSupport
   return outer
 
 class GenericPublisher(Implicit):
@@ -143,6 +156,7 @@ class InstancePublisher(GenericPublisher):
     return response
 
   @responseSupport()
+  @requireAcceptApplicationJson
   def __call__(self):
     """Instance GET/POST support"""
     if self.REQUEST['REQUEST_METHOD'] == 'POST':
