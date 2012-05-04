@@ -214,7 +214,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="destroyed",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("destroy_requested", hosting_subscription.getSlapState())
+    self.assertEquals(None, hosting_subscription)
 
   def test_Person_requestSoftwareInstance_returnHostingSubscriptionUrl(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
@@ -497,6 +497,45 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     self.assertEquals("stop_requested", hosting_subscription2.getSlapState())
     self.assertEquals("validated", hosting_subscription2.getValidationState())
 
+  def test_Person_requestSoftwareInstance_deletedHostingSubscription(self):
+    person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
+
+    software_release = self.software_release.getUrlString()
+    software_title = "test"
+    software_type = "test"
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
+    <instance>
+    </instance>
+    """
+    sla_xml = "test"
+    shared = True
+
+    person.requestSoftwareInstance(
+      software_release=software_release,
+      software_title=software_title,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+      shared=shared,
+      state="stopped",
+    )
+    hosting_subscription = person.REQUEST.get('request_hosting_subscription')
+    transaction.commit()
+    self.tic()
+
+    person.requestSoftwareInstance(
+      software_release=software_release,
+      software_title=software_title,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+      shared=shared,
+      state="destroyed",
+    )
+    hosting_subscription2 = person.REQUEST.get('request_hosting_subscription')
+    self.assertEquals(None, hosting_subscription2)
+    self.assertEquals("destroy_requested", hosting_subscription.getSlapState())
+
   def test_Person_requestSoftwareInstance_noConflictWithDeletedHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
@@ -517,9 +556,20 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       instance_xml=instance_xml,
       sla_xml=sla_xml,
       shared=shared,
-      state="destroyed",
+      state="stopped",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
+    transaction.commit()
+    self.tic()
+    person.requestSoftwareInstance(
+      software_release=software_release,
+      software_title=software_title,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+      shared=shared,
+      state="destroyed",
+    )
     self.assertEquals("destroy_requested", hosting_subscription.getSlapState())
     transaction.commit()
     self.tic()
@@ -534,6 +584,6 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="started",
     )
     hosting_subscription2 = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("started", hosting_subscription2.getSlapState())
+    self.assertEquals("start_requested", hosting_subscription2.getSlapState())
     self.assertNotEquals(hosting_subscription.getRelativeUrl(), 
                          hosting_subscription2.getRelativeUrl())
