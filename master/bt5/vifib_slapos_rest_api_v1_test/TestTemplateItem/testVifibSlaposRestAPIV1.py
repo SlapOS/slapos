@@ -316,7 +316,60 @@ class TestVifibSlaposRestAPIV1(ERP5TypeTestCase):
       self.json_response)
     self.assertSimulatorEmpty()
 
+  def test_request_no_content_negotiation_headers(self):
+    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
+      custom_header={
+        'Access-Control-Allow-Headers': self.access_control_allow_headers
+      })
+    kwargs = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'started',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': True}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({
+      'Content-Type': "Header with value 'application/json' is required.",
+      'Accept': "Header with value 'application/json' is required."},
+      self.json_response)
+    self.assertSimulatorEmpty()
+
+    # now check with incorrect headers
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference,
+        'Content-Type': 'please/complain',
+        'Accept': 'please/complain'})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({
+      'Content-Type': "Header with value 'application/json' is required.",
+      'Accept': "Header with value 'application/json' is required."},
+      self.json_response)
+    self.assertSimulatorEmpty()
+    # and with correct ones are set by default
+
   def test_instance_OPTIONS_not_logged_in(self):
+    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
+      custom_header={
+        'Access-Control-Allow-Headers': self.access_control_allow_headers
+      })
     self.connection.request(method='OPTIONS',
       url='/'.join([self.api_path, 'instance']))
     self.prepareResponse()
