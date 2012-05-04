@@ -16,7 +16,7 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -34,35 +34,42 @@ class Recipe(GenericBaseRecipe):
   nginx instance configuration.
   """
 
-  def install(self):
-    config = dict(
-      nb_workers = self.options["nb_workers"]
-      path_pid = self.options["path_pid"]
-      path_log = self.options["path_log"]
-      path_access_log = self.options["path_access_log"]
-      root = self.options["root"]
-      ip = self.options["ip"]
-      port = self.options["port"]
-      path_shell = self.options["path_shell"]
-      config_file = self.options["config_file"]
-      path = self.options["path"]
-    )
-    
-    # Configs
-    nginx_conf_file = self.createFile(
-      self.options['config_file'],
-      self.substituteTemplate(self.getTemplateFilename('nginx_conf.in', config))
-    )
-    
-    # Index default
-    nginx_index_file = self.createFile(
-      '/'.join([root,"index.html"),
-      self.substituteTemplate(self.getTemplateFilename('nginx_index.in', config))
-    )
-    
-    # Runners
-    runner_path = self.createExecutable(
-      self.options['path'],
-      self.substituteTemplate(self.getTemplateFilename('nginx_run.in'),config))
+  def __init__(self, buildout, name, options):
+	  return GenericBaseRecipe.__init__(self, buildout, name, options)
 
-    return [runner_path]
+
+  def install(self):
+	config = dict(
+	  nb_workers = self.options["nb_workers"],
+	  path_pid = self.options["path_pid"],
+	  path_log = self.options["path_log"],
+	  tmp = self.options["tmp"],
+	  path_access_log = self.options["path_access_log"],
+	  path_error_log = self.options["path_error_log"],
+	  root = self.options["root"],
+	  ip = self.options["ip"],
+	  port = self.options["port"],
+	  path_shell = self.options["path_shell"],
+	  config_file = self.options["config_file"],
+	  path = self.options["path"],
+	  nginx_path = self.options["nginx_path"],
+	  mime_path = self.options["mime_path"],
+	  default_index = self.options["default_index"]
+	)
+	
+	# Configs
+	nginx_conf_file = self.createFile(
+	  self.options['config_file'],
+	  self.substituteTemplate(self.getTemplateFilename('nginx_conf.in'), config)
+	)
+	nginx_mime_types = self.createFile(
+		self.options['mime_path'],
+		self.substituteTemplate(self.getTemplateFilename('mime_types.in'), config)
+	)
+	
+	# Runners
+	runner_path = self.createExecutable(
+	  self.options['path'],
+	  self.substituteTemplate(self.getTemplateFilename('nginx_run.in'),config))
+
+	return [runner_path, nginx_conf_file]

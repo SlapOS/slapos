@@ -1,5 +1,0 @@
-#!%(path_shell)s
-# BEWARE: This file is operated by slapgrid
-# BEWARE: It will be overwritten automatically
-
-exec %(path)s -c %(config_file)s
