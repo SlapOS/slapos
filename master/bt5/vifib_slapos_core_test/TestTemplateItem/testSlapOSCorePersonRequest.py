@@ -8,9 +8,34 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     return self.getPortalObject().portal_ids.generateNewId(
                                      id_group=('slapos_core_test'))
 
+  def generateNewSoftwareReleaseUrl(self):
+    return 'http://example.org/test%s.cfg' % self.generateNewId()
+
   def afterSetUp(self):
     portal = self.getPortalObject()
     new_id = self.generateNewId()
+
+    # Clone software release document
+    software_release = portal.software_release_module.template_software_release.\
+                                 Base_createCloneDocument(batch_mode=1)
+    software_release.edit(
+      title="live_test_%s" % new_id,
+      reference="live_test_%s" % new_id,
+      url_string=self.generateNewSoftwareReleaseUrl(),
+    )
+    software_release.publish()
+    self.software_release = software_release
+
+    new_id = self.generateNewId()
+    software_release = portal.software_release_module.template_software_release.\
+                                 Base_createCloneDocument(batch_mode=1)
+    software_release.edit(
+      title="live_test_%s" % new_id,
+      reference="live_test_%s" % new_id,
+      url_string=self.generateNewSoftwareReleaseUrl(),
+    )
+    software_release.publish()
+    self.software_release2 = software_release
 
     # Clone person document
     person_user = portal.person_module.template_member.\
@@ -37,10 +62,13 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
   def test_Person_requestSoftwareInstance_requiredParameter(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = "http://example.org/test.cfg"
+    software_release = self.software_release.getUrlString()
     software_title = "test"
     software_type = "test"
-    instance_xml = "test"
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
+    <instance>
+    </instance>
+    """
     sla_xml = "test"
     shared = True
     state = "started"
@@ -130,10 +158,13 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
   def test_Person_requestSoftwareInstance_acceptedState(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = "http://example.org/test.cfg"
+    software_release = self.software_release.getUrlString()
     software_title = "test"
     software_type = "test"
-    instance_xml = "test"
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
+    <instance>
+    </instance>
+    """
     sla_xml = "test"
     shared = True
     state = "started"
@@ -159,7 +190,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="started",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("started", hosting_subscription.getSlapState())
+    self.assertEquals("start_requested", hosting_subscription.getSlapState())
 
     person.requestSoftwareInstance(
       software_release=software_release,
@@ -171,7 +202,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="stopped",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("stopped", hosting_subscription.getSlapState())
+    self.assertEquals("stop_requested", hosting_subscription.getSlapState())
 
     person.requestSoftwareInstance(
       software_release=software_release,
@@ -183,15 +214,18 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="destroyed",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("destroyed", hosting_subscription.getSlapState())
+    self.assertEquals("destroy_requested", hosting_subscription.getSlapState())
 
   def test_Person_requestSoftwareInstance_returnHostingSubscriptionUrl(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = "http://example.org/test.cfg"
+    software_release = self.software_release.getUrlString()
     software_title = "test"
     software_type = "test"
-    instance_xml = "test"
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
+    <instance>
+    </instance>
+    """
     sla_xml = "test"
     shared = True
     state = "started"
@@ -212,10 +246,13 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
   def test_Person_requestSoftwareInstance_createHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = "http://example.org/test.cfg"
+    software_release = self.software_release.getUrlString()
     software_title = "test"
     software_type = "test"
-    instance_xml = "test"
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
+    <instance>
+    </instance>
+    """
     sla_xml = "test"
     shared = True
     state = "started"
@@ -241,7 +278,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     self.assertEquals(instance_xml, hosting_subscription.getTextContent())
     self.assertEquals(sla_xml, hosting_subscription.getSlaXml())
     self.assertEquals(shared, hosting_subscription.getRootSlave())
-    self.assertEquals(state, hosting_subscription.getSlapState())
+    self.assertEquals("start_requested", hosting_subscription.getSlapState())
     self.assertEquals("HOSTSUBS-%s" % (previous_id+1),
                       hosting_subscription.getReference())
     self.assertEquals("validated", hosting_subscription.getValidationState())
@@ -249,10 +286,13 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
   def test_Person_requestSoftwareInstance_HostingSubscriptionNotReindexed(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = "http://example.org/test.cfg"
+    software_release = self.software_release.getUrlString()
     software_title = "test"
     software_type = "test"
-    instance_xml = "test"
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
+    <instance>
+    </instance>
+    """
     sla_xml = "test"
     shared = True
     state = "started"
@@ -281,10 +321,13 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
   def test_Person_requestSoftwareInstance_updateHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = "http://example.org/test.cfg"
+    software_release = self.software_release.getUrlString()
     software_title = "test"
     software_type = "test"
-    instance_xml = "test"
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
+    <instance>
+    </instance>
+    """
     sla_xml = "test"
     shared = True
     state = "started"
@@ -304,10 +347,16 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     transaction.commit()
     self.tic()
 
-    software_release2 = "http://example.org/test.cfg2"
+    software_release2 = self.software_release.getUrlString()
     software_type2 = "test2"
-    instance_xml2 = "test2"
-    sla_xml2 = "test2"
+    instance_xml2 = """<?xml version='1.0' encoding='utf-8'?>
+<instance>
+
+</instance>"""
+    sla_xml2 = """<?xml version='1.0' encoding='utf-8'?>
+<instance>
+
+</instance>"""
     shared2 = False
     state2 = "stopped"
 
@@ -334,16 +383,19 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     self.assertEquals(instance_xml2, hosting_subscription.getTextContent())
     self.assertEquals(sla_xml2, hosting_subscription.getSlaXml())
     self.assertEquals(shared2, hosting_subscription.getRootSlave())
-    self.assertEquals(state2, hosting_subscription.getSlapState())
+    self.assertEquals("stop_requested", hosting_subscription.getSlapState())
     self.assertEquals("validated", hosting_subscription.getValidationState())
 
   def test_Person_requestSoftwareInstance_duplicatedHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = "http://example.org/test.cfg"
+    software_release = self.software_release.getUrlString()
     software_title = "test"
     software_type = "test"
-    instance_xml = "test"
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
+    <instance>
+    </instance>
+    """
     sla_xml = "test"
     shared = True
     state = "started"
@@ -380,11 +432,15 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
   def test_Person_requestSoftwareInstance_HostingSubscriptionNewTitle(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = "http://example.org/test.cfg"
+    software_release = self.software_release.getUrlString()
     software_title = "test"
     software_type = "test"
-    instance_xml = "test"
-    sla_xml = "test"
+    instance_xml = """<?xml version='1.0' encoding='utf-8'?>
+<instance>
+</instance>"""
+    sla_xml = """<?xml version='1.0' encoding='utf-8'?>
+<instance>
+</instance>"""
     shared = True
     state = "started"
 
@@ -401,11 +457,17 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
 
     transaction.commit()
 
-    software_release2 = "http://example.org/test.cfg2"
+    software_release2 = self.software_release.getUrlString()
     software_title2 = "test2"
     software_type2 = "test2"
-    instance_xml2 = "test2"
-    sla_xml2 = "test2"
+    instance_xml2 = """<?xml version='1.0' encoding='utf-8'?>
+<instance>
+
+</instance>"""
+    sla_xml2 = """<?xml version='1.0' encoding='utf-8'?>
+<instance>
+
+</instance>"""
     shared2 = False
     state2 = "stopped"
 
@@ -432,16 +494,19 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     self.assertEquals(instance_xml2, hosting_subscription2.getTextContent())
     self.assertEquals(sla_xml2, hosting_subscription2.getSlaXml())
     self.assertEquals(shared2, hosting_subscription2.getRootSlave())
-    self.assertEquals(state2, hosting_subscription2.getSlapState())
+    self.assertEquals("stop_requested", hosting_subscription2.getSlapState())
     self.assertEquals("validated", hosting_subscription2.getValidationState())
 
   def test_Person_requestSoftwareInstance_noConflictWithDeletedHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = "http://example.org/test.cfg"
+    software_release = self.software_release.getUrlString()
     software_title = "test"
     software_type = "test"
-    instance_xml = "test"
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>
+    <instance>
+    </instance>
+    """
     sla_xml = "test"
     shared = True
 
@@ -455,7 +520,7 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       state="destroyed",
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals("destroyed", hosting_subscription.getSlapState())
+    self.assertEquals("destroy_requested", hosting_subscription.getSlapState())
     transaction.commit()
     self.tic()
 
