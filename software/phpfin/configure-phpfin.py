@@ -3,9 +3,9 @@ import sys
 import os
 import MySQLdb
 
-
 def setup(args):
-   base_url, htdocs, renamed, mysql_user, mysql_password, mysql_database, mysql_host = args
+   renamed, mysql_host,  mysql_user, mysql_password, mysql_database, base_url, htdocs = args
+   #base_url, htdocs, renamed, mysql_user, mysql_password, mysql_database, mysql_host = args
    sql_file = os.path.join(htdocs, "scripts/phpfin.sql")
    try:
        conn = MySQLdb.connect (host = mysql_host,
