@@ -157,8 +157,6 @@ sub vcl_fetch {
     if (beresp.ttl > 0s) {
         /* Setup grace period for 30days for all cacheable contents */
         set beresp.grace = 30d;
-        /* Remove Expires from backend, it's not long enough */
-        unset beresp.http.expires;
         # /* Set the clients TTL on this object */
         # set beresp.http.cache-control = "max-age = 300";
         /* Set how long Varnish will keep it */
