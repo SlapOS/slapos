@@ -51,18 +51,14 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
       assignment.open()
 
     customer.requestSoftwareInstance = Simulator(self.person_request_simulator)
-
-    transaction.commit()
-    customer.recursiveImmediateReindexObject()
-    transaction.commit()
-    customer.updateLocalRolesOnSecurityGroups()
+    customer.manage_setLocalRoles(customer.getReference(),
+      ['Associate'])
     transaction.commit()
     customer.recursiveImmediateReindexObject()
     return customer, customer_reference
 
   def afterSetUp(self):
     self.setupVifibMachineAuthenticationPlugin()
-    self.setupVifibShadowAuthenticationPlugin()
     self.test_random_id = self.generateNewId()
     self.access_control_allow_headers = 'some, funny, headers, ' \
       'always, expected, %s' % self.test_random_id
@@ -428,14 +424,12 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
       destination_section=person.getRelativeUrl()
     )
     hosting_subscription.validate()
-    transaction.commit()
-    hosting_subscription.updateLocalRolesOnSecurityGroups()
-    transaction.commit()
-    hosting_subscription.recursiveImmediateReindexObject()
-    transaction.commit()
+    hosting_subscription.manage_setLocalRoles(person.getReference(),
+      ['Assignee'])
     software_instance.manage_setLocalRoles(person.getReference(),
       ['Assignee'])
     transaction.commit()
+    hosting_subscription.recursiveImmediateReindexObject()
     software_instance.recursiveImmediateReindexObject()
     return software_instance
 
