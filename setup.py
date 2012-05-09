@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.46-dev'
+version = '0.48-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -40,6 +40,7 @@ setup(name=name,
       zip_safe=True,
       entry_points={
         'zc.buildout': [
+          'agent = slapos.recipe.agent:Recipe',
           'apache.frontend = slapos.recipe.apache_frontend:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
@@ -63,6 +64,7 @@ setup(name=name,
           'helloworld = slapos.recipe.helloworld:Recipe',
           'generic.cloudooo = slapos.recipe.generic_cloudooo:Recipe',
           'cloudooo.test = slapos.recipe.cloudooo_test:Recipe',
+          'firefox = slapos.recipe.firefox:Recipe',
           'fontconfig = slapos.recipe.fontconfig:Recipe',
           'java = slapos.recipe.java:Recipe',
           'kumofs = slapos.recipe.kumofs:Recipe',
@@ -114,9 +116,8 @@ setup(name=name,
           'urlparse = slapos.recipe._urlparse:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'waitfor = slapos.recipe.waitfor:Recipe',
+          'xvfb = slapos.recipe.xvfb:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
-          'cloudooo = slapos.recipe.cloudooo:Recipe',
-          'cloudoootestnode = slapos.recipe.cloudoootestnode:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'generic.zope = slapos.recipe.generic_zope:Recipe',
           'generic.zope.zeo.client = slapos.recipe.generic_zope_zeo_client:Recipe',

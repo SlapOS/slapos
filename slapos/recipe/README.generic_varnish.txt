@@ -31,6 +31,9 @@ the HTTP Cache cheking result.
 web-checker-smtp-host is the smtp server to be used to send the web checker
 result.
 
+[Note]
+When web-checker-* parameters are not given, web_checker will be disabled.
+
 TODO
 ====
 

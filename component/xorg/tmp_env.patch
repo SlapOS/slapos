@@ -1,0 +1,30 @@
+--- xorg-server-1.9.3/os/utils.c.old	2012-03-29 18:20:02.000000000 +0200
++++ xorg-server-1.9.3/os/utils.c	2012-03-29 18:39:33.000000000 +0200
+@@ -226,7 +226,26 @@ OsSignal(int sig, OsSigHandlerPtr handle
+  * server at a time.  This keeps the servers from stomping on each other
+  * if the user forgets to give them different display numbers.
+  */
+-#define LOCK_DIR "/tmp"
++char *
++getcompatibleenv(const char *name, const char *compatible)
++{
++  static char path_list[1][PATH_MAX];
++  char *dir;
++
++  if (path_list[0][0]) {
++    return path_list[0];
++  }
++
++  dir = getenv(name);
++  if (dir == NULL) {
++    return strncpy(path_list[0], compatible, PATH_MAX);
++  } else {
++    return strncpy(path_list[0], dir, PATH_MAX);
++  }
++
++}
++
++#define LOCK_DIR getcompatibleenv("TMPDIR", "/tmp")
+ #define LOCK_TMP_PREFIX "/.tX"
+ #define LOCK_PREFIX "/.X"
+ #define LOCK_SUFFIX "-lock"

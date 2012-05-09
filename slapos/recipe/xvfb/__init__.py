@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,23 +25,32 @@
 #
 #############################################################################
 
-import os
-import sys
-import zc.buildout
-from slapos.recipe.librecipe import BaseSlapRecipe
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
   def install(self):
 
-    runner = self.createPythonScript(
-      self.options['runner-path'],
-      __name__+'.testrunner.run',
-      arguments=[self.options['suite-url'], 
-                 self.options['report-url'],
-                 self.options['report-project'],
-                 self.options['browser'],
-                 ])
+    config = {
+      'xvfb_binary': self.options['xvfb-path'],
+      'shell_path': self.options['shell-path'],
+      'fbdir_path': self.options['fbdir-path'],
+      'tmp_path': self.options['tmp-path'],
+      }
 
-    return [runner]
+    xvfb_path = self.createExecutable(
+      self.options['runner-path'],
+      self.substituteTemplate(self.getTemplateFilename('xvfb_run.in'),
+                              config))
+    result = [xvfb_path]
+
+    # Allow to take screenshot if needed
+    if ('xwd-path' in self.options) and ('xwd-hook-path' in self.options):
+
+      config['xwd_binary'] = self.options['xwd-path']
+      result.append(self.createExecutable(
+        self.options['xwd-hook-path'],
+        self.substituteTemplate(self.getTemplateFilename('xwd_run.in'),
+                                config)))
+
+    return result
 
