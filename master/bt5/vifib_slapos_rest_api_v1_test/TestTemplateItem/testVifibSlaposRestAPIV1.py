@@ -282,6 +282,35 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
         },
       self.json_response)
 
+  def test_additional_key_json(self):
+    kw_request = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'started',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': True}
+    kwargs = kw_request.copy()
+    kwargs.update(**{'wrong_key': 'Be ignored'})
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(202)
+    self.assertResponseJson()
+    self.assertPersonRequestSimulator((), kw_request)
+    self.assertEqual({
+        "status": "processing",
+        },
+      self.json_response)
+
   def test_correct_server_side_raise(self):
     self.customer.requestSoftwareInstance = \
       RaisingSimulator(AttributeError)
