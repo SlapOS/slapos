@@ -1,0 +1,7 @@
+#!%(shell_path)s
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+export DISPLAY=:0
+export TMPDIR=%(tmp_path)s 
+exec %(xwd_binary)s -root -out $1
