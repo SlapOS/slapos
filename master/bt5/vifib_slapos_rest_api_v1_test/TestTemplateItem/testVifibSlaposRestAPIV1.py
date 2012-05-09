@@ -648,19 +648,83 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     self.assertInstanceBangSimulatorEmpty()
 
   def test_other_one(self):
-    raise NotImplementedError
+    kwargs = {'log': 'This is cool log!'}
+    person, person_reference = self.createPerson()
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': person_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+    self.assertInstanceBangSimulatorEmpty()
 
   def test_no_json(self):
-    raise NotImplementedError
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'bang']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertTrue('error' in self.json_response)
+    self.assertEqual("Data is not json object.", self.json_response['error'])
+    self.assertInstanceBangSimulatorEmpty()
 
   def test_bad_json(self):
-    raise NotImplementedError
+    kwargs = {'wrong_key': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'log': 'Missing.'}, self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
 
   def test_empty_json(self):
-    raise NotImplementedError
+    kwargs = {}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'log': 'Missing.'}, self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
 
   def test_additional_key_json(self):
-    raise NotImplementedError
+    kw_log = {'log': 'This is cool log!'}
+    kwargs = kw_log.copy()
+    kwargs.update(**{'wrong_key': 'Be ignored'})
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstanceBangSimulator((), kw_log)
 
   def test_log_not_string(self):
-    raise NotImplementedError
+    kwargs = {'log': True}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'log': 'Not a string.'}, self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
