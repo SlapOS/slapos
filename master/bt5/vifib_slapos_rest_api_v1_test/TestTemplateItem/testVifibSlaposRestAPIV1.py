@@ -589,7 +589,7 @@ class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
     kwargs['comment'] = kwargs.pop('log')
     self.assertEqual(args, recargs)
     self.assertEqual(kwargs, reckwargs)
-    
+
 class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
   def test(self):
     kwargs = {'log': 'This is cool log!'}
@@ -631,7 +631,7 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     kwargs = {'log': 'This is cool log!'}
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance',
-      self.software_instance.getRelativeUrl(), 'bang']),
+      non_existing, 'bang']),
       body=json.dumps(kwargs),
       headers={'REMOTE_USER': self.customer_reference})
     self.prepareResponse()
