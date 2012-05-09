@@ -629,6 +629,26 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     self.assertResponseCode(204)
     self.assertInstanceBangSimulator((), kwargs)
 
+  def test_server_side_raise(self):
+    self.software_instance.reportComputerPartitionBang = RaisingSimulator(
+      AttributeError)
+    transaction.commit()
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'bang']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(500)
+    self.assertResponseJson()
+    self.assertEqual({
+        "error": "There is system issue, please try again later.",
+        },
+      self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
+
   def test_bad_xml(self):
     self._destroySoftwareInstanceTextContentXml(self.software_instance)
     kwargs = {'log': 'This is cool log!'}
