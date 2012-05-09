@@ -60,6 +60,34 @@ def requireHeader(header_dict):
     return wrapperRequireHeader
   return outer
 
+def requireJson(json_dict):
+  def outer(fn):
+    def wrapperRequireJson(self, *args, **kwargs):
+      self.REQUEST.stdin.seek(0)
+      try:
+        self.jbody = json.load(self.REQUEST.stdin)
+      except Exception:
+        self.REQUEST.response.setStatus(400)
+        self.REQUEST.response.setBody(json.dumps(
+          {'error': 'Data is not json object.'}))
+        return self.REQUEST.response
+      else:
+        error_dict = {}
+        for key, type_ in json_dict.iteritems():
+          if key not in self.jbody:
+            error_dict[key] = 'Missing.'
+          elif not isinstance(self.jbody[key], type_):
+            error_dict[key] = '%s is not %s.' % (type(self.jbody[key]).__name__,
+              type_.__name__)
+        if error_dict:
+          self.REQUEST.response.setStatus(400)
+          self.REQUEST.response.setBody(json.dumps(error_dict))
+          return self.REQUEST.response
+        return fn(self, *args, **kwargs)
+    wrapperRequireJson.__doc__ = fn.__doc__
+    return wrapperRequireJson
+  return outer
+
 def responseSupport(anonymous=False):
   def outer(fn):
     def wrapperResponseSupport(self, *args, **kwargs):
@@ -102,16 +130,8 @@ class InstancePublisher(GenericPublisher):
 
   @requireHeader({'Accept': 'application/json',
     'Content-Type': 'application/json'})
+  @requireJson(dict(log=unicode))
   def __bang(self):
-    self.REQUEST.stdin.seek(0)
-    try:
-      jbody = json.load(self.REQUEST.stdin)
-    except Exception:
-      self.REQUEST.response.setStatus(400)
-      self.REQUEST.response.setBody(json.dumps(
-        {'error': 'Data is not json object.'}))
-      return self.REQUEST.response
-
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     if person is None:
       transaction.abort()
@@ -123,19 +143,6 @@ class InstancePublisher(GenericPublisher):
         'There is system issue, please try again later.'}))
       return self.REQUEST.response
     instance_path = '/'.join(self.REQUEST['traverse_subpath'][:-1])
-    error_dict = {}
-    if 'log' not in jbody:
-      error_dict['log'] = "Missing."
-    elif not isinstance(jbody['log'], unicode):
-      error_dict['log'] = 'Not a string.'
-    else:
-      log = str(jbody['log'])
-
-    if error_dict:
-      self.REQUEST.response.setStatus(400)
-      self.REQUEST.response.setBody(json.dumps(error_dict))
-      return self.REQUEST.response
-
     try:
       software_instance = self.restrictedTraverse(instance_path)
       if getattr(software_instance, 'getPortalType', None) is None or \
@@ -156,7 +163,7 @@ class InstancePublisher(GenericPublisher):
         'There is system issue, please try again later.'}))
     else:
       try:
-        software_instance.reportComputerPartitionBang(comment=log)
+        software_instance.reportComputerPartitionBang(comment=self.jbody['log'])
       except Exception:
         LOG('VifibRestApiV1Tool', ERROR,
           'Problem while trying to generate instance dict:', error=True)
@@ -169,16 +176,17 @@ class InstancePublisher(GenericPublisher):
 
   @requireHeader({'Accept': 'application/json',
     'Content-Type': 'application/json'})
+  @requireJson(dict(
+    slave=bool,
+    software_release=unicode,
+    title=unicode,
+    software_type=unicode,
+    parameter=dict,
+    sla=dict,
+    status=unicode
+  ))
   def __request(self):
     response = self.REQUEST.response
-    self.REQUEST.stdin.seek(0)
-    try:
-      jbody = json.load(self.REQUEST.stdin)
-    except Exception:
-      response.setStatus(400)
-      response.setBody(json.dumps({'error': 'Data is not json object.'}))
-      return response
-
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     if person is None:
       transaction.abort()
@@ -191,10 +199,6 @@ class InstancePublisher(GenericPublisher):
       return response
 
     request_dict = {}
-    error_dict = {}
-    if 'slave' in jbody:
-      if not isinstance(jbody['slave'], bool):
-        error_dict['slave'] = 'Not boolean.'
     for k_j, k_i in (
         ('software_release', 'software_release'),
         ('title', 'software_title'),
@@ -204,18 +208,11 @@ class InstancePublisher(GenericPublisher):
         ('slave', 'shared'),
         ('status', 'state')
       ):
-      try:
-        if k_j in ('sla', 'parameter'):
-          request_dict[k_i] = xml_marshaller.xml_marshaller.dumps(jbody[k_j])
-        else:
-          request_dict[k_i] = jbody[k_j]
-      except KeyError:
-        error_dict[k_j] = 'Missing.'
-
-    if error_dict:
-      response.setStatus(400)
-      response.setBody(json.dumps(error_dict))
-      return response
+      if k_j in ('sla', 'parameter'):
+        request_dict[k_i] = xml_marshaller.xml_marshaller.dumps(
+          self.jbody[k_j])
+      else:
+        request_dict[k_i] = self.jbody[k_j]
 
     try:
       person.requestSoftwareInstance(**request_dict)
