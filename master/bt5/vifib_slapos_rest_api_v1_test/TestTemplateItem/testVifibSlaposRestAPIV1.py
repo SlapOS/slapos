@@ -50,7 +50,6 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
     for assignment in customer.contentValues(portal_type='Assignment'):
       assignment.open()
 
-    customer.requestSoftwareInstance = Simulator(self.person_request_simulator)
     customer.manage_setLocalRoles(customer.getReference(),
       ['Associate'])
     transaction.commit()
@@ -80,6 +79,7 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
 
     self.person_request_simulator = tempfile.mkstemp()[1]
     self.customer, self.customer_reference = self.createPerson()
+    self.customer.requestSoftwareInstance = Simulator(self.person_request_simulator)
     transaction.commit()
 
   def beforeTearDown(self):
