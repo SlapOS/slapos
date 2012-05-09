@@ -111,6 +111,36 @@ def responseSupport(anonymous=False):
     return wrapperResponseSupport
   return outer
 
+def extractInstance(fn):
+  def wrapperExtractInstance(self, *args, **kwargs):
+    if not self.REQUEST['traverse_subpath']:
+      self.REQUEST.response.setStatus(404)
+      return self.REQUEST.response
+    instance_path = self.REQUEST['traverse_subpath'][:2]
+    try:
+      self.software_instance = self.restrictedTraverse(instance_path)
+      if getattr(self.software_instance, 'getPortalType', None) is None or \
+        self.software_instance.getPortalType() not in ('Software Instance',
+          'Slave Instance'):
+        raise WrongRequest('%r is not an instance' % instance_path)
+    except WrongRequest:
+      LOG('VifibRestApiV1Tool', ERROR,
+        'Problem while trying to find instance:', error=True)
+      self.REQUEST.response.setStatus(404)
+    except (Unauthorized, KeyError):
+      self.REQUEST.response.setStatus(404)
+    except Exception:
+      LOG('VifibRestApiV1Tool', ERROR,
+        'Problem while trying to find instance:', error=True)
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(json.dumps({'error':
+        'There is system issue, please try again later.'}))
+    else:
+      self.REQUEST['traverse_subpath'] = self.REQUEST['traverse_subpath'][2:]
+      return fn(self, *args, **kwargs)
+    return self.REQUEST.response
+  wrapperExtractInstance.__doc__ = fn.__doc__
+  return wrapperExtractInstance
 class GenericPublisher(Implicit):
   @responseSupport(True)
   def OPTIONS(self, *args, **kwargs):
@@ -131,6 +161,7 @@ class InstancePublisher(GenericPublisher):
   @requireHeader({'Accept': 'application/json',
     'Content-Type': 'application/json'})
   @requireJson(dict(log=unicode))
+  @extractInstance
   def __bang(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     if person is None:
@@ -142,36 +173,16 @@ class InstancePublisher(GenericPublisher):
       self.REQUEST.response.setBody(json.dumps({'error':
         'There is system issue, please try again later.'}))
       return self.REQUEST.response
-    instance_path = '/'.join(self.REQUEST['traverse_subpath'][:-1])
     try:
-      software_instance = self.restrictedTraverse(instance_path)
-      if getattr(software_instance, 'getPortalType', None) is None or \
-        software_instance.getPortalType() not in ('Software Instance',
-          'Slave Instance'):
-        raise WrongRequest('%r is not an instance' % instance_path)
-    except WrongRequest:
-      LOG('VifibRestApiV1Tool', ERROR,
-        'Problem while trying to find instance:', error=True)
-      self.REQUEST.response.setStatus(404)
-    except (Unauthorized, KeyError):
-      self.REQUEST.response.setStatus(404)
+      self.software_instance.reportComputerPartitionBang(comment=self.jbody['log'])
     except Exception:
       LOG('VifibRestApiV1Tool', ERROR,
-        'Problem while trying to find instance:', error=True)
+        'Problem while trying to generate instance dict:', error=True)
       self.REQUEST.response.setStatus(500)
       self.REQUEST.response.setBody(json.dumps({'error':
         'There is system issue, please try again later.'}))
     else:
-      try:
-        software_instance.reportComputerPartitionBang(comment=self.jbody['log'])
-      except Exception:
-        LOG('VifibRestApiV1Tool', ERROR,
-          'Problem while trying to generate instance dict:', error=True)
-        self.REQUEST.response.setStatus(500)
-        self.REQUEST.response.setBody(json.dumps({'error':
-          'There is system issue, please try again later.'}))
-      else:
-        self.REQUEST.response.setStatus(204)
+      self.REQUEST.response.setStatus(204)
     return self.REQUEST.response
 
   @requireHeader({'Accept': 'application/json',
@@ -230,64 +241,45 @@ class InstancePublisher(GenericPublisher):
     return response
 
   @requireHeader({'Accept': 'application/json'})
+  @extractInstance
   def __instance_info(self):
     certificate = False
-    if self.REQUEST['traverse_subpath'][-1] == 'certificate':
+    if self.REQUEST['traverse_subpath'] and self.REQUEST[
+        'traverse_subpath'][-1] == 'certificate':
       certificate = True
-      self.REQUEST['traverse_subpath'] = self.REQUEST['traverse_subpath'][:-1]
-    instance_path = '/'.join(self.REQUEST['traverse_subpath'])
     try:
-      software_instance = self.restrictedTraverse(instance_path)
-      if getattr(software_instance, 'getPortalType', None) is None or \
-        software_instance.getPortalType() not in ('Software Instance',
-          'Slave Instance'):
-        raise WrongRequest('%r is not an instance' % instance_path)
-    except WrongRequest:
-      LOG('VifibRestApiV1Tool', ERROR,
-        'Problem while trying to find instance:', error=True)
-      self.REQUEST.response.setStatus(404)
-    except (Unauthorized, KeyError):
-      self.REQUEST.response.setStatus(404)
+      if certificate:
+        d = {
+          "ssl_key": self.software_instance.getSslKey(),
+          "ssl_certificate": self.software_instance.getSslCertificate()
+        }
+      else:
+        d = {
+          "title": self.software_instance.getTitle(),
+          "status": self.software_instance.getSlapState(),
+          "software_release": "", # not ready yet
+          "software_type": self.software_instance.getSourceReference(),
+          "slave": self.software_instance.getPortalType() == 'Slave Instance',
+          "connection": self.software_instance.getConnectionXmlAsDict(),
+          "parameter": self.software_instance.getInstanceXmlAsDict(),
+          "sla": self.software_instance.getSlaXmlAsDict(),
+          "children_list": [q.absolute_url() for q in \
+            self.software_instance.getPredecessorValueList()],
+          "partition": { # not ready yet
+            "public_ip": [],
+            "private_ip": [],
+            "tap_interface": "",
+          }
+        }
     except Exception:
       LOG('VifibRestApiV1Tool', ERROR,
-        'Problem while trying to find instance:', error=True)
+        'Problem while trying to generate instance dict:', error=True)
       self.REQUEST.response.setStatus(500)
       self.REQUEST.response.setBody(json.dumps({'error':
         'There is system issue, please try again later.'}))
     else:
-      try:
-        if certificate:
-          d = {
-            "ssl_key": software_instance.getSslKey(),
-            "ssl_certificate": software_instance.getSslCertificate()
-          }
-        else:
-          d = {
-            "title": software_instance.getTitle(),
-            "status": software_instance.getSlapState(),
-            "software_release": "", # not ready yet
-            "software_type": software_instance.getSourceReference(),
-            "slave": software_instance.getPortalType() == 'Slave Instance',
-            "connection": software_instance.getConnectionXmlAsDict(),
-            "parameter": software_instance.getInstanceXmlAsDict(),
-            "sla": software_instance.getSlaXmlAsDict(),
-            "children_list": [q.absolute_url() for q in \
-              software_instance.getPredecessorValueList()],
-            "partition": { # not ready yet
-              "public_ip": [],
-              "private_ip": [],
-              "tap_interface": "",
-            }
-          }
-      except Exception:
-        LOG('VifibRestApiV1Tool', ERROR,
-          'Problem while trying to generate instance dict:', error=True)
-        self.REQUEST.response.setStatus(500)
-        self.REQUEST.response.setBody(json.dumps({'error':
-          'There is system issue, please try again later.'}))
-      else:
-        self.REQUEST.response.setStatus(200)
-        self.REQUEST.response.setBody(json.dumps(d))
+      self.REQUEST.response.setStatus(200)
+      self.REQUEST.response.setBody(json.dumps(d))
     return self.REQUEST.response
 
   @responseSupport()
