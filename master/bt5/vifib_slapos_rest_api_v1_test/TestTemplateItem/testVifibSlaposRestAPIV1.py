@@ -613,12 +613,8 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
       headers={'REMOTE_USER': self.customer_reference})
     self.prepareResponse()
     self.assertBasicResponse()
-    self.assertResponseCode(500)
-    self.assertResponseJson()
-    self.assertEqual({
-      "error": "There is system issue, please try again later."},
-      self.json_response)
-    self.assertInstanceBangSimulatorEmpty()
+    self.assertResponseCode(204)
+    self.assertInstanceBangSimulator((), kwargs)
 
   def test_non_existing(self):
     non_existing = 'software_instance_module/' + self.generateNewId()
