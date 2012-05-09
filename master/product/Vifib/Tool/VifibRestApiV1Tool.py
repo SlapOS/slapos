@@ -91,22 +91,21 @@ def requireJson(json_dict):
 def responseSupport(anonymous=False):
   def outer(fn):
     def wrapperResponseSupport(self, *args, **kwargs):
-      response = self.REQUEST.response
-      response.setHeader('Content-Type', 'application/json')
-      response.setHeader('Access-Control-Allow-Headers',
+      self.REQUEST.response.setHeader('Content-Type', 'application/json')
+      self.REQUEST.response.setHeader('Access-Control-Allow-Headers',
         self.REQUEST.getHeader('Access-Control-Allow-Headers'))
-      response.setHeader('Access-Control-Allow-Origin', '*')
-      response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
+      self.REQUEST.response.setHeader('Access-Control-Allow-Origin', '*')
+      self.REQUEST.response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
         'GET, OPTIONS')
       if not anonymous:
         if getSecurityManager().getUser().getId() is None:
           # force login
-          response.setStatus(401)
-          response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
+          self.REQUEST.response.setStatus(401)
+          self.REQUEST.response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
             self.absolute_url())
-          response.setHeader('Location', self.getPortalObject()\
+          self.REQUEST.response.setHeader('Location', self.getPortalObject()\
             .portal_preferences.getPreferredRestApiV1TokenServerUrl())
-          return response
+          return self.REQUEST.response
         else:
           self.person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
           if self.person is None:
@@ -200,7 +199,6 @@ class InstancePublisher(GenericPublisher):
     status=unicode
   ))
   def __request(self):
-    response = self.REQUEST.response
     request_dict = {}
     for k_j, k_i in (
         ('software_release', 'software_release'),
@@ -223,14 +221,14 @@ class InstancePublisher(GenericPublisher):
       transaction.abort()
       LOG('VifibRestApiV1Tool', ERROR,
         'Problem with person.requestSoftwareInstance:', error=True)
-      response.setStatus(500)
-      response.setBody(json.dumps({'error':
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(json.dumps({'error':
         'There is system issue, please try again later.'}))
-      return response
+      return self.REQUEST.response
 
-    response.setStatus(202)
-    response.setBody(json.dumps({'status':'processing'}))
-    return response
+    self.REQUEST.response.setStatus(202)
+    self.REQUEST.response.setBody(json.dumps({'status':'processing'}))
+    return self.REQUEST.response
 
   @requireHeader({'Accept': 'application/json'})
   @extractInstance
