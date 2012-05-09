@@ -55,6 +55,7 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
       ['Associate'])
     transaction.commit()
     customer.recursiveImmediateReindexObject()
+    transaction.commit()
     return customer, customer_reference
 
   def afterSetUp(self):
@@ -431,6 +432,7 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
     transaction.commit()
     hosting_subscription.recursiveImmediateReindexObject()
     software_instance.recursiveImmediateReindexObject()
+    transaction.commit()
     return software_instance
 
   # needed to avoid calling interaction and being able to destroy XML
@@ -439,6 +441,7 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
     software_instance.setTextContent('This is bad XML')
     transaction.commit()
     software_instance.recursiveImmediateReindexObject()
+    transaction.commit()
 
 class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
   def test_non_existing(self):
