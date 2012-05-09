@@ -645,7 +645,7 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     self.prepareResponse()
     self.assertBasicResponse()
     self.assertResponseCode(404)
-    self.assertInstanceBangSimulator((), kwargs)
+    self.assertInstanceBangSimulatorEmpty()
 
   def test_other_one(self):
     raise NotImplementedError
