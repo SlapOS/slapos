@@ -98,14 +98,26 @@ def responseSupport(anonymous=False):
       response.setHeader('Access-Control-Allow-Origin', '*')
       response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
         'GET, OPTIONS')
-      if not anonymous and getSecurityManager().getUser().getId() is None:
-        # force login
-        response.setStatus(401)
-        response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
-          self.absolute_url())
-        response.setHeader('Location', self.getPortalObject()\
-          .portal_preferences.getPreferredRestApiV1TokenServerUrl())
-        return response
+      if not anonymous:
+        if getSecurityManager().getUser().getId() is None:
+          # force login
+          response.setStatus(401)
+          response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
+            self.absolute_url())
+          response.setHeader('Location', self.getPortalObject()\
+            .portal_preferences.getPreferredRestApiV1TokenServerUrl())
+          return response
+        else:
+          self.person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
+          if self.person is None:
+            transaction.abort()
+            LOG('VifibRestApiV1Tool', ERROR,
+              'Currenty logged in user %r has no Person document.'%
+                self.getPortalObject().getAuthenticatedMember())
+            self.REQUEST.response.setStatus(500)
+            self.REQUEST.response.setBody(json.dumps({'error':
+              'There is system issue, please try again later.'}))
+            return self.REQUEST.response
       return fn(self, *args, **kwargs)
     wrapperResponseSupport.__doc__ = fn.__doc__
     return wrapperResponseSupport
@@ -141,6 +153,7 @@ def extractInstance(fn):
     return self.REQUEST.response
   wrapperExtractInstance.__doc__ = fn.__doc__
   return wrapperExtractInstance
+
 class GenericPublisher(Implicit):
   @responseSupport(True)
   def OPTIONS(self, *args, **kwargs):
@@ -163,16 +176,6 @@ class InstancePublisher(GenericPublisher):
   @requireJson(dict(log=unicode))
   @extractInstance
   def __bang(self):
-    person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
-    if person is None:
-      transaction.abort()
-      LOG('VifibRestApiV1Tool', ERROR,
-        'Currenty logged in user %r has no Person document.'%
-          self.getPortalObject().getAuthenticatedMember())
-      self.REQUEST.response.setStatus(500)
-      self.REQUEST.response.setBody(json.dumps({'error':
-        'There is system issue, please try again later.'}))
-      return self.REQUEST.response
     try:
       self.software_instance.reportComputerPartitionBang(comment=self.jbody['log'])
     except Exception:
@@ -198,17 +201,6 @@ class InstancePublisher(GenericPublisher):
   ))
   def __request(self):
     response = self.REQUEST.response
-    person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
-    if person is None:
-      transaction.abort()
-      LOG('VifibRestApiV1Tool', ERROR,
-        'Currenty logged in user %r has no Person document.'%
-          self.getPortalObject().getAuthenticatedMember())
-      response.setStatus(500)
-      response.setBody(json.dumps({'error':
-        'There is system issue, please try again later.'}))
-      return response
-
     request_dict = {}
     for k_j, k_i in (
         ('software_release', 'software_release'),
@@ -226,7 +218,7 @@ class InstancePublisher(GenericPublisher):
         request_dict[k_i] = self.jbody[k_j]
 
     try:
-      person.requestSoftwareInstance(**request_dict)
+      self.person.requestSoftwareInstance(**request_dict)
     except Exception:
       transaction.abort()
       LOG('VifibRestApiV1Tool', ERROR,
