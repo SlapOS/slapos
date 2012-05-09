@@ -297,7 +297,8 @@ class InstancePublisher(GenericPublisher):
   def __call__(self):
     """Instance GET/POST support"""
     if self.REQUEST['REQUEST_METHOD'] == 'POST':
-      if self.REQUEST['traverse_subpath'][-1] == 'bang':
+      if self.REQUEST['traverse_subpath'] and \
+        self.REQUEST['traverse_subpath'][-1] == 'bang':
         self.__bang()
       else:
         self.__request()
