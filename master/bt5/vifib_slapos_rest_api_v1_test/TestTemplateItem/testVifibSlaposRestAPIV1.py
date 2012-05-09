@@ -1,4 +1,4 @@
-from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
+from Products.Vifib.tests.testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.ERP5Type.Base import WorkflowMethod
 import transaction
 import httplib
@@ -35,7 +35,7 @@ class CustomHeaderHTTPConnection(httplib.HTTPConnection):
     kwargs['headers'] = headers
     return httplib.HTTPConnection.request(self, *args, **kwargs)
 
-class VifibSlaposRestAPIV1Mixin(ERP5TypeTestCase):
+class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
   def generateNewId(self):
     return str(self.getPortalObject().portal_ids.generateNewId(
                                      id_group=('slapos_rest_api_v1_test')))
@@ -61,6 +61,8 @@ class VifibSlaposRestAPIV1Mixin(ERP5TypeTestCase):
     return customer, customer_reference
 
   def afterSetUp(self):
+    self.setupVifibMachineAuthenticationPlugin()
+    self.setupVifibShadowAuthenticationPlugin()
     self.test_random_id = self.generateNewId()
     self.access_control_allow_headers = 'some, funny, headers, ' \
       'always, expected, %s' % self.test_random_id
