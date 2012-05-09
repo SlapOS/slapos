@@ -1,4 +1,6 @@
-from Products.Vifib.tests.testVifibSlapWebService import TestVifibSlapWebServiceMixin
+# Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
+from Products.Vifib.tests.testVifibSlapWebService import \
+  TestVifibSlapWebServiceMixin
 from Products.ERP5Type.Base import WorkflowMethod
 import transaction
 import httplib
@@ -14,7 +16,8 @@ class Simulator:
 
   def __call__(self, *args, **kwargs):
     """Simulation Method"""
-    open(self.outfile, 'a').write('recargs = %r\nreckwargs = %r' % (args, kwargs))
+    open(self.outfile, 'a').write('recargs = %r\nreckwargs = %r' % (args,
+      kwargs))
 
 class RaisingSimulator(Simulator):
   def __init__(self, exception):
@@ -79,7 +82,8 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
 
     self.person_request_simulator = tempfile.mkstemp()[1]
     self.customer, self.customer_reference = self.createPerson()
-    self.customer.requestSoftwareInstance = Simulator(self.person_request_simulator)
+    self.customer.requestSoftwareInstance = Simulator(
+      self.person_request_simulator)
     transaction.commit()
 
   def beforeTearDown(self):
