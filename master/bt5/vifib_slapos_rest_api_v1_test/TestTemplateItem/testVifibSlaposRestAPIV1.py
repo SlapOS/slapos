@@ -161,8 +161,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(400)
     self.assertResponseJson()
-    self.assertTrue('error' in self.json_response)
-    self.assertEqual("Data is not json object.", self.json_response['error'])
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
     self.assertPersonRequestSimulatorEmpty()
 
   def test_bad_json(self):
@@ -174,8 +173,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(400)
     self.assertResponseJson()
-    self.assertTrue('error' in self.json_response)
-    self.assertEqual("Data is not json object.", self.json_response['error'])
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
     self.assertPersonRequestSimulatorEmpty()
 
   def test_empty_json(self):
@@ -669,8 +667,7 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     self.assertBasicResponse()
     self.assertResponseCode(400)
     self.assertResponseJson()
-    self.assertTrue('error' in self.json_response)
-    self.assertEqual("Data is not json object.", self.json_response['error'])
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
     self.assertInstanceBangSimulatorEmpty()
 
   def test_bad_json(self):
