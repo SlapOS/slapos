@@ -250,7 +250,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertResponseCode(400)
     self.assertResponseJson()
     self.assertEqual({
-        "slave": "Not boolean.",
+        "slave": "unicode is not bool.",
         },
       self.json_response)
     self.assertPersonRequestSimulatorEmpty()
@@ -752,5 +752,5 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     self.assertBasicResponse()
     self.assertResponseCode(400)
     self.assertResponseJson()
-    self.assertEqual({'log': 'Not a string.'}, self.json_response)
+    self.assertEqual({'log': 'bool is not unicode.'}, self.json_response)
     self.assertInstanceBangSimulatorEmpty()
