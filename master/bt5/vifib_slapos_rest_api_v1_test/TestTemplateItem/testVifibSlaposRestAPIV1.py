@@ -810,6 +810,9 @@ class TestInstancePUT(VifibSlaposRestAPIV1InstanceMixin):
     stored = eval(open(self.instance_put_simulator).read())
     self.assertEqual(stored, l)
 
+  def assertInstancePUTSimulatorEmpty(self):
+    self.assertEqual('', open(self.instance_put_simulator).read())
+
   def test(self):
     d = {
       'title': 'New Title' + self.test_random_id,
@@ -875,3 +878,79 @@ class TestInstancePUT(VifibSlaposRestAPIV1InstanceMixin):
       self.json_response)
     self.assertInstancePUTSimulator([{'recargs': (d['title'],),
       'reckwargs': {}, 'recmethod': 'setTitle'}])
+
+  def test_same_title_connection(self):
+    d = {
+      'title': self.software_instance.getTitle(),
+      'connection': self.software_instance.getConnectionXmlAsDict()
+    }
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_not_logged_in(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]))
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(401)
+    self.assertTrue(self.response.getheader('Location') is not None)
+    auth = self.response.getheader('WWW-Authenticate')
+    self.assertTrue(auth is not None)
+    self.assertTrue('Bearer realm="' in auth)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_no_json(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_bad_json(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body='This is not JSON',
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_empty_json(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body='{}',
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_future_compat(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps({'ignore':'me'}),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstancePUTSimulatorEmpty()
+
