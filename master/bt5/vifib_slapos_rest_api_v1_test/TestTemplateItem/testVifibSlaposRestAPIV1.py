@@ -10,15 +10,23 @@ import tempfile
 import os
 
 class Simulator:
-  def __init__(self, outfile):
+  def __init__(self, outfile, method):
     self.outfile = outfile
+    self.method = method
 
   def __call__(self, *args, **kwargs):
     """Simulation Method"""
-    open(self.outfile, 'a').write('recargs = %r\nreckwargs = %r' % (args,
-      kwargs))
+    old = open(self.outfile, 'r').read()
+    if old:
+      l = eval(old)
+    else:
+      l = []
+    l.append({'recmethod': self.method,
+      'recargs': args,
+      'reckwargs': kwargs})
+    open(self.outfile, 'w').write(repr(l))
 
-class RaisingSimulator(Simulator):
+class RaisingSimulator:
   def __init__(self, exception):
     self.exception = exception
 
@@ -81,8 +89,8 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
 
     self.person_request_simulator = tempfile.mkstemp()[1]
     self.customer, self.customer_reference = self.createPerson()
-    self.customer.requestSoftwareInstance = Simulator(
-      self.person_request_simulator)
+    self.customer.requestSoftwareInstance = Simulator(self.person_request_simulator,
+      'requestSoftwareInstance')
     transaction.commit()
 
   def beforeTearDown(self):
@@ -121,10 +129,7 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
     self.assertEqual(open(self.person_request_simulator).read(), '')
 
   def assertPersonRequestSimulator(self, args, kwargs):
-    # fillup magic
-    recargs = ()
-    reckwargs = {}
-    exec(open(self.person_request_simulator).read())
+    stored = eval(open(self.person_request_simulator).read())
     # do the same translation magic as in tool
     kwargs = kwargs.copy()
     for k_j, k_i in (
@@ -137,8 +142,9 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
         ('status', 'state')
       ):
       kwargs[k_i] = kwargs.pop(k_j)
-    self.assertEqual(args, recargs)
-    self.assertEqual(kwargs, reckwargs)
+    self.assertEqual(stored, 
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'requestSoftwareInstance'}])
 
 class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
   def test_not_logged_in(self):
@@ -608,7 +614,7 @@ class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
     super(VifibSlaposRestAPIV1BangMixin, self).afterSetUp()
     self.instance_bang_simulator = tempfile.mkstemp()[1]
     self.software_instance.reportComputerPartitionBang = Simulator(
-      self.instance_bang_simulator)
+      self.instance_bang_simulator, 'reportComputerPartitionBang')
     transaction.commit()
 
   def beforeTearDown(self):
@@ -620,14 +626,12 @@ class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
     self.assertEqual(open(self.instance_bang_simulator).read(), '')
 
   def assertInstanceBangSimulator(self, args, kwargs):
-    # fillup magic
-    recargs = ()
-    reckwargs = {}
-    exec(open(self.instance_bang_simulator).read())
+    stored = eval(open(self.instance_bang_simulator).read())
     # do the same translation magic as in workflow
     kwargs['comment'] = kwargs.pop('log')
-    self.assertEqual(args, recargs)
-    self.assertEqual(kwargs, reckwargs)
+    self.assertEqual(stored,
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'reportComputerPartitionBang'}])
 
 class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
   def test(self):
