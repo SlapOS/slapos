@@ -4,7 +4,9 @@ Changes
 0.50 (Unreleased)
 -----------------
 
-  * No change yet
+  * LAMP stack bugfix: fix a crash where recipe was trying to restart
+    non-existent httpd process. [Cedric de Saint Martin]
+  * LAMP stack bugfix: don't erase htdocs at update [Cedric de Saint Martin]
   
 0.49 (2012-05-10)
 -----------------
