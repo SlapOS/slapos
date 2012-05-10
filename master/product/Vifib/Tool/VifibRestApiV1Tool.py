@@ -187,10 +187,8 @@ class InstancePublisher(GenericPublisher):
     'Content-Type': 'application/json'})
   @requireJson(dict(
     title=unicode,
-    status=unicode,
-    log=unicode,
     connection=dict
-  ), ['title', 'status', 'log', 'connection'])
+  ), ['title', 'connection'])
   @extractInstance
   def PUT(self):
     """Instance PUT support"""
