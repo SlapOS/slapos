@@ -46,7 +46,7 @@
         </item>
         <item>
             <key> <string>script_name</string> </key>
-            <value> <string></string> </value>
+            <value> <string>Instance_checkConsistency</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
