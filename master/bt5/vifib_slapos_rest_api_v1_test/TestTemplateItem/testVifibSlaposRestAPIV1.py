@@ -8,7 +8,6 @@ import urlparse
 import json
 import tempfile
 import os
-import xml_marshaller
 
 class Simulator:
   def __init__(self, outfile):
@@ -137,8 +136,6 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
         ('slave', 'shared'),
         ('status', 'state')
       ):
-      if k_j in ('sla', 'parameter'):
-        reckwargs[k_i] = xml_marshaller.xml_marshaller.loads(reckwargs.pop(k_i))
       kwargs[k_i] = kwargs.pop(k_j)
     self.assertEqual(args, recargs)
     self.assertEqual(kwargs, reckwargs)
@@ -279,6 +276,12 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(202)
     self.assertResponseJson()
+    kwargs['parameter'] = '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<i'\
+      'nstance>\n  <parameter id="Custom1">one string</parameter>\n  <paramet'\
+      'er id="Custom2">one float</parameter>\n  <parameter id="Custom3">[u\'a'\
+      'bc\', u\'def\']</parameter>\n</instance>\n'
+    kwargs['sla'] = '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instanc'\
+      'e>\n  <parameter id="computer_id">COMP-0</parameter>\n</instance>\n'
     self.assertPersonRequestSimulator((), kwargs)
     self.assertEqual({
         "status": "processing",
@@ -308,6 +311,12 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertBasicResponse()
     self.assertResponseCode(202)
     self.assertResponseJson()
+    kw_request['parameter'] = '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<i'\
+      'nstance>\n  <parameter id="Custom1">one string</parameter>\n  <paramet'\
+      'er id="Custom2">one float</parameter>\n  <parameter id="Custom3">[u\'a'\
+      'bc\', u\'def\']</parameter>\n</instance>\n'
+    kw_request['sla'] = '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instanc'\
+      'e>\n  <parameter id="computer_id">COMP-0</parameter>\n</instance>\n'
     self.assertPersonRequestSimulator((), kw_request)
     self.assertEqual({
         "status": "processing",
