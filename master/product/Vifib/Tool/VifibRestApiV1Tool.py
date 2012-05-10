@@ -35,12 +35,20 @@ from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type import Permissions
 from ComputedAttribute import ComputedAttribute
 from zLOG import LOG, ERROR
-import xml_marshaller
+from lxml import etree
 import json
 import transaction
 
 class WrongRequest(Exception):
   pass
+
+def etreeXml(d):
+  r = etree.Element('instance')
+  for k, v in d.iteritems():
+    v = str(v)
+    etree.SubElement(r, "parameter", attrib={'id': k}).text = v
+  return etree.tostring(r, pretty_print=True, xml_declaration=True,
+    encoding='utf-8')
 
 def requireHeader(header_dict):
   def outer(fn):
@@ -210,8 +218,7 @@ class InstancePublisher(GenericPublisher):
         ('status', 'state')
       ):
       if k_j in ('sla', 'parameter'):
-        request_dict[k_i] = xml_marshaller.xml_marshaller.dumps(
-          self.jbody[k_j])
+        request_dict[k_i] = etreeXml(self.jbody[k_j])
       else:
         request_dict[k_i] = self.jbody[k_j]
 
