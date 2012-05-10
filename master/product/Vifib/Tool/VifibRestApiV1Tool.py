@@ -68,7 +68,9 @@ def requireHeader(header_dict):
     return wrapperRequireHeader
   return outer
 
-def requireJson(json_dict):
+def requireJson(json_dict, optional_key_list=None):
+  if optional_key_list is None:
+    optional_key_list = []
   def outer(fn):
     def wrapperRequireJson(self, *args, **kwargs):
       self.REQUEST.stdin.seek(0)
@@ -83,8 +85,9 @@ def requireJson(json_dict):
         error_dict = {}
         for key, type_ in json_dict.iteritems():
           if key not in self.jbody:
-            error_dict[key] = 'Missing.'
-          elif not isinstance(self.jbody[key], type_):
+            if key not in optional_key_list:
+              error_dict[key] = 'Missing.'
+          elif key in self.jbody and not isinstance(self.jbody[key], type_):
             error_dict[key] = '%s is not %s.' % (type(self.jbody[key]).__name__,
               type_.__name__)
         if error_dict:
@@ -178,6 +181,44 @@ class GenericPublisher(Implicit):
 
 class InstancePublisher(GenericPublisher):
   """Instance publisher"""
+
+  @requireHeader({'Accept': 'application/json',
+    'Content-Type': 'application/json'})
+  @requireJson(dict(
+    title=unicode,
+    status=unicode,
+    log=unicode,
+    connection=dict
+  ), ['title', 'status', 'log', 'connection'])
+  @extractInstance
+  def PUT(self):
+    """Instance PUT support"""
+    d = {}
+    try:
+      self.REQUEST.response.setStatus(204)
+      software_instance = self.restrictedTraverse(self.software_instance_url)
+      if 'title' in self.jbody and \
+          software_instance.getTitle() != self.jbody['title']:
+        software_instance.setTitle(self.jbody['title'])
+        d['title'] = 'Modified.'
+        self.REQUEST.response.setStatus(200)
+      if 'connection' in self.jbody:
+        xml = etreeXml(self.jbody['connection'])
+        if xml != software_instance.getConnectionXml():
+          software_instance.setConnectionXml(xml)
+          d['connection'] = 'Modified.'
+          self.REQUEST.response.setStatus(200)
+    except Exception:
+      transaction.abort()
+      LOG('VifibRestApiV1Tool', ERROR,
+        'Problem while modifying:', error=True)
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(json.dumps({'error':
+        'There is system issue, please try again later.'}))
+    else:
+      if d:
+        self.REQUEST.response.setBody(json.dumps(d))
+    return self.REQUEST.response
 
   @requireHeader({'Accept': 'application/json',
     'Content-Type': 'application/json'})
