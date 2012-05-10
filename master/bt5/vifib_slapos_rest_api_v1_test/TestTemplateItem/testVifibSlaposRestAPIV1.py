@@ -790,3 +790,88 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     self.assertResponseJson()
     self.assertEqual({'log': 'bool is not unicode.'}, self.json_response)
     self.assertInstanceBangSimulatorEmpty()
+
+class TestInstancePUT(VifibSlaposRestAPIV1InstanceMixin):
+  def afterSetUp(self):
+    super(TestInstancePUT, self).afterSetUp()
+    self.instance_put_simulator = tempfile.mkstemp()[1]
+    self.software_instance.setTitle = Simulator(self.instance_put_simulator,
+      'setTitle')
+    self.software_instance.setConnectionXml = Simulator(self.instance_put_simulator,
+      'setConnectionXml')
+    transaction.commit()
+
+  def beforeTearDown(self):
+    super(TestInstancePUT, self).beforeTearDown()
+    if os.path.exists(self.instance_put_simulator):
+      os.unlink(self.instance_put_simulator)
+
+  def assertInstancePUTSimulator(self, l):
+    stored = eval(open(self.instance_put_simulator).read())
+    self.assertEqual(stored, l)
+
+  def test(self):
+    d = {
+      'title': 'New Title' + self.test_random_id,
+      'connection': {'url': 'http://new' + self.test_random_id}
+    }
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({
+      "title": "Modified.",
+      "connection": "Modified."
+      },
+      self.json_response)
+    self.assertInstancePUTSimulator([{'recargs': (d['title'],), 'reckwargs': {},
+      'recmethod': 'setTitle'},
+    {'recargs': ('<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  '\
+      '<parameter id="url">http://new%s</parameter>\n</instance>\n'%
+        self.test_random_id,), 'reckwargs': {}, 'recmethod': 'setConnectionXml'}])
+
+  def test_same_title(self):
+    d = {
+      'title': self.software_instance.getTitle(),
+      'connection': {'url': 'http://new' + self.test_random_id}
+    }
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({"connection": "Modified."}, self.json_response)
+    self.assertInstancePUTSimulator([
+      {'recargs': ('<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  '\
+      '<parameter id="url">http://new%s</parameter>\n</instance>\n'%
+        self.test_random_id,), 'reckwargs': {}, 'recmethod': 'setConnectionXml'}])
+
+  def test_same_connection(self):
+    d = {
+      'title': 'New Title 2' + self.test_random_id,
+      'connection': self.software_instance.getConnectionXmlAsDict()
+    }
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({
+      "title": "Modified.",
+      },
+      self.json_response)
+    self.assertInstancePUTSimulator([{'recargs': (d['title'],),
+      'reckwargs': {}, 'recmethod': 'setTitle'}])
