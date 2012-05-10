@@ -182,6 +182,7 @@ class GenericPublisher(Implicit):
 class InstancePublisher(GenericPublisher):
   """Instance publisher"""
 
+  @responseSupport()
   @requireHeader({'Accept': 'application/json',
     'Content-Type': 'application/json'})
   @requireJson(dict(
