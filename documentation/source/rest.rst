@@ -285,15 +285,13 @@ Modify the instance information and status.
 
   {
     "title": "The New Instance Title",
-    "status": "started", # one of: started, stopped, updating, error
-    "log": "explanation of the status",
     "connection": {
       "custom_connection_parameter_1": "foo",
       "custom_connection_parameter_2": "bar"
     }
   }
 
-Where `status` is required with `log`, `connection` and `title` are optional and their existence allow to not send `status` and `log`.
+Where `connection` and `title` are optional.
 
 Setting different.
 
@@ -303,14 +301,9 @@ Setting different.
   Content-Type: application/json; charset=utf-8
 
   {
-    'action': ['Action description', 'Action description', ...]
+    "connection": "Modified",
+    "title": "Modified."
   }
-
-Where `action` describes what happened:
-
- * 'Renamed' (where title was different)
- * 'Updated status' (where status changed)
- * 'Updated connection information' (where connection changed)
 
 `Additional Responses`::
 
