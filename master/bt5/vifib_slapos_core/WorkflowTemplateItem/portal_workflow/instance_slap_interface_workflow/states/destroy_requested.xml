@@ -21,10 +21,7 @@
         <item>
             <key> <string>transitions</string> </key>
             <value>
-              <tuple>
-                <string>request_destroy</string>
-                <string>request_instance</string>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>
