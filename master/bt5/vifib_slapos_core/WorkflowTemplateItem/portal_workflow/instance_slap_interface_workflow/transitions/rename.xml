@@ -24,7 +24,7 @@
         </item>
         <item>
             <key> <string>after_script_name</string> </key>
-            <value> <string>SoftwareInstance_rename</string> </value>
+            <value> <string>RequestedInstance_rename</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Rename Software Instance</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>trigger_type</string> </key>

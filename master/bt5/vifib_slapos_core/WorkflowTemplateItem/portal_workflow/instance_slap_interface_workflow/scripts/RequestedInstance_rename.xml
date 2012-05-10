@@ -50,12 +50,29 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># Get the software_instance\n
-software_instance = state_change[\'object\']\n
+            <value> <string encoding="cdata"><![CDATA[
+
+instance = state_change[\'object\']\n
+portal = instance.getPortalObject()\n
+software_title = state_change.kwargs[\'new_name\']\n
+\n
+assert instance.getPortalType() in ["Slave Instance", "Software Instance"]\n
+\n
+hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
+\n
+# Instance can be moved from one requester to another\n
+# Prevent creating two instances with the same title\n
+tag = "%s_%s_inProgress" % (hosting_subscription.getUid(), software_title)\n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  # The software instance is already under creation but can not be fetched from catalog\n
+  # As it is not possible to fetch informations, it is better to raise an error\n
+  raise NotImplementedError(tag)\n
 \n
 # Change the title\n
-software_instance.edit(title=state_change.kwargs[\'new_name\'])\n
-</string> </value>
+instance.edit(title=software_title, activate_kw={\'tag\': tag})\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -63,11 +80,11 @@ software_instance.edit(title=state_change.kwargs[\'new_name\'])\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_rename</string> </value>
+            <value> <string>RequestedInstance_rename</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Rename software instance</string> </value>
+            <value> <string></string> </value>
         </item>
       </dictionary>
     </pickle>
