@@ -60,7 +60,7 @@ kwargs = state_change.kwargs\n
 # Required args\n
 # Raise TypeError if all parameters are not provided\n
 try:\n
-  software_release_url_string = state_change.kwargs[\'software_release\']\n
+  software_release_url_string = kwargs[\'software_release\']\n
   software_title = kwargs["software_title"]\n
   software_type = kwargs["software_type"]\n
   instance_xml = kwargs["instance_xml"]\n
@@ -115,28 +115,35 @@ else:\n
     activate_kw={\'tag\': tag},\n
   )\n
 \n
-request_hosting_subscription.edit(\n
-  text_content=instance_xml,\n
-  source_reference=software_type,\n
-  sla_xml=sla_xml,\n
-  root_software_release_url=software_release_url_string,\n
-  root_slave=is_slave,\n
-  activate_kw={\'tag\': tag},\n
-)\n
+promise_kw = {\n
+  \'instance_xml\': instance_xml,\n
+  \'software_type\': software_type,\n
+  \'sla_xml\': sla_xml,\n
+  \'software_release\': software_release_url_string,\n
+  \'shared\': is_slave,\n
+}\n
 \n
 context.REQUEST.set(\'request_hosting_subscription\', request_hosting_subscription)\n
 # Change desired state\n
 if (root_state == "started"):\n
-  request_hosting_subscription.requestStart()\n
+  request_hosting_subscription.requestStart(**promise_kw)\n
 elif (root_state == "stopped"):\n
-  request_hosting_subscription.requestStop()\n
+  request_hosting_subscription.requestStop(**promise_kw)\n
 elif (root_state == "destroyed"):\n
-  request_hosting_subscription.requestDestroy()\n
+  request_hosting_subscription.requestDestroy(**promise_kw)\n
   context.REQUEST.set(\'request_hosting_subscription\', None)\n
 else:\n
   raise ValueError, "state should be started, stopped or destroyed"\n
 \n
-request_hosting_subscription.HostingSubscription_requestRootSoftwareInstance(tag, person.getRelativeUrl())\n
+request_hosting_subscription.requestInstance(\n
+  software_release=software_release_url_string,\n
+  software_title=software_title,\n
+  software_type=software_type,\n
+  instance_xml=instance_xml,\n
+  sla_xml=sla_xml,\n
+  shared=is_slave,\n
+  state=root_state,\n
+)\n
 \n
 # Change the state at the end to allow to execute updateLocalRoles only once in the transaction\n
 validation_state = request_hosting_subscription.getValidationState()\n
