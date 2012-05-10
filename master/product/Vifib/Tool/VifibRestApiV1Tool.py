@@ -137,11 +137,12 @@ def extractInstance(fn):
       return self.REQUEST.response
     instance_path = self.REQUEST['traverse_subpath'][:2]
     try:
-      self.software_instance = self.restrictedTraverse(instance_path)
-      if getattr(self.software_instance, 'getPortalType', None) is None or \
-        self.software_instance.getPortalType() not in ('Software Instance',
+      software_instance = self.getPortalObject().restrictedTraverse(instance_path)
+      if getattr(software_instance, 'getPortalType', None) is None or \
+        software_instance.getPortalType() not in ('Software Instance',
           'Slave Instance'):
         raise WrongRequest('%r is not an instance' % instance_path)
+      self.software_instance_url = software_instance.getRelativeUrl()
     except WrongRequest:
       LOG('VifibRestApiV1Tool', ERROR,
         'Problem while trying to find instance:', error=True)
@@ -184,7 +185,8 @@ class InstancePublisher(GenericPublisher):
   @extractInstance
   def __bang(self):
     try:
-      self.software_instance.reportComputerPartitionBang(comment=self.jbody['log'])
+      self.restrictedTraverse(self.software_instance_url
+        ).reportComputerPartitionBang(comment=self.jbody['log'])
     except Exception:
       LOG('VifibRestApiV1Tool', ERROR,
         'Problem while trying to generate instance dict:', error=True)
@@ -241,27 +243,28 @@ class InstancePublisher(GenericPublisher):
   @extractInstance
   def __instance_info(self):
     certificate = False
+    software_instance = self.restrictedTraverse(self.software_instance_url)
     if self.REQUEST['traverse_subpath'] and self.REQUEST[
         'traverse_subpath'][-1] == 'certificate':
       certificate = True
     try:
       if certificate:
         d = {
-          "ssl_key": self.software_instance.getSslKey(),
-          "ssl_certificate": self.software_instance.getSslCertificate()
+          "ssl_key": software_instance.getSslKey(),
+          "ssl_certificate": software_instance.getSslCertificate()
         }
       else:
         d = {
-          "title": self.software_instance.getTitle(),
-          "status": self.software_instance.getSlapState(),
+          "title": software_instance.getTitle(),
+          "status": software_instance.getSlapState(),
           "software_release": "", # not ready yet
-          "software_type": self.software_instance.getSourceReference(),
-          "slave": self.software_instance.getPortalType() == 'Slave Instance',
-          "connection": self.software_instance.getConnectionXmlAsDict(),
-          "parameter": self.software_instance.getInstanceXmlAsDict(),
-          "sla": self.software_instance.getSlaXmlAsDict(),
+          "software_type": software_instance.getSourceReference(),
+          "slave": software_instance.getPortalType() == 'Slave Instance',
+          "connection": software_instance.getConnectionXmlAsDict(),
+          "parameter": software_instance.getInstanceXmlAsDict(),
+          "sla": software_instance.getSlaXmlAsDict(),
           "children_list": [q.absolute_url() for q in \
-            self.software_instance.getPredecessorValueList()],
+            software_instance.getPredecessorValueList()],
           "partition": { # not ready yet
             "public_ip": [],
             "private_ip": [],
