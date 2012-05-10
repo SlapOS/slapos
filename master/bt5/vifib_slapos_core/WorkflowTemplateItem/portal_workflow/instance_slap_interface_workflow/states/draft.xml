@@ -12,16 +12,21 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>destroy_requested</string> </value>
+            <value> <string>draft</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string></string> </value>
+            <value> <string>Draft</string> </value>
         </item>
         <item>
             <key> <string>transitions</string> </key>
             <value>
-              <tuple/>
+              <tuple>
+                <string>request_destroy</string>
+                <string>request_instance</string>
+                <string>request_start</string>
+                <string>request_stop</string>
+              </tuple>
             </value>
         </item>
         <item>

@@ -1,0 +1,432 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+requester_instance = state_change[\'object\']\n
+portal = requester_instance.getPortalObject()\n
+# Get required arguments\n
+kwargs = state_change.kwargs\n
+\n
+# Required args\n
+# Raise TypeError if all parameters are not provided\n
+try:\n
+  software_release_url_string = kwargs[\'software_release\']\n
+  software_title = kwargs["software_title"]\n
+  software_type = kwargs["software_type"]\n
+  instance_xml = kwargs["instance_xml"]\n
+  sla_xml = kwargs["sla_xml"]\n
+  is_slave = kwargs["shared"]\n
+  root_state = kwargs["state"]\n
+except KeyError:\n
+  raise\n
+  raise TypeError, "RequesterInstance_request takes exactly 7 arguments"\n
+\n
+if is_slave not in [True, False]:\n
+  raise ValueError, "shared should be a boolean"\n
+\n
+# Hosting subscriptin is used as the root of the instance tree\n
+if requester_instance.getPortalType() == "Hosting Subscription":\n
+  hosting_subscription = requester_instance\n
+else:\n
+  hosting_subscription = requester_instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
+\n
+# Instance can be moved from one requester to another\n
+# Prevent creating two instances with the same title\n
+tag = "%s_%s_inProgress" % (hosting_subscription.getUid(), software_title)\n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  # The software instance is already under creation but can not be fetched from catalog\n
+  # As it is not possible to fetch informations, it is better to raise an error\n
+  raise NotImplementedError(tag)\n
+\n
+# graph allows to "simulate" tree change after requested operation\n
+graph = {}\n
+predecessor_list = hosting_subscription.getPredecessorValueList()\n
+graph[hosting_subscription.getUid()] = [predecessor.getUid() for predecessor in predecessor_list]\n
+while True:\n
+  try:\n
+    current_software_instance = predecessor_list.pop(0)\n
+  except IndexError:\n
+    break\n
+  current_software_instance_predecessor_list = current_software_instance.getPredecessorValueList() or []\n
+  graph[current_software_instance.getUid()] = [predecessor.getUid()\n
+                                               for predecessor in current_software_instance_predecessor_list]\n
+  predecessor_list.extend(current_software_instance_predecessor_list)\n
+\n
+# Check if it already exists\n
+request_software_instance = portal.portal_catalog.getResultValue(\n
+  # Fetch all portal type, as it is not allowed to change it\n
+  portal_type=["Software Instance", "Slave Instance"],\n
+  title=software_title,\n
+  specialise_uid=hosting_subscription.getUid(),\n
+  # Do not fetch destroyed instances\n
+  # XXX slap_state=["start_requested", "stop_requested"],\n
+)\n
+\n
+if (request_software_instance is None):\n
+  # First time that the software instance is requested\n
+  if is_slave == True:\n
+    software_instance_portal_type = "Slave Instance"\n
+  else:\n
+    software_instance_portal_type = "Software Instance"\n
+  # Create a new one\n
+  reference = "SOFTINST-%s" % portal.portal_ids.generateNewId(\n
+    id_group=\'slap_software_instance_reference\',\n
+    id_generator=\'uid\')\n
+  certificate_dict = portal.portal_certificate_authority.getNewCertificate(reference)\n
+\n
+  module = portal.getDefaultModule(portal_type="Software Instance")\n
+  request_software_instance = module.newContent(\n
+    portal_type=software_instance_portal_type,\n
+    title=software_title,\n
+    specialise_value=hosting_subscription,\n
+    reference=reference,\n
+    destination_reference=certificate_dict[\'id\'],\n
+    ssl_key=certificate_dict[\'key\'],\n
+    ssl_certificate=certificate_dict[\'certificate\'],\n
+    activate_kw={\'tag\': tag},\n
+  )\n
+  # request_software_instance.portal_workflow.doActionFor(request_software_instance, \'validate_action\')\n
+  request_software_instance.validate()\n
+  graph[request_software_instance.getUid()] = []\n
+\n
+else:\n
+  # Update the predecessor category of the previous requester\n
+  predecessor = request_software_instance.getPredecessorRelatedValue(portal_type="Software Instance")\n
+  if (predecessor is None):\n
+    if (requester_instance.getPortalType() != "Hosting Subscription"):\n
+      raise ValueError(\'It is disallowed to request root software instance %s\' % request_software_instance.getRelativeUrl())\n
+  else:\n
+    predecessor_uid_list = predecessor.getPredecessorUidList()\n
+    predecessor_uid_list.remove(request_software_instance.getUid())\n
+    predecessor.edit(predecessor_uid_list=predecessor_uid_list)\n
+    graph[predecessor.getUid()] = predecessor_uid_list\n
+\n
+# Change desired state\n
+promise_kw = {\n
+  \'instance_xml\': instance_xml,\n
+  \'software_type\': software_type,\n
+  \'sla_xml\': sla_xml,\n
+  \'software_release\': software_release_url_string,\n
+  \'shared\': is_slave,\n
+}\n
+context.REQUEST.set(\'request_instance\', request_software_instance.getRelativeUrl())\n
+if (root_state == "started"):\n
+  request_software_instance.requestStart(**promise_kw)\n
+elif (root_state == "stopped"):\n
+  request_software_instance.requestStop(**promise_kw)\n
+elif (root_state == "destroyed"):\n
+  request_software_instance.requestDestroy(**promise_kw)\n
+  context.REQUEST.set(\'request_instance\', None)\n
+else:\n
+  raise ValueError, "state should be started, stopped or destroyed"\n
+\n
+predecessor_list = requester_instance.getPredecessorList() + [request_software_instance.getRelativeUrl()]\n
+# update graph to reflect requested operation\n
+graph[requester_instance.getUid()] = requester_instance.getPredecessorUidList() + [request_software_instance.getUid()]\n
+requester_instance.edit(predecessor_list=predecessor_list)\n
+\n
+# check if all elements are still connected and if there is no cycle\n
+request_software_instance.checkConnected(graph, hosting_subscription.getUid())\n
+request_software_instance.checkNotCyclic(graph)\n
+\n
+\n
+# Update the requested state\n
+\n
+#   packing_list_line = software_instance.getAggregateRelatedValue(portal_type="Sale Packing List Line")\n
+#   subscription = packing_list_line.getAggregateValue(portal_type="Hosting Subscription")\n
+#   software_release_document = context.portal_catalog.getResultValue(\n
+#     portal_type=\'Software Release\',\n
+#     url_string=software_release_url_string)\n
+#   base_sale_packing_list = packing_list_line.getParentValue()\n
+#   trade_condition = packing_list_line.getSpecialise(portal_type="Sale Trade Condition")\n
+#   sale_order = portal.getDefaultModule(portal_type="Sale Order").newContent(\n
+#     portal_type="Sale Order",\n
+#     destination=base_sale_packing_list.getDestination(),\n
+#      destination_section=base_sale_packing_list.getDestinationSection(),\n
+#      destination_decision=base_sale_packing_list.getDestinationDecision(),\n
+#     start_date=DateTime(),\n
+#     received_date=DateTime(),\n
+#     # XXX Hardcoded values\n
+#     source="organisation_module/vifib_internet",\n
+#     source_section="organisation_module/vifib_internet",\n
+#     quantity_unit="unit/piece",\n
+#     price_currency="currency_module/EUR",\n
+#     activate_kw={\'tag\': tag},\n
+#     )\n
+# \n
+#   setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
+#   service = portal.restrictedTraverse(setup_service_relative_url)\n
+#   sale_order.setSpecialise(trade_condition, portal_type="Sale Trade Condition")\n
+#   sale_order_line = sale_order.newContent(\n
+#     portal_type="Sale Order Line",\n
+#     resource=setup_service_relative_url,\n
+#     quantity=1,\n
+#     price=service.getSaleSupplyLineBasePrice(),\n
+#     aggregate_value_list=[request_software_instance,subscription,software_release_document],\n
+#     activate_kw={\'tag\': tag},\n
+#   )\n
+#   sale_order.order()\n
+\n
+#   if state == \'started\':\n
+#     request_software_instance.startRequested()\n
+#     request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
+#   elif state == \'stopped\':\n
+#     request_software_instance.stopRequested()\n
+#     request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
+#   else:\n
+#     raise ValueError(\'State %r is not supported\' % state)\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+\n
+# # copy and paste from\n
+# # portal_workflow/person_slap_interface_workflow/scripts/Person_requestSoftwareInstance\n
+# if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+#   # The software instance is already under creation but can not be fetched from catalog\n
+#   # As it is not possible to fetch informations, it is better to raise an error\n
+#   raise NotImplementedError(tag)\n
+# hosting_subscription = context\n
+# \n
+# sale_order_portal_type = "Sale Order"\n
+# sale_order_line_portal_type = "Sale Order Line"\n
+# hosting_subscription_portal_type = "Hosting Subscription"\n
+# if hosting_subscription.isRootSlave():\n
+#   software_instance_portal_type = "Slave Instance"\n
+# else:\n
+#   software_instance_portal_type = "Software Instance"\n
+# \n
+# # Mostly copy and paste from\n
+# # portal_workflow/person_slap_interface_workflow/scripts/Person_requestSoftwareInstance\n
+# request_software_instance = hosting_subscription.portal_catalog.getResultValue(\n
+#   portal_type=software_instance_portal_type,\n
+#   title=hosting_subscription.getTitle(),\n
+#   root_uid=hosting_subscription.getUid(),\n
+# )\n
+# \n
+# new_one = False\n
+# if (request_software_instance is None):\n
+#   new_one = True\n
+#   setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
+#   service = portal.restrictedTraverse(setup_service_relative_url)\n
+#   request_software_instance = portal.getDefaultModule(portal_type=software_instance_portal_type).newContent(\n
+#           portal_type=software_instance_portal_type,\n
+#           source_reference=hosting_subscription.getSourceReference(),\n
+#           title=hosting_subscription.getTitle(),\n
+#           text_content=hosting_subscription.getTextContent(),\n
+#           sla_xml=hosting_subscription.getSlaXml(),\n
+#           activate_kw={\'tag\': tag},\n
+#           **portal.Base_getNewSoftwareInstanceCoordinate()\n
+#   )\n
+#   request_software_instance.portal_workflow.doActionFor(request_software_instance,\n
+#                                                         \'validate_action\')\n
+# \n
+#   software_release_document = context.portal_catalog.getResultValue(\n
+#     portal_type=\'Software Release\',\n
+#     url_string=hosting_subscription.getRootSoftwareReleaseUrl())\n
+# \n
+#   sale_order = portal.getDefaultModule(portal_type=sale_order_portal_type).newContent(\n
+#     portal_type=sale_order_portal_type,\n
+#     destination=person_relative_url,\n
+#     destination_section=person_relative_url,\n
+#     destination_decision=person_relative_url,\n
+#     start_date=DateTime(),\n
+#     received_date=DateTime(),\n
+#     # XXX Hardcoded values\n
+#     specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
+#     source="organisation_module/vifib_internet",\n
+#     source_section="organisation_module/vifib_internet",\n
+#     quantity_unit="unit/piece",\n
+#     price_currency="currency_module/EUR",\n
+#     activate_kw={\'tag\': tag},\n
+#   )\n
+#   sale_order_line = sale_order.newContent(\n
+#     portal_type=sale_order_line_portal_type,\n
+#     resource=setup_service_relative_url,\n
+#     quantity=1,\n
+#     price=service.getSaleSupplyLineBasePrice(),\n
+#     aggregate_value_list=[request_software_instance,\n
+#                           hosting_subscription,\n
+#                           software_release_document\n
+# ],\n
+#     activate_kw={\'tag\': tag},\n
+#   )\n
+#   #portal.portal_workflow.doActionFor(sale_order, "order_action")\n
+#   # XXX: Do not verify security\n
+#   sale_order.order()\n
+# \n
+#   hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
+#   hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
+#   hosting_subscription.edit(predecessor_list=hosting_subscription_predecessor_list)\n
+# \n
+#   # Find Computer partition\n
+#   # XXX Link subscript to open order\n
+# else:\n
+#   # Update existing software instance\n
+#   request_software_instance.edit(\n
+#     text_content=hosting_subscription.getTextContent(),\n
+#     source_reference=hosting_subscription.getSourceReference(),\n
+#     sla_xml=hosting_subscription.getSlaXml(),\n
+#     activate_kw={\'tag\': tag},\n
+#   )\n
+#   for predecessor_related in request_software_instance.getPredecessorRelatedValueList():\n
+#     predecessor_list = predecessor_related.getPredecessorList()\n
+#     predecessor_list.remove(request_software_instance.getRelativeUrl())\n
+#     predecessor_related.setPredecessorList(predecessor_list)\n
+# \n
+#   hosting_subscription_predecessor_list = hosting_subscription.getPredecessorList()\n
+#   hosting_subscription_predecessor_list.append(request_software_instance.getRelativeUrl())\n
+#   hosting_subscription.setPredecessorList(hosting_subscription_predecessor_list)\n
+# \n
+# if hosting_subscription.getSlapState() == \'start_requested\':\n
+#   request_software_instance.startRequested()\n
+#   if not new_one:\n
+#     request_software_instance.activate(after_tag=tag).requestStartComputerPartition()\n
+# elif hosting_subscription.getSlapState() == \'stop_requested\':\n
+#   request_software_instance.stopRequested()\n
+#   if not new_one:\n
+#     request_software_instance.activate(after_tag=tag).requestStopComputerPartition()\n
+# \n
+# return request_software_instance\n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# \n
+# instance = state_change[\'object\']\n
+# portal = instance.getPortalObject()\n
+# # Get required arguments\n
+# kwargs = state_change.kwargs\n
+# \n
+# # Required args\n
+# # Raise TypeError if all parameters are not provided\n
+# try:\n
+#   software_release_url_string = state_change.kwargs[\'software_release\']\n
+#   software_type = kwargs["software_type"]\n
+#   instance_xml = kwargs["instance_xml"]\n
+#   sla_xml = kwargs["sla_xml"]\n
+#   is_slave = kwargs["shared"]\n
+# #   root_state = kwargs["state"]\n
+# except KeyError:\n
+#   raise TypeError, "RequestedInstance_updateParameterInformation takes exactly 5 arguments"\n
+# \n
+# edit_kw = {\n
+#   \'root_software_release_url\': software_release_url_string,\n
+#   \'text_content\': instance_xml,\n
+#   \'source_reference\': software_type,\n
+#   \'sla_xml\': sla_xml,\n
+# }\n
+# \n
+# # Check the slave management\n
+# if is_slave not in [True, False]:\n
+#   raise ValueError, "shared should be a boolean"\n
+# instance_portal_type = instance.getPortalType()\n
+# if instance_portal_type == "Hosting Subscription":\n
+#   edit_kw[\'root_slave\'] = is_slave\n
+# elif instance_portal_type == "Software Instance":\n
+#   if is_slave:\n
+#     raise NotImplementedError, "Please destroy before doing a slave (%s)" % \\\n
+#       (instance.getRelativeUrl(), )\n
+# elif instance_portal_type == "Slave Instance":\n
+#   if not is_slave:\n
+#     raise NotImplementedError, "Please destroy before doing an instance (%s)" % \\\n
+#       (instance.getRelativeUrl(), )\n
+# else:\n
+#   raise NotImplementedError, "Not supported portal type %s (%s)" % \\\n
+#     (instance.getPortalType(), instance.getRelativeUrl())\n
+# \n
+# instance.edit(**edit_kw)\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>state_change</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>RequesterInstance_request</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

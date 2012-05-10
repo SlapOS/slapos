@@ -20,7 +20,8 @@
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string></string> </value>
+            <value> <string>This workflow is used to ensure consistency in a instance (software instance, slave instance, hosting subscription) tree.\r\n
+It allows to request sub instances, rename, allocate, report promise status.</string> </value>
         </item>
         <item>
             <key> <string>groups</string> </key>
@@ -30,7 +31,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>hosting_subscription_slap_interface_workflow</string> </value>
+            <value> <string>instance_slap_interface_workflow</string> </value>
         </item>
         <item>
             <key> <string>initial_state</string> </key>
@@ -52,7 +53,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Hosting Subscription Slap Interface Workflow</string> </value>
+            <value> <string>Instance Slap Interface Workflow</string> </value>
         </item>
       </dictionary>
     </pickle>

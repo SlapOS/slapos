@@ -12,7 +12,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>start_requested</string> </value>
+            <value> <string>stop_requested</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
@@ -23,6 +23,7 @@
             <value>
               <tuple>
                 <string>request_destroy</string>
+                <string>request_instance</string>
                 <string>request_start</string>
                 <string>request_stop</string>
               </tuple>
