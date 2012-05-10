@@ -2,6 +2,12 @@
  <portal_type id="Hosting Subscription Module">
   <item>business_application</item>
  </portal_type>
+ <portal_type id="Slave Instance">
+  <item>specialise</item>
+ </portal_type>
+ <portal_type id="Software Instance">
+  <item>specialise</item>
+ </portal_type>
  <portal_type id="Software Instance Module">
   <item>business_application</item>
  </portal_type>
