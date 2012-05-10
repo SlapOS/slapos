@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -23,25 +23,25 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#############################################################################
-
-import os
-import sys
-import zc.buildout
-from slapos.recipe.librecipe import BaseSlapRecipe
+##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+import sys
 
 class Recipe(GenericBaseRecipe):
+  """
+  Create script that will check if "url" is available (e.g page answers 200 OK).
+  """
+
   def install(self):
+    config = {
+      'url': self.options['url'],
+      'shell_path': self.options['dash_path'],
+    }
 
-    runner = self.createPythonScript(
-      self.options['runner-path'],
-      __name__+'.testrunner.run',
-      arguments=[self.options['suite-url'], 
-                 self.options['report-url'],
-                 self.options['report-project'],
-                 self.options['browser'],
-                 ])
+    # XXX-Cedric in this script, curl won't check certificate
+    promise = self.createExecutable(
+      self.options['path'],
+      self.substituteTemplate(self.getTemplateFilename('check_url.in'), config)
+    )
 
-    return [runner]
-
+    return [promise]
