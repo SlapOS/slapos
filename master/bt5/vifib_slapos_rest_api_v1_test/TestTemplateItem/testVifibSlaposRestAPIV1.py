@@ -470,6 +470,9 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
     calculated = rfc1123_date(self.software_instance.getModificationDate())
     self.assertEqual(calculated, self.response.getheader('Last-Modified'))
 
+  def assertCacheControlHeader(self):
+    self.assertEqual('public', self.response.getheader('Cache-Control'))
+
   def test_non_existing(self):
     non_existing = 'software_instance_module/' + self.generateNewId()
     try:
@@ -518,6 +521,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
     self.assertBasicResponse()
     self.assertResponseCode(200)
     self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
     self.assertResponseJson()
     self.assertEqual({
       "status": "draft",
@@ -580,6 +584,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
     self.assertBasicResponse()
     self.assertResponseCode(200)
     self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
     self.assertResponseJson()
     self.assertEqual({
       "status": "draft",
@@ -611,6 +616,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
     self.assertBasicResponse()
     self.assertResponseCode(200)
     self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
     self.assertResponseJson()
     self.assertEqual({
       "status": "draft",
@@ -642,6 +648,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
     self.assertBasicResponse()
     self.assertResponseCode(200)
     self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
     self.assertResponseJson()
     self.assertEqual({
       "status": "draft",
