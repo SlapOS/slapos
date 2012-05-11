@@ -102,6 +102,34 @@ Unexpected error.
 Instance Methods
 ****************
 
+Fetching list of instances
+--------------------------
+
+Ask for list of instances.
+
+`Request`::
+
+  GET /api/v1/instance HTTP/1.1
+  Host: example.com
+  Accept: application/json
+
+`No Expected Request Body`
+
+`Expected Response`::
+
+  HTTP/1.1 200 OK
+  Content-Type: application/json; charset=utf-8
+
+  {
+    "list": ["http://one.example.com/one", "http://two.example.com/something"]
+  }
+
+`Additional Responses`::
+
+  HTTP/1.1 204 No Content
+
+In case where not instances are available.
+
 Requesting a new instance
 -------------------------
 
