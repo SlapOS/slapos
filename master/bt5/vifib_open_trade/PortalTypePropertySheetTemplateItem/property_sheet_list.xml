@@ -3,4 +3,10 @@
   <item>HostingSubscription</item>
   <item>SoftwareInstance</item>
  </portal_type>
+ <portal_type id="Slave Instance">
+  <item>HostingSubscription</item>
+ </portal_type>
+ <portal_type id="Software Instance">
+  <item>HostingSubscription</item>
+ </portal_type>
 </property_sheet_list>
