@@ -41,7 +41,7 @@ Response status code
 Success
 +++++++
 
-``GET`` requests will return a ``"200 OK"`` response if the resource is successfully retrieved.
+``GET`` requests will return a ``"200 OK"`` response if the resource is successfully retrieved. In case if client will set ``"If-Midified-Since"`` header the response could be ``"304 Not Modified"``. Also ``GET`` will return ``"Last-Modified"`` headers.
 
 ``POST`` requests which create a resource we will return a ``"201 Created"`` response if successful.
 
