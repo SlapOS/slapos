@@ -9,6 +9,8 @@ import json
 import tempfile
 import os
 from App.Common import rfc1123_date
+from DateTime import DateTime
+import time
 
 class Simulator:
   def __init__(self, outfile, method):
@@ -512,6 +514,130 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
       url='/'.join([self.api_path, 'instance',
       self.software_instance.getRelativeUrl()]),
       headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      "status": "draft",
+      "connection": {
+        "parameter1": "valueof1",
+        "parameter2": "https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5"},
+      "partition": {
+        "public_ip": [],
+        "tap_interface": "",
+        "private_ip": []},
+      "slave": False,
+      "children_list": [],
+      "title": "Template Software Instance",
+      "software_type": "RootSoftwareInstance",
+      "parameter": {
+        "parameter1": "valueof1",
+        "parameter2": "valueof2"},
+      "software_release": "",
+      "sla": {"computer_guid": "SOMECOMP"}},
+      self.json_response)
+
+  def test_if_modified_since_equal(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.software_instance\
+        .getModificationDate())})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_after(self):
+    # wait three seconds before continuing in order to not hit time precision
+    # issue, as test needs to provide date with second precision after
+    # last modification of software instance and *before* now()
+    time.sleep(3)
+    # add 2 seconds, as used rfc1123_date will ceil the second in response and
+    # one more second will be required in order to be *after* the modification time
+    if_modified = self.software_instance.getModificationDate().timeTime() + 2
+    # check the test: is calculated time *before* now?
+    self.assertTrue(int(if_modified) < int(DateTime().timeTime()))
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(DateTime(if_modified))})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_before(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.software_instance\
+        .getModificationDate() - 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      "status": "draft",
+      "connection": {
+        "parameter1": "valueof1",
+        "parameter2": "https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5"},
+      "partition": {
+        "public_ip": [],
+        "tap_interface": "",
+        "private_ip": []},
+      "slave": False,
+      "children_list": [],
+      "title": "Template Software Instance",
+      "software_type": "RootSoftwareInstance",
+      "parameter": {
+        "parameter1": "valueof1",
+        "parameter2": "valueof2"},
+      "software_release": "",
+      "sla": {"computer_guid": "SOMECOMP"}},
+      self.json_response)
+
+  def test_if_modified_since_date_not_date(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': 'This Is Not A date'})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      "status": "draft",
+      "connection": {
+        "parameter1": "valueof1",
+        "parameter2": "https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5"},
+      "partition": {
+        "public_ip": [],
+        "tap_interface": "",
+        "private_ip": []},
+      "slave": False,
+      "children_list": [],
+      "title": "Template Software Instance",
+      "software_type": "RootSoftwareInstance",
+      "parameter": {
+        "parameter1": "valueof1",
+        "parameter2": "valueof2"},
+      "software_release": "",
+      "sla": {"computer_guid": "SOMECOMP"}},
+      self.json_response)
+
+  def test_if_modified_since_date_future(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(DateTime() + 1)})
     self.prepareResponse()
     self.assertBasicResponse()
     self.assertResponseCode(200)
