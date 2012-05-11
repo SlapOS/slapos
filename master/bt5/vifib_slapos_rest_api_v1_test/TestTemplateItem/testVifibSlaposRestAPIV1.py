@@ -365,7 +365,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
   def test_content_negotiation_headers(self):
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
       custom_header={
-        'Access-Control-Allow-Headers': self.access_control_allow_headers
+        'Access-Control-Request-Headers': self.access_control_allow_headers
       })
     kwargs = {
       'parameter': {
