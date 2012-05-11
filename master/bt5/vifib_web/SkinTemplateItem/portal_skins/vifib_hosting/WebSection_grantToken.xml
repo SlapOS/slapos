@@ -74,7 +74,7 @@ except ValueError:\n
 query_dict = dict(\n
   access_token=token.getReference(),\n
   token_type=\'bearer\',\n
-  expires_in=int((token.getExpirationDate() - DateTime()) * 24 * 3600),\n
+  expires_in=str(int((token.getExpirationDate() - DateTime()) * 24 * 3600)),\n
 )\n
 if state:\n
   query_dict[\'state\'] = state\n
@@ -82,9 +82,9 @@ if state:\n
 query = make_query(query_dict)\n
 \n
 if \'#\' in redirect_uri:\n
-  redirect_uri += \'&\' + make_query(query_dict)\n
+  redirect_uri += \'&\' + query\n
 else:\n
-  redirect_uri += \'#\' + make_query(query_dict)\n
+  redirect_uri += \'#\' + query\n
 return context.REQUEST.RESPONSE.redirect( redirect_uri )\n
 
 
