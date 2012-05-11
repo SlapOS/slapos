@@ -70,6 +70,7 @@ LoadModule negotiation_module modules/mod_negotiation.so
 LoadModule rewrite_module modules/mod_rewrite.so
 LoadModule headers_module modules/mod_headers.so
 LoadModule cache_module modules/mod_cache.so
+LoadModule mem_cache_module modules/mod_mem_cache.so
 LoadModule antiloris_module modules/mod_antiloris.so
 
 CacheDefaultExpire 3600
@@ -77,7 +78,8 @@ CacheDefaultExpire 3600
 # The following directives modify normal HTTP response behavior to
 # handle known problems with browser implementations.
 BrowserMatch "Mozilla/2" nokeepalive
-BrowserMatch "MSIE 4\.0b2;" nokeepalive downgrade-1.0 force-response-1.0
+BrowserMatch ".*MSIE.*" nokeepalive ssl-unclean-shutdown \
+                        downgrade-1.0 force-response-1.0
 BrowserMatch "RealPlayer 4\.0" force-response-1.0
 BrowserMatch "Java/1\.0" force-response-1.0
 BrowserMatch "JDK/1\.0" force-response-1.0
@@ -93,3 +95,18 @@ BrowserMatch "^WebDAVFS/1.[0123]" redirect-carefully
 BrowserMatch "^gnome-vfs" redirect-carefully
 BrowserMatch "^XML Spy" redirect-carefully
 BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
+
+# Cache directives
+CacheEnable mem /
+MCacheSize 8192
+MCacheMaxObjectCount 1000
+MCacheMaxObjectSize 8192
+MCacheRemovalAlgorithm LRU
+
+# Deflate
+AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/x-javascript application/javascript
+BrowserMatch ^Mozilla/4 gzip-only-text/html
+BrowserMatch ^Mozilla/4\.0[678] no-gzip
+BrowserMatch \bMSIE !no-gzip !gzip-only-text/html 
+# Make sure proxies don't deliver the wrong content
+Header append Vary User-Agent
