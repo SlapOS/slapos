@@ -38,6 +38,7 @@ from zLOG import LOG, ERROR
 from lxml import etree
 import json
 import transaction
+from App.Common import rfc1123_date
 
 class WrongRequest(Exception):
   pass
@@ -321,6 +322,8 @@ class InstancePublisher(GenericPublisher):
         'There is system issue, please try again later.'}))
     else:
       self.REQUEST.response.setStatus(200)
+      self.REQUEST.response.setHeader('Last-Modified',
+        rfc1123_date(software_instance.getModificationDate()))
       self.REQUEST.response.setBody(json.dumps(d))
     return self.REQUEST.response
 
