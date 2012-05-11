@@ -41,23 +41,31 @@ Response status code
 Success
 +++++++
 
-``GET`` requests will return a ``"200 OK"`` response if the resource is successfully retrieved. In case if client will set ``"If-Midified-Since"`` header the response could be ``"304 Not Modified"``. Also ``GET`` will return ``"Last-Modified"`` headers.
+``GET`` requests will return a ``"200 OK"`` response if the resource is
+successfully retrieved. In case if client will set ``"If-Midified-Since"``
+header the response could be ``"304 Not Modified"``. Also ``GET`` will return
+``"Last-Modified"`` headers.
 
-``POST`` requests which create a resource we will return a ``"201 Created"`` response if successful.
+``POST`` requests which create a resource we will return a ``"201 Created"``
+response if successful.
 
 ``POST`` requests which perform some other action such as sending a campaign
 will return a ``"200 OK"`` response if successful.
 
-``PUT`` requests will return a ``"200 OK"`` response if the resource is successfully updated and ``"204 No Content"`` in case if no modification was applied..
+``PUT`` requests will return a ``"200 OK"`` response if the resource is
+successfully updated and ``"204 No Content"`` in case if no modification was
+applied..
 
-``OPTIONS`` requests will return ``"204 No Content"`` response with headers informing about possible method usage.
+``OPTIONS`` requests will return ``"204 No Content"`` response with headers
+informing about possible method usage.
 
 Common Error Responses
 ++++++++++++++++++++++
 
 400 Bad Request
 ~~~~~~~~~~~~~~~
-The request body does not follow the API (one argument is missing or malformed). The full information is available as text body::
+The request body does not follow the API (one argument is missing or
+malformed). The full information is available as text body::
 
   HTTP/1.1 400 Bad Request
   Content-Type: application/json
@@ -154,7 +162,9 @@ The request has been accepted for processing
 
 `Error Responses`:
 
-* ``409 Conflict`` The request can not be process because of the current status of the instance (sla changed, instance is under deletion, software release can not be changed, ...).
+* ``409 Conflict`` The request can not be process because of the current
+  status of the instance (sla changed, instance is under deletion, software
+  release can not be changed, ...).
 
 
 Get instance information
@@ -207,7 +217,8 @@ Request all instance information.
 
 `Error Responses`:
 
-* ``409 Conflict`` The request can not be process because of the current status of the instance
+* ``409 Conflict`` The request can not be process because of the current
+  status of the instance
 
 Get instance authentication certificates
 ----------------------------------------
@@ -238,7 +249,8 @@ Request the instance certificates.
 
 `Error Responses`:
 
-* ``409 Conflict`` The request can not be process because of the current status of the instance
+* ``409 Conflict`` The request can not be process because of the current
+  status of the instance
 
 Bang instance
 -------------
@@ -310,7 +322,9 @@ When nothing was modified.
 
 `Error Responses`:
 
-* ``409 Conflict`` The request can not be process because of the current status of the instance (sla changed, instance is under deletion, software release can not be changed, ...).
+* ``409 Conflict`` The request can not be process because of the current
+  status of the instance (sla changed, instance is under deletion,
+  software release can not be changed, ...).
 
 Computer Methods
 ****************
@@ -346,7 +360,8 @@ Add a new computer in the system.
 
 `Error Responses`:
 
-* ``409 Conflict`` The request can not be process because of the existence of a computer with the same title
+* ``409 Conflict`` The request can not be process because of the existence of
+  a computer with the same title
 
 Getting computer information
 ----------------------------
@@ -430,7 +445,8 @@ Modify computer information in the system
     ],
   }
 
-Where ``partition`` and ``software`` keys are optional, but at least one is required.
+Where ``partition`` and ``software`` keys are optional, but at least one is
+required.
 
 `Expected Response`::
 
