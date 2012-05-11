@@ -359,6 +359,9 @@ class InstancePublisher(GenericPublisher):
       # Last-Modified header of subobject containing certificate
       self.REQUEST.response.setHeader('Last-Modified',
         rfc1123_date(software_instance.getModificationDate()))
+      # Say that content is publicly cacheable. It is only required in order to
+      # *force* storing content on clients' disk in case of using HTTPS
+      self.REQUEST.response.setHeader('Cache-Control', 'public')
       self.REQUEST.response.setBody(json.dumps(d))
     return self.REQUEST.response
 
