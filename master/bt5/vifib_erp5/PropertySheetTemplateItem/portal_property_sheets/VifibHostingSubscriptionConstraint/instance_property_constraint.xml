@@ -22,8 +22,9 @@
             <key> <string>constraint_property</string> </key>
             <value>
               <tuple>
-                <string>reference</string>
-                <string>title</string>
+                <string>source_reference</string>
+                <string>root_slave</string>
+                <string>root_software_release_url</string>
               </tuple>
             </value>
         </item>
@@ -35,11 +36,39 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>basic_property_constraint</string> </value>
+            <value> <string>instance_property_constraint</string> </value>
+        </item>
+        <item>
+            <key> <string>int_index</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>membership_criterion_category</string> </key>
+            <value>
+              <tuple/>
+            </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
             <value> <string>Property Existence Constraint</string> </value>
+        </item>
+        <item>
+            <key> <string>string_index</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>test_method_id</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>test_tales_expression</string> </key>
+            <value> <string>python: here.getSlapState() != \'draft\'</string> </value>
         </item>
       </dictionary>
     </pickle>
