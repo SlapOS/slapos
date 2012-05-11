@@ -85,7 +85,7 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
 
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
       custom_header={
-        'Access-Control-Allow-Headers': self.access_control_allow_headers,
+        'Access-Control-Request-Headers': self.access_control_allow_headers,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       })
