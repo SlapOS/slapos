@@ -415,7 +415,7 @@ class TestInstanceOPTIONS(VifibSlaposRestAPIV1Mixin):
   def test_OPTIONS_not_logged_in(self):
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
       custom_header={
-        'Access-Control-Allow-Headers': self.access_control_allow_headers
+        'Access-Control-Request-Headers': self.access_control_allow_headers
       })
     self.connection.request(method='OPTIONS',
       url='/'.join([self.api_path, 'instance']))
