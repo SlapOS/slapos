@@ -96,6 +96,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_ui_test_core',
       'erp5_ui_test',
       'vifib_slapos_core',
+      'vifib_slapos_accounting',
       'vifib_mysql_innodb_catalog',
       'vifib_core',
       'vifib_base',
