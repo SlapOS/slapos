@@ -110,3 +110,7 @@ BrowserMatch ^Mozilla/4\.0[678] no-gzip
 BrowserMatch \bMSIE !no-gzip !gzip-only-text/html 
 # Make sure proxies don't deliver the wrong content
 Header append Vary User-Agent
+
+# Include configuration file not operated by slapos. This file won't be erased
+# or changed when slapgrid is ran. It can be freely customized by node admin.
+Include %(custom_apache_conf)s

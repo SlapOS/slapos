@@ -470,6 +470,27 @@ class Recipe(BaseSlapRecipe):
     self._createDirectory(cache_directory_location)
     self._createDirectory(mod_ssl_cache_location)
 
+    # Create "custom" apache configuration file if it does not exist.
+    # Note : This file won't be erased or changed when slapgrid is ran.
+    # It can be freely customized by node admin.
+    custom_apache_configuration_directory = os.path.join(
+        self.data_root_directory, 'apache-conf.d')
+    self._createDirectory(custom_apache_configuration_directory)
+    custom_apache_configuration_file_location = os.path.join(
+        custom_apache_configuration_directory, 'apache_frontend.custom.conf')
+    f = open(custom_apache_configuration_file_location, 'a')
+    f.close()
+
+    # Create backup of custom apache configuration
+    backup_path = self.createBackupDirectory('custom_apache_conf_backup')
+    backup_cron = os.path.join(self.cron_d, 'custom_apache_conf_backup')
+    open(backup_cron, 'w').write(
+        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
+          rdiff_backup=self.options['rdiff_backup_binary'],
+          source=custom_apache_configuration_directory,
+          destination=backup_path))
+    self.path_list.append(backup_cron)
+
     # Create configuration file and rewritemaps
     apachemap_name = "apachemap.txt"
     apachemapzope_name = "apachemapzope.txt"
@@ -497,6 +518,7 @@ class Recipe(BaseSlapRecipe):
       apachemapzope_path=os.path.join(self.etc_directory, apachemapzope_name),
       apache_domain=name,
       port=port,
+      custom_apache_conf=custom_apache_configuration_file_location,
     ))
 
     apache_conf_string = self.substituteTemplate(
