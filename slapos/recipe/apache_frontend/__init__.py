@@ -50,6 +50,8 @@ class Recipe(BaseSlapRecipe):
 
     # Define optional arguments
     frontend_port_number = self.parameter_dict.get("port", 4443)
+    frontend_plain_http_port_number = self.parameter_dict.get(
+        "plain_http_port", 8080)
     base_varnish_port = 26009
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
 
@@ -143,6 +145,7 @@ class Recipe(BaseSlapRecipe):
         ip_list=["[%s]" % self.getGlobalIPv6Address(),
                  self.getLocalIPv4Address()],
         port=frontend_port_number,
+        plain_http_port=frontend_plain_http_port_number,
         name=frontend_domain_name,
         rewrite_rule_list=rewrite_rule_list,
         rewrite_rule_zope_list=rewrite_rule_zope_list,
@@ -451,7 +454,8 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(wrapper)
     return stunnel_conf
 
-  def installFrontendApache(self, ip_list, port, key, certificate, name,
+  def installFrontendApache(self, ip_list, key, certificate, name,
+                            port, plain_http_port=8080, 
                             rewrite_rule_list=[], rewrite_rule_zope_list=[],
                             access_control_string=None):
     # Create htdocs, populate it with default 404 document
@@ -506,7 +510,11 @@ class Recipe(BaseSlapRecipe):
         )
     )
 
-    apache_conf["listen"] = "\n".join(["Listen %s:%s" % (ip, port) for ip in ip_list])
+    apache_conf["listen"] = "\n".join([
+        "Listen %s:%s" % (ip, port)
+        for port in (plain_http_port, port)
+        for ip in ip_list
+    ])
 
     path = self.substituteTemplate(
         self.getTemplateFilename('apache.conf.path-protected.in'),
@@ -517,7 +525,8 @@ class Recipe(BaseSlapRecipe):
       apachemap_path=os.path.join(self.etc_directory, apachemap_name),
       apachemapzope_path=os.path.join(self.etc_directory, apachemapzope_name),
       apache_domain=name,
-      port=port,
+      https_port=port,
+      plain_http_port=plain_http_port,
       custom_apache_conf=custom_apache_configuration_file_location,
     ))
 

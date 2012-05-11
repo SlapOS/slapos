@@ -19,9 +19,6 @@ RequestHeader unset REMOTE_USER
 
 ServerTokens Prod
 
-# SSL Configuration
-%(ssl_snippet)s
-
 # Log configuration
 ErrorLog "%(error_log)s"
 LogLevel warn
@@ -30,27 +27,6 @@ LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b" common
 CustomLog "%(access_log)s" common
 
 %(path_enable)s
-
-# Rewrite part
-ProxyVia On
-ProxyTimeout 600
-RewriteEngine On
-
-# Define the two rewritemaps : one for zope, one generic
-RewriteMap apachemapzope txt:%(apachemapzope_path)s
-RewriteMap apachemapgeneric txt:%(apachemap_path)s
-
-# First, we check if we have a zope backend server
-# If so, let's use Virtual Host Daemon rewrite
-RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
-RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:%%{SERVER_PORT}/VirtualHostRoot/$1 [L,P]
-
-# If we have generic backend server, let's rewrite without virtual host daemon
-RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
-RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
-
-# If nothing exist : put a nice error
-ErrorDocument 404 /notfound.html
 
 # List of modules
 #LoadModule unixd_module modules/mod_unixd.so
@@ -72,8 +48,6 @@ LoadModule headers_module modules/mod_headers.so
 LoadModule cache_module modules/mod_cache.so
 LoadModule mem_cache_module modules/mod_mem_cache.so
 LoadModule antiloris_module modules/mod_antiloris.so
-
-CacheDefaultExpire 3600
 
 # The following directives modify normal HTTP response behavior to
 # handle known problems with browser implementations.
@@ -98,6 +72,7 @@ BrowserMatch "^Dreamweaver-WebDAV-SCM1" redirect-carefully
 
 # Cache directives
 CacheEnable mem /
+CacheDefaultExpire 3600
 MCacheSize 8192
 MCacheMaxObjectCount 1000
 MCacheMaxObjectSize 8192
@@ -110,6 +85,42 @@ BrowserMatch ^Mozilla/4\.0[678] no-gzip
 BrowserMatch \bMSIE !no-gzip !gzip-only-text/html 
 # Make sure proxies don't deliver the wrong content
 Header append Vary User-Agent
+
+# SSL Configuration
+%(ssl_snippet)s
+
+# Dummy virtualhost redirecting to https. Note: will work only if https listens
+# on standard port (443)
+<VirtualHost *:%(plain_http_port)s>
+  RewriteEngine On
+  # Not using HTTPS? Ask that guy over there.
+  RewriteRule ^/(.*)$ https://%%{SERVER_NAME}%%{REQUEST_URI}
+</VirtualHost>
+
+<VirtualHost *:%(https_port)s>
+  SSLEngine on
+  SSLProxyEngine on
+  # Rewrite part
+  ProxyVia On
+  ProxyTimeout 600
+  RewriteEngine On
+
+  # Define the two rewritemaps : one for zope, one generic
+  RewriteMap apachemapzope txt:%(apachemapzope_path)s
+  RewriteMap apachemapgeneric txt:%(apachemap_path)s
+
+  # First, we check if we have a zope backend server
+  # If so, let's use Virtual Host Daemon rewrite
+  RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
+  RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:%%{SERVER_PORT}/VirtualHostRoot/$1 [L,P]
+
+  # If we have generic backend server, let's rewrite without virtual host daemon
+  RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
+  RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
+
+  # If nothing exist : put a nice error
+  ErrorDocument 404 /notfound.html
+</VirtualHost>
 
 # Include configuration file not operated by slapos. This file won't be erased
 # or changed when slapgrid is ran. It can be freely customized by node admin.

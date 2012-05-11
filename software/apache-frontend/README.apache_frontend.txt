@@ -54,8 +54,11 @@ Using the IP given by the Master Instance.
 
 port
 ~~~~
-Port used by Apache. Optional parameter, defaults to 443.
+Port used by Apache. Optional parameter, defaults to 4443.
 
+plain_http_port
+Port used by apache to serve plain http (only used to redirect to https).
+Optional parameter, defaults to 8080.
 
 Slave Instance Parameters
 -------------------------
@@ -105,3 +108,12 @@ listening to a custom domain::
         "custom_domain":"mycustomdomain.com",
     }
   )
+
+Notes
+=====
+
+It is not possible with slapos to listen to port <= 1024, because process are
+not run as root. It is a good idea then to go on the node where the instance is
+and set some iptables rules like (if using default ports)::
+  iptables -t nat -A PREROUTING -p tcp -d {public ip} --dport 443 -j DNAT --to-destination {listening ip}:4443
+  iptables -t nat -A PREROUTING -p tcp -d {public_ip} --dport 80 -j DNAT --to-destination {listening ip}:8080
