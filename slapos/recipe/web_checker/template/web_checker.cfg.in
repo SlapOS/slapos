@@ -9,7 +9,6 @@ debug_level = debug
 file_log_path = %(web_checker_log)s
 
 [header_list]
-Last-Modified = True
 Expires = True
 Vary = Accept-Language, Cookie, Accept-Encoding
   Accept-Language, Cookie
@@ -27,7 +26,13 @@ Vary = Accept-Encoding
 [header url=.*/favicon.ico]
 Last-Modified = True
 
-[no_header content-type=(image/.*|text/css|.*/javascript|application/font)]
+[header content-type=(text/css|.*/javascript)]
+Last-Modified = True
+Cache-Control = public,max-age=300
+  public,max-age=3600
+  public
+
+[no_header content-type=(image/.*|application/font)]
 Vary = None
 
 [erp5_extension_list]
