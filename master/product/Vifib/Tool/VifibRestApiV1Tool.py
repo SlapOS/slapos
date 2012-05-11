@@ -39,6 +39,7 @@ from lxml import etree
 import json
 import transaction
 from App.Common import rfc1123_date
+from DateTime import DateTime
 
 class WrongRequest(Exception):
   pass
@@ -67,6 +68,35 @@ def requireHeader(header_dict):
 
     wrapperRequireHeader.__doc__ = fn.__doc__
     return wrapperRequireHeader
+  return outer
+
+def supportModifiedSince(document_url_id):
+  def outer(fn):
+    def wrapperSupportModifiedSince(self, *args, **kwargs):
+      modified_since = self.REQUEST.getHeader('If-Modified-Since')
+      if modified_since is not None:
+        # RFC 2616 If-Modified-Since support
+        try:
+          modified_since = DateTime(self.REQUEST.getHeader('If-Modified-Since'))
+        except Exception:
+          # client sent wrong header, shall be ignored
+          pass
+        else:
+          if modified_since <= DateTime():
+            # client send date before current time, shall continue and
+            # compare with second precision, as client by default shall set
+            # If-Modified-Since to last known Last-Modified value
+            if int(self.restrictedTraverse(getattr(self, document_url_id)
+                ).getModificationDate().timeTime()) <= int(
+                  modified_since.timeTime()):
+              # document was not modified since
+              self.REQUEST.response.setStatus(304)
+              return self.REQUEST.response
+
+      return fn(self, *args, **kwargs)
+
+    wrapperSupportModifiedSince.__doc__ = fn.__doc__
+    return wrapperSupportModifiedSince
   return outer
 
 def requireJson(json_dict, optional_key_list=None):
@@ -284,6 +314,7 @@ class InstancePublisher(GenericPublisher):
 
   @requireHeader({'Accept': 'application/json'})
   @extractInstance
+  @supportModifiedSince('software_instance_url')
   def __instance_info(self):
     certificate = False
     software_instance = self.restrictedTraverse(self.software_instance_url)
