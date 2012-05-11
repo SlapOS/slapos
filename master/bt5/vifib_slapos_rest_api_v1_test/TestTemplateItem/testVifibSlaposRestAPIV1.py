@@ -1095,3 +1095,53 @@ class TestInstancePUT(VifibSlaposRestAPIV1InstanceMixin):
     self.assertResponseCode(204)
     self.assertInstancePUTSimulatorEmpty()
 
+class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
+  def test(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({
+      "list": ['/'.join([self.api_url,
+        self.software_instance.getRelativeUrl()])]
+      },
+      self.json_response)
+
+  def test_another_one(self):
+    person, person_reference = self.createPerson()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': person_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+
+  def test_empty(self):
+    self.portal.portal_catalog.unindexObject(
+      uid=self.software_instance.getUid())
+    self.software_instance.getParentValue().deleteContent(
+      self.software_instance.getId())
+    transaction.commit()
+
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+
+  def test_not_logged_in(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']))
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(401)
+    self.assertTrue(self.response.getheader('Location') is not None)
+    auth = self.response.getheader('WWW-Authenticate')
+    self.assertTrue(auth is not None)
+    self.assertTrue('Bearer realm="' in auth)
+    self.assertPersonRequestSimulatorEmpty()
+
