@@ -353,6 +353,10 @@ class InstancePublisher(GenericPublisher):
         'There is system issue, please try again later.'}))
     else:
       self.REQUEST.response.setStatus(200)
+      # Note: Last-Modified will result in resending certificate many times,
+      # because each modification of instance will result in new Last-Modified
+      # TODO: Separate certificate from instance and use correct
+      # Last-Modified header of subobject containing certificate
       self.REQUEST.response.setHeader('Last-Modified',
         rfc1123_date(software_instance.getModificationDate()))
       self.REQUEST.response.setBody(json.dumps(d))
