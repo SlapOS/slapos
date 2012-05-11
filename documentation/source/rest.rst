@@ -50,10 +50,7 @@ will return a ``"200 OK"`` response if successful.
 
 ``PUT`` requests will return a ``"200 OK"`` response if the resource is successfully updated and ``"204 No Content"`` in case if no modification was applied..
 
-``DELETE`` requests will return a ``"200 OK"`` response if the resource is successfully deleted.
-
-``OPTIONS`` requests will return ``"204 No Content"`` response with headers
-informing about possible method usage.
+``OPTIONS`` requests will return ``"204 No Content"`` response with headers informing about possible method usage.
 
 Common Error Responses
 ++++++++++++++++++++++
