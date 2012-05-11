@@ -50,6 +50,8 @@ class Recipe(BaseSlapRecipe):
 
     # Define optional arguments
     frontend_port_number = self.parameter_dict.get("port", 4443)
+    frontend_plain_http_port_number = self.parameter_dict.get(
+        "plain_http_port", 8080)
     base_varnish_port = 26009
     slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
 
@@ -111,7 +113,7 @@ class Recipe(BaseSlapRecipe):
         # rule structure.
         # So we will have one RewriteMap for normal websites, and one
         # RewriteMap for Zope Virtual Host Monster websites.
-        if slave_instance.get("zope", "").upper() in ('1', 'TRUE'):
+        if slave_instance.get("type", "").lower() in ('zope'):
           rewrite_rule_zope_list.append(rewrite_rule)
         else:
           rewrite_rule_list.append(rewrite_rule)
@@ -143,6 +145,7 @@ class Recipe(BaseSlapRecipe):
         ip_list=["[%s]" % self.getGlobalIPv6Address(),
                  self.getLocalIPv4Address()],
         port=frontend_port_number,
+        plain_http_port=frontend_plain_http_port_number,
         name=frontend_domain_name,
         rewrite_rule_list=rewrite_rule_list,
         rewrite_rule_zope_list=rewrite_rule_zope_list,
@@ -451,7 +454,8 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(wrapper)
     return stunnel_conf
 
-  def installFrontendApache(self, ip_list, port, key, certificate, name,
+  def installFrontendApache(self, ip_list, key, certificate, name,
+                            port, plain_http_port=8080, 
                             rewrite_rule_list=[], rewrite_rule_zope_list=[],
                             access_control_string=None):
     # Create htdocs, populate it with default 404 document
@@ -463,6 +467,34 @@ class Recipe(BaseSlapRecipe):
     notfound_file_content = open(notfound_template_file_location, 'r').read()
     self._writeFile(notfound_file_location, notfound_file_content)
 
+    # Create mod_ssl cache directory
+    cache_directory_location = os.path.join(self.var_directory, 'cache')
+    mod_ssl_cache_location = os.path.join(cache_directory_location,
+        'httpd_mod_ssl')
+    self._createDirectory(cache_directory_location)
+    self._createDirectory(mod_ssl_cache_location)
+
+    # Create "custom" apache configuration file if it does not exist.
+    # Note : This file won't be erased or changed when slapgrid is ran.
+    # It can be freely customized by node admin.
+    custom_apache_configuration_directory = os.path.join(
+        self.data_root_directory, 'apache-conf.d')
+    self._createDirectory(custom_apache_configuration_directory)
+    custom_apache_configuration_file_location = os.path.join(
+        custom_apache_configuration_directory, 'apache_frontend.custom.conf')
+    f = open(custom_apache_configuration_file_location, 'a')
+    f.close()
+
+    # Create backup of custom apache configuration
+    backup_path = self.createBackupDirectory('custom_apache_conf_backup')
+    backup_cron = os.path.join(self.cron_d, 'custom_apache_conf_backup')
+    open(backup_cron, 'w').write(
+        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
+          rdiff_backup=self.options['rdiff_backup_binary'],
+          source=custom_apache_configuration_directory,
+          destination=backup_path))
+    self.path_list.append(backup_cron)
+
     # Create configuration file and rewritemaps
     apachemap_name = "apachemap.txt"
     apachemapzope_name = "apachemapzope.txt"
@@ -472,9 +504,17 @@ class Recipe(BaseSlapRecipe):
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
-        dict(login_certificate=certificate, login_key=key))
+        dict(login_certificate=certificate,
+            login_key=key,
+            httpd_mod_ssl_cache_directory=mod_ssl_cache_location,
+        )
+    )
 
-    apache_conf["listen"] = "\n".join(["Listen %s:%s" % (ip, port) for ip in ip_list])
+    apache_conf["listen"] = "\n".join([
+        "Listen %s:%s" % (ip, port)
+        for port in (plain_http_port, port)
+        for ip in ip_list
+    ])
 
     path = self.substituteTemplate(
         self.getTemplateFilename('apache.conf.path-protected.in'),
@@ -485,7 +525,9 @@ class Recipe(BaseSlapRecipe):
       apachemap_path=os.path.join(self.etc_directory, apachemap_name),
       apachemapzope_path=os.path.join(self.etc_directory, apachemapzope_name),
       apache_domain=name,
-      port=port,
+      https_port=port,
+      plain_http_port=plain_http_port,
+      custom_apache_conf=custom_apache_configuration_file_location,
     ))
 
     apache_conf_string = self.substituteTemplate(
