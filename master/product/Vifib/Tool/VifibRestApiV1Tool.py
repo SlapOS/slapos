@@ -103,8 +103,10 @@ def responseSupport(anonymous=False):
   def outer(fn):
     def wrapperResponseSupport(self, *args, **kwargs):
       self.REQUEST.response.setHeader('Content-Type', 'application/json')
-      self.REQUEST.response.setHeader('Access-Control-Allow-Headers',
-        self.REQUEST.getHeader('Access-Control-Allow-Headers'))
+      allow_headers = self.REQUEST.getHeader('Access-Control-Allow-Headers')
+      if allow_headers:
+        self.REQUEST.response.setHeader('Access-Control-Allow-Headers',
+          allow_headers)
       self.REQUEST.response.setHeader('Access-Control-Allow-Origin', '*')
       self.REQUEST.response.setHeader('Access-Control-Allow-Methods', 'DELETE, PUT, POST, '
         'GET, OPTIONS')
