@@ -463,6 +463,13 @@ class Recipe(BaseSlapRecipe):
     notfound_file_content = open(notfound_template_file_location, 'r').read()
     self._writeFile(notfound_file_location, notfound_file_content)
 
+    # Create mod_ssl cache directory
+    cache_directory_location = os.path.join(self.var_directory, 'cache')
+    mod_ssl_cache_location = os.path.join(cache_directory_location,
+        'httpd_mod_ssl')
+    self._createDirectory(cache_directory_location)
+    self._createDirectory(mod_ssl_cache_location)
+
     # Create configuration file and rewritemaps
     apachemap_name = "apachemap.txt"
     apachemapzope_name = "apachemapzope.txt"
@@ -472,7 +479,11 @@ class Recipe(BaseSlapRecipe):
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
-        dict(login_certificate=certificate, login_key=key))
+        dict(login_certificate=certificate,
+            login_key=key,
+            httpd_mod_ssl_cache_directory=mod_ssl_cache_location,
+        )
+    )
 
     apache_conf["listen"] = "\n".join(["Listen %s:%s" % (ip, port) for ip in ip_list])
 
