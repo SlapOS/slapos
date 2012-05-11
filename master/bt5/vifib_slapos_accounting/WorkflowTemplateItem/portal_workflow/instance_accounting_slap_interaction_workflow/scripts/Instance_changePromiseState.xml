@@ -52,6 +52,7 @@
             <key> <string>_body</string> </key>
             <value> <string>instance = state_change[\'object\']\n
 hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
+person_relative_url = hosting_subscription.getDestinationSection()\n
 portal = instance.getPortalObject()\n
 \n
 # Check if instance is allocated\n
@@ -80,7 +81,7 @@ software_release_document = portal.portal_catalog.getResultValue(\n
 assert software_release_document is not None\n
 \n
 sale_order_portal_type = "Sale Order"\n
-sale_order_line_portal_type = "Sale Packing List"\n
+sale_order_line_portal_type = "Sale Order Line"\n
 \n
 if (partition is None):\n
   # If partition is not allocated yet, only a sale order can be instanciated\n
@@ -105,7 +106,7 @@ if (partition is None):\n
       portal_type=sale_order_line_portal_type,\n
       resource=setup_service_relative_url,\n
       quantity=1,\n
-      price=service.getSaleSupplyLineBasePrice(),\n
+      price=setup_service.getSaleSupplyLineBasePrice(),\n
       aggregate_value_list=[instance,\n
                             hosting_subscription,\n
                             software_release_document\n
