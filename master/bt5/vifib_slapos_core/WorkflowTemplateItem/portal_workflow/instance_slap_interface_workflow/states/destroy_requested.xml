@@ -21,7 +21,9 @@
         <item>
             <key> <string>transitions</string> </key>
             <value>
-              <tuple/>
+              <tuple>
+                <string>request_instance</string>
+              </tuple>
             </value>
         </item>
         <item>
