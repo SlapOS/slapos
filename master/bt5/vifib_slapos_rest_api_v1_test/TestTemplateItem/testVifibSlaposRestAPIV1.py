@@ -8,6 +8,7 @@ import urlparse
 import json
 import tempfile
 import os
+from App.Common import rfc1123_date
 
 class Simulator:
   def __init__(self, outfile, method):
@@ -463,6 +464,10 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
     transaction.commit()
 
 class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
+  def assertLastModifiedHeader(self):
+    calculated = rfc1123_date(self.software_instance.getModificationDate())
+    self.assertEqual(calculated, self.response.getheader('Last-Modified'))
+
   def test_non_existing(self):
     non_existing = 'software_instance_module/' + self.generateNewId()
     try:
@@ -510,6 +515,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
     self.prepareResponse()
     self.assertBasicResponse()
     self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
     self.assertResponseJson()
     self.assertEqual({
       "status": "draft",
