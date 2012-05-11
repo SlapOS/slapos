@@ -430,6 +430,13 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
     VifibSlaposRestAPIV1Mixin.afterSetUp(self)
     self.software_instance = self.createSoftwareInstance(self.customer)
 
+  def assertLastModifiedHeader(self):
+    calculated = rfc1123_date(self.software_instance.getModificationDate())
+    self.assertEqual(calculated, self.response.getheader('Last-Modified'))
+
+  def assertCacheControlHeader(self):
+    self.assertEqual('public', self.response.getheader('Cache-Control'))
+
   def createSoftwareInstance(self, person):
     software_instance = self.cloneByPath(
       'software_instance_module/template_software_instance')
@@ -466,13 +473,6 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
     transaction.commit()
 
 class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
-  def assertLastModifiedHeader(self):
-    calculated = rfc1123_date(self.software_instance.getModificationDate())
-    self.assertEqual(calculated, self.response.getheader('Last-Modified'))
-
-  def assertCacheControlHeader(self):
-    self.assertEqual('public', self.response.getheader('Cache-Control'))
-
   def test_non_existing(self):
     non_existing = 'software_instance_module/' + self.generateNewId()
     try:
@@ -689,6 +689,8 @@ class TestInstanceGETcertificate(VifibSlaposRestAPIV1InstanceMixin):
     self.prepareResponse()
     self.assertBasicResponse()
     self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
     self.assertResponseJson()
     self.assertEqual({
       "ssl_key": "SSL Key",
