@@ -67,6 +67,12 @@ assert state in [started, stopped, destroyed]\n
 # Get all needed services\n
 setup_service_relative_url = portal.portal_preferences.getPreferredInstanceSetupResource()\n
 setup_service = portal.restrictedTraverse(setup_service_relative_url)\n
+hosting_service_relative_url = portal.portal_preferences.getPreferredInstanceHostingResource()\n
+hosting_service = portal.restrictedTraverse(hosting_service_relative_url)\n
+cleanup_service_relative_url = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
+cleanup_service = portal.restrictedTraverse(cleanup_service_relative_url)\n
+update_service_relative_url = portal.portal_preferences.getPreferredInstanceUpdateResource()\n
+update_service = portal.restrictedTraverse(update_service_relative_url)\n
 # Get software release\n
 software_release_document = portal.portal_catalog.getResultValue(\n
   portal_type=\'Software Release\',\n
@@ -121,7 +127,113 @@ if (partition is None):\n
                           hosting_subscription.getRelativeUrl()]\n
         sale_order_line.edit(aggregate_list=aggregate_list)\n
 else:\n
-  raise NotImplementedError\n
+  assert delivery is not None\n
+\n
+  if (delivery.getPortalType() == "Sale Order"):\n
+    if (state == stopped):\n
+      # Try to find the setup packing list created from the open order to\n
+      # associate it instead of the sale order\n
+      packing_list = delivery.getCausalityRelatedValue(portal_type="Sale Packing List")\n
+      if (packing_list  is not None):\n
+        instance.edit(causality_value=packing_list)\n
+    else:\n
+      # Create a new packing list from scratch\n
+\n
+      packing_list_module = portal.getDefaultModule(portal_type=\'Sale Packing List\')\n
+      packing_list = packing_list_module.newContent(\n
+        portal_type=\'Sale Packing List\',\n
+        specialise=delivery.getSpecialise() or delivery.getCausalityValue().getSpecialise(),\n
+        destination=delivery.getDestination(),\n
+        destination_section=delivery.getDestinationSection(),\n
+        destination_decision=delivery.getDestinationDecision(),\n
+        source=delivery.getSource(),\n
+        source_section=delivery.getSourceSection(),\n
+        price_currency=delivery.getPriceCurrency(),\n
+        start_date=DateTime())\n
+\n
+      if (state == started):\n
+        service_relative_url = hosting_service_relative_url\n
+        service = hosting_service\n
+      elif (state == destroyed):\n
+        service_relative_url = cleanup_service_relative_url\n
+        service = cleanup_service\n
+\n
+      packing_list_line = packing_list.newContent(\n
+        portal_type=\'Sale Packing List Line\',\n
+        resource=service_relative_url,\n
+        quantity=service.getQuantity(),\n
+        aggregate_list=delivery.getAggregateList(),\n
+        # XXX Hardcode price on service\n
+        price=service.getSaleSupplyLineBasePrice(),\n
+      )\n
+\n
+      instance.edit(causality_value=packing_list)\n
+\n
+      if (state == started):\n
+        packing_list.confirm()\n
+      elif (state == destroyed):\n
+        packing_list.confirm()\n
+\n
+  else:\n
+    assert delivery.getPortalType() == "Sale Packing List"\n
+    line_list = delivery.contentValues(portal_type="Sale Packing List Line")\n
+    assert len(line_list) == 1\n
+    line = line_list[0]\n
+    service_relative_url = line.getResource()\n
+\n
+    def letsclone(service_relative_url):\n
+      new_delivery = delivery.Base_createCloneDocument(batch_mode=1)\n
+      new_delivery.edit(start_date=DateTime(), stop_date=DateTime())\n
+      new_delivery.contentValues(portal_type="Sale Packing List Line")[0].edit(resource=service_relative_url)\n
+      return new_delivery\n
+\n
+    if (service_relative_url == setup_service_relative_url):\n
+      if (state == started):\n
+        new_delivery = letsclone(hosting_service_relative_url)\n
+        new_delivery.start()\n
+        instance.edit(causality_value=new_delivery)\n
+      elif (state == stopped):\n
+        pass\n
+      elif (state == destroyed):\n
+        new_delivery = letsclone(cleanup_service_relative_url)\n
+        new_delivery.confirm()\n
+        instance.edit(causality_value=new_delivery)\n
+      else:\n
+        raise NotImplementedError\n
+\n
+    elif (service_relative_url == hosting_service_relative_url):\n
+      if (state == started):\n
+        if (delivery.getSimulationState() == \'stopped\'):\n
+          delivery.deliver()\n
+        new_delivery = letsclone(update_service_relative_url)\n
+        new_delivery.confirm()\n
+        instance.edit(causality_value=new_delivery)\n
+      elif (state == stopped):\n
+        delivery.edit(stop_date=DateTime())\n
+        delivery.stop()\n
+      elif (state == destroyed):\n
+        new_delivery = letsclone(cleanup_service_relative_url)\n
+        new_delivery.confirm()\n
+        instance.edit(causality_value=new_delivery)\n
+      else:\n
+        raise NotImplementedError\n
+\n
+    elif (service_relative_url == cleanup_service_relative_url):\n
+      raise NotImplementedError, "Not update should be allowed"\n
+\n
+    elif (service_relative_url == update_service_relative_url):\n
+      if (state == started):\n
+        pass\n
+      elif (state == stopped):\n
+        pass\n
+      elif (state == destroyed):\n
+        new_delivery = letsclone(cleanup_service_relative_url)\n
+        new_delivery.confirm()\n
+        instance.edit(causality_value=new_delivery)\n
+      else:\n
+        raise NotImplementedError\n
+    else:\n
+      raise NotImplementedError\n
 </string> </value>
         </item>
         <item>

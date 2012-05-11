@@ -59,6 +59,7 @@
                 <string>requestStart</string>
                 <string>requestStop</string>
                 <string>requestDestroy</string>
+                <string>allocatePartition</string>
               </list>
             </value>
         </item>
