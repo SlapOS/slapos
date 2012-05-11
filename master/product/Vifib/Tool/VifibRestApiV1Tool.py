@@ -365,6 +365,23 @@ class InstancePublisher(GenericPublisher):
       self.REQUEST.response.setBody(json.dumps(d))
     return self.REQUEST.response
 
+  @requireHeader({'Accept': 'application/json'})
+  def __instance_list(self):
+    kw = dict(
+      portal_type=('Software Instance', 'Slave Instance'),
+    )
+    catalog = self.getPortalObject().portal_catalog
+    if catalog.countResults(**kw)[0][0] == 0:
+      self.REQUEST.response.setStatus(204)
+      return self.REQUEST.response
+    d = {"list": []}
+    a = d['list'].append
+    for si in catalog(**kw):
+      a('/'.join([self.absolute_url(), si.getRelativeUrl()]))
+    self.REQUEST.response.setStatus(200)
+    self.REQUEST.response.setBody(json.dumps(d))
+    return self.REQUEST.response
+
   @responseSupport()
   def __call__(self):
     """Instance GET/POST support"""
@@ -374,9 +391,11 @@ class InstancePublisher(GenericPublisher):
         self.__bang()
       else:
         self.__request()
-    elif self.REQUEST['REQUEST_METHOD'] == 'GET' and \
-      self.REQUEST['traverse_subpath']:
-      self.__instance_info()
+    elif self.REQUEST['REQUEST_METHOD'] == 'GET':
+      if self.REQUEST['traverse_subpath']:
+        self.__instance_info()
+      else:
+        self.__instance_list()
 
 
 class VifibRestApiV1Tool(BaseTool):
