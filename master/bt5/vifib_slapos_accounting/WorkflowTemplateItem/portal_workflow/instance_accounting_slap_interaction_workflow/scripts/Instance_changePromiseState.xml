@@ -113,6 +113,7 @@ if (partition is None):\n
       ],\n
     )\n
     sale_order.order()\n
+    instance.edit(causality_value=sale_order)\n
 \n
   else:\n
     assert delivery.getPortalType() == sale_order_portal_type\n
