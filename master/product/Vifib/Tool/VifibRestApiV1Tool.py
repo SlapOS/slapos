@@ -151,8 +151,8 @@ def responseSupport(anonymous=False):
             .portal_preferences.getPreferredRestApiV1TokenServerUrl())
           return self.REQUEST.response
         else:
-          self.person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
-          if self.person is None:
+          person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
+          if person is None:
             transaction.abort()
             LOG('VifibRestApiV1Tool', ERROR,
               'Currenty logged in user %r has no Person document.'%
@@ -161,6 +161,7 @@ def responseSupport(anonymous=False):
             self.REQUEST.response.setBody(json.dumps({'error':
               'There is system issue, please try again later.'}))
             return self.REQUEST.response
+          self.person_url = person.getRelativeUrl()
       return fn(self, *args, **kwargs)
     wrapperResponseSupport.__doc__ = fn.__doc__
     return wrapperResponseSupport
@@ -298,7 +299,8 @@ class InstancePublisher(GenericPublisher):
         request_dict[k_i] = self.jbody[k_j]
 
     try:
-      self.person.requestSoftwareInstance(**request_dict)
+      self.restrictedTraverse(self.person_url
+        ).requestSoftwareInstance(**request_dict)
     except Exception:
       transaction.abort()
       LOG('VifibRestApiV1Tool', ERROR,
