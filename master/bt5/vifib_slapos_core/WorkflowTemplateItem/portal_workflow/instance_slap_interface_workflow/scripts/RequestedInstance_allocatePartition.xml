@@ -51,7 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>instance = state_change[\'object\']\n
-assert instance.getPortalType() == ["Software Instance", "Slave Instance"]\n
+assert instance.getPortalType() in ["Software Instance", "Slave Instance"]\n
 portal = instance.getPortalObject()\n
 # Get required arguments\n
 kwargs = state_change.kwargs\n
