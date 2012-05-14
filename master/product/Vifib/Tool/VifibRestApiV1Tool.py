@@ -372,16 +372,18 @@ class InstancePublisher(GenericPublisher):
     kw = dict(
       portal_type=('Software Instance', 'Slave Instance'),
     )
-    catalog = self.getPortalObject().portal_catalog
-    if len(catalog(limit=1, **kw)) == 0:
-      self.REQUEST.response.setStatus(204)
-      return self.REQUEST.response
     d = {"list": []}
     a = d['list'].append
-    for si in catalog(**kw):
+    for si in self.getPortalObject().portal_catalog(**kw):
       a('/'.join([self.absolute_url(), si.getRelativeUrl()]))
-    self.REQUEST.response.setStatus(200)
-    self.REQUEST.response.setBody(json.dumps(d))
+    try:
+      d['list'][0]
+    except IndexError:
+      # no results, so nothing to return
+      self.REQUEST.response.setStatus(204)
+    else:
+      self.REQUEST.response.setStatus(200)
+      self.REQUEST.response.setBody(json.dumps(d))
     return self.REQUEST.response
 
   @responseSupport()
