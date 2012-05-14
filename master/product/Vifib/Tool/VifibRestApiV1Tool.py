@@ -373,7 +373,7 @@ class InstancePublisher(GenericPublisher):
       portal_type=('Software Instance', 'Slave Instance'),
     )
     catalog = self.getPortalObject().portal_catalog
-    if catalog.countResults(**kw)[0][0] == 0:
+    if len(catalog(limit=1, **kw)) == 0:
       self.REQUEST.response.setStatus(204)
       return self.REQUEST.response
     d = {"list": []}
