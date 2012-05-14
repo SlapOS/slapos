@@ -959,6 +959,10 @@ class TestInstancePUT(VifibSlaposRestAPIV1InstanceMixin):
   def assertInstancePUTSimulator(self, l):
     stored = eval(open(self.instance_put_simulator).read())
     self.assertEqual(stored, l)
+    self.assertEqual(
+      set([type(q) for q in l[0]['recargs']]),
+      set([str])
+    )
 
   def assertInstancePUTSimulatorEmpty(self):
     self.assertEqual('', open(self.instance_put_simulator).read())
