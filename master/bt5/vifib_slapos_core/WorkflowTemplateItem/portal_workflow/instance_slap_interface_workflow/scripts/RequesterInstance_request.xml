@@ -151,8 +151,6 @@ else:\n
     predecessor.edit(predecessor_uid_list=predecessor_uid_list)\n
     graph[predecessor.getUid()] = predecessor_uid_list\n
 \n
-assert request_software_instance.getSlapState() in ["start_requested", "stop_requested"]\n
-\n
 # Change desired state\n
 promise_kw = {\n
   \'instance_xml\': instance_xml,\n
