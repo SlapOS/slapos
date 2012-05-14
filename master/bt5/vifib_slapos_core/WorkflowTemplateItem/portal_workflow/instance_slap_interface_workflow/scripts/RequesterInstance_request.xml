@@ -145,11 +145,12 @@ else:\n
   if (predecessor is None):\n
     if (requester_instance.getPortalType() != "Hosting Subscription"):\n
       raise ValueError(\'It is disallowed to request root software instance %s\' % request_software_instance.getRelativeUrl())\n
-  else:\n
-    predecessor_uid_list = predecessor.getPredecessorUidList()\n
-    predecessor_uid_list.remove(request_software_instance.getUid())\n
-    predecessor.edit(predecessor_uid_list=predecessor_uid_list)\n
-    graph[predecessor.getUid()] = predecessor_uid_list\n
+    else:\n
+      predecessor = requester_instance\n
+  predecessor_uid_list = predecessor.getPredecessorUidList()\n
+  predecessor_uid_list.remove(request_software_instance.getUid())\n
+  predecessor.edit(predecessor_uid_list=predecessor_uid_list)\n
+  graph[predecessor.getUid()] = predecessor_uid_list\n
 \n
 # Change desired state\n
 promise_kw = {\n
