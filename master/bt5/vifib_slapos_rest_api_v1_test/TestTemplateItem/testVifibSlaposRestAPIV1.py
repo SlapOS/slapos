@@ -145,9 +145,18 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
         ('status', 'state')
       ):
       kwargs[k_i] = kwargs.pop(k_j)
-    self.assertEqual(stored, 
+    self.assertEqual(stored,
       [{'recargs': args, 'reckwargs': kwargs,
       'recmethod': 'requestSoftwareInstance'}])
+    reckwargs = stored[0]['reckwargs']
+    self.assertEqual(
+      set([
+        type(reckwargs['software_title']), type(reckwargs['software_release']),
+        type(reckwargs['software_type']), type(reckwargs['state']),
+        type(reckwargs['instance_xml']), type(reckwargs['sla_xml'])
+      ]),
+      set([str])
+    )
 
 class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
   def test_not_logged_in(self):
