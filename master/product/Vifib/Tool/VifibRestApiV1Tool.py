@@ -99,6 +99,9 @@ def supportModifiedSince(document_url_id):
     return wrapperSupportModifiedSince
   return outer
 
+def encode_utf8(s):
+  return s.encode('utf-8')
+
 def requireJson(json_dict, optional_key_list=None):
   if optional_key_list is None:
     optional_key_list = []
@@ -118,9 +121,18 @@ def requireJson(json_dict, optional_key_list=None):
           if key not in self.jbody:
             if key not in optional_key_list:
               error_dict[key] = 'Missing.'
-          elif key in self.jbody and not isinstance(self.jbody[key], type_):
-            error_dict[key] = '%s is not %s.' % (type(self.jbody[key]).__name__,
-              type_.__name__)
+          elif key in self.jbody:
+            method = None
+            if type(type_) in (tuple, list):
+              type_, method = type_
+            if not isinstance(self.jbody[key], type_):
+              error_dict[key] = '%s is not %s.' % (type(self.jbody[key]
+                ).__name__, type_.__name__)
+            if method is not None:
+              try:
+                self.jbody[key] = method(self.jbody[key])
+              except Exception:
+                error_dict[key] = 'Malformed value.'
         if error_dict:
           self.REQUEST.response.setStatus(400)
           self.REQUEST.response.setBody(json.dumps(error_dict))
@@ -220,7 +232,7 @@ class InstancePublisher(GenericPublisher):
   @requireHeader({'Accept': 'application/json',
     'Content-Type': 'application/json'})
   @requireJson(dict(
-    title=unicode,
+    title=(unicode, encode_utf8),
     connection=dict
   ), ['title', 'connection'])
   @extractInstance
@@ -275,12 +287,12 @@ class InstancePublisher(GenericPublisher):
     'Content-Type': 'application/json'})
   @requireJson(dict(
     slave=bool,
-    software_release=unicode,
-    title=unicode,
-    software_type=unicode,
-    parameter=dict,
-    sla=dict,
-    status=unicode
+    software_release=(unicode, encode_utf8),
+    title=(unicode, encode_utf8),
+    software_type=(unicode, encode_utf8),
+    parameter=(dict, etreeXml),
+    sla=(dict, etreeXml),
+    status=(unicode, encode_utf8),
   ))
   def __request(self):
     request_dict = {}
@@ -293,10 +305,7 @@ class InstancePublisher(GenericPublisher):
         ('slave', 'shared'),
         ('status', 'state')
       ):
-      if k_j in ('sla', 'parameter'):
-        request_dict[k_i] = etreeXml(self.jbody[k_j])
-      else:
-        request_dict[k_i] = self.jbody[k_j]
+      request_dict[k_i] = self.jbody[k_j]
 
     try:
       self.restrictedTraverse(self.person_url
