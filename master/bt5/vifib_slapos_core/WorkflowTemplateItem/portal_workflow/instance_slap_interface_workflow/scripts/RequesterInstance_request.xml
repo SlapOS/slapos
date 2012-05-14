@@ -171,6 +171,9 @@ else:\n
   raise ValueError, "state should be started, stopped or destroyed"\n
 \n
 predecessor_list = requester_instance.getPredecessorList() + [request_software_instance.getRelativeUrl()]\n
+\n
+assert predecessor_list == list(set(predecessor_list))\n
+\n
 # update graph to reflect requested operation\n
 graph[requester_instance.getUid()] = requester_instance.getPredecessorUidList() + [request_software_instance.getUid()]\n
 requester_instance.edit(predecessor_list=predecessor_list)\n
