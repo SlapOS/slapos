@@ -151,6 +151,7 @@ else:\n
         source=delivery.getSource(),\n
         source_section=delivery.getSourceSection(),\n
         price_currency=delivery.getPriceCurrency(),\n
+        quantity_unit=delivery.getQuantityUnit(),\n
         start_date=DateTime())\n
 \n
       if (state == started):\n
@@ -163,7 +164,7 @@ else:\n
       packing_list_line = packing_list.newContent(\n
         portal_type=\'Sale Packing List Line\',\n
         resource=service_relative_url,\n
-        quantity=service.getQuantity(),\n
+        quantity=1,\n
         aggregate_list=delivery.getAggregateList(),\n
         # XXX Hardcode price on service\n
         price=service.getSaleSupplyLineBasePrice(),\n
