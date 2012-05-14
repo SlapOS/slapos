@@ -1,10 +1,11 @@
 Changes
 =======
 
-0.51 (Unreleased)
+0.51 (2012-05-14)
 -----------------
 
-  * No change yet.
+  * LAMP stack bugfix: Users were losing data when slapgrid is ran (Don't
+    erase htdocs if it already exist). [Cedric de Saint Martin]
 
 0.50 (2012-05-12)
 -----------------
