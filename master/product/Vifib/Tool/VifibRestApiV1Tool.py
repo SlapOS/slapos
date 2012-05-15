@@ -448,4 +448,93 @@ class VifibRestApiV1Tool(BaseTool):
           ['Manager',])
     BaseTool.inheritedAttribute('manage_afterAdd')(self, item, container)
 
+  @supportModifiedSince()
+  def __api_discovery(self):
+    self.REQUEST.response.setHeader('Last-Modified',
+      rfc1123_date(self.bobobase_modification_time()))
+    self.REQUEST.response.setHeader('Cache-Control', 'public')
+    self.REQUEST.response.setStatus(200)
+    d = {'access_point': [{
+      "discovery": {
+        "authentication": False,
+        "url": self.absolute_url(),
+        "method": "GET",
+        "required": {},
+        "optional": {}
+      },
+      "instance_list": {
+        "authentication": True,
+        "url": self.absolute_url() + '/instance',
+        "method": "GET",
+        "required": {},
+        "optional": {}
+      },
+      "instance_bang": {
+        "authentication": True,
+        "url": "{instance_url}/bang",
+        "method": "POST",
+        "required": {
+          "log": "unicode"
+        },
+        "optional": {}
+      },
+      "instance_certificate": {
+        "authentication": True,
+        "url": "{instance_url}/certificate",
+        "method": "GET",
+        "required": {},
+        "optional": {}
+      },
+      "instance_edit": {
+        "authentication": True,
+        "url": "{instance_url}",
+        "method": "PUT",
+        "required": {},
+        "optional": {
+           "title": "unicode",
+           "connection": "object"
+        },
+      },
+      "instance_info": {
+        "authentication": True,
+        "url": "{instance_url}",
+        "method": "GET",
+        "required": {},
+        "optional": {}
+      },
+      'request_instance': {
+        "authentication": True,
+        'url': self.absolute_url() + '/instance',
+        'method': 'POST',
+        'required': {
+           "status": "unicode",
+           "slave": "bool",
+           "title": "unicode",
+           "software_release": "unicode",
+           "software_type": "unicode",
+           "parameter": "object",
+           "sla": "object"
+        },
+        'optional' : {}
+      }
+    }]}
+    self.REQUEST.response.setBody(json.dumps(d))
+    return self.REQUEST.response
+
+  @responseSupport(True)
+  def OPTIONS(self, *args, **kwargs):
+    """HTTP OPTIONS implementation"""
+    self.REQUEST.response.setStatus(204)
+    return self.REQUEST.response
+
+  security.declarePublic('__call__')
+  @responseSupport(True)
+  @requireHeader({'Accept': 'application/json'})
+  def __call__(self):
+    """Possible API discovery"""
+    if self.REQUEST['REQUEST_METHOD'] == 'GET':
+      return self.__api_discovery()
+    self.REQUEST.response.setStatus(400)
+    return self.REQUEST.response
+
 InitializeClass(VifibRestApiV1Tool)
