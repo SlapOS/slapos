@@ -57,7 +57,7 @@ class Recipe(object):
       self.logger.debug("No parameter to return to main instance."
                           "Be careful about that...")
 
-    software_type = 'RootInstanceSoftware'
+    software_type = 'RootSoftwareInstance'
     if 'software-type' in options:
       software_type = options['software-type']
 
