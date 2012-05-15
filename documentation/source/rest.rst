@@ -99,6 +99,99 @@ Request to non existing resource made.
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Unexpected error.
 
+Introsepcation Methods
+**********************
+
+Fetching list of access urls
+----------------------------
+
+Explain acccess points in ``access_point`` list.
+
+Client is expected to ask about connection points before doing any request.
+
+In case if required mapping is defined on client side, but server does not
+expose this information, it means, that such capability is not available on
+server side and should not be used.
+
+In case if client does not support exposed mapping it is allowed to ignore
+them.
+
+Client shall be aware that one API can be spanned across many servers and that
+all urls are given as abolute ones.
+
+Endpoint to invoke required action is in ``url`` object, where values in
+``{}`` shall be replaced with corresponding access urls. For example
+``instance_url`` shall be replaced with obtained URL of instance (by request
+or list).
+
+``method`` is required method on URL.
+
+All required parameters, if any, are in ``required`` object.
+
+All optional understandable parameters, if any, are in ``optional`` object.
+
+In case if access point requires authentication, then ``authentication`` will be set to ``true``.
+
+`Request`::
+
+  GET / HTTP/1.1
+  Host: example.com
+  Accept: application/json
+
+`No Expected Request Body`
+
+Extract of possible response::
+
+  HTTP/1.1 200 OK
+  Content-Type: application/json; charset=utf-8
+
+  {
+    "access_point": [
+      "instance_bang": {
+        "authentication": true,
+        "url": "{instance_url}/bang",
+        "method": "POST",
+        "required": {
+          "log": "unicode"
+        },
+        "optional": {}
+      },
+      "instance_list": {
+        "authentication": true,
+        "url": "http://three.example.com/instance",
+        "method": "GET",
+        "required": {},
+        "optional": {}
+      },
+      "register_computer": {
+        "authentication": true,
+        "url": "http://two.example.com/computer",
+        "method": "POST",
+        "required": {
+          "title": "unicode"
+        },
+      },
+      "request_instance": {
+        "authentication": true,
+        "url": "http://one.example.com/instance",
+        "method": "POST",
+        "required": {
+           "status": "unicode",
+           "slave": "bool",
+           "title": "unicode",
+           "software_release": "unicode",
+           "software_type": "unicode",
+           "parameter": "object",
+           "sla": "object"
+        },
+        "optional": {}
+      }
+    ]
+  }
+
+All documentation here will refer to named access points except otherwise
+stated. The access point will appear in ``[]`` after method name.
+
 Instance Methods
 ****************
 
@@ -109,7 +202,7 @@ Ask for list of instances.
 
 `Request`::
 
-  GET /api/v1/instance HTTP/1.1
+  GET [instance_list] HTTP/1.1
   Host: example.com
   Accept: application/json
 
@@ -137,7 +230,7 @@ Request a new instantiation of a software.
 
 `Request`::
 
-  POST /api/v1/instance HTTP/1.1
+  POST [request_instance] HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -202,7 +295,7 @@ Request all instance information.
 
 `Request`::
 
-  GET /api/v1/instance/{instance_id} HTTP/1.1
+  GET [instance_info] HTTP/1.1
   Host: example.com
   Accept: application/json
 
@@ -255,7 +348,7 @@ Request the instance certificates.
 
 `Request`::
 
-  GET /api/v1/instance/{instance_id}/certificate HTTP/1.1
+  GET [instance_certificate] HTTP/1.1
   Host: example.com
   Accept: application/json
 
@@ -287,7 +380,7 @@ Trigger the re-instantiation of all partitions in the instance tree
 
 `Request`::
 
-  POST /api/v1/instance/{instance_id}/bang HTTP/1.1
+  POST [instance_bang] HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -313,7 +406,7 @@ Modify the instance information and status.
 
 `Request`::
 
-  PUT /api/v1/instance/{instance_id} HTTP/1.1
+  PUT [instance_edit] HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -364,7 +457,7 @@ Add a new computer in the system.
 
 `Request`::
 
-  POST /api/v1/computer HTTP/1.1
+  POST [register_computer] HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -398,7 +491,7 @@ Get the status of a computer
 
 `Request`::
 
-  GET /api/v1/computer/{computer_id} HTTP/1.1
+  GET [computer_info] HTTP/1.1
   Host: example.com
   Accept: application/json
 
@@ -444,7 +537,7 @@ Modify computer information in the system
 
 `Request`::
 
-  PUT /api/v1/computer/{computer_id} HTTP/1.1
+  PUT [computer_edit] HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -488,7 +581,7 @@ Request to supply a new software release on a computer
 
 `Request`::
 
-  POST /api/v1/computer/{computer_id}/supply HTTP/1.1
+  POST [computer_supply] HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -515,7 +608,7 @@ Request update on all partitions
 
 `Request`::
 
-  POST /api/v1/computer/{computer_id}/bang HTTP/1.1
+  POST [computer_bang] HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -541,7 +634,7 @@ Report computer usage
 
 `Request`::
 
-  POST /api/v1/computer/{computer_id}/report HTTP/1.1
+  POST [computer_report] HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
