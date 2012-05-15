@@ -676,9 +676,17 @@ class SlapTool(BaseTool):
     """
     Reports that Computer Partition is being build
     """
-    return self._getSoftwareInstanceForComputerPartition(
+    instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id).startComputerPartitionInstallation()
+        computer_partition_id)
+    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
+      if line.getResource() == portal.portal_preferences.\
+                                 getPreferredInstanceSetupResource():
+        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
+          delivery.start()
 
   @convertToREST
   def _availableComputerPartition(self, computer_id, computer_partition_id):
