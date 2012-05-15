@@ -52,6 +52,9 @@ def etreeXml(d):
   return etree.tostring(r, pretty_print=True, xml_declaration=True,
     encoding='utf-8')
 
+def jsonify(d):
+  return json.dumps(d, indent=2)
+
 def requireHeader(header_dict):
   def outer(fn):
     def wrapperRequireHeader(self, *args, **kwargs):
@@ -63,7 +66,7 @@ def requireHeader(header_dict):
         return fn(self, *args, **kwargs)
       else:
         self.REQUEST.response.setStatus(400)
-        self.REQUEST.response.setBody(json.dumps(problem_dict))
+        self.REQUEST.response.setBody(jsonify(problem_dict))
         return self.REQUEST.response
 
     wrapperRequireHeader.__doc__ = fn.__doc__
@@ -116,7 +119,7 @@ def requireJson(json_dict, optional_key_list=None):
         self.jbody = json.load(self.REQUEST.stdin)
       except Exception:
         self.REQUEST.response.setStatus(400)
-        self.REQUEST.response.setBody(json.dumps(
+        self.REQUEST.response.setBody(jsonify(
           {'error': 'Data is not json object.'}))
         return self.REQUEST.response
       else:
@@ -139,7 +142,7 @@ def requireJson(json_dict, optional_key_list=None):
                 error_dict[key] = 'Malformed value.'
         if error_dict:
           self.REQUEST.response.setStatus(400)
-          self.REQUEST.response.setBody(json.dumps(error_dict))
+          self.REQUEST.response.setBody(jsonify(error_dict))
           return self.REQUEST.response
         return fn(self, *args, **kwargs)
     wrapperRequireJson.__doc__ = fn.__doc__
@@ -174,7 +177,7 @@ def responseSupport(anonymous=False):
               'Currenty logged in user %r has no Person document.'%
                 self.getPortalObject().getAuthenticatedMember())
             self.REQUEST.response.setStatus(500)
-            self.REQUEST.response.setBody(json.dumps({'error':
+            self.REQUEST.response.setBody(jsonify({'error':
               'There is system issue, please try again later.'}))
             return self.REQUEST.response
           self.person_url = person.getRelativeUrl()
@@ -206,7 +209,7 @@ def extractInstance(fn):
       LOG('VifibRestApiV1Tool', ERROR,
         'Problem while trying to find instance:', error=True)
       self.REQUEST.response.setStatus(500)
-      self.REQUEST.response.setBody(json.dumps({'error':
+      self.REQUEST.response.setBody(jsonify({'error':
         'There is system issue, please try again later.'}))
     else:
       self.REQUEST['traverse_subpath'] = self.REQUEST['traverse_subpath'][2:]
@@ -262,11 +265,11 @@ class InstancePublisher(GenericPublisher):
       LOG('VifibRestApiV1Tool', ERROR,
         'Problem while modifying:', error=True)
       self.REQUEST.response.setStatus(500)
-      self.REQUEST.response.setBody(json.dumps({'error':
+      self.REQUEST.response.setBody(jsonify({'error':
         'There is system issue, please try again later.'}))
     else:
       if d:
-        self.REQUEST.response.setBody(json.dumps(d))
+        self.REQUEST.response.setBody(jsonify(d))
     return self.REQUEST.response
 
   @requireHeader({'Accept': 'application/json',
@@ -281,7 +284,7 @@ class InstancePublisher(GenericPublisher):
       LOG('VifibRestApiV1Tool', ERROR,
         'Problem while trying to generate instance dict:', error=True)
       self.REQUEST.response.setStatus(500)
-      self.REQUEST.response.setBody(json.dumps({'error':
+      self.REQUEST.response.setBody(jsonify({'error':
         'There is system issue, please try again later.'}))
     else:
       self.REQUEST.response.setStatus(204)
@@ -319,12 +322,12 @@ class InstancePublisher(GenericPublisher):
       LOG('VifibRestApiV1Tool', ERROR,
         'Problem with person.requestSoftwareInstance:', error=True)
       self.REQUEST.response.setStatus(500)
-      self.REQUEST.response.setBody(json.dumps({'error':
+      self.REQUEST.response.setBody(jsonify({'error':
         'There is system issue, please try again later.'}))
       return self.REQUEST.response
 
     self.REQUEST.response.setStatus(202)
-    self.REQUEST.response.setBody(json.dumps({'status':'processing'}))
+    self.REQUEST.response.setBody(jsonify({'status':'processing'}))
     return self.REQUEST.response
 
   @requireHeader({'Accept': 'application/json'})
@@ -364,7 +367,7 @@ class InstancePublisher(GenericPublisher):
       LOG('VifibRestApiV1Tool', ERROR,
         'Problem while trying to generate instance dict:', error=True)
       self.REQUEST.response.setStatus(500)
-      self.REQUEST.response.setBody(json.dumps({'error':
+      self.REQUEST.response.setBody(jsonify({'error':
         'There is system issue, please try again later.'}))
     else:
       self.REQUEST.response.setStatus(200)
@@ -377,7 +380,7 @@ class InstancePublisher(GenericPublisher):
       # Say that content is publicly cacheable. It is only required in order to
       # *force* storing content on clients' disk in case of using HTTPS
       self.REQUEST.response.setHeader('Cache-Control', 'public')
-      self.REQUEST.response.setBody(json.dumps(d))
+      self.REQUEST.response.setBody(jsonify(d))
     return self.REQUEST.response
 
   @requireHeader({'Accept': 'application/json'})
@@ -396,7 +399,7 @@ class InstancePublisher(GenericPublisher):
       self.REQUEST.response.setStatus(204)
     else:
       self.REQUEST.response.setStatus(200)
-      self.REQUEST.response.setBody(json.dumps(d))
+      self.REQUEST.response.setBody(jsonify(d))
     return self.REQUEST.response
 
   @responseSupport()
@@ -518,7 +521,7 @@ class VifibRestApiV1Tool(BaseTool):
         'optional' : {}
       }
     }]}
-    self.REQUEST.response.setBody(json.dumps(d))
+    self.REQUEST.response.setBody(jsonify(d))
     return self.REQUEST.response
 
   @responseSupport(True)
