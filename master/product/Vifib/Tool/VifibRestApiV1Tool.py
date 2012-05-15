@@ -455,10 +455,13 @@ class VifibRestApiV1Tool(BaseTool):
           ['Manager',])
     BaseTool.inheritedAttribute('manage_afterAdd')(self, item, container)
 
-  @supportModifiedSince()
+  # set this date to moment of API modification
+  api_modification_date = DateTime('2012/05/15 11:36 GMT+2')
+
+  @supportModifiedSince(modified_property_id='api_modification_date')
   def __api_discovery(self):
     self.REQUEST.response.setHeader('Last-Modified',
-      rfc1123_date(self.bobobase_modification_time()))
+      rfc1123_date(self.api_modification_date))
     self.REQUEST.response.setHeader('Cache-Control', 'public')
     self.REQUEST.response.setStatus(200)
     d = {'access_point': [{
