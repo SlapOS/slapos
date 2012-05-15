@@ -48,30 +48,13 @@ class CustomHeaderHTTPConnection(httplib.HTTPConnection):
     kwargs['headers'] = headers
     return httplib.HTTPConnection.request(self, *args, **kwargs)
 
-class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
+class VifibSlaposRestAPIV1MixinBase(TestVifibSlapWebServiceMixin):
   def generateNewId(self):
     return str(self.getPortalObject().portal_ids.generateNewId(
                                      id_group=('slapos_rest_api_v1_test')))
 
   def assertCacheControlHeader(self):
     self.assertEqual('public', self.response.getheader('Cache-Control'))
-
-  def createPerson(self):
-    customer = self.cloneByPath('person_module/template_member')
-    customer_reference = 'P' + self.generateNewId()
-    customer.edit(
-      reference=customer_reference,
-      default_email_url_string=customer_reference+'@example.com')
-    customer.validate()
-    for assignment in customer.contentValues(portal_type='Assignment'):
-      assignment.open()
-
-    customer.manage_setLocalRoles(customer.getReference(),
-      ['Associate'])
-    transaction.commit()
-    customer.recursiveImmediateReindexObject()
-    transaction.commit()
-    return customer, customer_reference
 
   def afterSetUp(self):
     self.setupVifibMachineAuthenticationPlugin()
@@ -92,20 +75,6 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       })
-
-    self.person_request_simulator = tempfile.mkstemp()[1]
-    self.customer, self.customer_reference = self.createPerson()
-    self.customer.requestSoftwareInstance = Simulator(self.person_request_simulator,
-      'requestSoftwareInstance')
-    transaction.commit()
-
-  def beforeTearDown(self):
-    if os.path.exists(self.person_request_simulator):
-      os.unlink(self.person_request_simulator)
-
-  def cloneByPath(self, path):
-    return self.portal.restrictedTraverse(path).Base_createCloneDocument(
-      batch_mode=1)
 
   def prepareResponse(self):
     self.response = self.connection.getresponse()
@@ -130,6 +99,42 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
 
   def assertResponseNoContentType(self):
     self.assertEqual(self.response.getheader('Content-Type'), None)
+
+class VifibSlaposRestAPIV1Mixin(VifibSlaposRestAPIV1MixinBase):
+  def createPerson(self):
+    customer = self.cloneByPath('person_module/template_member')
+    customer_reference = 'P' + self.generateNewId()
+    customer.edit(
+      reference=customer_reference,
+      default_email_url_string=customer_reference+'@example.com')
+    customer.validate()
+    for assignment in customer.contentValues(portal_type='Assignment'):
+      assignment.open()
+
+    customer.manage_setLocalRoles(customer.getReference(),
+      ['Associate'])
+    transaction.commit()
+    customer.recursiveImmediateReindexObject()
+    transaction.commit()
+    return customer, customer_reference
+
+  def afterSetUp(self):
+    super(VifibSlaposRestAPIV1Mixin, self).afterSetUp()
+    self.setupVifibMachineAuthenticationPlugin()
+
+    self.person_request_simulator = tempfile.mkstemp()[1]
+    self.customer, self.customer_reference = self.createPerson()
+    self.customer.requestSoftwareInstance = Simulator(self.person_request_simulator,
+      'requestSoftwareInstance')
+    transaction.commit()
+
+  def beforeTearDown(self):
+    if os.path.exists(self.person_request_simulator):
+      os.unlink(self.person_request_simulator)
+
+  def cloneByPath(self, path):
+    return self.portal.restrictedTraverse(path).Base_createCloneDocument(
+      batch_mode=1)
 
   def assertPersonRequestSimulatorEmpty(self):
     self.assertEqual(open(self.person_request_simulator).read(), '')
