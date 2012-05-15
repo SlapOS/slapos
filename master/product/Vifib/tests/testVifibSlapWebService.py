@@ -449,6 +449,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     REMOTE_USER = "test_vifib_customer_a"
     self.login("test_vifib_customer_a")
 
+  def stepSetSoftwareTitleRandom(self, sequence, **kw):
+    sequence['software_title'] = str(random())
+
   def stepCheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListDoesNotExists(

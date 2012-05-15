@@ -1372,9 +1372,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepSetSoftwareTitleRandom(self, sequence, **kw):
-    sequence['software_title'] = str(random.random())
-
   def test_request_new_with_destroyed_reference_web_ui(self):
     """Prove that having destroyed SI allows to request new one with same
       reference
