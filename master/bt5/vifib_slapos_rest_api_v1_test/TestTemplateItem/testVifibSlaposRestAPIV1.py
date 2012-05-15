@@ -53,6 +53,9 @@ class VifibSlaposRestAPIV1Mixin(TestVifibSlapWebServiceMixin):
     return str(self.getPortalObject().portal_ids.generateNewId(
                                      id_group=('slapos_rest_api_v1_test')))
 
+  def assertCacheControlHeader(self):
+    self.assertEqual('public', self.response.getheader('Cache-Control'))
+
   def createPerson(self):
     customer = self.cloneByPath('person_module/template_member')
     customer_reference = 'P' + self.generateNewId()
@@ -442,9 +445,6 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
   def assertLastModifiedHeader(self):
     calculated = rfc1123_date(self.software_instance.getModificationDate())
     self.assertEqual(calculated, self.response.getheader('Last-Modified'))
-
-  def assertCacheControlHeader(self):
-    self.assertEqual('public', self.response.getheader('Cache-Control'))
 
   def createSoftwareInstance(self, person):
     software_instance = self.cloneByPath(
@@ -1158,3 +1158,90 @@ class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
     self.assertTrue('Bearer realm="' in auth)
     self.assertPersonRequestSimulatorEmpty()
 
+class TestGET_discovery(VifibSlaposRestAPIV1Mixin):
+  def afterSetUp(self):
+    super(TestGET_discovery, self).afterSetUp()
+    self.api_date = self.portal.portal_vifib_rest_api_v1.api_modification_date
+
+  def assertLastModifiedHeader(self):
+    self.assertEqual(
+      rfc1123_date(self.api_date),
+      self.response.getheader('Last-Modified'))
+
+  def assertAPIDiscoveryDict(self):
+    self.assertSameSet(self.json_response.keys(),
+      [
+        'instance_certificate',
+        'request_instance',
+        'instance_list',
+        'instance_edit',
+        'instance_bang',
+        'instance_info',
+        'discovery',
+      ])
+
+  def test(self):
+    self.connection.request(method='GET',
+      url=self.api_path)
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertAPIDiscoveryDict()
+
+  def test_if_modified_since_equal(self):
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': rfc1123_date(self.api_date)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_after(self):
+    if_modified = self.api_date.timeTime() + 2
+    # check the test: is calculated time *before* now?
+    self.assertTrue(int(if_modified) < int(DateTime().timeTime()))
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': rfc1123_date(DateTime(if_modified))})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_before(self):
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': rfc1123_date(self.api_date - 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertAPIDiscoveryDict()
+
+  def test_if_modified_since_date_not_date(self):
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': 'This Is Not A date'})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertAPIDiscoveryDict()
+
+  def test_if_modified_since_date_future(self):
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': rfc1123_date(DateTime() + 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertAPIDiscoveryDict()
