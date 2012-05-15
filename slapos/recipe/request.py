@@ -57,7 +57,7 @@ class Recipe(object):
       self.logger.debug("No parameter to return to main instance."
                           "Be careful about that...")
 
-    software_type = 'RootInstanceSoftware'
+    software_type = 'RootSoftwareInstance'
     if 'software-type' in options:
       software_type = options['software-type']
 
@@ -98,6 +98,7 @@ class Recipe(object):
         status = "unknown"
       self.logger.error("Connection parameter %s not found. "
           "Status of requested instance is : %s." % (self.failed, status))
+      raise KeyError("Connection parameter %s not found. " % self.failed)
     return []
 
   update = install
