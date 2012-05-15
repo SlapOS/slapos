@@ -1107,7 +1107,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
   """
 
@@ -1118,7 +1118,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListStarted \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
     '
 
@@ -4486,7 +4486,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase

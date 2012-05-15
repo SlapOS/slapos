@@ -65,7 +65,7 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
     Logout \
     \
     LoginDefaultUser \
-    CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+    CheckComputerPartitionInstanceSetupSalePackingListStopped \
     Logout \
     \
     SlapLoginCurrentComputer \
@@ -74,7 +74,7 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
     SlapLogout \
     \
     LoginDefaultUser \
-    CheckComputerPartitionInstanceSetupSalePackingListStarted \
+    CheckComputerPartitionInstanceSetupSalePackingListStopped \
     Logout \
     \
     SlapLoginCurrentComputer \

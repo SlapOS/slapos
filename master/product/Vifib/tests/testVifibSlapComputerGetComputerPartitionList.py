@@ -334,7 +334,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       LoginDefaultUser \
       CallConfirmOrderedSaleOrderAlarm \
       Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
       \
       SlapLoginCurrentComputer \
@@ -364,7 +364,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CallConfirmOrderedSaleOrderAlarm \
       Tic \
       SetDeliveryLineAmountEqualOne \
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
       \
       SlapLoginCurrentComputer \

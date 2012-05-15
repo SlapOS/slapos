@@ -68,7 +68,7 @@ class TestVifibSlapComputerPartitionBuilding(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase
