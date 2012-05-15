@@ -64,10 +64,7 @@ except AttributeError:\n
   pass\n
 \n
 # Then, modify state\n
-confirm_tag = \'%s_confirm\' % packing_list.getPath()\n
-packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  tag=confirm_tag).Delivery_confirm()\n
+packing_list.Delivery_confirm()\n
 \n
 # First set the packing_list in the building state\n
 packing_list.startBuilding()\n
