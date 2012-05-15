@@ -383,7 +383,7 @@ class InstancePublisher(GenericPublisher):
         rfc1123_date(software_instance.getModificationDate()))
       # Say that content is publicly cacheable. It is only required in order to
       # *force* storing content on clients' disk in case of using HTTPS
-      self.REQUEST.response.setHeader('Cache-Control', 'public')
+      self.REQUEST.response.setHeader('Cache-Control', 'must-revalidate')
       self.REQUEST.response.setBody(jsonify(d))
     return self.REQUEST.response
 
