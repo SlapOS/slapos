@@ -1118,7 +1118,7 @@ class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
     self.assertResponseCode(200)
     self.assertResponseJson()
     self.assertEqual({
-      "list": ['/'.join([self.api_url,
+      "list": ['/'.join([self.api_url, 'instance',
         self.software_instance.getRelativeUrl()])]
       },
       self.json_response)
