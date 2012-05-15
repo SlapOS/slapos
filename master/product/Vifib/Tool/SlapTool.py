@@ -694,7 +694,7 @@ class SlapTool(BaseTool):
       line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
       if line.getResource() == portal.portal_preferences.\
                                  getPreferredInstanceSetupResource():
-        if portal.portal_workflow.isTransitionPossible(delivery, 'stop')
+        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
           delivery.stop()
 
   @convertToREST
