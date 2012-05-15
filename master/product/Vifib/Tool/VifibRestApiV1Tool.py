@@ -464,7 +464,7 @@ class VifibRestApiV1Tool(BaseTool):
       rfc1123_date(self.api_modification_date))
     self.REQUEST.response.setHeader('Cache-Control', 'public')
     self.REQUEST.response.setStatus(200)
-    d = {'access_point': [{
+    d = {
       "discovery": {
         "authentication": False,
         "url": self.absolute_url(),
@@ -527,7 +527,7 @@ class VifibRestApiV1Tool(BaseTool):
         },
         'optional' : {}
       }
-    }]}
+    }
     self.REQUEST.response.setBody(jsonify(d))
     return self.REQUEST.response
 

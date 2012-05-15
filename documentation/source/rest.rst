@@ -105,7 +105,7 @@ Introsepcation Methods
 Fetching list of access urls
 ----------------------------
 
-Explain acccess points in ``access_point`` list.
+Explain acccess points in dictionary.
 
 Client is expected to ask about connection points before doing any request.
 
@@ -146,47 +146,45 @@ Extract of possible response::
   Content-Type: application/json; charset=utf-8
 
   {
-    "access_point": [
-      "instance_bang": {
-        "authentication": true,
-        "url": "{instance_url}/bang",
-        "method": "POST",
-        "required": {
-          "log": "unicode"
-        },
-        "optional": {}
+    "instance_bang": {
+      "authentication": true,
+      "url": "{instance_url}/bang",
+      "method": "POST",
+      "required": {
+        "log": "unicode"
       },
-      "instance_list": {
-        "authentication": true,
-        "url": "http://three.example.com/instance",
-        "method": "GET",
-        "required": {},
-        "optional": {}
+      "optional": {}
+    },
+    "instance_list": {
+      "authentication": true,
+      "url": "http://three.example.com/instance",
+      "method": "GET",
+      "required": {},
+      "optional": {}
+    },
+    "register_computer": {
+      "authentication": true,
+      "url": "http://two.example.com/computer",
+      "method": "POST",
+      "required": {
+        "title": "unicode"
       },
-      "register_computer": {
-        "authentication": true,
-        "url": "http://two.example.com/computer",
-        "method": "POST",
-        "required": {
-          "title": "unicode"
-        },
+    },
+    "request_instance": {
+      "authentication": true,
+      "url": "http://one.example.com/instance",
+      "method": "POST",
+      "required": {
+         "status": "unicode",
+         "slave": "bool",
+         "title": "unicode",
+         "software_release": "unicode",
+         "software_type": "unicode",
+         "parameter": "object",
+         "sla": "object"
       },
-      "request_instance": {
-        "authentication": true,
-        "url": "http://one.example.com/instance",
-        "method": "POST",
-        "required": {
-           "status": "unicode",
-           "slave": "bool",
-           "title": "unicode",
-           "software_release": "unicode",
-           "software_type": "unicode",
-           "parameter": "object",
-           "sla": "object"
-        },
-        "optional": {}
-      }
-    ]
+      "optional": {}
+    }
   }
 
 All documentation here will refer to named access points except otherwise
