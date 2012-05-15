@@ -488,18 +488,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         self.portal.portal_preferences.getPreferredInstanceSetupResource(),
         sequence)
 
-  def stepCheckComputerPartitionInstanceSetupSalePackingListConfirmed(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('confirmed',
-        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
-  def stepCheckComputerPartitionInstanceSetupSalePackingListStarted(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('started',
-        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
   def stepCheckComputerPartitionInstanceSetupSalePackingListStopped(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('stopped',

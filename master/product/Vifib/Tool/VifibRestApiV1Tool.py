@@ -537,6 +537,10 @@ class VifibRestApiV1Tool(BaseTool):
     self.REQUEST.response.setStatus(204)
     return self.REQUEST.response
 
+  def __getitem__(self, item):
+    import ipdb ; ipdb.set_trace()
+    pass
+
   security.declarePublic('__call__')
   @responseSupport(True)
   @requireHeader({'Accept': 'application/json'})
