@@ -42,6 +42,19 @@ class Recipe(BaseSlapRecipe):
         'template/%s' % template_name)
 
   def _install(self):
+    # Check for mandatory arguments
+    frontend_domain_name = self.parameter_dict.get("domain")
+    if frontend_domain_name is None:
+      raise zc.buildout.UserError('No domain name specified. Please define '
+          'the "domain" instance parameter.')
+
+    # Define optional arguments
+    frontend_port_number = self.parameter_dict.get("port", 4443)
+    frontend_plain_http_port_number = self.parameter_dict.get(
+        "plain_http_port", 8080)
+    base_varnish_port = 26009
+    slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
+
     self.path_list = []
     self.requirements, self.ws = self.egg.working_set()
 
@@ -51,72 +64,63 @@ class Recipe(BaseSlapRecipe):
     self.killpidfromfile = zc.buildout.easy_install.scripts(
         [('killpidfromfile', 'slapos.recipe.erp5.killpidfromfile',
           'killpidfromfile')], self.ws, sys.executable, self.bin_directory)[0]
-
     self.path_list.append(self.killpidfromfile)
 
-    frontend_port_number = self.parameter_dict.get("port", 4443)
-    frontend_domain_name = self.parameter_dict.get("domain",
-        "host.vifib.net")
-
-    base_varnish_port = 26009
-    slave_instance_list = self.parameter_dict.get("slave_instance_list", [])
     rewrite_rule_list = []
+    rewrite_rule_zope_list = []
     slave_dict = {}
     service_dict = {}
-    if frontend_port_number is 443:
-      base_url = "%s/" % frontend_domain_name
-    else:
-      base_url = "%s:%s/" % (frontend_domain_name, frontend_port_number)
-    for slave_instance in slave_instance_list:
-      url = slave_instance.get("url")
-      if url is None:
-        continue
-      reference = slave_instance.get("slave_reference")
-      subdomain = reference.replace("-", "").lower()
-      slave_dict[reference] = "https://%s.%s" % (subdomain, base_url)
 
-      enable_cache = slave_instance.get("enable_cache", "")
-      if enable_cache.upper() in ('1', 'TRUE'):
-        # Varnish should use stunnel to connect to the backend
-        base_varnish_control_port = base_varnish_port
-        base_varnish_port += 1
-        # Use regex
-        host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9]+)"
-        slave_host = re.search(host_regex, url).group(0)
-        port_regex = "\w+(\/|)$"
-        matcher = re.search(port_regex, url)
-        if matcher is not None:
-          slave_port = matcher.group(0)
-          slave_port = slave_port.replace("/", "")
-        elif url.startswith("https://"):
-          slave_port = 443
-        else:
-          slave_port = 80
-        service_name = "varnish_%s" % reference
-        varnish_ip = self.getLocalIPv4Address()
-        stunnel_port = base_varnish_port + 1
-        self.installVarnishCache(service_name,
-          ip=varnish_ip,
-          port=base_varnish_port,
-          control_port=base_varnish_control_port,
-          backend_host=varnish_ip,
-          backend_port=stunnel_port,
-          size="1G")
-        service_dict[service_name] = dict(public_ip=varnish_ip,
-            public_port=stunnel_port,
-            private_ip=slave_host.replace("[", "").replace("]", ""),
-            private_port=slave_port)
-        rewrite_rule_list.append("%s.%s http://%s:%s" % \
-            (reference.replace("-", ""), frontend_domain_name,
-            varnish_ip, base_varnish_port))
+    # Check if default port
+    if frontend_port_number is 443 or frontend_port_number is 80:
+      port_snippet = ""
+    else:
+      port_snippet = ":%s" % frontend_port_number
+
+    for slave_instance in slave_instance_list:
+      backend_url = slave_instance.get("url", None)
+      reference = slave_instance.get("slave_reference")
+      # Set scheme (http? https?)
+      # Future work may allow to choose between http and https (or both?)
+      scheme = 'https://'
+
+      self.logger.info('processing slave instance: %s' % reference)
+
+      # Check for mandatory slave fields
+      if backend_url is None:
+        self.logger.warn('No "url" parameter is defined for %s slave'\
+            'instance. Ignoring it.' % reference)
+        continue
+
+      # Check for custom domain (like mypersonaldomain.com)
+      # If no custom domain, use generated one
+      domain = slave_instance.get('custom_domain', 
+          "%s.%s" % (reference.replace("-", "").lower(), frontend_domain_name))
+      slave_dict[reference] = "%s%s%s/" % (scheme, domain, port_snippet)
+
+      # Check if we want varnish+stunnel cache.
+      if slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE'):
+        # XXX-Cedric : need to refactor to clean code? (to many variables)
+        rewrite_rule = self.configureVarnishSlave(
+            base_varnish_port, backend_url, reference, service_dict, domain)
         base_varnish_port += 2
       else:
-        rewrite_rule_list.append("%s.%s %s" % (subdomain, frontend_domain_name,
-            url))
+        rewrite_rule = "%s %s" % (domain, backend_url)
 
+      # Finally, if successful, we add the rewrite rule to our list of rules
+      if rewrite_rule:
+        # We check if we have a zope slave. It requires different rewrite
+        # rule structure.
+        # So we will have one RewriteMap for normal websites, and one
+        # RewriteMap for Zope Virtual Host Monster websites.
+        if slave_instance.get("type", "").lower() in ('zope'):
+          rewrite_rule_zope_list.append(rewrite_rule)
+        else:
+          rewrite_rule_list.append(rewrite_rule)
+
+    # Certificate stuff
     valid_certificate_str = self.parameter_dict.get("domain_ssl_ca_cert")
     valid_key_str = self.parameter_dict.get("domain_ssl_ca_key")
-
     if valid_certificate_str is None and valid_key_str is None:
       ca_conf = self.installCertificateAuthority()
       key, certificate = self.requestCertificate(frontend_domain_name)
@@ -125,14 +129,13 @@ class Recipe(BaseSlapRecipe):
           frontend_domain_name, valid_certificate_str, valid_key_str)
       key = ca_conf.pop("key")
       certificate = ca_conf.pop("certificate")
-
     if service_dict != {}:
       if valid_certificate_str is not None and valid_key_str is not None:
         self.installCertificateAuthority()
         stunnel_key, stunnel_certificate = \
             self.requestCertificate(frontend_domain_name)
       else:
-        stunnel_key, stunnet_certificate = key, certificate
+        stunnel_key, stunnel_certificate = key, certificate
       self.installStunnel(service_dict,
         stunnel_certificate, stunnel_key,
         ca_conf["ca_crl"],
@@ -142,18 +145,86 @@ class Recipe(BaseSlapRecipe):
         ip_list=["[%s]" % self.getGlobalIPv6Address(),
                  self.getLocalIPv4Address()],
         port=frontend_port_number,
+        plain_http_port=frontend_plain_http_port_number,
         name=frontend_domain_name,
         rewrite_rule_list=rewrite_rule_list,
+        rewrite_rule_zope_list=rewrite_rule_zope_list,
         key=key, certificate=certificate)
 
+    # Send connection informations about each slave
     for reference, url in slave_dict.iteritems():
       self.setConnectionDict(dict(site_url=url), reference)
 
+    # Then set it for master instance
     self.setConnectionDict(
       dict(site_url=apache_parameter_dict["site_url"],
            domain_ipv6_address=self.getGlobalIPv6Address(),
            domain_ipv4_address=self.getLocalIPv4Address()))
+
+    # Promises
+    promise_config = dict(
+      hostname=self.getGlobalIPv6Address(),
+      port=frontend_port_number,
+      python_path=sys.executable,
+    )
+    promise_v6 = self.createPromiseWrapper(
+      'apache_ipv6',
+      self.substituteTemplate(
+          pkg_resources.resource_filename(
+              'slapos.recipe.check_port_listening',
+          'template/socket_connection_attempt.py.in'),
+        promise_config))
+    self.path_list.append(promise_v6)
+
+    promise_config = dict(
+      hostname=self.getLocalIPv4Address(),
+      port=frontend_port_number,
+      python_path=sys.executable,
+    )
+    promise_v4 = self.createPromiseWrapper(
+      'apache_ipv4',
+      self.substituteTemplate(
+          pkg_resources.resource_filename(
+              'slapos.recipe.check_port_listening',
+          'template/socket_connection_attempt.py.in'),
+        promise_config))
+    self.path_list.append(promise_v4)
+
     return self.path_list
+
+  def configureVarnishSlave(self, base_varnish_port, url, reference,
+      service_dict, domain):
+    # Varnish should use stunnel to connect to the backend
+    base_varnish_control_port = base_varnish_port
+    base_varnish_port += 1
+    # Use regex
+    host_regex = "((\[\w*|[0-9]+\.)(\:|)).*(\]|\.[0-9]+)"
+    slave_host = re.search(host_regex, url).group(0)
+    port_regex = "\w+(\/|)$"
+    matcher = re.search(port_regex, url)
+    if matcher is not None:
+      slave_port = matcher.group(0)
+      slave_port = slave_port.replace("/", "")
+    elif url.startswith("https://"):
+      slave_port = 443
+    else:
+      slave_port = 80
+    service_name = "varnish_%s" % reference
+    varnish_ip = self.getLocalIPv4Address()
+    stunnel_port = base_varnish_port + 1
+    self.installVarnishCache(service_name,
+      ip=varnish_ip,
+      port=base_varnish_port,
+      control_port=base_varnish_control_port,
+      backend_host=varnish_ip,
+      backend_port=stunnel_port,
+      size="1G")
+    service_dict[service_name] = dict(public_ip=varnish_ip,
+        public_port=stunnel_port,
+        private_ip=slave_host.replace("[", "").replace("]", ""),
+        private_port=slave_port)
+    return "%s http://%s:%s" % \
+        (domain, varnish_ip, base_varnish_port)
 
   def installLogrotate(self):
     """Installs logortate main configuration file and registers its to cron"""
@@ -301,9 +372,9 @@ class Recipe(BaseSlapRecipe):
     apache_conf['port'] = port
     apache_conf['server_admin'] = 'admin@'
     apache_conf['error_log'] = os.path.join(self.log_directory,
-        name + '-error.log')
+        'frontend-apache-error.log')
     apache_conf['access_log'] = os.path.join(self.log_directory,
-        name + '-access.log')
+        'frontend-apache-access.log')
     self.registerLogRotation(name, [apache_conf['error_log'],
       apache_conf['access_log']], self.killpidfromfile + ' ' +
       apache_conf['pid_file'] + ' SIGUSR1')
@@ -383,7 +454,8 @@ class Recipe(BaseSlapRecipe):
     self.path_list.append(wrapper)
     return stunnel_conf
 
-  def installFrontendApache(self, ip_list, port, key, certificate, name,
+  def installFrontendApache(self, ip_list, key, certificate, name,
+                            port, plain_http_port=8080, 
                             rewrite_rule_list=[], rewrite_rule_zope_list=[],
                             access_control_string=None):
     # Create htdocs, populate it with default 404 document
@@ -395,10 +467,36 @@ class Recipe(BaseSlapRecipe):
     notfound_file_content = open(notfound_template_file_location, 'r').read()
     self._writeFile(notfound_file_location, notfound_file_content)
 
+    # Create mod_ssl cache directory
+    cache_directory_location = os.path.join(self.var_directory, 'cache')
+    mod_ssl_cache_location = os.path.join(cache_directory_location,
+        'httpd_mod_ssl')
+    self._createDirectory(cache_directory_location)
+    self._createDirectory(mod_ssl_cache_location)
+
+    # Create "custom" apache configuration file if it does not exist.
+    # Note : This file won't be erased or changed when slapgrid is ran.
+    # It can be freely customized by node admin.
+    custom_apache_configuration_directory = os.path.join(
+        self.data_root_directory, 'apache-conf.d')
+    self._createDirectory(custom_apache_configuration_directory)
+    custom_apache_configuration_file_location = os.path.join(
+        custom_apache_configuration_directory, 'apache_frontend.custom.conf')
+    f = open(custom_apache_configuration_file_location, 'a')
+    f.close()
+
+    # Create backup of custom apache configuration
+    backup_path = self.createBackupDirectory('custom_apache_conf_backup')
+    backup_cron = os.path.join(self.cron_d, 'custom_apache_conf_backup')
+    open(backup_cron, 'w').write(
+        '''0 0 * * * %(rdiff_backup)s %(source)s %(destination)s'''%dict(
+          rdiff_backup=self.options['rdiff_backup_binary'],
+          source=custom_apache_configuration_directory,
+          destination=backup_path))
+    self.path_list.append(backup_cron)
+
     # Create configuration file and rewritemaps
     apachemap_name = "apachemap.txt"
-    # XXX-Cedric : implement zope specific rewrites list. Current apachemap is
-    #              generic and does not use VirtualHost Monster.
     apachemapzope_name = "apachemapzope.txt"
     self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
     self.createConfigurationFile(apachemapzope_name,
@@ -406,9 +504,17 @@ class Recipe(BaseSlapRecipe):
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
-        dict(login_certificate=certificate, login_key=key))
+        dict(login_certificate=certificate,
+            login_key=key,
+            httpd_mod_ssl_cache_directory=mod_ssl_cache_location,
+        )
+    )
 
-    apache_conf["listen"] = "\n".join(["Listen %s:%s" % (ip, port) for ip in ip_list])
+    apache_conf["listen"] = "\n".join([
+        "Listen %s:%s" % (ip, port)
+        for port in (plain_http_port, port)
+        for ip in ip_list
+    ])
 
     path = self.substituteTemplate(
         self.getTemplateFilename('apache.conf.path-protected.in'),
@@ -419,7 +525,9 @@ class Recipe(BaseSlapRecipe):
       apachemap_path=os.path.join(self.etc_directory, apachemap_name),
       apachemapzope_path=os.path.join(self.etc_directory, apachemapzope_name),
       apache_domain=name,
-      port=port,
+      https_port=port,
+      plain_http_port=plain_http_port,
+      custom_apache_conf=custom_apache_configuration_file_location,
     ))
 
     apache_conf_string = self.substituteTemplate(
@@ -427,11 +535,10 @@ class Recipe(BaseSlapRecipe):
 
     apache_config_file = self.createConfigurationFile('apache_frontend.conf',
         apache_conf_string)
-
-
     self.path_list.append(apache_config_file)
+
     self.path_list.extend(zc.buildout.easy_install.scripts([(
-      name, 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
+      'frontend_apache', 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
           sys.executable, self.wrapper_directory, arguments=[
             dict(
               required_path_list=[key, certificate],
