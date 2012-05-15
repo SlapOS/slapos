@@ -395,7 +395,7 @@ class InstancePublisher(GenericPublisher):
     d = {"list": []}
     a = d['list'].append
     for si in self.getPortalObject().portal_catalog(**kw):
-      a('/'.join([self.absolute_url(), si.getRelativeUrl()]))
+      a('/'.join([self.absolute_url(), 'instance', si.getRelativeUrl()]))
     try:
       d['list'][0]
     except IndexError:
