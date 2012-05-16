@@ -54,7 +54,8 @@ class VifibSlaposRestAPIV1MixinBase(TestVifibSlapWebServiceMixin):
                                      id_group=('slapos_rest_api_v1_test')))
 
   def assertCacheControlHeader(self):
-    self.assertEqual('public', self.response.getheader('Cache-Control'))
+    self.assertEqual('must-revalidate',
+      self.response.getheader('Cache-Control'))
 
   def afterSetUp(self):
     self.setupVifibMachineAuthenticationPlugin()
