@@ -1115,6 +1115,11 @@ class TestInstancePUT(VifibSlaposRestAPIV1InstanceMixin):
     self.assertInstancePUTSimulatorEmpty()
 
 class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
+  def assertLastModifiedHeader(self):
+    calculated = rfc1123_date(self.portal.software_instance_module\
+      .bobobase_modification_time())
+    self.assertEqual(calculated, self.response.getheader('Last-Modified'))
+
   def test(self):
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance']),
@@ -1123,6 +1128,90 @@ class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
     self.assertBasicResponse()
     self.assertResponseCode(200)
     self.assertResponseJson()
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertEqual({
+      "list": ['/'.join([self.api_url, 'instance',
+        self.software_instance.getRelativeUrl()])]
+      },
+      self.json_response)
+
+  def test_if_modified_since_equal(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.portal.software_instance_module\
+        .bobobase_modification_time())})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_after(self):
+    # wait three seconds before continuing in order to not hit time precision
+    # issue, as test needs to provide date with second precision after
+    # last modification of software instance and *before* now()
+    time.sleep(3)
+    # add 2 seconds, as used rfc1123_date will ceil the second in response and
+    # one more second will be required in order to be *after* the modification time
+    if_modified = self.portal.software_instance_module\
+      .bobobase_modification_time().timeTime() + 2
+    # check the test: is calculated time *before* now?
+    self.assertTrue(int(if_modified) < int(DateTime().timeTime()))
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.portal.software_instance_module\
+        .bobobase_modification_time())})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_before(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.portal.software_instance_module\
+        .bobobase_modification_time() - 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertEqual({
+      "list": ['/'.join([self.api_url, 'instance',
+        self.software_instance.getRelativeUrl()])]
+      },
+      self.json_response)
+
+  def test_if_modified_since_date_not_date(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': 'This Is Not A date'})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertEqual({
+      "list": ['/'.join([self.api_url, 'instance',
+        self.software_instance.getRelativeUrl()])]
+      },
+      self.json_response)
+
+  def test_if_modified_since_date_future(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(DateTime() + 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
     self.assertEqual({
       "list": ['/'.join([self.api_url, 'instance',
         self.software_instance.getRelativeUrl()])]
