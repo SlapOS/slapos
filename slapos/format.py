@@ -699,6 +699,11 @@ class Interface(object):
           for q in netifaces.ifaddresses(interface_name)[af]]:
       # add an address
       callAndRead(['ip', 'addr', 'add', address_string, 'dev', interface_name])
+
+      # Fake success for local ipv4
+      if not ipv6:
+        return True
+
       # wait few moments
       time.sleep(2)
     # check existence on interface
@@ -1174,12 +1179,6 @@ def main(*args):
       else:
         return 0, ''
     callAndRead = dry_callAndRead
-    real_addSystemAddress = Interface._addSystemAddress
-    def fake_addSystemAddress(*args, **kw):
-      real_addSystemAddress(*args, **kw)
-      # Fake success
-      return True
-    Interface._addSystemAddress = fake_addSystemAddress
     def fake_getpwnam(user):
       class result(object):
         pw_uid = 12345
