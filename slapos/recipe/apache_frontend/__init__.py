@@ -71,12 +71,6 @@ class Recipe(BaseSlapRecipe):
     slave_dict = {}
     service_dict = {}
 
-    # Check if default port
-    if frontend_port_number is 443 or frontend_port_number is 80:
-      port_snippet = ""
-    else:
-      port_snippet = ":%s" % frontend_port_number
-
     for slave_instance in slave_instance_list:
       backend_url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
@@ -93,10 +87,12 @@ class Recipe(BaseSlapRecipe):
         continue
 
       # Check for custom domain (like mypersonaldomain.com)
-      # If no custom domain, use generated one
+      # If no custom domain, use generated one.
       domain = slave_instance.get('custom_domain', 
           "%s.%s" % (reference.replace("-", "").lower(), frontend_domain_name))
-      slave_dict[reference] = "%s%s%s/" % (scheme, domain, port_snippet)
+      # Define the URL where the instance will be available
+      # WARNING: we use default ports (443, 80) here.
+      slave_dict[reference] = "%s%s/" % (scheme, domain)
 
       # Check if we want varnish+stunnel cache.
       if slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE'):
@@ -455,7 +451,7 @@ class Recipe(BaseSlapRecipe):
     return stunnel_conf
 
   def installFrontendApache(self, ip_list, key, certificate, name,
-                            port, plain_http_port=8080, 
+                            port=4443, plain_http_port=8080, 
                             rewrite_rule_list=[], rewrite_rule_zope_list=[],
                             access_control_string=None):
     # Create htdocs, populate it with default 404 document
