@@ -420,7 +420,8 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceDestroy \
+      SetSequenceSoftwareInstanceStateDestroyed \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       SlapLoginCurrentComputer \
