@@ -72,8 +72,6 @@ hosting_service_relative_url = portal.portal_preferences.getPreferredInstanceHos
 hosting_service = portal.restrictedTraverse(hosting_service_relative_url)\n
 cleanup_service_relative_url = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
 cleanup_service = portal.restrictedTraverse(cleanup_service_relative_url)\n
-update_service_relative_url = portal.portal_preferences.getPreferredInstanceUpdateResource()\n
-update_service = portal.restrictedTraverse(update_service_relative_url)\n
 # Get software release\n
 software_release_document = portal.portal_catalog.getResultValue(\n
   portal_type=\'Software Release\',\n
@@ -209,7 +207,7 @@ else:\n
       if (state == started):\n
         if (delivery.getSimulationState() == \'stopped\'):\n
           delivery.deliver()\n
-        new_delivery = letsclone(update_service_relative_url)\n
+        new_delivery = letsclone(hosting_service_relative_url)\n
         new_delivery.confirm()\n
         instance.edit(causality_value=new_delivery)\n
       elif (state == stopped):\n
@@ -225,17 +223,6 @@ else:\n
     elif (service_relative_url == cleanup_service_relative_url):\n
       raise NotImplementedError, "Not update should be allowed"\n
 \n
-    elif (service_relative_url == update_service_relative_url):\n
-      if (state == started):\n
-        pass\n
-      elif (state == stopped):\n
-        pass\n
-      elif (state == destroyed):\n
-        new_delivery = letsclone(cleanup_service_relative_url)\n
-        new_delivery.confirm()\n
-        instance.edit(causality_value=new_delivery)\n
-      else:\n
-        raise NotImplementedError\n
     else:\n
       raise NotImplementedError\n
 </string> </value>
