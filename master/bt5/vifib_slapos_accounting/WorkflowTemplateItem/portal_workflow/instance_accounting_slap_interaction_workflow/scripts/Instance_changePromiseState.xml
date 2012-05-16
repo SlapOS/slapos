@@ -56,7 +56,7 @@ person_relative_url = hosting_subscription.getDestinationSection()\n
 portal = instance.getPortalObject()\n
 \n
 # Check if instance is allocated\n
-partition = instance.getAggregateValue(portal_type="Computer Partition")\n
+partition = instance.getAggregate(portal_type="Computer Partition")\n
 # Get current delivery\n
 delivery = instance.getCausalityValue(portal_type=["Sale Order", "Sale Packing List"])\n
 # Get latest workflow transition\n
