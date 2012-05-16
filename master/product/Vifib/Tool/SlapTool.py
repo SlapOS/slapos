@@ -873,10 +873,10 @@ class SlapTool(BaseTool):
       software_instance_document = self.\
         _getSoftwareInstanceForComputerPartition(computer_id,
         computer_partition_id)
-      software_instance_document.requestSoftwareInstance(
+      software_instance_document.requestInstance(
               software_release=software_release,
               software_type=software_type,
-              partition_reference=partition_reference,
+              software_title=partition_reference,
               instance_xml=instance_xml,
               shared=shared,
               sla_xml=sla_xml,
