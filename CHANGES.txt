@@ -1,12 +1,16 @@
 Changes
 =======
 
-0.25 (Unreleased)
+0.25 (2012-05-16)
 -----------------
 
  * Fix support for no_bridge option in configuration files for some values:
    no_bridge = false was stated as true. [Cedric de Saint Martin]
  * Delay a randomized period of time before calling slapgrid. [Yingjie Xu]
+ * slapformat: Don't require tunctl if no_bridge is set [Leonardo Rochael]
+ * slapformat: remove monkey patching when creating address so that it doesn't
+   return false positive. [Cedric de Saint Martin]
+ * Various: clearer error messages.
 
 0.24 (2012-03-29)
 -----------------
