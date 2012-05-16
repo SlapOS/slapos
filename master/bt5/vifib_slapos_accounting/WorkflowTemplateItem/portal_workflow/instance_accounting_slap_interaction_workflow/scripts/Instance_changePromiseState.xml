@@ -192,7 +192,7 @@ else:\n
     if (service_relative_url == setup_service_relative_url):\n
       if (state == started):\n
         new_delivery = letsclone(hosting_service_relative_url)\n
-        new_delivery.start()\n
+        new_delivery.confirm()\n
         instance.edit(causality_value=new_delivery)\n
       elif (state == stopped):\n
         pass\n
@@ -207,13 +207,14 @@ else:\n
       if (state == started):\n
         if (delivery.getSimulationState() == \'stopped\'):\n
           delivery.deliver()\n
-        new_delivery = letsclone(hosting_service_relative_url)\n
-        new_delivery.confirm()\n
-        instance.edit(causality_value=new_delivery)\n
+          new_delivery = letsclone(hosting_service_relative_url)\n
+          new_delivery.confirm()\n
+          instance.edit(causality_value=new_delivery)\n
       elif (state == stopped):\n
         delivery.edit(stop_date=DateTime())\n
         delivery.stop()\n
       elif (state == destroyed):\n
+        delivery.deliver()\n
         new_delivery = letsclone(cleanup_service_relative_url)\n
         new_delivery.confirm()\n
         instance.edit(causality_value=new_delivery)\n
