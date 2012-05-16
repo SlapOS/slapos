@@ -1143,7 +1143,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_destroy_requested_computer_partition = \
       prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceDestroy \
+      SetSequenceSoftwareInstanceStateDestroyed \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       \
@@ -1484,6 +1485,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def stepSetSequenceSoftwareInstanceStateStarted(self, sequence, **kw):
     sequence['software_instance_state'] = 'started'
+
+  def stepSetSequenceSoftwareInstanceStateDestroyed(self, sequence, **kw):
+    sequence['software_instance_state'] = 'destroyed'
 
   def stepCheckComputerTradeConditionDestinationSectionListEmpty(self,
       sequence, **kw):
@@ -4339,7 +4343,8 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     sequence_string = self\
         .prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceDestroy \
+      SetSequenceSoftwareInstanceStateDestroyed \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       SlapLoginCurrentComputer \
