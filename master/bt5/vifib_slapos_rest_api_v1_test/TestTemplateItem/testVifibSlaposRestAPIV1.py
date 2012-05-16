@@ -1185,6 +1185,21 @@ class TestGET_discovery(VifibSlaposRestAPIV1Mixin):
         'discovery',
       ])
 
+  def test_noAcquisition(self):
+    # check the test
+    portal_id = self.portal.getId()
+    self.logout()
+    self.assertEqual(portal_id, self.portal.getId())
+    self.login()
+    # prove that even if anyone has access to portal root it is impossible
+    # to fetch it via API
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, self.portal.getId(), 'getId'])
+    )
+    self.prepareResponse()
+    self.assertResponseCode(404)
+    self.assertBasicResponse()
+
   def test(self):
     self.connection.request(method='GET',
       url=self.api_path)
