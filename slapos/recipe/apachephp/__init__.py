@@ -37,9 +37,9 @@ class Recipe(GenericBaseRecipe):
     path_list = []
 
     # Copy application
-    shutil.rmtree(self.options['htdocs'])
-    shutil.copytree(self.options['source'],
-                    self.options['htdocs'])
+    if not os.path.exists(self.options['htdocs']):
+      shutil.copytree(self.options['source'],
+                      self.options['htdocs'])
 
     # Install php.ini
     php_ini = self.createFile(os.path.join(self.options['php-ini-dir'],
@@ -112,6 +112,8 @@ class Recipe(GenericBaseRecipe):
       # Reload apache configuration
       with open(self.options['pid-file']) as pid_file:
         pid = int(pid_file.read().strip(), 10)
-      os.kill(pid, signal.SIGUSR1) # Graceful restart
-
+      try:
+        os.kill(pid, signal.SIGUSR1) # Graceful restart
+      except OSError:
+        pass
     return path_list
