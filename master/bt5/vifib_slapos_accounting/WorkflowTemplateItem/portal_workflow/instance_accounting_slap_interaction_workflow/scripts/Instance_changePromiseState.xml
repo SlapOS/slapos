@@ -211,7 +211,6 @@ else:\n
           new_delivery.confirm()\n
           instance.edit(causality_value=new_delivery)\n
       elif (state == stopped):\n
-        delivery.edit(stop_date=DateTime())\n
         delivery.stop()\n
       elif (state == destroyed):\n
         delivery.deliver()\n
