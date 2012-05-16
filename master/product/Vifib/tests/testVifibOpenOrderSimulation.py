@@ -202,7 +202,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroy
+      SetSequenceSoftwareInstanceStateDestroyed
+      PersonRequestSoftwareInstance
       Tic
       Logout
 
