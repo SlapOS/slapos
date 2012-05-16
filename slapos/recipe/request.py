@@ -51,6 +51,10 @@ class Recipe(object):
     software-url
       URL of a software definition to request an instance of.
 
+    software-type
+      Software type of requested instance, among those provided by the
+      definition from software-url.
+
     slave (optional, defaults to false)
       Set to "true" when requesting a slave instance, ie just setting a set of
       parameters in an existing instance.
