@@ -96,6 +96,10 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_ui_test_core',
       'erp5_ui_test',
       'vifib_slapos_core',
+      'vifib_slapos_core_test',
+      'vifib_slapos_rest_api_v1_portal_type',
+      'vifib_slapos_rest_api_v1',
+      'vifib_slapos_rest_api_v1_test'
       'vifib_slapos_accounting',
       'vifib_mysql_innodb_catalog',
       'vifib_core',
@@ -414,16 +418,3 @@ class testVifibMixin(ERP5TypeTestCase):
     super(testVifibMixin, self).stepTic(**kw)
 
     self.checkDivergency()
-
-class testVifibMixinSlaposCore(testVifibMixin):
-  def getBusinessTemplateList(self):
-    result = super(testVifibMixinSlaposCore, self
-      ).getBusinessTemplateList()
-    result.extend([
-      'vifib_slapos_rest_api_v1_portal_type',
-      'vifib_slapos_rest_api_v1',
-      'vifib_slapos_core_test',
-      'vifib_slapos_rest_api_v1_test'
-    ])
-    return result
-
