@@ -614,9 +614,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         portal_type=software_instance_portal_type,
         title=software_title):
       try:
-        software_instance.Item_getInstancePackingListLine(cleanup_resource)
+        cleanup_line = software_instance.Item_getInstancePackingListLine(
+          cleanup_resource)
       except ValueError:
         software_instance_list.append(software_instance)
+      else:
+        if cleanup_line.getSimulationState() != 'delivered':
+          software_instance_list.append(software_instance)
     self.assertEqual(1, len(software_instance_list))
     software_instance = software_instance_list[0]
     sequence.edit(
