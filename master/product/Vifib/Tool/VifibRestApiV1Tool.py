@@ -98,7 +98,7 @@ def supportModifiedSince(document_url_id=None, modified_property_id=None):
               document_date = getattr(self, modified_property_id)
             if document is not None:
               document_date = document.getModificationDate() or \
-                self.bobobase_modification_time()
+                document.bobobase_modification_time()
             if int(document_date.timeTime()) <= int(modified_since.timeTime()):
               # document was not modified since
               self.REQUEST.response.setStatus(304)
