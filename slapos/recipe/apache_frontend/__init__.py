@@ -76,7 +76,7 @@ class Recipe(BaseSlapRecipe):
       reference = slave_instance.get("slave_reference")
       # Set scheme (http? https?)
       # Future work may allow to choose between http and https (or both?)
-      scheme = 'https://'
+      scheme = 'http://'
 
       self.logger.info('processing slave instance: %s' % reference)
 
