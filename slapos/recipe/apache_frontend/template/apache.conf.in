@@ -102,6 +102,7 @@ Header append Vary User-Agent
   SSLProxyEngine on
   # Rewrite part
   ProxyVia On
+  ProxyPreserveHost On
   ProxyTimeout 600
   RewriteEngine On
 
