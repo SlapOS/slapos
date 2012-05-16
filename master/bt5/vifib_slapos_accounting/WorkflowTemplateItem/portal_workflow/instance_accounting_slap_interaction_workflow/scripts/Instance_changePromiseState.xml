@@ -129,7 +129,7 @@ if (partition is None):\n
 else:\n
   assert delivery is not None\n
 \n
-  if (delivery.getPortalType() == "Sale Order"):\n
+  if (delivery.getPortalType() == "Sale Order" and delivery.getSimulationState() == "confirmed"):\n
     if (state == stopped):\n
       # Try to find the setup packing list created from the open order to\n
       # associate it instead of the sale order\n
@@ -176,8 +176,7 @@ else:\n
       elif (state == destroyed):\n
         packing_list.confirm()\n
 \n
-  else:\n
-    assert delivery.getPortalType() == "Sale Packing List"\n
+  elif delivery.getPortalType() == "Sale Packing List":\n
     line_list = delivery.contentValues(portal_type="Sale Packing List Line")\n
     assert len(line_list) == 1\n
     line = line_list[0]\n
