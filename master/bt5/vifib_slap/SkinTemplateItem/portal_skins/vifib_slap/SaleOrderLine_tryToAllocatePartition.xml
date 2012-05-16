@@ -106,7 +106,7 @@ if sale_order.getSimulationState() == \'ordered\':\n
         # order not ready yet\n
         pass\n
       else:\n
-        sale_order.setStartDate(DateTime())\n
+        sale_order.setStopDate(DateTime())\n
         sale_order.confirm()\n
         software_instance.allocatePartition(computer_partition=computer_partition)\n
 </string> </value>
