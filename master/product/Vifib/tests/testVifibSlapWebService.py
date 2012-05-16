@@ -1085,6 +1085,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLogout
 
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
       Tic
       Logout
@@ -1169,7 +1170,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_start_requested_computer_partition_sequence_string = \
       prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceStart \
+      SetSequenceSoftwareInstanceStateStarted \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       LoginDefaultUser \
@@ -1191,7 +1193,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_stop_requested_computer_partition_sequence_string = \
       prepare_started_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceStop \
+      SetSequenceSoftwareInstanceStateStopped \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       \
@@ -1475,6 +1478,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps
   ########################################
+
+  def stepSetSequenceSoftwareInstanceStateStopped(self, sequence, **kw):
+    sequence['software_instance_state'] = 'stopped'
+
+  def stepSetSequenceSoftwareInstanceStateStarted(self, sequence, **kw):
+    sequence['software_instance_state'] = 'started'
 
   def stepCheckComputerTradeConditionDestinationSectionListEmpty(self,
       sequence, **kw):

@@ -759,12 +759,6 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepSetSequenceSoftwareInstanceStateStopped(self, sequence, **kw):
-    sequence['software_instance_state'] = 'stopped'
-
-  def stepSetSequenceSoftwareInstanceStateStarted(self, sequence, **kw):
-    sequence['software_instance_state'] = 'started'
-
   def test_start_computer_partition_allocation_scope_close(self):
     """Check that it is possible to request stop of computer partition even
     if computer is close"""
