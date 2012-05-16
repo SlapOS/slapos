@@ -1468,6 +1468,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   create_new_user_instance_sequence_string = '\
       LoginWebUser \
+      SetSoftwareTitleRandom \
       PersonRequestSoftwareInstance \
       Tic \
       Logout \
