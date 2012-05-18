@@ -62,7 +62,7 @@ if state:\n
   query_dict[\'state\'] = state\n
 person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
 try:\n
-  token = context.getPortalObject().bearer_token_module.BearerTokenModule_addNewToken(person.getReference())\n
+  token = person.Person_getBearerToken()\n
 except ValueError:\n
   query_dict[\'error\'] = \'server_error\'\n
   if \'#\' in redirect_uri:\n
