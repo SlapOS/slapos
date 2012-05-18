@@ -121,8 +121,10 @@ if (partition is None):\n
     else:\n
       # Update the software release if it has been changed before allocation\n
       sale_order_line = delivery.contentValues(portal_type=sale_order_line_portal_type)[0]\n
-      if sale_order_line.getAggregate(portal_type=\'Software Release\') != instance.getRootSoftwareReleaseUrl():\n
-        aggregate_list = [instance.getRootSoftwareReleaseUrl(), \n
+      if sale_order_line.getAggregateValue(portal_type=\'Software Release\').getUrlString() != instance.getRootSoftwareReleaseUrl():\n
+        software_release = portal.portal_catalog.getResultValue(portal_type=\'Software Release\',\n
+          url_string=instance.getRootSoftwareReleaseUrl())\n
+        aggregate_list = [software_release.getRelativeUrl(), \n
                           instance.getRelativeUrl(),\n
                           hosting_subscription.getRelativeUrl()]\n
         sale_order_line.edit(aggregate_list=aggregate_list)\n
