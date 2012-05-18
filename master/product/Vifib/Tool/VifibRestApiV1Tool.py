@@ -468,7 +468,7 @@ class VifibRestApiV1Tool(BaseTool):
   def __api_discovery(self):
     self.REQUEST.response.setHeader('Last-Modified',
       rfc1123_date(self.api_modification_date))
-    self.REQUEST.response.setHeader('Cache-Control', 'public')
+    self.REQUEST.response.setHeader('Cache-Control', 'must-revalidate')
     self.REQUEST.response.setStatus(200)
     d = {
       "discovery": {
