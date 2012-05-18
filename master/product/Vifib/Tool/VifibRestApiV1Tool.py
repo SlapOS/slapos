@@ -318,6 +318,11 @@ class InstancePublisher(GenericPublisher):
       ):
       request_dict[k_i] = self.jbody[k_j]
 
+    if request_dict['state'] not in ['started', 'stopped', 'destroyed']:
+      self.REQUEST.response.setStatus(400)
+      self.REQUEST.response.setBody(jsonify(
+        {'status': 'Status shall be one of: started, stopped, destroyed.'}))
+      return self.REQUEST.response
     try:
       self.restrictedTraverse(self.person_url
         ).requestSoftwareInstance(**request_dict)

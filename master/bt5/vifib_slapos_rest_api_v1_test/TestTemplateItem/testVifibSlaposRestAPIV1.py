@@ -282,6 +282,33 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
       self.json_response)
     self.assertPersonRequestSimulatorEmpty()
 
+  def test_incorrect_status(self):
+    kwargs = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'badstatus',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': True}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({
+        "status": "Status shall be one of: started, stopped, destroyed.",
+        },
+      self.json_response)
+    self.assertPersonRequestSimulatorEmpty()
+
   def test_correct(self):
     kwargs = {
       'parameter': {
