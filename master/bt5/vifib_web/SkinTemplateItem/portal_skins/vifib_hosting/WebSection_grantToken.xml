@@ -62,7 +62,7 @@ if state:\n
   query_dict[\'state\'] = state\n
 person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
 try:\n
-  token = person.Person_getBearerToken()\n
+  token, expires = person.Person_getBearerToken()\n
 except ValueError:\n
   query_dict[\'error\'] = \'server_error\'\n
   if \'#\' in redirect_uri:\n
@@ -72,9 +72,9 @@ except ValueError:\n
   return context.REQUEST.RESPONSE.redirect( redirect_uri )\n
 \n
 query_dict = dict(\n
-  access_token=token.getReference(),\n
+  access_token=token,\n
   token_type=\'bearer\',\n
-  expires_in=str(int((token.getExpirationDate() - DateTime()) * 24 * 3600)),\n
+  expires_in=str(int((expires - DateTime().timeTime()))),\n
 )\n
 if state:\n
   query_dict[\'state\'] = state\n
