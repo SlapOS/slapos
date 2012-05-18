@@ -72,11 +72,13 @@ link-binary =
   {{ parameter_dict['coreutils'] }}/bin/ls
   {{ parameter_dict['coreutils'] }}/bin/tr
   {{ parameter_dict['coreutils'] }}/bin/uname
+  {{ parameter_dict['coreutils'] }}/bin/dirname
   {{ parameter_dict['imagemagick'] }}/bin/convert
   {{ parameter_dict['imagemagick'] }}/bin/identify
   {{ parameter_dict['poppler'] }}/bin/pdfinfo
   {{ parameter_dict['poppler'] }}/bin/pdftotext
   {{ parameter_dict['poppler'] }}/bin/pdftohtml
+  {{ parameter_dict['pdftk'] }}/bin/pdftk
 
 # rest of parts are candidates for some generic stuff
 [basedirectory]
