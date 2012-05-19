@@ -33,8 +33,6 @@ application_hostname = %(ip)s
 # OpenOffice Port
 openoffice_port = %(openoffice_port)s
 
-# PATH is required for imagemagick and others conversors
-env-PATH = %(PATH)s
 # LD_LIBRARY_PATH passed to OpenOffice
 env-LD_LIBRARY_PATH = %(LD_LIBRARY_PATH)s
 env-FONTCONFIG_FILE = %(FONTCONFIG_FILE)s
