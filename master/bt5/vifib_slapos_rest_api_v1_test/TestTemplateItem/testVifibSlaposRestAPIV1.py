@@ -81,6 +81,9 @@ class VifibSlaposRestAPIV1MixinBase(TestVifibSlapWebServiceMixin):
         'Content-Type': 'application/json',
       })
 
+  def beforeTearDown(self):
+    pass
+
   def prepareResponse(self):
     self.response = self.connection.getresponse()
     self.response_data = self.response.read()
