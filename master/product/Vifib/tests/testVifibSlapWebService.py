@@ -999,10 +999,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_computer = """
       LoginTestVifibAdmin
       CustomerRegisterNewComputer
-      Tic
+      CleanTic
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPublic
-      Tic
+      CleanTic
       CheckComputerTradeConditionDestinationSectionListEmpty
       Logout
   """
@@ -3695,11 +3695,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def _checkSoftwareInstanceAndRelatedPartition(self, software_instance,
       partition_portal_type=computer_partition_portal_type):
-    # There should be only one Sale Packing List Line
+    # There should be two Sale Packing List Line
     sale_packing_list_line_list = software_instance\
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(1, len(sale_packing_list_line_list))
+    self.assertEqual(2, len(sale_packing_list_line_list))
     sale_packing_list_line = sale_packing_list_line_list[0]
 
     # This Sale Packing List Line shall have only one Computer Partition
@@ -3709,11 +3709,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     computer_partition = computer_partition_list[0]
 
-    # This Computer Partition shall have only Sale Packing List Line related
+    # This Computer Partition shall have two Sale Packing List Line related
     computer_partition_sale_packing_list_line_list = computer_partition\
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
+    self.assertEqual(2, len(computer_partition_sale_packing_list_line_list))
 
   def stepCheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition(self,
     sequence, **kw):
