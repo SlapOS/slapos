@@ -511,6 +511,16 @@ class VifibRestApiV1Tool(BaseTool):
     self.REQUEST.response.setHeader('Cache-Control', 'must-revalidate')
     self.REQUEST.response.setStatus(200)
     d = {
+      "computer_update": {
+        "authentication": True,
+        "url": '{computer_url}',
+        "method": "PUT",
+        "required": {},
+        "optional": {
+          "software": "list",
+          "address": "list"
+        }
+      },
       "discovery": {
         "authentication": False,
         "url": self.absolute_url(),
