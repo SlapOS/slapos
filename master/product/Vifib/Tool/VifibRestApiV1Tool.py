@@ -179,7 +179,8 @@ def responseSupport(anonymous=False):
             transaction.abort()
             LOG('VifibRestApiV1Tool', ERROR,
               'Currenty logged in user %r has no Person document.'%
-                self.getPortalObject().getAuthenticatedMember())
+                str(self.getPortalObject().portal_membership
+                  .getAuthenticatedMember()))
             self.REQUEST.response.setStatus(500)
             self.REQUEST.response.setBody(jsonify({'error':
               'There is system issue, please try again later.'}))
