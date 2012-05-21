@@ -190,37 +190,41 @@ def responseSupport(anonymous=False):
     return wrapperResponseSupport
   return outer
 
-def extractInstance(fn):
-  def wrapperExtractInstance(self, *args, **kwargs):
-    if not self.REQUEST['traverse_subpath']:
-      self.REQUEST.response.setStatus(404)
+def extractDocument(portal_type):
+  if not isinstance(portal_type, (list, tuple)):
+    portal_type = [portal_type]
+  def outer(fn):
+    def wrapperExtractDocument(self, *args, **kwargs):
+      if not self.REQUEST['traverse_subpath']:
+        self.REQUEST.response.setStatus(404)
+        return self.REQUEST.response
+      path = self.REQUEST['traverse_subpath'][:2]
+      try:
+        document = self.getPortalObject().restrictedTraverse(path)
+        if getattr(document, 'getPortalType', None) is None or \
+          document.getPortalType() not in portal_type:
+          raise WrongRequest('%r is neiter of %s' % (path, ', '.join(
+            portal_type)))
+        self.document_url = document.getRelativeUrl()
+      except WrongRequest:
+        LOG('VifibRestApiV1Tool', ERROR,
+          'Problem while trying to find document:', error=True)
+        self.REQUEST.response.setStatus(404)
+      except (Unauthorized, KeyError):
+        self.REQUEST.response.setStatus(404)
+      except Exception:
+        LOG('VifibRestApiV1Tool', ERROR,
+          'Problem while trying to find instance:', error=True)
+        self.REQUEST.response.setStatus(500)
+        self.REQUEST.response.setBody(jsonify({'error':
+          'There is system issue, please try again later.'}))
+      else:
+        self.REQUEST['traverse_subpath'] = self.REQUEST['traverse_subpath'][2:]
+        return fn(self, *args, **kwargs)
       return self.REQUEST.response
-    instance_path = self.REQUEST['traverse_subpath'][:2]
-    try:
-      software_instance = self.getPortalObject().restrictedTraverse(instance_path)
-      if getattr(software_instance, 'getPortalType', None) is None or \
-        software_instance.getPortalType() not in ('Software Instance',
-          'Slave Instance'):
-        raise WrongRequest('%r is not an instance' % instance_path)
-      self.software_instance_url = software_instance.getRelativeUrl()
-    except WrongRequest:
-      LOG('VifibRestApiV1Tool', ERROR,
-        'Problem while trying to find instance:', error=True)
-      self.REQUEST.response.setStatus(404)
-    except (Unauthorized, KeyError):
-      self.REQUEST.response.setStatus(404)
-    except Exception:
-      LOG('VifibRestApiV1Tool', ERROR,
-        'Problem while trying to find instance:', error=True)
-      self.REQUEST.response.setStatus(500)
-      self.REQUEST.response.setBody(jsonify({'error':
-        'There is system issue, please try again later.'}))
-    else:
-      self.REQUEST['traverse_subpath'] = self.REQUEST['traverse_subpath'][2:]
-      return fn(self, *args, **kwargs)
-    return self.REQUEST.response
-  wrapperExtractInstance.__doc__ = fn.__doc__
-  return wrapperExtractInstance
+    wrapperExtractDocument.__doc__ = fn.__doc__
+    return wrapperExtractDocument
+  return outer
 
 class GenericPublisher(Implicit):
   @responseSupport(True)
@@ -246,13 +250,13 @@ class InstancePublisher(GenericPublisher):
     title=(unicode, encode_utf8),
     connection=dict
   ), ['title', 'connection'])
-  @extractInstance
+  @extractDocument(['Software Instance', 'Slave Instance'])
   def PUT(self):
     """Instance PUT support"""
     d = {}
     try:
       self.REQUEST.response.setStatus(204)
-      software_instance = self.restrictedTraverse(self.software_instance_url)
+      software_instance = self.restrictedTraverse(self.document_url)
       if 'title' in self.jbody and \
           software_instance.getTitle() != self.jbody['title']:
         software_instance.setTitle(self.jbody['title'])
@@ -279,10 +283,10 @@ class InstancePublisher(GenericPublisher):
   @requireHeader({'Accept': 'application/json',
     'Content-Type': 'application/json'})
   @requireJson(dict(log=unicode))
-  @extractInstance
+  @extractDocument(['Software Instance', 'Slave Instance'])
   def __bang(self):
     try:
-      self.restrictedTraverse(self.software_instance_url
+      self.restrictedTraverse(self.document_url
         ).reportComputerPartitionBang(comment=self.jbody['log'])
     except Exception:
       LOG('VifibRestApiV1Tool', ERROR,
@@ -340,11 +344,11 @@ class InstancePublisher(GenericPublisher):
     return self.REQUEST.response
 
   @requireHeader({'Accept': 'application/json'})
-  @extractInstance
-  @supportModifiedSince('software_instance_url')
+  @extractDocument(['Software Instance', 'Slave Instance'])
+  @supportModifiedSince('document_url')
   def __instance_info(self):
     certificate = False
-    software_instance = self.restrictedTraverse(self.software_instance_url)
+    software_instance = self.restrictedTraverse(self.document_url)
     if self.REQUEST['traverse_subpath'] and self.REQUEST[
         'traverse_subpath'][-1] == 'certificate':
       certificate = True
