@@ -1385,3 +1385,162 @@ class TestGET_discovery(VifibSlaposRestAPIV1Mixin):
     self.assertCacheControlHeader()
     self.assertResponseJson()
     self.assertAPIDiscoveryDict()
+
+class TestComputerPUT(VifibSlaposRestAPIV1MixinBase):
+  def createComputer(self):
+    computer = self.cloneByPath(
+      'computer_module/template_computer')
+    computer.edit(reference='C' + self.test_random_id)
+    computer.validate()
+    computer.manage_setLocalRoles(computer.getReference(),
+      ['Assignor'])
+    transaction.commit()
+    computer.recursiveImmediateReindexObject()
+    transaction.commit()
+    return computer
+
+  def afterSetUp(self):
+    super(TestComputerPUT, self).afterSetUp()
+    self.computer = self.createComputer()
+    self.computer_reference = self.computer.getReference()
+    self.computer_put_simulator = tempfile.mkstemp()[1]
+    self.computer.Computer_updateFromJson = Simulator(self.computer_put_simulator,
+      'Computer_updateFromJson')
+    transaction.commit()
+
+  def beforeTearDown(self):
+    super(TestComputerPUT, self).beforeTearDown()
+    if os.path.exists(self.computer_put_simulator):
+      os.unlink(self.computer_put_simulator)
+
+  def assertComputerPUTSimulator(self, l):
+    stored = eval(open(self.computer_put_simulator).read())
+    self.assertEqual(stored, l)
+    # check that method is called with strings, not unicodes
+    for l_ in l[0]['recargs'][0].itervalues():
+      for el in l_:
+        self.assertEqual(
+          set([type(q) for q in el.itervalues()]),
+          set([str])
+        )
+
+  def assertComputerPUTSimulatorEmpty(self):
+    self.assertEqual('', open(self.computer_put_simulator).read())
+
+  def test(self):
+    d = {
+      "partition": [
+        {
+          "title": "part0",
+          "public_ip": "::0",
+          "private_ip": "127.0.0.0",
+          "tap_interface": "tap0"
+        }
+      ],
+      "software": [
+        {
+          "software_release": "software_release",
+          "status": "uninstalled",
+          "log": "Installation log"
+        }
+      ]
+    }
+
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertComputerPUTSimulator([
+      {'recmethod': 'Computer_updateFromJson',
+      'recargs': ({
+        'partition':
+          [{
+            'public_ip': '::0',
+            'tap_interface': 'tap0',
+            'private_ip': '127.0.0.0',
+            'title': 'part0'}],
+        'software':
+          [{
+            'status': 'uninstalled',
+            'software_release': 'software_release',
+            'log': 'Installation log'}]},),
+      'reckwargs': {}}])
+
+  def test_not_logged_in(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]))
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(401)
+    self.assertTrue(self.response.getheader('Location') is not None)
+    auth = self.response.getheader('WWW-Authenticate')
+    self.assertTrue(auth is not None)
+    self.assertTrue('Bearer realm="' in auth)
+    self.assertComputerPUTSimulatorEmpty()
+
+  def test_no_json(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
+    self.assertComputerPUTSimulatorEmpty()
+
+  def test_bad_json(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      body='This is not JSON',
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
+    self.assertComputerPUTSimulatorEmpty()
+
+  def test_empty_json(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      body='{}',
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertComputerPUTSimulatorEmpty()
+
+  def test_future_compat(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      body=json.dumps({'ignore':'me'}),
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertComputerPUTSimulatorEmpty()
+
+  def test_software_release_status(self):
+    raise NotImplementedError
+
+  def test_only_partition(self):
+    raise NotImplementedError
+
+  def test_only_software(self):
+    raise NotImplementedError
+
+  def test_partition_object_incorrect(self):
+    raise NotImplementedError
+
+  def test_software_object_incorrect(self):
+    raise NotImplementedError
