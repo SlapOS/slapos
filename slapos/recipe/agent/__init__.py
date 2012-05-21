@@ -88,11 +88,17 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
 
     agent_crond_path = os.path.join(self.crond, "agent")
     agent_crond = open(agent_crond_path, "w")
-    agent_crond.write("*/3 * * * * %s -S %s" % \
+    agent_crond.write("*/5 * * * * %s -S %s\n" % \
       (self.options["python_binary"],
         "%s --pidfile=%s %s" % \
           (self.options["agent_binary"], self.options["pidfile"],
             configuration_path)))
+    agent_crond.write("1 0 * * * %s -S %s %s\n" % \
+      (self.options["python_binary"],
+          self.options["report_start"], configuration_path))
+    agent_crond.write("59 23 * * * %s -S %s %s\n" % \
+      (self.options["python_binary"],
+          self.options["report_stop"], configuration_path))
     agent_crond.close()
 
     return self.path_list + [configuration_path, key_filepath, cert_filepath, agent_crond_path]
