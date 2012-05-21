@@ -461,6 +461,9 @@ class ComputerPublisher(GenericPublisher):
               error_list.append('Missing key "%s".' % k)
             elif not isinstance(dict_[k], unicode):
               error_list.append('Key "%s" is not unicode.' % k)
+            elif k == 'status' and dict_[k] not in ['installed',
+              'uninstalled', 'error']:
+              error_list.append('Status "%s" is incorrect.' % dict_[k])
         if len(error_list) > 0:
           error_dict['%s_%s' % (prefix, no)] = error_list
         no += 1
