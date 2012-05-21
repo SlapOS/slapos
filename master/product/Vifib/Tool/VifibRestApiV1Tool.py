@@ -393,7 +393,6 @@ class InstancePublisher(GenericPublisher):
     return self.REQUEST.response
 
   software_instance_module = 'software_instance_module'
-  @supportModifiedSince('software_instance_module')
   @requireHeader({'Accept': 'application/json'})
   def __instance_list(self):
     kw = dict(
@@ -409,10 +408,6 @@ class InstancePublisher(GenericPublisher):
       # no results, so nothing to return
       self.REQUEST.response.setStatus(204)
     else:
-      self.REQUEST.response.setHeader('Last-Modified',
-        rfc1123_date(self.getPortalObject().software_instance_module\
-          .bobobase_modification_time()))
-      self.REQUEST.response.setHeader('Cache-Control', 'must-revalidate')
       self.REQUEST.response.setStatus(200)
       self.REQUEST.response.setBody(jsonify(d))
     return self.REQUEST.response
