@@ -659,8 +659,21 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     )
 
   def stepRequestSoftwareInstanceDestroy(self, sequence, **kw):
-    self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestDestroyComputerPartition()
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestDestroy(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestSoftwareInstanceDestroyRaisesValueError(self, sequence, **kw):
     self.assertRaises(ValueError, self.portal.portal_catalog.getResultValue(
@@ -970,16 +983,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       LoginTestVifibDeveloper
       SelectNewSoftwareReleaseUri
       CreateSoftwareRelease
-      Tic
+      CleanTic
       SubmitSoftwareRelease
-      Tic
+      CleanTic
       CreateSoftwareProduct
-      Tic
+      CleanTic
       ValidateSoftwareProduct
-      Tic
+      CleanTic
       SetSoftwareProductToSoftwareRelease
       PublishByActionSoftwareRelease
-      Tic
+      CleanTic
       Logout
   """
 
@@ -997,7 +1010,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_formated_computer = prepare_computer + """
       SlapLoginCurrentComputer
       FormatComputer
-      Tic
+      CleanTic
       SlapLogout
   """
 
