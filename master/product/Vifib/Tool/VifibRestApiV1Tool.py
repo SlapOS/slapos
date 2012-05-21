@@ -448,6 +448,36 @@ class ComputerPublisher(GenericPublisher):
   def PUT(self):
     """Computer PUT support"""
     computer = self.restrictedTraverse(self.document_url)
+    error_dict = {}
+    def getErrorDict(list_, key_list, prefix):
+      no = 0
+      for dict_ in list_:
+        error_list = []
+        if not isinstance(dict_, dict):
+          error_list.append('Not a dict.')
+        else:
+          for k in key_list:
+            if k not in dict_:
+              error_list.append('Missing key "%s".' % k)
+            elif not isinstance(dict_[k], unicode):
+              error_list.append('Key "%s" is not unicode.' % k)
+        if len(error_list) > 0:
+          error_dict['%s_%s' % (prefix, no)] = error_list
+        no += 1
+      return error_dict
+
+    error_dict = {}
+    if 'partition' in self.jbody:
+      error_dict.update(getErrorDict(self.jbody['partition'],
+        ('title', 'public_ip', 'private_ip', 'tap_interface'), 'partition'))
+    if 'software' in self.jbody:
+      error_dict.update(getErrorDict(self.jbody['software'],
+        ('software_release', 'status', 'log'), 'software'))
+    if error_dict:
+      self.REQUEST.response.setStatus(400)
+      self.REQUEST.response.setBody(jsonify(error_dict))
+      return self.REQUEST.response
+
     try:
       computer.Computer_updateFromJson(self.jbody)
     except Exception:
