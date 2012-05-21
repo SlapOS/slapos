@@ -432,6 +432,32 @@ class InstancePublisher(GenericPublisher):
         self.__instance_list()
 
 
+class ComputerPublisher(GenericPublisher):
+  @responseSupport()
+  @requireHeader({'Accept': 'application/json',
+    'Content-Type': 'application/json'})
+  @extractDocument('Computer')
+  @requireJson(dict(
+    partition=list,
+    software=list
+  ), ['partition', 'software'])
+  def PUT(self):
+    """Computer PUT support"""
+    computer = self.restrictedTraverse(self.document_url)
+    try:
+      computer.Computer_updateFromJson(self.jbody)
+    except Exception:
+      transaction.abort()
+      LOG('VifibRestApiV1Tool', ERROR,
+        'Problem while trying to update computer:', error=True)
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(jsonify({'error':
+        'There is system issue, please try again later.'}))
+      return self.REQUEST.response
+    self.REQUEST.response.setStatus(204)
+    return self.REQUEST.response
+
+
 class VifibRestApiV1Tool(BaseTool):
   """SlapOS REST API V1 Tool"""
 
@@ -447,6 +473,12 @@ class VifibRestApiV1Tool(BaseTool):
   def instance(self):
     """Instance publisher"""
     return InstancePublisher().__of__(self)
+
+  security.declarePublic('computer')
+  @ComputedAttribute
+  def computer(self):
+    """Computer publisher"""
+    return ComputerPublisher().__of__(self)
 
   security.declarePrivate('manage_afterAdd')
   def manage_afterAdd(self, item, container) :
