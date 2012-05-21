@@ -1531,16 +1531,156 @@ class TestComputerPUT(VifibSlaposRestAPIV1MixinBase):
     self.assertComputerPUTSimulatorEmpty()
 
   def test_software_release_status(self):
-    raise NotImplementedError
+    d = {
+      "partition": [
+        {
+          "title": "part0",
+          "public_ip": "::0",
+          "private_ip": "127.0.0.0",
+          "tap_interface": "tap0"
+        }
+      ],
+      "software": [
+        {
+          "software_release": "software_release",
+          "status": "wrong status",
+          "log": "Installation log"
+        }
+      ]
+    }
+
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'software_0': ['Status "wrong status" is incorrect.']},
+      self.json_response)
+    self.assertComputerPUTSimulatorEmpty()
 
   def test_only_partition(self):
-    raise NotImplementedError
+    d = {
+      "partition": [
+        {
+          "title": "part0",
+          "public_ip": "::0",
+          "private_ip": "127.0.0.0",
+          "tap_interface": "tap0"
+        }
+      ]
+    }
+
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertComputerPUTSimulator([
+      {'recmethod': 'Computer_updateFromJson',
+      'recargs': ({
+        'partition':
+          [{
+            'public_ip': '::0',
+            'tap_interface': 'tap0',
+            'private_ip': '127.0.0.0',
+            'title': 'part0'}],
+        },),
+      'reckwargs': {}}])
 
   def test_only_software(self):
-    raise NotImplementedError
+    d = {
+      "software": [
+        {
+          "software_release": "software_release",
+          "status": "uninstalled",
+          "log": "Installation log"
+        }
+      ]
+    }
+
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertComputerPUTSimulator([
+      {'recmethod': 'Computer_updateFromJson',
+      'recargs': ({
+        'software':
+          [{
+            'status': 'uninstalled',
+            'software_release': 'software_release',
+            'log': 'Installation log'}]},),
+      'reckwargs': {}}])
 
   def test_partition_object_incorrect(self):
-    raise NotImplementedError
+    d = {
+      "partition": [
+        {
+          "title": "part0",
+          "public_ip": "::0",
+          "private_ip": "127.0.0.0"
+        }
+      ],
+      "software": [
+        {
+          "software_release": "software_release",
+          "status": "uninstalled",
+          "log": "Installation log"
+        }
+      ]
+    }
+
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'partition_0': ['Missing key "tap_interface".']},
+      self.json_response)
+    self.assertComputerPUTSimulatorEmpty()
 
   def test_software_object_incorrect(self):
-    raise NotImplementedError
+    d = {
+      "partition": [
+        {
+          "title": "part0",
+          "public_ip": "::0",
+          "private_ip": "127.0.0.0",
+          "tap_interface": "tap0"
+        }
+      ],
+      "software": [
+        {
+          "software_release": "software_release",
+          "status": "uninstalled",
+        }
+      ]
+    }
+
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'computer',
+        self.computer.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.computer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'software_0': ['Missing key "log".']},
+      self.json_response)
+    self.assertComputerPUTSimulatorEmpty()
