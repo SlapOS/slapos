@@ -467,27 +467,32 @@ class ComputerPublisher(GenericPublisher):
       return error_dict
 
     error_dict = {}
+    transmitted = False
     if 'partition' in self.jbody:
       error_dict.update(getErrorDict(self.jbody['partition'],
         ('title', 'public_ip', 'private_ip', 'tap_interface'), 'partition'))
+      transmitted = True
     if 'software' in self.jbody:
       error_dict.update(getErrorDict(self.jbody['software'],
         ('software_release', 'status', 'log'), 'software'))
+      transmitted = True
+      # XXX: Support status as enum.
     if error_dict:
       self.REQUEST.response.setStatus(400)
       self.REQUEST.response.setBody(jsonify(error_dict))
       return self.REQUEST.response
 
-    try:
-      computer.Computer_updateFromJson(self.jbody)
-    except Exception:
-      transaction.abort()
-      LOG('VifibRestApiV1Tool', ERROR,
-        'Problem while trying to update computer:', error=True)
-      self.REQUEST.response.setStatus(500)
-      self.REQUEST.response.setBody(jsonify({'error':
-        'There is system issue, please try again later.'}))
-      return self.REQUEST.response
+    if transmitted:
+      try:
+        computer.Computer_updateFromJson(self.jbody)
+      except Exception:
+        transaction.abort()
+        LOG('VifibRestApiV1Tool', ERROR,
+          'Problem while trying to update computer:', error=True)
+        self.REQUEST.response.setStatus(500)
+        self.REQUEST.response.setBody(jsonify({'error':
+          'There is system issue, please try again later.'}))
+        return self.REQUEST.response
     self.REQUEST.response.setStatus(204)
     return self.REQUEST.response
 
