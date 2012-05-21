@@ -31,6 +31,7 @@
 from Acquisition import Implicit
 from Products.ERP5Type.Tool.BaseTool import BaseTool
 from AccessControl import ClassSecurityInfo, getSecurityManager, Unauthorized
+from Products.Vifib.VifibMachineAuthenticationPlugin import getUserByLogin
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type import Permissions
 from ComputedAttribute import ComputedAttribute
@@ -174,18 +175,20 @@ def responseSupport(anonymous=False):
             .portal_preferences.getPreferredRestApiV1TokenServerUrl())
           return self.REQUEST.response
         else:
-          person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
-          if person is None:
+          user_name = self.getPortalObject().portal_membership\
+            .getAuthenticatedMember()
+          user_document = getUserByLogin(self.getPortalObject(),
+            str(user_name))
+          if len(user_document) != 1:
             transaction.abort()
             LOG('VifibRestApiV1Tool', ERROR,
-              'Currenty logged in user %r has no Person document.'%
-                str(self.getPortalObject().portal_membership
-                  .getAuthenticatedMember()))
+              'Currenty logged in user %r wrong document list %r.'%
+                (user_name, user_document))
             self.REQUEST.response.setStatus(500)
             self.REQUEST.response.setBody(jsonify({'error':
               'There is system issue, please try again later.'}))
             return self.REQUEST.response
-          self.person_url = person.getRelativeUrl()
+          self.user_url = user_document[0].getRelativeUrl()
       return fn(self, *args, **kwargs)
     wrapperResponseSupport.__doc__ = fn.__doc__
     return wrapperResponseSupport
@@ -329,7 +332,7 @@ class InstancePublisher(GenericPublisher):
         {'status': 'Status shall be one of: started, stopped, destroyed.'}))
       return self.REQUEST.response
     try:
-      self.restrictedTraverse(self.person_url
+      self.restrictedTraverse(self.user_url
         ).requestSoftwareInstance(**request_dict)
     except Exception:
       transaction.abort()
