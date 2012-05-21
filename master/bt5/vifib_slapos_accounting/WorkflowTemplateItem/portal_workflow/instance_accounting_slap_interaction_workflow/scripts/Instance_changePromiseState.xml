@@ -54,6 +54,7 @@
 hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
 person_relative_url = hosting_subscription.getDestinationSection()\n
 portal = instance.getPortalObject()\n
+isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
 \n
 # Check if instance is allocated\n
 partition = instance.getAggregate(portal_type="Computer Partition")\n
@@ -214,6 +215,8 @@ else:\n
       elif (state == stopped):\n
         delivery.stop()\n
       elif (state == destroyed):\n
+        if isTransitionPossible(delivery, "stop"):\n
+          delivery.stop()\n
         delivery.deliver()\n
         new_delivery = letsclone(cleanup_service_relative_url)\n
         new_delivery.confirm()\n
