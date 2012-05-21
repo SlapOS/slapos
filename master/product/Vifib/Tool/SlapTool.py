@@ -778,10 +778,18 @@ class SlapTool(BaseTool):
     """
     Reports that Computer Partition is destroyed
     """
-    software_instance = self._getSoftwareInstanceForComputerPartition(
+    instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
         computer_partition_id)
-    return software_instance.destroyComputerPartition()
+    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
+      if line.getResource() in [
+          portal.portal_preferences.getPreferredInstanceCleanupResource()]:
+        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
+          delivery.stop()
+        delivery.deliver()
 
   @convertToREST
   def _setComputerPartitionConnectionXml(self, computer_id,
