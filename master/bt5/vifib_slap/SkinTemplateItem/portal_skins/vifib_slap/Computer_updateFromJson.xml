@@ -91,7 +91,18 @@ def updatePartitionList(computer, partition_list):\n
     partition.deleteContent([q.getId() for q in to_delete_list])\n
 \n
 def updateSoftwareList(computer, software_list):\n
-  pass\n
+  for software_dict in software_list:\n
+    status = software_dict[\'status\']\n
+    try:\n
+      if status == \'installed\':\n
+        computer.stopSoftwareReleaseInstallation(software_release_url=software_dict[\'software_release\'], comment=software_dict[\'log\'])\n
+      elif status == \'uninstalled\':\n
+        computer.cleanupSoftwareReleaseInstallation(software_release_url=software_dict[\'software_release\'], comment=software_dict[\'log\'])\n
+      elif status == \'error\':\n
+        computer.reportSoftwareReleaseInstallationError(software_release_url=software_dict[\'software_release\'], comment=software_dict[\'log\'])\n
+    except ValueError:\n
+      # BBB: Underlying code is state based, does not support multiple information\n
+      pass\n
 \n
 if \'partition\' in computer_json:\n
   updatePartitionList(context, computer_json[\'partition\'])\n
