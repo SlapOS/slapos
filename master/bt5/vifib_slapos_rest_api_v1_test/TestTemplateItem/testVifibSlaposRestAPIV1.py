@@ -53,6 +53,10 @@ class VifibSlaposRestAPIV1MixinBase(TestVifibSlapWebServiceMixin):
     return str(self.getPortalObject().portal_ids.generateNewId(
                                      id_group=('slapos_rest_api_v1_test')))
 
+  def cloneByPath(self, path):
+    return self.portal.restrictedTraverse(path).Base_createCloneDocument(
+      batch_mode=1)
+
   def assertCacheControlHeader(self):
     self.assertEqual('must-revalidate',
       self.response.getheader('Cache-Control'))
@@ -132,10 +136,6 @@ class VifibSlaposRestAPIV1Mixin(VifibSlaposRestAPIV1MixinBase):
   def beforeTearDown(self):
     if os.path.exists(self.person_request_simulator):
       os.unlink(self.person_request_simulator)
-
-  def cloneByPath(self, path):
-    return self.portal.restrictedTraverse(path).Base_createCloneDocument(
-      batch_mode=1)
 
   def assertPersonRequestSimulatorEmpty(self):
     self.assertEqual(open(self.person_request_simulator).read(), '')
