@@ -60,6 +60,7 @@
                 <string>_setTextContent</string>
                 <string>_setSourceReference</string>
                 <string>_setSlaXml</string>
+                <string>bang</string>
               </list>
             </value>
         </item>

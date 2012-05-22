@@ -23,6 +23,7 @@
             <value>
               <tuple>
                 <string>allocate_partition</string>
+                <string>bang</string>
                 <string>rename</string>
                 <string>request_destroy</string>
                 <string>request_instance</string>

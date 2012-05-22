@@ -734,8 +734,8 @@ class SlapTool(BaseTool):
     """
     return self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id).reportComputerPartitionBang(
-                                     comment=message)
+        computer_partition_id).bang(bang_tree=True,
+                                    comment=message)
 
   @convertToREST
   def _startedComputerPartition(self, computer_id, computer_partition_id):

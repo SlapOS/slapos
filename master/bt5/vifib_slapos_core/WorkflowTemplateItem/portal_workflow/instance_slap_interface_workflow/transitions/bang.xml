@@ -24,7 +24,7 @@
         </item>
         <item>
             <key> <string>after_script_name</string> </key>
-            <value> <string>SoftwareInstance_bangSoftwareInstanceTree</string> </value>
+            <value> <string>RequestedInstance_bangInstanceTree</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -38,7 +38,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>report_computer_partition_bang</string> </value>
+            <value> <string>bang</string> </value>
         </item>
         <item>
             <key> <string>new_state_id</string> </key>
@@ -46,7 +46,7 @@
         </item>
         <item>
             <key> <string>script_name</string> </key>
-            <value> <string></string> </value>
+            <value> <string>Instance_checkConsistency</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
