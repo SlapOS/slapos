@@ -50,38 +50,29 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>if related_simulation_movement_path_list is None:\n
-  raise RuntimeError, \'related_simulation_movement_path_list is missing. Update ERP5 Product.\'\n
+            <value> <string>from Products.ERP5Type.Message import translateString\n
+if context.getPortalType() != \'Sale Packing List\':\n
+  raise TypeError(\'%r is not Sale Packing List\' % context.getPath())\n
+line = context.contentValues(portal_type=\'Sale Packing List Line\')[0]\n
 \n
-packing_list = context\n
+portal = context.getPortalObject()\n
+if line.getResource() != portal.portal_preferences.getPreferredInstanceSetupResource():\n
+  raise TypeError(\'%r is not Instance Setup Sale Packing List\' % context.getPath())\n
 \n
-try:\n
-  packing_list.PackingList_copyOrderProperties()\n
-except AttributeError:\n
-  # does not come from Order\n
-  pass\n
-\n
-# Then, modify state\n
-packing_list.Delivery_confirm()\n
-\n
-line = packing_list.contentValues(portal_type=\'Sale Packing List Line\')[0]\n
-portal = packing_list.getPortalObject()\n
-\n
-if line.getResource() == portal.portal_preferences.getPreferredInstanceSetupResource():\n
-  packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))).SalePackingList_stopInstanceSetup()\n
-\n
-# First set the packing_list in the building state\n
-packing_list.startBuilding()\n
+comment = translateString(\'Automatic transition on setup delivery.\')\n
+if portal.portal_workflow.isTransitionPossible(context, \'start\'):\n
+  context.start(comment=comment)\n
+if portal.portal_workflow.isTransitionPossible(context, \'stop\'):\n
+  context.stop(comment=comment)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>related_simulation_movement_path_list=None</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibSalePackingList_postGeneration</string> </value>
+            <value> <string>SalePackingList_stopInstanceSetup</string> </value>
         </item>
       </dictionary>
     </pickle>
