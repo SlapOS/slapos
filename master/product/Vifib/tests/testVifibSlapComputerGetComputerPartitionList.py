@@ -463,7 +463,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_stopped_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckSuccessComputerGetComputerPartitionCall \
+      CheckEmptyComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
