@@ -58,8 +58,8 @@ if state_change.kwargs[\'bang_tree\']:\n
   portal = instance.getPortalObject()\n
   hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
   portal.portal_catalog.searchAndActivate(\n
-    specialise_uid=hosting_subscription.getUid(),\n
-    path=NegatedQuery(Query(uid=instance.getPath())),\n
+    default_specialise_uid=hosting_subscription.getUid(),\n
+    path=NegatedQuery(Query(path=instance.getPath())),\n
     portal_type=["Slave Instance", "Software Instance"],\n
     method_id=\'bang\',\n
     method_kw={\'bang_tree\': False},\n
