@@ -174,6 +174,8 @@ else:\n
 \n
 predecessor_list = requester_instance.getPredecessorList() + [request_software_instance_url]\n
 uniq_predecessor_list = list(set(predecessor_list))\n
+predecessor_list.sort()\n
+uniq_predecessor_list.sort()\n
 \n
 assert predecessor_list == uniq_predecessor_list, "%s != %s" % (predecessor_list, uniq_predecessor_list)\n
 \n
