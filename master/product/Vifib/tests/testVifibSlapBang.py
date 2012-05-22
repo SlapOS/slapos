@@ -97,9 +97,9 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
   def checkSoftwareInstanceBangMessage(self, software_instance):
     bang_list = [q for q in software_instance.Base_getWorkflowHistoryItemList(
-      'software_instance_slap_interface_workflow')
-      if q.action == 'report_computer_partition_bang']
-    self.assertEqual(1, len(bang_list))
+      'instance_slap_interface_workflow')
+      if q.action == 'bang']
+    self.assertEqual(5, len(bang_list))
     self.assertEqual(self.bang_message, bang_list[0].comment)
 
   def stepCheckS0BangMessage(self, sequence, **kw):
