@@ -21,8 +21,9 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     common_kw = dict(
       software_release=sequence['software_release_uri'],
       software_type='any', instance_xml=self.minimal_correct_xml,
+      shared=False,
       sla_xml=self.minimal_correct_xml, state='stopped')
-    root_software_instance.requestSoftwareInstance(partition_reference=S1,
+    root_software_instance.requestInstance(software_title=S1,
       **common_kw)
     self.stepTic()
     self.stepCallConfirmOrderedSaleOrderAlarm()
@@ -30,13 +31,13 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
     S1_instance = self.portal.portal_catalog.getResultValue(
       portal_type='Software Instance', title=S1)
-    S1_instance.requestSoftwareInstance(partition_reference=S2, **common_kw)
+    S1_instance.requestInstance(software_title=S2, **common_kw)
     self.stepTic()
-    S1_instance.requestSoftwareInstance(partition_reference=S3, **common_kw)
+    S1_instance.requestInstance(software_title=S3, **common_kw)
     self.stepCallConfirmOrderedSaleOrderAlarm()
     self.stepTic()
 
-    root_software_instance.requestSoftwareInstance(partition_reference=S4,
+    root_software_instance.requestInstance(software_title=S4,
       **common_kw)
     self.stepTic()
     self.stepCallConfirmOrderedSaleOrderAlarm()
@@ -379,11 +380,12 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     common_kw = dict(
       software_release=sequence['software_release_uri'],
       software_type='any', instance_xml=self.minimal_correct_xml,
+      slave=False,
       state='stopped')
     self.logout()
     self.login(sequence['software_instance_reference'])
-    root_software_instance.requestSoftwareInstance(
-      partition_reference=S1,
+    root_software_instance.requestInstance(
+      software_title=S1,
       sla_xml="""<?xml version='1.0' encoding='utf-8'?>
       <instance>
         <parameter id="computer_guid">%s</parameter>
@@ -400,8 +402,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     S1_reference = S1_instance.getReference()
     self.logout()
     self.login(S1_reference)
-    S1_instance.requestSoftwareInstance(
-      partition_reference=S2,
+    S1_instance.requestInstance(
+      software_title=S2,
       sla_xml="""<?xml version='1.0' encoding='utf-8'?>
       <instance>
         <parameter id="computer_guid">%s</parameter>
@@ -419,8 +421,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.logout()
 
     self.login(S2_reference)
-    S2_instance.requestSoftwareInstance(
-      partition_reference=S3,
+    S2_instance.requestInstance(
+      software_title=S3,
       sla_xml="""<?xml version='1.0' encoding='utf-8'?>
       <instance>
         <parameter id="computer_guid">%s</parameter>
@@ -653,12 +655,13 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     common_kw = dict(
       software_release=sequence['software_release_uri'],
       software_type='any', instance_xml=self.minimal_correct_xml,
+      slave=False,
       sla_xml=self.minimal_correct_xml, state='stopped')
     self.logout()
 
     self.login(sequence['software_instance_reference'])
-    root_software_instance.requestSoftwareInstance(
-      partition_reference=S1,
+    root_software_instance.requestInstance(
+      software_title=S1,
       **common_kw)
     self.stepTic()
     self.stepCallConfirmOrderedSaleOrderAlarm()
