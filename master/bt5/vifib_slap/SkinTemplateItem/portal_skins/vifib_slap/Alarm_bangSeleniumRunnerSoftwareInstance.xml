@@ -52,7 +52,7 @@
             <key> <string>_body</string> </key>
             <value> <string>software_instance = context.restrictedTraverse(\'software_instance_module/20120413-6FDFC3\', None)\n
 if software_instance is not None:\n
-  software_instance.reportComputerPartitionBang(comment=\'Bang by alarm\')\n
+  software_instance.bang(bang_tree=True, comment=\'Bang by alarm\')\n
 </string> </value>
         </item>
         <item>
