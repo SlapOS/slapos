@@ -51,6 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>instance = state_change[\'object\']\n
+portal = instance.getPortalObject()\n
 \n
 # Get current sale order\n
 delivery = instance.getCausalityValue(portal_type=["Sale Order"])\n
