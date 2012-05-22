@@ -1228,7 +1228,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceHostingSalePackingListStopped \
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered \
       Logout \
   '
 
