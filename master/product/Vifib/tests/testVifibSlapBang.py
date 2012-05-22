@@ -50,10 +50,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     S4_instance = self.portal.portal_catalog.getResultValue(
       portal_type='Software Instance', title=S4)
 
-    S1_instance.stopComputerPartitionInstallation()
-    S2_instance.stopComputerPartitionInstallation()
-    S3_instance.stopComputerPartitionInstallation()
-    S4_instance.stopComputerPartitionInstallation()
     self.stepTic()
     sequence.edit(
       S0_uid = sequence['software_instance_uid'],
@@ -440,17 +436,14 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.logout()
 
     self.login(S1_reference)
-    S1_instance.stopComputerPartitionInstallation()
     self.stepTic()
     self.logout()
 
     self.login(S2_reference)
-    S2_instance.stopComputerPartitionInstallation()
     self.stepTic()
     self.logout()
 
     self.login(S3_reference)
-    S3_instance.stopComputerPartitionInstallation()
     self.stepTic()
     self.logout()
 
@@ -675,7 +668,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.logout()
 
     self.login(S1_reference)
-    S1_instance.stopComputerPartitionInstallation()
     self.logout()
 
     self.login(sequence['software_instance_reference'])
