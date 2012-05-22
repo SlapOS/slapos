@@ -75,7 +75,7 @@ def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
   newSecurityManager(None, self.getPortalObject().acl_users.getUserById(
     reference))
   try:
-    software_instance.reportComputerPartitionBang(comment=comment)
+    software_instance.bang(bang_tree=True, comment=comment)
   finally:
     # Restore the original user.
     setSecurityManager(sm)
