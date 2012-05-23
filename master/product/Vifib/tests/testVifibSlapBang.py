@@ -648,7 +648,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     common_kw = dict(
       software_release=sequence['software_release_uri'],
       software_type='any', instance_xml=self.minimal_correct_xml,
-      slave=False,
+      shared=False,
       sla_xml=self.minimal_correct_xml, state='stopped')
     self.logout()
 
