@@ -53,6 +53,9 @@
             <value> <string>from Products.ERP5Type.Constraint import PropertyTypeValidity\n
 from Products.CMFActivity.ActiveResult import ActiveResult\n
 \n
+if context.getId().startswith(\'template_\'):\n
+  return\n
+\n
 constraint_message_list = []\n
 \n
 if context.providesIConstraint():\n

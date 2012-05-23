@@ -23,7 +23,6 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       reference="live_test_%s" % new_id,
       url_string=self.generateNewSoftwareReleaseUrl(),
     )
-    del software_release.isIndexable
     software_release.publish()
     self.software_release = software_release
 
@@ -35,7 +34,6 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       reference="live_test_%s" % new_id,
       url_string=self.generateNewSoftwareReleaseUrl(),
     )
-    del software_release.isIndexable
     software_release.publish()
     self.software_release2 = software_release
 
@@ -47,7 +45,6 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
       reference="live_test_%s" % new_id,
       default_email_text="live_test_%s@example.org" % new_id,
     )
-    del person_user.isIndexable
 
     person_user.updateLocalRolesOnSecurityGroups()
     person_user.validate()
