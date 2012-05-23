@@ -103,7 +103,7 @@ while True:\n
   predecessor_list.extend(current_software_instance_predecessor_list)\n
 \n
 # Check if it already exists\n
-request_software_instance = portal.portal_catalog.getResultValue(\n
+request_software_instance_list = portal.portal_catalog(\n
   # Fetch all portal type, as it is not allowed to change it\n
   portal_type=["Software Instance", "Slave Instance"],\n
   title=software_title,\n
@@ -111,7 +111,15 @@ request_software_instance = portal.portal_catalog.getResultValue(\n
   # Do not fetch destroyed instances\n
   # XXX slap_state=["start_requested", "stop_requested"],\n
   validation_state="validated",\n
+  limit=2,\n
 )\n
+instance_count = len(request_software_instance_list)\n
+if instance_count == 0:\n
+  request_software_instance = None\n
+elif instance_count == 1:\n
+  request_software_instance = request_software_instance_list[0].getObject()\n
+else:\n
+  raise ValueError, "Too many instances \'%s\' found: %s" % (software_title, [x.path for x in request_software_instance_list])\n
 \n
 if (request_software_instance is None):\n
   # First time that the software instance is requested\n
