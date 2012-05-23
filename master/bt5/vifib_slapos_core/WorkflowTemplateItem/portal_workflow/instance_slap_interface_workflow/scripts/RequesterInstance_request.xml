@@ -190,11 +190,12 @@ assert predecessor_list == uniq_predecessor_list, "%s != %s" % (predecessor_list
 \n
 # update graph to reflect requested operation\n
 graph[requester_instance.getUid()] = requester_instance.getPredecessorUidList() + [request_software_instance.getUid()]\n
-requester_instance.edit(predecessor_list=predecessor_list)\n
 \n
 # check if all elements are still connected and if there is no cycle\n
 request_software_instance.checkConnected(graph, hosting_subscription.getUid())\n
 request_software_instance.checkNotCyclic(graph)\n
+\n
+requester_instance.edit(predecessor_list=predecessor_list)\n
 
 
 ]]></string> </value>
