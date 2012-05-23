@@ -101,7 +101,7 @@ if not(add_kw_kw or modify_kw_kw or remove_id_list):\n
 \n
 if previous_open_sale_order is not None:\n
   open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-  open_sale_order.setEffectiveDate(now, activate_kw=activate_kw)\n
+  open_sale_order.edit(effective_date=now, activate_kw=activate_kw)\n
   open_sale_order.order(activate_kw=activate_kw)\n
   open_sale_order.validate(activate_kw=activate_kw)\n
 \n
