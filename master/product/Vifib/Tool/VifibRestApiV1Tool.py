@@ -291,7 +291,7 @@ class InstancePublisher(GenericPublisher):
   def __bang(self):
     try:
       self.restrictedTraverse(self.document_url
-        ).reportComputerPartitionBang(comment=self.jbody['log'])
+        ).bang(bang_tree=True, comment=self.jbody['log'])
     except Exception:
       LOG('VifibRestApiV1Tool', ERROR,
         'Problem while trying to generate instance dict:', error=True)
