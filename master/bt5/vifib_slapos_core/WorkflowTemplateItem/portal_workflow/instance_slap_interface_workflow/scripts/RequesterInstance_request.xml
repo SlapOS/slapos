@@ -110,6 +110,7 @@ request_software_instance = portal.portal_catalog.getResultValue(\n
   specialise_uid=hosting_subscription.getUid(),\n
   # Do not fetch destroyed instances\n
   # XXX slap_state=["start_requested", "stop_requested"],\n
+  validation_state="validated",\n
 )\n
 \n
 if (request_software_instance is None):\n
