@@ -821,7 +821,7 @@ class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
 
 class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
   def test(self):
-    kwargs = {'log': 'This is cool log!'}
+    kwargs = {'log': 'This is cool log!', 'bang_tree': True}
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance',
       self.software_instance.getRelativeUrl(), 'bang']),
@@ -854,7 +854,7 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
 
   def test_bad_xml(self):
     self._destroySoftwareInstanceTextContentXml(self.software_instance)
-    kwargs = {'log': 'This is cool log!'}
+    kwargs = {'log': 'This is cool log!', 'bang_tree': True}
     self.connection.request(method='POST',
       url='/'.join([self.api_path, 'instance',
       self.software_instance.getRelativeUrl(), 'bang']),
@@ -950,7 +950,7 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     self.assertInstanceBangSimulatorEmpty()
 
   def test_additional_key_json(self):
-    kw_log = {'log': 'This is cool log!'}
+    kw_log = {'log': 'This is cool log!', 'bang_tree': True}
     kwargs = kw_log.copy()
     kwargs.update(**{'wrong_key': 'Be ignored'})
     self.connection.request(method='POST',
