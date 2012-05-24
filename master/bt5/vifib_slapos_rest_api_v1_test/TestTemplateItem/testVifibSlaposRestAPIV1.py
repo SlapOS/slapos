@@ -799,8 +799,8 @@ class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
   def afterSetUp(self):
     super(VifibSlaposRestAPIV1BangMixin, self).afterSetUp()
     self.instance_bang_simulator = tempfile.mkstemp()[1]
-    self.software_instance.reportComputerPartitionBang = Simulator(
-      self.instance_bang_simulator, 'reportComputerPartitionBang')
+    self.software_instance.bang = Simulator(
+      self.instance_bang_simulator, 'bang')
     transaction.commit()
 
   def beforeTearDown(self):
@@ -817,7 +817,7 @@ class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
     kwargs['comment'] = kwargs.pop('log')
     self.assertEqual(stored,
       [{'recargs': args, 'reckwargs': kwargs,
-      'recmethod': 'reportComputerPartitionBang'}])
+      'recmethod': 'bang'}])
 
 class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
   def test(self):
@@ -833,7 +833,7 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     self.assertInstanceBangSimulator((), kwargs)
 
   def test_server_side_raise(self):
-    self.software_instance.reportComputerPartitionBang = RaisingSimulator(
+    self.software_instance.bang = RaisingSimulator(
       AttributeError)
     transaction.commit()
     kwargs = {'log': 'This is cool log!'}
