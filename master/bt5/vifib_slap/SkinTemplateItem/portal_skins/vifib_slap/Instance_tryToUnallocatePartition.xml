@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>partition = instance.getAggregateValue(portal_type="Computer Partition")\n
+portal = instance.getPortalObject()\n
+if partition is not None:\n
+  # Partition may be managed by another instance at the same time\n
+  # Prevent creating two instances with the same title\n
+  tag = "allocate_%s" % partition.getRelativeUrl()\n
+  if (portal.portal_activities.countMessageWithTag(tag) == 0):\n
+    # No concurrency issue\n
+    instance.unallocatePartition()\n
+    instance_sql_list = portal.portal_catalog(\n
+                          portal_type=["Software Instance", "Slave Instance"],\n
+                          default_aggregate_uid=partition.getUid(),\n
+                        )\n
+    count = len(instance_sql_list)\n
+    if count == 0:\n
+      # Current instance should at least be cataloggued\n
+      pass\n
+    else:\n
+      can_be_free = True\n
+      for instance_sql in instance_sql_list:\n
+        new_instance = instance_sql.getObject()\n
+        if new_instance.getAggregateValue(portal_type="Computer Partition") is not None:\n
+          can_be_free = False\n
+          break\n
+      if can_be_free:\n
+        partition.markFree()\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Instance_tryToUnallocatePartition</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
