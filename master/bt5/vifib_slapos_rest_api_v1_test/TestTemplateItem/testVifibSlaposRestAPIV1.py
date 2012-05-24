@@ -1296,6 +1296,7 @@ class TestGET_discovery(VifibSlaposRestAPIV1Mixin):
   def assertAPIDiscoveryDict(self):
     self.assertSameSet(self.json_response.keys(),
       [
+        'computer_update',
         'instance_certificate',
         'request_instance',
         'instance_list',
