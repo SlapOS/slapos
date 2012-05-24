@@ -50,7 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>partition = instance.getAggregateValue(portal_type="Computer Partition")\n
+            <value> <string>instance = context\n
+partition = instance.getAggregateValue(portal_type="Computer Partition")\n
 portal = instance.getPortalObject()\n
 if partition is not None:\n
   # Partition may be managed by another instance at the same time\n
