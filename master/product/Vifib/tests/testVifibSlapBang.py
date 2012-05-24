@@ -461,14 +461,13 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
     For tree like this:
 
-    S0
+    S0 (on non public C0)
       \
-       S1
+       S1 (on non public C1)
          \
-          S2
+          S2 (on non public C0)
 
-    Where S0 and S2 are on C0 and S1 is on C1 and both are non public it shall
-    work.
+    Bang shall work from all instances.
     """
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
