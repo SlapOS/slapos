@@ -711,6 +711,26 @@ class SlapTool(BaseTool):
           delivery.stop()
         delivery.deliver()
 
+        # XXX Integrate with REST API
+        # Code duplication will be needed until SlapTool is removed
+        # revoke certificate
+        try:
+          portal.portal_certificate_authority\
+            .revokeCertificate(instance.getDestinationReference())
+        except ValueError:
+          # Ignore already revoked certificates, as OpenSSL backend is
+          # non transactional, so it is ok to allow multiple tries to destruction
+          # even if certificate was already revoked
+          pass
+
+        # remove certificate from SI
+        instance.edit(
+          ssl_key=None,
+          ssl_certificate=None,
+        )
+
+        instance.invalidate()
+
   @convertToREST
   def _setComputerPartitionConnectionXml(self, computer_id,
                                          computer_partition_id,
