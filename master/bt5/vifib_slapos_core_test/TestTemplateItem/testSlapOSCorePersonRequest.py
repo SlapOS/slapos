@@ -1,8 +1,9 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
+from Products.Vifib.tests.testVifibSlapWebService import \
+  TestVifibSlapWebServiceMixin
 import transaction
 
-class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
+class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
 
   def generateNewId(self):
     return self.getPortalObject().portal_ids.generateNewId(
@@ -14,6 +15,8 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
   def afterSetUp(self):
     portal = self.getPortalObject()
     new_id = self.generateNewId()
+
+    self.setupPortalCertificateAuthority()
 
     # Clone software release document
     software_release = portal.software_release_module.template_software_release.\
@@ -58,6 +61,9 @@ class TestSlapOSCorePersonRequest(ERP5TypeTestCase):
     self.login(person_user.getReference())
     new_person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
     self.assertEquals(person_user.getRelativeUrl(), new_person.getRelativeUrl())
+
+  def beforeTearDown(self):
+    pass
 
   def test_Person_requestSoftwareInstance_requiredParameter(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
