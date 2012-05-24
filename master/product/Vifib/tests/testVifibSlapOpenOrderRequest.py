@@ -128,6 +128,9 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetSequenceSoftwareInstanceRequestedStateDestroyed(self, sequence, **kw):
+    sequence['requested_state'] = 'destroyed'
+
   def test_person_destroy_not_instanciable_software_instance(self):
     """Check that if there is no way to instantiate software instance
     on any partition person is able to destroy it"""
@@ -166,8 +169,9 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       CheckSoftwareInstanceNoDeliveryRelated
       Logout
 
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroy
+      SlapLoginTestVifibCustomer
+      SetSequenceSoftwareInstanceRequestedStateDestroyed
+      PersonRequestSlapSoftwareInstance
       Tic
       Logout
 
