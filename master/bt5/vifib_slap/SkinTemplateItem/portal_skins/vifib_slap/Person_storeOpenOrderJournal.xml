@@ -92,7 +92,7 @@ for hosting_subscription in portal.portal_catalog(\n
     aggregate=hosting_subscription.getRelativeUrl()\n
   )\n
   add_kw_list.append((add_kw, hosting_subscription.getPath()))\n
-  if hosting_subscription.getSlapState() == \'destroyed_requested\':\n
+  if hosting_subscription.getSlapState() == \'destroy_requested\':\n
     remove_hosting_list.append((hosting_subscription.getRelativeUrl(), hosting_subscription.getPath()))\n
   try:\n
     start_date = getWorkflowDate(hosting_subscription, \'request_instance\')\n
