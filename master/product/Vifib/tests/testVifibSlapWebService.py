@@ -996,7 +996,33 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout
   """
 
-  prepare_computer = """
+  # stabilise accounting until payment is reached
+  stabilise_accounting = """
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallVifibExpandDeliveryLineAlarm
+      CleanTic
+      CallVifibTriggerBuildAlarm
+      CleanTic
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallVifibExpandDeliveryLineAlarm
+      CleanTic
+      CallVifibTriggerBuildAlarm
+      CleanTic
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallStopConfirmedSaleInvoiceTransactionAlarm
+      CleanTic
+      CallVifibExpandDeliveryLineAlarm
+      CleanTic
+      CallVifibTriggerBuildAlarm
+      CleanTic
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+  """
+
+  prepare_computer = stabilise_accounting + """
       LoginTestVifibAdmin
       CustomerRegisterNewComputer
       CleanTic
