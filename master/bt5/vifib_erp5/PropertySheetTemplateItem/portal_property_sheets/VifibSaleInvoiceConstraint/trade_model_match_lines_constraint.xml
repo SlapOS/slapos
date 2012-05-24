@@ -46,7 +46,7 @@
         </item>
         <item>
             <key> <string>message_expression_false</string> </key>
-            <value> <string>Deinfed Trade Model does not match Lines definition</string> </value>
+            <value> <string>Defined Trade Model does not match Lines definition</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
