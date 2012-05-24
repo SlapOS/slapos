@@ -3,6 +3,7 @@ Computer Partition | computer_partition_slap_interface_workflow
 Computer Partition | slap_interaction_workflow
 Computer | computer_slap_interface_workflow
 Computer | slap_interaction_workflow
+Hosting Subscription | slap_interaction_workflow
 Internal Packing List | slap_interaction_workflow
 Open Sale Order | slap_interaction_workflow
 Person | person_slap_interface_workflow

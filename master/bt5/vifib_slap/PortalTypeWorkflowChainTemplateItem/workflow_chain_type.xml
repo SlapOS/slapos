@@ -12,6 +12,10 @@
   <workflow>computer_partition_slap_interface_workflow, slap_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Hosting Subscription</type>
+  <workflow>slap_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Internal Packing List</type>
   <workflow>slap_interaction_workflow</workflow>
  </chain>
