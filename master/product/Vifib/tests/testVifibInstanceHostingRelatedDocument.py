@@ -516,7 +516,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
     # there are three invoice lines, where two share same invoice
     # and other is on other one
     first_invoice = setup_invoice_line_list[0].getParentValue()
-    second_invoice = [q.getParentValue() for q in subscription_invoice_line_list \
+    second_invoice = [q.getParentValue() for q in \
+      subscription_invoice_line_list \
       if q.getParentValue().getUid() != first_invoice.getUid()][0]
 
     # invoices shall be solved
