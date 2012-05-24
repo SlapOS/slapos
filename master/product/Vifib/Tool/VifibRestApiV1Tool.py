@@ -541,7 +541,7 @@ class VifibRestApiV1Tool(BaseTool):
     BaseTool.inheritedAttribute('manage_afterAdd')(self, item, container)
 
   # set this date to moment of API modification
-  api_modification_date = DateTime('2012/05/15 11:36 GMT+2')
+  api_modification_date = DateTime('2012/05/24 10:00 GMT+2')
 
   @supportModifiedSince(modified_property_id='api_modification_date')
   def __api_discovery(self):
