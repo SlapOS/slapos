@@ -522,6 +522,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       # Request S0
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
       Tic
       Logout
@@ -551,7 +552,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
       LoginTestVifibCustomer
-      RequestSoftwareInstanceStart
+      SetSequenceSoftwareInstanceStateStarted
+      PersonRequestSoftwareInstance
       Tic
       Logout
       LoginDefaultUser
