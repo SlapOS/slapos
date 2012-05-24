@@ -65,15 +65,12 @@ if portal.portal_activities.countMessageWithTag(tag) > 0:\n
 def storeWorkflowComment(document, comment):\n
   portal.portal_workflow.doActionFor(document, \'edit_action\', comment=comment)\n
 \n
-add_kw_kw, modify_kw_kw, hs_modify_kw_kw, remove_id_list = context.Person_getOpenOrderDifference(\n
+add_kw_kw, modify_kw_kw, remove_id_list = context.Person_getOpenOrderDifference(\n
   remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list,\n
   stop_date=stop_date, start_date_tuple_list=start_date_tuple_list)\n
 \n
 if src__== 1:\n
-  return add_kw_kw, modify_kw_kw, hs_modify_kw_kw, remove_id_list\n
-\n
-for hs, kw in hs_modify_kw_kw.iteritems():\n
-  portal.restrictedTraverse(hs).edit(activate_kw=activate_kw, **kw)\n
+  return add_kw_kw, modify_kw_kw, remove_id_list\n
 \n
 now = DateTime()\n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n

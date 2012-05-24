@@ -87,7 +87,6 @@ for (add_kw, explanation) in add_kw_list:\n
     add_kw_kw[add_kw[\'aggregate\']][\'explanation\'] = [\'Added because of %s \' % explanation]\n
 \n
 modify_kw_kw = {}\n
-hs_modify_kw_kw = {}\n
 for start_date_tuple in start_date_tuple_list:\n
   start_date_tuple, explanation = start_date_tuple[0:2], start_date_tuple[2]\n
   start_date = getClosestDate(target_date=start_date_tuple[1], precision=\'day\')\n
@@ -105,16 +104,6 @@ for start_date_tuple in start_date_tuple_list:\n
     add_kw_kw[start_date_tuple[0]][\'start_date\'] = start_date\n
     add_kw_kw[start_date_tuple[0]][\'explanation\'].append(\'Added start date beacuse of %s\' % explanation)\n
     start_date_modified = True\n
-  if start_date_modified:\n
-    hs = portal.restrictedTraverse(start_date_tuple[0])\n
-    if hs.getPeriodicityMonthDayList() != [start_date.day()]:\n
-      hs_modify_kw_kw.setdefault(start_date_tuple[0], {})\n
-      hs_modify_kw_kw[start_date_tuple[0]] = dict(\n
-        periodicity_month_day_list = [start_date.day()],\n
-        periodicity_hour_list=[0],\n
-        periodicity_minute_list=[0]\n
-      )\n
-      hs_modify_kw_kw[start_date_tuple[0]][\'explanation\'] = \'Set up because of %s\' % explanation\n
 \n
 if previous_open_sale_order is not None:\n
   for line in previous_open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
@@ -179,7 +168,7 @@ if previous_open_sale_order is not None:\n
           order_line_cancelled = True\n
       if order_line_cancelled or (line.getStartDate() is not None and line.getStopDate() is not None and line.getStartDate() < line.getStopDate()):\n
         remove_id_list.add((line.getId(), \'Removed %s\' % line.getPath()))\n
-return add_kw_kw, modify_kw_kw, hs_modify_kw_kw, list(remove_id_list)\n
+return add_kw_kw, modify_kw_kw, list(remove_id_list)\n
 
 
 ]]></string> </value>

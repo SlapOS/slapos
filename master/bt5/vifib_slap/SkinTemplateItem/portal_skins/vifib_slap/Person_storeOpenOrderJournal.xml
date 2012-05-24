@@ -50,14 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>person = context\n
+            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query\n
 portal = context.getPortalObject()\n
-catalog = portal.portal_catalog\n
-\n
-cleanup_resource_uid = portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceCleanupResource()).getUid()\n
-setup_resource_uid = portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource()).getUid()\n
-\n
-person_uid = person.getUid()\n
 \n
 kw = {}\n
 if modification_date is not None:\n
@@ -67,25 +61,17 @@ remove_hosting_list = []\n
 add_kw_list = []\n
 start_date_tuple_list = []\n
 \n
-movement_kw = kw.copy()\n
-movement_kw[\'movement.destination_uid\'] = person_uid\n
-for cleanup_line in catalog(\n
-  portal_type=\'Sale Packing List Line\',\n
-  default_resource_uid=cleanup_resource_uid,\n
-  simulation_state=\'delivered\',\n
-  **movement_kw):\n
-  aggregate = cleanup_line.getAggregate(portal_type=\'Hosting Subscription\')\n
-  if aggregate not in remove_hosting_list:\n
-    remove_hosting_list.append((aggregate, cleanup_line.getPath()))\n
+hosting_kw = kw.copy()\n
 \n
-for cancelled_line in catalog(\n
-  portal_type=\'Sale Order Line\',\n
-  default_resource_uid=setup_resource_uid,\n
-  simulation_state=\'cancelled\',\n
-  **movement_kw):\n
-  aggregate = cancelled_line.getAggregate(portal_type=\'Hosting Subscription\')\n
-  if aggregate not in remove_hosting_list:\n
-    remove_hosting_list.append((aggregate, cancelled_line.getPath()))\n
+hosting_kw[\'default_destination_section_uid\'] = context.getUid()\n
+\n
+def getWorkflowDate(document, state):\n
+  workflow_item_list = portal.portal_workflow.getInfoFor(ob=document, name=\'history\', wf_id=\'instance_slap_interface_workflow\')\n
+  for item in workflow_item_list:\n
+    if item.get(\'slap_state\') == state:\n
+      return item.get(\'time\')\n
+  raise ValueError(\'Document %s has no state %s\' % (document.getPath(), state))\n
+\n
 \n
 subscription_service_relative_url=portal.portal_preferences.getPreferredInstanceSubscriptionResource()\n
 common_add_kw = dict(\n
@@ -96,41 +82,27 @@ common_add_kw = dict(\n
   resource=subscription_service_relative_url,\n
   price=portal.restrictedTraverse(subscription_service_relative_url).getSaleSupplyLineBasePrice()\n
   )\n
-for order in catalog(\n
-  portal_type=\'Sale Order\',\n
-  simulation_state=[\'planned\', \'ordered\',\'confirmed\'],\n
-  default_destination_decision_uid=person_uid,\n
-  **kw\n
+for hosting_subscription in portal.portal_catalog(\n
+  portal_type=\'Hosting Subscription\',\n
+  **hosting_kw\n
   ):\n
-  hosting_subscription = order.getMovementList()[0].getAggregate(portal_type=\'Hosting Subscription\')\n
   add_kw = common_add_kw.copy()\n
   add_kw.update(\n
-    title=portal.restrictedTraverse(hosting_subscription).getTitle(),\n
-    aggregate=hosting_subscription\n
+    title=hosting_subscription.getTitle(),\n
+    aggregate=hosting_subscription.getRelativeUrl()\n
   )\n
-  add_kw_list.append((add_kw, order.getPath()))\n
+  add_kw_list.append((add_kw, hosting_subscription.getPath()))\n
+  if hosting_subscription.getSlapState() == \'destroyed_requested\':\n
+    remove_hosting_list.append((hosting_subscription.getRelativeUrl(), hosting_subscription.getPath()))\n
+  try:\n
+    start_date = getWorkflowDate(hosting_subscription, \'request_instance\')\n
+  except ValueError:\n
+    pass\n
+  else:\n
+    start_date_tuple_list.append((hosting_subscription.getRelativeUrl(), start_date, hosting_subscription.getPath()))\n
 \n
-def getWorkflowDate(delivery, state):\n
-  workflow_item_list = portal.portal_workflow.getInfoFor(ob=delivery, name=\'history\', wf_id=\'packing_list_workflow\')\n
-  for item in workflow_item_list:\n
-    if item.get(\'simulation_state\') == state:\n
-      return item.get(\'time\')\n
-  raise ValueError(\'Delivery %s has no state %s\' % (delivery.getPath(), state))\n
 \n
-for setup_line in catalog(\n
-  portal_type=\'Sale Packing List Line\',\n
-  default_resource_uid=setup_resource_uid,\n
-  simulation_state=[\'stopped\', \'delivered\'],\n
-  **movement_kw):\n
-  real_setup_line = catalog.getResultValue(portal_type=\'Sale Packing List Line\', simulation_state=[\'stopped\', \'delivered\'],\n
-    default_resource_uid=setup_resource_uid,\n
-    default_aggregate_uid=setup_line.getAggregateValue(portal_type=\'Hosting Subscription\').getUid(),\n
-    sort_on=((\'movement.start_date\', \'ascending\'),))\n
-  # start date shall be stopped state reach\n
-  start_date = getWorkflowDate(real_setup_line.getParentValue(), \'stopped\')\n
-  start_date_tuple_list.append((setup_line.getAggregate(portal_type=\'Hosting Subscription\'), start_date, real_setup_line.getPath()))\n
-\n
-result = person.Person_updateOpenOrder(src__=src__, remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list, start_date_tuple_list=start_date_tuple_list, stop_date=stop_date)\n
+result = context.Person_updateOpenOrder(src__=src__, remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list, start_date_tuple_list=start_date_tuple_list, stop_date=stop_date)\n
 from pprint import pformat\n
 return pformat(result)\n
 </string> </value>
