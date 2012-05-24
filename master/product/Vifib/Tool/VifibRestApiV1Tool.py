@@ -41,6 +41,7 @@ import json
 import transaction
 from App.Common import rfc1123_date
 from DateTime import DateTime
+import re
 
 class WrongRequest(Exception):
   pass
@@ -61,7 +62,7 @@ def requireHeader(header_dict):
     def wrapperRequireHeader(self, *args, **kwargs):
       problem_dict = {}
       for header, value in header_dict.iteritems():
-        if self.REQUEST.getHeader(header) != value:
+        if not re.match(value, self.REQUEST.getHeader(header)):
           problem_dict[header] = 'Header with value %r is required.' % value
       if not problem_dict:
         return fn(self, *args, **kwargs)
@@ -249,7 +250,7 @@ class InstancePublisher(GenericPublisher):
 
   @responseSupport()
   @requireHeader({'Accept': 'application/json',
-    'Content-Type': 'application/json'})
+    'Content-Type': '^application/json.*'})
   @requireJson(dict(
     title=(unicode, encode_utf8),
     connection=dict
@@ -285,7 +286,7 @@ class InstancePublisher(GenericPublisher):
     return self.REQUEST.response
 
   @requireHeader({'Accept': 'application/json',
-    'Content-Type': 'application/json'})
+    'Content-Type': '^application/json.*'})
   @requireJson(dict(log=unicode))
   @extractDocument(['Software Instance', 'Slave Instance'])
   def __bang(self):
@@ -303,7 +304,7 @@ class InstancePublisher(GenericPublisher):
     return self.REQUEST.response
 
   @requireHeader({'Accept': 'application/json',
-    'Content-Type': 'application/json'})
+    'Content-Type': '^application/json.*'})
   @requireJson(dict(
     slave=bool,
     software_release=(unicode, encode_utf8),
@@ -439,7 +440,7 @@ class InstancePublisher(GenericPublisher):
 class ComputerPublisher(GenericPublisher):
   @responseSupport()
   @requireHeader({'Accept': 'application/json',
-    'Content-Type': 'application/json'})
+    'Content-Type': '^application/json.*'})
   @extractDocument('Computer')
   @requireJson(dict(
     partition=list,
