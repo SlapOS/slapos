@@ -53,14 +53,14 @@
             <value> <string>if context.getPortalType() == \'Sale Order Line\':\n
   delivery_line = context\n
 else:\n
-  delivery_line = context.SoftwareInstance_getInstancePackingListLine(portal_type=["Sale Order Line", "Sale Packing List Line"])\n
+  delivery = context.getCausalityValue(portal_type=["Sale Order", "Sale Packing List"])\n
+  delivery_line = context.contentValues(portal_type=["Sale Order Line", "Sale Packing List Line"])[0]\n
 \n
-if delivery_line is not None:\n
-  software_release = delivery_line.getAggregateValue(portal_type=\'Software Release\')\n
-  if software_release is not None:\n
-    software_product = software_release.getAggregateValue()\n
-    if software_product is not None:\n
-      return "%s/index_html" % software_product.getDefaultImageAbsoluteUrl()\n
+software_release = delivery_line.getAggregateValue(portal_type=\'Software Release\')\n
+if software_release is not None:\n
+  software_product = software_release.getAggregateValue()\n
+  if software_product is not None:\n
+    return "%s/index_html" % software_product.getDefaultImageAbsoluteUrl()\n
 </string> </value>
         </item>
         <item>
