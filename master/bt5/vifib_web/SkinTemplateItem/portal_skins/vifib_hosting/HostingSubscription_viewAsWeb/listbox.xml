@@ -17,7 +17,6 @@
                 <string>select</string>
                 <string>selection_name</string>
                 <string>title</string>
-                <string>url_columns</string>
               </list>
             </value>
         </item>
@@ -114,10 +113,6 @@
                     <value>
                       <list>
                         <tuple>
-                          <string>action_button</string>
-                          <string>Action</string>
-                        </tuple>
-                        <tuple>
                           <string>image</string>
                           <string>image</string>
                         </tuple>
@@ -157,25 +152,6 @@
                 <item>
                     <key> <string>title</string> </key>
                     <value> <string>My Software Instances</string> </value>
-                </item>
-                <item>
-                    <key> <string>url_columns</string> </key>
-                    <value>
-                      <list>
-                        <tuple>
-                          <string>start_button</string>
-                          <string>SoftwareInstance_getStartUrl</string>
-                        </tuple>
-                        <tuple>
-                          <string>stop_button</string>
-                          <string>SoftwareInstance_getStopUrl</string>
-                        </tuple>
-                        <tuple>
-                          <string>destroy_button</string>
-                          <string>SoftwareInstance_getDestroyUrl</string>
-                        </tuple>
-                      </list>
-                    </value>
                 </item>
               </dictionary>
             </value>

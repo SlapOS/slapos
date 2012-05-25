@@ -20,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_stop_button</string> </value>
+            <value> <string>my_start_button</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -105,11 +105,11 @@
               <dictionary>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string>nolabel cancel widthAuto</string> </value>
+                    <value> <string>nolabel validate widthAuto</string> </value>
                 </item>
                 <item>
                     <key> <string>default</string> </key>
-                    <value> <string>Stop</string> </value>
+                    <value> <string>Start</string> </value>
                 </item>
                 <item>
                     <key> <string>enabled</string> </key>
@@ -129,7 +129,7 @@
                 </item>
                 <item>
                     <key> <string>name</string> </key>
-                    <value> <string>SoftwareInstance_requestStop:method</string> </value>
+                    <value> <string>HostingSubscription_requestStart:method</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -137,7 +137,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Stop</string> </value>
+                    <value> <string>Start</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -153,7 +153,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.SoftwareInstance_getStatus() == "Started"</string> </value>
+            <value> <string>python: here.getSlapState() != \'destroy_requested\'</string> </value>
         </item>
       </dictionary>
     </pickle>
@@ -169,7 +169,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>here/SoftwareInstance_getStopUrl</string> </value>
+            <value> <string>here/SoftwareInstance_getStartUrl</string> </value>
         </item>
       </dictionary>
     </pickle>

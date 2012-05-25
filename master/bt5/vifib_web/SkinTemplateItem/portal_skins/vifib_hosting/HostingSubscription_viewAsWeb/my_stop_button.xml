@@ -20,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_destroy_button</string> </value>
+            <value> <string>my_stop_button</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -109,7 +109,7 @@
                 </item>
                 <item>
                     <key> <string>default</string> </key>
-                    <value> <string>Destroy</string> </value>
+                    <value> <string>Stop</string> </value>
                 </item>
                 <item>
                     <key> <string>enabled</string> </key>
@@ -129,7 +129,7 @@
                 </item>
                 <item>
                     <key> <string>name</string> </key>
-                    <value> <string>SoftwareInstance_requestDestroy:method</string> </value>
+                    <value> <string>HostingSubscription_requestStop:method</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -137,7 +137,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Destroy</string> </value>
+                    <value> <string>Stop</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -153,7 +153,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.SoftwareInstance_getStatus() not in (\'Destroyed\', \'Destruction in progress\')</string> </value>
+            <value> <string>python: here.getSlapState() != \'destroy_requested\'</string> </value>
         </item>
       </dictionary>
     </pickle>
@@ -169,7 +169,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>here/SoftwareInstance_getDestroyUrl</string> </value>
+            <value> <string>here/SoftwareInstance_getStopUrl</string> </value>
         </item>
       </dictionary>
     </pickle>

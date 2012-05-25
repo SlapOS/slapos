@@ -50,16 +50,25 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>return context.SoftwareInstance_callWorkflowAction(\'destroy\')\n
+            <value> <string>person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
+person.requestSoftwareInstance(\n
+  state=state,\n
+  software_release=context.getRootSoftwareReleaseUrl(),\n
+  software_title=context.getTitle(),\n
+  software_type=context.getSourceReference(),\n
+  instance_xml=context.getTextContent(),\n
+  sla_xml=context.getSlaXml(),\n
+  shared=context.isRootSlave()\n
+)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>state</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_requestDestroy</string> </value>
+            <value> <string>HostingSubscription_requestPerson</string> </value>
         </item>
       </dictionary>
     </pickle>

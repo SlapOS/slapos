@@ -2,13 +2,13 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="RawTextAreaField" module="Products.Formulator.StandardFields"/>
+      <global name="StringField" module="Products.Formulator.StandardFields"/>
     </pickle>
     <pickle>
       <dictionary>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>listbox_destroy_button</string> </value>
+            <value> <string>your_status</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -50,6 +50,14 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>display_maxwidth</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>display_width</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>editable</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -63,10 +71,6 @@
                 </item>
                 <item>
                     <key> <string>extra</string> </key>
-                    <value> <string></string> </value>
-                </item>
-                <item>
-                    <key> <string>height</string> </key>
                     <value> <string></string> </value>
                 </item>
                 <item>
@@ -95,10 +99,6 @@
                 </item>
                 <item>
                     <key> <string>whitespace_preserve</string> </key>
-                    <value> <string></string> </value>
-                </item>
-                <item>
-                    <key> <string>width</string> </key>
                     <value> <string></string> </value>
                 </item>
               </dictionary>
@@ -118,17 +118,25 @@
                 </item>
                 <item>
                     <key> <string>default</string> </key>
-                    <value> <string></string> </value>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                    </value>
                 </item>
                 <item>
                     <key> <string>description</string> </key>
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>display_maxwidth</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>display_width</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>editable</string> </key>
-                    <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
-                    </value>
+                    <value> <string></string> </value>
                 </item>
                 <item>
                     <key> <string>enabled</string> </key>
@@ -140,10 +148,6 @@
                 </item>
                 <item>
                     <key> <string>extra</string> </key>
-                    <value> <string></string> </value>
-                </item>
-                <item>
-                    <key> <string>height</string> </key>
                     <value> <string></string> </value>
                 </item>
                 <item>
@@ -172,10 +176,6 @@
                 </item>
                 <item>
                     <key> <string>whitespace_preserve</string> </key>
-                    <value> <string></string> </value>
-                </item>
-                <item>
-                    <key> <string>width</string> </key>
                     <value> <string></string> </value>
                 </item>
               </dictionary>
@@ -191,19 +191,27 @@
                 </item>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string>nolabel negative widthAuto</string> </value>
+                    <value> <string>inline</string> </value>
                 </item>
                 <item>
                     <key> <string>default</string> </key>
-                    <value> <string>Destroy</string> </value>
+                    <value> <string></string> </value>
                 </item>
                 <item>
                     <key> <string>description</string> </key>
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>display_maxwidth</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>display_width</string> </key>
+                    <value> <int>20</int> </value>
+                </item>
+                <item>
                     <key> <string>editable</string> </key>
-                    <value> <int>1</int> </value>
+                    <value> <int>0</int> </value>
                 </item>
                 <item>
                     <key> <string>enabled</string> </key>
@@ -216,10 +224,6 @@
                 <item>
                     <key> <string>extra</string> </key>
                     <value> <string></string> </value>
-                </item>
-                <item>
-                    <key> <string>height</string> </key>
-                    <value> <int>5</int> </value>
                 </item>
                 <item>
                     <key> <string>hidden</string> </key>
@@ -235,7 +239,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Destroy</string> </value>
+                    <value> <string>Status</string> </value>
                 </item>
                 <item>
                     <key> <string>truncate</string> </key>
@@ -248,10 +252,6 @@
                 <item>
                     <key> <string>whitespace_preserve</string> </key>
                     <value> <int>0</int> </value>
-                </item>
-                <item>
-                    <key> <string>width</string> </key>
-                    <value> <int>40</int> </value>
                 </item>
               </dictionary>
             </value>
@@ -270,7 +270,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.SoftwareInstance_getStatus() in (\'started\', \'stopped\')</string> </value>
+            <value> <string>here/SoftwareInstance_getStatus</string> </value>
         </item>
       </dictionary>
     </pickle>
