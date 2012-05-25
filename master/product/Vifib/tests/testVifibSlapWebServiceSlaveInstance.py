@@ -4,6 +4,38 @@ import unittest
 from Products.ERP5Type.tests.backportUnittest import skip
 
 class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
+  def stepCheckComputerPartitionSaleOrderAggregatedList(self, sequence):
+    portal_catalog = self.portal.portal_catalog
+    sale_packing_list = portal_catalog.getResultValue(
+        uid=sequence['sale_packing_list_uid'])
+    sale_packing_list_line = sale_packing_list.objectValues()[0]
+    computer_partition = sale_packing_list_line.getAggregateValue(
+        portal_type=self.computer_partition_portal_type)
+    sale_order_line_list = computer_partition.getAggregateRelatedValueList(
+        portal_type="Sale Order Line")
+    sale_order_line_1, sale_order_line_2 = sale_order_line_list
+    self.assertEquals(sale_order_line_1.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type),
+                      sale_order_line_2.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type))
+    self.assertEquals(2, len(sale_order_line_list))
+    sale_packing_line_list = computer_partition.getAggregateRelatedValueList(
+        portal_type="Sale Packing List Line")
+    self.assertEquals(2, len(sale_packing_line_list))
+    sale_packing_list_line_1, sale_packing_list_line_2 = sale_packing_line_list
+    self.assertEquals(sale_packing_list_line_1.getAggregateValue(
+                        portal_type=self.software_release_portal_type),
+                      sale_packing_list_line_2.getAggregateValue(
+                        portal_type=self.software_release_portal_type))
+    self.assertEquals(sale_packing_list_line_1.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type),
+                      sale_packing_list_line_2.getAggregateValue(
+                        portal_type=self.computer_partition_portal_type))
+    hosting_1, hosting_2 = [hosting.getAggregateValue(
+      portal_type=self.hosting_subscription_portal_type) \
+          for hosting in sale_packing_line_list]
+    self.assertNotEquals(hosting_1, hosting_2)
+
   def test_SlaveInstance_Person_request_with_Different_User(self):
     """
       Check that user B can declare a slot of slave instance in computer
