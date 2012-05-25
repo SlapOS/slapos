@@ -61,9 +61,7 @@ now = DateTime()\n
 if hosting_subscription.getAggregateRelatedValue(portal_type=\'Sale Order Line\').getParentValue().getDestinationSectionValue().getReference() == \'seleniumtester\' and \\\n
   hosting_subscription.getModificationDate() < (now - 1):\n
   if hosting_subscription.SoftwareInstance_getStatus() not in [\'Destroyed\', \'Destruction in progress\']:\n
-    software_instance = hosting_subscription.getPredecessorValue(portal_type=\'Software Instance\')\n
-    if software_instance is not None:\n
-      software_instance.requestDestroyComputerPartition(comment=\'Requested by clenaup alarm\', activate_kw={\'tag\': tag})\n
+    hosting_subscription.requestDestroy(comment=\'Requested by clenaup alarm\', activate_kw={\'tag\': tag})\n
 
 
 ]]></string> </value>
