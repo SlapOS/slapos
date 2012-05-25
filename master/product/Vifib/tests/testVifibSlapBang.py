@@ -672,12 +672,21 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     self.logout()
 
     self.login(sequence['software_instance_reference'])
-    root_software_instance.requestDestroyComputerPartition()
+    root_software_instance.requestDestroy(
+        software_release=root_software_instance.getRootSoftwareReleaseUrl(),
+        instance_xml=root_software_instance.getTextContent(),
+        software_type=root_software_instance.getSourceReference(),
+        sla_xml=root_software_instance.getSlaXml(),
+        shared=root_software_instance.getPortalType() == 'Slave Instance',
+    )
     self.stepTic()
     self.logout()
-    
+
     self.login(sequence['computer_reference'])
-    root_software_instance.destroyComputerPartition()
+    self.portal.portal_slap.destroyedComputerPartition(
+      sequence['computer_reference'],
+      root_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference())
     self.stepTic()
     self.logout()
 
