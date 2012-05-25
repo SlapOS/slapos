@@ -2,6 +2,7 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from Products.ERP5Type.tests.backportUnittest import skip
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 
 class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
   def stepCheckComputerPartitionSaleOrderAggregatedList(self, sequence):
@@ -19,8 +20,17 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
                       sale_order_line_2.getAggregateValue(
                         portal_type=self.computer_partition_portal_type))
     self.assertEquals(2, len(sale_order_line_list))
-    sale_packing_line_list = computer_partition.getAggregateRelatedValueList(
-        portal_type="Sale Packing List Line")
+    query = ComplexQuery(
+        Query(default_aggregate_uid=computer_partition.getUid()),
+        Query(default_resource_uid=self.portal.restrictedTraverse(
+          self.portal.portal_preferences.getPreferredInstanceSetupResource()
+            ).getUid()),
+        operator="AND"
+    )
+    sale_packing_line_list = portal_catalog(
+        portal_type="Sale Packing List Line",
+        query=query
+        )
     self.assertEquals(2, len(sale_packing_line_list))
     sale_packing_list_line_1, sale_packing_list_line_2 = sale_packing_line_list
     self.assertEquals(sale_packing_list_line_1.getAggregateValue(
