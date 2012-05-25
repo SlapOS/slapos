@@ -588,8 +588,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     if 'software_type' not in kw:
       kw['software_type'] = sequence.get('requested_software_type',
                                          'requested_software_type')
+    default_state = 'started'
     if 'state' not in kw:
-      kw['state'] = sequence.get('software_instance_state', 'started')
+      kw['state'] = sequence.get('software_instance_state', default_state) \
+        or default_state
 
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
