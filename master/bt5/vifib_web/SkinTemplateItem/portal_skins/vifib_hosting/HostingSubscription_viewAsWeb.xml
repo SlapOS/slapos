@@ -82,7 +82,10 @@
                 <item>
                     <key> <string>center</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>your_instance_xml</string>
+                        <string>my_update_button</string>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -100,8 +103,8 @@
                       <list>
                         <string>my_title</string>
                         <string>listbox</string>
-                        <string>your_status</string>
                         <string>last_event_listbox</string>
+                        <string>your_status</string>
                       </list>
                     </value>
                 </item>
