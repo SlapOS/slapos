@@ -1507,6 +1507,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   create_new_user_instance_sequence_string = '\
       LoginWebUser \
+      ResetSequenceSoftwareInstanceState \
       SetSoftwareTitleRandom \
       PersonRequestSoftwareInstance \
       Tic \
@@ -1523,6 +1524,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps
   ########################################
+
+  def stepResetSequenceSoftwareInstanceState(self, sequence, **kw):
+    sequence['software_instance_state'] = ''
 
   def stepSetSequenceSoftwareInstanceStateStopped(self, sequence, **kw):
     sequence['software_instance_state'] = 'stopped'
