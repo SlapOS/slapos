@@ -601,37 +601,17 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       sla_xml=sequence.get('sla_xml'),
       shared=kw.get('shared', False),
       state=kw['state'])
-    transaction.commit()
-    self.tic()
-    # Note: This is tricky part. Workflow methods does not return nothing
-    # so the only way is to find again the computer partition.
-    # But only title can be passed, that is why random is used to avoid
-    # duplication
+
     software_instance_portal_type = kw.get("instance_portal_type",
                                   self.software_instance_portal_type)
-    software_instance_list = []
-    cleanup_resource = self.portal.portal_preferences\
-      .getPreferredInstanceCleanupResource()
-    for software_instance in self.portal.portal_catalog(
-        portal_type=software_instance_portal_type,
-        title=software_title):
-      try:
-        cleanup_line = software_instance.Item_getInstancePackingListLine(
-          cleanup_resource)
-      except ValueError:
-        software_instance_list.append(software_instance)
-      else:
-        if cleanup_line.getSimulationState() != 'delivered':
-          software_instance_list.append(software_instance)
-    self.assertEqual(1, len(software_instance_list))
-    software_instance = software_instance_list[0]
+    software_instance = self.portal.restrictedTraverse(
+        self.portal.REQUEST.get('request_instance'))
     sequence.edit(
         root_software_instance_title=software_title,
         software_instance_uid=software_instance.getUid(),
         software_instance_reference=software_instance.getReference(),
-        hosting_subscription_uid=software_instance.getAggregateRelatedValue(
-          portal_type='Sale Order Line').getAggregateValue(
-            portal_type='Hosting Subscription').getUid())
+        hosting_subscription_uid=software_instance.getSpecialiseUid(),
+        )
 
   def stepSetComputerPartitionFromRootSoftwareInstance(self, sequence):
     computer_partition = self.portal.portal_catalog.getResultValue(
