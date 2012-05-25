@@ -4125,9 +4125,21 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     return slave_instance
 
   def stepRequestDestroySoftwareInstanceFromCurrentComputerPartition(self, sequence):
-    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+    instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
-    software_instance.requestDestroyComputerPartition()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestDestroy(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepStartSoftwareInstanceFromCurrentComputerPartition(self, sequence):
     software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
