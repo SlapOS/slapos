@@ -1075,6 +1075,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         PayRegistrationPayment \
         Tic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
         CheckPaidInvoice \
         LoginERP5TypeTestCase \
         CheckSiteConsistency \
