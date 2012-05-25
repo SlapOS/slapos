@@ -50,9 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-"""Add selected product to the cart and continue"""\n
+            <value> <string>"""Add selected product to the cart and continue"""\n
 portal = context.getPortalObject()\n
 \n
 if len(uids) != 1:\n
@@ -65,22 +63,14 @@ if not service_title:\n
 \n
 cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
 software_instance_list = []\n
-for software_instance in context.portal_catalog(\n
-  portal_type=[\'Software Instance\', \'Slave Instance\'],\n
+hosting_subscription = portal.portal_catalog.getResultValue(\n
+  portal_type=\'Hosting Subscription\',\n
+  validation_state="validated",\n
   select_expression=\'title\',\n
   title={\'query\': service_title, \'key\': \'ExactMatch\'}\n
-):\n
-  try:\n
-    cleanup_delivery_line = software_instance.Item_getInstancePackingListLine(cleanup_resource)\n
-  except ValueError:\n
-    software_instance_list.append(software_instance)\n
-    break\n
-  else:\n
-    if cleanup_delivery_line.getSimulationState() != \'delivered\':\n
-      software_instance_list.append(software_instance)\n
-      break\n
+  )\n
 \n
-if len(software_instance_list) > 0:\n
+if hosting_subscription is not None:\n
   return context.Base_redirect(dialog_id,\n
                         keep_items={\'portal_status_message\':context.Base_translateString(\n
                           "You already have service named ${service_title}. Please choose different unique name.", mapping={\'service_title\': service_title})})\n
@@ -99,9 +89,7 @@ if kw.has_key(\'came_from\'):\n
   context = portal.restrictedTraverse(kw[\'came_from\'])\n
   \n
 context.WebSection_viewNextStep()\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
