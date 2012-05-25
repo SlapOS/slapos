@@ -1480,10 +1480,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def stepSetSoftwareInstanceUidToCurrentSlave(self, sequence, **kw):
     computer_partition = self.portal.portal_catalog.getResultValue(uid=sequence[
       'computer_partition_uid'])
-    instance_setup_packing_list = computer_partition\
-      .Item_getInstancePackingListLine()
-    slave_instance = instance_setup_packing_list.getAggregateValue(
-        portal_type='Slave Instance')
+    computer_partition = self.portal.portal_catalog.getResultValue(
+      portal_type="Slave Instance",
+      validation_state="validated",
+      default_aggregate_uid=computer_partition.getUid(),
+      )
     sequence['software_instance_uid'] = slave_instance.getUid()
 
   def test_catalog_slave_destruction(self):
