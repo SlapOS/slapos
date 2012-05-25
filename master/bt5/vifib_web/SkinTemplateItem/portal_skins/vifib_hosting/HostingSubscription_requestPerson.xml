@@ -50,13 +50,18 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
+            <value> <string>if instance_xml is None:\n
+  instance_xml = context.getTextContent()\n
+if state is None:\n
+  state = {\'request_start\': \'started\', \'request_destroy\': \'destroyed\', \'request_stop\': \'stopped\'}[context.getSlapState()]\n
+\n
+person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
 person.requestSoftwareInstance(\n
   state=state,\n
   software_release=context.getRootSoftwareReleaseUrl(),\n
   software_title=context.getTitle(),\n
   software_type=context.getSourceReference(),\n
-  instance_xml=context.getTextContent(),\n
+  instance_xml=instance_xml,\n
   sla_xml=context.getSlaXml(),\n
   shared=context.isRootSlave()\n
 )\n
@@ -64,7 +69,7 @@ person.requestSoftwareInstance(\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state</string> </value>
+            <value> <string>state=None, instance_xml=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
