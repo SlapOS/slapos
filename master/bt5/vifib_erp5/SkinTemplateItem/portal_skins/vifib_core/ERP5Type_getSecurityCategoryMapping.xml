@@ -62,7 +62,6 @@ return (\n
   # Person security\n
   (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'group\']),\n
   (\'ERP5Type_getSecurityCategoryFromAssignment\', [\'role\']),\n
-  # (\'ERP5Type_getPersonSecurityFromHostingSubscription\', [\'aggregate\']),\n
 \n
   # Computer security\n
   (\'ERP5Type_getComputerSecurityCategory\', [\'role\']),\n
