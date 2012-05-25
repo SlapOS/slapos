@@ -127,8 +127,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       # ...so no buildable
       self.assertFalse(simulation_movement.isBuildable())
 
-      # stopped...
-      self.assertEqual('stopped', simulation_movement.getSimulationState())
+      # delivered...
+      self.assertEqual('delivered', simulation_movement.getSimulationState())
       # ...so invoice rule applied
       self.assertEqual(1,
         len(simulation_movement.contentValues(portal_type="Applied Rule")))
@@ -190,6 +190,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       CallDeliverSubscriptionSalePackingListAlarm
       CleanTic
       CallVifibExpandDeliveryLineAlarm
+      CleanTic
+      CallDeliverSubscriptionSalePackingListAlarm
       CleanTic
 
       CheckSimulationMovement
