@@ -155,10 +155,16 @@ class VifibConduit:
           computer.searchFolder(reference=movement['reference'])[0].getObject()
 
         # We retrieve the latest SPL (Instance Setup) related to the partition
-        instance_setup_packing_list_line = \
-          partition.Item_getInstancePackingListLine()
+        instance = portal.portal_catalog.getResultValue(
+            portal_type="Software Instance",
+            default_aggregate_uid=partition.getUid(),
+            )
         instance_setup_packing_list = \
-          instance_setup_packing_list_line.getParent()
+          instance.getCausalityValue()
+        instance_setup_packing_list_line = \
+          instance_setup_packing_list.contentValues(
+              portal_type=["Sale Order Line", "Sale Packing List Line"],
+            )[0]
 
         # We edit the SPLL
         usage_report_sale_packing_list_document_line.edit(
