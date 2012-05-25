@@ -91,6 +91,8 @@
                         <string>my_reference</string>
                         <string>my_title</string>
                         <string>your_status</string>
+                        <string>your_new_title</string>
+                        <string>my_update_button</string>
                       </list>
                     </value>
                 </item>
@@ -108,7 +110,6 @@
                       <list>
                         <string>your_system_message</string>
                         <string>my_text_content</string>
-                        <string>my_update_button</string>
                       </list>
                     </value>
                 </item>
