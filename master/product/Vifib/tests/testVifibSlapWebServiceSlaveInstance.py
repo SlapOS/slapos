@@ -45,6 +45,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
         CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
         SlapLogout
         LoginTestVifibCustomer
+        SetSoftwareTitleRandom
         PersonRequestSlaveInstance
         Tic
         Logout
@@ -69,6 +70,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
     Tic
     LoginTestVifibCustomer
+    SetSoftwareTitleRandom
     PersonRequestSlaveInstance
     Tic
     Logout
@@ -100,6 +102,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + """
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -137,6 +140,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """ 
       Tic
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       CallConfirmOrderedSaleOrderAlarm
@@ -173,6 +177,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       CallConfirmOrderedSaleOrderAlarm
       Tic
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       CallConfirmOrderedSaleOrderAlarm
@@ -200,6 +205,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       self.prepare_published_software_release + """
       Tic
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       CallConfirmOrderedSaleOrderAlarm
@@ -229,6 +235,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     """ + self.prepare_install_requested_computer_partition_sequence_string + """
     Tic
     LoginTestVifibCustomer
+    SetSoftwareTitleRandom
     PersonRequestSlaveInstance
     Tic
     CallConfirmOrderedSaleOrderAlarm
@@ -255,6 +262,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       StoreSoftwareReleaseUri
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       CallConfirmOrderedSaleOrderAlarm
@@ -275,6 +283,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SelectDifferentSoftwareReleaseUri
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       CallConfirmOrderedSaleOrderAlarm
@@ -337,6 +346,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + """
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -367,6 +377,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -402,6 +413,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -449,6 +461,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -524,6 +537,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       StoreCurrentSoftwareInstanceBufferA
 
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       SlapLogout
       LoginDefaultUser
@@ -582,6 +596,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       Tic
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -658,6 +673,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       Tic
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -698,6 +714,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       CheckEmptyComputerGetComputerPartitionCall
       SlapLogout
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -749,6 +766,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -778,6 +796,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -844,6 +863,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       CheckEmptySlaveInstanceListFromOneComputerPartition
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
