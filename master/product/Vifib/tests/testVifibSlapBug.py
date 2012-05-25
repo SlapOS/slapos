@@ -78,7 +78,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
         .prepare_installed_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       RequestSoftwareInstanceDestroy
-      RequestSoftwareInstanceDestroyRaisesValueError
+      RequestSoftwareInstanceDestroyRaisesUnsupportedWorkflowMethod
       Tic
       Logout
 

@@ -677,9 +677,23 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         shared=shared,
         )
 
-  def stepRequestSoftwareInstanceDestroyRaisesValueError(self, sequence, **kw):
-    self.assertRaises(ValueError, self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestDestroyComputerPartition)
+  def stepRequestSoftwareInstanceDestroyRaisesUnsupportedWorkflowMethod(self,
+    sequence, **kw):
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    self.assertRaises(UnsupportedWorkflowMethod, instance.requestDestroy, 
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestSoftwareInstanceStart(self, sequence, **kw):
     self.portal.portal_catalog.getResultValue(
@@ -2222,10 +2236,22 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     Base.serialize_call = Base.serialize
     Base.serialize = verify_serialize_call
 
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
     try:
-      self.assertRaises(DummyTestException,
-        self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestDestroyComputerPartition)
+      self.assertRaises(DummyTestException,instance.requestDestroy, 
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
     finally:
       Base.serialize = Base.serialize_call
 
