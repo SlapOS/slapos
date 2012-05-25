@@ -60,22 +60,15 @@ if slap_state == \'free\':\n
 \n
 elif slap_state == \'busy\':\n
 \n
-  # Partition under destruction does not accept new slave\n
-  try:\n
-    delivery_line = context.Item_getInstancePackingListLine(service_relative_url=portal_preferences.getPreferredInstanceCleanupResource(), aggregate_portal_type=\'Software Instance\')\n
-  except ValueError:\n
-    pass\n
+  instance = portal.portal_catalog.getResultValue(\n
+    portal_type="Software Instance",\n
+    validation_state="validated",\n
+    default_aggregate_uid=context.getUid(),\n
+  )\n
+  if instance is None:\n
+    return []\n
   else:\n
-    if delivery_line.getSimulationState() != \'delivered\':\n
-      return []\n
-\n
-  try:\n
-    delivery_line = context.Item_getInstancePackingListLine()\n
-  except ValueError:\n
-    pass\n
-  else:\n
-    software_release = delivery_line.getAggregateValue(portal_type=\'Software Release\')\n
-    return [software_release.getUrlString()]\n
+    return [instance.getRootSoftwareReleaseUrl()]\n
 \n
 else:\n
   return []\n
