@@ -341,6 +341,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SlapLogout \
       \
       LoginTestVifibCustomer \
+      SetRandomRequestedReference \
       PersonRequestSlaveInstance \
       Tic \
       SlapLogout \
@@ -370,6 +371,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SlapLogout \
       \
       LoginTestVifibCustomer \
+      SetRandomRequestedReference \
       PersonRequestSlaveInstance \
       Tic \
       SlapLogout \
