@@ -179,7 +179,7 @@ class Computer(object):
   def __getinitargs__(self):
     return (self.reference, self.interface)
 
-  def getAddress(self):
+  def getAddress(self, no_bridge=False):
     """
     Return a list of the interface address not attributed to any partition, (which
     are therefore free for the computer itself).
@@ -201,11 +201,15 @@ class Computer(object):
       if address_dict['addr'] not in computer_partition_address_list:
         return address_dict
 
-    # all addresses on interface are for partition, so lets add new one
-    computer_tap = Tap('compdummy')
-    computer_tap.createWithOwner(User('root'), attach_to_tap=True)
-    self.interface.addTap(computer_tap)
-    return self.interface.addAddr()
+    if not no_bridge:
+      # all addresses on interface are for partition, so lets add new one
+      computer_tap = Tap('compdummy')
+      computer_tap.createWithOwner(User('root'), attach_to_tap=True)
+      self.interface.addTap(computer_tap)
+      return self.interface.addAddr()
+
+    # Can't find address
+    return False
 
   def send(self, config):
     """
@@ -976,7 +980,7 @@ def run(config):
   computer.instance_root = config.instance_root
   computer.software_root = config.software_root
   config.logger.info('Updating computer')
-  address = computer.getAddress()
+  address = computer.getAddress(config.no_bridge)
   computer.address = address['addr']
   computer.netmask = address['netmask']
 
