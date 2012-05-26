@@ -12,9 +12,9 @@ certificate_repository_path = /etc/opt/slapos/pki/
 [slapformat]
 # Replace by your network interface like eth0, eth1, slapbr0...
 interface_name = interfacename
+partition_amount = 10
 computer_xml = /opt/slapos/slapos.xml
 log_file = /opt/slapos/slapformat.log
-partition_amount = 20
 partition_base_name = slappart
 user_base_name = slapuser
 tap_base_name = slaptap
