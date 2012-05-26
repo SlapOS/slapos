@@ -73,6 +73,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_computer_immobilisation',
       'erp5_accounting',
       'erp5_accounting_l10n_fr',
+      'erp5_bearer_token',
       'erp5_tax_resource',
       'erp5_discount_resource',
       'erp5_invoicing',
@@ -94,26 +95,31 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_payzen_secure_payment',
       'erp5_ui_test_core',
       'erp5_ui_test',
+      'vifib_slapos_core',
+      'vifib_slapos_core_test',
+      'vifib_slapos_rest_api_v1_portal_type',
+      'vifib_slapos_rest_api_v1',
+      'vifib_slapos_rest_api_v1_test',
+      'vifib_slapos_accounting',
       'vifib_mysql_innodb_catalog',
       'vifib_core',
       'vifib_base',
       'vifib_open_trade',
       'vifib_slap',
-      'vifib_crm',
       'vifib_forge_release',
       'vifib_software_pdm',
+      'vifib_payzen',
       'vifib_web',
       'vifib_web_ui_test',
       'vifib_l10n_fr',
       'vifib_data',
       'vifib_data_category',
       'vifib_data_web',
-      'vifib_payzen',
       'vifib_data_payzen',
       'vifib_data_simulation',
+      'vifib_agent',
       'vifib_erp5',
       'vifib_test',
-      'vifib_agent',
     ]
     return result
 
@@ -201,16 +207,6 @@ class testVifibMixin(ERP5TypeTestCase):
       self.bootstrapSite()
       self.portal._p_changed = 1
       transaction.commit()
-
-  def setPreference(self):
-    # Enable default preference
-    preference = self.portal.portal_preferences.default_site_preference
-    # XXX-Luke: checking for preference state is no op (in such early state
-    # this preference is disabled anyway), but in my environment enable does
-    # not work, UNTIL getPreferenceState is called. Possibly cache/
-    # /configuration issue, to be checked later
-    if preference.getPreferenceState() == 'disabled':
-      preference.enable()
 
   def getDefaultSitePreferenceId(self):
     """Default id, usefull method to override
@@ -312,7 +308,6 @@ class testVifibMixin(ERP5TypeTestCase):
     self.login()
     self.setupVifibMachineAuthenticationPlugin()
     self.setupVifibShadowAuthenticationPlugin()
-    self.setPreference()
     self.prepareTestUsers()
     self.prepareVifibAccountingPeriod()
     transaction.commit()
@@ -369,7 +364,14 @@ class testVifibMixin(ERP5TypeTestCase):
       # clear cache
       self.clearCache()
       self.changeSkin('RSS')
-      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist())
+      diverged_document_list = self.portal.portal_catalog(
+        portal_type=self.portal.getPortalDeliveryTypeList(),
+        causality_state='!= solved'
+      )
+      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist(),
+        'There are unsolved deliveries: %s' % ','.join([
+          ' '.join((q.getTitle(), q.getPath(), q.getCausalityState())) \
+          for q in diverged_document_list]))
     finally:
       self.changeSkin(current_skin)
 

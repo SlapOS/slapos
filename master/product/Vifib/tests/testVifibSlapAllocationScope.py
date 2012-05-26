@@ -111,7 +111,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # request as someone else
@@ -141,7 +141,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase
@@ -210,7 +210,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # request as friend
@@ -227,7 +227,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # request as someone else
@@ -257,7 +257,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase
@@ -313,7 +313,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # request as someone else
@@ -330,7 +330,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase
@@ -487,7 +487,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # now this computer patrition request new one
@@ -536,7 +536,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # change allocation to personal
@@ -603,7 +603,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       StoreTestVifibAdminComputerPartitionCoordinate
@@ -622,7 +622,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # change allocation to friend
@@ -689,7 +689,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # change allocation to close
@@ -733,7 +733,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # change allocation to empty
@@ -758,9 +758,6 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-
-  def stepSetSequenceSoftwareInstanceStateStopped(self, sequence, **kw):
-    sequence['software_instance_state'] = 'stopped'
 
   def test_start_computer_partition_allocation_scope_close(self):
     """Check that it is possible to request stop of computer partition even
@@ -810,11 +807,12 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # request as someone else
       LoginTestVifibAdmin
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
       Tic
       Logout
@@ -827,7 +825,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # confirm instantiation
@@ -855,7 +853,8 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # request start and check that it worked
       LoginTestVifibAdmin
-      RequestSoftwareInstanceStart
+      SetSequenceSoftwareInstanceStateStarted
+      PersonRequestSoftwareInstance
       Tic
       Logout
 

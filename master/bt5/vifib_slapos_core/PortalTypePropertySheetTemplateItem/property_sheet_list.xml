@@ -1,0 +1,16 @@
+<property_sheet_list>
+ <portal_type id="Hosting Subscription">
+  <item>TextDocument</item>
+  <item>VariationRange</item>
+ </portal_type>
+ <portal_type id="Slave Instance">
+  <item>Reference</item>
+  <item>TextDocument</item>
+  <item>VariationRange</item>
+ </portal_type>
+ <portal_type id="Software Instance">
+  <item>Reference</item>
+  <item>TextDocument</item>
+  <item>VariationRange</item>
+ </portal_type>
+</property_sheet_list>

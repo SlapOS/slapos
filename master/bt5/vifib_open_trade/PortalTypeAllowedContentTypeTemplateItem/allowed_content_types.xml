@@ -8,9 +8,6 @@
   <item>String Divergence Tester</item>
   <item>Variation Divergence Tester</item>
  </portal_type>
- <portal_type id="Hosting Subscription Module">
-  <item>Hosting Subscription</item>
- </portal_type>
  <portal_type id="Subscription Item Root Simulation Rule">
   <item>Accounting Rule Cell</item>
   <item>Category Membership Divergence Tester</item>

@@ -1,0 +1,1357 @@
+# Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
+from Products.Vifib.tests.testVifibSlapWebService import \
+  TestVifibSlapWebServiceMixin
+from Products.ERP5Type.Base import WorkflowMethod
+import transaction
+import httplib
+import urlparse
+import json
+import tempfile
+import os
+from App.Common import rfc1123_date
+from DateTime import DateTime
+import time
+
+class Simulator:
+  def __init__(self, outfile, method):
+    self.outfile = outfile
+    self.method = method
+
+  def __call__(self, *args, **kwargs):
+    """Simulation Method"""
+    old = open(self.outfile, 'r').read()
+    if old:
+      l = eval(old)
+    else:
+      l = []
+    l.append({'recmethod': self.method,
+      'recargs': args,
+      'reckwargs': kwargs})
+    open(self.outfile, 'w').write(repr(l))
+
+class RaisingSimulator:
+  def __init__(self, exception):
+    self.exception = exception
+
+  def __call__(self, *args, **kwargs):
+    """Simulation Method"""
+    raise self.exception
+
+class CustomHeaderHTTPConnection(httplib.HTTPConnection):
+  def __init__(self, custom_header, *args, **kwargs):
+    self._custom_header = custom_header
+    httplib.HTTPConnection.__init__(self, *args, **kwargs)
+
+  def request(self, *args, **kwargs):
+    headers = kwargs.get('headers', {})
+    headers.update(self._custom_header)
+    kwargs['headers'] = headers
+    return httplib.HTTPConnection.request(self, *args, **kwargs)
+
+class VifibSlaposRestAPIV1MixinBase(TestVifibSlapWebServiceMixin):
+  def generateNewId(self):
+    return str(self.getPortalObject().portal_ids.generateNewId(
+                                     id_group=('slapos_rest_api_v1_test')))
+
+  def assertCacheControlHeader(self):
+    self.assertEqual('must-revalidate',
+      self.response.getheader('Cache-Control'))
+
+  def afterSetUp(self):
+    self.setupVifibMachineAuthenticationPlugin()
+    self.test_random_id = self.generateNewId()
+    self.access_control_allow_headers = 'some, funny, headers, ' \
+      'always, expected, %s' % self.test_random_id
+
+    self.document_list = []
+    self.portal = self.getPortalObject()
+
+    self.api_url = self.portal.portal_vifib_rest_api_v1.absolute_url()
+    self.api_scheme, self.api_netloc, self.api_path, self.api_query, \
+      self.api_fragment = urlparse.urlsplit(self.api_url)
+
+    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
+      custom_header={
+        'Access-Control-Request-Headers': self.access_control_allow_headers,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      })
+
+  def prepareResponse(self):
+    self.response = self.connection.getresponse()
+    self.response_data = self.response.read()
+
+  def assertBasicResponse(self):
+    self.assertEqual(self.response.getheader('access-control-allow-origin'),
+      '*')
+    self.assertEqual(self.response.getheader('access-control-allow-methods'),
+      'DELETE, PUT, POST, GET, OPTIONS')
+    self.assertEqual(self.response.getheader('access-control-allow-headers'),
+      self.access_control_allow_headers)
+
+  def assertResponseCode(self, code):
+    self.assertEqual(self.response.status, code,
+      '%s was expected, but got %s with response:\n%s' %
+        (code, self.response.status, self.response_data))
+
+  def assertResponseJson(self):
+    self.assertEqual(self.response.getheader('Content-Type'), 'application/json')
+    self.json_response = json.loads(self.response_data)
+
+  def assertResponseNoContentType(self):
+    self.assertEqual(self.response.getheader('Content-Type'), None)
+
+class VifibSlaposRestAPIV1Mixin(VifibSlaposRestAPIV1MixinBase):
+  def createPerson(self):
+    customer = self.cloneByPath('person_module/template_member')
+    customer_reference = 'P' + self.generateNewId()
+    customer.edit(
+      reference=customer_reference,
+      default_email_url_string=customer_reference+'@example.com')
+    customer.validate()
+    for assignment in customer.contentValues(portal_type='Assignment'):
+      assignment.open()
+
+    customer.manage_setLocalRoles(customer.getReference(),
+      ['Associate'])
+    transaction.commit()
+    customer.recursiveImmediateReindexObject()
+    transaction.commit()
+    return customer, customer_reference
+
+  def afterSetUp(self):
+    super(VifibSlaposRestAPIV1Mixin, self).afterSetUp()
+    self.setupVifibMachineAuthenticationPlugin()
+
+    self.person_request_simulator = tempfile.mkstemp()[1]
+    self.customer, self.customer_reference = self.createPerson()
+    self.customer.requestSoftwareInstance = Simulator(self.person_request_simulator,
+      'requestSoftwareInstance')
+    transaction.commit()
+
+  def beforeTearDown(self):
+    if os.path.exists(self.person_request_simulator):
+      os.unlink(self.person_request_simulator)
+
+  def cloneByPath(self, path):
+    return self.portal.restrictedTraverse(path).Base_createCloneDocument(
+      batch_mode=1)
+
+  def assertPersonRequestSimulatorEmpty(self):
+    self.assertEqual(open(self.person_request_simulator).read(), '')
+
+  def assertPersonRequestSimulator(self, args, kwargs):
+    stored = eval(open(self.person_request_simulator).read())
+    # do the same translation magic as in tool
+    kwargs = kwargs.copy()
+    for k_j, k_i in (
+        ('software_release', 'software_release'),
+        ('title', 'software_title'),
+        ('software_type', 'software_type'),
+        ('parameter', 'instance_xml'),
+        ('sla', 'sla_xml'),
+        ('slave', 'shared'),
+        ('status', 'state')
+      ):
+      kwargs[k_i] = kwargs.pop(k_j)
+    self.assertEqual(stored,
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'requestSoftwareInstance'}])
+    reckwargs = stored[0]['reckwargs']
+    self.assertEqual(
+      set([
+        type(reckwargs['software_title']), type(reckwargs['software_release']),
+        type(reckwargs['software_type']), type(reckwargs['state']),
+        type(reckwargs['instance_xml']), type(reckwargs['sla_xml'])
+      ]),
+      set([str])
+    )
+
+class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
+  def test_not_logged_in(self):
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']))
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(401)
+    self.assertTrue(self.response.getheader('Location') is not None)
+    auth = self.response.getheader('WWW-Authenticate')
+    self.assertTrue(auth is not None)
+    self.assertTrue('Bearer realm="' in auth)
+    self.assertPersonRequestSimulatorEmpty()
+
+  def test_no_json(self):
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
+    self.assertPersonRequestSimulatorEmpty()
+
+  def test_bad_json(self):
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body='This is not JSON',
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
+    self.assertPersonRequestSimulatorEmpty()
+
+  def test_empty_json(self):
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body='{}',
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({
+        "status": "Missing.",
+        "slave": "Missing.",
+        "title": "Missing.",
+        "software_release": "Missing.",
+        "software_type": "Missing.",
+        "parameter": "Missing.",
+        "sla": "Missing."},
+      self.json_response)
+    self.assertPersonRequestSimulatorEmpty()
+
+  def test_status_slave_missing_json(self):
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body="""
+{
+  "title": "My unique instance", 
+  "software_release": "http://example.com/example.cfg", 
+  "software_type": "type_provided_by_the_software", 
+  "parameter": {
+    "Custom1": "one string", 
+    "Custom2": "one float", 
+    "Custom3": [
+      "abc", 
+      "def"
+    ]
+  }, 
+  "sla": {
+    "computer_id": "COMP-0"
+  }
+}""",
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({
+        "status": "Missing.",
+        "slave": "Missing."
+        },
+      self.json_response)
+    self.assertPersonRequestSimulatorEmpty()
+
+  def test_slave_not_bool(self):
+    kwargs = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'started',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': "True"}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({
+        "slave": "unicode is not bool.",
+        },
+      self.json_response)
+    self.assertPersonRequestSimulatorEmpty()
+
+  def test_correct(self):
+    kwargs = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'started',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': True}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(202)
+    self.assertResponseJson()
+    kwargs['parameter'] = '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<i'\
+      'nstance>\n  <parameter id="Custom1">one string</parameter>\n  <paramet'\
+      'er id="Custom2">one float</parameter>\n  <parameter id="Custom3">[u\'a'\
+      'bc\', u\'def\']</parameter>\n</instance>\n'
+    kwargs['sla'] = '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instanc'\
+      'e>\n  <parameter id="computer_id">COMP-0</parameter>\n</instance>\n'
+    self.assertPersonRequestSimulator((), kwargs)
+    self.assertEqual({
+        "status": "processing",
+        },
+      self.json_response)
+
+  def test_additional_key_json(self):
+    kw_request = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'started',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': True}
+    kwargs = kw_request.copy()
+    kwargs.update(**{'wrong_key': 'Be ignored'})
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(202)
+    self.assertResponseJson()
+    kw_request['parameter'] = '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<i'\
+      'nstance>\n  <parameter id="Custom1">one string</parameter>\n  <paramet'\
+      'er id="Custom2">one float</parameter>\n  <parameter id="Custom3">[u\'a'\
+      'bc\', u\'def\']</parameter>\n</instance>\n'
+    kw_request['sla'] = '<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instanc'\
+      'e>\n  <parameter id="computer_id">COMP-0</parameter>\n</instance>\n'
+    self.assertPersonRequestSimulator((), kw_request)
+    self.assertEqual({
+        "status": "processing",
+        },
+      self.json_response)
+
+  def test_correct_server_side_raise(self):
+    self.customer.requestSoftwareInstance = \
+      RaisingSimulator(AttributeError)
+    transaction.commit()
+    kwargs = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'started',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': True}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(500)
+    self.assertResponseJson()
+    self.assertEqual({
+        "error": "There is system issue, please try again later.",
+        },
+      self.json_response)
+    self.assertPersonRequestSimulatorEmpty()
+
+  def test_content_negotiation_headers(self):
+    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
+      custom_header={
+        'Access-Control-Request-Headers': self.access_control_allow_headers
+      })
+    kwargs = {
+      'parameter': {
+        'Custom1': 'one string',
+        'Custom2': 'one float',
+        'Custom3': ['abc', 'def']},
+      'title': 'My unique instance',
+      'software_release': 'http://example.com/example.cfg',
+      'status': 'started',
+      'sla': {
+        'computer_id': 'COMP-0'},
+      'software_type': 'type_provided_by_the_software',
+      'slave': True}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({
+      'Content-Type': "Header with value 'application/json' is required.",
+      'Accept': "Header with value 'application/json' is required."},
+      self.json_response)
+    self.assertPersonRequestSimulatorEmpty()
+
+    # now check with incorrect headers
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference,
+        'Content-Type': 'please/complain',
+        'Accept': 'please/complain'})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({
+      'Content-Type': "Header with value 'application/json' is required.",
+      'Accept': "Header with value 'application/json' is required."},
+      self.json_response)
+    self.assertPersonRequestSimulatorEmpty()
+    # and with correct ones are set by default
+
+class TestInstanceOPTIONS(VifibSlaposRestAPIV1Mixin):
+  def test_OPTIONS_not_logged_in(self):
+    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
+      custom_header={
+        'Access-Control-Request-Headers': self.access_control_allow_headers
+      })
+    self.connection.request(method='OPTIONS',
+      url='/'.join([self.api_path, 'instance']))
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertResponseNoContentType()
+    self.assertPersonRequestSimulatorEmpty()
+
+class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
+  def afterSetUp(self):
+    VifibSlaposRestAPIV1Mixin.afterSetUp(self)
+    self.software_instance = self.createSoftwareInstance(self.customer)
+
+  def assertLastModifiedHeader(self):
+    calculated = rfc1123_date(self.software_instance.getModificationDate())
+    self.assertEqual(calculated, self.response.getheader('Last-Modified'))
+
+  def createSoftwareInstance(self, person):
+    software_instance = self.cloneByPath(
+      'software_instance_module/template_software_instance')
+    hosting_subscription = self.cloneByPath(
+      'hosting_subscription_module/template_hosting_subscription')
+    software_instance.edit(
+      reference='SI' + self.test_random_id,
+      ssl_key='SSL Key',
+      ssl_certificate='SSL Certificate'
+    )
+    software_instance.validate()
+    hosting_subscription.edit(
+      reference='HS' + self.test_random_id,
+      predecessor=software_instance.getRelativeUrl(),
+      destination_section=person.getRelativeUrl()
+    )
+    hosting_subscription.validate()
+    hosting_subscription.manage_setLocalRoles(person.getReference(),
+      ['Assignee'])
+    software_instance.manage_setLocalRoles(person.getReference(),
+      ['Assignee'])
+    transaction.commit()
+    hosting_subscription.recursiveImmediateReindexObject()
+    software_instance.recursiveImmediateReindexObject()
+    transaction.commit()
+    return software_instance
+
+  # needed to avoid calling interaction and being able to destroy XML
+  @WorkflowMethod.disable
+  def _destroySoftwareInstanceTextContentXml(self, software_instance):
+    software_instance.setTextContent('This is bad XML')
+    transaction.commit()
+    software_instance.recursiveImmediateReindexObject()
+    transaction.commit()
+
+class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
+  def test_non_existing(self):
+    non_existing = 'software_instance_module/' + self.generateNewId()
+    try:
+      self.portal.restrictedTraverse(non_existing)
+    except KeyError:
+      pass
+    else:
+      raise AssertionError('It was impossible to test')
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      non_existing]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_something_else(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_bad_xml(self):
+    self._destroySoftwareInstanceTextContentXml(self.software_instance)
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(500)
+    self.assertResponseJson()
+    self.assertEqual({
+      "error": "There is system issue, please try again later."},
+      self.json_response)
+
+  def test(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      "status": "draft",
+      "connection": {
+        "parameter1": "valueof1",
+        "parameter2": "https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5"},
+      "partition": {
+        "public_ip": [],
+        "tap_interface": "",
+        "private_ip": []},
+      "slave": False,
+      "children_list": [],
+      "title": "Template Software Instance",
+      "software_type": "RootSoftwareInstance",
+      "parameter": {
+        "parameter1": "valueof1",
+        "parameter2": "valueof2"},
+      "software_release": "",
+      "sla": {"computer_guid": "SOMECOMP"}},
+      self.json_response)
+
+  def test_if_modified_since_equal(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.software_instance\
+        .getModificationDate())})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_after(self):
+    # wait three seconds before continuing in order to not hit time precision
+    # issue, as test needs to provide date with second precision after
+    # last modification of software instance and *before* now()
+    time.sleep(3)
+    # add 2 seconds, as used rfc1123_date will ceil the second in response and
+    # one more second will be required in order to be *after* the modification time
+    if_modified = self.software_instance.getModificationDate().timeTime() + 2
+    # check the test: is calculated time *before* now?
+    self.assertTrue(int(if_modified) < int(DateTime().timeTime()))
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(DateTime(if_modified))})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_before(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.software_instance\
+        .getModificationDate() - 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      "status": "draft",
+      "connection": {
+        "parameter1": "valueof1",
+        "parameter2": "https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5"},
+      "partition": {
+        "public_ip": [],
+        "tap_interface": "",
+        "private_ip": []},
+      "slave": False,
+      "children_list": [],
+      "title": "Template Software Instance",
+      "software_type": "RootSoftwareInstance",
+      "parameter": {
+        "parameter1": "valueof1",
+        "parameter2": "valueof2"},
+      "software_release": "",
+      "sla": {"computer_guid": "SOMECOMP"}},
+      self.json_response)
+
+  def test_if_modified_since_date_not_date(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': 'This Is Not A date'})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      "status": "draft",
+      "connection": {
+        "parameter1": "valueof1",
+        "parameter2": "https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5"},
+      "partition": {
+        "public_ip": [],
+        "tap_interface": "",
+        "private_ip": []},
+      "slave": False,
+      "children_list": [],
+      "title": "Template Software Instance",
+      "software_type": "RootSoftwareInstance",
+      "parameter": {
+        "parameter1": "valueof1",
+        "parameter2": "valueof2"},
+      "software_release": "",
+      "sla": {"computer_guid": "SOMECOMP"}},
+      self.json_response)
+
+  def test_if_modified_since_date_future(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(DateTime() + 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      "status": "draft",
+      "connection": {
+        "parameter1": "valueof1",
+        "parameter2": "https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5"},
+      "partition": {
+        "public_ip": [],
+        "tap_interface": "",
+        "private_ip": []},
+      "slave": False,
+      "children_list": [],
+      "title": "Template Software Instance",
+      "software_type": "RootSoftwareInstance",
+      "parameter": {
+        "parameter1": "valueof1",
+        "parameter2": "valueof2"},
+      "software_release": "",
+      "sla": {"computer_guid": "SOMECOMP"}},
+      self.json_response)
+
+  def test_other_one(self):
+    person, person_reference = self.createPerson()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': person_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+class TestInstanceGETcertificate(VifibSlaposRestAPIV1InstanceMixin):
+  def test(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl(), 'certificate']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      "ssl_key": "SSL Key",
+      "ssl_certificate": "SSL Certificate"
+      },
+      self.json_response)
+
+  def test_bad_xml(self):
+    self._destroySoftwareInstanceTextContentXml(self.software_instance)
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl(), 'certificate']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({
+      "ssl_key": "SSL Key",
+      "ssl_certificate": "SSL Certificate"
+      },
+      self.json_response)
+
+  def test_non_existing(self):
+    non_existing = 'software_instance_module/' + self.generateNewId()
+    try:
+      self.portal.restrictedTraverse(non_existing)
+    except KeyError:
+      pass
+    else:
+      raise AssertionError('It was impossible to test')
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      non_existing, 'certificate']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_something_else(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'certificate']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_other_one(self):
+    person, person_reference = self.createPerson()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'certificate']),
+      headers={'REMOTE_USER': person_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
+  def afterSetUp(self):
+    super(VifibSlaposRestAPIV1BangMixin, self).afterSetUp()
+    self.instance_bang_simulator = tempfile.mkstemp()[1]
+    self.software_instance.reportComputerPartitionBang = Simulator(
+      self.instance_bang_simulator, 'reportComputerPartitionBang')
+    transaction.commit()
+
+  def beforeTearDown(self):
+    super(VifibSlaposRestAPIV1BangMixin, self).beforeTearDown()
+    if os.path.exists(self.instance_bang_simulator):
+      os.unlink(self.instance_bang_simulator)
+
+  def assertInstanceBangSimulatorEmpty(self):
+    self.assertEqual(open(self.instance_bang_simulator).read(), '')
+
+  def assertInstanceBangSimulator(self, args, kwargs):
+    stored = eval(open(self.instance_bang_simulator).read())
+    # do the same translation magic as in workflow
+    kwargs['comment'] = kwargs.pop('log')
+    self.assertEqual(stored,
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'reportComputerPartitionBang'}])
+
+class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
+  def test(self):
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'bang']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstanceBangSimulator((), kwargs)
+
+  def test_server_side_raise(self):
+    self.software_instance.reportComputerPartitionBang = RaisingSimulator(
+      AttributeError)
+    transaction.commit()
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'bang']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(500)
+    self.assertResponseJson()
+    self.assertEqual({
+        "error": "There is system issue, please try again later.",
+        },
+      self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
+
+  def test_bad_xml(self):
+    self._destroySoftwareInstanceTextContentXml(self.software_instance)
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'bang']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstanceBangSimulator((), kwargs)
+
+  def test_non_existing(self):
+    non_existing = 'software_instance_module/' + self.generateNewId()
+    try:
+      self.portal.restrictedTraverse(non_existing)
+    except KeyError:
+      pass
+    else:
+      raise AssertionError('It was impossible to test')
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      non_existing, 'bang']),
+      body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+    self.assertInstanceBangSimulatorEmpty()
+
+  def test_something_else(self):
+    kwargs = {'log': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+    self.assertInstanceBangSimulatorEmpty()
+
+  def test_other_one(self):
+    kwargs = {'log': 'This is cool log!'}
+    person, person_reference = self.createPerson()
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': person_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+    self.assertInstanceBangSimulatorEmpty()
+
+  def test_no_json(self):
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(), 'bang']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
+
+  def test_bad_json(self):
+    kwargs = {'wrong_key': 'This is cool log!'}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'log': 'Missing.'}, self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
+
+  def test_empty_json(self):
+    kwargs = {}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'log': 'Missing.'}, self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
+
+  def test_additional_key_json(self):
+    kw_log = {'log': 'This is cool log!'}
+    kwargs = kw_log.copy()
+    kwargs.update(**{'wrong_key': 'Be ignored'})
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstanceBangSimulator((), kw_log)
+
+  def test_log_not_string(self):
+    kwargs = {'log': True}
+    self.connection.request(method='POST',
+      url='/'.join([self.api_path, 'instance',
+      self.software_instance.getPredecessorRelatedValue().getRelativeUrl(),
+      'bang']), body=json.dumps(kwargs),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'log': 'bool is not unicode.'}, self.json_response)
+    self.assertInstanceBangSimulatorEmpty()
+
+class TestInstancePUT(VifibSlaposRestAPIV1InstanceMixin):
+  def afterSetUp(self):
+    super(TestInstancePUT, self).afterSetUp()
+    self.instance_put_simulator = tempfile.mkstemp()[1]
+    self.software_instance.setTitle = Simulator(self.instance_put_simulator,
+      'setTitle')
+    self.software_instance.setConnectionXml = Simulator(self.instance_put_simulator,
+      'setConnectionXml')
+    transaction.commit()
+
+  def beforeTearDown(self):
+    super(TestInstancePUT, self).beforeTearDown()
+    if os.path.exists(self.instance_put_simulator):
+      os.unlink(self.instance_put_simulator)
+
+  def assertInstancePUTSimulator(self, l):
+    stored = eval(open(self.instance_put_simulator).read())
+    self.assertEqual(stored, l)
+    self.assertEqual(
+      set([type(q) for q in l[0]['recargs']]),
+      set([str])
+    )
+
+  def assertInstancePUTSimulatorEmpty(self):
+    self.assertEqual('', open(self.instance_put_simulator).read())
+
+  def test(self):
+    d = {
+      'title': 'New Title' + self.test_random_id,
+      'connection': {'url': 'http://new' + self.test_random_id}
+    }
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({
+      "title": "Modified.",
+      "connection": "Modified."
+      },
+      self.json_response)
+    self.assertInstancePUTSimulator([{'recargs': (d['title'],), 'reckwargs': {},
+      'recmethod': 'setTitle'},
+    {'recargs': ('<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  '\
+      '<parameter id="url">http://new%s</parameter>\n</instance>\n'%
+        self.test_random_id,), 'reckwargs': {}, 'recmethod': 'setConnectionXml'}])
+
+  def test_same_title(self):
+    d = {
+      'title': self.software_instance.getTitle(),
+      'connection': {'url': 'http://new' + self.test_random_id}
+    }
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({"connection": "Modified."}, self.json_response)
+    self.assertInstancePUTSimulator([
+      {'recargs': ('<?xml version=\'1.0\' encoding=\'utf-8\'?>\n<instance>\n  '\
+      '<parameter id="url">http://new%s</parameter>\n</instance>\n'%
+        self.test_random_id,), 'reckwargs': {}, 'recmethod': 'setConnectionXml'}])
+
+  def test_same_connection(self):
+    d = {
+      'title': 'New Title 2' + self.test_random_id,
+      'connection': self.software_instance.getConnectionXmlAsDict()
+    }
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertEqual({
+      "title": "Modified.",
+      },
+      self.json_response)
+    self.assertInstancePUTSimulator([{'recargs': (d['title'],),
+      'reckwargs': {}, 'recmethod': 'setTitle'}])
+
+  def test_same_title_connection(self):
+    d = {
+      'title': self.software_instance.getTitle(),
+      'connection': self.software_instance.getConnectionXmlAsDict()
+    }
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps(d),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_not_logged_in(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]))
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(401)
+    self.assertTrue(self.response.getheader('Location') is not None)
+    auth = self.response.getheader('WWW-Authenticate')
+    self.assertTrue(auth is not None)
+    self.assertTrue('Bearer realm="' in auth)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_no_json(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_bad_json(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body='This is not JSON',
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(400)
+    self.assertResponseJson()
+    self.assertEqual({'error': "Data is not json object."}, self.json_response)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_empty_json(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body='{}',
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstancePUTSimulatorEmpty()
+
+  def test_future_compat(self):
+    self.connection.request(method='PUT',
+      url='/'.join([self.api_path, 'instance',
+        self.software_instance.getRelativeUrl()]),
+      body=json.dumps({'ignore':'me'}),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+    self.assertInstancePUTSimulatorEmpty()
+
+class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
+  def assertLastModifiedHeader(self):
+    calculated = rfc1123_date(self.portal.software_instance_module\
+      .bobobase_modification_time())
+    self.assertEqual(calculated, self.response.getheader('Last-Modified'))
+
+  def test(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertEqual({
+      "list": ['/'.join([self.api_url, 'instance',
+        self.software_instance.getRelativeUrl()])]
+      },
+      self.json_response)
+
+  def test_if_modified_since_equal(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.portal.software_instance_module\
+        .bobobase_modification_time())})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_after(self):
+    # wait three seconds before continuing in order to not hit time precision
+    # issue, as test needs to provide date with second precision after
+    # last modification of software instance and *before* now()
+    time.sleep(3)
+    # add 2 seconds, as used rfc1123_date will ceil the second in response and
+    # one more second will be required in order to be *after* the modification time
+    if_modified = self.portal.software_instance_module\
+      .bobobase_modification_time().timeTime() + 2
+    # check the test: is calculated time *before* now?
+    self.assertTrue(int(if_modified) < int(DateTime().timeTime()))
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.portal.software_instance_module\
+        .bobobase_modification_time())})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_before(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(self.portal.software_instance_module\
+        .bobobase_modification_time() - 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertEqual({
+      "list": ['/'.join([self.api_url, 'instance',
+        self.software_instance.getRelativeUrl()])]
+      },
+      self.json_response)
+
+  def test_if_modified_since_date_not_date(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': 'This Is Not A date'})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertEqual({
+      "list": ['/'.join([self.api_url, 'instance',
+        self.software_instance.getRelativeUrl()])]
+      },
+      self.json_response)
+
+  def test_if_modified_since_date_future(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference,
+      'If-Modified-Since': rfc1123_date(DateTime() + 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertResponseJson()
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertEqual({
+      "list": ['/'.join([self.api_url, 'instance',
+        self.software_instance.getRelativeUrl()])]
+      },
+      self.json_response)
+
+  def test_another_one(self):
+    person, person_reference = self.createPerson()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': person_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+
+  def test_empty(self):
+    self.portal.portal_catalog.unindexObject(
+      uid=self.software_instance.getUid())
+    self.software_instance.getParentValue().deleteContent(
+      self.software_instance.getId())
+    transaction.commit()
+
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+
+  def test_not_logged_in(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'instance']))
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(401)
+    self.assertTrue(self.response.getheader('Location') is not None)
+    auth = self.response.getheader('WWW-Authenticate')
+    self.assertTrue(auth is not None)
+    self.assertTrue('Bearer realm="' in auth)
+    self.assertPersonRequestSimulatorEmpty()
+
+class TestGET_discovery(VifibSlaposRestAPIV1Mixin):
+  def afterSetUp(self):
+    super(TestGET_discovery, self).afterSetUp()
+    self.api_date = self.portal.portal_vifib_rest_api_v1.api_modification_date
+
+  def assertLastModifiedHeader(self):
+    self.assertEqual(
+      rfc1123_date(self.api_date),
+      self.response.getheader('Last-Modified'))
+
+  def assertAPIDiscoveryDict(self):
+    self.assertSameSet(self.json_response.keys(),
+      [
+        'instance_certificate',
+        'request_instance',
+        'instance_list',
+        'instance_edit',
+        'instance_bang',
+        'instance_info',
+        'discovery',
+      ])
+
+  def test_noAcquisition(self):
+    # check the test
+    portal_id = self.portal.getId()
+    self.logout()
+    self.assertEqual(portal_id, self.portal.getId())
+    self.login()
+    # prove that even if anyone has access to portal root it is impossible
+    # to fetch it via API
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, self.portal.getId(), 'getId'])
+    )
+    self.prepareResponse()
+    self.assertResponseCode(404)
+    self.assertBasicResponse()
+
+  def test(self):
+    self.connection.request(method='GET',
+      url=self.api_path)
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertAPIDiscoveryDict()
+
+  def test_if_modified_since_equal(self):
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': rfc1123_date(self.api_date)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_after(self):
+    if_modified = self.api_date.timeTime() + 2
+    # check the test: is calculated time *before* now?
+    self.assertTrue(int(if_modified) < int(DateTime().timeTime()))
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': rfc1123_date(DateTime(if_modified))})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(304)
+
+  def test_if_modified_since_before(self):
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': rfc1123_date(self.api_date - 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertAPIDiscoveryDict()
+
+  def test_if_modified_since_date_not_date(self):
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': 'This Is Not A date'})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertAPIDiscoveryDict()
+
+  def test_if_modified_since_date_future(self):
+    self.connection.request(method='GET',
+      url=self.api_path,
+      headers={'If-Modified-Since': rfc1123_date(DateTime() + 1)})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertAPIDiscoveryDict()

@@ -1,0 +1,7 @@
+<type_roles>
+  <role id='Auditor; Assignor'>
+   <property id='title'>Person can manage tokens related to them</property>
+   <property id='base_category_script'>BearerTokenType_getSecurityCategoryFromSelfDestinationReference</property>
+   <multi_property id='base_category'>group</multi_property>
+  </role>
+</type_roles>

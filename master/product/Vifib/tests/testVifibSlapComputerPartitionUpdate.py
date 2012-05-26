@@ -51,7 +51,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       SlapLoginCurrentComputer
@@ -59,7 +59,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       SlapLoginCurrentComputer
@@ -333,7 +333,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       SlapLoginCurrentComputer
@@ -341,7 +341,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStarted
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       SlapLoginCurrentComputer
@@ -608,8 +608,11 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
       software_title=software_title,
+      software_type="RootSoftwareInstance",
       instance_xml=self.minimal_correct_xml,
-      **kw)
+      sla_xml="",
+      shared=False,
+      state="started")
     sequence.edit(root_software_instance_title=software_title)
 
   def test_update_not_created_person_request_in_progress(self):

@@ -79,16 +79,21 @@
   <td>hosting_subscription_url</td>\n
   <td></td>\n
 </tr>\n
+<tr>\n
+  <td>echo</td>\n
+  <td>${hosting_subscription_url}</td>\n
+  <td></td>\n
+</tr>\n
 <!--\n
 Unfortunately there is currently now way to do good client-server waiting for reindexation\n
-of Software Instance, so just wait 10s.\n
+of Software Instance, so just wait 60s.\n
 \n
 It shall be maximum of reindexation.\n
 \n
 -->\n
 <tr>\n
   <td>pause</td>\n
-  <td>10000</td>\n
+  <td>60000</td>\n
   <td></td>\n
 </tr>\n
 \n
@@ -126,13 +131,18 @@ It shall be maximum of reindexation.\n
 \n
 <!-- Hackish, but there is no other way to fetch software instance status -->\n
 <!-- XXX: It is hammering server, needs to make it a bit nicer -->\n
-<tr>\n
+<!--tr>\n
   <td>waitForCondition</td>\n
   <td>new\n
 Ajax.Request(\'${software_instance_path}/SoftwareInstance_getStatus\',\n
 {asynchronous: false}).transport.responseText === "Started"; var i;\n
 for (i = 0; i < 10000000; i++) { };</td>\n
   <td>600000</td>\n
+</tr-->\n
+<tr>\n
+  <td>pause</td>\n
+  <td>1200000</td>\n
+  <td></td>\n
 </tr>\n
 <tr>\n
   <td>open</td>\n

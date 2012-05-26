@@ -56,7 +56,7 @@
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>startComputerPartition</string>
+                <string>startComputerPartitionDeprecated</string>
               </list>
             </value>
         </item>

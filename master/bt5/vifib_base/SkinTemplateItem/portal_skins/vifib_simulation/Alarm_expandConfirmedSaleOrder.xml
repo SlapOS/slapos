@@ -56,14 +56,14 @@ portal = context.getPortalObject()\n
 activate_kw = {\n
   \'tag\': tag\n
 }\n
-uid_list = [q.UID for q in portal.Base_getNotCategoryRelatedList(\n
+path_list = [q.getPath() for q in portal.Base_getNotCategoryRelatedList(\n
   portal_type_list=[\'Sale Order Line\'],\n
   simulation_state_list=[\'confirmed\'],\n
   base_category_uid=portal.portal_categories.delivery.getUid())]\n
 \n
-if len(uid_list) > 0:\n
+if len(path_list) > 0:\n
   portal.portal_catalog.searchAndActivate(\n
-    uid=uid_list,\n
+    path=path_list,\n
     activate_kw=activate_kw,\n
     packet_size=1, # Separate calls to many transactions\n
     method_id=\'DeliveryLine_updateAppliedRule\',\n

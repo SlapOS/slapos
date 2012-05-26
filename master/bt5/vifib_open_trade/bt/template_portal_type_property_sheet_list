@@ -1,4 +1,4 @@
 Hosting Subscription | HostingSubscription
 Hosting Subscription | SoftwareInstance
-Hosting Subscription | TextDocument
-Hosting Subscription | VariationRange
+Slave Instance | HostingSubscription
+Software Instance | HostingSubscription

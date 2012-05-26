@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().portal_workflow.doActionFor(context, \'confirm_action\', comment=\'Transaction being registered in Payzen\')\n
+            <value> <string>context.getPortalObject().portal_workflow.doActionFor(context, \'confirm_action\', comment=\'Transaction synchronised with PayZen\')\n
 </string> </value>
         </item>
         <item>

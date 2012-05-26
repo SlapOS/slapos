@@ -9,7 +9,9 @@
         <item>
             <key> <string>delegated_list</string> </key>
             <value>
-              <list/>
+              <list>
+                <string>portal_type</string>
+              </list>
             </value>
         </item>
         <item>
@@ -59,6 +61,12 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>portal_type</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                    </value>
+                </item>
+                <item>
                     <key> <string>target</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -75,7 +83,7 @@
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
-                    <value> <string>Base_viewForgeReleaseFieldLibrary</string> </value>
+                    <value> <string>erp5_forge_release/SoftwareRelease_view</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -83,6 +91,19 @@
                 </item>
               </dictionary>
             </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <string>python:  map(lambda x: [x,x], here.getPortalNodeTypeList() + here.getPortalProjectTypeList() +  here.getPortalTicketTypeList() + here.getPortalDeliveryTypeList())</string> </value>
         </item>
       </dictionary>
     </pickle>

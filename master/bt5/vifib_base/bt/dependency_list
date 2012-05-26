@@ -16,7 +16,6 @@ erp5_full_text_myisam_catalog
 erp5_ingestion
 erp5_ingestion_mysql_innodb_catalog
 erp5_invoicing
-erp5_item
 erp5_jquery
 erp5_jquery_ui
 erp5_km
@@ -42,3 +41,5 @@ erp5_trade
 erp5_web
 erp5_web_download_theme
 erp5_xhtml_jquery_style
+vifib_slapos_core
+erp5_bearer_token

@@ -50,11 +50,27 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-if context.getSimulationState() != \'confirmed\':\n
+            <value> <string>from DateTime import DateTime\n
+portal = context.getPortalObject()\n
+service = None\n
+try:\n
+  service = portal.portal_secure_payments.find()\n
+except ValueError, e:\n
+  portal.system_event_module.newContent(title=\'Transaction %s cannot be updated, because of service error: %s\' % (context.getTitle(), e), portal_type=\'Payzen Event\', source_value=service, destination_value=context).confirm()\n
   return\n
-service = portal.portal_secure_payments.find()\n
-portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).updateStatus()\n
+  \n
+if context.getSimulationState() not in [\'planned\', \'confirmed\']:\n
+  return\n
+\n
+previous_id = context.PaymentTransaction_getPreviousPayzenId()\n
+\n
+if context.getSimulationState() == \'confirmed\' or previous_id is None:\n
+  portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).updateStatus()\n
+  return\n
+else:\n
+  context.setStartDate(DateTime())\n
+  context.updateCausalityState()\n
+  portal.system_event_module.newContent(title=\'Transaction %s Payzen registration\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).registerPayzen()\n
 </string> </value>
         </item>
         <item>

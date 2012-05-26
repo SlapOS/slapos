@@ -130,6 +130,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   # Assertions
   ########################################
   def assertSameDict(self, expected, got):
+    got = got.copy()
     issue_list = []
     for k, v in expected.items():
       if k not in got:
@@ -448,6 +449,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     REMOTE_USER = "test_vifib_customer_a"
     self.login("test_vifib_customer_a")
 
+  def stepSetSoftwareTitleRandom(self, sequence, **kw):
+    sequence['software_title'] = str(random())
+
   def stepCheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListDoesNotExists(
@@ -481,18 +485,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepCheckComputerPartitionInstanceSetupSalePackingListCancelled(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('cancelled',
-        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
-  def stepCheckComputerPartitionInstanceSetupSalePackingListConfirmed(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('confirmed',
-        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
-  def stepCheckComputerPartitionInstanceSetupSalePackingListStarted(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('started',
         self.portal.portal_preferences.getPreferredInstanceSetupResource(),
         sequence)
 
@@ -597,14 +589,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       kw['software_type'] = sequence.get('requested_software_type',
                                          'requested_software_type')
     if 'state' not in kw:
-      kw['state'] = sequence.get('software_instance_state')
+      kw['state'] = sequence.get('software_instance_state', 'started')
 
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
       software_title=software_title,
+      software_type=kw['software_type'],
       instance_xml=self.minimal_correct_xml,
       sla_xml=sequence.get('sla_xml'),
-      **kw)
+      shared=kw.get('shared', False),
+      state=kw['state'])
     transaction.commit()
     self.tic()
     # Note: This is tricky part. Workflow methods does not return nothing
@@ -620,9 +614,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         portal_type=software_instance_portal_type,
         title=software_title):
       try:
-        software_instance.Item_getInstancePackingListLine(cleanup_resource)
+        cleanup_line = software_instance.Item_getInstancePackingListLine(
+          cleanup_resource)
       except ValueError:
         software_instance_list.append(software_instance)
+      else:
+        if cleanup_line.getSimulationState() != 'delivered':
+          software_instance_list.append(software_instance)
     self.assertEqual(1, len(software_instance_list))
     software_instance = software_instance_list[0]
     sequence.edit(
@@ -925,6 +923,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     payment = self.portal.portal_catalog.getResultValue(
         portal_type="Payment Transaction",
         simulation_state="planned")
+    payment.setStartDate(DateTime())
     payment.confirm()
     payment.start()
     payment.stop()
@@ -1090,6 +1089,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLogout
 
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
       Tic
       Logout
@@ -1103,7 +1103,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
   """
 
@@ -1114,7 +1114,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListStarted \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
     '
 
@@ -1147,7 +1147,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_destroy_requested_computer_partition = \
       prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceDestroy \
+      SetSequenceSoftwareInstanceStateDestroyed \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       \
@@ -1174,7 +1175,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_start_requested_computer_partition_sequence_string = \
       prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceStart \
+      SetSequenceSoftwareInstanceStateStarted \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       LoginDefaultUser \
@@ -1196,7 +1198,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_stop_requested_computer_partition_sequence_string = \
       prepare_started_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceStop \
+      SetSequenceSoftwareInstanceStateStopped \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       \
@@ -1439,15 +1442,25 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic \
       Logout \
       LoginERP5TypeTestCase \
+      CallVifibExpandDeliveryLineAlarm \
+      CleanTic \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
       CallVifibTriggerBuildAlarm \
-      Tic \
-      CallStopConfirmedSaleInvoiceTransactionAlarm \
-      Tic \
-      CallVifibTriggerBuildAlarm \
-      Tic \
+      CleanTic \
       CallVifibExpandDeliveryLineAlarm \
       CleanTic \
       CallVifibTriggerBuildAlarm \
+      CleanTic \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
+      CallStopConfirmedSaleInvoiceTransactionAlarm \
+      CleanTic \
+      CallVifibExpandDeliveryLineAlarm \
+      CleanTic \
+      CallVifibTriggerBuildAlarm \
+      CleanTic \
+      CallVifibExpandDeliveryLineAlarm \
       CleanTic \
       CallVifibUpdateDeliveryCausalityStateAlarm \
       CleanTic \
@@ -1455,6 +1468,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   create_new_user_instance_sequence_string = '\
       LoginWebUser \
+      SetSoftwareTitleRandom \
       PersonRequestSoftwareInstance \
       Tic \
       Logout \
@@ -1470,6 +1484,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps
   ########################################
+
+  def stepSetSequenceSoftwareInstanceStateStopped(self, sequence, **kw):
+    sequence['software_instance_state'] = 'stopped'
+
+  def stepSetSequenceSoftwareInstanceStateStarted(self, sequence, **kw):
+    sequence['software_instance_state'] = 'started'
+
+  def stepSetSequenceSoftwareInstanceStateDestroyed(self, sequence, **kw):
+    sequence['software_instance_state'] = 'destroyed'
 
   def stepCheckComputerTradeConditionDestinationSectionListEmpty(self,
       sequence, **kw):
@@ -4325,7 +4348,8 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     sequence_string = self\
         .prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
-      RequestSoftwareInstanceDestroy \
+      SetSequenceSoftwareInstanceStateDestroyed \
+      PersonRequestSoftwareInstance \
       Tic \
       Logout \
       SlapLoginCurrentComputer \
@@ -4472,7 +4496,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase
@@ -4524,6 +4548,9 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       LoginWebUser
       CheckPersonUpdatedCredential
       Logout
+
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
 
       LoginERP5TypeTestCase
       CheckSiteConsistency

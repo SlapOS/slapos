@@ -113,7 +113,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListStarted \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
       \
       SlapLoginCurrentComputer \
@@ -184,7 +184,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListStarted \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
       \
       SlapLoginCurrentComputer \
@@ -267,7 +267,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListStarted \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
       \
       SlapLoginCurrentComputer \
@@ -404,7 +404,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListStarted \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
       \
       SlapLoginCurrentComputer \
@@ -1041,7 +1041,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
 
        LoginDefaultUser
        SetDeliveryLineAmountEqualOne
-       CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+       CheckComputerPartitionInstanceSetupSalePackingListStopped
        SlapLogout
 
        SlapLoginCurrentComputer
@@ -1135,7 +1135,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         CallConfirmOrderedSaleOrderAlarm
         Tic
         SetDeliveryLineAmountEqualZero
-        CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+        CheckComputerPartitionInstanceSetupSalePackingListStopped
 
         LoginERP5TypeTestCase
         CheckSiteConsistency
@@ -1266,7 +1266,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       CallConfirmOrderedSaleOrderAlarm \
       Tic \
       SetDeliveryLineAmountEqualOne \
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
       \
       SetRequestedWrongFilterParameterDict \
@@ -1278,7 +1278,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CallConfirmOrderedSaleOrderAlarm \
       Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed \
+      CheckComputerPartitionInstanceSetupSalePackingListStopped \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \

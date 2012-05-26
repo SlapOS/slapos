@@ -107,6 +107,10 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       StartSalePackingList \
       StopSalePackingList \
+      \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
+      \
       DeliverSalePackingList \
       Tic \
       CheckComputerPartitionInstanceSetupSalePackingListDelivered \

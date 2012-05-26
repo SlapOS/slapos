@@ -1,0 +1,16 @@
+<base_category_list>
+ <portal_type id="Hosting Subscription Module">
+  <item>business_application</item>
+ </portal_type>
+ <portal_type id="Slave Instance">
+  <item>aggregate</item>
+  <item>specialise</item>
+ </portal_type>
+ <portal_type id="Software Instance">
+  <item>aggregate</item>
+  <item>specialise</item>
+ </portal_type>
+ <portal_type id="Software Instance Module">
+  <item>business_application</item>
+ </portal_type>
+</base_category_list>

@@ -608,7 +608,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     transaction_list = self.portal.portal_catalog(
       portal_type="Sale Invoice Transaction",
       destination_section_relative_url=person.getRelativeUrl(),
-      sort_on=(('uid', 'DESC'),),
+      sort_on=(('creation_date', 'DESC'),),
       )
     self.assertEquals(2, len(transaction_list))
 
@@ -786,7 +786,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     transaction_list = self.portal.portal_catalog(
       portal_type="Sale Invoice Transaction",
       destination_section_relative_url=person.getRelativeUrl(),
-      sort_on=(('uid', 'DESC'),),
+      sort_on=(('creation_date', 'DESC'),),
       )
     self.assertEquals(2, len(transaction_list))
 
@@ -1001,7 +1001,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         \
         LoginWebUser \
         CheckSetupOngoingInvoice \
-        RequestSoftwareInstanceStart \
+        SetSequenceSoftwareInstanceStateStarted \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1009,7 +1010,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         Logout \
         LoginWebUser \
-        RequestSoftwareInstanceStop \
+        SetSequenceSoftwareInstanceStateStopped \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1027,7 +1029,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         LoginWebUser \
         CheckHostingOngoingInvoice \
         \
-        RequestSoftwareInstanceDestroy \
+        SetSequenceSoftwareInstanceStateDestroyed \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1090,7 +1093,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     transaction_list = self.portal.portal_catalog(
       portal_type="Sale Invoice Transaction",
       destination_section_relative_url=person.getRelativeUrl(),
-      sort_on=(('uid', 'DESC'),),
+      sort_on=(('creation_date', 'DESC'),),
       )
     self.assertEquals(2, len(transaction_list))
 
@@ -1296,7 +1299,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         \
         LoginWebUser \
-        RequestSoftwareInstanceStart \
+        SetSequenceSoftwareInstanceStateStarted \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1304,7 +1308,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         Logout \
         LoginWebUser \
-        RequestSoftwareInstanceStop \
+        SetSequenceSoftwareInstanceStateStopped \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1313,7 +1318,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Logout \
         \
         LoginWebUser \
-        RequestSoftwareInstanceStart \
+        SetSequenceSoftwareInstanceStateStarted \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1321,7 +1327,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         Logout \
         LoginWebUser \
-        RequestSoftwareInstanceStop \
+        SetSequenceSoftwareInstanceStateStopped \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1330,7 +1337,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Logout \
         \
         LoginWebUser \
-        RequestSoftwareInstanceDestroy \
+        SetSequenceSoftwareInstanceStateDestroyed \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1354,7 +1362,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         SlapLogout \
         \
         LoginWebUser \
-        RequestSoftwareInstanceStart \
+        SetSequenceSoftwareInstanceStateStarted \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1362,7 +1371,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         Logout \
         LoginWebUser \
-        RequestSoftwareInstanceStop \
+        SetSequenceSoftwareInstanceStateStopped \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1371,7 +1381,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Logout \
         \
         LoginWebUser \
-        RequestSoftwareInstanceDestroy \
+        SetSequenceSoftwareInstanceStateDestroyed \
+        PersonRequestSoftwareInstance \
         Tic \
         Logout \
         SlapLoginCurrentComputer \
@@ -1389,9 +1400,23 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         LoginERP5TypeTestCase \
         ConfirmOngoingInvoice \
         Tic \
-        Tic \
+        \
         SlapLogout \
         Tic \
+        \
+        CallVifibExpandDeliveryLineAlarm \
+        CleanTic \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        CallStopConfirmedSaleInvoiceTransactionAlarm \
+        CleanTic \
+        CallVifibExpandDeliveryLineAlarm \
+        CleanTic \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        \
         LoginWebUser \
         PayRegistrationPayment \
         Tic \

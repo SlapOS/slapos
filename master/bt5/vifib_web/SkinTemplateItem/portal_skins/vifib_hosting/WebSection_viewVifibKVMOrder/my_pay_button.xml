@@ -65,6 +65,12 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>enabled</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                    </value>
+                </item>
+                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -75,7 +81,7 @@
                 <item>
                     <key> <string>href</string> </key>
                     <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
                     </value>
                 </item>
                 <item>
@@ -139,7 +145,20 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: here.ERP5Site_getInitialPlannedPaymentTransaction().getRelativeUrl() + \'/AccountingTransaction_startPayment\'</string> </value>
+            <value> <string>python: here.ERP5Site_getAuthenticatedMemberPersonValue().Person_getOutstandingPayment() is not None</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <string>python: here.ERP5Site_getAuthenticatedMemberPersonValue().Person_getOutstandingPayment().getRelativeUrl() + \'/AccountingTransaction_startPayment\'</string> </value>
         </item>
       </dictionary>
     </pickle>

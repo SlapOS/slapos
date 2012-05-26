@@ -55,6 +55,8 @@
 from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery\n
 from DateTime import DateTime\n
 movement = context\n
+if movement.getSimulationState() != \'confirmed\':\n
+  return\n
 portal = movement.getPortalObject()\n
 cleanup_service = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
 \n

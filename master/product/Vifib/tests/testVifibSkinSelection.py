@@ -64,6 +64,7 @@ class TestVifibSkinSelection(testVifibMixin):
           'Multiflex',
           'ODS',
           'ODT',
+          'Outdated',
           'RSS',
           'View',
         ]
@@ -115,7 +116,6 @@ vifib_agent
 vifib_base
 vifib_cash
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_jauks_theme
 vifib_jauks_widget_library
@@ -141,6 +141,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -212,7 +213,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_fiber_theme
 vifib_forge_release
 vifib_jauks_theme
@@ -240,6 +240,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -312,7 +313,6 @@ vifib_hosting
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_hosting_theme
 vifib_jauks_theme
@@ -339,6 +339,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -410,7 +411,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -433,6 +433,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -502,7 +503,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -525,6 +525,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -594,7 +595,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -618,6 +618,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -690,7 +691,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -713,6 +713,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -785,7 +786,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -808,6 +808,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -877,7 +878,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -900,6 +900,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -968,7 +969,6 @@ vifib_upgrader
 vifib_agent
 vifib_base
 vifib_core
-vifib_crm
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
@@ -991,6 +991,7 @@ erp5_accounting
 erp5_accounting_bbb
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation

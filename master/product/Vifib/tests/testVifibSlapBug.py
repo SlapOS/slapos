@@ -287,7 +287,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       StoreCurrentSoftwareInstanceUidBufferA
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # Start it..
@@ -656,7 +656,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # Request destruction...
@@ -694,10 +694,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       uid = sequence['software_instance_uid'])
     from erp5.document.SoftwareInstance import DisconnectedSoftwareTree
     self.assertRaises(DisconnectedSoftwareTree,
-      software_instance.requestSoftwareInstance,
+      software_instance.requestInstance,
       software_release=sequence['software_release_uri'],
       software_type=sequence['requested_reference'],
-      partition_reference=sequence['requested_reference'],
+      software_title=sequence['requested_reference'],
       shared=False,
       instance_xml=self.minimal_correct_xml,
       sla_xml=self.minimal_correct_xml,
@@ -775,7 +775,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # From root request B
@@ -859,10 +859,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       uid = sequence['software_instance_uid'])
     from erp5.document.SoftwareInstance import CyclicSoftwareTree
     self.assertRaises(CyclicSoftwareTree,
-      software_instance.requestSoftwareInstance,
+      software_instance.requestInstance,
       software_release=sequence['software_release_uri'],
       software_type=sequence['requested_reference'],
-      partition_reference=sequence['requested_reference'],
+      software_title=sequence['requested_reference'],
       shared=False,
       instance_xml=self.minimal_correct_xml,
       sla_xml=self.minimal_correct_xml,
@@ -940,7 +940,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # From root request B
@@ -1034,10 +1034,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid = sequence['software_instance_uid'])
     self.assertRaises(ValueError,
-      software_instance.requestSoftwareInstance,
+      software_instance.requestInstance,
       software_release=sequence['software_release_uri'],
       software_type=sequence['requested_reference'],
-      partition_reference=sequence['requested_reference'],
+      software_title=sequence['requested_reference'],
       shared=False,
       instance_xml=self.minimal_correct_xml,
       sla_xml=self.minimal_correct_xml,
@@ -1112,7 +1112,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       # From root request B
@@ -1319,7 +1319,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SetSelectedComputerPartition
       SetRequestedComputerPartition
       CheckComputerPartitionNoInstanceHostingSalePackingList
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginTestVifibCustomer
@@ -1362,7 +1362,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SetSelectedComputerPartition
       SetRequestedComputerPartition
       CheckComputerPartitionNoInstanceHostingSalePackingList
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase
@@ -1371,9 +1371,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
-
-  def stepSetSoftwareTitleRandom(self, sequence, **kw):
-    sequence['software_title'] = str(random.random())
 
   def test_request_new_with_destroyed_reference_web_ui(self):
     """Prove that having destroyed SI allows to request new one with same
@@ -1398,7 +1395,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase
@@ -1470,7 +1467,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
       LoginDefaultUser
       CheckComputerPartitionInTable
-      CheckComputerPartitionInstanceSetupSalePackingListConfirmed
+      CheckComputerPartitionInstanceSetupSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase

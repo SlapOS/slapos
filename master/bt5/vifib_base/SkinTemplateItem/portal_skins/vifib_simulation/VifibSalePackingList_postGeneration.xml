@@ -54,7 +54,6 @@
   raise RuntimeError, \'related_simulation_movement_path_list is missing. Update ERP5 Product.\'\n
 \n
 from Products.ERP5Type.Message import translateString\n
-\n
 packing_list = context\n
 \n
 try:\n
@@ -64,10 +63,16 @@ except AttributeError:\n
   pass\n
 \n
 # Then, modify state\n
-confirm_tag = \'%s_confirm\' % packing_list.getPath()\n
-packing_list.activate(after_path_and_method_id=(related_simulation_movement_path_list,\n
-  (\'immediateReindexObject\',\'recursiveImmediateReindexObject\')),\n
-  tag=confirm_tag).Delivery_confirm()\n
+packing_list.Delivery_confirm()\n
+\n
+line = packing_list.contentValues(portal_type=\'Sale Packing List Line\')[0]\n
+portal = packing_list.getPortalObject()\n
+comment = translateString(\'Automatic transition on setup delivery.\')\n
+if line.getResource() == portal.portal_preferences.getPreferredInstanceSetupResource():\n
+  if portal.portal_workflow.isTransitionPossible(packing_list, \'start\'):\n
+    packing_list.start(comment=comment)\n
+  if portal.portal_workflow.isTransitionPossible(packing_list, \'stop\'):\n
+    packing_list.stop(comment=comment)\n
 \n
 # First set the packing_list in the building state\n
 packing_list.startBuilding()\n

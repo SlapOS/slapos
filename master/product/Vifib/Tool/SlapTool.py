@@ -676,18 +676,34 @@ class SlapTool(BaseTool):
     """
     Reports that Computer Partition is being build
     """
-    return self._getSoftwareInstanceForComputerPartition(
+    instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id).startComputerPartitionInstallation()
+        computer_partition_id)
+    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
+      if line.getResource() == portal.portal_preferences.\
+                                 getPreferredInstanceSetupResource():
+        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
+          delivery.start()
 
   @convertToREST
   def _availableComputerPartition(self, computer_id, computer_partition_id):
     """
     Reports that Computer Partition is available
     """
-    return self._getSoftwareInstanceForComputerPartition(
+    instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id).stopComputerPartitionInstallation()
+        computer_partition_id)
+    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
+      if line.getResource() == portal.portal_preferences.\
+                                 getPreferredInstanceSetupResource():
+        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
+          delivery.stop()
 
   @convertToREST
   def _softwareInstanceError(self, computer_id,
@@ -726,18 +742,36 @@ class SlapTool(BaseTool):
     """
     Reports that Computer Partition is started
     """
-    return self._getSoftwareInstanceForComputerPartition(
+    instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id).startComputerPartition()
+        computer_partition_id)
+    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
+      if line.getResource() in [
+          portal.portal_preferences.getPreferredInstanceHostingResource(),
+          portal.portal_preferences.getPreferredInstanceUpdateResource()]:
+        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
+          delivery.start()
 
   @convertToREST
   def _stoppedComputerPartition(self, computer_id, computer_partition_id):
     """
     Reports that Computer Partition is stopped
     """
-    return self._getSoftwareInstanceForComputerPartition(
+    instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id).stopComputerPartition()
+        computer_partition_id)
+    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
+      if line.getResource() in [
+          portal.portal_preferences.getPreferredInstanceHostingResource(),
+          portal.portal_preferences.getPreferredInstanceUpdateResource()]:
+        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
+          delivery.stop()
 
   @convertToREST
   def _destroyedComputerPartition(self, computer_id, computer_partition_id):
@@ -839,10 +873,10 @@ class SlapTool(BaseTool):
       software_instance_document = self.\
         _getSoftwareInstanceForComputerPartition(computer_id,
         computer_partition_id)
-      software_instance_document.requestSoftwareInstance(
+      software_instance_document.requestInstance(
               software_release=software_release,
               software_type=software_type,
-              partition_reference=partition_reference,
+              software_title=partition_reference,
               instance_xml=instance_xml,
               shared=shared,
               sla_xml=sla_xml,

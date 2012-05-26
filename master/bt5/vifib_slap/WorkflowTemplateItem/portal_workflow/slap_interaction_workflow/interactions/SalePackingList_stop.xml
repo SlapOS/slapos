@@ -56,7 +56,7 @@
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>stop</string>
+                <string>stopDeprecated</string>
               </list>
             </value>
         </item>

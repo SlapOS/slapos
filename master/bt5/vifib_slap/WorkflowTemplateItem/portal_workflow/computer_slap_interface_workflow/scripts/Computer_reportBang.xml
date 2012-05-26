@@ -57,6 +57,9 @@ for computer_partition in [x for x in computer.contentValues(portal_type=\'Compu
   except ValueError:\n
     # no need to bang trees without any delivery line\n
     continue\n
+  if packing_list_line.getResource() == context.getPortalObject().portal_preferences.getPreferredInstanceCleanupResource() and \\\n
+    packing_list_line.getSimulationState() == \'delivered\':\n
+      continue\n
   software_instance = packing_list_line.getAggregateValue(portal_type=\'Software Instance\')\n
   software_instance.activate().SoftwareInstance_bangAsSelf(relative_url=software_instance.getRelativeUrl(),\n
     reference=software_instance.getReference(), comment=state_change.kwargs.get(\'comment\', \'\'))\n

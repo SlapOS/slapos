@@ -101,7 +101,7 @@ class TestVifibUserAdmin(testVifibMixin):
     # Deliver IPL
     internal_packing_list.portal_workflow.doActionFor(internal_packing_list, 'confirm_action')
     internal_packing_list.portal_workflow.doActionFor(internal_packing_list, 'stop_action')
-    self.assertEquals('building', internal_packing_list.getCausalityState())
+    self.assertEquals('draft', internal_packing_list.getCausalityState())
     transaction.commit()
     self.stepTic()
     transaction.commit()
@@ -109,7 +109,7 @@ class TestVifibUserAdmin(testVifibMixin):
     self.logout()
     # Computer registration has to be validated by a Vifib System Administrator
     self.login(user_name='test_vifib_admin')
-    self.assertEquals('solved', internal_packing_list.getCausalityState())
+    self.assertEquals('draft', internal_packing_list.getCausalityState())
     internal_packing_list.portal_workflow.doActionFor(internal_packing_list, 'deliver_action')
 
     self.logout()
@@ -169,7 +169,7 @@ class TestVifibUserAdmin(testVifibMixin):
     # Deliver IPL
     internal_packing_list.portal_workflow.doActionFor(internal_packing_list, 'confirm_action')
     internal_packing_list.portal_workflow.doActionFor(internal_packing_list, 'stop_action')
-    self.assertEquals('building', internal_packing_list.getCausalityState())
+    self.assertEquals('draft', internal_packing_list.getCausalityState())
     transaction.commit()
     self.stepTic()
     transaction.commit()
@@ -177,7 +177,7 @@ class TestVifibUserAdmin(testVifibMixin):
     self.logout()
     # Computer registration has to be validated by a Vifib System Administrator
     self.login(user_name='test_vifib_admin')
-    self.assertEquals('solved', internal_packing_list.getCausalityState())
+    self.assertEquals('draft', internal_packing_list.getCausalityState())
     internal_packing_list.portal_workflow.doActionFor(internal_packing_list, 'deliver_action')
 
     self.logout()
