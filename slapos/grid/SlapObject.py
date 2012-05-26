@@ -284,7 +284,12 @@ class Partition(object):
     template_location = os.path.join(self.software_path, 'template.cfg')
     config_location = os.path.join(self.instance_path, 'buildout.cfg')
     self.logger.debug("Coping %r to %r" % (template_location, config_location))
-    shutil.copy(template_location, config_location)
+    try:
+      shutil.copy(template_location, config_location)
+    except IOError, e:
+      # Template not found on SR, we notify user.
+      raise IOError('Software Release %s is not correctly installed.\n'
+          '%s' % e)
     # fill generated buildout with additional information
     buildout_text = open(config_location).read()
     buildout_text += '\n\n' + pkg_resources.resource_string(__name__,
