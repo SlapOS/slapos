@@ -36,8 +36,10 @@ import pkg_resources
 import zc.buildout
 
 class GenericBaseRecipe(object):
-  """Boilerplate class providing helpful methods for all SlapOS recipes.
-     Can be used to extend SlapOS recipes to ease development"""
+  """Boilerplate class for all Buildout recipes providing helpful methods like
+     creating configuration file, creating wrappers, generating passwords, etc.
+     Can be extended in SlapOS recipes to ease development.
+  """
 
   TRUE_VALUES = ['y', 'yes', '1', 'true']
   FALSE_VALUES = ['n', 'no', '0', 'false']
