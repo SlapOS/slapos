@@ -36,6 +36,7 @@ class Recipe(object):
     slap = slapmodule.slap()
 
     self.software_release_url = options['software-url']
+    self.name = options['name']
 
     slap.initializeConnection(options['server-url'],
                               options.get('key-file'),
@@ -73,7 +74,7 @@ class Recipe(object):
             options['config-%s' % config_parameter]
 
     self.instance = self.request(options['software-url'], software_type,
-      options['name'], partition_parameter_kw=partition_parameter_kw,
+      self.name, partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=self.isSlave)
 
     self.failed = None
@@ -93,12 +94,11 @@ class Recipe(object):
         status = self.instance.getState()
       except slapmodule.NotFoundError:
         status = "not ready yet, please try again"
-      # XXX-Cedric : currently raise an error. So swallow it...
       except AttributeError:
         status = "unknown"
-      self.logger.error("Connection parameter %s not found. "
-          "Status of requested instance is : %s." % (self.failed, status))
-      raise KeyError("Connection parameter %s not found. " % self.failed)
+      raise KeyError("Connection parameter %s not found when requesting "
+          "instance named %s. Status of instance is: %s." % (self.failed,
+              self.name, status))
     return []
 
   update = install
