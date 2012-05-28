@@ -606,12 +606,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
                                   self.software_instance_portal_type)
     software_instance = self.portal.REQUEST.get('request_instance')
     hosting_subscription = self.portal.REQUEST.get('request_hosting_subscription')
-    sequence.edit(
-        root_software_instance_title=software_title,
-        software_instance_uid=software_instance.getUid(),
-        software_instance_reference=software_instance.getReference(),
-        hosting_subscription_uid=hosting_subscription.getUid(),
-        )
+    if (software_instance is not None):
+      sequence.edit(
+          root_software_instance_title=software_title,
+          software_instance_uid=software_instance.getUid(),
+          software_instance_reference=software_instance.getReference(),
+          hosting_subscription_uid=hosting_subscription.getUid(),
+          )
 
   def stepSetComputerPartitionFromRootSoftwareInstance(self, sequence):
     computer_partition = self.portal.portal_catalog.getResultValue(
