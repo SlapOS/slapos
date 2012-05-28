@@ -676,16 +676,55 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         )
 
   def stepRequestSoftwareInstanceStart(self, sequence, **kw):
-    self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestStartComputerPartition()
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStart(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestSoftwareInstanceStartRaisesValueError(self, sequence, **kw):
-    self.assertRaises(ValueError, self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestStartComputerPartition)
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    self.assertRaises(ValueError, instance.requestDestroy, 
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestSoftwareInstanceStop(self, sequence, **kw):
-    self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestStopComputerPartition()
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStop(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestSoftwareInstallation(self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
@@ -4090,15 +4129,39 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         )
 
   def stepStartSoftwareInstanceFromCurrentComputerPartition(self, sequence):
-    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+    instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
-    software_instance.requestStartComputerPartition()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStart(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepRequestStopSoftwareInstanceFromCurrentComputerPartition(self,
       sequence):
-    software_instance = self._getSoftwareInstanceFromCurrentComputerPartition(
+    instance = self._getSoftwareInstanceFromCurrentComputerPartition(
         sequence)
-    software_instance.requestStopComputerPartition()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStop(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepCheckSalePackingListFromSlaveInstanceAccessUsingSoftwareInstanceUser(self,
       sequence):
