@@ -287,7 +287,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       StoreCurrentSoftwareInstanceUidBufferA
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # Start it..
@@ -298,7 +298,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
 
@@ -415,7 +415,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
 
@@ -656,7 +656,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # Request destruction...
@@ -775,7 +775,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # From root request B
@@ -940,7 +940,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # From root request B
@@ -1112,7 +1112,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # From root request B
@@ -1319,7 +1319,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SetSelectedComputerPartition
       SetRequestedComputerPartition
       CheckComputerPartitionNoInstanceHostingSalePackingList
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginTestVifibCustomer
@@ -1362,7 +1362,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SetSelectedComputerPartition
       SetRequestedComputerPartition
       CheckComputerPartitionNoInstanceHostingSalePackingList
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -1395,7 +1395,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -1467,7 +1467,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
       LoginDefaultUser
       CheckComputerPartitionInTable
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase

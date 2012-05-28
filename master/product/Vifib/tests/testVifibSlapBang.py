@@ -532,14 +532,14 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
       SlapLoginCurrentComputer
       SoftwareInstanceBuilding
       Tic
       SlapLogout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
       SlapLoginCurrentComputer
       SoftwareInstanceAvailable
@@ -547,7 +547,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
       LoginTestVifibCustomer

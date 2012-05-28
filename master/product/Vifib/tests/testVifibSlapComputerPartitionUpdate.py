@@ -51,7 +51,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       SlapLoginCurrentComputer
@@ -59,7 +59,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       SlapLoginCurrentComputer
@@ -68,7 +68,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionNoInstanceHostingSalePackingList
       Logout
 
@@ -102,7 +102,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionNoInstanceHostingSalePackingList
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceUpdateSalePackingListDelivered
       Logout
 
@@ -333,7 +333,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       SlapLoginCurrentComputer
@@ -341,7 +341,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       SlapLoginCurrentComputer
@@ -350,7 +350,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionNoInstanceHostingSalePackingList
       Logout
 

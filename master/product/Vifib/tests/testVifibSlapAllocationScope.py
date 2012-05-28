@@ -111,7 +111,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as someone else
@@ -141,7 +141,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -210,7 +210,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as friend
@@ -227,7 +227,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as someone else
@@ -257,7 +257,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -313,7 +313,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as someone else
@@ -330,7 +330,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -487,7 +487,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # now this computer patrition request new one
@@ -536,7 +536,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # change allocation to personal
@@ -603,7 +603,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       StoreTestVifibAdminComputerPartitionCoordinate
@@ -622,7 +622,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # change allocation to friend
@@ -689,7 +689,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # change allocation to close
@@ -733,7 +733,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # change allocation to empty
@@ -807,7 +807,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # request as someone else
@@ -825,7 +825,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       # confirm instantiation
@@ -836,7 +836,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionNoInstanceHostingSalePackingList
       Logout
 

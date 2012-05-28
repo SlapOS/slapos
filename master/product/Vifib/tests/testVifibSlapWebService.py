@@ -488,12 +488,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         self.portal.portal_preferences.getPreferredInstanceSetupResource(),
         sequence)
 
-  def stepCheckComputerPartitionInstanceSetupSalePackingListStopped(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('stopped',
-        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
   def stepCheckComputerPartitionInstanceSetupSalePackingListDelivered(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('delivered',
@@ -1146,7 +1140,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SelectCurrentlyUsedSalePackingListUid
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
   """
 
@@ -1157,7 +1151,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic \
       SlapLogout \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListStopped \
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       Logout \
     '
 
@@ -1169,7 +1163,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLogout
       LoginDefaultUser
       SetSelectedComputerPartition
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
   """
@@ -4591,7 +4585,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase

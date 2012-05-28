@@ -438,7 +438,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
 
       LoginERP5TypeTestCase
       CheckSiteConsistency
@@ -477,7 +477,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceHostingSalePackingListStarted
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       LoginTestVifibCustomer
       RequestStopSoftwareInstanceFromCurrentComputerPartition
       Tic
@@ -606,7 +606,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       SetDeliveryLineAmountEqualOne
       CheckComputerPartitionInstanceHostingSalePackingListStarted
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginTestVifibCustomer
@@ -1074,7 +1074,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       CheckComputerPartitionInstanceHostingSalePackingListDelivered
       SetDeliveryLineAmountEqualOne
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       RequestDestroySoftwareInstanceFromCurrentComputerPartition
       Tic
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
@@ -1133,7 +1133,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic 
       LoginDefaultUser
       SetDeliveryLineAmountEqualOne
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed """ + \
       self.prepare_published_software_release + """
       Tic
@@ -1180,7 +1180,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       SetDeliveryLineAmountEqualOne
-      CheckComputerPartitionInstanceSetupSalePackingListStopped
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
       LoginAsCustomerA

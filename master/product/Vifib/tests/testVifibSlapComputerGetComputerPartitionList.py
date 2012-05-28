@@ -209,7 +209,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_string = self.prepare_installed_computer_partition_sequence_string + '\
       LoginDefaultUser \
       Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListStopped \
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       SelectCurrentlyUsedSalePackingListUid \
       CancelSalePackingList \
       Tic \
@@ -349,7 +349,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       LoginDefaultUser \
       CallConfirmOrderedSaleOrderAlarm \
       Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListStopped \
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       Logout \
       \
       SlapLoginCurrentComputer \
@@ -380,7 +380,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CallConfirmOrderedSaleOrderAlarm \
       Tic \
       SetDeliveryLineAmountEqualOne \
-      CheckComputerPartitionInstanceSetupSalePackingListStopped \
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       Logout \
       \
       SlapLoginCurrentComputer \
