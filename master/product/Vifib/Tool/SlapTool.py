@@ -838,14 +838,10 @@ class SlapTool(BaseTool):
     if requested_software_instance is None:
       raise SoftwareInstanceNotReady
     else:
-      requested_software_instance = portal.restrictedTraverse(
-        requested_software_instance)
-      if not requested_software_instance.getAggregate(
-        portal_type="Computer Partition"):
+      if not requested_software_instance.getAggregate(portal_type="Computer Partition"):
         raise SoftwareInstanceNotReady
       else:
-        parameter_dict = self._getSoftwareInstanceAsParameterDict(
-          requested_software_instance)
+        parameter_dict = self._getSoftwareInstanceAsParameterDict(requested_software_instance)
         software_instance = SoftwareInstance(**parameter_dict)
         return xml_marshaller.xml_marshaller.dumps(software_instance)
 
