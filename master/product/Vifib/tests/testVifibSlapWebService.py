@@ -604,13 +604,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     software_instance_portal_type = kw.get("instance_portal_type",
                                   self.software_instance_portal_type)
-    software_instance = self.portal.restrictedTraverse(
+    software_instance = self.portal.unrestrictedTraverse(
         self.portal.REQUEST.get('request_instance'))
+    hosting_subscription = self.portal.unrestrictedTraverse(
+        self.portal.REQUEST.get('request_hosting_subscription'))
     sequence.edit(
         root_software_instance_title=software_title,
         software_instance_uid=software_instance.getUid(),
         software_instance_reference=software_instance.getReference(),
-        hosting_subscription_uid=software_instance.getSpecialiseUid(),
+        hosting_subscription_uid=hosting_subscription.getUid(),
         )
 
   def stepSetComputerPartitionFromRootSoftwareInstance(self, sequence):
