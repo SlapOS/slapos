@@ -291,7 +291,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.getPortalObject().portal_workflow.getInfoFor(context, \'comment\', wf_id=\'software_instance_slap_interface_workflow\')</string> </value>
+            <value> <string>python: context.getPortalObject().portal_workflow.getInfoFor(context, \'comment\', wf_id=\'instance_slap_interface_workflow\')</string> </value>
         </item>
       </dictionary>
     </pickle>
@@ -304,7 +304,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.getPortalObject().portal_workflow.getInfoFor(context, \'comment\', wf_id=\'software_instance_slap_interface_workflow\')</string> </value>
+            <value> <string>python: context.getPortalObject().portal_workflow.getInfoFor(context, \'comment\', wf_id=\'instance_slap_interface_workflow\')</string> </value>
         </item>
       </dictionary>
     </pickle>
@@ -317,7 +317,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: "Notification at %s" % context.getPortalObject().portal_workflow.getInfoFor(context, \'time\', wf_id=\'software_instance_slap_interface_workflow\')</string> </value>
+            <value> <string>python: "Notification at %s" % context.getPortalObject().portal_workflow.getInfoFor(context, \'time\', wf_id=\'instance_slap_interface_workflow\')</string> </value>
         </item>
       </dictionary>
     </pickle>
