@@ -25,6 +25,7 @@
                 <string>allocate_partition</string>
                 <string>bang</string>
                 <string>rename</string>
+                <string>report_computer_partition_error</string>
                 <string>request_destroy</string>
                 <string>request_instance</string>
                 <string>request_start</string>
