@@ -618,7 +618,15 @@ class Slapgrid(object):
         clean_run = False
         exception = traceback.format_exc()
         logger.error(exception)
-        computer_partition.error(exception)
+        try:
+          computer_partition.error(exception)
+        except (SystemExit, KeyboardInterrupt):
+          raise
+        except Exception:
+          exception = traceback.format_exc()
+          logger.error('Problem during reporting error, continuing:\n' +
+            exception)
+
 
     logger.info("Finished computer partitions...")
     return clean_run
