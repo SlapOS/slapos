@@ -54,6 +54,9 @@
 from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
 from zExceptions import Unauthorized\n
 \n
+def markHistory(document, comment):\n
+  document.portal_workflow.doActionFor(document, action=\'edit_action\', comment=comment)\n
+\n
 def assignComputerPartition(order):\n
   portal = context.getPortalObject()\n
 \n
@@ -86,6 +89,8 @@ def assignComputerPartition(order):\n
           order_line.edit(\n
             aggregate_list=order_line.getAggregateList()+[computer_partition_relative_url])\n
           return (software_instance, computer_partition_relative_url)\n
+        else:\n
+          markHistory(order, \'Not confirmed: no open order line found.\')\n
   return (None, None)\n
 \n
 sale_order = context.getParentValue()\n
@@ -94,17 +99,17 @@ if sale_order.getSimulationState() == \'ordered\':\n
     software_instance, computer_partition = assignComputerPartition(sale_order)\n
   except ValueError:\n
     # It was not possible to find free Computer Partition\n
-    pass\n
+    markHistory(sale_order, \'Not confirmed: no free Computer Partition\')\n
   except Unauthorized:\n
     # user has bad balance\n
-    pass\n
+    markHistory(sale_order, \'Not confirmed: user has bad balance\')\n
   else:\n
     if computer_partition is not None:\n
       try:\n
         sale_order.Base_checkConsistency()\n
       except ValidationFailed:\n
         # order not ready yet\n
-        pass\n
+        markHistory(sale_order, \'Not confirmed: consistency failed\')\n
       else:\n
         sale_order.setStopDate(DateTime())\n
         sale_order.confirm()\n
