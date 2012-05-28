@@ -62,8 +62,8 @@ if line.getResource() != portal.portal_preferences.getPreferredInstanceSetupReso
 comment = translateString(\'Automatic transition on setup delivery.\')\n
 if portal.portal_workflow.isTransitionPossible(context, \'start\'):\n
   context.start(comment=comment)\n
-if portal.portal_workflow.isTransitionPossible(context, \'stop\'):\n
   context.stop(comment=comment)\n
+  context.deliver(comment=comment)\n
 </string> </value>
         </item>
         <item>
@@ -72,7 +72,7 @@ if portal.portal_workflow.isTransitionPossible(context, \'stop\'):\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SalePackingList_stopInstanceSetup</string> </value>
+            <value> <string>SalePackingList_deliverInstanceSetup</string> </value>
         </item>
       </dictionary>
     </pickle>
