@@ -975,6 +975,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CheckRegistrationAccounting \
         PayRegistrationPayment \
         Tic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
         Logout \
         LoginWebUser \
         CheckPaidRegistrationAccounting \
