@@ -119,7 +119,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       resource_relative_url=setup_resource)
 
     self.assertEqual(1, len(setup_delivery_line_list))
-    self.assertEqual('stopped', setup_delivery_line_list[0]\
+    self.assertEqual('delivered', setup_delivery_line_list[0]\
       .getSimulationState())
 
     setup_invoice_line_list = catalog(portal_type='Invoice Line',
