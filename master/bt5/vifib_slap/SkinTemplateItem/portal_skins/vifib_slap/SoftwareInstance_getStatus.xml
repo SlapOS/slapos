@@ -68,7 +68,7 @@ else:\n
         else:\n
           return \'Start in progress\'        \n
       elif state == "stop_requested":\n
-        if delivery_state == "delivered":\n
+        if delivery_state == "delivered" or (delivery.getPortalType() == \'Sale Order\' and delivery.getSimulationState() == \'confirmed\'):\n
           return \'Stopped\'\n
         else:\n
           return \'Stop in progress\'\n
