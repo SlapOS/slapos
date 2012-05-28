@@ -194,7 +194,8 @@ else:\n
       elif (state == destroyed):\n
         if isTransitionPossible(delivery, "stop"):\n
           delivery.stop()\n
-        delivery.deliver()\n
+        if isTransitionPossible(delivery, "deliver"):\n
+          delivery.deliver()\n
         new_delivery = letsclone(cleanup_service_relative_url)\n
         new_delivery.confirm()\n
         instance.edit(causality_value=new_delivery)\n
