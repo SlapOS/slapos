@@ -23,7 +23,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
       resource=self.portal.portal_preferences\
         .getPreferredInstanceSetupResource()).getParentValue()
 
-    self.assertEqual('stopped', instance_setup_delivery.getSimulationState())
+    self.assertEqual('delivered', instance_setup_delivery.getSimulationState())
     start_date = None
     for item in self.portal.portal_workflow.getInfoFor(
       ob=instance_setup_delivery, name='history', wf_id='packing_list_workflow'):
