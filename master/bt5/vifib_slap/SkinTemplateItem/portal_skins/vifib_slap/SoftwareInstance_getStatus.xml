@@ -68,7 +68,7 @@ else:\n
         else:\n
           return \'Start in progress\'        \n
       elif state == "stop_requested":\n
-        if delivery_state == "stopped":\n
+        if delivery_state == "delivered":\n
           return \'Stopped\'\n
         else:\n
           return \'Stop in progress\'\n
