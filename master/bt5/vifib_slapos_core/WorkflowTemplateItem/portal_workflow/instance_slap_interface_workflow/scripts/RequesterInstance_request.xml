@@ -170,7 +170,7 @@ promise_kw = {\n
   \'shared\': is_slave,\n
 }\n
 request_software_instance_url = request_software_instance.getRelativeUrl()\n
-context.REQUEST.set(\'request_instance\', request_software_instance_url)\n
+context.REQUEST.set(\'request_instance\', request_software_instance)\n
 if (root_state == "started"):\n
   request_software_instance.requestStart(**promise_kw)\n
 elif (root_state == "stopped"):\n

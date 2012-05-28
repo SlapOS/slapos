@@ -834,11 +834,10 @@ class SlapTool(BaseTool):
               sla_xml=sla_xml,
               state=state)
 
-    requested_software_instance_url = self.REQUEST.get('request_instance')
-    if requested_software_instance_url is None:
+    requested_software_instance = self.REQUEST.get('request_instance')
+    if requested_software_instance is None:
       raise SoftwareInstanceNotReady
     else:
-      requested_software_instance = portal.restrictedTraverse(requested_software_instance_url)
       if not requested_software_instance.getAggregate(portal_type="Computer Partition"):
         raise SoftwareInstanceNotReady
       else:
