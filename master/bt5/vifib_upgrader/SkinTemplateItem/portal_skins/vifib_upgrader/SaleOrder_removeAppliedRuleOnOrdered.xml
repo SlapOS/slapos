@@ -52,8 +52,8 @@
             <key> <string>_body</string> </key>
             <value> <string>if context.getPortalType() != \'Sale Order\':\n
   raise TypeError(\'%r is not Sale Order\' % context.getPath())\n
-if context.getSimulationState() != \'ordered\':\n
-  raise TypeError(\'%r is not ordered\' % context.getPath())\n
+if context.getSimulationState() == \'confirmed\':\n
+  raise TypeError(\'%r is confirmed\' % context.getPath())\n
 \n
 for applied_rule in context.getPortalObject().portal_catalog(\n
   portal_type=\'Applied Rule\',\n
