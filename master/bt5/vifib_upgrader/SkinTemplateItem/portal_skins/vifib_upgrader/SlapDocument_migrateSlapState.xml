@@ -168,7 +168,7 @@ if slap_document.getSlapState() == \'draft\':\n
   elif state == "stopped":\n
     slap_document.requestStop(comment=\'Migration.\', **promise_kw)\n
   elif state == "destroyed":\n
-    slap_document.requestStop(comment=\'Migration, in order to reach destroy.\', **promise_kw)\n
+    raise NotImplementedError\n
     slap_document.requestDestroy(comment=\'Migration.\', **promise_kw)\n
   else:\n
     raise ValueError("Unknown state %s for %s" % (state, slap_document.getRelativeUrl()))\n
