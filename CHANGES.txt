@@ -4,7 +4,9 @@ Changes
 0.26 (Unreleased)
 -----------------
 
- * No change yet.
+ * slapformat: no_bridge option becomes 'not create_tap'.
+   create_tap is true by default. So a bridge is used and tap will be created by
+   default. [Cedric de Saint Martin]
 
 0.25 (2012-05-16)
 -----------------
