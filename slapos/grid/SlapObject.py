@@ -289,7 +289,7 @@ class Partition(object):
     except IOError, e:
       # Template not found on SR, we notify user.
       raise IOError('Software Release %s is not correctly installed.\n'
-          '%s' % e)
+          '%s' % (self.software_release_url, e))
     # fill generated buildout with additional information
     buildout_text = open(config_location).read()
     buildout_text += '\n\n' + pkg_resources.resource_string(__name__,
