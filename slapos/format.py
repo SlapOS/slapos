@@ -465,6 +465,7 @@ class User(object):
     try:
       pwd.getpwnam(self.name)
     except KeyError:
+      user_parameter_list.append('--system')
       callAndRead(['useradd'] + user_parameter_list)
     else:
       callAndRead(['usermod'] + user_parameter_list)
