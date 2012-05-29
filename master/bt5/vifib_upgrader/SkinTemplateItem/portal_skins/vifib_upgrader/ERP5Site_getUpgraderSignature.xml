@@ -118,8 +118,8 @@ KEEP_ORIGINAL_DICT = {\n
     \'portal_workflow/software_instance_slap_interface_workflow\',\n
   ),\n
   \'vifib_open_trade\': (\n
-    \'hosting_subscription_module \',\n
-    \'portal_types/Hosting Subscription \',\n
+    \'hosting_subscription_module\',\n
+    \'portal_types/Hosting Subscription\',\n
     \'portal_types/Hosting Subscription Module\',\n
     \'property_sheet_list/Hosting Subscription\',\n
     \'allowed_content_types/Hosting Subscription Module\',\n
