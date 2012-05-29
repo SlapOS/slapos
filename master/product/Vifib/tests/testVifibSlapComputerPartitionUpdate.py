@@ -6,8 +6,26 @@ from random import random
 
 class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
   def stepRequestSoftwareInstanceUpdate(self, sequence, **kw):
-    self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestUpdateComputerPartition()
+    instance = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_instance_uid'])
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    method_dict = {
+        'start_requested': instance.requestStart,
+        'stop_requested': instance.requestStop,
+        'destroy_requested': instance.requestDestroy,
+        }
+    method_dict[instance.getSlapState()](
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepCheckComputerPartitionInstanceUpdateSalePackingListDelivered(self,
       sequence, **kw):
@@ -463,7 +481,24 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     **kw):
     instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    self.assertRaises(ValidationFailed, instance.requestUpdateComputerPartition)
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    method_dict = {
+        'start_requested': instance.requestStart,
+        'stop_requested': instance.requestStop,
+        'destroy_requested': instance.requestDestroy,
+        }
+    self.assertRaises(ValidationFailed, method_dict[instance.getSlapState()],
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def test_update_not_possible_delivered_instance_cleanup(self):
     sequence_list = SequenceList()
