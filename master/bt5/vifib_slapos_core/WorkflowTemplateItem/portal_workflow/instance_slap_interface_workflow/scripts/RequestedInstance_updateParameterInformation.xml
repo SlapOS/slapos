@@ -92,6 +92,8 @@ else:\n
     (instance.getPortalType(), instance.getRelativeUrl())\n
 \n
 instance.edit(**edit_kw)\n
+# Prevent storing broken XML in text content (which prevent to update parameters after)\n
+context.Instance_checkConsistency(state_change)\n
 </string> </value>
         </item>
         <item>
