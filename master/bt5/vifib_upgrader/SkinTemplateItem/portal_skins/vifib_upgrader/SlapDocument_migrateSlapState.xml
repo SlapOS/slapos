@@ -50,7 +50,24 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+            <value> <string encoding="cdata"><![CDATA[
+
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+\n
+def setUpPeriodicity(hosting_subscription):\n
+  from Products.ERP5Type.DateUtils import addToDate, getClosestDate\n
+  start_date = hosting_subscription.getCreationDate()\n
+  start_date = getClosestDate(target_date=start_date, precision=\'day\')\n
+  while start_date.day() >= 29:\n
+    start_date = addToDate(start_date, to_add={\'day\': -1})\n
+  periodicity_month_day_list = [start_date.day()]\n
+  periodicity_hour_list=[0]\n
+  periodicity_minute_list=[0]\n
+  hosting_subscription.edit(\n
+    periodicity_month_day_list=periodicity_month_day_list,\n
+    periodicity_hour_list=periodicity_hour_list,\n
+    periodicity_minute_list=periodicity_minute_list\n
+  )\n
 \n
 slap_document = context\n
 portal = context.getPortalObject()\n
@@ -64,6 +81,9 @@ sale_order_line = slap_document.getAggregateRelatedValue(portal_type=\'Sale Orde
 \n
 \n
 if portal_type == \'Hosting Subscription\':\n
+  current_periodicity = slap_document.getPeriodicityMonthDayList()\n
+  if current_periodicity is None or len(current_periodicity) == 0:\n
+    setUpPeriodicity(slap_document)\n
   # Person is now directly associated on the HS\n
   slap_document.edit(\n
     destination_section_value=sale_order_line.getDestinationSectionValue(portal_type="Person"),\n
@@ -167,7 +187,9 @@ else:\n
     slap_document.invalidate()\n
   else:\n
     assert(slap_document.getValidationState() == \'validated\')\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
