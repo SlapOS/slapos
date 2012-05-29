@@ -624,11 +624,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software instance"""
     software_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    delivery_line = [q for q in software_instance
-        .getAggregateRelatedValueList(
-          portal_type=self.sale_packing_list_line_portal_type)
-        if q.getSimulationState() in ['confirmed', 'started', 'stopped']][0]
-    computer_partition = delivery_line.getAggregateValue(
+    computer_partition = software_instance.getAggregateValue(
         portal_type=self.computer_partition_portal_type)
     sequence.edit(
       computer_partition_uid=computer_partition.getUid(),
@@ -3248,6 +3244,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         default_aggregate_uid=sequence['computer_partition_uid'])
     delivery = software_instance.getCausalityValue(
         portal_type="Sale Packing List")
+    if delivery is None:
+      order = software_instance.getCausalityValue(
+          portal_type="Sale Order")
+      delivery = order.getCausalityRelatedValue(
+          portal_type="Sale Packing List")
     sequence.edit(sale_packing_list_uid=delivery.getUid())
 
   def stepCheckSalePackingListErrorText(self, sequence, **kw):
