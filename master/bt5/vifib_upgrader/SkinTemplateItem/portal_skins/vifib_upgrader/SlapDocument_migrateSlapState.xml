@@ -153,6 +153,9 @@ else:\n
   }\n
 \n
   slap_document.setCausalityValue(explanation_delivery_line.getParentValue())\n
+  if state != \'destroyed\' or explanation_delivery_line.getSimulationState() != \'delivered\':\n
+    slap_document.setAggregateValue(explanation_delivery_line.getAggregateValue(portal_type=\'Computer Partition\'))\n
+    assert(slap_document.getAggregate() == explanation_delivery_line.getAggregate(portal_type=\'Computer Partition\'))\n
 state_map = {\n
   \'started\': \'start_requested\',\n
   \'stopped\': \'stop_requested\',\n
