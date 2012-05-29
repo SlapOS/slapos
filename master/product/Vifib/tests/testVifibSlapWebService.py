@@ -1855,16 +1855,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer = self.slap.registerComputer(computer_guid)
     self.assertRaises(slap.NotFoundError, computer.getComputerPartitionList)
 
-  def stepCheckEmptyComputerGetComputerPartitionCall(self, sequence, **kw):
-    """
-    Check that Computer.getComputerPartitionList is successfully called.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    self.assertEquals([], computer.getComputerPartitionList())
-
   def stepSelectYetAnotherRequestedReference(self, sequence, **kw):
     sequence.edit(requested_reference='yet_another_requested_reference')
 

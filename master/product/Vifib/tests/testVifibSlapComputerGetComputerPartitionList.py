@@ -18,7 +18,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_computer + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -35,7 +35,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_formated_computer + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -100,7 +100,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       ' + self.prepare_computer + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -156,7 +156,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CheckComputerPartitionInstanceCleanupSalePackingListCancelled \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -217,7 +217,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -261,7 +261,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -284,7 +284,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -318,7 +318,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -337,7 +337,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       \
       LoginTestVifibCustomer \
@@ -367,7 +367,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       \
       LoginTestVifibCustomer \
@@ -397,7 +397,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       \
       LoginTestVifibCustomer \
@@ -416,7 +416,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CheckComputerPartitionInstanceHostingSalePackingListDelivered \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -465,7 +465,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_stopped_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -570,7 +570,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list = SequenceList()
     sequence_string = self.prepare_destroyed_computer_partition + '\
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetComputerPartitionCall \
+      CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \

@@ -143,7 +143,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       FinishSoftwareInstanceTree
       Logout
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       SlapLoginCurrentSoftwareInstance
@@ -166,7 +166,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       SlapLoginCurrentSoftwareInstance
@@ -189,7 +189,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       SlapLoginCurrentSoftwareInstance
@@ -249,7 +249,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout
@@ -319,7 +319,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       SlapLoginTestVifibCustomer
@@ -570,7 +570,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
       Tic
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout
@@ -624,7 +624,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout
@@ -706,7 +706,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       FinishSoftwareInstancePartlyDestroyedTree
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout

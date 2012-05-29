@@ -75,7 +75,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       # prepared initally stopped instance
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       LoginTestVifibCustomer
@@ -107,7 +107,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       LoginERP5TypeTestCase
@@ -122,7 +122,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_started_computer_partition_sequence_string \
       + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -153,7 +153,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginERP5TypeTestCase
@@ -168,7 +168,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_stopped_computer_partition_sequence_string \
       + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -199,7 +199,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginERP5TypeTestCase
@@ -228,7 +228,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_stopped_computer_partition_sequence_string \
       + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -693,7 +693,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = \
       self.prepare_started_computer_partition_sequence_string + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -722,7 +722,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = \
       self.prepare_started_computer_partition_sequence_string + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -750,7 +750,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = \
       self.prepare_started_computer_partition_sequence_string + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -778,7 +778,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_string = \
       self.prepare_started_computer_partition_sequence_string + """
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginTestVifibCustomer
@@ -791,7 +791,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         SlapLoginCurrentComputer
-        CheckEmptyComputerGetComputerPartitionCall
+        CheckSuccessComputerGetComputerPartitionCall
         SlapLogout
 
         LoginERP5TypeTestCase

@@ -508,7 +508,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_started_computer_partition_sequence_string + """
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
       LoginTestVifibCustomer
       SetSoftwareTitleRandom
@@ -755,7 +755,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance
       SoftwareInstanceStarted
       Tic
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       SlapLogout
 
       SlapLoginCurrentSoftwareInstance
