@@ -283,7 +283,7 @@ class Partition(object):
     # TODO how to fetch the good template? Naming conventions?
     template_location = os.path.join(self.software_path, 'template.cfg')
     config_location = os.path.join(self.instance_path, 'buildout.cfg')
-    self.logger.debug("Coping %r to %r" % (template_location, config_location))
+    self.logger.debug("Copying %r to %r" % (template_location, config_location))
     try:
       shutil.copy(template_location, config_location)
     except IOError, e:
