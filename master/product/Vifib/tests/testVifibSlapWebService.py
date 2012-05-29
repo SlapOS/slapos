@@ -3253,29 +3253,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     and Software Instance"""
     computer_partition = self.portal.portal_catalog.getResultValue(
         uid=sequence['computer_partition_uid'])
-    state_list = []
-    state_list.extend(self.portal.getPortalCurrentInventoryStateList())
-    state_list.extend(self.portal.getPortalReservedInventoryStateList())
-    state_list.extend(self.portal.getPortalTransitInventoryStateList())
-    service_uid_list = []
-    for service_relative_url in \
-      (self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-       self.portal.portal_preferences.getPreferredInstanceHostingResource(),
-       self.portal.portal_preferences.getPreferredInstanceCleanupResource(),
-       ):
-      service = self.portal.restrictedTraverse(service_relative_url)
-      service_uid_list.append(service.getUid())
-    delivery_line = self.portal.portal_catalog.getResultValue(
-      portal_type=self.sale_packing_list_line_portal_type,
-      simulation_state=state_list,
-      aggregate_relative_url=computer_partition.getRelativeUrl(),
-      default_resource_uid=service_uid_list,
-      sort_on=(('movement.start_date', 'DESC'),),
-      limit=1,
-    )
-
-    self.assertNotEqual(None, delivery_line)
-    delivery = delivery_line.getParentValue()
+    software_instance = self.portal.portal_catalog.getResultValue(
+        portal_type="Software Instance",
+        default_aggregate_uid=sequence['computer_partition_uid'])
+    delivery = software_instance.getCausalityValue(
+        portal_type="Sale Packing List")
     sequence.edit(sale_packing_list_uid=delivery.getUid())
 
   def stepCheckSalePackingListErrorText(self, sequence, **kw):
