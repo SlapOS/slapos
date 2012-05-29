@@ -59,9 +59,9 @@ for computer_partition in [x for x in computer.contentValues(portal_type=\'Compu
                         ):\n
     instance = instance_sql.getObject()\n
     if instance.getSlapState() in ["start_requested", "stop_requested"]:\n
-      software_instance.activate().SoftwareInstance_bangAsSelf(\n
-        relative_url=software_instance.getRelativeUrl(),\n
-        reference=software_instance.getReference(), \n
+      instance.activate().SoftwareInstance_bangAsSelf(\n
+        relative_url=instance.getRelativeUrl(),\n
+        reference=instance.getReference(), \n
         comment=state_change.kwargs.get(\'comment\', \'\'))\n
 </string> </value>
         </item>
