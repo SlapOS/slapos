@@ -280,7 +280,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_started_computer_partition_sequence_string + \
       """
       SlapLoginCurrentComputer
-      CheckEmptyComputerGetComputerPartitionCall
+      CheckSuccessComputerGetComputerPartitionCall
       ComputerBang
       Tic
       SlapLogout
