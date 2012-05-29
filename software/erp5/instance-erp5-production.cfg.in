@@ -108,11 +108,6 @@ bt5 = erp5_full_text_myisam_catalog
 bt5-repository-url = {{ local_bt5_repository }}
 smtp-url = smtp://localhost:25/
 
-# rest of parts are candidates for some generic stuff
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
-services = ${rootdirectory:etc}/run
-
-[rootdirectory]
-recipe = slapos.cookbook:mkdirectory
-etc = ${buildout:directory}/etc
+etc = ${buildout:directory}/etc/run
