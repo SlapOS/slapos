@@ -4208,19 +4208,38 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         software_instance.getConnectionXml())
 
   def stepSlaveInstanceStarted(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
+    instance = self.portal.portal_catalog.getResultValue(
         uid=sequence["software_instance_uid"])
-    slave_instance.startComputerPartition()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStart(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepSlaveInstanceStopped(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
+    instance = self.portal.portal_catalog.getResultValue(
         uid=sequence["software_instance_uid"])
-    slave_instance.stopComputerPartition()
-
-  def stepSlaveInstanceStopComputerPartitionInstallation(self, sequence):
-    slave_instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence["software_instance_uid"])
-    slave_instance.stopComputerPartitionInstallation()
+    if instance.getPortalType() == "Software Instance":
+      shared = False
+    elif instance.getPortalType() == "Slave Instance":
+      shared = True
+    else:
+      raise NotImplementedError
+    instance.requestStop(
+        software_release=instance.getRootSoftwareReleaseUrl(),
+        instance_xml=instance.getTextContent(),
+        software_type=instance.getSourceReference(),
+        sla_xml=instance.getSlaXml(),
+        shared=shared,
+        )
 
   def stepSetDeliveryLineAmountEqualZero(self, sequence):
     sequence.edit(delivery_line_amount=0)

@@ -153,8 +153,6 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginTestVifibCustomer
-      SlaveInstanceStopComputerPartitionInstallation
-      Tic
       SlaveInstanceStarted
       Tic
       SlaveInstanceStopped
