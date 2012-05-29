@@ -113,8 +113,6 @@ KEEP_ORIGINAL_DICT = {\n
     \'property_sheet_list/Slave Instance\',\n
     \'property_sheet_list/Software Instance\',\n
     \'property_sheet_list/Item\',\n
-    \'portal_type_workflow_chain/Slave Instance\',\n
-    \'portal_type_workflow_chain/Software Instance\',\n
     \'portal_workflow/software_instance_slap_interface_workflow\',\n
   ),\n
   \'vifib_open_trade\': (\n
