@@ -50,7 +50,113 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>return {}\n
+            <value> <string>"""\n
+  The release signature is a kind of declarative\n
+  specification of an upgrader.\n
+"""\n
+\n
+BEFORE_TRIGGERED_BT5_SCRIPT_ID_DICT = {\n
+}\n
+\n
+AFTER_TRIGGERED_BT5_SCRIPT_ID_DICT = {\n
+}\n
+\n
+ALARM_DICT = {\n
+ "bt5_upgrader" : True,\n
+ "finalize_upgrader" : True\n
+}\n
+\n
+REQUIRED_BT5_ID_LIST = (\n
+  \'erp5_core\',\n
+  \'erp5_property_sheets\',\n
+  \'erp5_xhtml_style\',\n
+  \'erp5_base\',\n
+  \'erp5_jquery_ui\',\n
+  \'erp5_rss_style\',\n
+  \'erp5_accounting\',\n
+  \'erp5_credential\',\n
+  \'erp5_crm\',\n
+  \'erp5_open_trade\',\n
+  \'erp5_payzen_secure_payment\',\n
+  \'erp5_web\',\n
+  \'erp5_bearer_token\',\n
+  \'vifib_slapos_core\',\n
+  \'vifib_base\',\n
+  \'vifib_mysql_innodb_catalog\',\n
+  \'vifib_forge_release\',\n
+  \'vifib_open_trade\',\n
+  \'vifib_slap\',\n
+  \'vifib_software_pdm\',\n
+  \'vifib_web\',\n
+  \'vifib_payzen\',\n
+  \'vifib_web_ui_test\',\n
+  \'vifib_agent\',\n
+  \'vifib_data\',\n
+  \'vifib_data_web\',\n
+  \'vifib_slapos_accounting\',\n
+  \'vifib_erp5\',\n
+)\n
+\n
+REINSTALLABLE_BT5_ID_LIST = ()\n
+\n
+# items to keep even if marked by BT5 to \'Remove\'\n
+KEEP_ORIGINAL_DICT = {\n
+  \'vifib_base\': (\n
+    \'software_instance_module\',\n
+    \'portal_types/Slave Instance\',\n
+    \'portal_types/Software Instance\',\n
+    \'portal_types/Software Instance Module\',\n
+    \'allowed_content_types/Software Instance Module\',\n
+    \'base_category_list/Slave Instance\',\n
+    \'base_category_list/Software Instance\',\n
+    \'base_category_list/Software Instance Module\',\n
+    \'property_sheet_list/Slave Instance\',\n
+    \'property_sheet_list/Software Instance\',\n
+    \'property_sheet_list/Item\',\n
+    \'portal_type_workflow_chain/Slave Instance\',\n
+    \'portal_type_workflow_chain/Software Instance\',\n
+    \'portal_workflow/software_instance_slap_interface_workflow\',\n
+  ),\n
+  \'vifib_open_trade\': (\n
+    \'hosting_subscription_module \',\n
+    \'portal_types/Hosting Subscription \',\n
+    \'portal_types/Hosting Subscription Module\',\n
+    \'property_sheet_list/Hosting Subscription\',\n
+    \'allowed_content_types/Hosting Subscription Module\',\n
+    \'base_category_list/Hosting Subscription\',\n
+    \'base_category_list/Hosting Subscription Module\',\n
+    \'portal_type_workflow_chain/Hosting Subscription\',\n
+  ),\n
+}\n
+\n
+# Items which need validation at upgrade time\n
+VALIDATION_DICT = { }\n
+\n
+INTEGRITY_VERIFICATION_SCRIPT_ID_LIST = ( )\n
+\n
+ALARM_TOOL_CONFIGURATION_LIST = ( )\n
+\n
+\n
+FINALIZE_ALARM_SCRIPT = ( )\n
+\n
+# Wrap everything into a dict\n
+signature_dict = {\n
+   \'alarm_dict\' : ALARM_DICT\n
+ , \'required_bt5_id_list\': REQUIRED_BT5_ID_LIST\n
+ , \'before_triggered_bt5_id_dict\': BEFORE_TRIGGERED_BT5_SCRIPT_ID_DICT\n
+ , \'after_triggered_bt5_id_dict\': AFTER_TRIGGERED_BT5_SCRIPT_ID_DICT\n
+ , \'reinstalable_bt5_id_list\': REINSTALLABLE_BT5_ID_LIST\n
+ , \'keep_original_dict\': KEEP_ORIGINAL_DICT\n
+ , \'validation_dict\': VALIDATION_DICT\n
+ , \'integrity_verification_script_id_list\': INTEGRITY_VERIFICATION_SCRIPT_ID_LIST\n
+ , \'alarm_tool_configuration_list\' : ALARM_TOOL_CONFIGURATION_LIST\n
+ # , \'finalize_upgrade_script_list\': FINALIZE_ALARM_SCRIPT\n
+}\n
+\n
+if item is not None:\n
+  return signature_dict.get(item, None)\n
+else:\n
+  return signature_dict\n
 </string> </value>
         </item>
         <item>
