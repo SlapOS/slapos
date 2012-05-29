@@ -51,8 +51,8 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>context.getPortalObject().portal_catalog.searchAndActivate(\n
-  portal_type=\'Hosting Subscription\',\n
-  method_id=\'HostingSubscription_migrateSlapState\'\n
+  portal_type=[\'Hosting Subscription\', \'Software Instance\', \'Slave Instance\'],\n
+  method_id=\'SlapDocument_migrateSlapState\'\n
 )\n
 </string> </value>
         </item>
@@ -62,7 +62,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Site_migrateHostingSubscriptionSlapState</string> </value>
+            <value> <string>ERP5Site_migrateSlapState</string> </value>
         </item>
       </dictionary>
     </pickle>
