@@ -159,7 +159,7 @@ def SlapDocument_migrateSlapState(self):
       pass
     else:
       if explanation_delivery_line.getSimulationState() == 'cancelled':
-        state = 'destoyed'
+        state = 'destroyed'
       else:
         raise NotImplementedError
     promise_kw = {
