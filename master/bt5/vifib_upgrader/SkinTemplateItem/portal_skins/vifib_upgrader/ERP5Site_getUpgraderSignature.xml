@@ -134,7 +134,7 @@ INTEGRITY_VERIFICATION_SCRIPT_ID_LIST = ( )\n
 \n
 ALARM_TOOL_CONFIGURATION_LIST = ( )\n
 \n
-WORKFLOW_CHAIN_DICT = context.getPortalObject().getWorkflowChainDict()\n
+WORKFLOW_CHAIN_DICT = context.getPortalObject().portal_workflow.getWorkflowChainDict()\n
 \n
 WORKFLOW_CHAIN_DICT.update(**{\n
   \'chain_Slave Instance\': \'edit_workflow, instance_accounting_slap_interaction_workflow, instance_slap_interface_workflow, item_workflow, local_permission_vifib_interaction_workflow, slap_interaction_workflow\',\n
