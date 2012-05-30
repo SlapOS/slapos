@@ -179,25 +179,17 @@ def SlapDocument_migrateSlapState(self):
     'stopped': 'stop_requested',
     'destroyed': 'destroy_requested'
   }
-  
-  if slap_document.getSlapState() == 'draft':
-    if state == "started":
-      slap_document.requestStart(comment='Migration.', **promise_kw)
-    elif state == "stopped":
-      slap_document.requestStop(comment='Migration.', **promise_kw)
-    elif state == "destroyed":
-      raise NotImplementedError
-      slap_document.requestDestroy(comment='Migration.', **promise_kw)
-    else:
-      raise ValueError("Unknown state %s for %s" % (state, slap_document.getRelativeUrl()))
-  if not(slap_document.getSlapState() == state_map[state]):
-    raise ValueError('%s: %s != %s' % (state, slap_document.getSlapState(), state_map[state]))
+  required_state = state_map[state]
+  _jumpToStateFor = portal.portal_workflow._jumpToStateFor
+  if slap_document.getSlapState() != required_state:
+      _jumpToStateFor(slap_document, required_state, 'instance_slap_interface_workflow')
+  if not(slap_document.getSlapState() == required_state):
+    raise ValueError('%s: %s != %s' % (state, slap_document.getSlapState(), required_state))
   
   # Migrate validation state
   if portal_type == 'Hosting Subscription':
     if state == 'destroyed':
-      slap_document.validate()
-      slap_document.archive()
+      _jumpToStateFor(slap_document, 'archived', 'hosting_subscription_workflow')
       assert(slap_document.getValidationState() == 'archived')
     else:
       assert(slap_document.getValidationState() == 'validated')
@@ -205,7 +197,7 @@ def SlapDocument_migrateSlapState(self):
     if state == 'destroyed' and \
         (explanation_delivery_line.getPortalType() == 'Sale Order Line' or \
         explanation_delivery_line.getSimulationState() == 'delivered'):
-      slap_document.invalidate()
+      _jumpToStateFor(slap_document, 'invalidated', 'item_workflow')
     else:
       if not(slap_document.getValidationState() == 'validated'):
         raise ValueError('%s != %s' % (slap_document.getValidationState(), 'validated'))
