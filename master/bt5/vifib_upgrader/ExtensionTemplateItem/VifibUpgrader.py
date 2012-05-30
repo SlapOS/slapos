@@ -233,6 +233,9 @@ def SlapDocument_migrateSlapState(self):
     else:
       if not(slap_document.getValidationState() == 'validated'):
         raise ValueError('%s != %s' % (slap_document.getValidationState(), 'validated'))
+
+  # Update Local Roles
+  slap_document.updateLocalRolesOnSecurityGroups()
   
 def SalePackingListLine_deliver(self):
   portal = self.getPortalObject()
