@@ -234,3 +234,10 @@ def SlapDocument_migrateSlapState(self):
       if not(slap_document.getValidationState() == 'validated'):
         raise ValueError('%s != %s' % (slap_document.getValidationState(), 'validated'))
   
+def SalePackingListLine_deliver(self):
+  portal = self.getPortalObject()
+  assert(self.getResource() in [portal.portal_preferences.getPreferredInstanceSetupResource(),
+    portal.portal_preferences.getPreferredInstanceUpdateResource()])
+  if self.getSimulationState() != 'delivered':
+    portal.portal_workflow._jumpToStateFor(self.getParentValue(), 'delivered')
+    self.recursiveReindexObject()
