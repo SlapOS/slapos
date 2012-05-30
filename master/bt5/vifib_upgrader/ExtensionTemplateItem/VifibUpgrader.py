@@ -149,7 +149,8 @@ def SlapDocument_migrateSlapState(self):
   else:
     hosting_subscription = explanation_delivery_line.getAggregateValue(portal_type='Hosting Subscription')
     slap_document.edit(
-      specialise_value=hosting_subscription
+      specialise_value=hosting_subscription,
+      root_software_release_url=explanation_delivery_line.getAggregateValue(portal_type='Software Release').getUrlString()
     )
     assert(slap_document.getSpecialise() == hosting_subscription.getRelativeUrl())
   
