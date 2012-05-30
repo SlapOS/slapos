@@ -184,7 +184,15 @@ def SlapDocument_migrateSlapState(self):
       if explanation_delivery_line.getSimulationState() == 'cancelled':
         state = 'destroyed'
       else:
-        raise NotImplementedError
+        assert(explanation_delivery_line.getSimulationState() in ['ordered', 'confirmed'])
+        previous_workflow_state = self.workflow_history[
+          'software_instance_slap_interface_workflow'][-1]['slap_state']
+        if previous_workflow_state == 'start_requested':
+          state = 'started'
+        elif previous_workflow_state == 'stop_requested':
+          state = 'stopped'
+        else:
+          raise NotImplementedError("Previous state %r not supported" % previous_workflow_state)
     promise_kw = {
       'instance_xml': slap_document.getTextContent(),
       'software_type': slap_document.getSourceReference(),
