@@ -148,7 +148,10 @@ def SlapDocument_migrateSlapState(self):
     assert(slap_document.getDestinationSection() == explanation_delivery_line.getDestinationSectionValue().getRelativeUrl())
   else:
     hosting_subscription = explanation_delivery_line.getAggregateValue(portal_type='Hosting Subscription')
-    slap_document.edit(
+    @WorkflowMethod.disable
+    def edit(slap_document, **kw):
+      slap_document.edit(**kw)
+    edit(slap_document,
       specialise_value=hosting_subscription,
       root_software_release_url=explanation_delivery_line.getAggregateValue(portal_type='Software Release').getUrlString()
     )
