@@ -77,7 +77,21 @@ portal_type = slap_document.getPortalType()\n
 if portal_type not in portal_type_list:\n
   raise TypeError(\'%s is not %s\' % (slap_document.getPath(), portal_type_list))\n
 \n
-sale_order_line = slap_document.getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
+explanation_delivery_line = portal.portal_catalog.getResultValue(\n
+  portal_type=\'Sale Packing List Line\',\n
+  query=ComplexQuery(\n
+    Query(default_aggregate_uid=slap_document.getUid()),\n
+    Query(default_resource_uid=[\n
+      portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource()).getUid(),\n
+      portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceHostingResource()).getUid(),\n
+      portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceCleanupResource()).getUid(),\n
+    ]),\n
+    operator=\'AND\',\n
+  ),\n
+  sort_on=((\'movement.start_date\', \'DESC\'),)\n
+)\n
+if explanation_delivery_line is None:\n
+  explanation_delivery_line = slap_document.getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
 \n
 \n
 if portal_type == \'Hosting Subscription\':\n
@@ -86,11 +100,11 @@ if portal_type == \'Hosting Subscription\':\n
     setUpPeriodicity(slap_document)\n
   # Person is now directly associated on the HS\n
   slap_document.edit(\n
-    destination_section_value=sale_order_line.getDestinationSectionValue(portal_type="Person"),\n
+    destination_section_value=explanation_delivery_line.getDestinationSectionValue(portal_type="Person"),\n
   )\n
-  assert(slap_document.getDestinationSection() == sale_order_line.getDestinationSectionValue().getRelativeUrl())\n
+  assert(slap_document.getDestinationSection() == explanation_delivery_line.getDestinationSectionValue().getRelativeUrl())\n
 else:\n
-  hosting_subscription = sale_order_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
+  hosting_subscription = explanation_delivery_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
   slap_document.edit(\n
     specialise_value=hosting_subscription\n
   )\n
@@ -108,22 +122,6 @@ if portal_type == \'Hosting Subscription\':\n
     \'shared\': slap_document.isRootSlave()\n
   }\n
 else:\n
-  explanation_delivery_line = portal.portal_catalog.getResultValue(\n
-    portal_type=\'Sale Packing List Line\',\n
-    query=ComplexQuery(\n
-      Query(default_aggregate_uid=slap_document.getUid()),\n
-      Query(default_resource_uid=[\n
-        portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource()).getUid(),\n
-        portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceHostingResource()).getUid(),\n
-        portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceCleanupResource()).getUid(),\n
-      ]),\n
-      operator=\'AND\',\n
-    ),\n
-    sort_on=((\'movement.start_date\', \'DESC\'),)\n
-  )\n
-  if explanation_delivery_line is None:\n
-    explanation_delivery_line = sale_order_line\n
-\n
   if explanation_delivery_line.getPortalType() == \'Sale Packing List Line\':\n
     resource = explanation_delivery_line.getResource()\n
     if resource == portal.portal_preferences.getPreferredInstanceSetupResource():\n
@@ -189,7 +187,8 @@ else:\n
       explanation_delivery_line.getSimulationState() == \'delivered\'):\n
     slap_document.invalidate()\n
   else:\n
-    assert(slap_document.getValidationState() == \'validated\')\n
+    if not(slap_document.getValidationState() == \'validated\'):\n
+      raise ValueError(\'%s != %s\' % (slap_document.getValidationState(), \'validated\'))\n
 
 
 ]]></string> </value>
