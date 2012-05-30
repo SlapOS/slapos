@@ -192,6 +192,7 @@ def SlapDocument_migrateSlapState(self):
       _jumpToStateFor(slap_document, 'archived', 'hosting_subscription_workflow')
       assert(slap_document.getValidationState() == 'archived')
     else:
+      _jumpToStateFor(slap_document, 'validated', 'hosting_subscription_workflow')
       assert(slap_document.getValidationState() == 'validated')
   else:
     if state == 'destroyed' and \
