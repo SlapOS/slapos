@@ -134,6 +134,10 @@ INTEGRITY_VERIFICATION_SCRIPT_ID_LIST = ( )\n
 \n
 ALARM_TOOL_CONFIGURATION_LIST = ( )\n
 \n
+WORKFLOW_CHAIN_DICT = {\n
+  \'chain_Slave Instance\': \'edit_workflow, instance_accounting_slap_interaction_workflow, instance_slap_interface_workflow, item_workflow, local_permission_vifib_interaction_workflow, slap_interaction_workflow\',\n
+  \'chain_Software Instance\': \'edit_workflow, instance_accounting_slap_interaction_workflow, instance_slap_interface_workflow, item_workflow, local_permission_vifib_interaction_workflow, slap_interaction_workflow\',\n
+}\n
 \n
 FINALIZE_ALARM_SCRIPT = ( )\n
 \n
@@ -148,6 +152,7 @@ signature_dict = {\n
  , \'validation_dict\': VALIDATION_DICT\n
  , \'integrity_verification_script_id_list\': INTEGRITY_VERIFICATION_SCRIPT_ID_LIST\n
  , \'alarm_tool_configuration_list\' : ALARM_TOOL_CONFIGURATION_LIST\n
+ , \'workflow_chain_dict\': WORKFLOW_CHAIN_DICT\n
  # , \'finalize_upgrade_script_list\': FINALIZE_ALARM_SCRIPT\n
 }\n
 \n
