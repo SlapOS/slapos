@@ -244,3 +244,6 @@ def SalePackingListLine_deliver(self):
   if self.getSimulationState() != 'delivered':
     portal.portal_workflow._jumpToStateFor(self.getParentValue(), 'delivered')
     self.recursiveReindexObject()
+
+def Computer_updateLocalRoles(self):
+  self.updateLocalRolesOnSecurityGroups(reindex=False)

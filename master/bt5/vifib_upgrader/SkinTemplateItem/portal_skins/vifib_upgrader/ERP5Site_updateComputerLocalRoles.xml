@@ -50,7 +50,10 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.portal_types.Computer.updateRoleMapping()\n
+            <value> <string>portal = context.getPortalObject()\n
+portal.portal_catalog.searchAndActivate(portal_type=\'Computer\', method_id=\'Computer_updateLocalRoles\', activate_kw={\'tag\': \'Computer_updateLocalRoles\'})\n
+\n
+portal.computer_module.activate(after_tag=\'Computer_updateLocalRoles\').Folder_reindexAll()\n
 </string> </value>
         </item>
         <item>
