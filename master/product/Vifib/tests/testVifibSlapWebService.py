@@ -4547,7 +4547,8 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
   def test_person_from_credential_request_software_instance(self):
     """Checks that person created from web can use the system"""
     sequence_list = SequenceList()
-    sequence_string = self.prepare_published_software_release + \
+    sequence_string = self.stabilise_accounting + \
+        self.prepare_published_software_release + \
         self.prepare_formated_computer + """
       LoginTestVifibAdmin
       RequestSoftwareInstallation

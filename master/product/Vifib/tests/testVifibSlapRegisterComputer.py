@@ -14,7 +14,7 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
     does not fail
     """
     sequence_list = SequenceList()
-    sequence_string = '\
+    sequence_string = self.stabilise_accounting + '\
       SetRandomComputerReference \
       LoginDefaultUser \
       CheckSuccessSlapRegisterComputerCall \
@@ -37,7 +37,7 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     # Note: ERP5TypeTestCase is used as login to being able to test it
-    sequence_string = '\
+    sequence_string = self.stabilise_accounting + '\
       LoginTestVifibAdmin \
       CreateDraftComputer \
       Tic \
@@ -59,7 +59,7 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
     a validated computer exists.
     """
     sequence_list = SequenceList()
-    sequence_string = '\
+    sequence_string = self.stabilise_accounting + '\
       LoginTestVifibAdmin \
       CustomerRegisterNewComputer \
       Tic \
@@ -83,7 +83,7 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
     Check the slap.registerComputer works in case of more then one computer available
     """
     sequence_list = SequenceList()
-    sequence_string = '\
+    sequence_string = self.stabilise_accounting + '\
       LoginTestVifibAdmin \
       CustomerRegisterNewComputer \
       Tic \
