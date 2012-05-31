@@ -3757,7 +3757,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type):
       if sequence['software_instance_uid'] in delivery_line\
-          .getAggregateUidList():
+          .getAggregateUidList() and delivery_line\
+          .getResource() == self.portal.portal_preferences\
+            .getPreferredInstanceSetupResource():
         computer_partition_sale_packing_list_line_list.append(delivery_line)
     self.assertEqual(1, len(computer_partition_sale_packing_list_line_list))
 
