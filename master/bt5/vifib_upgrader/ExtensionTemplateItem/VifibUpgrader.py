@@ -240,6 +240,7 @@ def SlapDocument_migrateSlapState(self):
   # Update Local Roles
   slap_document.updateLocalRolesOnSecurityGroups()
   
+@WorkflowMethod.disable
 def SalePackingListLine_deliver(self):
   portal = self.getPortalObject()
   assert(self.getResource() in [portal.portal_preferences.getPreferredInstanceSetupResource(),
