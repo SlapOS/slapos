@@ -119,6 +119,7 @@ def SlapDocument_migrateSlapState(self):
   
   explanation_delivery_line = portal.portal_catalog.getResultValue(
     portal_type='Sale Packing List Line',
+    simulation_state=['ready', 'confirmed', 'started', 'stopped', 'delivered'],
     query=ComplexQuery(
       Query(default_aggregate_uid=slap_document.getUid()),
       Query(default_resource_uid=[
