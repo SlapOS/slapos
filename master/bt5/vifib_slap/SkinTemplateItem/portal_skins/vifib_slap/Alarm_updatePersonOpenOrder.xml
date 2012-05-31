@@ -59,7 +59,7 @@ from Products.ZSQLCatalog.SQLCatalog import Query\n
 from Products.ERP5Type.DateUtils import getClosestDate, addToDate\n
 \n
 last_active_process = context.getLastActiveProcess()\n
-if last_active_process is not None and params.get(\'full\', False):\n
+if last_active_process is not None and not(params.get(\'full\', False)):\n
   # fetch only objects modified since last alarm run\n
   kw[\'modification_date\'] = Query(modification_date=last_active_process.getStartDate(), range="min")\n
   search_kw[\'modification_date\'] = Query(modification_date=addToDate(last_active_process.getStartDate(), to_add={\'hour\': -1}), range="min")\n
