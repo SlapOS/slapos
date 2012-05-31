@@ -91,6 +91,7 @@ def fixSaleOrder(slap_document):
   sale_packing_list.getParentValue().deleteContent(sale_packing_list.getId())
   return new_sale_order.contentValues(portal_type='Sale Order Line')[0]
 
+@WorkflowMethod.disable
 def SlapDocument_migrateSlapState(self):
   from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
   
@@ -149,10 +150,7 @@ def SlapDocument_migrateSlapState(self):
     assert(slap_document.getDestinationSection() == explanation_delivery_line.getDestinationSectionValue().getRelativeUrl())
   else:
     hosting_subscription = explanation_delivery_line.getAggregateValue(portal_type='Hosting Subscription')
-    @WorkflowMethod.disable
-    def edit(slap_document, **kw):
-      slap_document.edit(**kw)
-    edit(slap_document,
+    slap_document.edit(
       specialise_value=hosting_subscription,
       root_software_release_url=explanation_delivery_line.getAggregateValue(portal_type='Software Release').getUrlString()
     )
