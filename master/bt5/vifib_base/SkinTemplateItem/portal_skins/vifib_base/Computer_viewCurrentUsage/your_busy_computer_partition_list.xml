@@ -406,7 +406,7 @@
                           <string>Image</string>
                         </tuple>
                         <tuple>
-                          <string>SoftwareInstance_getStatus</string>
+                          <string>ComuterPartition_getSoftwareInstanceStatus</string>
                           <string>Status</string>
                         </tuple>
                       </list>
