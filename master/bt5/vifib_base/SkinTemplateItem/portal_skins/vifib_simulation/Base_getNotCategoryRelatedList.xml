@@ -99,8 +99,9 @@ base_category_uid\r\n
             <value> <string encoding="cdata"><![CDATA[
 
 select\n
-  catalog.uid, catalog.path from catalog\n
+  catalog.uid, catalog.path from catalog, movement\n
 where\n
+  movement.uid = catalog.uid AND movement.quantity <> 0 AND \n
   catalog.uid not in (\n
     select category.category_uid from category where category.base_category_uid=<dtml-var base_category_uid>)\n
   and (<dtml-in simulation_state_list>\n
