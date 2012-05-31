@@ -3736,9 +3736,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition = self._softwareInstance_getComputerPartition(
       software_instance)
     # There should be only one Sale Packing List Line
-    sale_packing_list_line_list = software_instance\
-        .getAggregateRelatedValueList(
-            portal_type=self.sale_packing_list_line_portal_type)
+    sale_packing_list_line_list = self.portal.portal_catalog(
+      portal_type=self.sale_packing_list_line_portal_type,
+      default_aggregate_uid=software_instance.getUid(),
+      default_resource_uid=self.portal.restrictedTraverse(self.portal\
+        .portal_preferences.getPreferredInstanceSetupResource()).getUid()
+    )
     self.assertEqual(1, len(sale_packing_list_line_list))
     sale_packing_list_line = sale_packing_list_line_list[0]
     # This Sale Packing List Line shall have only one Computer Partition
