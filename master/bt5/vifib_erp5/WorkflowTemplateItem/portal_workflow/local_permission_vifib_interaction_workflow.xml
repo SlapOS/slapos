@@ -22,6 +22,10 @@
             <key> <string>id</string> </key>
             <value> <string>local_permission_vifib_interaction_workflow</string> </value>
         </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string>Local Permission Vifib Interaction Workflow</string> </value>
+        </item>
       </dictionary>
     </pickle>
   </record>
