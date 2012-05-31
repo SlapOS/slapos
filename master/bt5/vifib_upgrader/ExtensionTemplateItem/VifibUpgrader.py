@@ -252,3 +252,5 @@ def SalePackingListLine_deliver(self):
 
 def Computer_updateLocalRoles(self):
   self.updateLocalRolesOnSecurityGroups(reindex=False)
+  for partition in self.contentValues(portal_type='Computer Partition'):
+    partition.updateLocalRolesOnSecurityGroups(reindex=False)
