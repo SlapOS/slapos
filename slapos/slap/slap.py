@@ -632,8 +632,7 @@ class slap:
     self._connection_helper.GET('/registerComputerPartition?' \
         'computer_reference=%s&computer_partition_reference=%s' % (
           computer_guid, partition_id))
-    xml = self._connection_helper.response.read()
-    return xml_marshaller.loads(xml)
+    return xml_marshaller.loads(self._connection_helper.response.read())
 
   def registerOpenOrder(self):
     return OpenOrder()
