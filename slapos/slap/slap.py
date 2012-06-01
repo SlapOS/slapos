@@ -585,17 +585,17 @@ class slap:
     if not(query == '' and fragment == ''):
       raise AttributeError('Passed URL %r issue: not parseable'%
           slapgrid_uri)
-    if scheme not in ('http', 'https'):
-      raise AttributeError('Passed URL %r issue: there is no support for %r p'
-          'rotocol' % (slapgrid_uri, scheme))
 
     if scheme == 'http':
       connection_wrapper = httplib.HTTPConnection
-    else:
+    elif scheme == 'https':
       if master_ca_file is not None:
         connection_wrapper = HTTPSConnectionCA
       else:
         connection_wrapper = httplib.HTTPSConnection
+    else:
+      raise AttributeError('Passed URL %r issue: there is no support for %r p'
+          'rotocol' % (slapgrid_uri, scheme))
     slap._connection_helper = \
       SlapDocument._connection_helper = ConnectionHelper(connection_wrapper,
           netloc, path, key_file, cert_file, master_ca_file, timeout)
