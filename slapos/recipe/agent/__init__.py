@@ -73,11 +73,9 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
     configuration.set("agent", "software_list",
         parameter_dict["software_list"])
     configuration.set("agent", "log_directory", self.options["log_directory"])
-    configuration.set("agent", "state_file", self.options["state_file"])
-    if not os.path.exists(self.options["state_file"]):
-      state = open(self.options["state_file"], "w")
-      state.write('')
-      state.close()
+    state_file = self.options["state_file"]
+    configuration.set("agent", "state_file", state_file)
+    open(state_file, "a").close()
     configuration.set("agent", "path_file", self.options["path_file"])
     configuration.add_section("software_uri")
     software_list = json.loads(parameter_dict["software_list"])
