@@ -600,15 +600,6 @@ class slap:
       SlapDocument._connection_helper = ConnectionHelper(connection_wrapper,
           netloc, path, key_file, cert_file, master_ca_file, timeout)
 
-  def _register(self, klass, *registration_argument_list):
-    if len(registration_argument_list) == 1 and type(
-        registration_argument_list[0]) == type([]):
-      # in case if list is explicitly passed and there is only one
-      # argument in registration convert it to list
-      registration_argument_list = registration_argument_list[0]
-    document = klass(*registration_argument_list)
-    return document
-
   def registerSoftwareRelease(self, software_release):
     """
     Registers connected representation of software release and
@@ -621,7 +612,7 @@ class slap:
     Registers connected representation of computer and
     returns Computer class object
     """
-    return self._register(Computer, computer_guid)
+    return Computer(computer_guid)
 
   def registerComputerPartition(self, computer_guid, partition_id):
     """
