@@ -48,47 +48,37 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
       self.computer_partition_id,
     ).getInstanceParameterDict()
 
+    # XXX: should probably expect one more (SR-originating) parameter instead
+    # of using self.work_directory .
     configuration_path = os.path.join(self.work_directory, "agent.cfg")
-    configuration = ConfigParser.SafeConfigParser()
-    configuration.add_section("agent")
-    configuration.set("agent", "portal_url", parameter_dict["portal_url"])
-    configuration.set("agent", "master_url", parameter_dict["master_url"])
-    configuration.set("agent", "report_url", parameter_dict["report_url"])
-    key_filepath = os.path.join(self.work_directory, "key")
-    key_file = open(key_filepath, "w")
-    key_file.write(parameter_dict["key"])
-    key_file.close()
-    configuration.set("agent", "key_file", key_filepath)
-    cert_filepath = os.path.join(self.work_directory, "cert")
-    cert_file = open(cert_filepath, "w")
-    cert_file.write(parameter_dict["cert"])
-    cert_file.close()
-    configuration.set("agent", "cert_file", cert_filepath)
-    configuration.set("agent", "maximum_software_installation_duration",
-        parameter_dict["maximum_software_installation_duration"])
-    configuration.set("agent", "software_live_duration",
-        parameter_dict["software_live_duration"])
-    configuration.set("agent", "computer_list",
-        parameter_dict["computer_list"])
-    configuration.set("agent", "software_list",
-        parameter_dict["software_list"])
-    configuration.set("agent", "log_directory", self.options["log_directory"])
+    with open(configuration_path, "w") as configuration:
+      configuration.write(parameter_dict["configuration"])
+    if "key" in parameter_dict:
+      key_filepath = os.path.join(self.work_directory, "key")
+      cert_filepath = os.path.join(self.work_directory, "cert")
+      with open(key_filepath, "w") as key_file:
+        key_file.write(parameter_dict['key'])
+      with open(cert_filepath, "w") as cert_file:
+        cert_file.write(parameter_dict["cert"])
+      extra_arguments = "--key_file=%s --cert_file=%s " % (key_filepath,
+        cert_filepath)
+    else:
+      extra_arguments = ""
+
     state_file = self.options["state_file"]
-    configuration.set("agent", "state_file", state_file)
     open(state_file, "a").close()
-    configuration.set("agent", "path_file", self.options["path_file"])
-    configuration.add_section("software_uri")
-    software_list = json.loads(parameter_dict["software_list"])
-    for software in software_list:
-      configuration.set("software_uri", software, parameter_dict[software])
-    configuration.write(open(configuration_path, "w"))
 
     agent_crond_path = os.path.join(crond, "agent")
     with open(agent_crond_path, "w") as agent_crond:
-      agent_crond.write("*/5 * * * * %s -S %s --pidfile=%s %s\n" % (
+      agent_crond.write("*/5 * * * * %s -S %s --pidfile=%s --log_directory=%s "
+        "--state_file=%s --path_file=%s %s%s\n" % (
           self.options["python_binary"],
           self.options["agent_binary"],
           self.options["pidfile"],
+          self.options["log_directory"],
+          state_file,
+          self.options["path_file"],
+          extra_arguments,
           configuration_path,
       ))
       agent_crond.write("1 0 * * * %s -S %s %s\n" % (
