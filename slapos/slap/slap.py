@@ -621,7 +621,6 @@ class slap:
     Registers connected representation of computer and
     returns Computer class object
     """
-    self.computer_guid = computer_guid
     return self._register(Computer, computer_guid)
 
   def registerComputerPartition(self, computer_guid, partition_id):
