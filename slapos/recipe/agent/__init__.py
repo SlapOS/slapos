@@ -84,24 +84,23 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
     configuration.write(open(configuration_path, "w"))
 
     agent_crond_path = os.path.join(crond, "agent")
-    agent_crond = open(agent_crond_path, "w")
-    agent_crond.write("*/5 * * * * %s -S %s --pidfile=%s %s\n" % (
-      self.options["python_binary"],
-      self.options["agent_binary"],
-      self.options["pidfile"],
-      configuration_path,
-    ))
-    agent_crond.write("1 0 * * * %s -S %s %s\n" % (
-      self.options["python_binary"],
-      self.options["report_start"],
-      configuration_path
-    ))
-    agent_crond.write("59 23 * * * %s -S %s %s\n" % (
-      self.options["python_binary"],
-      self.options["report_stop"],
-      configuration_path,
-    ))
-    agent_crond.close()
+    with open(agent_crond_path, "w") as agent_crond:
+      agent_crond.write("*/5 * * * * %s -S %s --pidfile=%s %s\n" % (
+          self.options["python_binary"],
+          self.options["agent_binary"],
+          self.options["pidfile"],
+          configuration_path,
+      ))
+      agent_crond.write("1 0 * * * %s -S %s %s\n" % (
+        self.options["python_binary"],
+        self.options["report_start"],
+        configuration_path
+      ))
+      agent_crond.write("59 23 * * * %s -S %s %s\n" % (
+        self.options["python_binary"],
+        self.options["report_stop"],
+        configuration_path,
+      ))
 
     return self.path_list + [configuration_path, key_filepath, cert_filepath, agent_crond_path]
 
