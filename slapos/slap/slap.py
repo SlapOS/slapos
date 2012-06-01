@@ -636,7 +636,11 @@ class slap:
     self._connection_helper.GET('/registerComputerPartition?' \
         'computer_reference=%s&computer_partition_reference=%s' % (
           computer_guid, partition_id))
-    return xml_marshaller.loads(self._connection_helper.response.read())
+    result = xml_marshaller.loads(self._connection_helper.response.read())
+    # XXX: dirty hack to make computer partition usable. xml_marshaller is too
+    # low-level for our needs here.
+    result._connection_helper = self._connection_helper
+    return result
 
   def registerOpenOrder(self):
     return OpenOrder(connection_helper=self._connection_helper)
