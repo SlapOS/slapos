@@ -37,43 +37,39 @@ import ConfigParser
 class Recipe(BaseSlapRecipe, GenericSlapRecipe):
   def install(self):
     self.path_list = []
-    self.crond = self.installCrond()
+    crond = self.installCrond()
 
     slap = slapos.slap.slap()
-    computer_id = self.computer_id
-    computer_partition_id = self.computer_partition_id
-    server_url = self.server_url
-    key_file = self.key_file
-    cert_file = self.cert_file
-    slap.initializeConnection(server_url, key_file, cert_file)
-    self.computer_partition = slap.registerComputerPartition(
-        computer_id, computer_partition_id)
-    self.parameter_dict = self.computer_partition.getInstanceParameterDict()
+    slap.initializeConnection(self.server_url, self.key_file, self.cert_file)
+    parameter_dict = slap.registerComputerPartition(
+      self.computer_id,
+      self.computer_partition_id,
+    ).getInstanceParameterDict()
 
     configuration_path = os.path.join(self.work_directory, "agent.cfg")
     configuration = ConfigParser.SafeConfigParser()
     configuration.add_section("agent")
-    configuration.set("agent", "portal_url", self.parameter_dict["portal_url"])
-    configuration.set("agent", "master_url", self.parameter_dict["master_url"])
-    configuration.set("agent", "report_url", self.parameter_dict["report_url"])
+    configuration.set("agent", "portal_url", parameter_dict["portal_url"])
+    configuration.set("agent", "master_url", parameter_dict["master_url"])
+    configuration.set("agent", "report_url", parameter_dict["report_url"])
     key_filepath = os.path.join(self.work_directory, "key")
     key_file = open(key_filepath, "w")
-    key_file.write(self.parameter_dict["key"])
+    key_file.write(parameter_dict["key"])
     key_file.close()
     configuration.set("agent", "key_file", key_filepath)
     cert_filepath = os.path.join(self.work_directory, "cert")
     cert_file = open(cert_filepath, "w")
-    cert_file.write(self.parameter_dict["cert"])
+    cert_file.write(parameter_dict["cert"])
     cert_file.close()
     configuration.set("agent", "cert_file", cert_filepath)
     configuration.set("agent", "maximum_software_installation_duration",
-        self.parameter_dict["maximum_software_installation_duration"])
+        parameter_dict["maximum_software_installation_duration"])
     configuration.set("agent", "software_live_duration",
-        self.parameter_dict["software_live_duration"])
+        parameter_dict["software_live_duration"])
     configuration.set("agent", "computer_list",
-        self.parameter_dict["computer_list"])
+        parameter_dict["computer_list"])
     configuration.set("agent", "software_list",
-        self.parameter_dict["software_list"])
+        parameter_dict["software_list"])
     configuration.set("agent", "log_directory", self.options["log_directory"])
     configuration.set("agent", "state_file", self.options["state_file"])
     if not os.path.exists(self.options["state_file"]):
@@ -82,12 +78,12 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
       state.close()
     configuration.set("agent", "path_file", self.options["path_file"])
     configuration.add_section("software_uri")
-    software_list = json.loads(self.parameter_dict["software_list"])
+    software_list = json.loads(parameter_dict["software_list"])
     for software in software_list:
-      configuration.set("software_uri", software, self.parameter_dict[software])
+      configuration.set("software_uri", software, parameter_dict[software])
     configuration.write(open(configuration_path, "w"))
 
-    agent_crond_path = os.path.join(self.crond, "agent")
+    agent_crond_path = os.path.join(crond, "agent")
     agent_crond = open(agent_crond_path, "w")
     agent_crond.write("*/5 * * * * %s -S %s --pidfile=%s %s\n" % (
       self.options["python_binary"],
@@ -110,12 +106,12 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
     return self.path_list + [configuration_path, key_filepath, cert_filepath, agent_crond_path]
 
   def installCrond(self):
-    _, self.ws = self.egg.working_set()
+    _, ws = self.egg.working_set()
     timestamps = self.createDataDirectory('cronstamps')
     cron_output = os.path.join(self.log_directory, 'cron-output')
     self._createDirectory(cron_output)
     catcher = zc.buildout.easy_install.scripts([('catchcron',
-      __name__ + '.catdatefile', 'catdatefile')], self.ws, sys.executable,
+      __name__ + '.catdatefile', 'catdatefile')], ws, sys.executable,
       self.bin_directory, arguments=[cron_output])[0]
     self.path_list.append(catcher)
     cron_d = os.path.join(self.etc_directory, 'cron.d')
@@ -123,7 +119,7 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
     self._createDirectory(cron_d)
     self._createDirectory(crontabs)
     wrapper = zc.buildout.easy_install.scripts([('crond',
-      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
+      'slapos.recipe.librecipe.execute', 'execute')], ws, sys.executable,
       self.wrapper_directory, arguments=[
         self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
         '-t', timestamps, '-f', '-l', '5', '-M', catcher]
