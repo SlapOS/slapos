@@ -67,8 +67,9 @@ software_instance_list = obj.getPortalObject().portal_catalog(\n
 )\n
 \n
 if len(software_instance_list) == 1:\n
+  hosting_subscription = software_instance_list[0].getSpecialise(portal_type=\'Hosting Subscription\')\n
   for base_category in base_category_list:\n
-    category_list.append({base_category: software_instance_list[0].getRelativeUrl()})\n
+    category_list.append({base_category: hosting_subscription})\n
 \n
 return category_list\n
 </string> </value>
@@ -94,7 +95,7 @@ return category_list\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Type_getSecurityCategoryFromAggregateRelatedSoftwareInstance</string> </value>
+            <value> <string>ERP5Type_getSecurityCategoryFromAggregateRelatedSoftwareInstanceHostingSubscription</string> </value>
         </item>
       </dictionary>
     </pickle>
