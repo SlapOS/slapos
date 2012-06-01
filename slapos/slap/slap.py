@@ -593,11 +593,6 @@ class slap:
 
   def initializeConnection(self, slapgrid_uri, key_file=None, cert_file=None,
       master_ca_file=None, timeout=60):
-    self._initialiseConnectionHelper(slapgrid_uri, key_file, cert_file,
-        master_ca_file, timeout)
-
-  def _initialiseConnectionHelper(self, slapgrid_uri, key_file, cert_file,
-      master_ca_file, timeout):
     scheme, netloc, path, query, fragment = urlparse.urlsplit(
         slapgrid_uri)
     if not(query == '' and fragment == ''):
