@@ -84,7 +84,8 @@ def fixSaleOrder(slap_document):
   sale_packing_list = sale_packing_list_line_list[0].getParentValue()
 
   new_sale_order = sale_order.Base_createCloneDocument(batch_mode=1)
-  new_sale_order.order()
+  slap_document.getPortalObject().portal_workflow.\
+    _jumpToStateFor(new_sale_order, 'ordered', 'order_workflow')
   applied_rule = sale_order.getCausalityRelatedValue(portal_type='Applied Rule')
   applied_rule.getParentValue().deleteContent(applied_rule.getId())
   sale_order.getParentValue().deleteContent(sale_order.getId())
