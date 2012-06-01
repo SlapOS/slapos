@@ -608,6 +608,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       StoreTestVifibAdminComputerPartitionCoordinate
 
+      """ + self.stabilise_accounting + """
       # request as someone else
       LoginTestVifibCustomerA
       PersonRequestSoftwareInstance
