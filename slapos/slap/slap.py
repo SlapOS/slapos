@@ -580,15 +580,14 @@ class slap:
 
   def _initialiseConnectionHelper(self, slapgrid_uri, key_file, cert_file,
       master_ca_file, timeout):
-    SlapDocument._slapgrid_uri = slapgrid_uri
     scheme, netloc, path, query, fragment = urlparse.urlsplit(
-        SlapDocument._slapgrid_uri)
+        slapgrid_uri)
     if not(query == '' and fragment == ''):
       raise AttributeError('Passed URL %r issue: not parseable'%
-          SlapDocument._slapgrid_uri)
+          slapgrid_uri)
     if scheme not in ('http', 'https'):
       raise AttributeError('Passed URL %r issue: there is no support for %r p'
-          'rotocol' % (SlapDocument._slapgrid_uri, scheme))
+          'rotocol' % (slapgrid_uri, scheme))
 
     if scheme == 'http':
       connection_wrapper = httplib.HTTPConnection
