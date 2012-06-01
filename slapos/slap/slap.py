@@ -64,7 +64,11 @@ class HTTPSConnectionCA(httplib.HTTPSConnection):
 
 
 class SlapDocument:
-  pass
+  def __init__(self, connection_helper=None):
+    if connection_helper is not None:
+      # Do not require connection_helper to be provided, but when it's not,
+      # cause failures when accessing _connection_helper property.
+      self._connection_helper = connection_helper
 
 class SoftwareRelease(SlapDocument):
   """
@@ -79,6 +83,7 @@ class SoftwareRelease(SlapDocument):
 
     XXX **kw args only kept for compatibility
     """
+    SlapDocument.__init__(self, kw.pop('connection_helper', None))
     self._software_instance_list = []
     if software_release is not None:
       software_release = software_release.encode('UTF-8')
@@ -179,13 +184,18 @@ class OpenOrder(SlapDocument):
     try:
       self._connection_helper.POST('/requestComputerPartition', request_dict)
     except ResourceNotReady:
-      return ComputerPartition(request_dict=request_dict)
+      return ComputerPartition(
+        request_dict=request_dict,
+        connection_helper=self._connection_helper,
+      )
     else:
       xml = self._connection_helper.response.read()
       software_instance = xml_marshaller.loads(xml)
       computer_partition = ComputerPartition(
         software_instance.slap_computer_id.encode('UTF-8'),
-        software_instance.slap_computer_partition_id.encode('UTF-8'))
+        software_instance.slap_computer_partition_id.encode('UTF-8'),
+        connection_helper=self._connection_helper,
+      )
       if shared:
         computer_partition._synced = True
         computer_partition._connection_dict = software_instance._connection_dict
@@ -211,7 +221,8 @@ class Computer(SlapDocument):
 
   zope.interface.implements(interface.IComputer)
 
-  def __init__(self, computer_id):
+  def __init__(self, computer_id, connection_helper=None):
+    SlapDocument.__init__(self, connection_helper)
     self._computer_id = computer_id
 
   def __getinitargs__(self):
@@ -298,7 +309,9 @@ class ComputerPartition(SlapDocument):
 
   zope.interface.implements(interface.IComputerPartition)
 
-  def __init__(self, computer_id=None, partition_id=None, request_dict=None):
+  def __init__(self, computer_id=None, partition_id=None, request_dict=None,
+      connection_helper=None):
+    SlapDocument.__init__(self, connection_helper)
     if request_dict is not None and (computer_id is not None or
         partition_id is not None):
       raise TypeError('request_dict conflicts with computer_id and '
@@ -348,13 +361,18 @@ class ComputerPartition(SlapDocument):
     try:
       self._connection_helper.POST('/requestComputerPartition', request_dict)
     except ResourceNotReady:
-      return ComputerPartition(request_dict=request_dict)
+      return ComputerPartition(
+        request_dict=request_dict,
+        connection_helper=self._connection_helper,
+      )
     else:
       xml = self._connection_helper.response.read()
       software_instance = xml_marshaller.loads(xml)
       computer_partition = ComputerPartition(
         software_instance.slap_computer_id.encode('UTF-8'),
-        software_instance.slap_computer_partition_id.encode('UTF-8'))
+        software_instance.slap_computer_partition_id.encode('UTF-8'),
+        connection_helper=self._connection_helper,
+      )
       if shared:
         computer_partition._synced = True
         computer_partition._connection_dict = getattr(software_instance,
@@ -596,8 +614,7 @@ class slap:
     else:
       raise AttributeError('Passed URL %r issue: there is no support for %r p'
           'rotocol' % (slapgrid_uri, scheme))
-    slap._connection_helper = \
-      SlapDocument._connection_helper = ConnectionHelper(connection_wrapper,
+    self._connection_helper = ConnectionHelper(connection_wrapper,
           netloc, path, key_file, cert_file, master_ca_file, timeout)
 
   def registerSoftwareRelease(self, software_release):
@@ -605,14 +622,16 @@ class slap:
     Registers connected representation of software release and
     returns SoftwareRelease class object
     """
-    return SoftwareRelease(software_release=software_release)
+    return SoftwareRelease(software_release=software_release,
+      connection_helper=self._connection_helper,
+    )
 
   def registerComputer(self, computer_guid):
     """
     Registers connected representation of computer and
     returns Computer class object
     """
-    return Computer(computer_guid)
+    return Computer(computer_guid, connection_helper=self._connection_helper)
 
   def registerComputerPartition(self, computer_guid, partition_id):
     """
@@ -625,7 +644,7 @@ class slap:
     return xml_marshaller.loads(self._connection_helper.response.read())
 
   def registerOpenOrder(self):
-    return OpenOrder()
+    return OpenOrder(connection_helper=self._connection_helper)
 
   def registerSupply(self):
-    return Supply()
+    return Supply(connection_helper=self._connection_helper)
