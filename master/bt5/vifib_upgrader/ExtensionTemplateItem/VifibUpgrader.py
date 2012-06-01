@@ -240,6 +240,7 @@ def SlapDocument_migrateSlapState(self):
 
     # Update Local Roles
     slap_document.updateLocalRolesOnSecurityGroups()
+  real(self)
   
 def SalePackingListLine_deliver(self):
   @WorkflowMethod.disable
