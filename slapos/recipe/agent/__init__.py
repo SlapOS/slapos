@@ -34,6 +34,8 @@ from slapos.recipe.librecipe import GenericSlapRecipe
 import json
 import ConfigParser
 
+# XXX: BaseSlapRecipe and GenericSlapRecipe are deprecated, use
+# GenericBaseRecipe and move partition parameter fetching to software release.
 class Recipe(BaseSlapRecipe, GenericSlapRecipe):
   def install(self):
     self.path_list = []
