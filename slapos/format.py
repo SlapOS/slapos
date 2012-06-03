@@ -1156,7 +1156,7 @@ class Config(object):
     if self.dry_run:
       self.logger.info("Dry-run mode enabled.")
     if self.create_tap:
-      self.logger.info("Tap mode enabled.")
+      self.logger.info("Tap creation mode enabled.")
 
     # Calculate path once
     self.computer_xml = os.path.abspath(self.computer_xml)
