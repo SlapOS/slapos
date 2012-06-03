@@ -25,9 +25,6 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
-import binascii
-import os
-import sys
 
 class Recipe(GenericBaseRecipe):
   """
@@ -35,19 +32,18 @@ class Recipe(GenericBaseRecipe):
   """
 
   def __init__(self, buildout, name, options):
-    #options['key'] = binascii.hexlify(os.urandom(24))
     return GenericBaseRecipe.__init__(self, buildout, name, options)
 
   def install(self):
     config = dict(
       pid_file_path=self.options['pid-file'],
-      consumption_log_file=self.options['consumption-log-path'],
+      consumption_log_path=self.options['consumption-log-path'],
       database_path=self.options['database-path'],
       slapreport_path = self.options['slapreport-path'],
-      logbox_ip = self.options['log-server-ip'],
-      logbox_port = self.options['log-server-port'],
-      logbox_login = self.options['log-server-login'],
-      logbox_password = self.options['log-server-password'],
+      logbox_ip = self.options['logbox-ip'],
+      logbox_port = self.options['logbox-port'],
+      logbox_user = self.options['logbox-user'],
+      logbox_passwd = self.options['logbox-passwd'],
       shell_path=self.options['shell-path'],
     )
 
