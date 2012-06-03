@@ -1073,6 +1073,9 @@ class Config(object):
     if not getattr(self, "interface_name", None) \
         and getattr(self, "bridge_name", None):
       setattr(self, "interface_name", self.bridge_name)
+    if not getattr(self, "create_tap", None) \
+        and getattr(self, "no_bridge", None):
+      setattr(self, "create_tap", not self.no_bridge)
 
     # Set defaults lately
     if self.alter_network is None:
