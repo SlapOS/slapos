@@ -88,8 +88,11 @@ class Recipe(BaseSlapRecipe):
 
       # Check for custom domain (like mypersonaldomain.com)
       # If no custom domain, use generated one.
-      domain = slave_instance.get('custom_domain', 
-          "%s.%s" % (reference.replace("-", "").lower(), frontend_domain_name))
+      # Note: if we get an empty custom_domain parameter, we ignore it
+      domain = slave_instance.get('custom_domain').strip()
+      if domain is None or domain == '':
+        domain = "%s.%s" % (reference.replace("-", "").lower(),
+            frontend_domain_name)
       # Define the URL where the instance will be available
       # WARNING: we use default ports (443, 80) here.
       slave_dict[reference] = "%s%s/" % (scheme, domain)
