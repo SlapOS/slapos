@@ -4,7 +4,7 @@ Note: all port counters are pre-incremented. No idea why base port is skipped.
 -#}
 {% set current_zeo_port = zeo_port_base | int -%}
 {% set zope_port_base = zope_port_base | int -%}
-{% set zope_dummy_list = [] %}
+{% set zope_dummy_list = [] -%}
 {% set current_apache_port = apache_port_base | int -%}
 {% set current_haproxy_port = haproxy_port_base | int -%}
 {% set json = json_module.loads(slapparameter_dict['json']) -%}
@@ -40,13 +40,13 @@ backward compatibility with existing automatically setup CAs.
   longrequest_logger_interval=''
 ) -%}
 {% set conf_name = name ~ '-conf' -%}
-{% set conf_parameter_name = conf_name ~ '-param' %}
+{% set conf_parameter_name = conf_name ~ '-param' -%}
 [{{ conf_parameter_name }}]
 < = zope-conf-parameter-base
 pid-file = ${directory:run}/{{ name }}.pid
 lock-file = ${directory:run}/{{ name }}.lock
-{% do zope_dummy_list.append(None) %}
-{% set offset = zope_dummy_list | length %}
+{% do zope_dummy_list.append(None) -%}
+{% set offset = zope_dummy_list | length -%}
 port = {{ zope_port_base + offset }}
 thread-amount = {{ thread_amount }}
 timeserver = {{ timeserver }}
@@ -360,7 +360,7 @@ context =
 # Activity nodes
 {% for q in range(1, json['activity']['zopecount'] + 1) -%}
 {{   zope('zope-activity-%s' % q, timeserver=True) }}
-{% endfor %}
+{%- endfor %}
 # Other zopes, apaches and haproxies
 {% set publish_url_list =  [] -%}
 {% for backend_name, backend_configuration in json['backend'].iteritems() -%}
@@ -385,7 +385,7 @@ context =
          longrequest_logger_interval=longrequest_logger_interval,
        ) }}
 {%     do haproxy_backend_list.append('${%(part_name)s:ip}:${%(part_name)s:port}' % {'part_name': part_name}) -%}
-{%   endfor %}
+{%  endfor -%}
 {%   set scheme = backend_configuration.get('scheme', ['https']) -%}
 {%   set current_apache_port = current_apache_port + 2 -%}
 {%   set current_haproxy_port = current_haproxy_port + 1 -%}
@@ -417,7 +417,7 @@ recipe = slapos.cookbook:logrotate.d
 name = apache-public-{{ backend_name }}
 log = ${apache-public-{{ backend_name }}:error-log} ${apache-public-{{ backend_name }}:access-log}
 post = {{ bin_directory }}/killpidfromfile ${apache-public-{{ backend_name }}:pid-file} SIGUSR1
-{%   endif %}
+{%   endif -%}
 {%   if 'https' in scheme -%}
 {%     set section_name = 'apache-' ~ backend_name -%}
 {%     do publish_url_list.append(
@@ -474,9 +474,8 @@ server-check-path = /{{ site_id }}/getId
 wrapper-path = ${directory:services}/haproxy-{{ backend_name }}
 binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
 backend-list = {{ haproxy_backend_list | join(' ')}}
-{%   endif -%}
-{% endfor %}
-
+{%-  endif %}
+{% endfor -%}
 [{{ section('publish-apache-backend-list') }}]
 recipe = slapos.cookbook:publish
 {{ publish_url_list | join('\n') }}
@@ -536,5 +535,4 @@ parts =
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
-
-{% endif %}
+{%- endif %}
