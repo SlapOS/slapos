@@ -328,7 +328,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
 
       # ...and request destruction
@@ -338,6 +338,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 
