@@ -17,14 +17,45 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-[slap-parameter]
-# By default, if no white list is specified, backend allows access to everyone
-access-control-string = all
+{% if 'frontend-software-url' in slapparameter_dict -%}
+[request-slave-frontend]
+recipe = slapos.cookbook:request
+software-url = {{ slapparameter_dict['frontend-software-url'] }}
+software-type = {{ slapparameter_dict.get('frontend-software-type', 'RootSoftwareInstance') }}
+sla = instance_guid
+sla-instance_guid = {{ slapparameter_dict['frontend-instance-guid'] }}
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+name = SlaveFrontend
+slave = true
+{% set config_dict = {
+  'url': '${apache-zope-backend-instance:scheme}://[${apache-zope-backend-instance:ip}]:${apache-zope-backend-instance:port}',
+  'type': 'zope',
+} -%}
+{% if 'frontend-domain' in slapparameter_dict -%}
+{%   do config_dict.__setitem__('custom_domain', slapparameter_dict['frontend-domain']) -%}
+{% endif -%}
+config = {{ config_dict.keys() | join(' ') }}
+{% for name, value in config_dict.items() -%}
+config-{{ name }} = {{ value }}
+{% endfor -%}
+return = site_url
 
+[publish-apache-zope-backend-connection-string]
+recipe = slapos.cookbook:publish
+url = ${request-slave-frontend:connection-site_url}
+login = ${zope-instance:user}
+password = ${zope-instance:password}
+url-deadlock = ${:url}/${zope-instance:deadlock-path}?${zope-instance:deadlock-password}
+{% else %}
 [publish-apache-zope-backend-connection-string]
 recipe = slapos.cookbook:publish
 url = https://${zope-instance:user}:${zope-instance:password}@[${apache-zope-backend-instance:ip}]:${apache-zope-backend-instance:port}
 url-deadlock = ${:url}/${zope-instance:deadlock-path}?${zope-instance:deadlock-password}
+{% endif %}
 
 [apache-zope-backend-instance]
 recipe = slapos.cookbook:apache.zope.backend
@@ -35,7 +66,8 @@ wrapper = ${rootdirectory:bin}/apache
 key-file = ${directory:apache-conf}/apache.key
 cert-file = ${directory:apache-conf}/apache.crt
 configuration-file = ${directory:apache-conf}/apache.conf
-access-control-string = ${slap-parameter:access-control-string}
+{# By default, if no white list is specified, backend allows access to everyone -#}
+access-control-string = {{ slapparameter_dict.get('access-control-string', 'all') }}
 pid-file = ${basedirectory:run}/apache.pid
 lock-file = ${basedirectory:run}/apache.lock
 ssl-session-cache = ${basedirectory:log}/apache-ssl-session-cache
@@ -58,7 +90,7 @@ recipe = slapos.cookbook:generic.zope
 # XXX: products won't be needed as soon as all ERP5 (and products-deps)
 # products will be eggified so then it will be possible to use them thanks to
 # availability in software's eggs
-products = {{ products_list }}
+products = {{ product_list }}
 
 # Options
 user = zope
