@@ -534,7 +534,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       CheckComputerPartitionIsFree
-      CheckComputerPartitionNoInstanceHostingSalePackingList
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
