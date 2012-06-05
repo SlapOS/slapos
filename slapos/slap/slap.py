@@ -236,6 +236,8 @@ class Computer(SlapDocument):
 
     Raise an INotFoundError if computer_guid doesn't exist.
     """
+    for software_relase in self._software_release_list:
+      software_relase._connection_helper = self._connection_helper
     return self._software_release_list
 
   @_syncComputerInformation
