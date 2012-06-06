@@ -3,6 +3,7 @@ import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from random import random
+from Products.ERP5Type.tests.backportUnittest import skip
 
 class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
   def stepRequestSoftwareInstanceUpdate(self, sequence, **kw):
@@ -21,7 +22,8 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         }
     method_dict[instance.getSlapState()](
         software_release=instance.getRootSoftwareReleaseUrl(),
-        instance_xml=instance.getTextContent(),
+        instance_xml='<?xml version="1.0"' \
+                     'encoding="utf-8"?><instance>   </instance>',
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
         shared=shared,
@@ -102,7 +104,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+      CheckComputerPartitionInstanceUpdateSalePackingListDelivered
       Logout
 
       SlapLoginCurrentComputer
@@ -149,7 +151,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
@@ -195,7 +197,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
@@ -255,7 +257,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
@@ -273,7 +275,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
         LoginDefaultUser
         CheckComputerPartitionInstanceHostingSalePackingListDelivered
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         CheckUpdateSalePackingListErrorText
         Logout
 
@@ -372,13 +374,6 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionNoInstanceHostingSalePackingList
       Logout
 
-
-      LoginDefaultUser
-      DeliverSalePackingList
-      Tic
-      CheckComputerPartitionInstanceSetupSalePackingListDelivered
-      Logout
-
       # prepared delivered instance setup delivery
 
       LoginTestVifibCustomer
@@ -388,6 +383,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       CheckComputerPartitionNoInstanceUpdateSalePackingList
+      CheckComputerPartitionInstanceSetupSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -437,6 +433,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Update is forbidden on destroyed instance')
   def test_update_not_created_confirmed_instance_cleanup(self):
     sequence_list = SequenceList()
     sequence_string = \
@@ -737,7 +734,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
@@ -766,7 +763,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
@@ -794,7 +791,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         SlapLoginCurrentComputer
