@@ -27,14 +27,30 @@
 
 from datetime import datetime
 from erp5functionaltestreporthandler import ERP5TestReportHandler
-from ERP5TypeFunctionalTestCase import Xvfb, Firefox, TimeoutError
+from ERP5TypeFunctionalTestCase import TimeoutError
 from time import sleep
 import time
 import os
 import urllib2
+import urlparse
+from subprocess import Popen, PIPE
+import signal
 
 def run(args):
-  config = args[0]
+  suite_url = args[0]
+  report_url = args[1]
+  project = args[2]
+  browser_binary = args[3]
+
+  suite_parsed = urlparse.urlparse(suite_url)
+
+  config = {
+    'suite_name': suite_parsed.path.split('/')[-1],
+    'base_url': "%s://%s%s" % (suite_parsed.scheme, suite_parsed.hostname,
+                               '/'.join(suite_parsed.path.split('/')[:-1])),
+    'user': suite_parsed.username,
+    'password': suite_parsed.password,
+    }
 
   test_url = assembleTestUrl(config['base_url'], config['suite_name'],
       config['user'], config['password'])
@@ -43,20 +59,17 @@ def run(args):
   timeout = 2.0 * 60 * 60
   
   while True:
-    erp5_report = ERP5TestReportHandler(config['test_report_instance_url'],
-        config['project'] + '@' + config['suite_name'])
+    erp5_report = ERP5TestReportHandler(report_url,
+        project + '@' + config['suite_name'])
     try:
-      os.environ['DISPLAY'] = config['display']
-      xvfb = Xvfb(config['etc_directory'], config['xvfb_binary'])
-      profile_dir = os.path.join(config['etc_directory'], 'profile')
-      # XXX-Cedric : change Firefox prefs.js generation so that it can take a
-      #              list of websites supposed to be reached instead of config['base_url']
-      browser = Firefox(profile_dir, config['base_url'], config['browser_binary'])
       try:
         start = time.time()
-        xvfb.run()
-        profile_dir = os.path.join(config['etc_directory'], 'profile')
-        browser.run(test_url , xvfb.display)
+        print("Running test on: %s" % test_url)
+        process = Popen('%s "%s"' % (browser_binary, test_url),
+                        stdout=PIPE,
+                        stderr=PIPE,
+                        shell=True,
+                        close_fds=True)
         erp5_report.reportStart()
         while not isTestFinished(config['base_url']):
           time.sleep(10)
@@ -66,8 +79,8 @@ def run(args):
       except TimeoutError:
         continue
       finally:
-        browser.quit()
-        xvfb.quit()
+        if process.pid:
+          os.kill(process.pid, signal.SIGTERM)
       print("Test has finished and Firefox has been killed.")
       
       erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",

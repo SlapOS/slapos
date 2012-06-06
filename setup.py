@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.46-dev'
+version = '0.53-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -40,6 +40,7 @@ setup(name=name,
       zip_safe=True,
       entry_points={
         'zc.buildout': [
+          'agent = slapos.recipe.agent:Recipe',
           'apache.frontend = slapos.recipe.apache_frontend:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
@@ -47,6 +48,7 @@ setup(name=name,
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
           'check_port_listening = slapos.recipe.check_port_listening:Recipe',
+          'check_url_available = slapos.recipe.check_url_available:Recipe',
           'cron = slapos.recipe.dcron:Recipe',
           'cron.d = slapos.recipe.dcron:Part',
           'davstorage = slapos.recipe.davstorage:Recipe',
@@ -57,11 +59,13 @@ setup(name=name,
           'erp5scalabilitytestbed = slapos.recipe.erp5scalabilitytestbed:Recipe',
           'equeue = slapos.recipe.equeue:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
+          'generate_output_if_input_not_null = slapos.recipe.generate_output_if_input_not_null:Recipe',
           'generate.mac = slapos.recipe.generatemac:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
           'generic.onetimeupload = slapos.recipe.generic_onetimeupload:Recipe',
           'helloworld = slapos.recipe.helloworld:Recipe',
           'generic.cloudooo = slapos.recipe.generic_cloudooo:Recipe',
+          'firefox = slapos.recipe.firefox:Recipe',
           'fontconfig = slapos.recipe.fontconfig:Recipe',
           'java = slapos.recipe.java:Recipe',
           'kumofs = slapos.recipe.kumofs:Recipe',
@@ -112,6 +116,7 @@ setup(name=name,
           'urlparse = slapos.recipe._urlparse:Recipe',
           'vifib = slapos.recipe.vifib:Recipe',
           'waitfor = slapos.recipe.waitfor:Recipe',
+          'xvfb = slapos.recipe.xvfb:Recipe',
           'xwiki = slapos.recipe.xwiki:Recipe',
           'zabbixagent = slapos.recipe.zabbixagent:Recipe',
           'generic.zope = slapos.recipe.generic_zope:Recipe',

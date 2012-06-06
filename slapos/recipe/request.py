@@ -57,7 +57,7 @@ class Recipe(object):
       self.logger.debug("No parameter to return to main instance."
                           "Be careful about that...")
 
-    software_type = 'RootInstanceSoftware'
+    software_type = 'RootSoftwareInstance'
     if 'software-type' in options:
       software_type = options['software-type']
 
@@ -73,7 +73,7 @@ class Recipe(object):
             options['config-%s' % config_parameter]
 
     self.instance = self.request(options['software-url'], software_type,
-      options.get('name', name), partition_parameter_kw=partition_parameter_kw,
+      options['name'], partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=self.isSlave)
 
     self.failed = None
@@ -96,8 +96,9 @@ class Recipe(object):
       # XXX-Cedric : currently raise an error. So swallow it...
       except AttributeError:
         status = "unknown"
-      raise KeyError("Connection parameter %s not found. "
+      self.logger.error("Connection parameter %s not found. "
           "Status of requested instance is : %s." % (self.failed, status))
+      raise KeyError("Connection parameter %s not found. " % self.failed)
     return []
 
   update = install
