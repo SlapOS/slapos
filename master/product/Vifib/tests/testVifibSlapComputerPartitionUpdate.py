@@ -4,6 +4,7 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from random import random
 from Products.ERP5Type.tests.backportUnittest import skip
+from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 
 class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
   def stepRequestSoftwareInstanceUpdate(self, sequence, **kw):
@@ -423,7 +424,8 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         'stop_requested': instance.requestStop,
         'destroy_requested': instance.requestDestroy,
         }
-    self.assertRaises(ValidationFailed, method_dict[instance.getSlapState()],
+    self.assertRaises(UnsupportedWorkflowMethod, 
+        method_dict[instance.getSlapState()],
         software_release=instance.getRootSoftwareReleaseUrl(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
