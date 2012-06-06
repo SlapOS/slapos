@@ -446,7 +446,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
 
       # Now request destruction of second software instance...
@@ -457,6 +457,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 
