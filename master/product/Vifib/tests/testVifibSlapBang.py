@@ -66,6 +66,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
     slap_computer_partition.bang(self.bang_message)
+    sequence.edit(expected_bang_count=1)
 
   def stepProcessSoftwareInstanceList(self, sequence, **kw):
     S0 = self.portal.portal_catalog.getResultValue(uid=sequence['S0_uid'])
@@ -95,31 +96,36 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         .getAggregateValue(portal_type='Computer Partition').getReference()
     )
 
-  def checkSoftwareInstanceBangMessage(self, software_instance):
+  def checkSoftwareInstanceBangMessage(self, count, software_instance):
     bang_list = [q for q in software_instance.Base_getWorkflowHistoryItemList(
       'instance_slap_interface_workflow')
       if q.action == 'bang']
-    self.assertEqual(5, len(bang_list))
+    self.assertEqual(count, len(bang_list))
     self.assertEqual(self.bang_message, bang_list[0].comment)
 
   def stepCheckS0BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S0_uid']))
 
   def stepCheckS1BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid']))
 
   def stepCheckS2BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid']))
 
   def stepCheckS3BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid']))
 
   def stepCheckS4BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid']))
 
   def test_bang_computer_partition_complex_tree(self):
@@ -218,6 +224,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     slap_computer = self.slap.registerComputer(
       sequence['computer_reference'])
     slap_computer.bang(self.bang_message)
+    sequence.edit(expected_bang_count=5)
 
   def stepCheckComputerBangMessage(self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
