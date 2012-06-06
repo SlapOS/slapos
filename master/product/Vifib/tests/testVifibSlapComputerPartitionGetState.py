@@ -423,7 +423,7 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckStoppedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginDefaultUser \
       SetHostingAfterSetupStartDate \
