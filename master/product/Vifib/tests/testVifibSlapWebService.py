@@ -2397,11 +2397,18 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     Check that Computer.getComputerPartitionList is successfully called.
     """
     computer_guid = sequence["computer_reference"]
+    computer_uid = sequence["computer_uid"]
+    erp5_computer = self.portal.portal_catalog.unrestrictedSearchResults(
+        uid=computer_uid)[0].getObject()
+    computer_partition_amount = len([x for x in \
+      erp5_computer.contentValues(portal_type="Computer Partition") \
+      if x.getSlapState() == "busy"])
+
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
     computer = self.slap.registerComputer(computer_guid)
     computer_partition_list = computer.getComputerPartitionList()
-    self.assertEquals(self.computer_partition_amount,
+    self.assertEquals(computer_partition_amount,
                       len(computer_partition_list))
 
   def stepCheckSuccessComputerPartitionGetIdCall(self, sequence, **kw):
