@@ -190,7 +190,8 @@ else:\n
           new_delivery.confirm()\n
           instance.edit(causality_value=new_delivery)\n
       elif (state == stopped):\n
-        delivery.stop()\n
+        if isTransitionPossible(delivery, "stop"):\n
+          delivery.stop()\n
       elif (state == destroyed):\n
         if isTransitionPossible(delivery, "stop"):\n
           delivery.stop()\n
