@@ -1229,15 +1229,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout \
   '
   prepare_stop_requested_computer_partition_sequence_string = \
-      prepare_started_computer_partition_sequence_string + '\
+      prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
       SetSequenceSoftwareInstanceStateStopped \
       PersonRequestSoftwareInstance \
       Tic \
-      Logout \
-      \
-      LoginDefaultUser \
-      CheckComputerPartitionInstanceHostingSalePackingListStopped \
       Logout \
   '
   prepare_stopped_computer_partition_sequence_string = \
