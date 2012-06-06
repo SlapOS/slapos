@@ -389,10 +389,10 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckNotFoundComputerPartitionErrorCall \
+      CheckSuccessComputerPartitionErrorCall \
       SlapLogout \
       LoginDefaultUser \
-      CheckSalePackingListNoErrorText \
+      CheckSalePackingListErrorText \
       CheckDeliveredSalePackingList \
       Logout \
       LoginERP5TypeTestCase \
