@@ -250,8 +250,6 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       CleanTic \
       \
       LoginDefaultUser \
-      DeliverInstanceSetupSalePackingList \
-      Tic \
       CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       SelectCurrentlyUsedSalePackingListUid \
       CancelSalePackingList \
@@ -413,7 +411,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       \
       LoginDefaultUser \
       SetDeliveryLineAmountEqualOne \
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered \
+      CheckComputerPartitionInstanceHostingSalePackingListStopped \
       Logout \
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetComputerPartitionCall \
