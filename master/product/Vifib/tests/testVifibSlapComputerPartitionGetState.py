@@ -32,7 +32,7 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckStoppedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -54,7 +54,7 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckDestroyedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -160,7 +160,7 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckStoppedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
