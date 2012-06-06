@@ -24,7 +24,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     method_dict[instance.getSlapState()](
         software_release=instance.getRootSoftwareReleaseUrl(),
         instance_xml='<?xml version="1.0"' \
-                     'encoding="utf-8"?><instance>   </instance>',
+                     'encoding="utf-8"?><instance><parameter id="foo">bar</parameter></instance>',
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
         shared=shared,
