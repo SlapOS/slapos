@@ -4415,7 +4415,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
     sequence_string = self\
         .prepare_installed_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckRaisesNotFoundComputerPartitionDestroyedCall \
+      CheckSuccessComputerPartitionDestroyedCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
