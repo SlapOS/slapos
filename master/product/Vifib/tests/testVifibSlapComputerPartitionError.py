@@ -140,8 +140,6 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_installed_computer_partition_sequence_string + '\
       LoginDefaultUser \
-      DeliverSalePackingList \
-      Tic \
       CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       Logout \
       \
