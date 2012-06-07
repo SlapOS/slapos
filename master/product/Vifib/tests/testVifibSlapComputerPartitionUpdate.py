@@ -215,7 +215,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         SlapLogout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceHostingSalePackingListDelivered
+        CheckComputerPartitionInstanceHostingSalePackingListStopped
         CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
@@ -275,7 +275,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         SlapLogout
 
         LoginDefaultUser
-        CheckComputerPartitionInstanceHostingSalePackingListDelivered
+        CheckComputerPartitionInstanceHostingSalePackingListStopped
         CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         CheckUpdateSalePackingListErrorText
         Logout
@@ -298,7 +298,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         LoginERP5TypeTestCase
@@ -318,7 +318,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         LoginERP5TypeTestCase
@@ -338,7 +338,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         LoginERP5TypeTestCase
@@ -358,7 +358,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         LoginERP5TypeTestCase
