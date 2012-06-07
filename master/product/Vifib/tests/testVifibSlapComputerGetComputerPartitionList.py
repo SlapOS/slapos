@@ -486,7 +486,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       Logout \
       \
       SlapLoginCurrentComputer \
-      CheckStartedComputerPartitionGetStateCall \
+      CheckDestroyedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
