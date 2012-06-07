@@ -315,7 +315,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered \
+      CheckComputerPartitionInstanceHostingSalePackingListStopped \
       Logout \
       \
       LoginERP5TypeTestCase \
