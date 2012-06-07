@@ -3707,7 +3707,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_instance_sale_packing_list_line_list = software_instance\
         .getAggregateRelatedList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(1, len(software_instance_sale_packing_list_line_list))
+    self.assertEqual(2, len(software_instance_sale_packing_list_line_list))
 
   def _checkSoftwareInstanceAndRelatedPartition(self, software_instance,
       partition_portal_type=computer_partition_portal_type):
