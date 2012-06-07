@@ -569,18 +569,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceCleanupSalePackingListCancelled
       Logout
 
-      # So all packing lists are finished, but one is cancelled,
-      # time to request destruction...
-
-      LoginDefaultUser
-      RequestSoftwareInstanceDestroy
-      Tic
-      Logout
-
-      LoginDefaultUser
-      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
-      Logout
-
       # ...and destroy it
 
       SlapLoginCurrentComputer
@@ -589,7 +577,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionInstanceCleanupSalePackingListCancelled
       CheckComputerPartitionIsFree
       Logout
 
