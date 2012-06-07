@@ -389,6 +389,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Update is forbidden on destroyed instance')
   def test_update_not_created_started_instance_cleanup(self):
     sequence_list = SequenceList()
     sequence_string = \
