@@ -764,7 +764,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetSoftwareInstanceAsCurrentRequestedSlave
-      CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+      CheckComputerPartitionInstanceUpdateSalePackingListDelivered
       Logout
       SlapLoginCurrentComputer
       CheckSuccessComputerGetComputerPartitionCall
