@@ -842,7 +842,16 @@ class SlapTool(BaseTool):
         raise SoftwareInstanceNotReady
       else:
         parameter_dict = self._getSoftwareInstanceAsParameterDict(requested_software_instance)
+
+        # software instance has to define an xml parameter
+        xml = self._instanceXmlToDict(
+          parameter_dict.pop('xml'))
+        connection_xml = self._instanceXmlToDict(
+          parameter_dict.pop('connection_xml'))
+
         software_instance = SoftwareInstance(**parameter_dict)
+        software_instance._parameter_dict = xml
+        software_instance._connection_dict = connection_xml
         return xml_marshaller.xml_marshaller.dumps(software_instance)
 
   ####################################################
