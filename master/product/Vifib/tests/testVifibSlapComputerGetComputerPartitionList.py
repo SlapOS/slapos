@@ -149,11 +149,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SelectCurrentlyUsedSalePackingListUid \
       CancelSalePackingList \
       Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListCancelled \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      CheckComputerPartitionInstanceCleanupSalePackingListCancelled \
+      CheckComputerPartitionInstanceHostingSalePackingListCancelled \
       Logout \
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetComputerPartitionCall \
