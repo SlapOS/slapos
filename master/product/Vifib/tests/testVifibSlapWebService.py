@@ -3699,7 +3699,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sale_packing_list_line_list = computer_partition\
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(1, len(sale_packing_list_line_list))
+    self.assertEqual(2, len(sale_packing_list_line_list))
     sale_packing_list_line = sale_packing_list_line_list[0]
     software_instance = sale_packing_list_line.getAggregateValue(
         portal_type=self.software_instance_portal_type)
