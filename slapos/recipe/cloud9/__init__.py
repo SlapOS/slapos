@@ -31,14 +31,15 @@ class Recipe(GenericBaseRecipe):
   """Deploy a fully operational cloud9 service."""
 
   def _options(self, options):
-    self.ip = options['ipv6'].strip()
+    self.ip = options['ip'].strip()
     self.port = options['port'].strip()
     self.git = options['git-binary'].strip()
     self.node_executable = options['node-binary'].strip()
     self.cloud9 = options['cloud9'].strip()
     self.workdir = options['working-directory'].strip()
+    self.wrapper = options['wrapper'].strip()
     # Set cloud9 access URL
-    options['access_url'] = 'http://[%s]:%s' % (self.ip, self.port)
+    options['access-url'] = 'http://[%s]:%s' % (self.ip, self.port)
 
   def install(self):
     path_list = []
@@ -50,8 +51,10 @@ class Recipe(GenericBaseRecipe):
     cloud9_args = [self.node_executable, self.cloud9, '-l', self.ip, '-p',
         self.port, '-w', self.workdir]
 
-    wrapper = self.createPythonScript(self.options['wrapper-name'],
-        'slapos.recipe.librecipe.execute.executee', cloud9_args, environment)
+    wrapper = self.createPythonScript(self.wrapper,
+        'slapos.recipe.librecipe.execute.executee',
+        (cloud9_args, environment)
+    )
     path_list.append(wrapper)
-    
+
     return path_list
