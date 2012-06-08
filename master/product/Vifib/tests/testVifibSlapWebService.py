@@ -3991,7 +3991,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
           for obj in sale_packing_list_line_list]
     self.assertEquals(computer_partition_list[0],
         computer_partition_list[1])
-    self.assertEquals(2, len(computer_partition_list))
+    self.assertEquals(4, len(computer_partition_list))
 
   def stepCheckSlaveInstanceNotReady(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
