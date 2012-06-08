@@ -3936,6 +3936,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     portal_type_list = [instance.getPortalType() for instance in instance_list]
     expected_portal_type_list = [self.slave_instance_portal_type,
         self.slave_instance_portal_type,
+        self.slave_instance_portal_type,
+        self.slave_instance_portal_type,
+        self.software_instance_portal_type,
         self.software_instance_portal_type]
     self.assertEquals(expected_portal_type_list, sorted(portal_type_list))
     computer_partition_list = [obj.getAggregateValue(

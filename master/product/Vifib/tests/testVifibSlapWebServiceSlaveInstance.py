@@ -347,6 +347,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       Tic
       LoginAsCustomerA
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
