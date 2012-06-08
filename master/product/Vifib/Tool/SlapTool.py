@@ -709,7 +709,8 @@ class SlapTool(BaseTool):
           portal.portal_preferences.getPreferredInstanceCleanupResource()]:
         if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
           delivery.stop()
-        delivery.deliver()
+        if portal.portal_workflow.isTransitionPossible(delivery, 'deliver'):
+          delivery.deliver()
 
         # XXX Integrate with REST API
         # Code duplication will be needed until SlapTool is removed
