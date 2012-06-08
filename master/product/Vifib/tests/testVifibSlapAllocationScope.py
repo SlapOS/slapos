@@ -773,6 +773,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetComputerCoordinatesFromComputerTitle
+      CleanTic
       Logout
 
       LoginTestVifibCustomer
@@ -803,6 +804,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       # instantiate for owner
       LoginDefaultUser
       CallConfirmOrderedSaleOrderAlarm
+      Tic
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
