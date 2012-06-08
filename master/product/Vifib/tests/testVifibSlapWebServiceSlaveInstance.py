@@ -159,7 +159,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       SlapLoginCurrentComputer
       CheckEmptySlaveInstanceListFromOneComputerPartition
       Logout
