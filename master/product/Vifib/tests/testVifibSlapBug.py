@@ -1174,6 +1174,9 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetSequenceSoftwareInstanceRequestedStateDestroyed(self, sequence, **kw):
+    sequence['requested_state'] = 'destroyed'
+
   def test_request_new_with_destroyed_while_looking_for_partition_reference(self):
     """Prove that having destroyed SI allows to request new one with same
       reference, when destruction was done while looking for new partition"""
@@ -1213,7 +1216,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginTestVifibCustomer
-      SetSequenceSoftwareInstanceStateDestroyed
+      SetSequenceSoftwareInstanceRequestedStateDestroyed
       PersonRequestSoftwareInstance
       Tic
       Logout
