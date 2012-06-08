@@ -1353,6 +1353,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SetRequestedComputerPartition
       CheckComputerPartitionNoInstanceHostingSalePackingList
       CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      Tic
       Logout
 
       LoginERP5TypeTestCase

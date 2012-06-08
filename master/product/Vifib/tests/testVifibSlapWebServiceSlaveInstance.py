@@ -606,9 +606,11 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       CallConfirmOrderedSaleOrderAlarm
+      Tic
       SlapLogout
       LoginTestVifibCustomer
       CheckSlaveInstanceSecurityWithDifferentCustomer
+      Tic
       SlapLogout
 
       LoginERP5TypeTestCase

@@ -358,6 +358,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance \
       DirectRequestComputerPartitionHttpRequestTimeoutResponseWithoutState \
       Tic \
+      Tic \
       SlapLogout \
       \
       LoginERP5TypeTestCase \
