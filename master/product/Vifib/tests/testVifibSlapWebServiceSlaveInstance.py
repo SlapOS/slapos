@@ -719,6 +719,12 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
         portal_type='Slave Instance')
     sequence['software_instance_uid'] = slave_instance.getUid()
 
+  def stepCheckComputerPartitionInstanceUpdateSalePackingListDelivered(self,
+      sequence, **kw):
+    self._checkComputerPartitionSalePackingListState('delivered',
+        self.portal.portal_preferences.getPreferredInstanceUpdateResource(),
+        sequence)
+
   def test_SlaveInstance_change_parameter_dict_after_request(self):
     """
       Check that request to change the parameter dict from a Slave Instance
