@@ -58,20 +58,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_bug_doubleClickOnStart_serializeIsCalled(self):
-    sequence_list = SequenceList()
-    sequence_string = self\
-        .prepare_stopped_computer_partition_sequence_string + """
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceStartCheckSerializeIsCalled
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
-    """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
   def test_bug_doubleClickOnDestroy(self):
     sequence_list = SequenceList()
     sequence_string = self\
@@ -85,20 +71,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_bug_doubleClickOnDestroy_serializeIsCalled(self):
-    sequence_list = SequenceList()
-    sequence_string = self\
-        .prepare_installed_computer_partition_sequence_string + """
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroyCheckSerializeIsCalled
 
       LoginERP5TypeTestCase
       CheckSiteConsistency
