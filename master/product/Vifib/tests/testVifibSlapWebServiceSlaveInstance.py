@@ -458,7 +458,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SetDeliveryLineAmountEqualOne
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       RequestStopSoftwareInstanceFromCurrentComputerPartition
       Tic
       SlapLoginCurrentComputer
