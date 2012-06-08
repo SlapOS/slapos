@@ -320,7 +320,9 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
+      CleanTic
       CallConfirmOrderedSaleOrderAlarm
       Tic
       SelectDifferentSoftwareReleaseUri
