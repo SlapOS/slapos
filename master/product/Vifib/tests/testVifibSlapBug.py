@@ -43,7 +43,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
         .prepare_stopped_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       RequestSoftwareInstanceStart
-      RequestSoftwareInstanceStartRaisesValueError
+      RequestSoftwareInstanceStart
       Tic
       Logout
 
