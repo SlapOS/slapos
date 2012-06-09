@@ -25,3 +25,25 @@
 #
 ##############################################################################
 
+from slapos.recipe.librecipe import GenericBaseRecipe
+import sys
+
+class Recipe(GenericBaseRecipe):
+  """
+  Check html promise
+  """
+
+  def install(self):
+    config = dict(
+      hostname=self.options['url'],
+      port=self.options['working_directory'],
+      python_path=sys.executable,
+    )
+
+    html_promise = self.createExecutable(
+      self.options['path'],
+      self.substituteTemplate(
+        self.getTemplateFilename('html_promise.py.in'),
+        config))
+
+    return [html_promise]
