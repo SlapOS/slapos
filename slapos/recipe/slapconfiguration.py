@@ -25,13 +25,8 @@
 #
 ##############################################################################
 import slapos.slap
-import json
 from ConfigParser import RawConfigParser
-
-cast_dict = {
-    'json': (True, json.dumps),
-    'str': (False, str),
-}
+from netaddr import valid_ipv4, valid_ipv6
 
 class Recipe(object):
   """
@@ -39,6 +34,8 @@ class Recipe(object):
   buildout section in various ways, and in various encodings.
   Populates the buildout section it is used in with all slap partition
   parameters.
+  Also provides access to partition properties: all IPv4, IPv6 and tap
+  interfaces it is allowed to use.
 
   Input:
     url
@@ -59,56 +56,65 @@ class Recipe(object):
       Partition identifier.
       Example:
         ${slap-connection:partition-id}
-    unsafe (optional, 0 by default)
-      Enables formats which are unsafe when represented back into a buildout
-      text file. Set to 0 to explicitly disable unsafe formats, any other
-      integer value to enable them.
 
   Output:
-    One key per supported serialisation format, with all partition parameters
-    serialised in that format as values and format's name.
-    Also, one key per partition parameter, prefixed with serialisation format
-    followed by a dot. Example:
-      json = {"foo": "bar"}
-      json.foo = "bar"
-
-  Supported serailisation formats:
-    json (safe)
-      JavaScript Object Notation
-    str (unsafe)
-      Python string representation.
+    slap-software-type
+      Current partition's software type.
+    ipv4
+      Set of IPv4 addresses.
+    ipv6
+      Set of IPv6 addresses.
+    tap
+      Set of TAP interfaces.
+    configuration
+      Dict of all parameters.
+    configuration.<key>
+      One key per partition parameter.
+      Partition parameter whose name cannot be represented unambiguously in
+      buildout syntax are ignored. They cannot be accessed from buildout syntax
+      anyway, and are available through "configuration" output key.
   """
 
   # XXX: used to detect if a configuration key is a valid section key. This
   # assumes buildout uses ConfigParser - which is currently the case.
-  OPTCRE = RawConfigParser.OPTCRE
+  OPTCRE_match = RawConfigParser.OPTCRE.match
 
   def __init__(self, buildout, name, options):
       slap = slapos.slap.slap()
       slap.initializeConnection(
-        options['url'],
-        options.get('key'),
-        options.get('cert'),
+          options['url'],
+          options.get('key'),
+          options.get('cert'),
       )
       parameter_dict = slap.registerComputerPartition(
-        options['computer'],
-        options['partition'],
+          options['computer'],
+          options['partition'],
       ).getInstanceParameterDict()
-      allow_unsafe = bool(int(options.get('unsafe', '0')))
-      match = self.OPTCRE.match
-      for name, (safe, cast) in cast_dict.iteritems():
-          if not safe and not allow_unsafe:
+      # XXX: those are not partition parameters, strictly speaking.
+      # Discard them, and make them available as separate section keys.
+      options['slap-software-type'] = parameter_dict.pop(
+          'slap_software_type')
+      ipv4_set = set()
+      v4_add = ipv4_set.add
+      ipv6_set = set()
+      v6_add = ipv6_set.add
+      tap_set = set()
+      tap_add = tap_set.add
+      for tap, ip in parameter_dict.pop('ip_list'):
+          tap_add(tap)
+          if valid_ipv4(ip):
+              v4_add(ip)
+          elif valid_ipv6(ip):
+              v6_add(ip)
+          # XXX: emit warning on unknown address type ?
+      options['ipv4'] = ipv4_set
+      options['ipv6'] = ipv6_set
+      options['tap'] = tap_set
+      options['configuration'] = parameter_dict
+      match = self.OPTCRE_match
+      for key, value in parameter_dict.iteritems():
+          if match(key) is not None:
               continue
-          options[name] = cast(parameter_dict)
-          for key, value in parameter_dict.iteritems():
-              if match(key) is not None:
-                  # It should be OK to skip silently and unconditionally: such
-                  # parameter cannot be accessed in a well-formed buildout
-                  # config.
-                  continue
-              options[name + '.' + key] = cast(value)
+          options['configuration.' + key] = value
 
-  def install(self):
-      return []
-
-  update = install
+  install = update = lambda self: []

@@ -7,7 +7,7 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [slap-parameters]
-recipe = slapos.cookbook:slapparameters
+recipe = slapos.cookbook:slapconfiguration
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
@@ -21,7 +21,8 @@ extra-context =
 context =
     key eggs_directory buildout:eggs-directory
     key develop_eggs_directory buildout:develop-eggs-directory
-    jsonkey slapparameter_dict slap-parameters:json
+    key slap_software_type slap-parameters:slap-software-type
+    key slapparameter_dict slap-parameters:configuration
     ${:extra-context}
 
 [dynamic-template-tidstorage-parameters]
@@ -47,6 +48,7 @@ aspell = {{ aspell_location }}
 poppler = {{ poppler_location }}
 dmtx-utils = {{ dmtx_utils_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
+zope-conf-template = {{ template_zope_conf }}
 
 [dynamic-template-tidstorage]
 < = jinja2-template-base
@@ -60,6 +62,8 @@ extra-context =
     raw zeo_port_base 15000
     raw haproxy_port_base 11000
     raw apache_port_base 10000
+    key ipv4_set slap-parameters:ipv4
+    key ipv6_set slap-parameters:ipv6
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type tidstorage
 
