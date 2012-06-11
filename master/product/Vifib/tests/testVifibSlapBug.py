@@ -1351,6 +1351,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       """
 
       LoginTestVifibCustomer
+      SetSequenceSoftwareInstanceStateStopped
       PersonRequestSoftwareInstance
       Tic
       Logout
