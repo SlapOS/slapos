@@ -34,7 +34,7 @@ backward compatibility with existing automatically setup CAs.
 {% macro zope(
   name,
   thread_amount=1,
-  timeserver=False,
+  timerserver_interval=0,
   longrequest_logger_file='',
   longrequest_logger_timeout='',
   longrequest_logger_interval=''
@@ -49,7 +49,9 @@ lock-file = ${directory:run}/{{ name }}.lock
 {% set offset = zope_dummy_list | length -%}
 port = {{ zope_port_base + offset }}
 thread-amount = {{ thread_amount }}
-timeserver = {{ timeserver }}
+{% if timerserver_interval -%}
+timerserver-interval = {{ timerserver_interval }}
+{% endif -%}
 event-log = ${directory:log}/{{ name }}-event.log
 z2-log = ${directory:log}/{{ name }}-Z2.log
 
@@ -354,12 +356,12 @@ context =
   ${:extra-context}
 
 # Distribution node
-{{ zope('zope-distribution', timeserver=True) }}
+{{ zope('zope-distribution', timerserver_interval=1) }}
 # Admin node
 {{ zope('zope-admin') }}
 # Activity nodes
 {% for q in range(1, json['activity']['zopecount'] + 1) -%}
-{{   zope('zope-activity-%s' % q, timeserver=True) }}
+{{   zope('zope-activity-%s' % q, timerserver_interval=1) }}
 {%- endfor %}
 # Other zopes, apaches and haproxies
 {% set publish_url_list =  [] -%}
