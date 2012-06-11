@@ -1194,7 +1194,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
 
-      SetRandomRequestedReference
+      SetRandomRequestedReferenceAndTitle
       SlapLoginTestVifibCustomer
       PersonRequestSlapSoftwareInstancePrepare
       Tic
@@ -1216,7 +1216,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginTestVifibCustomer
-      SetSequenceSoftwareInstanceRequestedStateDestroyed
+      SetSequenceSoftwareInstanceStateDestroyed
       PersonRequestSoftwareInstance
       Tic
       Logout

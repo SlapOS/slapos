@@ -4267,6 +4267,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepSetRandomRequestedReference(self, sequence, **kw):
     sequence['requested_reference'] = self.id() + str(random())
 
+  def stepSetRandomRequestedReferenceAndTitle(self, sequence, **kw):
+    sequence['requested_reference'] = self.id() + str(random())
+    sequence['software_title'] = sequence['requested_reference']
+
   def stepRenameCurrentSoftwareInstanceDead(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid=sequence['software_instance_uid']
