@@ -216,7 +216,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered \
       CheckComputerPartitionIsFree \
-      CheckOpenOrderLineRemoved \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
