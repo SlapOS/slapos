@@ -3715,7 +3715,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sale_packing_list_line_list = software_instance\
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(2, len(sale_packing_list_line_list))
+    if (software_instance.getSlapState() == "start_requested"):
+      expected_count = 2
+    else:
+      expected_count = 1
+
+    self.assertEqual(expected_count, len(sale_packing_list_line_list))
     sale_packing_list_line = sale_packing_list_line_list[0]
 
     # This Sale Packing List Line shall have only one Computer Partition
@@ -3729,7 +3734,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition_sale_packing_list_line_list = computer_partition\
         .getAggregateRelatedValueList(
             portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEqual(2, len(computer_partition_sale_packing_list_line_list))
+    self.assertEqual(expected_count, len(computer_partition_sale_packing_list_line_list))
 
   def stepCheckPersonRequestedSoftwareInstanceAndRelatedComputerPartition(self,
     sequence, **kw):
