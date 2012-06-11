@@ -706,13 +706,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance
       RequestSlaveInstanceFromComputerPartition
       Tic
-      CheckRaisesNotFoundComputerPartitionParameterDict
-      LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
-      Tic
-      Logout
-      RequestSlaveInstanceFromComputerPartition
-      Tic
       SlapLogout
 
       LoginDefaultUser
