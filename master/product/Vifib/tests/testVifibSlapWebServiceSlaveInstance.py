@@ -411,7 +411,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       SetDeliveryLineAmountEqualOne
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       CheckComputerPartitionInstanceSetupSalePackingListDelivered
       LoginTestVifibCustomer
       RequestStopSoftwareInstanceFromCurrentComputerPartition
@@ -419,7 +419,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       SoftwareInstanceStopped
       Tic
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       StartSoftwareInstanceFromCurrentComputerPartition
       Tic
       SoftwareInstanceStarted
@@ -433,8 +433,6 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SoftwareInstanceStarted
       Tic
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
-      SetDeliveryLineAmountEqualZero
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
       LoginTestVifibCustomer
@@ -470,7 +468,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       SoftwareInstanceStarted
       Tic
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
 
       LoginERP5TypeTestCase
