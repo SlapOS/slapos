@@ -48,12 +48,10 @@ products {{ product }}
 </product-config>
 
 {% endif -%}
-{# BBB: should not have to compare those values to begin with: just take a
-parameter with timerserver interval, empty string meaning disabled -#}
-{% if parameter_dict['timeserver'] in ('y', 'yes', '1', 'true') -%}
+{% if 'timerserver-interval' in parameter_dict -%}
 %import timerserver
 <timer-server>
-  interval 1
+  interval {{ parameter_dict['timerserver-interval'] }}
 </timer-server>
 
 {% endif -%}
