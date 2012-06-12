@@ -73,6 +73,20 @@ except KeyError:\n
 if is_slave not in [True, False]:\n
   raise ValueError, "shared should be a boolean"\n
 \n
+empty_parameter = """<?xml version="1.0" encoding="utf-8"?>\n
+<instance>\n
+</instance>"""\n
+\n
+# XXX Hardcode default parameter\n
+if instance_xml == empty_parameter:\n
+  if software_release_url_string == "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5-frontend:/software/erp5/software.cfg":  \n
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>\n
+<instance>\n
+<parameter id="frontend-instance-guid">SOFTINST-9238</parameter>\n
+<parameter id="frontend-software-url">http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg</parameter>\n
+</instance>\n
+"""\n
+\n
 hosting_subscription_portal_type = "Hosting Subscription"\n
 \n
 tag = "%s_%s_inProgress" % (person.getUid(), \n
