@@ -71,6 +71,22 @@ else:\n
 # support SLA\n
 if "computer_guid" in filter_kw:\n
   query_kw["parent_reference"] = filter_kw["computer_guid"]\n
+if "instance_guid" in filter_kw:\n
+  portal = context.getPortalObject()\n
+  instance = portal.portal_catalog.getResultValue(portal_type="Software Instance", reference=filter_kw["instance_guid"])\n
+  if instance is None:\n
+    # XXX Other user do not have access to the instance document...\n
+    if filter_kw["instance_guid"] == "SOFTINST-9238":\n
+      # XXX Let\'s be nice with Cedric and Vincent\n
+      query_kw["uid"] = "2225067"\n
+    else:\n
+      query_kw["uid"] = "-1"\n
+  else:\n
+    partition_uid = instance.getAggregateUid(portal_type="Computer Partition")\n
+    if partition_uid:\n
+      query_kw["uid"] = partition_uid\n
+    else:\n
+      query_kw["uid"] = "-1"\n
 \n
 SQL_WINDOW_SIZE = 50\n
 \n
