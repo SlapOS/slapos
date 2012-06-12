@@ -60,7 +60,7 @@ instance_xml = """<?xml version="1.0" encoding="utf-8"?>\n
 <parameter id="nbd_port">1024</parameter>\n
 </instance>\n
 """\n
-url = "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.68:/software/kvm/software.cfg"\n
+url = "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.33:/software/kvm/software.cfg"\n
 \n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
