@@ -242,6 +242,31 @@ def SlapDocument_migrateSlapState(self):
     # Update Local Roles
     slap_document.updateLocalRolesOnSecurityGroups()
   real(self)
+
+def HostingSubscription_garbageCollectForMigration(self):
+  @WorkflowMethod.disable
+  def real(self):
+    slap_document = self
+    portal = self.getPortalObject()
+
+    title = slap_document.getTitle()
+    instance_state = 'destroy_requested'
+    for software_instance in slap_document.getPredecessorValueList():
+      if software_instance.getTitle() == title:
+        if software_instance.getSlapState() != 'destroy_requested':
+          instance_state = software_instance.getSlapState()
+          break
+
+    if instance_state == 'destroy_requested':
+      _jumpToStateFor = portal.portal_workflow._jumpToStateFor
+      _jumpToStateFor(slap_document, instance_state, 'instance_slap_interface_workflow')
+      assert(slap_document.getSlapState() == instance_state)
+      _jumpToStateFor(slap_document, 'archived', 'hosting_subscription_workflow')
+      assert(slap_document.getValidationState() == 'archived')
+
+    # Update Local Roles
+    slap_document.updateLocalRolesOnSecurityGroups()
+  real(self)
   
 def SalePackingListLine_deliver(self):
   @WorkflowMethod.disable
