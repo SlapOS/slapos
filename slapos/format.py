@@ -867,6 +867,10 @@ class Parser(OptionParser):
         help="Shall slapformat alter user database [default: True]"),
       Option('--alter_network', choices=['True', 'False'],
         help="Shall slapformat alter network configuration [default: True]"),
+      Option('--now', 
+             help="Launch slapformat without delay",
+             default=False,
+             action="store_true"),
       ])
 
   def check_args(self, args):
@@ -1209,6 +1213,12 @@ def main(*args):
       config.logger.debug(' '.join(argument_list))
       return dry_callAndRead(argument_list, raise_on_error)
     callAndRead = logging_callAndRead
+  # Add delay between 0 and 1 hour
+  if not config.now:
+    duration = float(60*60) * random.random()
+    print("Sleeping for %s seconds. To disable this feature, " \
+                    "use with --now parameter in manual." % duration)
+    time.sleep(duration)
   try:
     run(config)
   except:
