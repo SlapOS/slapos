@@ -106,7 +106,7 @@ while True:\n
 request_software_instance_list = portal.portal_catalog(\n
   # Fetch all portal type, as it is not allowed to change it\n
   portal_type=["Software Instance", "Slave Instance"],\n
-  title=software_title,\n
+  title={\'query\': software_title, \'key\': \'ExactMatch\'},\n
   specialise_uid=hosting_subscription.getUid(),\n
   # Do not fetch destroyed instances\n
   # XXX slap_state=["start_requested", "stop_requested"],\n

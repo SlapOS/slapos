@@ -100,7 +100,7 @@ if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
 # Check if it already exists\n
 request_hosting_subscription_list = portal.portal_catalog(\n
   portal_type=hosting_subscription_portal_type,\n
-  title=software_title,\n
+  title={\'title\': software_title, \'key\': \'ExactMatch\'},\n
   validation_state="validated",\n
   default_destination_section=person.getRelativeUrl(),\n
   limit=2,\n
