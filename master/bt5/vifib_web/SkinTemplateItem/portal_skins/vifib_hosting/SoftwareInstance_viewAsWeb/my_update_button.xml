@@ -76,7 +76,7 @@
               <dictionary>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string>nolabel validate</string> </value>
+                    <value> <string>nolabel validate alignr</string> </value>
                 </item>
                 <item>
                     <key> <string>default</string> </key>

@@ -105,7 +105,7 @@
               <dictionary>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string>nolabel cancel widthAuto</string> </value>
+                    <value> <string>alignr nolabel cancel widthAuto</string> </value>
                 </item>
                 <item>
                     <key> <string>default</string> </key>
@@ -153,7 +153,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: here.getSlapState() != \'destroy_requested\'</string> </value>
+            <value> <string>python: here.getSlapState() == \'start_requested\'</string> </value>
         </item>
       </dictionary>
     </pickle>
