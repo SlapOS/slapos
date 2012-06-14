@@ -25,47 +25,6 @@ context =
     key slapparameter_dict slap-parameters:configuration
     ${:extra-context}
 
-[dynamic-template-tidstorage-parameters]
-apache = {{ apache_location }}
-haproxy = {{ haproxy_location }}
-dcron = {{ dcron_location }}
-logrotate = {{ logrotate_location }}
-gzip = {{ gzip_location }}
-openssl = {{ openssl_location }}
-coreutils = {{ coreutils_location }}
-git = {{ git_location }}
-graphviz = {{ graphviz_location }}
-grep = {{ grep_location }}
-imagemagick = {{ imagemagick_location }}
-librsvg = {{ librsvg_location }}
-mariadb = {{ mariadb_location }}
-pdftk = {{ pdftk_location }}
-sed = {{ sed_location }}
-tesseract = {{ tesseract_location }}
-w3m = {{ w3m_location }}
-aspell = {{ aspell_location }}
-poppler = {{ poppler_location }}
-dmtx-utils = {{ dmtx_utils_location }}
-buildout-bin-directory = {{ buildout_bin_directory }}
-zope-conf-template = {{ template_zope_conf }}
-
-[dynamic-template-tidstorage]
-< = jinja2-template-base
-template = {{ template_tidstorage }}
-filename = instance-tidstorage.cfg
-extensions = jinja2.ext.do
-extra-context =
-    section parameter_dict dynamic-template-tidstorage-parameters
-    import json_module json
-    raw zope_port_base 12000
-    raw zeo_port_base 15000
-    raw haproxy_port_base 11000
-    raw apache_port_base 10000
-    key ipv4_set slap-parameters:ipv4
-    key ipv6_set slap-parameters:ipv6
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type tidstorage
-
 [dynamic-template-cloudooo-parameters]
 file = {{ file_location }}
 fontconfig = {{ fontconfig_location }}
@@ -181,30 +140,98 @@ extra-context =
     key openssl_location template-erp5-development-parameters:openssl
     key template_zope dynamic-template-zope:rendered
 
-[dynamic-template-production-parameters]
+[dynamic-template-erp5-production-parameters]
 local-bt5-repository = {{ local_bt5_repository }}
 
-[dynamic-template-production]
+[dynamic-template-erp5-production]
 < = jinja2-template-base
 template = {{ template_erp5_production }}
 filename = instance-erp5-production.cfg
+extensions = jinja2.ext.do
 extra-context =
-    key local_bt5_repository dynamic-template-production-parameters:local-bt5-repository
+    key local_bt5_repository dynamic-template-erp5-production-parameters:local-bt5-repository
+    import json_module json
 # Must match the key id in [switch-softwaretype] which uses this section.
     raw software_type production
+
+[dynamic-template-balancer-parameters]
+apache = {{ apache_location }}
+openssl = {{ openssl_location }}
+haproxy = {{ haproxy_location }}
+instance-logrotate-cfg = {{ template_logrotate_base }}
+
+[dynamic-template-balancer]
+< = jinja2-template-base
+template = {{ template_balancer }}
+filename = instance-balancer.cfg
+extra-context =
+    key ipv4_set slap-parameters:ipv4
+    key ipv6_set slap-parameters:ipv6
+    section parameter_dict dynamic-template-balancer-parameters
+# Must match the key id in [switch-softwaretype] which uses this section.
+# XXX: a better name should be searched
+    raw software_type balancer
+
+[dynamic-template-zeo-parameters]
+buildout-bin-directory = {{ buildout_bin_directory }}
+instance-logrotate-cfg = {{ template_logrotate_base }}
+
+[dynamic-template-zeo]
+< = jinja2-template-base
+template = {{ template_zeo }}
+filename = instance-zeo.cfg
+extensions = jinja2.ext.do
+extra-context =
+    key ipv6_set slap-parameters:ipv6
+    section parameter_dict dynamic-template-zeo-parameters
+#    key instance_stunnel
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type zeo
+
+[dynamic-template-production-zope-parameters]
+zope-conf-template = {{ template_zope_conf }}
+products = {{ product_list }}
+instance-logrotate-cfg = {{ template_logrotate_base }}
+git = {{ git_location }}
+graphviz = {{ graphviz_location }}
+buildout-bin-directory = {{ buildout_bin_directory }}
+coreutils = {{ coreutils_location }}
+grep = {{ grep_location }}
+imagemagick = {{ imagemagick_location }}
+#mariadb = {{ mariadb_location }} ?
+pdftk = {{ pdftk_location }}
+sed = {{ sed_location }}
+tesseract = {{ tesseract_location }}
+w3m = {{ w3m_location }}
+poppler = {{ poppler_location }}
+dmtx-utils = {{ dmtx_utils_location }}
+
+[dynamic-template-production-zope]
+< = jinja2-template-base
+template = {{ template_production_zope }}
+filename = instance-production-zope.cfg
+extensions = jinja2.ext.do
+extra-context =
+    key ipv6_set slap-parameters:ipv6
+    section parameter_dict dynamic-template-production-zope
+#    key instance_stunnel
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type production-zope
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = ${template-erp5-development:rendered}
-production = ${dynamic-template-production:rendered}
+production = ${dynamic-template-erp5-production:rendered}
 kumofs = {{ template_kumofs }}
 memcached = {{ template_memcached }}
 cloudooo = ${dynamic-template-cloudooo:rendered}
 zope = ${dynamic-template-zope:rendered}
 mariadb = {{ template_mariadb }}
 sphinx = {{ template_sphinx }}
-tidstorage = ${dynamic-template-tidstorage:rendered}
 varnish = ${dynamic-template-varnish:rendered}
+balancer = ${dynamic-template-balancer:rendered}
+zeo = ${dynamic-template-zeo:rendered}
+production-zope = ${dynamic-template-production-zope:rendered}
 
 [slap-connection]
 # part to migrate to new - separated words

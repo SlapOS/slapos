@@ -1,0 +1,246 @@
+{% if slap_software_type == software_type -%}
+{% set site_id = slapparameter_dict['site-id'] -%}
+{% set part_list = [] -%}
+{% set publish_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{#
+XXX: This template only supports exactly one IPv4 and one IPv6 per
+partition. No more (undefined result), no less (IndexError).
+-#}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+instance = ${:srv}/erp5shared
+instance-constraint = ${:instance}/Constraint
+instance-document = ${:instance}/Document
+instance-etc = ${:instance}/etc
+instance-etc-package-include = ${:instance}/etc/package-include
+instance-extensions = ${:instance}/Extensions
+instance-import = ${:instance}/import
+instance-lib = ${:instance}/lib
+instance-products = ${:instance}/Products
+instance-propertysheet = ${:instance}/PropertySheet
+instance-tests = ${:instance}/tests
+log = ${:var}/log
+run = ${:var}/run
+services = ${:etc}/run
+srv = ${buildout:directory}/srv
+tmp = ${buildout:directory}/tmp
+var = ${buildout:directory}/var
+
+[binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary =
+  {{ parameter_dict['coreutils'] }}/bin/basename
+  {{ parameter_dict['coreutils'] }}/bin/cat
+  {{ parameter_dict['coreutils'] }}/bin/cp
+  {{ parameter_dict['coreutils'] }}/bin/ls
+  {{ parameter_dict['coreutils'] }}/bin/tr
+  {{ parameter_dict['coreutils'] }}/bin/uname
+  {{ parameter_dict['git'] }}/bin/git
+  {{ parameter_dict['graphviz'] }}/bin/dot
+  {{ parameter_dict['grep'] }}/bin/grep
+  {{ parameter_dict['imagemagick'] }}/bin/convert
+  {{ parameter_dict['imagemagick'] }}/bin/identify
+  {{ parameter_dict['mariadb'] }}/bin/mysql
+  {{ parameter_dict['mariadb'] }}/bin/mysqldump
+  {{ parameter_dict['pdftk'] }}/bin/pdftk
+  {{ parameter_dict['sed'] }}/bin/sed
+  {{ parameter_dict['tesseract'] }}/bin/tesseract
+  {{ parameter_dict['w3m'] }}/bin/w3m
+  {{ parameter_dict['poppler'] }}/bin/pdfinfo
+  {{ parameter_dict['poppler'] }}/bin/pdftotext
+  {{ parameter_dict['poppler'] }}/bin/pdftohtml
+  {{ parameter_dict['dmtx-utils'] }}/bin/dmtxwrite
+
+[certificate-authority-common]
+requests-directory = ${directory:requests}
+ca-dir = ${directory:ca-dir}
+ca-private = ${directory:private}
+ca-certs = ${directory:certs}
+ca-newcerts = ${directory:newcerts}
+ca-crl = ${directory:crl}
+
+[certificate-authority]
+< = certificate-authority-common
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl }}/bin/openssl
+wrapper = ${directory:services}/ca
+
+[stunnel-cert]
+< = certificate-authority-common
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${directory:stunnel-conf}/stunnel.key
+cert-file = ${directory:stunnel-conf}/stunnel.crt
+executable = ${stunnel:wrapper}
+wrapper = ${directory:services}/stunnel
+
+[stunnel-base]
+recipe = slapos.cookbook:stunnel
+stunnel-binary = {{ stunnel }}/bin/stunnel
+wrapper = ${directory:bin}/stunnel-${:name}
+log-file = ${directory:log}/stunnel-${:name}.log
+config-file = ${directory:etc}/stunnel-${:name}.conf
+pid-file = ${directory:run}/stunnel-${:name}.pid
+client = false
+key-file = ${stunnel-cert:key-file}
+cert-file = ${stunnel-cert:cert-file}
+remote-address = {{ ipv6 }}
+remote-port = ${:local-port}
+local-address = {{ ipv4 }}
+
+[zope-base]
+recipe = slapos.cookbook:generic.zope.zeo.client
+user = zope
+ip = {{ ipv4 }}
+timezone = {{ slapparameter_dict['timezone'] }}
+tidstorage-ip = ${tidstorage:ip}
+tidstorage-port = ${tidstorage:port}
+instance-etc = ${directory:instance-etc}
+bt5-repository = ${directory:var}/bt5_repository
+tmp-path = ${directory:tmp}
+bin-path = ${directory:bin}
+site-zcml = ${:instance-etc}/site.zcml
+inituser = ${directory:instance}/inituser
+runzope-binary = {{ bin_directory }}/runzope
+bt5-repository-list =
+
+[deadlock-debugger-password]
+recipe = slapos.cookbook:pwgen.stable
+
+[zope-conf-parameter-base]
+ip = {{ ipv4 }}
+site-id = {{ site_id }}
+zodb-list = {{ dumps(zodb_connection_list) }}
+# XXX: products won't be needed as soon as all ERP5 (and products-deps)
+# products will be eggified so then it will be possible to use them thanks to
+# availability in software's eggs
+products = {{ parameter_dict['products'] }}
+
+[zope-conf-base]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['zope-conf-template'] }}
+extra-context =
+context =
+  key instance directory:instance
+  key instance_products directory:instance-products
+  raw deadlock_path /manage_debug_threads
+  key deadlock_debugger_password deadlock-debugger-password:password
+  key tidstorage_ip tidstorage:ip
+  key tidstorage_port tidstorage:port
+  key promise_path erp5-promise:promise-path
+  ${:extra-context}
+
+[logrotate-entry-base]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:logrotate-backup}
+
+{% set zope_dummy_list = [] -%}
+{% macro zope(
+  name,
+  publish,
+  thread_amount=1,
+  timerserver_interval=5,
+  longrequest_logger_file='',
+  longrequest_logger_timeout='',
+  longrequest_logger_interval=''
+) -%}
+{% set conf_name = name ~ '-conf' -%}
+{% set conf_parameter_name = conf_name ~ '-param' -%}
+[{{ conf_parameter_name }}]
+< = zope-conf-parameter-base
+pid-file = ${directory:run}/{{ name }}.pid
+lock-file = ${directory:run}/{{ name }}.lock
+{% do zope_dummy_list.append(None) -%}
+{% set offset = zope_dummy_list | length -%}
+{#
+XXX: port base hardcoded
+-#}
+port = {{ 2000 + offset }}
+thread-amount = {{ thread_amount }}
+{% if timerserver_interval -%}
+timerserver-interval = {{ timerserver_interval }}
+{% endif -%}
+event-log = ${directory:log}/{{ name }}-event.log
+z2-log = ${directory:log}/{{ name }}-Z2.log
+
+[{{ conf_name }}]
+< = zope-conf-base
+rendered = ${directory:etc}/{{ name }}.conf
+extra-context =
+  section parameter_dict {{ conf_parameter_name }}
+
+[{{ section(name) }}]
+< = zope-base
+longrequest-logger-file = {{ longrequest_logger_file }}
+longrequest-logger-timeout = {{ longrequest_logger_timeout }}
+longrequest-logger-interval = {{ longrequest_logger_interval }}
+wrapper = ${directory:services}/{{ name }}
+configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
+port = {{ '${' ~ conf_parameter_name ~ ':port}' }}
+
+{% set stunnel_name = 'stunnel-' ~ name -%}
+[{{ stunnel_name }}]
+{% if publish -%}
+< = stunnel-base
+name = {{ name }}
+local-port = {{ '${' ~ name ~ ':port}' }}
+{%   do publish_list.append(stunnel_name) -%}
+{% else -%}
+# Dummy entry to keep logrotate section template simple
+log-file =
+{% endif %}
+[{{ section('logrotate-entry-' ~ name) }}]
+< = logrotate-entry-base
+name = {{ name }}
+log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ stunnel_name ~ ':log-file}' }}
+post = {{ bin_directory }}/killpidfromfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} SIGUSR2
+{% endmacro -%}
+
+#{ % for ... in ... -%}
+#{ {    zope(...) }}
+#{ %  endfor -%}
+{{ zope("foo", False) }}
+{{ zope("bar", True) }}
+
+[publish-zope]
+recipe = slapos.cookbook:publish
+url-list =
+  {{ publish_list | join('\n  ') }}
+
+# TODO: move to another place - or remove altogether ?
+#[erp5-bootstrap]
+#recipe = slapos.cookbook:erp5.bootstrap
+#runner-path = ${directory:services}/erp5-bootstrap
+#mysql-url = {{ slapparameter_dict['mysql-url'] }}
+#zope-url = http://${zope-admin:user}:${zope-admin:password}@${zope-admin:ip}:${zope-admin:port}/{{ site_id }}
+
+[erp5-promise]
+recipe = slapos.cookbook:erp5.promise
+promise-path = ${directory:etc}/erp5promise.cfg
+kumofs-url = {{ slapparameter_dict['kumofs-url'] }}
+memcached-url = {{ slapparameter_dict['memcached-url'] }}
+cloudooo-url = {{ slapparameter_dict['cloudooo-url'] }}
+smtp-url = ${slap-parameter:smtp-url}
+bt5 = ${slap-parameter:bt5}
+bt5-repository-url = ${slap-parameter:bt5-repository-url}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+extends =
+  {{ parameter_dict['instance-logrotate-cfg'] }}
+parts +=
+  binary-link
+  erp5-promise
+  erp5-bootstrap
+  {{ part_list | join('\n  ') }}
+{% endif %}
