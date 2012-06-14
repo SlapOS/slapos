@@ -55,11 +55,6 @@ wrapper = ${basedirectory:services}/apache
 [zope-instance]
 recipe = slapos.cookbook:generic.zope
 
-# XXX: products won't be needed as soon as all ERP5 (and products-deps)
-# products will be eggified so then it will be possible to use them thanks to
-# availability in software's eggs
-products = {{ products_list }}
-
 # Options
 user = zope
 port = 12001

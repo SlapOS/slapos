@@ -13,11 +13,6 @@ rest-output-encoding utf-8
 
 # XXX: isn't this entry implicit ?
 products {{ instance_products }}
-{% for product in parameter_dict['products'].split() -%}
-{%   if product.strip() -%}
-products {{ product }}
-{%   endif -%}
-{% endfor -%}
 
 <http-server>
   address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}

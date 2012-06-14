@@ -335,10 +335,6 @@ recipe = slapos.cookbook:pwgen.stable
 ip = {{ ipv4 }}
 site-id = {{ site_id }}
 zodb-list = {{ json_module.dumps(zodb_connection_list) }}
-# XXX: products won't be needed as soon as all ERP5 (and products-deps)
-# products will be eggified so then it will be possible to use them thanks to
-# availability in software's eggs
-products = {{ parameter_dict['products'] }}
 
 [zope-conf-base]
 recipe = slapos.recipe.template:jinja2

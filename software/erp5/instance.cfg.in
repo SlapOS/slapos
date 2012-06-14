@@ -26,7 +26,6 @@ context =
     ${:extra-context}
 
 [dynamic-template-tidstorage-parameters]
-products = {{ product_list }}
 apache = {{ apache_location }}
 haproxy = {{ haproxy_location }}
 dcron = {{ dcron_location }}
