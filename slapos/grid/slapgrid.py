@@ -192,12 +192,12 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   for f in mandatory_file_list:
     if f is not None:
       if not os.path.exists(f):
-        parser.error('File %r does not exists.' % f)
+        parser.error('File %r does not exist.' % f)
 
   certificate_repository_path = option_dict.get('certificate_repository_path')
   if certificate_repository_path is not None:
     if not os.path.isdir(certificate_repository_path):
-      parser.error('Directory %r does not exists' %
+      parser.error('Directory %r does not exist' %
           certificate_repository_path)
 
   # Supervisord configuration location
