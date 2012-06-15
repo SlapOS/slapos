@@ -3,6 +3,7 @@ software_root = %(software_root)s
 instance_root = %(instance_root)s
 master_url = %(master_url)s
 computer_id = %(computer_id)s
+maximal_delay = 0
 
 [slapformat]
 partition_amount = %(partition_amount)s
