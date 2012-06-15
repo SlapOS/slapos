@@ -159,7 +159,12 @@ class Recipe(BaseSlapRecipe):
       self.logger.debug("Sending connection parameters of slave "
           "instance: %s" % reference)
       try:
-        self.setConnectionDict(dict(site_url=url), reference)
+        connection_dict = {
+           'frontend_ipv6_address': self.getGlobalIPv6Address(),
+           'frontend_ipv4_address': self.getLocalIPv4Address(),
+           'site_url': url
+        }
+        self.setConnectionDict(connection_dict, reference)
       except:
         self.logger.fatal("Error while sending slave %s informations: %s",
             reference, traceback.format_exc())
@@ -167,8 +172,8 @@ class Recipe(BaseSlapRecipe):
     # Then set it for master instance
     self.setConnectionDict(
       dict(site_url=apache_parameter_dict["site_url"],
-           domain_ipv6_address=self.getGlobalIPv6Address(),
-           domain_ipv4_address=self.getLocalIPv4Address()))
+           frontend_ipv6_address=self.getGlobalIPv6Address(),
+           frontend_ipv4_address=self.getLocalIPv4Address()))
 
     # Promises
     promise_config = dict(
