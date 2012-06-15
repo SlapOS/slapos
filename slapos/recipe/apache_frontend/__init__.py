@@ -33,6 +33,7 @@ import zc.buildout
 import zc.recipe.egg
 import ConfigParser
 import re
+import traceback
 
 
 class Recipe(BaseSlapRecipe):
@@ -78,7 +79,7 @@ class Recipe(BaseSlapRecipe):
       # Future work may allow to choose between http and https (or both?)
       scheme = 'http://'
 
-      self.logger.info('processing slave instance: %s' % reference)
+      self.logger.info('Processing slave instance: %s' % reference)
 
       # Check for mandatory slave fields
       if backend_url is None:
@@ -88,8 +89,14 @@ class Recipe(BaseSlapRecipe):
 
       # Check for custom domain (like mypersonaldomain.com)
       # If no custom domain, use generated one.
-      domain = slave_instance.get('custom_domain', 
-          "%s.%s" % (reference.replace("-", "").lower(), frontend_domain_name))
+      # Note: if we get an empty custom_domain parameter, we ignore it
+      domain = slave_instance.get('custom_domain')
+      if isinstance(domain, basestring):
+        domain = domain.strip()
+      if domain is None or domain.strip() == '':
+        domain = "%s.%s" % (reference.replace("-", "").lower(),
+            frontend_domain_name)
+
       # Define the URL where the instance will be available
       # WARNING: we use default ports (443, 80) here.
       slave_dict[reference] = "%s%s/" % (scheme, domain)
@@ -149,7 +156,13 @@ class Recipe(BaseSlapRecipe):
 
     # Send connection informations about each slave
     for reference, url in slave_dict.iteritems():
-      self.setConnectionDict(dict(site_url=url), reference)
+      self.logger.debug("Sending connection parameters of slave "
+          "instance: %s" % reference)
+      try:
+        self.setConnectionDict(dict(site_url=url), reference)
+      except:
+        self.logger.fatal("Error while sending slave %s informations: %s",
+            reference, traceback.format_exc())
 
     # Then set it for master instance
     self.setConnectionDict(
@@ -451,7 +464,7 @@ class Recipe(BaseSlapRecipe):
     return stunnel_conf
 
   def installFrontendApache(self, ip_list, key, certificate, name,
-                            port=4443, plain_http_port=8080, 
+                            port=4443, plain_http_port=8080,
                             rewrite_rule_list=[], rewrite_rule_zope_list=[],
                             access_control_string=None):
     # Create htdocs, populate it with default 404 document
