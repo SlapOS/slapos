@@ -92,13 +92,14 @@ class Recipe(object):
       try:
         status = self.instance.getState()
       except slapmodule.NotFoundError:
-        status = "not ready yet, please try again"
-      # XXX-Cedric : currently raise an error. So swallow it...
+        status = 'not ready yet, please try again'
       except AttributeError:
-        status = "unknown"
-      self.logger.error("Connection parameter %s not found. "
-          "Status of requested instance is : %s." % (self.failed, status))
-      raise KeyError("Connection parameter %s not found. " % self.failed)
+        status = 'unknown'
+      error_message = 'Connection parameter %s not found. '
+          'Status of requested instance is : %s. If this error persists, '
+          'check this instance.' % (self.failed, status)
+      self.logger.error(error_message)
+      raise KeyError(error_message)
     return []
 
   update = install
