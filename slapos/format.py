@@ -1143,11 +1143,21 @@ class Config(object):
           "%(name)s - %(levelname)s - %(message)s"))
         self.logger.addHandler(file_handler)
         self.logger.info('Configured logging to file %r' % self.log_file)
+
     # Check mandatory options
     for parameter in ('computer_id', 'instance_root', 'master_url',
                       'software_root', 'computer_xml'):
       if not getattr(self, parameter, None):
         raise UsageError("Parameter '%s' is not defined." % parameter)
+
+    # Check existence of SSL certificate files, if defined
+    for attribute in ['key_file', 'cert_file', 'master_ca_file']:
+      file_location = getattr(self, attribute, None)
+      if file_location is not None:
+        if not os.path.exists(file_location):
+          self.logger.fatal('File %r does not exist or is no readable.' %
+              file_location)
+          sys.exit(1)
 
     self.logger.info("Started.")
     if self.verbose:
