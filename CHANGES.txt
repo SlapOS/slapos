@@ -1,15 +1,15 @@
 Changes
 =======
 
-0.55 (Unreleased)
+0.55 (2012-06-18)
 -----------------
 
-  * No change yet.
+  * Add slapmonitor and slapreport recipes. [Mohamadou Mbengue]
 
 0.54.1 (2012-06-18)
 -----------------
 
-  * Fix 0.54 release containing wrong code in request.py
+  * Fix 0.54 release containing wrong code in request.py.
 
 0.54 (2012-06-18)
 -----------------
