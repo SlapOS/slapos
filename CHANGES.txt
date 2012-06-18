@@ -1,15 +1,18 @@
 Changes
 =======
 
-0.54 (Unreleased)
+0.54 (2012-06-18)
 -----------------
 
   * Apache frontend: won't block sending slave informations to SlapOS Master
     in case of problem from one slave instance.[Cedric de Saint Martin]
+  * Apache frontend will send IP informations for slaves in case slave is about
+    custom domain. [Cedric de Saint Martin]
   * Ability to use LAMP applications without configuration. [Cedric de Saint
     Martin]
   * Users can specify custom domain in LAMP applications. [Cedric de Saint
     Martin]
+
 0.53 (2012-06-07)
 -----------------
 
