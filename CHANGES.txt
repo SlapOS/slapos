@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.55 (Unreleased)
+0.54.1 (2012-06-18)
 -----------------
 
-  * No change yet.
+  * Fix 0.54 release containing wrong code in request.py
 
 0.54 (2012-06-18)
 -----------------
