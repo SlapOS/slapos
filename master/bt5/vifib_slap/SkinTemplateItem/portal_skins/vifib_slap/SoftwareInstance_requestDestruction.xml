@@ -69,7 +69,7 @@ promise_kw = {\n
 }\n
 \n
 if context.getPortalObject().portal_workflow.isTransitionPossible(context, \'request_destroy\'):\n
-  context.requestDestroy(**promise_kw)\n
+  context.requestDestroy(comment="Garbage collected because Hosting Subscription is archived", **promise_kw)\n
 </string> </value>
         </item>
         <item>
