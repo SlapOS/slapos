@@ -34,6 +34,7 @@ CustomLog "%(access_log)s" common
 #LoadModule authz_core_module modules/mod_authz_core.so
 LoadModule authz_host_module modules/mod_authz_host.so
 LoadModule log_config_module modules/mod_log_config.so
+LoadModule deflate_module modules/mod_deflate.so
 LoadModule setenvif_module modules/mod_setenvif.so
 LoadModule version_module modules/mod_version.so
 LoadModule proxy_module modules/mod_proxy.so
@@ -89,19 +90,12 @@ Header append Vary User-Agent
 # SSL Configuration
 %(ssl_snippet)s
 
-# Dummy virtualhost redirecting to https. Note: will work only if https listens
-# on standard port (443)
-<VirtualHost *:%(plain_http_port)s>
-  RewriteEngine On
-  # Not using HTTPS? Ask that guy over there.
-  RewriteRule ^/(.*)$ https://%%{SERVER_NAME}%%{REQUEST_URI}
-</VirtualHost>
-
 <VirtualHost *:%(https_port)s>
   SSLEngine on
   SSLProxyEngine on
   # Rewrite part
   ProxyVia On
+  ProxyPreserveHost On
   ProxyTimeout 600
   RewriteEngine On
 
@@ -120,6 +114,21 @@ Header append Vary User-Agent
 
   # If nothing exist : put a nice error
   ErrorDocument 404 /notfound.html
+</VirtualHost>
+
+<VirtualHost *:%(plain_http_port)s>
+  RewriteEngine On
+  ProxyPreserveHost On
+
+  # We accept generic (i.e not lamp) backends on http
+  RewriteMap apachemapgeneric txt:%(apachemap_path)s
+  RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
+  RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
+
+  # Not using HTTPS? Ask that guy over there.
+  # Dummy redirection to https. Note: will work only if https listens
+  # on standard port (443).
+  RewriteRule ^/(.*)$ https://%%{SERVER_NAME}%%{REQUEST_URI}
 </VirtualHost>
 
 # Include configuration file not operated by slapos. This file won't be erased

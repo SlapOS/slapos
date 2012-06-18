@@ -1,10 +1,50 @@
 Changes
 =======
 
-0.52 (Unreleased)
+0.55 (Unreleased)
 -----------------
 
   * No change yet.
+
+0.54.1 (2012-06-18)
+-----------------
+
+  * Fix 0.54 release containing wrong code in request.py
+
+0.54 (2012-06-18)
+-----------------
+
+  * Apache frontend: won't block sending slave informations to SlapOS Master
+    in case of problem from one slave instance.[Cedric de Saint Martin]
+  * Apache frontend will send IP informations for slaves in case slave is about
+    custom domain. [Cedric de Saint Martin]
+  * Ability to use LAMP applications without configuration. [Cedric de Saint
+    Martin]
+  * Users can specify custom domain in LAMP applications. [Cedric de Saint
+    Martin]
+
+0.53 (2012-06-07)
+-----------------
+
+  * Switch slaprunner into generic recipe, and add cloud9 recipe. [Cedric de
+    Saint Martin]
+
+0.52 (2012-05-16)
+-----------------
+
+  * Request bugfix: Correct default software_type (was: RootInstanceSoftware).
+    [Cedric de Saint Martin]
+  * Request will raise again if requested instance is not ready
+    [Romain Courteaud]
+  * Apache Frontend: assume apache is available from standard ports.
+    Consequence: url connection parameter of slave instance doesn't contain
+    port. [Cedric de Saint Martin]
+  * Apache Frontend bugfix: correctly detect slave instance type (zope).
+    [Cedric de Saint Martin]
+  * Apache Frontend: "default" slave instances are available through http
+    in addition to https. [Cedric de Saint Martin]
+  * Apache Frontend: Configuration: Add mod_deflate and set ProxyPreserveHost
+    [Cedric de Saint Martin]
 
 0.51 (2012-05-14)
 -----------------

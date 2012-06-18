@@ -33,6 +33,7 @@ import zc.buildout
 import zc.recipe.egg
 import ConfigParser
 import re
+import traceback
 
 
 class Recipe(BaseSlapRecipe):
@@ -71,20 +72,14 @@ class Recipe(BaseSlapRecipe):
     slave_dict = {}
     service_dict = {}
 
-    # Check if default port
-    if frontend_port_number is 443 or frontend_port_number is 80:
-      port_snippet = ""
-    else:
-      port_snippet = ":%s" % frontend_port_number
-
     for slave_instance in slave_instance_list:
       backend_url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
       # Set scheme (http? https?)
       # Future work may allow to choose between http and https (or both?)
-      scheme = 'https://'
+      scheme = 'http://'
 
-      self.logger.info('processing slave instance: %s' % reference)
+      self.logger.info('Processing slave instance: %s' % reference)
 
       # Check for mandatory slave fields
       if backend_url is None:
@@ -93,10 +88,18 @@ class Recipe(BaseSlapRecipe):
         continue
 
       # Check for custom domain (like mypersonaldomain.com)
-      # If no custom domain, use generated one
-      domain = slave_instance.get('custom_domain', 
-          "%s.%s" % (reference.replace("-", "").lower(), frontend_domain_name))
-      slave_dict[reference] = "%s%s%s/" % (scheme, domain, port_snippet)
+      # If no custom domain, use generated one.
+      # Note: if we get an empty custom_domain parameter, we ignore it
+      domain = slave_instance.get('custom_domain')
+      if isinstance(domain, basestring):
+        domain = domain.strip()
+      if domain is None or domain.strip() == '':
+        domain = "%s.%s" % (reference.replace("-", "").lower(),
+            frontend_domain_name)
+
+      # Define the URL where the instance will be available
+      # WARNING: we use default ports (443, 80) here.
+      slave_dict[reference] = "%s%s/" % (scheme, domain)
 
       # Check if we want varnish+stunnel cache.
       if slave_instance.get("enable_cache", "").upper() in ('1', 'TRUE'):
@@ -113,7 +116,7 @@ class Recipe(BaseSlapRecipe):
         # rule structure.
         # So we will have one RewriteMap for normal websites, and one
         # RewriteMap for Zope Virtual Host Monster websites.
-        if slave_instance.get("type", "").lower() in ('zope'):
+        if slave_instance.get("type", "").lower() in ['zope']:
           rewrite_rule_zope_list.append(rewrite_rule)
         else:
           rewrite_rule_list.append(rewrite_rule)
@@ -153,13 +156,24 @@ class Recipe(BaseSlapRecipe):
 
     # Send connection informations about each slave
     for reference, url in slave_dict.iteritems():
-      self.setConnectionDict(dict(site_url=url), reference)
+      self.logger.debug("Sending connection parameters of slave "
+          "instance: %s" % reference)
+      try:
+        connection_dict = {
+           'frontend_ipv6_address': self.getGlobalIPv6Address(),
+           'frontend_ipv4_address': self.getLocalIPv4Address(),
+           'site_url': url
+        }
+        self.setConnectionDict(connection_dict, reference)
+      except:
+        self.logger.fatal("Error while sending slave %s informations: %s",
+            reference, traceback.format_exc())
 
     # Then set it for master instance
     self.setConnectionDict(
       dict(site_url=apache_parameter_dict["site_url"],
-           domain_ipv6_address=self.getGlobalIPv6Address(),
-           domain_ipv4_address=self.getLocalIPv4Address()))
+           frontend_ipv6_address=self.getGlobalIPv6Address(),
+           frontend_ipv4_address=self.getLocalIPv4Address()))
 
     # Promises
     promise_config = dict(
@@ -455,7 +469,7 @@ class Recipe(BaseSlapRecipe):
     return stunnel_conf
 
   def installFrontendApache(self, ip_list, key, certificate, name,
-                            port, plain_http_port=8080, 
+                            port=4443, plain_http_port=8080,
                             rewrite_rule_list=[], rewrite_rule_zope_list=[],
                             access_control_string=None):
     # Create htdocs, populate it with default 404 document
