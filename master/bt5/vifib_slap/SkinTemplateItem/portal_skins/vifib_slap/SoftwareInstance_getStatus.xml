@@ -53,6 +53,8 @@
             <value> <string>"""Dirty script to return Software Instance state"""\n
 if context.getPortalType() == "Sale Order Line":\n
   return "Under Approval"\n
+elif context.getPortalType() == "Hosting Subscription":\n
+  return context.getSlapStateTitle()\n
 else:\n
   state = context.getSlapState()\n
   has_partition = context.getAggregate(portal_type="Computer Partition")\n
