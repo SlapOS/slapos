@@ -167,8 +167,10 @@ link-binary =
   {{ tesseract_location }}/bin/tesseract
   {{ w3m_location }}/bin/w3m
   {{ poppler_location }}/bin/pdfinfo
+  {{ poppler_location }}/bin/pdfseparate
   {{ poppler_location }}/bin/pdftotext
   {{ poppler_location }}/bin/pdftohtml
+  {{ poppler_location }}/bin/pdfunite
   {{ dmtx_utils_location }}/bin/dmtxwrite
   {{ aspell_location }}/bin/aspell
 [certificate-authority]
