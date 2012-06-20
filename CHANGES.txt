@@ -1,9 +1,11 @@
 Changes
 =======
 
-0.56 (Unreleased)
+0.56 (2012-06-18)
 -----------------
 
+  * Add signalwrapper, generate.mac, generate.password recipes. [Romain
+    Courteaud]
 
 0.55 (2012-06-18)
 -----------------
