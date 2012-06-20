@@ -37,9 +37,9 @@ class Recipe(GenericBaseRecipe):
     path_list = []
 
     # Copy application
-    shutil.rmtree(self.options['htdocs'])
-    shutil.copytree(self.options['source'],
-                    self.options['htdocs'])
+    if not os.path.exists(self.options['htdocs']):
+      shutil.copytree(self.options['source'],
+                      self.options['htdocs'])
 
     # Install php.ini
     php_ini = self.createFile(os.path.join(self.options['php-ini-dir'],
@@ -85,33 +85,37 @@ class Recipe(GenericBaseRecipe):
       with open(secret_key_filename, 'r') as secret_key_file:
         secret_key = secret_key_file.read()
 
-    application_conf = dict(mysql_database=self.options['mysql-database'],
-                            mysql_user=self.options['mysql-username'],
-                            mysql_password=self.options['mysql-password'],
-                            mysql_host='%s:%s' % (self.options['mysql-host'],
-                                                  self.options['mysql-port']),
-                            secret_key=secret_key,
-                           )
+    # Generate application configuration file
+    if self.options.get('template'):
+      application_conf = dict(mysql_database=self.options['mysql-database'],
+                              mysql_user=self.options['mysql-username'],
+                              mysql_password=self.options['mysql-password'],
+                              mysql_host='%s:%s' % (self.options['mysql-host'],
+                                                    self.options['mysql-port']),
+                              secret_key=secret_key,
+                             )
 
-    directory, file_ = os.path.split(self.options['configuration'])
+      directory, file_ = os.path.split(self.options['configuration'])
 
-    path = self.options['htdocs']
-    if directory:
-      path = os.path.join(path, directory)
-      if not os.path.exists(path):
-        os.makedirs(path)
-      if not os.path.isdir(path):
-        raise OSError("Cannot create %r." % path)
+      path = self.options['htdocs']
+      if directory:
+        path = os.path.join(path, directory)
+        if not os.path.exists(path):
+          os.makedirs(path)
+        if not os.path.isdir(path):
+          raise OSError("Cannot create %r." % path)
 
-    destination = os.path.join(path, file_)
-    config = self.createFile(destination,
-      self.substituteTemplate(self.options['template'], application_conf))
-    path_list.append(config)
+      destination = os.path.join(path, file_)
+      config = self.createFile(destination,
+        self.substituteTemplate(self.options['template'], application_conf))
+      path_list.append(config)
 
     if os.path.exists(self.options['pid-file']):
       # Reload apache configuration
       with open(self.options['pid-file']) as pid_file:
         pid = int(pid_file.read().strip(), 10)
-      os.kill(pid, signal.SIGUSR1) # Graceful restart
-
+      try:
+        os.kill(pid, signal.SIGUSR1) # Graceful restart
+      except OSError:
+        pass
     return path_list

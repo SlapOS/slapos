@@ -58,7 +58,7 @@ class Recipe(object):
       self.logger.debug("No parameter to return to main instance."
                           "Be careful about that...")
 
-    software_type = 'RootInstanceSoftware'
+    software_type = 'RootSoftwareInstance'
     if 'software-type' in options:
       software_type = options['software-type']
 
@@ -93,12 +93,14 @@ class Recipe(object):
       try:
         status = self.instance.getState()
       except slapmodule.NotFoundError:
-        status = "not ready yet, please try again"
+        status = 'not ready yet, please try again'
       except AttributeError:
-        status = "unknown"
-      raise KeyError("Connection parameter %s not found when requesting "
-          "instance named %s. Status of instance is: %s." % (self.failed,
-              self.name, status))
+        status = 'unknown'
+      error_message = 'Connection parameter %s not found. '\
+          'Requested instance is currently %s. If this error persists, '\
+          'check status of this instance.' % (self.failed, status)
+      self.logger.error(error_message)
+      raise KeyError(error_message)
     return []
 
   update = install

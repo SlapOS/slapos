@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.49-dev'
+version = '0.56-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -49,6 +49,7 @@ setup(name=name,
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
           'check_port_listening = slapos.recipe.check_port_listening:Recipe',
           'check_url_available = slapos.recipe.check_url_available:Recipe',
+          'cloud9 = slapos.recipe.cloud9:Recipe',
           'cron = slapos.recipe.dcron:Recipe',
           'cron.d = slapos.recipe.dcron:Part',
           'davstorage = slapos.recipe.davstorage:Recipe',
@@ -108,6 +109,8 @@ setup(name=name,
           'siptester = slapos.recipe.siptester:SipTesterRecipe',
           'simplelogger = slapos.recipe.simplelogger:Recipe',
           'slaprunner = slapos.recipe.slaprunner:Recipe',
+          'slapmonitor = slapos.recipe.slapmonitor:Recipe',
+          'slapreport = slapos.recipe.slapreport:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'sshkeys_authority.request = slapos.recipe.sshkeys_authority:Request',
           'sphinx= slapos.recipe.sphinx:Recipe',
