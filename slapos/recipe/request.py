@@ -36,6 +36,7 @@ class Recipe(object):
     slap = slapmodule.slap()
 
     self.software_release_url = options['software-url']
+    self.name = options['name']
 
     slap.initializeConnection(options['server-url'],
                               options.get('key-file'),
@@ -73,7 +74,7 @@ class Recipe(object):
             options['config-%s' % config_parameter]
 
     self.instance = self.request(options['software-url'], software_type,
-      options['name'], partition_parameter_kw=partition_parameter_kw,
+      self.name, partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=self.isSlave)
 
     self.failed = None
