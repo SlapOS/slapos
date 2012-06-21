@@ -25,6 +25,7 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+from binascii import b2a_uu as uuencode
 import binascii
 import os
 import sys
