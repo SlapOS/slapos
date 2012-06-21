@@ -26,6 +26,7 @@
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
 from binascii import b2a_uu as uuencode
+import shutil
 import binascii
 import os
 import sys
@@ -50,6 +51,11 @@ class Recipe(GenericBaseRecipe):
       index_page_id = self.options.get("index-page-id", "index.php"),
       php_cgi_address = self.options["php-cgi-address"]
     )
+
+    # Copy application
+    if not os.path.exists(self.options['nginx-root']):
+      shutil.copytree(self.options['source'],
+                      self.options['nginx-root'])
     
     # Configs
     self.createFile(
