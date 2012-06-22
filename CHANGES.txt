@@ -1,9 +1,10 @@
 Changes
 =======
 
-0.57 (Unreleased)
+0.57 (2012-06-22)
 -----------------
 
+  * Do not use system curl. [Romain Courteaud]
 
 0.56 (2012-06-18)
 -----------------
