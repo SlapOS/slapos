@@ -6,11 +6,6 @@
 [buildout]
 
 parts =
-  request-mariadb
-  request-sphinx
-  request-cloudooo
-  request-memcached
-  request-kumofs
   request-tidstorage
   basedirectory
 
@@ -66,7 +61,17 @@ sla-computer_guid = ${slap-parameter:kumofs-computer-guid}
 <=request-common
 name = TidStorage
 return = url-login
-config = json mysql-url memcached-url cloudooo-url kumofs-url sphinx-url-sphinx sphinx-url-sphinx-sql smtp-url bt5 bt5-repository-url
+config =
+  json
+  mysql-url
+  memcached-url
+  cloudooo-url
+  kumofs-url
+  sphinx-url-sphinx
+  sphinx-url-sphinx-sql
+  smtp-url
+  bt5
+  bt5-repository-url
 config-json = ${slap-parameter:json}
 config-mysql-url = ${request-mariadb:connection-url}
 config-memcached-url = ${request-memcached:connection-url}
