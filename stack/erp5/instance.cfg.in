@@ -168,6 +168,7 @@ extra-context =
 [template-erp5-development-parameters]
 bin-directory = {{ bin_directory }}
 openssl = {{ openssl_location }}
+local_bt5_repository = {{ local_bt5_repository  }}
 
 [template-erp5-development]
 < = jinja2-template-base
@@ -180,6 +181,7 @@ extra-context =
     key bin_directory template-erp5-development-parameters:bin-directory
     key openssl_location template-erp5-development-parameters:openssl
     key template_zope dynamic-template-zope:rendered
+    key local_bt5_repository template-erp5-development-parameters:local_bt5_repository
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
