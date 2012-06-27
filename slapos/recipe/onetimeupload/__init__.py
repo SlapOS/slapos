@@ -33,11 +33,6 @@ class Recipe(GenericBaseRecipe):
   """
   kvm instance configuration.
   """
-
-  def __init__(self, buildout, name, options):
-    options['key'] = binascii.hexlify(os.urandom(24))
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
-
   def install(self):
     config = dict(
       ip=self.options['ip'],

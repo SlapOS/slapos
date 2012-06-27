@@ -236,6 +236,8 @@ class BaseSlapRecipe:
     return 'insecure'
 
   def install(self):
+    self.logger.warning("BaseSlapRecipe has been deprecated. Use " \
+        "GenericBaseRecipe or GenericSlapRecipe instead.")
     self.slap.initializeConnection(self.server_url, self.key_file,
         self.cert_file)
     self.computer_partition = self.slap.registerComputerPartition(
