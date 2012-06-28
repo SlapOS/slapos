@@ -1053,6 +1053,11 @@ class Config(object):
     """
     self.key_file = None
     self.cert_file = None
+
+    # set up logging
+    self.logger = logging.getLogger("slapformat")
+    self.logger.setLevel(logging.INFO)
+
     # Set options parameters
     for option, value in option_dict.__dict__.items():
       setattr(self, option, value)
@@ -1077,9 +1082,13 @@ class Config(object):
     if not getattr(self, "interface_name", None) \
         and getattr(self, "bridge_name", None):
       setattr(self, "interface_name", self.bridge_name)
+      self.logger.warning('bridge_name option is deprecated and should be '
+          'replaced by interface_name.')
     if not getattr(self, "create_tap", None) \
         and getattr(self, "no_bridge", None):
       setattr(self, "create_tap", not self.no_bridge)
+      self.logger.warning('no_bridge option is deprecated and should be '
+          'replaced by create_tap.')
 
     # Set defaults lately
     if self.alter_network is None:
@@ -1091,9 +1100,7 @@ class Config(object):
     if self.create_tap is None:
       self.create_tap = True
 
-    # set up logging
-    self.logger = logging.getLogger("slapformat")
-    self.logger.setLevel(logging.INFO)
+    # Configure logging
     if self.console:
       self.logger.addHandler(logging.StreamHandler())
 
