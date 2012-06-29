@@ -931,6 +931,11 @@ class SlapTool(BaseTool):
   def _getSoftwareInstanceAsParameterDict(self, software_instance):
     portal = software_instance.getPortalObject()
     computer_partition = software_instance.getAggregateValue(portal_type="Computer Partition")
+    timestamp = int(computer_partition.getModificationDate())
+
+    newtimestamp = int(software_instance.getModificationDate())
+    if (newtimestamp > timestamp):
+      timestamp = newtimestamp
 
     ip_list = []
     for internet_protocol_address in computer_partition.contentValues(portal_type='Internet Protocol Address'):
@@ -955,6 +960,9 @@ class SlapTool(BaseTool):
             'xml': slave_instance.getTextContent(),
             'connection_xml': slave_instance.getConnectionXml(),
           })
+          newtimestamp = int(slave_instance.getModificationDate())
+          if (newtimestamp > timestamp):
+            timestamp = newtimestamp
     return {
       'xml': software_instance.getTextContent(),
       'connection_xml': software_instance.getConnectionXml(),
@@ -964,6 +972,7 @@ class SlapTool(BaseTool):
       'slap_software_release_url': software_instance.getRootSoftwareReleaseUrl(),
       'slave_instance_list': slave_instance_list,
       'ip_list': ip_list,
+      'timestamp': timestamp,
     }
 
   @UnrestrictedMethod
