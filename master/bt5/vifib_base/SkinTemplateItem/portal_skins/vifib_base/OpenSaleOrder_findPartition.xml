@@ -79,6 +79,9 @@ if "instance_guid" in filter_kw:\n
     if filter_kw["instance_guid"] == "SOFTINST-9238":\n
       # XXX Let\'s be nice with Cedric and Vincent\n
       query_kw["uid"] = "2225067"\n
+    elif filter_kw["instance_guid"] == "SOFTINST-11031":\n
+      # XXX Let\'s be nice with KVM frontend\n
+      query_kw["uid"] = "2874296"\n
     else:\n
       query_kw["uid"] = "-1"\n
   else:\n
