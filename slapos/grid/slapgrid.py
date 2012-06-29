@@ -118,6 +118,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="SlapOS configuration file.")
   parser.add_argument("--maximal_delay", help="The maximal delay value in seconds. " \
                     "A negative value leads start immediately.")
+  parser.add_argument("--now", action="store_true", default=False,
+    help="Launch slapgrid without delay.")
 
   # Parses arguments
   if argument_tuple == ():
@@ -219,9 +221,12 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   else:
     signature_certificate_list = None
 
-  maximal_delay = float(option_dict.get("maximal_delay", "300"))
+  if option_dict["now"]:
+    maximal_delay = 0
+  else:
+    maximal_delay = float(option_dict.get("maximal_delay", "300"))
   if maximal_delay > 0:
-    duration = maximal_delay * random()
+    duration = int(maximal_delay * random())
     logging.info("Sleeping for %s seconds. To disable this feature, " \
                     "check maximal_delay parameter in manual." % duration)
     time.sleep(duration)
