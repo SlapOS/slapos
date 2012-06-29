@@ -76,9 +76,12 @@ if is_slave not in [True, False]:\n
 empty_parameter = """<?xml version="1.0" encoding="utf-8"?>\n
 <instance>\n
 </instance>"""\n
+empty_parameter2 = """<?xml version=\'1.0\' encoding=\'utf-8\'?>\n
+<instance/>"""\n
+\n
 \n
 # XXX Hardcode default parameter\n
-if instance_xml == empty_parameter:\n
+if (instance_xml == empty_parameter) or (instance_xml.startswith(empty_parameter2)):\n
   if software_release_url_string == "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5-frontend:/software/erp5/software.cfg":  \n
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>\n
 <instance>\n
