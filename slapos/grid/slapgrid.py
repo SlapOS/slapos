@@ -60,6 +60,8 @@ from lxml import etree
 from time import sleep
 from random import random
 
+from slapos.slap.slap import NotFoundError
+from hashlib import md5
 
 MANDATORY_PARAMETER_LIST = [
     'computer_id',
@@ -446,6 +448,8 @@ class Slapgrid(object):
       state = software_release.getState()
       try:
         software_release_uri = software_release.getURI()
+        url_hash = md5(software_release_uri).hexdigest()
+        software_path = os.path.join(self.software_root, url_hash)
         software = Software(url=software_release_uri,
             software_root=self.software_root,
             console=self.console, buildout=self.buildout,
@@ -462,12 +466,21 @@ class Slapgrid(object):
             shadir_cert_file=self.shadir_cert_file,
             shadir_key_file=self.shadir_key_file)
         if state == 'available':
-          software_release.building()
-          software.install()
+          completed_tag = os.path.join(software_path, '.completed')
+          if not os.path.exists(completed_tag):
+            try:
+              software_release.building()
+            except NotFoundError:
+              pass
+            software.install()
+            file_descriptor = open(completed_tag, 'w')
+            file_descriptor.write(time.asctime())
+            file_descriptor.close()
         elif state == 'destroyed':
-          logger.info('Destroying %r...' % software_release_uri)
-          software.destroy()
-          logger.info('Destroyed %r.' % software_release_uri)
+          if os.path.exists(software_path):
+            logger.info('Destroying %r...' % software_release_uri)
+            software.destroy()
+            logger.info('Destroyed %r.' % software_release_uri)
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         software_release.error(exception)
@@ -479,9 +492,15 @@ class Slapgrid(object):
         clean_run = False
       else:
         if state == 'available':
-          software_release.available()
+          try:
+            software_release.available()
+          except NotFoundError:
+            pass
         elif state == 'destroyed':
-          software_release.destroyed()
+          try:
+            software_release.destroyed()
+          except NotFoundError:
+            pass
     logger.info("Finished software releases...")
     return clean_run
 
