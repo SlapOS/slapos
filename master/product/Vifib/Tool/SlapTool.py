@@ -972,7 +972,7 @@ class SlapTool(BaseTool):
       'slap_software_release_url': software_instance.getRootSoftwareReleaseUrl(),
       'slave_instance_list': slave_instance_list,
       'ip_list': ip_list,
-      'timestamp': timestamp,
+      'timestamp': "%s" % timestamp,
     }
 
   @UnrestrictedMethod
