@@ -58,7 +58,7 @@ class Recipe(GenericBaseRecipe):
     post_rotate = self.createPythonScript(
       self.options['logrotate-post'],
       'slapos.recipe.librecipe.execute.execute',
-      [mysql_binary, '--no-defaults', '-B', '--socket=%s' % socket, '-e',
+      [mysql_binary, '--no-defaults', '-B', '-u', 'root', '--socket=%s' % socket, '-e',
        'FLUSH LOGS']
     )
     path_list.append(post_rotate)

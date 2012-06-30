@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.48-dev'
+version = '0.58-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -48,6 +48,8 @@ setup(name=name,
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
           'certificate_authority.request = slapos.recipe.certificate_authority:Request',
           'check_port_listening = slapos.recipe.check_port_listening:Recipe',
+          'check_url_available = slapos.recipe.check_url_available:Recipe',
+          'cloud9 = slapos.recipe.cloud9:Recipe',
           'cron = slapos.recipe.dcron:Recipe',
           'cron.d = slapos.recipe.dcron:Part',
           'davstorage = slapos.recipe.davstorage:Recipe',
@@ -59,8 +61,9 @@ setup(name=name,
           'equeue = slapos.recipe.equeue:Recipe',
           'erp5testnode = slapos.recipe.erp5testnode:Recipe',
           'generate.mac = slapos.recipe.generatemac:Recipe',
+          'generate.password = slapos.recipe.generatepassword:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',
-          'generic.onetimeupload = slapos.recipe.generic_onetimeupload:Recipe',
+          'onetimeupload = slapos.recipe.onetimeupload:Recipe',
           'helloworld = slapos.recipe.helloworld:Recipe',
           'generic.cloudooo = slapos.recipe.generic_cloudooo:Recipe',
           'cloudooo.test = slapos.recipe.cloudooo_test:Recipe',
@@ -109,6 +112,8 @@ setup(name=name,
           'siptester = slapos.recipe.siptester:SipTesterRecipe',
           'simplelogger = slapos.recipe.simplelogger:Recipe',
           'slaprunner = slapos.recipe.slaprunner:Recipe',
+          'slapmonitor = slapos.recipe.slapmonitor:Recipe',
+          'slapreport = slapos.recipe.slapreport:Recipe',
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'sshkeys_authority.request = slapos.recipe.sshkeys_authority:Request',
           'sphinx= slapos.recipe.sphinx:Recipe',
@@ -130,6 +135,7 @@ setup(name=name,
           'erp5.test = slapos.recipe.erp5_test:Recipe',
           'generic.varnish = slapos.recipe.generic_varnish:Recipe',
           'webchecker = slapos.recipe.web_checker:Recipe',
+          'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',

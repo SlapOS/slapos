@@ -336,7 +336,7 @@ recipe = slapos.cookbook:pwgen.stable
 [zope-conf-parameter-base]
 ip = {{ ipv4 }}
 site-id = {{ site_id }}
-zodb-list = {{ json_module.dumps(zodb_connection_list) }}
+zodb-list = {{ dumps(zodb_connection_list) }}
 
 [zope-conf-base]
 recipe = slapos.recipe.template:jinja2
@@ -347,7 +347,6 @@ context =
   key instance_products directory:instance-products
   raw deadlock_path /manage_debug_threads
   key deadlock_debugger_password deadlock-debugger-password:password
-  import json_module json
   key tidstorage_ip tidstorage:ip
   key tidstorage_port tidstorage:port
   key promise_path erp5-promise:promise-path
