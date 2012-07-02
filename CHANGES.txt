@@ -8,6 +8,8 @@ Changes
    create_tap is true by default. So a bridge is used and tap will be created by
    default. [Cedric de Saint Martin]
  * Add delay for slapformat [Cedric Le Ninivin]
+ * If no software_type is given, is default one (i.e fix "error 500" when
+   requesting new instance). [Cedric de Saint Martin]
 
 0.25 (2012-05-16)
 -----------------
