@@ -207,7 +207,12 @@ def _syncComputerInformation(func):
   Synchronize computer object with server information
   """
   def decorated(self, *args, **kw):
-    computer = self._connection_helper.getFullComputerInformation(self._computer_id)
+    # XXX: This is a ugly way to keep backward compatibility,
+    # We should stablise slap library soon.
+    try:
+      computer = self._connection_helper.getFullComputerInformation(self._computer_id)
+    except NotFoundError:
+      computer = self._connection_helper.getComputerInformation(self._computer_id)
     for key, value in computer.__dict__.items():
       if isinstance(value, unicode):
         # convert unicode to utf-8
@@ -268,7 +273,12 @@ def _syncComputerPartitionInformation(func):
   def decorated(self, *args, **kw):
     if getattr(self, '_synced', 0):
       return func(self, *args, **kw)
-    computer = self._connection_helper.getFullComputerInformation(self._computer_id)
+    # XXX: This is a ugly way to keep backward compatibility,
+    # We should stablise slap library soon.
+    try:
+      computer = self._connection_helper.getFullComputerInformation(self._computer_id)
+    except NotFoundError:
+      computer = self._connection_helper.getComputerInformation(self._computer_id)
     found_computer_partition = None
     for computer_partition in computer._computer_partition_list:
       if computer_partition.getId() == self.getId():
