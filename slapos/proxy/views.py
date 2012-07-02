@@ -84,6 +84,7 @@ def after_request(response):
   return response
 
 @app.route('/getComputerInformation', methods=['GET'])
+@app.route('/getFullComputerInformation', methods=['GET'])
 def getComputerInformation():
   computer_id = request.args['computer_id']
   if app.config['computer_id'] == computer_id:
