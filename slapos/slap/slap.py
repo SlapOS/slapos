@@ -42,6 +42,8 @@ import zope.interface
 Simple, easy to (un)marshall classes for slap client/server communication
 """
 
+DEFAULT_SOFTWARE_TYPE = 'default'
+
 # httplib.HTTPSConnection with key verification
 class HTTPSConnectionCA(httplib.HTTPSConnection):
   """Patched version of HTTPSConnection which verifies server certificate"""
@@ -181,6 +183,9 @@ class OpenOrder(SlapDocument):
       }
     if software_type is not None:
       request_dict['software_type'] = software_type
+    else:
+      # Let's enforce a default software type
+      request_dict['software_type'] = DEFAULT_SOFTWARE_TYPE
     try:
       self._connection_helper.POST('/requestComputerPartition', request_dict)
     except ResourceNotReady:
@@ -358,6 +363,10 @@ class ComputerPartition(SlapDocument):
     elif not isinstance(filter_kw, dict):
       raise ValueError("Unexpected type of filter_kw '%s'" % \
                        filter_kw)
+
+    # Let enforce a default software type
+    if software_type is None:
+      software_type = DEFAULT_SOFTWARE_TYPE
 
     request_dict = { 'computer_id': self._computer_id,
         'computer_partition_id': self._partition_id,
