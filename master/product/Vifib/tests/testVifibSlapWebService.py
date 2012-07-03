@@ -55,7 +55,8 @@ DEFAULT_INSTANCE_DICT_PARAMETER_LIST = [
     'slap_partition_reference',
     'slap_software_release_url',
     'slap_software_type',
-    "slave_instance_list"
+    "slave_instance_list",
+    'timestamp',
 ]
 
 
