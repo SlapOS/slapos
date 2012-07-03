@@ -118,8 +118,6 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
                       help="Promise timeout in seconds.")
   parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
       help="SlapOS configuration file.")
-  parser.add_argument("--maximal_delay", help="The maximal delay value in seconds. " \
-                    "A negative value leads start immediately.")
   parser.add_argument("--now", action="store_true", default=False,
     help="Launch slapgrid without delay.")
 
