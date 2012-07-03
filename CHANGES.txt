@@ -14,6 +14,8 @@ Changes
    information from server [Yingjie Xu]
  * slapproxy: new api to mock full computer information [Yingjie Xu]
  * slapgrid: minor fix randomise delay feature [Yingjie Xu]
+ * slapgrid: optimise slapgrid-cp, run slapgrid-cp only if there is an update
+   on server side [Yingjie Xu]
 
 0.25 (2012-05-16)
 -----------------
