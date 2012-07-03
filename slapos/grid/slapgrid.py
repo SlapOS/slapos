@@ -570,6 +570,8 @@ class Slapgrid(object):
     # Process Computer Partitions
     clean_run = True
     for computer_partition in self.getComputerPartitionList():
+      instance_path = os.path.join(self.instance_root,
+        computer_partition.getId())
       computer_partition_id = computer_partition.getId()
       try:
         software_url = computer_partition.getSoftwareRelease().getURI()
@@ -579,8 +581,7 @@ class Slapgrid(object):
             getSoftwareUrlHash(software_url))
       local_partition = Partition(
         software_path=software_path,
-        instance_path=os.path.join(self.instance_root,
-            computer_partition.getId()),
+        instance_path=instance_path),
         supervisord_partition_configuration_path=os.path.join(
           self.supervisord_configuration_directory, '%s.conf' %
           computer_partition_id),
