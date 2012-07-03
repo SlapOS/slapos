@@ -573,6 +573,16 @@ class Slapgrid(object):
       computer_partition_id = computer_partition.getId()
       instance_path = os.path.join(
         self.instance_root, computer_partition_id)
+      timestamp_path = os.path.join(instance_path, '.timestamp')
+      if os.path.exists(timestamp_path):
+        descriptor = open(timestamp_path)
+        old_timestamp = int(descriptor.read())
+        descriptor.close()
+        parameter_dict = computer_partition.getInstanceParameterDict()
+        if 'timestamp' in parameter_dict:
+          timestamp = int(parameter_dict['timestamp'])
+          if timestamp <= old_timestamp:
+            continue
       try:
         software_url = computer_partition.getSoftwareRelease().getURI()
       except NotFoundError:
