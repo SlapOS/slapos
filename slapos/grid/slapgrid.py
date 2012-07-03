@@ -581,7 +581,7 @@ class Slapgrid(object):
             getSoftwareUrlHash(software_url))
       local_partition = Partition(
         software_path=software_path,
-        instance_path=instance_path),
+        instance_path=instance_path,
         supervisord_partition_configuration_path=os.path.join(
           self.supervisord_configuration_directory, '%s.conf' %
           computer_partition_id),
