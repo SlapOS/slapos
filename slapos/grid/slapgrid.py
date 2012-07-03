@@ -583,6 +583,7 @@ class Slapgrid(object):
             if int(timestamp) <= int(old_timestamp):
               continue
           except ValueError:
+            os.remove(timestamp_path)
             exception = traceback.format_exc()
             logger.error(exception)
       try:
