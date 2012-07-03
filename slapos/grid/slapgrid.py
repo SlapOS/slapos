@@ -583,7 +583,8 @@ class Slapgrid(object):
             if int(timestamp) <= int(old_timestamp):
               continue
           except ValueError:
-            pass
+            exception = traceback.format_exc()
+            logger.error(exception)
       try:
         software_url = computer_partition.getSoftwareRelease().getURI()
       except NotFoundError:
