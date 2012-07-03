@@ -570,9 +570,9 @@ class Slapgrid(object):
     # Process Computer Partitions
     clean_run = True
     for computer_partition in self.getComputerPartitionList():
-      instance_path = os.path.join(self.instance_root,
-        computer_partition.getId())
       computer_partition_id = computer_partition.getId()
+      instance_path = os.path.join(
+        self.instance_root, computer_partition_id)
       try:
         software_url = computer_partition.getSoftwareRelease().getURI()
       except NotFoundError:
