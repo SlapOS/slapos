@@ -11,8 +11,8 @@ As API is going to be used in environments which support TLS communication
 channel, but do not, or support is cumbersome, support X509 keys OAuth-2 will
 be proposed by library.
 
-Token based authentication
-++++++++++++++++++++++++++
+Internal authentication
++++++++++++++++++++++++
 
 In case if client of API does not fulfill X509 authentication it has a chance
 to use token based authentication (after obtaining proper token).
@@ -27,6 +27,29 @@ Example of using Bearer token::
   Host: example.com
   Accept: application/json
   Authorization: Bearer 7Fjfp0ZBr1KtDRbnfVdmIw
+
+
+Facebook authentication
++++++++++++++++++++++++
+
+It is possible to use Facebook as Authorisation Server in Oauth 2.0
+architecture. Client shall fetch `access_token` as described in
+https://developers.facebook.com/docs/authentication/client-side/ and later use
+it as in specially crafted `Authorization` header::
+
+  GET /api/v1/instance/{instance_id} HTTP/1.1
+  Host: example.com
+  Accept: application/json
+  Authorization: Facebook access_token_from_facebook
+
+The client is responsible for having its own Facebook application ID and
+configure it that user basic information and email will be available after
+using `access_token`, for example by fetching token after query like::
+
+  https://www.facebook.com/dialog/oauth?client_id=FB_ID&response_type=token&redirect_uri=APP_URL&scope=email
+
+Server will contact with Facebook and use the logged in user profile. Facebook
+is trusted by server.
 
 Exchange format
 ---------------
