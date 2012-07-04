@@ -2,6 +2,7 @@ erp5_accounting
 erp5_accounting_l10n_fr
 erp5_administration
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_computer_immobilisation
 erp5_content_translation
@@ -42,4 +43,3 @@ erp5_web
 erp5_web_download_theme
 erp5_xhtml_jquery_style
 vifib_slapos_core
-erp5_bearer_token
