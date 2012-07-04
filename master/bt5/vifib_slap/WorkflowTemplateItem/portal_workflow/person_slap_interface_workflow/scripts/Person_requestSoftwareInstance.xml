@@ -105,11 +105,11 @@ request_hosting_subscription_list = portal.portal_catalog(\n
   portal_type=hosting_subscription_portal_type,\n
   title={\'query\': software_title, \'key\': \'ExactMatch\'},\n
   validation_state="validated",\n
-  default_destination_section=person.getRelativeUrl(),\n
+  default_destination_section_uid=person.getUid(),\n
   limit=2,\n
   )\n
 if len(request_hosting_subscription_list) > 1:\n
-  raise NotImplementedError, "Too many hosting subscription %s found" % software_title\n
+  raise NotImplementedError, "Too many hosting subscription %s found %s" % (software_title, [x.path for x in request_hosting_subscription_list])\n
 elif len(request_hosting_subscription_list) == 1:\n
   request_hosting_subscription = request_hosting_subscription_list[0].getObject()\n
   if (request_hosting_subscription.getSlapState() == "destroy_requested") or \\\n
