@@ -168,12 +168,18 @@ def responseSupport(anonymous=False):
         'GET, OPTIONS')
       if not anonymous:
         if getSecurityManager().getUser().getId() is None:
-          # force login
-          self.REQUEST.response.setStatus(401)
-          self.REQUEST.response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
-            self.absolute_url())
-          self.REQUEST.response.setHeader('Location', self.getPortalObject()\
-            .portal_preferences.getPreferredRestApiV1TokenServerUrl())
+          if self.REQUEST.get('USER_CREATION_IN_PROGRESS') is not None:
+            # inform that user is not ready yet
+            self.REQUEST.response.setStatus(202)
+            self.REQUEST.response.setBody(jsonify(
+              {'status':'User under creation.'}))
+          else:
+            # force login
+            self.REQUEST.response.setStatus(401)
+            self.REQUEST.response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
+              self.absolute_url())
+            self.REQUEST.response.setHeader('Location', self.getPortalObject()\
+              .portal_preferences.getPreferredRestApiV1TokenServerUrl())
           return self.REQUEST.response
         else:
           user_name = self.getPortalObject().portal_membership\
