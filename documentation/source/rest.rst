@@ -82,6 +82,17 @@ applied..
 ``OPTIONS`` requests will return ``"204 No Content"`` response with headers
 informing about possible method usage.
 
+``"202 Accepted"`` with json response with status can be returned in order to
+indicate that request was correct, but some asynchronous opertions are disallow
+to finish it, for example user being in creation process::
+
+  HTTP/1.1 202 Accepted
+  Content-Type: application/json; charset=utf-8
+
+  {
+    "status": "User under creation."
+  }
+
 Common Error Responses
 ++++++++++++++++++++++
 
