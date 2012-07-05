@@ -45,6 +45,7 @@ class SlapMixin(unittest.TestCase):
       self.server_url = 'http://localhost/'
     else:
       self.server_url = self._server_url
+    print 'Testing against SLAP server %r' % self.server_url
 
   def tearDown(self):
     if self._server_url is None:
@@ -589,7 +590,6 @@ class TestOpenOrder(SlapMixin):
     self.assertTrue(requested_partition_id, computer_partition.getId())
 
 if __name__ == '__main__':
-  print 'Testing against SLAP server %r' % SERVER_URL
   print 'You can point to any SLAP server by setting TEST_SLAP_SERVER_URL '\
       'environment variable'
   unittest.main()
