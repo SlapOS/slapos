@@ -53,46 +53,18 @@ class Recipe(BaseSlapRecipe, GenericSlapRecipe):
     configuration_path = os.path.join(self.work_directory, "agent.cfg")
     with open(configuration_path, "w") as configuration:
       configuration.write(parameter_dict["configuration"])
-    if "key" in parameter_dict:
-      key_filepath = os.path.join(self.work_directory, "key")
-      cert_filepath = os.path.join(self.work_directory, "cert")
-      with open(key_filepath, "w") as key_file:
-        key_file.write(parameter_dict['key'])
-      with open(cert_filepath, "w") as cert_file:
-        cert_file.write(parameter_dict["cert"])
-      extra_arguments = "--key_file=%s --cert_file=%s " % (key_filepath,
-        cert_filepath)
-    else:
-      extra_arguments = ""
-
-    state_file = self.options["state_file"]
-    open(state_file, "a").close()
-
     agent_crond_path = os.path.join(crond, "agent")
     with open(agent_crond_path, "w") as agent_crond:
-      agent_crond.write("*/5 * * * * %s -S %s --pidfile=%s --log_directory=%s "
-        "--state_file=%s --path_file=%s %s%s\n" % (
+      agent_crond.write("*/5 * * * * %s -S %s --pidfile=%s --log=%s "
+        "%s 2>&1 > /dev/null\n" % (
           self.options["python_binary"],
           self.options["agent_binary"],
           self.options["pidfile"],
-          self.options["log_directory"],
-          state_file,
-          self.options["path_file"],
-          extra_arguments,
+          self.options["log"],
           configuration_path,
       ))
-      agent_crond.write("1 0 * * * %s -S %s %s\n" % (
-        self.options["python_binary"],
-        self.options["report_start"],
-        configuration_path
-      ))
-      agent_crond.write("59 23 * * * %s -S %s %s\n" % (
-        self.options["python_binary"],
-        self.options["report_stop"],
-        configuration_path,
-      ))
 
-    return self.path_list + [configuration_path, key_filepath, cert_filepath, agent_crond_path]
+    return self.path_list + [configuration_path, agent_crond_path]
 
   def installCrond(self):
     _, ws = self.egg.working_set()
