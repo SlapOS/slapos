@@ -227,7 +227,7 @@ def _syncComputerInformation(func):
       else:
         setattr(self, key, value)
     setattr(self, '_synced', True)
-    for computer_partition in computer.getComputerPartitionList():
+    for computer_partition in self.getComputerPartitionList():
       setattr(computer_partition, '_synced', True)
     return func(self, *args, **kw)
   return decorated 
@@ -326,7 +326,7 @@ def _syncComputerPartitionInformation(func):
         else:
           setattr(self, key, value)
     setattr(self, '_synced', True)
-    for computer_partition in computer.getComputerPartitionList():
+    for computer_partition in self.getComputerPartitionList():
       setattr(computer_partition, '_synced', True)
     return func(self, *args, **kw)
   return decorated
