@@ -494,6 +494,14 @@ class ComputerPartition(SlapDocument):
       'slave_reference': slave_reference})
 
   @_syncComputerPartitionInformation
+  def getInstanceParameter(self, key):
+    parameter_dict = getattr(self, '_parameter_dict', None) or {}
+    if key in parameter_dict:
+      return parameter_dict[key]
+    else:
+      raise NotFoundError("%s not found" % key)
+
+  @_syncComputerPartitionInformation
   def getConnectionParameter(self, key):
     connection_dict = getattr(self, '_connection_dict', None) or {}
     if key in connection_dict:
