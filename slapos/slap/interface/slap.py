@@ -190,6 +190,13 @@ class IComputerPartition(IBuildoutController, IRequester):
     profile.
     """
 
+  def getConnectionParameterDict():
+    """
+    Returns a dictionary of connection parameters.
+
+    The contained values are connection parameters of a compute partition.
+    """
+
   def setUsage(usage_log):
     """
     Associate a usage log to the computer partition.
@@ -227,6 +234,15 @@ class IComputerPartition(IBuildoutController, IRequester):
                               connection dict of the partition.
 
     slave_reference -- current reference of the slave instance to modify
+    """
+
+  def getInstanceParameter(key):
+    """
+    Returns the instance parameter associated to the key.
+
+    Raise an INotFoundError if no key is defined.
+
+    key -- a string name of the parameter
     """
 
   def getConnectionParameter(key):
