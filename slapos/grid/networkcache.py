@@ -12,15 +12,8 @@
 #
 ##############################################################################
 
-
-import hashlib
-import os
-import posixpath
-import re
 import shutil
-import urlparse
 import traceback
-import utils
 import json
 import platform
 

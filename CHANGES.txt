@@ -1,21 +1,27 @@
 Changes
 =======
 
-0.26 (Unreleased)
+0.27 (Unreleased)
+-----------------
+
+ * No change yet.
+
+0.26 (2012-07-05)
 -----------------
 
  * slapformat: no_bridge option becomes 'not create_tap'.
    create_tap is true by default. So a bridge is used and tap will be created by
    default. [Cedric de Saint Martin]
- * Add delay for slapformat [Cedric Le Ninivin]
+ * Add delay for slapformat. [Cedric Le Ninivin]
  * If no software_type is given, is default one (i.e fix "error 500" when
    requesting new instance). [Cedric de Saint Martin]
  * slapgrid: promise based software release, new api to fetch full computer
-   information from server [Yingjie Xu]
+   information from server. [Yingjie Xu]
  * slapproxy: new api to mock full computer information [Yingjie Xu]
- * slapgrid: minor fix randomise delay feature [Yingjie Xu]
+ * slapgrid: minor fix randomise delay feature. [Yingjie Xu]
  * slapgrid: optimise slapgrid-cp, run slapgrid-cp only if there is an update
-   on server side [Yingjie Xu]
+   on server side. [Yingjie Xu]
+ * libslap: Allow accessing ServerError. [Vincent Pelletier]
 
 0.25 (2012-05-16)
 -----------------

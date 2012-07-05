@@ -48,7 +48,6 @@ from utils import setRunning
 from utils import setFinished
 from utils import getSoftwareUrlHash
 from slapos import slap
-from slapos.slap import NotFoundError
 from slapos.slap.slap import ServerError
 from utils import dropPrivileges
 from utils import SlapPopen
@@ -57,7 +56,6 @@ import tempfile
 from time import strftime
 import StringIO
 from lxml import etree
-from time import sleep
 from random import random
 
 from slapos.slap.slap import NotFoundError
@@ -721,12 +719,13 @@ class Slapgrid(object):
         usage_string = StringIO.StringIO(computer_partition_usage.usage)
         root = etree.parse(usage_string)
       except UnicodeError:
-        logger.info("Failed to read %s." % (computer_partition_usage.usage))
-        logger.error(UnicodeError)
+        self.logger.info("Failed to read %s." % (
+            computer_partition_usage.usage))
+        self.logger.error(UnicodeError)
         raise "Failed to read %s." % (computer_partition_usage.usage)
       except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
-        logger.info("Failed to parse %s." % (usage_string))
-        logger.error(e)
+        self.logger.info("Failed to parse %s." % (usage_string))
+        self.logger.error(e)
         raise _formatXMLError(e)
       except Exception:
         raise "Failed to generate XML report."
