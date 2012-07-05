@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.26 (Unreleased)
+0.26 (2012-07-05)
 -----------------
 
  * slapformat: no_bridge option becomes 'not create_tap'.
