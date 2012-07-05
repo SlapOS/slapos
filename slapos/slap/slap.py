@@ -212,8 +212,6 @@ def _syncComputerInformation(func):
   Synchronize computer object with server information
   """
   def decorated(self, *args, **kw):
-    if getattr(self, '_synced', 0):
-      return func(self, *args, **kw)
     # XXX: This is a ugly way to keep backward compatibility,
     # We should stablise slap library soon.
     try:
@@ -226,9 +224,6 @@ def _syncComputerInformation(func):
         setattr(self, key, value.encode('utf-8'))
       else:
         setattr(self, key, value)
-    setattr(self, '_synced', True)
-    for computer_partition in self.getComputerPartitionList():
-      setattr(computer_partition, '_synced', True)
     return func(self, *args, **kw)
   return decorated 
 
@@ -325,9 +320,6 @@ def _syncComputerPartitionInformation(func):
           setattr(self, key, new_dict)
         else:
           setattr(self, key, value)
-    setattr(self, '_synced', True)
-    for computer_partition in self.getComputerPartitionList():
-      setattr(computer_partition, '_synced', True)
     return func(self, *args, **kw)
   return decorated
 
