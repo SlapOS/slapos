@@ -27,7 +27,7 @@
 ##############################################################################
 __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
            "Supply", "OpenOrder", "NotFoundError", "Unauthorized",
-           "ResourceNotReady"]
+           "ResourceNotReady", "ServerError"]
 
 from interface import slap as interface
 from xml_marshaller import xml_marshaller
