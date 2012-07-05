@@ -100,9 +100,9 @@ if sale_order.getSimulationState() == \'ordered\':\n
   except ValueError:\n
     # It was not possible to find free Computer Partition\n
     markHistory(sale_order, \'Not confirmed: no free Computer Partition\')\n
-  except Unauthorized:\n
+  except Unauthorized, e:\n
     # user has bad balance\n
-    markHistory(sale_order, \'Not confirmed: user has bad balance\')\n
+    markHistory(sale_order, \'Not confirmed: %s\' % e)\n
   else:\n
     if computer_partition is not None:\n
       try:\n
