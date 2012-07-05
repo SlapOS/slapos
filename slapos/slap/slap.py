@@ -472,6 +472,10 @@ class ComputerPartition(SlapDocument):
     return getattr(self, '_parameter_dict', None) or {}
 
   @_syncComputerPartitionInformation
+  def getConnectionParameterDict(self):
+    return getattr(self, '_connection_dict', None) or {}
+
+  @_syncComputerPartitionInformation
   def getSoftwareRelease(self):
     """
     Returns the software release associate to the computer partition.
