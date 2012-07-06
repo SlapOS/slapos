@@ -85,9 +85,9 @@ def Facebook_checkUserExistence(self):
   url = urlparse.urlsplit(self.portal_preferences.getPreferredVifibRestApiLoginCheck())
   connection_kw = {'host': url.netloc, 'timeout': 5}
   if url.scheme == 'http':
-    connection = httplib.HTTPConnection(connection_kw)
+    connection = httplib.HTTPConnection(**connection_kw)
   else:
-    connection = httplib.HTTPSConnection(connection_kw)
+    connection = httplib.HTTPSConnection(**connection_kw)
   connection.request('GET', url.path, headers = {
       'Authorization' : 'Facebook %s' % access_token,
       'Accept': 'application/json'})
