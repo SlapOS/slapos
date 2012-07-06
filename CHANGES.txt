@@ -1,10 +1,15 @@
 Changes
 =======
 
-0.27 (Unreleased)
+0.26.1 (2012-07-06)
 -----------------
 
- * No change yet.
+ * slapgrid-sr: Add --develop option to make it ignore .completed files.
+ * SLAP library: it is now possible to fetch whole dict of connection
+   parameters.
+ * SLAP library: it is now possible to fetch single instance parameter.
+ * SLAP library: change Computer and ComputerPartition behavior to have proper
+   caching of computer partition parameters.
 
 0.26 (2012-07-05)
 -----------------
@@ -13,13 +18,13 @@ Changes
    create_tap is true by default. So a bridge is used and tap will be created by
    default. [Cedric de Saint Martin]
  * Add delay for slapformat. [Cedric Le Ninivin]
- * If no software_type is given, is default one (i.e fix "error 500" when
+ * If no software_type is given, use default one (i.e fix "error 500" when
    requesting new instance). [Cedric de Saint Martin]
  * slapgrid: promise based software release, new api to fetch full computer
    information from server. [Yingjie Xu]
  * slapproxy: new api to mock full computer information [Yingjie Xu]
  * slapgrid: minor fix randomise delay feature. [Yingjie Xu]
- * slapgrid: optimise slapgrid-cp, run slapgrid-cp only if there is an update
+ * slapgrid: optimise slapgrid-cp, run buildout only if there is an update
    on server side. [Yingjie Xu]
  * libslap: Allow accessing ServerError. [Vincent Pelletier]
 
