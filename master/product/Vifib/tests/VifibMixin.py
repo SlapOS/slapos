@@ -87,7 +87,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_project',
       'erp5_xhtml_jquery_style',
       'erp5_credential',
-      'erp5_credential_facebook',
+      'erp5_credential_oauth2',
       'erp5_km',
       'erp5_web_download_theme',
       'erp5_tiosafe_core',

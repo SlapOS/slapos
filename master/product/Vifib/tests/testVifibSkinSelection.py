@@ -150,7 +150,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -251,7 +251,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -352,7 +352,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -448,7 +448,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -542,7 +542,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -637,7 +637,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -734,7 +734,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -831,7 +831,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -925,7 +925,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource
@@ -1018,7 +1018,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
-erp5_credential_facebook
+erp5_credential_oauth2
 erp5_crm
 erp5_dhtml_style
 erp5_discount_resource

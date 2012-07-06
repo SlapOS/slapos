@@ -52,6 +52,7 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
+script.log(\'called\')\n
 from DateTime import DateTime\n
 \n
 portal = context.getPortalObject()\n
@@ -98,7 +99,7 @@ person.setRoleList(assignment.getRoleList())\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_createFacebookUser</string> </value>
+            <value> <string>Base_createOauth2User</string> </value>
         </item>
       </dictionary>
     </pickle>
