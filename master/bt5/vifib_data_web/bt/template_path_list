@@ -2,7 +2,7 @@ image_module/vifib.cloud
 image_module/vifib.kvm
 image_module/vifib.rack
 portal_caches/facebook_server_auth_token_cache_factory
-portal_caches/facebook_server_auth_token_cache_factory/**
+portal_caches/facebook_server_auth_token_cache_factory/volatile_cache_plugin
 web_page_module/vifib*
 web_site_module/cash
 web_site_module/cash/**
