@@ -118,6 +118,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="SlapOS configuration file.")
   parser.add_argument("--now", action="store_true", default=False,
     help="Launch slapgrid without delay.")
+  parser.add_argument("--develop", action="store_true", default=False,
+    help="Launch slapgrid in develop mode. In develop mode, slapgrid-sr ignores .completed file")
 
   # Parses arguments
   if argument_tuple == ():
@@ -261,6 +263,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             shacache_key_file=option_dict.get('shacache-key-file', None),
             shadir_cert_file=option_dict.get('shadir-cert-file', None),
             shadir_key_file=option_dict.get('shadir-key-file', None),
+            develop=option_dict.get('develop', False)
             ),
           option_dict])
 
@@ -347,7 +350,8 @@ class Slapgrid(object):
                shacache_cert_file=None,
                shacache_key_file=None,
                shadir_cert_file=None,
-               shadir_key_file=None):
+               shadir_key_file=None,
+               develop=False):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
     self.software_root = os.path.abspath(software_root)
@@ -387,6 +391,7 @@ class Slapgrid(object):
     self.console = console
     self.buildout = buildout
     self.promise_timeout = promise_timeout
+    self.develop = develop
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -463,7 +468,7 @@ class Slapgrid(object):
             shadir_key_file=self.shadir_key_file)
         if state == 'available':
           completed_tag = os.path.join(software_path, '.completed')
-          if not os.path.exists(completed_tag):
+          if self.develop or (not os.path.exists(completed_tag)):
             try:
               software_release.building()
             except NotFoundError:
