@@ -62,7 +62,8 @@ def requireHeader(header_dict):
     def wrapperRequireHeader(self, *args, **kwargs):
       problem_dict = {}
       for header, value in header_dict.iteritems():
-        if not re.match(value, self.REQUEST.getHeader(header)):
+        send_header = self.REQUEST.getHeader(header)
+        if send_header is None or not re.match(value, send_header):
           problem_dict[header] = 'Header with value %r is required.' % value
       if not problem_dict:
         return fn(self, *args, **kwargs)
