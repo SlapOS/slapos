@@ -64,6 +64,9 @@
                  type="hidden" name="came_from"\n
                  tal:attributes="value request/came_from" />\n
           <fieldset>\n
+            <div class="field nolabel validate widthAuto forgotten_password">\n
+               You can <a href="./login_with_facebook">login with with <img width="25px" src="./vifib_image/facebook_logo.png" alt="Facebook" title="Facebook"></a>, or use traditional methods below.\n
+            </div>\n
             <div class="field login_name">\n
               <label for="name" class="required" i18n:translate="" i18n:domain="ui">Name</label>\n
               <div class="input"><input type="text" name="__ac_name" id="name" tal:attributes="value python: request.get(\'__ac_name\') or \'\'" /></div>\n

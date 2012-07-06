@@ -103,7 +103,9 @@
                 <item>
                     <key> <string>normal</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>your_user_preparation</string>
+                      </list>
                     </value>
                 </item>
                 <item>
