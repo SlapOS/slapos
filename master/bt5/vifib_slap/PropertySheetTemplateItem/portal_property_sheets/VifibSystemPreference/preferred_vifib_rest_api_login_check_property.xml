@@ -33,7 +33,7 @@
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>URL to Vifib REST API used to check facebook login user presence.</string> </value>
+            <value> <string>URL to Vifib REST API used to check external login user presence.</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
