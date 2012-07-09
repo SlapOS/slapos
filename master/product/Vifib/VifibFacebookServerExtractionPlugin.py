@@ -62,7 +62,6 @@ class VifibFacebookServerExtractionPlugin(BasePlugin):
   meta_type = "Vifib Facebook Server Extraction Plugin"
   # cache_fatory_name proposal to begin configurable
   cache_factory_name = 'facebook_server_auth_token_cache_factory'
-  reference_prefix = 'fb_'
   security = ClassSecurityInfo()
 
   def __init__(self, id, title=None):
