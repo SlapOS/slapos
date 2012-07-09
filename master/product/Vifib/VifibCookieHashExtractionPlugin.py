@@ -54,14 +54,11 @@ def addVifibFacebookServerExtractionPlugin(dispatcher, id, title=None, REQUEST=N
           'VifibFacebookServerExtractionPlugin+added.'
           % dispatcher.absolute_url())
 
-class VifibFacebookServerExtractionPlugin(BasePlugin):
+class VifibCookieHashExtractionPlugin(BasePlugin):
   """
   Plugin to authenicate as machines.
   """
 
-  meta_type = "Vifib Facebook Server Extraction Plugin"
-  # cache_fatory_name proposal to begin configurable
-  cache_factory_name = 'facebook_server_auth_token_cache_factory'
   security = ClassSecurityInfo()
 
   def __init__(self, id, title=None):
@@ -88,13 +85,6 @@ class VifibFacebookServerExtractionPlugin(BasePlugin):
       raise KeyError
     return cache_factory
 
-  def setFacebookToken(self, key, body):
-    cache_factory = self._getCacheFactory()
-    cache_duration = cache_factory.cache_duration
-    for cache_plugin in cache_factory.getCachePluginList():
-      cache_plugin.set(key, DEFAULT_CACHE_SCOPE,
-                       body, cache_duration=cache_duration)
-
   def getKey(self, key):
     cache_factory = self._getCacheFactory()
     for cache_plugin in cache_factory.getCachePluginList():
@@ -108,16 +98,16 @@ class VifibFacebookServerExtractionPlugin(BasePlugin):
   ####################################
   security.declarePrivate('extractCredentials')
   def extractCredentials(self, request):
-    """ Extract facebook credentials from the request header. """
+    """ Extract CookieHash credentials from the request header. """
     creds = {}
-    facebook_cookie = request.get('__ac_facebook_hash')
-    if facebook_cookie is not None:
+    cookie_hash = request.get(self.cookie_name)
+    if cookie_hash is not None:
       try:
-        facebook_dict = self.getKey(facebook_cookie)
+        user_dict = self.getKey(cookie_hash)
       except KeyError:
         return DumbHTTPExtractor().extractCredentials(request)
-      if 'login' in facebook_dict:
-        creds['external_login'] = facebook_dict['login']
+      if 'login' in user_dict:
+        creds['external_login'] = user_dict['login']
         creds['remote_host'] = request.get('REMOTE_HOST', '')
         try:
           creds['remote_address'] = request.getClientAddr()
@@ -126,10 +116,10 @@ class VifibFacebookServerExtractionPlugin(BasePlugin):
         return creds
     return DumbHTTPExtractor().extractCredentials(request)
 
-  manage_editVifibFacebookServerExtractionPluginForm = PageTemplateFile(
-      'www/Vifib_editVifibFacebookServerExtractionPlugin',
-      globals(),
-      __name__='manage_editVifibFacebookServerExtractionPluginForm')
+class VifibFacebookServerExtractionPlugin(VifibCookieHashExtractionPlugin):
+  cache_factory_name = 'facebook_server_auth_token_cache_factory'
+  cookie_name = '__ac_facebook_hash'
+  meta_type = "Vifib Facebook Server Extraction Plugin"
 
 #List implementation of class
 classImplements( VifibFacebookServerExtractionPlugin,

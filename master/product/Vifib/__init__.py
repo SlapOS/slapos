@@ -43,7 +43,7 @@ from Products.PluggableAuthService.PluggableAuthService import registerMultiPlug
 
 import VifibMachineAuthenticationPlugin
 import VifibShadowAuthenticationPlugin
-import VifibFacebookServerExtractionPlugin
+import VifibCookieHashExtractionPlugin
 
 def initialize(context):
   import Document
@@ -70,11 +70,11 @@ def initialize(context):
                          , icon='www/portal.gif'
                          )
 
-  context.registerClass( VifibFacebookServerExtractionPlugin.VifibFacebookServerExtractionPlugin
+  context.registerClass( VifibCookieHashExtractionPlugin.VifibFacebookServerExtractionPlugin
                          , permission=ManageUsers
                          , constructors=(
-                            VifibFacebookServerExtractionPlugin.manage_addVifibFacebookServerExtractionPluginForm,
-                            VifibFacebookServerExtractionPlugin.addVifibFacebookServerExtractionPlugin, )
+                            VifibCookieHashExtractionPlugin.manage_addVifibFacebookServerExtractionPluginForm,
+                            VifibCookieHashExtractionPlugin.addVifibFacebookServerExtractionPlugin, )
                          , visibility=None
                          , icon='www/portal.gif'
                          )
@@ -82,4 +82,4 @@ def initialize(context):
 
 registerMultiPlugin(VifibMachineAuthenticationPlugin.VifibMachineAuthenticationPlugin.meta_type)
 registerMultiPlugin(VifibShadowAuthenticationPlugin.VifibShadowAuthenticationPlugin.meta_type)
-registerMultiPlugin(VifibFacebookServerExtractionPlugin.VifibFacebookServerExtractionPlugin.meta_type)
+registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibFacebookServerExtractionPlugin.meta_type)
