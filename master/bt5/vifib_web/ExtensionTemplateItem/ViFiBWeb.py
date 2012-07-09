@@ -36,10 +36,10 @@ def formatXml(self, xml):
   popen = subprocess.Popen(['xmllint', '--format', '--recover', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
   return popen.communicate(xml)[0]
 
-def _getCacheFactory(self):
+# common methods
+def _getCacheFactory(self, cache_factory_name):
   portal = self.getPortalObject()
   cache_tool = portal.portal_caches
-  cache_factory_name = 'facebook_server_auth_token_cache_factory'
   cache_factory = cache_tool.getRamCacheRoot().get(cache_factory_name)
   #XXX This conditional statement should be remove as soon as
   #Broadcasting will be enable among all zeo clients.
@@ -50,20 +50,27 @@ def _getCacheFactory(self):
     cache_tool.updateCache()
   return cache_tool.getRamCacheRoot().get(cache_factory_name)
 
-def Facebook_setServerToken(self, key, body):
-  cache_factory = _getCacheFactory(self)
+def setServerToken(self, key, body, cache_factory_name):
+  cache_factory = _getCacheFactory(self, cache_factory_name)
   cache_duration = cache_factory.cache_duration
   for cache_plugin in cache_factory.getCachePluginList():
     cache_plugin.set(key, DEFAULT_CACHE_SCOPE,
                      body, cache_duration=cache_duration)
 
-def Facebook_getServerToken(self, key):
-  cache_factory = _getCacheFactory(self)
+def getServerToken(self, key, cache_factory_name):
+  cache_factory = _getCacheFactory(self, cache_factory_name)
   for cache_plugin in cache_factory.getCachePluginList():
     cache_entry = cache_plugin.get(key, DEFAULT_CACHE_SCOPE)
     if cache_entry is not None:
       return cache_entry.getValue()
   raise KeyError('Key %r not found' % key)
+
+# Facebook AS
+def Facebook_setServerToken(self, key, body):
+  setServerToken(self, key, body, 'facebook_server_auth_token_cache_factory')
+
+def Facebook_getServerToken(self, key):
+  return getServerToken(self, key, 'facebook_server_auth_token_cache_factory')
 
 def Facebook_getAccessTokenFromCode(self, code, redirect_uri):
   return facebook.get_access_token_from_code(code=code,
