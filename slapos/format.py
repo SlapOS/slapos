@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2010, 2011 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
 from optparse import OptionParser, Option
 from xml_marshaller import xml_marshaller
 import ConfigParser

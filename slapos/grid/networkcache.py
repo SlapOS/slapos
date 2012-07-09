@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 ViFiB SARL and Contributors.
+# Copyright (c) 2010, 2011, 2012 ViFiB SARL and Contributors.
 # All Rights Reserved.
 #
 # This software is subject to the provisions of the Zope Public License,
