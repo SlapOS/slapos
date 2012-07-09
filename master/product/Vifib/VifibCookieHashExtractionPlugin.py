@@ -36,24 +36,6 @@ from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.PluggableAuthService.PluggableAuthService import DumbHTTPExtractor
 from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
 
-#Form for new plugin in ZMI
-manage_addVifibFacebookServerExtractionPluginForm = PageTemplateFile(
-  'www/Vifib_addVifibFacebookServerExtractionPlugin', globals(),
-  __name__='manage_addVifibFacebookServerExtractionPluginForm')
-
-def addVifibFacebookServerExtractionPlugin(dispatcher, id, title=None, REQUEST=None):
-  """ Add a VifibFacebookServerExtractionPlugin to a Pluggable Auth Service. """
-
-  plugin = VifibFacebookServerExtractionPlugin(id, title)
-  dispatcher._setObject(plugin.getId(), plugin)
-
-  if REQUEST is not None:
-      REQUEST['RESPONSE'].redirect(
-          '%s/manage_workspace'
-          '?manage_tabs_message='
-          'VifibFacebookServerExtractionPlugin+added.'
-          % dispatcher.absolute_url())
-
 class VifibCookieHashExtractionPlugin(BasePlugin):
   """
   Plugin to authenicate as machines.
@@ -116,6 +98,24 @@ class VifibCookieHashExtractionPlugin(BasePlugin):
         return creds
     return DumbHTTPExtractor().extractCredentials(request)
 
+#Form for new plugin in ZMI
+manage_addVifibFacebookServerExtractionPluginForm = PageTemplateFile(
+  'www/Vifib_addVifibFacebookServerExtractionPlugin', globals(),
+  __name__='manage_addVifibFacebookServerExtractionPluginForm')
+
+def addVifibFacebookServerExtractionPlugin(dispatcher, id, title=None, REQUEST=None):
+  """ Add a VifibFacebookServerExtractionPlugin to a Pluggable Auth Service. """
+
+  plugin = VifibFacebookServerExtractionPlugin(id, title)
+  dispatcher._setObject(plugin.getId(), plugin)
+
+  if REQUEST is not None:
+      REQUEST['RESPONSE'].redirect(
+          '%s/manage_workspace'
+          '?manage_tabs_message='
+          'VifibFacebookServerExtractionPlugin+added.'
+          % dispatcher.absolute_url())
+
 class VifibFacebookServerExtractionPlugin(VifibCookieHashExtractionPlugin):
   cache_factory_name = 'facebook_server_auth_token_cache_factory'
   cookie_name = '__ac_facebook_hash'
@@ -126,4 +126,33 @@ classImplements( VifibFacebookServerExtractionPlugin,
                 plugins.ILoginPasswordHostExtractionPlugin
                )
 InitializeClass(VifibFacebookServerExtractionPlugin)
+
+#Form for new plugin in ZMI
+manage_addVifibGoogleServerExtractionPluginForm = PageTemplateFile(
+  'www/Vifib_addVifibGoogleServerExtractionPlugin', globals(),
+  __name__='manage_addVifibGoogleServerExtractionPluginForm')
+
+def addVifibGoogleServerExtractionPlugin(dispatcher, id, title=None, REQUEST=None):
+  """ Add a VifibGoogleServerExtractionPlugin to a Pluggable Auth Service. """
+
+  plugin = VifibGoogleServerExtractionPlugin(id, title)
+  dispatcher._setObject(plugin.getId(), plugin)
+
+  if REQUEST is not None:
+      REQUEST['RESPONSE'].redirect(
+          '%s/manage_workspace'
+          '?manage_tabs_message='
+          'VifibGoogleServerExtractionPlugin+added.'
+          % dispatcher.absolute_url())
+
+class VifibGoogleServerExtractionPlugin(VifibCookieHashExtractionPlugin):
+  cache_factory_name = 'google_server_auth_token_cache_factory'
+  cookie_name = '__ac_google_hash'
+  meta_type = "Vifib Google Server Extraction Plugin"
+
+#List implementation of class
+classImplements( VifibGoogleServerExtractionPlugin,
+                plugins.ILoginPasswordHostExtractionPlugin
+               )
+InitializeClass(VifibGoogleServerExtractionPlugin)
 
