@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -23,37 +23,34 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-##############################################################################
+#############################################################################
+
 from slapos.recipe.librecipe import GenericBaseRecipe
-import binascii
-import os
-import sys
 
 class Recipe(GenericBaseRecipe):
-  """
-  kvm instance configuration.
-  """
-
-  def __init__(self, buildout, name, options):
-    options['key'] = binascii.hexlify(os.urandom(24))
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
-
   def install(self):
-    config = dict(
-      ip=self.options['ip'],
-      port=self.options['port'],
-      onetimeupload_path=self.options['onetimeupload-path'],
-      shell_path=self.options['shell-path'],
-      log_path=self.options['log-path'],
-      image=self.options['image-path'],
-      key=self.options['key'],
-    )
 
-    # Runners
-    runner_path = self.createExecutable(
-      self.options['path'],
-      self.substituteTemplate(self.getTemplateFilename('onetimeupload_run.in'),
+    config = {
+      'xvfb_binary': self.options['xvfb-path'],
+      'shell_path': self.options['shell-path'],
+      'fbdir_path': self.options['fbdir-path'],
+      'tmp_path': self.options['tmp-path'],
+      }
+
+    xvfb_path = self.createExecutable(
+      self.options['runner-path'],
+      self.substituteTemplate(self.getTemplateFilename('xvfb_run.in'),
                               config))
+    result = [xvfb_path]
 
-    return [runner_path]
+    # Allow to take screenshot if needed
+    if ('xwd-path' in self.options) and ('xwd-hook-path' in self.options):
+
+      config['xwd_binary'] = self.options['xwd-path']
+      result.append(self.createExecutable(
+        self.options['xwd-hook-path'],
+        self.substituteTemplate(self.getTemplateFilename('xwd_run.in'),
+                                config)))
+
+    return result
 
