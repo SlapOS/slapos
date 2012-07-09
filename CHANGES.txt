@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.27 (Unreleased)
+0.26.2 (Unreleased)
 -----------------
 
- * No change yet.
+ * Define UTF-8 encoding in SlapOS Node codebase, as defined in PEP-263.
 
 0.26.1 (2012-07-06)
 -----------------
