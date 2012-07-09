@@ -627,26 +627,15 @@ class Slapgrid(object):
           local_partition.stop()
           computer_partition.stopped()
         elif computer_partition_state == "destroyed":
-          # Stop, but safely
+          local_partition.stop()
           try:
-            local_partition.stop()
-            try:
-              computer_partition.stopped()
-            except (SystemExit, KeyboardInterrupt):
-              exception = traceback.format_exc()
-              computer_partition.error(exception)
-              raise
-            except Exception:
-              pass
+            computer_partition.stopped()
           except (SystemExit, KeyboardInterrupt):
             exception = traceback.format_exc()
             computer_partition.error(exception)
             raise
           except Exception:
-            clean_run = False
-            exception = traceback.format_exc()
-            logger.error(exception)
-            computer_partition.error(exception)
+            pass
         else:
           error_string = "Computer Partition %r has unsupported state: %s" % \
             (computer_partition_id, computer_partition_state)
@@ -656,10 +645,9 @@ class Slapgrid(object):
         exception = traceback.format_exc()
         computer_partition.error(exception)
         raise
-      except Exception:
+      except Exception as exception:
         clean_run = False
-        exception = traceback.format_exc()
-        logger.error(exception)
+        logger.error(traceback.format_exc())
         try:
           computer_partition.error(exception)
         except (SystemExit, KeyboardInterrupt):

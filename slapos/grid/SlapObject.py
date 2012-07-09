@@ -263,8 +263,6 @@ class Partition(object):
     """ Creates configuration file from template in software_path, then
     installs the software partition with the help of buildout
     """
-    # XXX: Shall be no op in case if revision had not changed
-    #      It requires implementation of revision on server
     self.logger.info("Installing Computer Partition %s..." \
         % self.computer_partition.getId())
     # Checks existence and permissions of Partition directory
@@ -283,7 +281,6 @@ class Partition(object):
     os.environ = utils.getCleanEnvironment(pwd.getpwuid(
       instance_stat_info.st_uid).pw_dir)
     # Generates buildout part from template
-    # TODO how to fetch the good template? Naming conventions?
     template_location = os.path.join(self.software_path, 'template.cfg')
     config_location = os.path.join(self.instance_path, 'buildout.cfg')
     self.logger.debug("Copying %r to %r" % (template_location, config_location))
