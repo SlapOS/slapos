@@ -133,11 +133,9 @@ def Facebook_getUserId(access_token):
   return facebook_entry['id'].encode('utf-8')
 
 def Google_getUserId(access_token):
-#  import ipdb ; ipdb.set_trace()
   timeout = socket.getdefaulttimeout()
   try:
-    # require really fast interaction
-#    socket.setdefaulttimeout(10)
+    socket.setdefaulttimeout(10)
     http = oauth2client.client.AccessTokenCredentials(access_token, 'Vifib'
       ).authorize(httplib2.Http())
     service = apiclient.discovery.build("oauth2", "v1", http=http)
