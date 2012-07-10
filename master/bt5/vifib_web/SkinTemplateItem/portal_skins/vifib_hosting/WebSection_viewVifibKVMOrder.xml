@@ -104,7 +104,8 @@
                     <key> <string>normal</string> </key>
                     <value>
                       <list>
-                        <string>your_user_preparation</string>
+                        <string>your_user_preparation_facebook</string>
+                        <string>your_user_preparation_google</string>
                       </list>
                     </value>
                 </item>

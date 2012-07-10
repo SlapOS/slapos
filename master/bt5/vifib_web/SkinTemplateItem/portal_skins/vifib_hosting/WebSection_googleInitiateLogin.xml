@@ -50,55 +50,24 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from DateTime import DateTime\n
+            <value> <string>from ZTUtils import make_query\n
+query = make_query({\n
+    \'response_type\': \'code\',\n
+    \'client_id\': context.portal_preferences.getPreferredVifibGoogleApplicationId(),\n
+    \'redirect_uri\': context.google_callback.absolute_url(),\n
+    \'scope\': \'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email\'\n
+})\n
 \n
-portal = context.getPortalObject()\n
-\n
-if portal.portal_activities.countMessageWithTag(tag) > 0:\n
-  return\n
-\n
-person = portal.ERP5Site_getAuthenticatedMemberPersonValue(reference)\n
-if person is not None:\n
-  return\n
-\n
-activate_kw={\'tag\': tag}\n
-person = portal.person_module.newContent(portal_type=\'Person\',\n
-  reference=reference,\n
-  first_name=first_name,\n
-  last_name=last_name,\n
-  default_email_coordinate_text=email,\n
-  activate_kw=activate_kw)\n
-\n
-person.validate(activate_kw=activate_kw)\n
-\n
-assignment_duration = portal.portal_preferences.getPreferredCredentialAssignmentDuration()\n
-today = DateTime()\n
-delay = today + assignment_duration\n
-\n
-category_list = portal.portal_preferences.getPreferredSubscriptionAssignmentCategoryList()\n
-\n
-assignment = person.newContent(\n
-        portal_type=\'Assignment\',\n
-        category_list=category_list,\n
-        start_date = today,\n
-        stop_date = delay,\n
-        activate_kw=activate_kw)\n
-assignment.open(activate_kw=activate_kw)\n
-\n
-person.setRoleList(assignment.getRoleList())\n
-
-
-]]></string> </value>
+context.REQUEST.RESPONSE.redirect(\'\'\'https://accounts.google.com/o/oauth2/auth?\'\'\' + query)\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, first_name, last_name, reference, email</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_createOauth2User</string> </value>
+            <value> <string>WebSection_googleInitiateLogin</string> </value>
         </item>
       </dictionary>
     </pickle>

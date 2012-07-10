@@ -65,7 +65,7 @@ elif get(\'code\') is not None:\n
     hash = context.Base_getHMAC(access_token, access_token)\n
     context.REQUEST.RESPONSE.setCookie(\'__ac_facebook_hash\', hash, path=\'/\')\n
     context.Facebook_setServerToken(hash, access_token_dict)\n
-    return context.Base_redirect(context.getWebSiteValue().absolute_url())\n
+    return context.REQUEST.RESPONSE.redirect(context.getWebSiteValue().absolute_url())\n
 return handleError()\n
 </string> </value>
         </item>

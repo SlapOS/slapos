@@ -29,7 +29,13 @@ import subprocess
 import facebook
 from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
 import httplib
+import urllib
 import urlparse
+import json
+import apiclient.discovery
+import httplib2
+import oauth2client.client
+import socket
 
 def formatXml(self, xml):
   """Simple way to have nicely formatted XML"""
@@ -78,9 +84,72 @@ def Facebook_getAccessTokenFromCode(self, code, redirect_uri):
     app_id=self.portal_preferences.getPreferredVifibFacebookApplicationId(),
     app_secret=self.portal_preferences.getPreferredVifibFacebookApplicationSecret())
 
+# Google AS
+def Google_setServerToken(self, key, body):
+  setServerToken(self, key, body, 'google_server_auth_token_cache_factory')
+
+def Google_getServerToken(self, key):
+  return getServerToken(self, key, 'google_server_auth_token_cache_factory')
+
+def Facebook_getAccessTokenFromCode(self, code, redirect_uri):
+  return facebook.get_access_token_from_code(code=code,
+    redirect_uri=redirect_uri,
+    app_id=self.portal_preferences.getPreferredVifibFacebookApplicationId(),
+    app_secret=self.portal_preferences.getPreferredVifibFacebookApplicationSecret())
+
+def Google_getAccessTokenFromCode(self, code, redirect_uri):
+  connection_kw = {'host': 'accounts.google.com', 'timeout': 30}
+  connection = httplib.HTTPSConnection(**connection_kw)
+  data = {
+      'client_id': self.portal_preferences.getPreferredVifibGoogleApplicationId(),
+      'client_secret': self.portal_preferences.getPreferredVifibGoogleApplicationSecret(),
+      'grant_type': 'authorization_code',
+      'redirect_uri': redirect_uri,
+      'code': code
+      }
+  data = urllib.urlencode(data)
+  headers = {
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Accept": "*/*"
+  }
+  connection.request('POST', '/o/oauth2/token', data, headers)
+  response = connection.getresponse()
+
+  if response.status != 200:
+    return None
+
+  try:
+    body = json.loads(response.read())
+  except Exception:
+    return None
+
+  try:
+    return body
+  except Exception:
+    return None
+
 def Facebook_getUserId(access_token):
   facebook_entry = facebook.GraphAPI(access_token).get_object("me")
   return facebook_entry['id'].encode('utf-8')
+
+def Google_getUserId(access_token):
+#  import ipdb ; ipdb.set_trace()
+  timeout = socket.getdefaulttimeout()
+  try:
+    # require really fast interaction
+#    socket.setdefaulttimeout(10)
+    http = oauth2client.client.AccessTokenCredentials(access_token, 'Vifib'
+      ).authorize(httplib2.Http())
+    service = apiclient.discovery.build("oauth2", "v1", http=http)
+    google_entry = service.userinfo().get().execute()
+  except Exception:
+    google_entry = None
+  finally:
+    socket.setdefaulttimeout(timeout)
+
+  if google_entry is not None:
+    return google_entry['id'].encode('utf-8')
+  return None
 
 def Facebook_checkUserExistence(self):
   hash = self.REQUEST.get('__ac_facebook_hash')
@@ -90,13 +159,34 @@ def Facebook_checkUserExistence(self):
     return False
   access_token = access_token_dict.get('access_token')
   url = urlparse.urlsplit(self.portal_preferences.getPreferredVifibRestApiLoginCheck())
-  connection_kw = {'host': url.netloc, 'timeout': 5}
+  connection_kw = {'host': url.netloc, 'timeout': 30}
   if url.scheme == 'http':
     connection = httplib.HTTPConnection(**connection_kw)
   else:
     connection = httplib.HTTPSConnection(**connection_kw)
   connection.request('GET', url.path, headers = {
       'Authorization' : 'Facebook %s' % access_token,
+      'Accept': 'application/json'})
+  response = connection.getresponse()
+
+  # user exist if server gave some correct response without waiting for user
+  return response.status in (200, 204)
+
+def Google_checkUserExistence(self):
+  hash = self.REQUEST.get('__ac_google_hash')
+  try:
+    access_token_dict = Google_getServerToken(self, hash)
+  except KeyError:
+    return False
+  access_token = access_token_dict.get('access_token')
+  url = urlparse.urlsplit(self.portal_preferences.getPreferredVifibRestApiLoginCheck())
+  connection_kw = {'host': url.netloc, 'timeout': 30}
+  if url.scheme == 'http':
+    connection = httplib.HTTPConnection(**connection_kw)
+  else:
+    connection = httplib.HTTPSConnection(**connection_kw)
+  connection.request('GET', url.path, headers = {
+      'Authorization' : 'Google %s' % access_token,
       'Accept': 'application/json'})
   response = connection.getresponse()
 
