@@ -243,6 +243,7 @@ tmp = ${buildout:directory}/tmp
 recipe = slapos.cookbook:mkdirectory
 log = ${rootdirectory:var}/log
 services = ${rootdirectory:etc}/run
+promises = ${rootdirectory:etc}/promise/
 run = ${rootdirectory:var}/run
 backup = ${rootdirectory:srv}/backup
 bt5-erp5 = ${rootdirectory:var}/bt5_erp5
@@ -289,3 +290,10 @@ crontabs = ${rootdirectory:etc}/crontabs
 cronstamps = ${rootdirectory:etc}/cronstamps
 logrotate-backup = ${basedirectory:backup}/logrotate
 logrotate-entries = ${rootdirectory:etc}/logrotate.d
+
+# Deploy zope promises scripts
+[promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${basedirectory:promises}/zope
+hostname = ${zope-instance:ip}
+port = ${zope-instance:port}
