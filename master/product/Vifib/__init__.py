@@ -88,8 +88,18 @@ def initialize(context):
                          , icon='www/portal.gif'
                          )
 
+  context.registerClass( VifibCookieHashExtractionPlugin.VifibBrowserIDExtractionPlugin
+                         , permission=ManageUsers
+                         , constructors=(
+                            VifibCookieHashExtractionPlugin.manage_addVifibBrowserIDExtractionPluginForm,
+                            VifibCookieHashExtractionPlugin.addVifibBrowserIDExtractionPlugin, )
+                         , visibility=None
+                         , icon='www/portal.gif'
+                         )
+
 
 registerMultiPlugin(VifibMachineAuthenticationPlugin.VifibMachineAuthenticationPlugin.meta_type)
 registerMultiPlugin(VifibShadowAuthenticationPlugin.VifibShadowAuthenticationPlugin.meta_type)
 registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibFacebookServerExtractionPlugin.meta_type)
 registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibGoogleServerExtractionPlugin.meta_type)
+registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibBrowserIDExtractionPlugin.meta_type)

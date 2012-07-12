@@ -180,6 +180,7 @@ if REQUEST.has_key(\'portal_skin\'):\n
 REQUEST.RESPONSE.expireCookie(\'__ac\', path=\'/\')\n
 REQUEST.RESPONSE.expireCookie(\'__ac_facebook_hash\', path=\'/\')\n
 REQUEST.RESPONSE.expireCookie(\'__ac_google_hash\', path=\'/\')\n
+REQUEST.RESPONSE.expireCookie(\'__ac_browser_id_hash\', path=\'/\')\n
 msg = context.Base_translateString(\'You have been logged out. Thank you for using this website.\')\n
 return website.Base_redirect(form_id, keep_items = {\'portal_status_message\' : msg},  **kw)\n
 </string> </value>

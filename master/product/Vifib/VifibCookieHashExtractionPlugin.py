@@ -156,3 +156,32 @@ classImplements( VifibGoogleServerExtractionPlugin,
                )
 InitializeClass(VifibGoogleServerExtractionPlugin)
 
+#Form for new plugin in ZMI
+manage_addVifibBrowserIDExtractionPluginForm = PageTemplateFile(
+  'www/Vifib_addVifibBrowserIDExtractionPlugin', globals(),
+  __name__='manage_addVifibBrowserIDExtractionPluginForm')
+
+def addVifibBrowserIDExtractionPlugin(dispatcher, id, title=None, REQUEST=None):
+  """ Add a VifibBrowserIDExtractionPlugin to a Pluggable Auth Service. """
+
+  plugin = VifibBrowserIDExtractionPlugin(id, title)
+  dispatcher._setObject(plugin.getId(), plugin)
+
+  if REQUEST is not None:
+      REQUEST['RESPONSE'].redirect(
+          '%s/manage_workspace'
+          '?manage_tabs_message='
+          'VifibBrowserIDExtractionPlugin+added.'
+          % dispatcher.absolute_url())
+
+class VifibBrowserIDExtractionPlugin(VifibCookieHashExtractionPlugin):
+  cache_factory_name = 'browser_id_auth_token_cache_factory'
+  cookie_name = '__ac_browser_id_hash'
+  meta_type = "Vifib Browser ID Extraction Plugin"
+
+#List implementation of class
+classImplements( VifibBrowserIDExtractionPlugin,
+                plugins.ILoginPasswordHostExtractionPlugin
+               )
+InitializeClass(VifibBrowserIDExtractionPlugin)
+
