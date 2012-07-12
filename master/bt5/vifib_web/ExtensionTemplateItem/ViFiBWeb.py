@@ -93,12 +93,6 @@ def Google_setServerToken(self, key, body):
 def Google_getServerToken(self, key):
   return getServerToken(self, key, 'google_server_auth_token_cache_factory')
 
-def Facebook_getAccessTokenFromCode(self, code, redirect_uri):
-  return facebook.get_access_token_from_code(code=code,
-    redirect_uri=redirect_uri,
-    app_id=self.portal_preferences.getPreferredVifibFacebookApplicationId(),
-    app_secret=self.portal_preferences.getPreferredVifibFacebookApplicationSecret())
-
 def Google_getAccessTokenFromCode(self, code, redirect_uri):
   connection_kw = {'host': 'accounts.google.com', 'timeout': 30}
   connection = httplib.HTTPSConnection(**connection_kw)
