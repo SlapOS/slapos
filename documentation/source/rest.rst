@@ -14,6 +14,8 @@ be proposed by library.
 Internal authentication
 +++++++++++++++++++++++
 
+**Note**: This authentication mechanism will change. Avoid implementation for now.
+
 In case if client of API does not fulfill X509 authentication it has a chance
 to use token based authentication (after obtaining proper token).
 
