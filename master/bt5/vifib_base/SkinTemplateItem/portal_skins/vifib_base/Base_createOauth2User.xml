@@ -54,6 +54,10 @@
 
 from DateTime import DateTime\n
 \n
+if context.REQUEST.get(\'Base_createOauth2User\') is not None:\n
+ return\n
+\n
+context.REQUEST.set(\'Base_createOauth2User\', 1)\n
 portal = context.getPortalObject()\n
 \n
 if portal.portal_activities.countMessageWithTag(tag) > 0:\n
