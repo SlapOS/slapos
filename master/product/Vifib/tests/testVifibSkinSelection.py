@@ -123,7 +123,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -223,7 +223,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -325,7 +325,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -422,7 +422,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -516,7 +516,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -610,7 +610,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -708,7 +708,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -805,7 +805,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -899,7 +899,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -992,7 +992,7 @@ vifib_open_trade
 vifib_payzen
 vifib_simulation
 vifib_slap
-vifib_slapos_rest_api_v1
+vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
