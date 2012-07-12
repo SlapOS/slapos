@@ -31,27 +31,40 @@ Example of using Bearer token::
   Authorization: Bearer 7Fjfp0ZBr1KtDRbnfVdmIw
 
 
-Facebook authentication
+External authentication
 +++++++++++++++++++++++
 
-It is possible to use Facebook as Authorisation Server in Oauth 2.0
-architecture. Client shall fetch `access_token` as described in
-https://developers.facebook.com/docs/authentication/client-side/ and later use
-it as in specially crafted `Authorization` header::
+It is possible to use Facebook and Google as Authorization Server with Oauth 2.0
+access tokens.  Client shall fetch `access_token` as described in:
+
+ * https://developers.facebook.com/docs/authentication/client-side/ (Facebook)
+ * https://developers.google.com/accounts/docs/OAuth2Login (Google)
+
+Such token shall be passed in `Authorization` header, in case of Facebook::
 
   GET /api/v1/instance/{instance_id} HTTP/1.1
   Host: example.com
   Accept: application/json
-  Authorization: Facebook access_token_from_facebook
+  Authorization: Facebook retrieved_access_token
 
-The client is responsible for having its own Facebook application ID and
+and in case of Google::
+
+  GET /api/v1/instance/{instance_id} HTTP/1.1
+  Host: example.com
+  Accept: application/json
+  Authorization: Google retrieved_access_token
+
+
+The client is responsible for having its own application ID and
 configure it that user basic information and email will be available after
 using `access_token`, for example by fetching token after query like::
 
   https://www.facebook.com/dialog/oauth?client_id=FB_ID&response_type=token&redirect_uri=APP_URL&scope=email
 
-Server will contact with Facebook and use the logged in user profile. Facebook
-is trusted by server.
+While passing access token Vifib.net server will contact proper Authorization
+Server (Google or Facebook) and use proper user profile. In case of first time
+usage of the service the user will be automatically created, so application
+shall be prepared to support HTTP ``"202 Accepted"`` code, as described in `Response status code`_.
 
 Exchange format
 ---------------
