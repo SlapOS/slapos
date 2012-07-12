@@ -82,8 +82,6 @@ Exchange format
 
 SlapOS master will support both XML and JSON formats for input and output.
 
-The Accept header is required and responsible for format selection.
-
 Response status code
 --------------------
 
