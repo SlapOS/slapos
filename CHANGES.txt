@@ -1,9 +1,10 @@
 Changes
 =======
 
-0.59 (Unreleased)
+0.59 (2012-07-12)
 -----------------
 
+  * Zabbix: add temperature monitoring using custom commands.
 
 0.58 (2012-07-06)
 -----------------
