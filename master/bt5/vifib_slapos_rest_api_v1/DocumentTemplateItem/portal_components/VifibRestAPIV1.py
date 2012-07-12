@@ -254,8 +254,7 @@ class InstancePublisher(GenericPublisher):
   """Instance publisher"""
 
   @responseSupport()
-  @requireHeader({'Accept': 'application/json',
-    'Content-Type': '^application/json.*'})
+  @requireHeader({'Content-Type': '^application/json.*'})
   @requireJson(dict(
     title=(unicode, encode_utf8),
     connection=dict
@@ -290,8 +289,7 @@ class InstancePublisher(GenericPublisher):
         self.REQUEST.response.setBody(jsonify(d))
     return self.REQUEST.response
 
-  @requireHeader({'Accept': 'application/json',
-    'Content-Type': '^application/json.*'})
+  @requireHeader({'Content-Type': '^application/json.*'})
   @requireJson(dict(log=unicode))
   @extractDocument(['Software Instance', 'Slave Instance'])
   def __bang(self):
@@ -308,8 +306,7 @@ class InstancePublisher(GenericPublisher):
       self.REQUEST.response.setStatus(204)
     return self.REQUEST.response
 
-  @requireHeader({'Accept': 'application/json',
-    'Content-Type': '^application/json.*'})
+  @requireHeader({'Content-Type': '^application/json.*'})
   @requireJson(dict(
     slave=bool,
     software_release=(unicode, encode_utf8),
@@ -353,7 +350,6 @@ class InstancePublisher(GenericPublisher):
     self.REQUEST.response.setBody(jsonify({'status':'processing'}))
     return self.REQUEST.response
 
-  @requireHeader({'Accept': 'application/json'})
   @extractDocument(['Software Instance', 'Slave Instance'])
   @supportModifiedSince('document_url')
   def __instance_info(self):
@@ -407,7 +403,6 @@ class InstancePublisher(GenericPublisher):
     return self.REQUEST.response
 
   software_instance_module = 'software_instance_module'
-  @requireHeader({'Accept': 'application/json'})
   def __instance_list(self):
     kw = dict(
       portal_type=('Software Instance', 'Slave Instance'),
@@ -444,8 +439,7 @@ class InstancePublisher(GenericPublisher):
 
 class ComputerPublisher(GenericPublisher):
   @responseSupport()
-  @requireHeader({'Accept': 'application/json',
-    'Content-Type': '^application/json.*'})
+  @requireHeader({'Content-Type': '^application/json.*'})
   @extractDocument('Computer')
   @requireJson(dict(
     partition=list,
@@ -529,7 +523,6 @@ class VifibRestAPIV1(Implicit):
 
   security.declarePublic('__call__')
   @responseSupport(True)
-  @requireHeader({'Accept': 'application/json'})
   def __call__(self):
     """Possible API discovery"""
     self.REQUEST.response.setStatus(400)
