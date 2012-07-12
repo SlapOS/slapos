@@ -20,7 +20,7 @@ In case if client of API does not fulfill X509 authentication it has a chance
 to use token based authentication (after obtaining proper token).
 
 Client application HAVE TO use ``"Authorization"`` header, even if OAuth-2
-allows other ways (like hvaing token in GET parameter or as form one).
+allows other ways (like having token in GET parameter or as form one).
 They were not implemented as begin fragile from security point of view.
 
 Example of using Bearer token::
@@ -141,7 +141,7 @@ Introsepcation Methods
 Fetching list of access urls
 ----------------------------
 
-Explain acccess points in dictionary.
+Explain access points in dictionary.
 
 Client is expected to ask about connection points before doing any request.
 
@@ -153,7 +153,7 @@ In case if client does not support exposed mapping it is allowed to ignore
 them.
 
 Client shall be aware that one API can be spanned across many servers and that
-all urls are given as abolute ones.
+all urls are given as absolute ones.
 
 Endpoint to invoke required action is in ``url`` object, where values in
 ``{}`` shall be replaced with corresponding access urls. For example
