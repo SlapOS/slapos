@@ -211,7 +211,8 @@ class Computer(object):
       return self.interface.addAddr()
 
     # Can't find address
-    return False
+    raise NoAddressOnInterface('No valid IPv6 found on %s.' % 
+        self.interface.name)
 
   def send(self, config):
     """
