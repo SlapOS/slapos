@@ -52,12 +52,8 @@ class VifibRestApiTool(BaseTool):
   def v1(self):
     """API hooked"""
     # XXX: It could be done better (more dynamic, configurable from UI)
-    try:
-      from erp5.component.document.VifibRestAPIV1 import VifibRestAPIV1
-    except ImportError:
-      return ''
-    else:
-      return VifibRestAPIV1().__of__(self)
+    from erp5.component.document.VifibRestAPIV1 import VifibRestAPIV1
+    return VifibRestAPIV1().__of__(self)
 
   security.declarePrivate('manage_afterAdd')
   def manage_afterAdd(self, item, container) :
