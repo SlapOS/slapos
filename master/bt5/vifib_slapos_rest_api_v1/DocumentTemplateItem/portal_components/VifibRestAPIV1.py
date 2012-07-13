@@ -187,7 +187,7 @@ def responseSupport(anonymous=False):
             str(user_name))
           if len(user_document) != 1:
             transaction.abort()
-            LOG('VifibRestApiV1Tool', ERROR,
+            LOG('VifibRestApiV1', ERROR,
               'Currenty logged in user %r wrong document list %r.'%
                 (user_name, user_document))
             self.REQUEST.response.setStatus(500)
@@ -217,13 +217,13 @@ def extractDocument(portal_type):
             portal_type)))
         self.document_url = document.getRelativeUrl()
       except WrongRequest:
-        LOG('VifibRestApiV1Tool', ERROR,
+        LOG('VifibRestApiV1', ERROR,
           'Problem while trying to find document:', error=True)
         self.REQUEST.response.setStatus(404)
       except (Unauthorized, KeyError):
         self.REQUEST.response.setStatus(404)
       except Exception:
-        LOG('VifibRestApiV1Tool', ERROR,
+        LOG('VifibRestApiV1', ERROR,
           'Problem while trying to find instance:', error=True)
         self.REQUEST.response.setStatus(500)
         self.REQUEST.response.setBody(jsonify({'error':
@@ -279,7 +279,7 @@ class InstancePublisher(GenericPublisher):
           self.REQUEST.response.setStatus(200)
     except Exception:
       transaction.abort()
-      LOG('VifibRestApiV1Tool', ERROR,
+      LOG('VifibRestApiV1', ERROR,
         'Problem while modifying:', error=True)
       self.REQUEST.response.setStatus(500)
       self.REQUEST.response.setBody(jsonify({'error':
@@ -297,7 +297,7 @@ class InstancePublisher(GenericPublisher):
       self.restrictedTraverse(self.document_url
         ).bang(bang_tree=True, comment=self.jbody['log'])
     except Exception:
-      LOG('VifibRestApiV1Tool', ERROR,
+      LOG('VifibRestApiV1', ERROR,
         'Problem while trying to generate instance dict:', error=True)
       self.REQUEST.response.setStatus(500)
       self.REQUEST.response.setBody(jsonify({'error':
@@ -339,7 +339,7 @@ class InstancePublisher(GenericPublisher):
         ).requestSoftwareInstance(**request_dict)
     except Exception:
       transaction.abort()
-      LOG('VifibRestApiV1Tool', ERROR,
+      LOG('VifibRestApiV1', ERROR,
         'Problem with person.requestSoftwareInstance:', error=True)
       self.REQUEST.response.setStatus(500)
       self.REQUEST.response.setBody(jsonify({'error':
@@ -383,7 +383,7 @@ class InstancePublisher(GenericPublisher):
           }
         }
     except Exception:
-      LOG('VifibRestApiV1Tool', ERROR,
+      LOG('VifibRestApiV1', ERROR,
         'Problem while trying to generate instance dict:', error=True)
       self.REQUEST.response.setStatus(500)
       self.REQUEST.response.setBody(jsonify({'error':
@@ -490,7 +490,7 @@ class ComputerPublisher(GenericPublisher):
         computer.Computer_updateFromJson(self.jbody)
       except Exception:
         transaction.abort()
-        LOG('VifibRestApiV1Tool', ERROR,
+        LOG('VifibRestApiV1', ERROR,
           'Problem while trying to update computer:', error=True)
         self.REQUEST.response.setStatus(500)
         self.REQUEST.response.setBody(jsonify({'error':
