@@ -1148,7 +1148,8 @@ class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
       .bobobase_modification_time())
     self.assertEqual(calculated, self.response.getheader('Last-Modified'))
 
-  def test(self):
+  def test_no_cache(self):
+    # version of test which ignores cache to expose possible other errors
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance']),
       headers={'REMOTE_USER': self.customer_reference})
@@ -1156,13 +1157,16 @@ class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
     self.assertBasicResponse()
     self.assertResponseCode(200)
     self.assertResponseJson()
-    self.assertLastModifiedHeader()
-    self.assertCacheControlHeader()
     self.assertEqual({
       "list": ['/'.join([self.api_url, 'instance',
         self.software_instance.getRelativeUrl()])]
       },
       self.json_response)
+
+  def test(self):
+    self.test_no_cache()
+    self.assertLastModifiedHeader()
+    self.assertCacheControlHeader()
 
   def test_if_modified_since_equal(self):
     self.connection.request(method='GET',
