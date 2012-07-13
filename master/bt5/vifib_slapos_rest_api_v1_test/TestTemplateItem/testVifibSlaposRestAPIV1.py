@@ -71,7 +71,7 @@ class VifibSlaposRestAPIV1MixinBase(TestVifibSlapWebServiceMixin):
     self.document_list = []
     self.portal = self.getPortalObject()
 
-    self.api_url = self.portal.portal_vifib_rest_api_v1.absolute_url()
+    self.api_url = self.portal.portal_vifib_rest_api.v1.getAPIRoot()
     self.api_scheme, self.api_netloc, self.api_path, self.api_query, \
       self.api_fragment = urlparse.urlsplit(self.api_url)
 
