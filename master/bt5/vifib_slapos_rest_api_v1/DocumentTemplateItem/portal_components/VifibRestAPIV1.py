@@ -395,7 +395,6 @@ class InstancePublisher(GenericPublisher):
       self.REQUEST.response.setBody(jsonify(d))
     return self.REQUEST.response
 
-  software_instance_module = 'software_instance_module'
   def __instance_list(self):
     kw = dict(
       portal_type=('Software Instance', 'Slave Instance'),
