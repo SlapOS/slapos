@@ -74,7 +74,7 @@ def requireHeader(header_dict):
     return wrapperRequireHeader
   return outer
 
-def supportModifiedSince(document_url_id=None, modified_property_id=None):
+def supportModifiedSince(document_url_id):
   def outer(fn):
     def wrapperSupportModifiedSince(self, *args, **kwargs):
       modified_since = self.REQUEST.getHeader('If-Modified-Since')
@@ -90,16 +90,9 @@ def supportModifiedSince(document_url_id=None, modified_property_id=None):
             # client send date before current time, shall continue and
             # compare with second precision, as client by default shall set
             # If-Modified-Since to last known Last-Modified value
-            document = None
-            if document_url_id is None and modified_property_id is None:
-              document = self
-            elif document_url_id is not None:
-              document = self.restrictedTraverse(getattr(self, document_url_id))
-            else:
-              document_date = getattr(self, modified_property_id)
-            if document is not None:
-              document_date = document.getModificationDate() or \
-                document.bobobase_modification_time()
+            document = self.restrictedTraverse(getattr(self, document_url_id))
+            document_date = document.getModificationDate() or \
+              document.bobobase_modification_time()
             if int(document_date.timeTime()) <= int(modified_since.timeTime()):
               # document was not modified since
               self.REQUEST.response.setStatus(304)
