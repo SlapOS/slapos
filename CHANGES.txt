@@ -4,6 +4,9 @@ Changes
 0.26.3 (Unreleased)
 -----------------
 
+ * slapformat: Raise correct error when no IPv6 is available on selected
+   interface.
+
 0.26.2 (2012-07-09)
 -----------------
 
