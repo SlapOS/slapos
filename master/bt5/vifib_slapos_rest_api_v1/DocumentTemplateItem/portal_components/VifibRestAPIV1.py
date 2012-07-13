@@ -176,7 +176,7 @@ def responseSupport(anonymous=False):
             # force login
             self.REQUEST.response.setStatus(401)
             self.REQUEST.response.setHeader('WWW-Authenticate', 'Bearer realm="%s"'%
-              self.absolute_url())
+              self.getAPIRoot())
             self.REQUEST.response.setHeader('Location', self.getPortalObject()\
               .portal_preferences.getPreferredRestApiTokenServerUrl())
           return self.REQUEST.response
@@ -374,8 +374,8 @@ class InstancePublisher(GenericPublisher):
           "connection": software_instance.getConnectionXmlAsDict(),
           "parameter": software_instance.getInstanceXmlAsDict(),
           "sla": software_instance.getSlaXmlAsDict(),
-          "children_list": [q.absolute_url() for q in \
-            software_instance.getPredecessorValueList()],
+          "children_list": [self.getAPIRoot() + '/' + q.getRelativeUrl() \
+            for q in software_instance.getPredecessorValueList()],
           "partition": { # not ready yet
             "public_ip": [],
             "private_ip": [],
@@ -410,7 +410,7 @@ class InstancePublisher(GenericPublisher):
     d = {"list": []}
     a = d['list'].append
     for si in self.getPortalObject().portal_catalog(**kw):
-      a('/'.join([self.absolute_url(), 'instance', si.getRelativeUrl()]))
+      a('/'.join([self.getAPIRoot(), 'instance', si.getRelativeUrl()]))
     try:
       d['list'][0]
     except IndexError:
@@ -504,6 +504,12 @@ class VifibRestAPIV1(Implicit):
   security = ClassSecurityInfo()
   security.declareObjectProtected(Permissions.AccessContentsInformation)
   security.declarePublic('instance')
+
+  security.declarePublic('getAPIRoot')
+  def getAPIRoot(self):
+    """Returns the root of API"""
+    return self.absolute_url() + '/v1'
+
   @ComputedAttribute
   def instance(self):
     """Instance publisher"""
