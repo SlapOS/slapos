@@ -11,7 +11,6 @@ import os
 from App.Common import rfc1123_date
 from DateTime import DateTime
 import time
-from Products.ERP5Type.tests.backportUnittest import skip
 
 class Simulator:
   def __init__(self, outfile, method):
@@ -411,7 +410,6 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
       self.json_response)
     self.assertPersonRequestSimulatorEmpty()
 
-  @skip("Temporary disabled to reduce error numbers in global tests")
   def test_content_negotiation_headers(self):
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
       custom_header={
@@ -653,7 +651,6 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
       "sla": {"computer_guid": "SOMECOMP"}},
       self.json_response)
 
-  @skip("Temporary disabled to reduce error numbers in global tests")
   def test_if_modified_since_date_not_date(self):
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance',
@@ -1169,7 +1166,6 @@ class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
       },
       self.json_response)
 
-  @skip("Temporary disabled to reduce error numbers in global tests")
   def test_if_modified_since_equal(self):
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance']),
