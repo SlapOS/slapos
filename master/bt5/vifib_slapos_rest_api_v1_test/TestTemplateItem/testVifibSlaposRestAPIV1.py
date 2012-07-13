@@ -487,7 +487,8 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
     software_instance.edit(
       reference='SI' + self.test_random_id,
       ssl_key='SSL Key',
-      ssl_certificate='SSL Certificate'
+      ssl_certificate='SSL Certificate',
+      root_software_release_url='http://url.of.software.release/'
     )
     software_instance.validate()
     hosting_subscription.edit(
@@ -581,7 +582,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
       "parameter": {
         "parameter1": "valueof1",
         "parameter2": "valueof2"},
-      "software_release": "",
+      "software_release": "http://url.of.software.release/",
       "sla": {"computer_guid": "SOMECOMP"}},
       self.json_response)
 
@@ -644,7 +645,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
       "parameter": {
         "parameter1": "valueof1",
         "parameter2": "valueof2"},
-      "software_release": "",
+      "software_release": "http://url.of.software.release/",
       "sla": {"computer_guid": "SOMECOMP"}},
       self.json_response)
 
@@ -676,7 +677,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
       "parameter": {
         "parameter1": "valueof1",
         "parameter2": "valueof2"},
-      "software_release": "",
+      "software_release": "http://url.of.software.release/",
       "sla": {"computer_guid": "SOMECOMP"}},
       self.json_response)
 
@@ -708,7 +709,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
       "parameter": {
         "parameter1": "valueof1",
         "parameter2": "valueof2"},
-      "software_release": "",
+      "software_release": "http://url.of.software.release/",
       "sla": {"computer_guid": "SOMECOMP"}},
       self.json_response)
 
