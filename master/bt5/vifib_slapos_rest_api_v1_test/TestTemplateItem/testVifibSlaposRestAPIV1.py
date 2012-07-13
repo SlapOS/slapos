@@ -436,8 +436,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertResponseCode(400)
     self.assertResponseJson()
     self.assertEqual({
-      'Content-Type': "Header with value 'application/json' is required.",
-      'Accept': "Header with value 'application/json' is required."},
+      'Content-Type': "Header with value '^application/json.*' is required."},
       self.json_response)
     self.assertPersonRequestSimulatorEmpty()
 
@@ -447,14 +446,13 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
       body=json.dumps(kwargs),
       headers={'REMOTE_USER': self.customer_reference,
         'Content-Type': 'please/complain',
-        'Accept': 'please/complain'})
+        'Accept': 'be/silent'})
     self.prepareResponse()
     self.assertBasicResponse()
     self.assertResponseCode(400)
     self.assertResponseJson()
     self.assertEqual({
-      'Content-Type': "Header with value 'application/json' is required.",
-      'Accept': "Header with value 'application/json' is required."},
+      'Content-Type': "Header with value '^application/json.*' is required."},
       self.json_response)
     self.assertPersonRequestSimulatorEmpty()
     # and with correct ones are set by default
