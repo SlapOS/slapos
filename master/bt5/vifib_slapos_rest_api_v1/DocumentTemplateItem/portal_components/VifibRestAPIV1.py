@@ -368,7 +368,7 @@ class InstancePublisher(GenericPublisher):
         d = {
           "title": software_instance.getTitle(),
           "status": software_instance.getSlapState(),
-          "software_release": "", # not ready yet
+          "software_release": software_instance.getRootSoftwareReleaseUrl(),
           "software_type": software_instance.getSourceReference(),
           "slave": software_instance.getPortalType() == 'Slave Instance',
           "connection": software_instance.getConnectionXmlAsDict(),
@@ -498,7 +498,6 @@ class ComputerPublisher(GenericPublisher):
         return self.REQUEST.response
     self.REQUEST.response.setStatus(204)
     return self.REQUEST.response
-
 
 class VifibRestAPIV1(Implicit):
   security = ClassSecurityInfo()
