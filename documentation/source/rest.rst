@@ -77,6 +77,22 @@ Server (Google or Facebook) and use proper user profile. In case of first time
 usage of the service the user will be automatically created, so application
 shall be prepared to support HTTP ``"202 Accepted"`` code, as described in `Response status code`_.
 
+Facebook notes
+~~~~~~~~~~~~~~
+
+While requesting Facebook access token it is required to set ``scope`` value
+to ``email``.
+
+Vifib.net will use those data to create users.
+
+Google notes
+~~~~~~~~~~~~
+
+While requesting Google access token it is required to set ``scope`` value
+to ``https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email``.
+
+Vifib.net will use those data to create users.
+
 Exchange format
 ---------------
 
