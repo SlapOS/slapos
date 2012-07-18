@@ -2,7 +2,6 @@
 [buildout]
 parts =
   publish-cloudooo-connection-information
-  cloudooo-instance
   cloudooo-test-runner
 
 eggs-directory = {{ eggs_directory }}
