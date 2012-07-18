@@ -123,6 +123,20 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     help="Launch slapgrid without delay.")
   parser.add_argument("--develop", action="store_true", default=False,
     help="Launch slapgrid in develop mode. In develop mode, slapgrid-sr ignores .completed file")
+  parser.add_argument("--only_sr", 
+    help="Force the update of a single software release (use url hash)," + \
+         "event if is already installed. This option will make all others " + \
+         "sofware releases be ignored")
+  parser.add_argument("--only_cp", 
+    help="Update a single or a list of computer partition (ie.:slappartX, slappartY)," + \
+         "this option will make all others sofware releases be ignored")
+  parser.add_argument("--only_sr",
+    help="Force the update of a single software release (use url hash)," + \
+         "event if is already installed. This option will make all others " + \
+         "sofware releases be ignored")
+  parser.add_argument("--only_cp",
+    help="Update a single or a list of computer partitions (ie.:slappartX, slappartY)," + \
+         "this option will make all others computer partitions be ignored")
 
   # Parses arguments
   if argument_tuple == ():
