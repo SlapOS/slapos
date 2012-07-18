@@ -134,6 +134,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
          "(ie.:slappartX, slappartY),"
          "this option will make all others computer partitions be ignored.")
 
+
   # Parses arguments
   if argument_tuple == ():
     # No arguments given to entry point : we parse sys.argv.
@@ -277,7 +278,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             shacache_key_file=option_dict.get('shacache-key-file', None),
             shadir_cert_file=option_dict.get('shadir-cert-file', None),
             shadir_key_file=option_dict.get('shadir-key-file', None),
-            develop=option_dict.get('develop', False)
+            develop=option_dict.get('develop', False),
+            software_release_filter_list=option_dict.get('only_sr', None),
+            computer_partition_filter_list=option_dict.get('only_cp', None),
             ),
           option_dict])
 
@@ -408,6 +411,13 @@ class Slapgrid(object):
     self.buildout = buildout
     self.promise_timeout = promise_timeout
     self.develop = develop
+    if software_release_filter_list is not None:
+      self.software_release_filter_list = software_release_filter_list.split(",")
+    else:
+      self.software_release_filter_list= []
+    self.computer_partition_filter_list = []
+    if computer_partition_filter_list is not None:
+      self.computer_partition_filter_list = computer_partition_filter_list.split(",")
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -484,7 +494,10 @@ class Slapgrid(object):
             shadir_key_file=self.shadir_key_file)
         if state == 'available':
           completed_tag = os.path.join(software_path, '.completed')
-          if self.develop or (not os.path.exists(completed_tag)):
+          if self.develop or \
+            (not os.path.exists(completed_tag) and \
+                 len(self.software_release_filter_list) == 0) or \
+             url_hash in self.software_release_filter_list:
             try:
               software_release.building()
             except NotFoundError:
@@ -590,6 +603,10 @@ class Slapgrid(object):
     clean_run = True
     for computer_partition in self.getComputerPartitionList():
       computer_partition_id = computer_partition.getId()
+      if len(self.computer_partition_filter_list) > 0 and \
+           (computer_partition_id not in self.computer_partition_filter_list):
+        continue
+
       instance_path = os.path.join(
         self.instance_root, computer_partition_id)
       timestamp_path = os.path.join(instance_path, '.timestamp')
