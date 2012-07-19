@@ -169,6 +169,8 @@ extra-context =
 bin-directory = {{ bin_directory }}
 openssl = {{ openssl_location }}
 local_bt5_repository = {{ local_bt5_repository  }}
+dash = {{ dash_location }}
+curl = {{ curl_location }}
 
 [template-erp5-development]
 < = jinja2-template-base
@@ -180,6 +182,8 @@ filename = instance-erp5-development.cfg
 extra-context =
     key bin_directory template-erp5-development-parameters:bin-directory
     key openssl_location template-erp5-development-parameters:openssl
+    key curl_location template-erp5-development-parameters:curl
+    key dash_location template-erp5-development-parameters:dash
     key template_zope dynamic-template-zope:rendered
     key local_bt5_repository template-erp5-development-parameters:local_bt5_repository
 

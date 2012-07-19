@@ -15,6 +15,7 @@ parts +=
   test-runner
   erp5-bootstrap
   erp5-promise
+  promise-erp5-site
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -127,3 +128,10 @@ site-id = ${slap-parameter:site-id}
 test-ca-dir = ${rootdirectory:srv}/test-ca
 test-instance-path = ${rootdirectory:srv}/test-instance
 unit-test-path = ${:test-instance-path}/unit_test
+
+[promise-erp5-site]
+recipe = slapos.cookbook:check_url_available
+path = ${basedirectory:promises}/erp5site
+url = http://${zope-instance:ip}:${zope-instance:port}/${slap-parameter:site-id}
+dash_path = {{ dash_location }}/bin/dash
+curl_path = {{ curl_location }}/bin/curl
