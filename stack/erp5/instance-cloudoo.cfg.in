@@ -5,6 +5,8 @@
 parts =
   publish-cloudooo-connection-information
   cloudooo-instance
+  promise
+  promise-openoffice
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
@@ -22,8 +24,8 @@ port = 23000
 openoffice-port = 23060
 
 # Paths
-configuration-file = ${rootdirectory:etc}/cloudooo.cfg
-wrapper = ${basedirectory:services}/cloudooo
+configuration-file = ${directory:etc}/cloudooo.cfg
+wrapper = ${directory:service}/cloudooo
 
 # Paths: Data
 data-directory = ${directory:cloudooo-data}
@@ -40,25 +42,32 @@ ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
 
 [fontconfig-instance]
 recipe = slapos.cookbook:fontconfig
-conf-path = ${rootdirectory:etc}/font.conf
+conf-path = ${directory:etc}/font.conf
 font-system-folder = {{ parameter_dict['fonts'] }}
 font-folder = ${directory:font}
 url-list = {{ json.get('font_url_list', []) | join(' ') }}
-service-folder = ${basedirectory:services}
+service-folder = ${directory:service}
 onetimedownload_path = {{ bin_directory }}/onetimedownload
 
+[promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/cloudooo
+hostname = ${cloudooo-instance:ip}
+port = ${cloudooo-instance:port}
+
+[promise-openoffice]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/openoffice
+hostname = ${cloudooo-instance:ip}
+port = ${cloudooo-instance:openoffice-port}
+
 # rest of parts are candidates for some generic stuff
-[basedirectory]
-recipe = slapos.cookbook:mkdirectory
-services = ${rootdirectory:etc}/run
-
 [directory]
-recipe = slapos.cookbook:mkdirectory
-cloudooo-data = ${rootdirectory:srv}/cloudooo
-font = ${rootdirectory:srv}/font
-
-[rootdirectory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
 srv = ${buildout:directory}/srv
+service = ${:etc}/run
+promise = ${:etc}/promise
+cloudooo-data = ${:srv}/cloudooo
+font = ${:srv}/font
 {% endif %}
