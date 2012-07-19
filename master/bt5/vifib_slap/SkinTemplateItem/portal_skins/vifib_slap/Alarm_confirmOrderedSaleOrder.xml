@@ -58,6 +58,7 @@ portal.portal_catalog.searchAndActivate(\n
   default_resource_uid=portal.restrictedTraverse(setup_service).getUid(),\n
   simulation_state="ordered",\n
   method_id=\'SaleOrderLine_tryToAllocatePartition\',\n
+  packet_size=1, # Separate calls to many transactions\n
   activate_kw={\'tag\': tag}\n
 )\n
 \n
