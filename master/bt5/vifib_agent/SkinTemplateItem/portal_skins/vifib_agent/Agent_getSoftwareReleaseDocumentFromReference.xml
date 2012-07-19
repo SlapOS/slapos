@@ -51,7 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-software_release = portal.portal_catalog.getResultValue(portal_type="Software Release", reference=software_release_reference)\n
+software_release = portal.portal_catalog.getResultValue(portal_type="Software Release", url_string=software_release_reference)\n
 return software_release\n
 </string> </value>
         </item>
