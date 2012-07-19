@@ -52,6 +52,7 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
 computer = state_change[\'object\']\n
 # Get required arguments\n
 kwargs = state_change.kwargs\n
@@ -74,7 +75,27 @@ if portal.portal_activities.countMessageWithTag(tag) > 0:\n
   raise NotImplementedError(\'In progress\')\n
 activate_kw = {\'tag\': tag}\n
 \n
-if len(context.Computer_getSoftwarePackingListLineList(state_change, service_uid_list=[service_uid])) > 0:\n
+state_list = []\n
+state_list.extend(portal.getPortalReservedInventoryStateList())\n
+state_list.extend(portal.getPortalTransitInventoryStateList())\n
+state_list.extend([\'stopped\', \'delivered\'])\n
+\n
+current_delivery_line = portal.portal_catalog.getResultValue(\n
+  portal_type=\'Purchase Packing List Line\',\n
+  simulation_state=state_list,\n
+  default_resource_uid=[\n
+    portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareCleanupResource()).getUid(),\n
+    portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource()).getUid(),\n
+  ],\n
+  sort_on=((\'movement.start_date\', \'DESC\'),),\n
+  aggregate_relative_url=ComplexQuery(\n
+    Query(aggregate_relative_url=software_release_document.getRelativeUrl()),\n
+    Query(aggregate_relative_url=computer.getRelativeUrl()),\n
+    operator="AND"),\n
+  limit=1\n
+)\n
+\n
+if current_delivery_line is not None and current_delivery_line.getResourceUid() == service_uid:\n
   # change installation in progress\n
   return\n
 \n
