@@ -9,23 +9,22 @@
 parts =
   memcached-instance
   publish-memcached-connection-information
+  promise
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-[rootdirectory]
+[directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
 bin = ${buildout:directory}/bin
-
-[basedirectory]
-recipe = slapos.cookbook:mkdirectory
-services = ${rootdirectory:etc}/run
+service = ${:etc}/run
+promise = ${:etc}/promise
 
 [memcached-instance]
 recipe = slapos.cookbook:generic.memcached
-wrapper_path = ${basedirectory:services}/memcached
+wrapper_path = ${directory:service}/memcached
 binary_path = {{ memcached_location }}/bin/memcached
 shell-path = {{ dash_location }}/bin/dash
 ip = ${slap-network-information:local-ipv4}
@@ -34,3 +33,10 @@ port = 11000
 [publish-memcached-connection-information]
 recipe = slapos.cookbook:publishurl
 url = memcached://${memcached-instance:ip}:${memcached-instance:port}/
+
+# Deploy zope promises scripts
+[promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/memcache
+hostname = ${memcached-instance:ip}
+port = ${memcached-instance:port}

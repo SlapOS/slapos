@@ -6,6 +6,10 @@ parts =
   logrotate-entry-kumofs
   cron
   cron-entry-logrotate
+  promise-kumofs-server
+  promise-kumofs-server-listen
+  promise-kumofs-gateway
+  promise-kumofs-manager
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -70,6 +74,7 @@ state-file = ${rootdirectory:srv}/logrotate.status
 recipe = slapos.cookbook:mkdirectory
 log = ${rootdirectory:var}/log
 services = ${rootdirectory:etc}/run
+promise = ${rootdirectory:etc}/promise
 run = ${rootdirectory:var}/run
 backup = ${rootdirectory:srv}/backup
 
@@ -109,3 +114,26 @@ recipe = slapos.cookbook:cron.d
 name = logrotate
 frequency = 0 0 * * *
 command = ${logrotate:wrapper}
+
+# Deploy zope promises scripts
+[promise-template]
+recipe = slapos.cookbook:check_port_listening
+path = ${basedirectory:promise}/kumofs
+hostname = ${kumofs-instance:ip}
+port = ${kumofs-instance:server-listen-port}
+
+[promise-kumofs-server]
+<= promise-template
+port = ${kumofs-instance:server-port}
+
+[promise-kumofs-server-listen]
+<= promise-template
+port = ${kumofs-instance:server-listen-port}
+
+[promise-kumofs-gateway]
+<= promise-template
+port = ${kumofs-instance:gateway-port}
+
+[promise-kumofs-manager]
+<= promise-template
+port = ${kumofs-instance:manager-port}
