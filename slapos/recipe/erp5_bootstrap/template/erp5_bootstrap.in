@@ -32,4 +32,7 @@ if result.status == 204: # and (result.read() == "False"):
       'cmf_activity_sql_connection_string': mysql_url,
     }),
     headers=header_dict)
-
+  # Wait for the erp5 response, to prevent multiple requests
+  # been done by the same script.
+  result = zope_connection.getresponse()
+  print "ERP5 site created."
