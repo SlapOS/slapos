@@ -42,6 +42,8 @@ zlib = {{ zlib_location }}
 libreoffice-bin = {{ libreoffice_bin_location }}
 fonts = {{ fonts_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
+haproxy = {{ haproxy_location }}
+dash = {{ dash_location }}
 
 [dynamic-template-cloudooo]
 < = jinja2-template-base

@@ -7,13 +7,14 @@ parts =
   cloudooo-instance
   promise
   promise-openoffice
+  promise-tunnel
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [publish-cloudooo-connection-information]
 recipe = slapos.cookbook:publishurl
-url = cloudooo://${cloudooo-instance:ip}:${cloudooo-instance:port}/
+url = cloudooo://[${ipv6toipv4:ipv6}]:${ipv6toipv4:ipv6-port}/
 
 [cloudooo-instance]
 recipe = slapos.cookbook:generic.cloudooo
@@ -60,6 +61,24 @@ recipe = slapos.cookbook:check_port_listening
 path = ${directory:promise}/openoffice
 hostname = ${cloudooo-instance:ip}
 port = ${cloudooo-instance:openoffice-port}
+
+[promise-tunnel]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/tunnel
+hostname = ${ipv6toipv4:ipv6}
+port = ${ipv6toipv4:ipv6-port}
+
+[ipv6toipv4]
+recipe = slapos.cookbook:ipv6toipv4
+conf-path = ${directory:etc}/${:base-name}.conf
+runner-path = ${directory:service}/${:base-name}
+haproxy-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+ipv4 = ${cloudooo-instance:ip}
+ipv6 = ${slap-network-information:global-ipv6}
+ipv6-port = ${cloudooo-instance:port}
+ipv4-port = ${cloudooo-instance:port}
+base-name = cloudooo-tunnel
 
 # rest of parts are candidates for some generic stuff
 [directory]
