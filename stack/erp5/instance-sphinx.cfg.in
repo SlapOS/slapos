@@ -9,8 +9,8 @@ offline = true
 
 [publish-sphinx-url]
 recipe = slapos.cookbook:publish
-url-sphinx = sphinx://${sphinxd-instance:ip}:${sphinxd-instance:sphinx-port}
-url-sphinx-sql = mysql://${sphinxd-instance:ip}:${sphinxd-instance:sql-port}
+url-sphinx = sphinx://[${sphinx-tunnel:ipv6}]:${sphinx-tunnel:ipv6-port}
+url-sphinx-sql = mysql://[${sphinx-sql-tunnel:ipv6}]:${sphinx-sql-tunnel:ipv6-port}
 
 [sphinxd-instance]
 recipe = slapos.cookbook:sphinx
@@ -24,6 +24,27 @@ sphinx-port = 9312
 sql-port = 9306
 wrapper = ${basedirectory:services}/sphinxd
 sphinx-searchd-binary = {{ sphinx_location }}/bin/searchd
+
+[ipv6toipv4-base]
+recipe = slapos.cookbook:ipv6toipv4
+conf-path = ${rootdirectory:etc}/${:base-name}.conf
+runner-path = ${basedirectory:services}/${:base-name}
+haproxy-path = {{ haproxy_location }}/sbin/haproxy
+shell-path = {{ dash_location }}/bin/dash
+ipv4 = ${sphinxd-instance:ip}
+ipv6 = ${slap-network-information:global-ipv6}
+
+[sphinx-tunnel]
+< = ipv6toipv4-base
+base-name = sphinx-tunnel
+ipv6-port = ${sphinxd-instance:sphinx-port}
+ipv4-port = ${sphinxd-instance:sphinx-port}
+
+[sphinx-sql-tunnel]
+< = ipv6toipv4-base
+base-name = sphinx-sql-tunnel
+ipv6-port = ${sphinxd-instance:sql-port}
+ipv4-port = ${sphinxd-instance:sql-port}
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
