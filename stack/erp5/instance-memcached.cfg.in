@@ -7,7 +7,6 @@
 #############################
 [buildout]
 parts =
-  memcached-instance
   publish-memcached-connection-information
   promise
 
@@ -30,13 +29,31 @@ shell-path = {{ dash_location }}/bin/dash
 ip = ${slap-network-information:local-ipv4}
 port = 11000
 
+[ipv6toipv4]
+recipe = slapos.cookbook:ipv6toipv4
+conf-path = ${rootdirectory:etc}/${:base-name}.conf
+runner-path = ${basedirectory:services}/${:base-name}
+haproxy-path = {{ haproxy_location }}/sbin/haproxy
+shell-path = {{ dash_location }}/bin/dash
+ipv4 = ${memcached-instance:ip}
+ipv6 = ${slap-network-information:global-ipv6}
+ipv6-port = ${memcached-instance:port}
+ipv4-port = ${memcached-instance:port}
+base-name = memcached-tunnel
+
 [publish-memcached-connection-information]
 recipe = slapos.cookbook:publishurl
-url = memcached://${memcached-instance:ip}:${memcached-instance:port}/
+url = memcached://[${ipv6toipv4:ipv6}]:${ipv6toipv4:ipv6-port}/
 
-# Deploy zope promises scripts
-[promise]
+# Deploy promises scripts
+[haproxy-promise]
 recipe = slapos.cookbook:check_port_listening
 path = ${directory:promise}/memcache
 hostname = ${memcached-instance:ip}
 port = ${memcached-instance:port}
+
+[tunnel-promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/tunnel
+hostname = ${ipv6toipv4:ipv6}
+port = ${ipv6toipv4:ipv6-port}
