@@ -25,6 +25,7 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
+import json
 
 class Recipe(GenericBaseRecipe):
   """
@@ -73,7 +74,7 @@ class Recipe(GenericBaseRecipe):
     server_snippet = ""
     i = 0
     name = self.options['name']
-    for address in self.options['backend-list'].split():
+    for address in json.loads(self.options['backend-list']):
       i += 1
       server_snippet += self.substituteTemplate(
           snippet_filename, dict(
