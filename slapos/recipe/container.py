@@ -49,6 +49,7 @@ class Recipe(GenericSlapRecipe):
         config.add_section('information')
         config.set('information', 'ipv6', self.options['ipv6'])
         config.set('information', 'ipv4', self.options['ipv4'])
+        config.set('information', 'interface', self.options['interface'])
 
         config_filename = self.options['config']
         with open(config_filename, 'w') as config_file:
