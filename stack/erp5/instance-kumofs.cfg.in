@@ -17,13 +17,13 @@ offline = true
 
 [publish-kumofs-connection-information]
 recipe = slapos.cookbook:publishurl
-url = memcached://${kumofs-instance:ip}:${kumofs-instance:gateway-port}/
+url = memcached://[${kumofs-instance:ip}]:${kumofs-instance:gateway-port}/
 
 [kumofs-instance]
 recipe = slapos.cookbook:generic.kumofs
 
 # Network options
-ip = ${slap-network-information:local-ipv4}
+ip = ${slap-network-information:global-ipv6}
 manager-port = 13101
 server-port = 13201
 server-listen-port = 13202

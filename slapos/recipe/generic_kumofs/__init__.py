@@ -29,7 +29,7 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
   def install(self):
-    ip = self.options['ip']
+    ip = "[%s]" % self.options['ip']
     kumo_manager_port = int(self.options['manager-port'])
     kumo_server_port = int(self.options['server-port'])
     kumo_server_listen_port = int(self.options['server-listen-port'])
