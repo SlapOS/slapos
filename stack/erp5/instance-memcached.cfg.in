@@ -8,7 +8,8 @@
 [buildout]
 parts =
   publish-memcached-connection-information
-  promise
+  haproxy-promise
+  tunnel-promise
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -31,8 +32,8 @@ port = 11000
 
 [ipv6toipv4]
 recipe = slapos.cookbook:ipv6toipv4
-conf-path = ${rootdirectory:etc}/${:base-name}.conf
-runner-path = ${basedirectory:services}/${:base-name}
+conf-path = ${directory:etc}/${:base-name}.conf
+runner-path = ${directory:service}/${:base-name}
 haproxy-path = {{ haproxy_location }}/sbin/haproxy
 shell-path = {{ dash_location }}/bin/dash
 ipv4 = ${memcached-instance:ip}
