@@ -43,6 +43,7 @@ logrotate-backup = ${:backup}/logrotate
 logrotate-entries = ${:etc}/logrotate.d
 bin = ${buildout:directory}/bin
 srv = ${buildout:directory}/srv
+backup = ${:srv}/backup
 etc = ${buildout:directory}/etc
 services = ${:etc}/run
 log = ${buildout:directory}/var/log
