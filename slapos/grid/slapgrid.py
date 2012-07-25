@@ -123,6 +123,20 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     help="Launch slapgrid without delay.")
   parser.add_argument("--develop", action="store_true", default=False,
     help="Launch slapgrid in develop mode. In develop mode, slapgrid-sr ignores .completed file")
+  parser.add_argument("--only_sr",
+    help="Force the update of a single software release (use url hash)," + \
+         "event if is already installed. This option will make all others " + \
+         "sofware releases be ignored")
+  parser.add_argument("--only_cp",
+    help="Update a single or a list of computer partition (ie.:slappartX, slappartY)," + \
+         "this option will make all others sofware releases be ignored")
+  parser.add_argument("--only_sr",
+    help="Force the update of a single software release (use url hash)," + \
+         "event if is already installed. This option will make all others " + \
+         "sofware releases be ignored")
+  parser.add_argument("--only_cp",
+    help="Update a single or a list of computer partitions (ie.:slappartX, slappartY)," + \
+         "this option will make all others computer partitions be ignored")
 
   # Parses arguments
   if argument_tuple == ():
@@ -354,7 +368,9 @@ class Slapgrid(object):
                shacache_key_file=None,
                shadir_cert_file=None,
                shadir_key_file=None,
-               develop=False):
+               develop=False,
+               software_release_filter_list=None,
+               computer_partition_filter_list=None):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
     self.software_root = os.path.abspath(software_root)
@@ -707,7 +723,7 @@ class Slapgrid(object):
                "<source></source>" \
                "<destination></destination>" \
                "</arrow>" \
-               % (strftime("%Y-%m-%d at %H:%M:%S"), 
+               % (strftime("%Y-%m-%d at %H:%M:%S"),
                   self.computer_id)
 
     for computer_partition_usage in computer_partition_usage_list:
@@ -733,7 +749,7 @@ class Slapgrid(object):
             xml_movements += "<%s>%s</%s>" % (children.tag, computer_partition_usage.getId(), children.tag)
           else:
             xml_movements += "<%s>%s</%s>" % (children.tag, children.text, children.tag)
-        xml_movements += "</movement>"  
+        xml_movements += "</movement>"
 
     xml_foot = "</transaction>" \
                "</journal>"
@@ -758,7 +774,7 @@ class Slapgrid(object):
     except IOError:
       computer_consumption_model = \
         pkg_resources.resource_string(
-          __name__, 
+          __name__,
           '../../../../slapos/slap/doc/computer_consumption.xsd')
 
     try:
@@ -769,7 +785,7 @@ class Slapgrid(object):
     except IOError:
       partition_consumption_model = \
         pkg_resources.resource_string(
-          __name__, 
+          __name__,
           '../../../../slapos/slap/doc/partition_consumption.xsd')
 
     clean_run = True

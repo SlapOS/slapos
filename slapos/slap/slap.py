@@ -107,17 +107,17 @@ class SoftwareRelease(SlapDocument):
 
   def available(self):
     self._connection_helper.POST('/availableSoftwareRelease', {
-      'url': self._software_release, 
+      'url': self._software_release,
       'computer_id': self._computer_guid})
 
   def building(self):
     self._connection_helper.POST('/buildingSoftwareRelease', {
-      'url': self._software_release, 
+      'url': self._software_release,
       'computer_id': self._computer_guid})
 
   def destroyed(self):
     self._connection_helper.POST('/destroyedSoftwareRelease', {
-      'url': self._software_release, 
+      'url': self._software_release,
       'computer_id': self._computer_guid})
 
   def getState(self):
@@ -230,7 +230,7 @@ def _syncComputerInformation(func):
     for computer_partition in self.getComputerPartitionList():
       setattr(computer_partition, '_synced', True)
     return func(self, *args, **kw)
-  return decorated 
+  return decorated
 
 class Computer(SlapDocument):
 
@@ -532,7 +532,7 @@ class ComputerPartition(SlapDocument):
 #       result = func(self, *args, **kw)
 #       setattr(self, key, result)
 #       return result
-#   return decorated 
+#   return decorated
 
 class ConnectionHelper:
   error_message_timeout = "\nThe connection timed out. Please try again later."
