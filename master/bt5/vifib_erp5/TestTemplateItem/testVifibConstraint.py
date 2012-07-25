@@ -304,16 +304,6 @@ class TestVifibPersonConstraint(testVifibMixin):
   def getTitle(self):
     return "Vifib Person Constraint checks"
 
-  def test_last_name_existence(self):
-    person = self.portal.person_module.newContent(portal_type='Person')
-    consistency_message = 'Property last_name must be defined'
-
-    self.assertTrue(consistency_message in getMessageList(person))
-
-    person.setLastName(rndstr())
-
-    self.assertFalse(consistency_message in getMessageList(person))
-
   def test_role(self):
     person = self.portal.person_module.newContent(portal_type='Person')
     consistency_message = 'One role should be defined'
