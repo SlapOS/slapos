@@ -211,7 +211,7 @@ class Computer(object):
       return self.interface.addAddr()
 
     # Can't find address
-    raise NoAddressOnInterface('No valid IPv6 found on %s.' % 
+    raise NoAddressOnInterface('No valid IPv6 found on %s.' %
         self.interface.name)
 
   def send(self, config):
@@ -237,7 +237,7 @@ class Computer(object):
       raise slap.NotFoundError("%s\nERROR : This SlapOS node is not recognised by "
           "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
           "like 'COMP-123' and is correct.\nError is : 404 Not Found." % error)
-    return 
+    return
 
   def dump(self, path_to_xml):
     """
@@ -311,7 +311,7 @@ class Computer(object):
     if alter_network and self.address is not None:
       self.interface.addAddr(self.address, self.netmask)
 
-    for path in self.instance_root, self.software_root: 
+    for path in self.instance_root, self.software_root:
       if not os.path.exists(path):
         os.makedirs(path, 0755)
       else:
@@ -677,7 +677,7 @@ class Interface(object):
 
   def _addSystemAddress(self, address, netmask, ipv6=True):
     """Adds system address to interface
-    
+
     Returns True if address was added successfully.
 
     Returns False if there was issue.
@@ -870,7 +870,7 @@ class Parser(OptionParser):
         help="Shall slapformat alter user database [default: True]"),
       Option('--alter_network', choices=['True', 'False'],
         help="Shall slapformat alter network configuration [default: True]"),
-      Option('--now', 
+      Option('--now',
              help="Launch slapformat without delay",
              default=False,
              action="store_true"),
@@ -1138,7 +1138,7 @@ class Config(object):
       root_needed = True
     else:
       root_needed = False
-    
+
     # check root
     if root_needed and os.getuid() != 0:
       message = "Root rights are needed"

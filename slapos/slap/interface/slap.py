@@ -52,7 +52,7 @@ class IRequester(Interface):
   slapgrid server.
   """
 
-  def request(software_release, software_type, partition_reference, 
+  def request(software_release, software_type, partition_reference,
               shared=False, partition_parameter_kw=None, filter_kw=None):
     """
     Request software release instanciation to slapgrid server.
@@ -92,13 +92,13 @@ class IBuildoutController(Interface):
 
   def available():
     """
-    Notify (to the slapgrid server) that the software instance is 
+    Notify (to the slapgrid server) that the software instance is
     available.
     """
 
   def building():
     """
-    Notify (to the slapgrid server) that the buildout is not 
+    Notify (to the slapgrid server) that the buildout is not
     available and under creation.
     """
 
@@ -146,13 +146,13 @@ class IComputerPartition(IBuildoutController, IRequester):
 
   def stopped():
     """
-    Notify (to the slapgrid server) that the software instance is 
+    Notify (to the slapgrid server) that the software instance is
     available and stopped.
     """
 
   def started():
     """
-    Notify (to the slapgrid server) that the software instance is 
+    Notify (to the slapgrid server) that the software instance is
     available and started.
     """
 
@@ -217,7 +217,7 @@ class IComputerPartition(IBuildoutController, IRequester):
 
   def getCertificate():
     """
-    Returns a dictionnary containing the authentification certificates 
+    Returns a dictionnary containing the authentification certificates
     associated to the computer partition.
     The dictionnary keys are:
       key -- value is a SSL key
@@ -273,7 +273,7 @@ class IComputer(Interface):
   installed.
   """
 
-  def getSoftwareReleaseList(): 
+  def getSoftwareReleaseList():
     """
     Returns the list of software release which has to be supplied by the
     computer.
@@ -281,7 +281,7 @@ class IComputer(Interface):
     Raise an INotFoundError if computer_guid doesn't exist.
     """
 
-  def getComputerPartitionList(): 
+  def getComputerPartitionList():
     """
     Returns the list of configured computer partitions associated to this
     computer.
@@ -291,7 +291,7 @@ class IComputer(Interface):
 
   def reportUsage(computer_partition_list):
     """
-    Report the computer usage to the slapgrid server. 
+    Report the computer usage to the slapgrid server.
     IComputerPartition.setUsage has to be called on each computer partition to
     define each usage.
 
@@ -338,7 +338,7 @@ class ISupply(Interface):
     software_release -- uri of the software release
                         which has to be instanciated
 
-    computer_guid -- the identifier of the computer inside the slapgrid 
+    computer_guid -- the identifier of the computer inside the slapgrid
                      server.
     """
 
@@ -346,7 +346,7 @@ class slap(Interface):
   """
   Initialise slap connection to the slapgrid server
 
-  Slapgrid server URL is defined during the slap library installation, 
+  Slapgrid server URL is defined during the slap library installation,
   as recipes should not use another server.
   """
 
@@ -374,7 +374,7 @@ class slap(Interface):
 
     computer_guid -- the identifier of the computer inside the slapgrid server.
 
-    partition_id -- the identifier of the computer partition inside the 
+    partition_id -- the identifier of the computer partition inside the
                     slapgrid server.
 
     Raise an INotFoundError if computer_guid doesn't exist.
@@ -391,8 +391,8 @@ class slap(Interface):
     """
     Instanciate an open order in the slap library.
     """
-    
+
   def registerSupply():
-    """   
+    """
     Instanciate a supply in the slap library.
     """

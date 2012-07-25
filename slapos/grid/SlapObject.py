@@ -123,7 +123,7 @@ class Software(object):
             self.shadir_cert_file,
             self.shadir_key_file)
     shutil.rmtree(cache_dir)
-      
+
   def _install_from_buildout(self):
     """ Fetches buildout configuration from the server, run buildout with
     it. If it fails, we notify the server.

@@ -156,11 +156,11 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
   config = Config()
   options, arguments = RequestParser(usage=usage).check_args()
   config.setConfig(options, arguments[0])
-  
+
   local = init(config)
-  
+
   # Request instance
-  # XXX-Cedric : support things like : 
+  # XXX-Cedric : support things like :
   # --instance-type std --configuration-size 23 --computer-region europe/france
   # XXX-Cedric : add support for xml_parameter
   software_url = arguments[1]
@@ -196,6 +196,6 @@ examples :
   >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
   config = Config()
   config.setConfig(*Parser(usage=usage).check_args())
-  
+
   local = init(config)
   __import__("code").interact(banner="", local=local)
