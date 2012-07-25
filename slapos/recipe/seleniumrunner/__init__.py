@@ -37,7 +37,7 @@ class Recipe(GenericBaseRecipe):
     runner = self.createPythonScript(
       self.options['runner-path'],
       __name__+'.testrunner.run',
-      arguments=[self.options['suite-url'], 
+      arguments=[self.options['suite-url'],
                  self.options['report-url'],
                  self.options['report-project'],
                  self.options['browser'],

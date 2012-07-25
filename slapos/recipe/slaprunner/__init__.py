@@ -71,7 +71,7 @@ class Recipe(GenericBaseRecipe):
         private_key=self.options['private_key'],
         cloud9_url=self.cloud9_url
     )
-    
+
     config_file = self.createFile(self.options['slapos.cfg'],
         self.substituteTemplate(self.getTemplateFilename('slapos.cfg.in'),
         configuration))

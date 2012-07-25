@@ -44,7 +44,7 @@ class Recipe(BaseSlapRecipe):
     self.cron_d = self.installCrond()
     memcached_conf = self.installMemcached(ip=self.getLocalIPv4Address(),
         port=11000)
-        
+
     ca_conf = self.installCertificateAuthority()
     key, certificate = self.requestCertificate('Memcached')
 
@@ -52,7 +52,7 @@ class Recipe(BaseSlapRecipe):
         self.getLocalIPv4Address(), 12345, memcached_conf['memcached_port'],
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
-    
+
     self.linkBinary()
     self.setConnectionDict(dict(
       stunnel_ip = stunnel_conf['public_ip'],
@@ -81,7 +81,7 @@ class Recipe(BaseSlapRecipe):
       os.symlink(target, link)
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
-  
+
   def installCrond(self):
     timestamps = self.createDataDirectory('cronstamps')
     cron_output = os.path.join(self.log_directory, 'cron-output')
@@ -103,7 +103,7 @@ class Recipe(BaseSlapRecipe):
       )[0]
     self.path_list.append(wrapper)
     return cron_d
-  
+
   def installLogrotate(self):
     """Installs logortate main configuration file and registers its to cron"""
     logrotate_d = os.path.abspath(os.path.join(self.etc_directory,
