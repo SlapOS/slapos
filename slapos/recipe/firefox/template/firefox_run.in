@@ -1,0 +1,55 @@
+#!%(python_path)s
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+#
+
+import os
+from subprocess import Popen, PIPE
+import tempfile
+import shutil
+import sys
+import signal
+import subprocess
+import time
+
+os.environ['MOZ_NO_REMOTE'] = '1'
+os.environ['LC_ALL'] = 'C'
+os.environ['MOZ_CRASHREPORTER_DISABLE'] = '1'
+os.environ['NO_EM_RESTART'] = '1'
+os.environ['TMPDIR'] = "%(tmp_path)s"
+os.environ['DISPLAY'] = ':0'
+# XXX .Xauthority
+
+profile_path = tempfile.mkdtemp()
+shutil.copyfile('%(pref_path)s', os.path.join(profile_path, 'pref.js'))
+# os.environ['HOME'] = profile_path
+child_pg = None
+
+def sig_handler(signal, frame):
+  if child_pg is not None:
+    os.killpg(child_pg, signal.SIGHUP)
+    os.killpg(child_pg, signal.SIGTERM)
+  sys.exit(0)
+
+signal.signal(signal.SIGINT, sig_handler)
+signal.signal(signal.SIGQUIT, sig_handler)
+signal.signal(signal.SIGTERM, sig_handler)
+
+def execute_with_signal_translation(args):
+  """Run process as children and translate from SIGTERM to another signal"""
+  child = subprocess.Popen(args, close_fds=True, preexec_fn=os.setsid)
+  child_pg = child.pid
+  try:
+    while True:
+      time.sleep(2)
+  finally:
+    os.killpg(child_pg, signal.SIGHUP)
+    os.killpg(child_pg, signal.SIGTERM)
+
+try:
+  execute_with_signal_translation(
+    ["%(firefox_binary)s", "-no-remote", "-profile", profile_path] + sys.argv[1:])
+
+finally:
+  shutil.rmtree(profile_path)
+  

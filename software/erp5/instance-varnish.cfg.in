@@ -1,11 +1,16 @@
+{% if software_type == slap_software_type -%}
+{% set web_checker_parameter = slapparameter_dict['web-checker-mail-address'] -%}
 [buildout]
 parts =
   publish-varnish-connection-information
   varnish-instance
-  web-checker
   cron
   cron-entry-logrotate
+  {# When web_checker related parameter is given, web_checker will be enabled.#}
+{% if web_checker_parameter is defined %}
+  web-checker
   cron-entry-web-checker
+{% endif %}
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -28,16 +33,16 @@ varnishd-wrapper = ${basedirectory:services}/varnishd
 varnishlog-wrapper = ${rootdirectory:bin}/varnishlog
 
 # Binary information
-varnishd-binary = {{ varnish_location }}/sbin/varnishd
-varnishlog-binary = {{ varnish_location }}/bin/varnishlog
-shell-path = {{ dash_location }}/bin/dash
+varnishd-binary = {{ parameter_dict['varnish'] }}/sbin/varnishd
+varnishlog-binary = {{ parameter_dict['varnish'] }}/bin/varnishlog
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
 # Configuration by VCL
 vcl-file = ${rootdirectory:etc}/default.vcl
 pid-file = ${basedirectory:run}/varnishd.pid
 varnish-data = ${directory:varnish-data}
 # this will pass at -n option
 varnish-instance-name = ${directory:varnish-instance}
-web-checker = {{ bin_directory }}/web_checker_utility
+web-checker = {{ parameter_dict['buildout-bin-directory'] }}/web_checker_utility
 
 [cron-entry-web-checker]
 <= cron
@@ -50,15 +55,14 @@ command = ${varnish-instance:web-checker} ${web-checker:web-checker-config}
 recipe = slapos.cookbook:webchecker
 web-checker-config = ${rootdirectory:etc}/web_checker.cfg
 web-checker-working-directory = ${directory:web-checker}
-# for now frontend-url is varnish, it will replace with the real front-end one.
 frontend-url = ${varnish-instance:ip}:${varnish-instance:server-port}
-wget-binary-path = {{ wget_location }}/bin/wget
+wget-binary-path = {{ parameter_dict['wget'] }}/bin/wget
 varnishlog-binary-path = ${varnish-instance:varnishlog-wrapper}
 web-checker-log = ${basedirectory:log}/web-checker.log
 
 [cron]
 recipe = slapos.cookbook:cron
-dcrond-binary = {{ dcron_location }}/sbin/crond
+dcrond-binary = {{ parameter_dict['dcron'] }}/sbin/crond
 cron-entries = ${directory:cron-entries}
 crontabs = ${directory:crontabs}
 cronstamps = ${directory:cronstamps}
@@ -80,9 +84,9 @@ command = ${logrotate:wrapper}
 [logrotate]
 recipe = slapos.cookbook:logrotate
 # Binaries
-logrotate-binary = {{ logrotate_location }}/usr/sbin/logrotate
-gzip-binary = {{ gzip_location }}/bin/gzip
-gunzip-binary = {{ gzip_location }}/bin/gunzip
+logrotate-binary = {{ parameter_dict['logrotate'] }}/usr/sbin/logrotate
+gzip-binary = {{ parameter_dict['gzip'] }}/bin/gzip
+gunzip-binary = {{ parameter_dict['gzip'] }}/bin/gunzip
 # Directories
 wrapper = ${rootdirectory:bin}/logrotate
 conf = ${rootdirectory:etc}/logrotate.conf
@@ -115,4 +119,4 @@ etc = ${buildout:directory}/etc
 var = ${buildout:directory}/var
 srv = ${buildout:directory}/srv
 bin = ${buildout:directory}/bin
-
+{% endif %}
