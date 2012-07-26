@@ -26,14 +26,17 @@
 ##############################################################################
 
 import os
+import subprocess
 
 from slapos.recipe.librecipe import GenericBaseRecipe
-from slapos.recipe.librecipe.execute import execute
 
 def service(args):
-    if not os.path.exists(args['rootfs']) and \
-       not os.path.exists(args['output']):
-        execute([args['wget'], args['archive'], '-O', args['output']])
+    if not os.path.exists(args['confirm']):
+        subprocess.check_call([args['wget'], args['archive'],
+                               '-O', args['output']])
+        open(args['confirm'], 'w').close()
+
+
 
 class Recipe(GenericBaseRecipe):
 
@@ -48,7 +51,7 @@ class Recipe(GenericBaseRecipe):
                     'wget': self.options['wget-binary'],
                     'archive': self.options['archive-url'],
                     'output': self.options['downloaded-archive'],
-                    'rootfs': self.options['rootfs']
+                    'confirm': self.options['downloaded-archive-complete']
                 }
             )
         )

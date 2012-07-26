@@ -109,11 +109,13 @@ class Recipe(GenericSlapRecipe):
         config.add_section('rootfs')
         config.set('rootfs', 'directory', self.options['rootfs'])
         config.set('rootfs', 'tmp', self.options['tmp-dir'])
+        config.set('rootfs', 'complete', self.options['archive-complete'])
         config.add_section('config')
         config.set('config', 'file', self.options['config-file'])
         config.add_section('tar')
         config.set('tar', 'binary', self.options['tar-binary'])
         config.set('tar', 'path', self.options['tar-path'])
+        config.set('tar', 'archive', self.options['archive'])
 
         config_filename = self.options['config']
         with open(config_filename, 'w') as config_file:
