@@ -233,17 +233,19 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   else:
     signature_certificate_list = None
 
+  # Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
+  # SlapOS Nodes configured with cron.
   if option_dict["now"]:
     maximal_delay = 0
   else:
-    maximal_delay = float(option_dict.get("maximal_delay", "300"))
+    maximal_delay = int(option_dict.get("maximal_delay", "300"))
   if maximal_delay > 0:
     duration = int(maximal_delay * random())
     logging.info("Sleeping for %s seconds. To disable this feature, " \
                     "check maximal_delay parameter in manual." % duration)
     time.sleep(duration)
 
-  # Returning new Slapgrid instance and options
+  # Return new Slapgrid instance and options
   return ([Slapgrid(software_root=option_dict['software_root'],
             instance_root=option_dict['instance_root'],
             master_url=option_dict['master_url'],
