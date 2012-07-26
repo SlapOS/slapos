@@ -90,7 +90,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--supervisord-socket",
                     help="The socket supervisor will use.")
   parser.add_argument("--supervisord-configuration-path",
-                    help="The location where supervisord configuration " \
+                    help="The location where supervisord configuration "
                            "will be stored.")
   parser.add_argument("--usage-report-periodicity",
                     type=int, default="24",
@@ -100,12 +100,13 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--pidfile",
                     help="The location where pidfile will be created.")
   parser.add_argument("--logfile",
-                    help="The location where slapgrid logfile will be " \
+                    help="The location where slapgrid logfile will be "
                            "created.")
   parser.add_argument("--key_file", help="SSL Authorisation key file.")
   parser.add_argument("--cert_file",
       help="SSL Authorisation certificate file.")
-  parser.add_argument("--signature_private_key_file", help="Signature private key file.")
+  parser.add_argument("--signature_private_key_file", help="Signature private "
+      "key file.")
   parser.add_argument("--master_ca_file", help="Root certificate of SlapOS "
       "master key.")
   parser.add_argument("--certificate_repository_path",
@@ -122,14 +123,16 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--now", action="store_true", default=False,
     help="Launch slapgrid without delay.")
   parser.add_argument("--develop", action="store_true", default=False,
-    help="Launch slapgrid in develop mode. In develop mode, slapgrid-sr ignores .completed file")
+    help="Launch slapgrid in develop mode. In develop mode, slapgrid-sr "
+        "ignores .completed file.")
   parser.add_argument("--only_sr",
-    help="Force the update of a single software release (use url hash)," + \
-         "event if is already installed. This option will make all others " + \
-         "sofware releases be ignored")
+    help="Force the update of a single software release (use url hash),"
+         "event if is already installed. This option will make all others "
+         "sofware releases be ignored.")
   parser.add_argument("--only_cp",
-    help="Update a single or a list of computer partitions (ie.:slappartX, slappartY)," + \
-         "this option will make all others computer partitions be ignored")
+    help="Update a single or a list of computer partitions "
+         "(ie.:slappartX, slappartY),"
+         "this option will make all others computer partitions be ignored.")
 
   # Parses arguments
   if argument_tuple == ():
@@ -153,7 +156,6 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     if argument_value is not None:
       option_dict.update({argument_key: argument_value})
   # Configures logger.
-  #XXX: We need to configure it as soon as possible, so I do it here.
   logger_format = '%(asctime)s %(name)-18s: %(levelname)-8s %(message)s'
   if option_dict['verbose']:
     level = logging.DEBUG
