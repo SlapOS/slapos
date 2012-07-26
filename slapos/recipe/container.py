@@ -37,6 +37,28 @@ from slapos.recipe.librecipe import GenericSlapRecipe
 
 class Recipe(GenericSlapRecipe):
 
+    def _options(self, options):
+        config_filename = self.options['config']
+
+        container_uuid = None
+
+        if os.path.exists(config_filename):
+            config = ConfigParser.ConfigParser()
+            config.read(config_filename)
+            if config.has_option('requested', 'name'):
+                container_uuid = uuid.UUID(hex=config.get('requested', 'name'))
+
+        if container_uuid is None:
+            # uuid wasn't generated at first in order to avoid
+            # wasting entropy
+            container_uuid = uuid.uuid4()
+
+        options['slapcontainer-name'] = container_uuid.hex
+
+        return options
+
+
+
     def _install(self):
         path_list = []
 
@@ -46,6 +68,7 @@ class Recipe(GenericSlapRecipe):
         config.add_section('requested')
         config.set('requested', 'status',
                    self.computer_partition.getState())
+        config.set('requested', 'name', self.options['slapcontainer-name'])
         config.add_section('network')
         config.set('network', 'ipv6', self.options['ipv6'])
         config.set('network', 'ipv4', self.options['ipv4'])
