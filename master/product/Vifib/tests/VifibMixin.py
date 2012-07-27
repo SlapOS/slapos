@@ -380,14 +380,14 @@ class testVifibMixin(ERP5TypeTestCase):
   def stepCheckSiteConsistency(self, **kw):
     self.portal.portal_alarms.vifib_check_consistency.activeSense()
     transaction.commit()
-    super(testVifibMixin, self).stepTic(**kw)
+    self.tic(**kw)
     self.assertEqual([], self.portal.portal_alarms.vifib_check_consistency\
         .Alarm_getConsistencyCheckReportLineList())
     self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
     self.checkDivergency()
 
   def stepCleanTic(self, **kw):
-    super(testVifibMixin, self).stepTic(**kw)
+    self.tic(**kw)
 
   def stepTic(self, **kw):
     def activateAlarm():
@@ -410,13 +410,13 @@ class testVifibMixin(ERP5TypeTestCase):
     activateAlarm()
     transaction.commit()
 
-    super(testVifibMixin, self).stepTic(**kw)
+    self.tic(**kw)
 
     # retrigger activateAlarm after tic
     activateAlarm()
     transaction.commit()
 
     # tic after activateAlarm
-    super(testVifibMixin, self).stepTic(**kw)
+    self.tic(**kw)
 
     self.checkDivergency()
