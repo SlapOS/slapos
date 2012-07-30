@@ -209,6 +209,31 @@ class testVifibMixin(ERP5TypeTestCase):
       self.bootstrapSite()
       self.portal._p_changed = 1
       transaction.commit()
+    self.stabiliseAccounting()
+
+  def stabiliseAccounting(self):
+      self.stepCallVifibUpdateDeliveryCausalityStateAlarm()
+      self.tic()
+      self.stepCallVifibExpandDeliveryLineAlarm()
+      self.tic()
+      self.stepCallVifibTriggerBuildAlarm()
+      self.tic()
+      self.stepCallVifibUpdateDeliveryCausalityStateAlarm()
+      self.tic()
+      self.stepCallVifibExpandDeliveryLineAlarm()
+      self.tic()
+      self.stepCallVifibTriggerBuildAlarm()
+      self.tic()
+      self.stepCallVifibUpdateDeliveryCausalityStateAlarm()
+      self.tic()
+      self.stepCallStopConfirmedSaleInvoiceTransactionAlarm()
+      self.tic()
+      self.stepCallVifibExpandDeliveryLineAlarm()
+      self.tic()
+      self.stepCallVifibTriggerBuildAlarm()
+      self.tic()
+      self.stepCallVifibUpdateDeliveryCausalityStateAlarm()
+      self.tic()
 
   def getDefaultSitePreferenceId(self):
     """Default id, usefull method to override
