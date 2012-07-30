@@ -32,7 +32,7 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 def service(args):
     if not os.path.exists(args['confirm']):
-        subprocess.check_call([args['wget'], args['archive'],
+        subprocess.check_call([args['wget'], args['image'],
                                '-O', args['output']])
         open(args['confirm'], 'w').close()
 
@@ -49,9 +49,9 @@ class Recipe(GenericBaseRecipe):
                 'slapos.recipe.rootfs.service',
                 {
                     'wget': self.options['wget-binary'],
-                    'archive': self.options['archive-url'],
-                    'output': self.options['downloaded-archive'],
-                    'confirm': self.options['downloaded-archive-complete']
+                    'image': self.options['image-url'],
+                    'output': self.options['downloaded-image'],
+                    'confirm': self.options['downloaded-image-complete']
                 }
             )
         )

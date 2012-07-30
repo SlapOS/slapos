@@ -102,20 +102,16 @@ class Recipe(GenericSlapRecipe):
         config.set('requested', 'status',
                    self.computer_partition.getState())
         config.set('requested', 'name', self.options['slapcontainer-name'])
-        config.add_section('network')
-        config.set('network', 'ipv6', self.options['ipv6'])
-        config.set('network', 'ipv4', self.options['ipv4'])
-        config.set('network', 'interface', self.options['interface'])
         config.add_section('rootfs')
-        config.set('rootfs', 'directory', self.options['rootfs'])
-        config.set('rootfs', 'tmp', self.options['tmp-dir'])
-        config.set('rootfs', 'complete', self.options['archive-complete'])
+        config.set('rootfs', 'image', self.options['image'])
+        config.set('rootfs', 'complete', self.options['image-complete'])
+        config.add_section('network')
+        config.set('network', 'interface', self.options['interface'])
         config.add_section('config')
-        config.set('config', 'file', self.options['config-file'])
-        config.add_section('tar')
-        config.set('tar', 'binary', self.options['tar-binary'])
-        config.set('tar', 'path', self.options['tar-path'])
-        config.set('tar', 'archive', self.options['archive'])
+        config.set('config', 'file', self.options['lxc-config'])
+
+        # Just a touch
+        open(self.options['lxc-config'], 'a').close()
 
         config_filename = self.options['config']
         with open(config_filename, 'w') as config_file:
