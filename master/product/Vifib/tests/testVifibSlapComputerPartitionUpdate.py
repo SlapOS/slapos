@@ -1,7 +1,6 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from random import random
 from Products.ERP5Type.tests.backportUnittest import skip
 from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
