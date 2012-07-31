@@ -57,7 +57,7 @@ invoice_line = portal.portal_catalog.getResultValue(\n
   resource_relative_url=portal.portal_preferences.getPreferredRegistrationResource(),\n
   portal_type="Invoice Line",\n
   # XXX Hardcoded\n
-  simulation_state=["stopped", "delivered"],\n
+  simulation_state=["confirmed", "stopped", "delivered"],\n
   **{\'movement.destination_uid\': person.getUid()})\n
 \n
 if invoice_line is None:\n
