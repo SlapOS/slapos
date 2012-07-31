@@ -55,6 +55,8 @@
 isTransitionPossible = context.getPortalObject().portal_workflow.isTransitionPossible\n
 if context.getSimulationState() == \'planned\' and context.getStartDate() < this_month and isTransitionPossible(context, \'confirm\'):\n
   context.confirm()\n
+  # as user will not have any invoice in planned state create new one, a bit later, in order to have current state reindexed\n
+  context.getDestinationValue().activate(after_path_and_method_id=(context.getPath, (\'recursiveImmediateReindexObject\', \'immediateReindexObject\'))).fixConsistency()\n
 
 
 ]]></string> </value>
