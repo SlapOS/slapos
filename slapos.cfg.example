@@ -131,3 +131,8 @@ signature-certificate-list =
   Loe5mIHsjRVKvzB6SvIaFUYq/EzmHnqNdpIGkT/Mj7r/iUs61btTcGUCLsUiUeci
   Vd0Ozh79JSRpkrdI8R/NRQ2XPHAo+29TT70=
   -----END CERTIFICATE-----
+# List of URL(s) which shouldn't be installed from binary cache, separated by
+# commas. Any URL beginning by a blacklisted URL will be blacklisted as well.
+binary-cache-url-blacklist =
+  http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD
+  http://git.erp5.org/gitweb/slapos.core.git/blob_plain/refs/heads

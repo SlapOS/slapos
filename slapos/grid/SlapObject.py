@@ -54,7 +54,8 @@ class Software(object):
       upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
       shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
       download_binary_cache_url=None, upload_binary_cache_url=None,
-      download_binary_dir_url=None, upload_binary_dir_url=None):
+      download_binary_dir_url=None, upload_binary_dir_url=None,
+      binary_cache_url_blacklist = []):
     """Initialisation of class parameters
     """
     self.url = url
@@ -77,14 +78,17 @@ class Software(object):
     self.upload_binary_cache_url = upload_binary_cache_url
     self.download_binary_dir_url = download_binary_dir_url
     self.upload_binary_dir_url = upload_binary_dir_url
+    self.binary_cache_url_blacklist = binary_cache_url_blacklist
 
   def install(self):
     """ Fetches binary cache if possible.
     Installs from buildout otherwise.
     """
+    self.logger.info("Installing software release %s..." % self.url)
     tarname = self.software_url_hash
     cache_dir = tempfile.mkdtemp()
     tarpath = os.path.join(cache_dir, tarname)
+    # Check if we can download from cache
     if (not os.path.exists(self.software_path)) \
       and download_network_cached(
           self.download_binary_cache_url,
@@ -92,7 +96,8 @@ class Software(object):
           self.url, self.software_root,
           self.software_url_hash,
           tarpath, self.logger,
-          self.signature_certificate_list):
+          self.signature_certificate_list,
+          self.binary_cache_url_blacklist):
         tar = tarfile.open(tarpath)
         try:
           self.logger.info("Extracting archive of cached software release...")
@@ -128,7 +133,6 @@ class Software(object):
     """ Fetches buildout configuration from the server, run buildout with
     it. If it fails, we notify the server.
     """
-    self.logger.info("Installing software release %s..." % self.url)
     root_stat_info = os.stat(self.software_root)
     os.environ = utils.getCleanEnvironment(pwd.getpwuid(root_stat_info.st_uid
       ).pw_dir)
