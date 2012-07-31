@@ -82,7 +82,7 @@ if invoice is None:\n
 \n
     # force tracking causality state\n
     invoice.startBuilding()\n
-    invoice.plan(**kw)\n
+    invoice.plan(comment=\'Initialised by fixing consistency.\', **kw)\n
 </string> </value>
         </item>
         <item>
