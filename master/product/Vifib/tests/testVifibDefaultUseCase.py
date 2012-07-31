@@ -4,20 +4,24 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
 class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
 
+  def _getRegistrationInvoice(self, person):
+    transaction_list = self.portal.portal_catalog(
+      resource_relative_url=self.portal.portal_preferences\
+        .getPreferredRegistrationResource(),
+      portal_type="Invoice Line",
+      **{'movement.destination_uid': person.getUid()}
+      )
+    self.assertEquals(1, len(transaction_list))
+
+    return transaction_list[0].getObject().getParentValue()
+
   def stepCheckRegistrationAccounting(self, sequence, **kw):
     """
     """
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
 
-    # Check that one sale invoice has been generated for the user
-    transaction_list = self.portal.portal_catalog(
-      portal_type="Sale Invoice Transaction",
-      destination_section_relative_url=person.getRelativeUrl(),
-      )
-    self.assertEquals(1, len(transaction_list))
-
-    sale_invoice = transaction_list[0].getObject()
+    sale_invoice = self._getRegistrationInvoice(person)
 
     # Check invoice creation
     self.assertEquals(
@@ -172,14 +176,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
 
-    # Check that one sale invoice has been generated for the user
-    transaction_list = self.portal.portal_catalog(
-      portal_type="Sale Invoice Transaction",
-      destination_section_relative_url=person.getRelativeUrl(),
-      )
-    self.assertEquals(1, len(transaction_list))
-
-    sale_invoice = transaction_list[0].getObject()
+    sale_invoice = self._getRegistrationInvoice(person)
 
     # Check invoice creation
     self.assertEquals(
