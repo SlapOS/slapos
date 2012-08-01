@@ -91,8 +91,6 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="The socket supervisor will use.")
   parser.add_argument("--supervisord-configuration-path",
       help="The location where supervisord configuration will be stored.")
-  parser.add_argument("--usage-report-periodicity", type=int, default="24",
-      help="The periodicity of usage report sends, in hours.")
   parser.add_argument("--buildout", default=None,
       help="Location of buildout binary.")
   parser.add_argument("--pidfile",
@@ -252,7 +250,6 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             supervisord_socket=option_dict['supervisord_socket'],
             supervisord_configuration_path=option_dict[
               'supervisord_configuration_path'],
-            usage_report_periodicity=option_dict['usage_report_periodicity'],
             key_file=key_file,
             cert_file=cert_file,
             master_ca_file=master_ca_file,
@@ -348,7 +345,6 @@ class Slapgrid(object):
                computer_id,
                supervisord_socket,
                supervisord_configuration_path,
-               usage_report_periodicity,
                buildout,
                key_file=None,
                cert_file=None,
@@ -379,7 +375,6 @@ class Slapgrid(object):
     self.computer_id = computer_id
     self.supervisord_socket = supervisord_socket
     self.supervisord_configuration_path = supervisord_configuration_path
-    self.usage_report_periodicity = usage_report_periodicity
     self.key_file = key_file
     self.cert_file = cert_file
     self.master_ca_file = master_ca_file
@@ -909,12 +904,6 @@ class Slapgrid(object):
             filename_delete_list.append(filename)
         else:
           logger.debug("Usage report %r not found, ignored" % file_path)
-
-        #last_push_date = self.computer.getLastUsagePush()
-        #periodicity_timedelta = datetime.timedelta(
-        #        self.usage_report_periodicity)
-        #if periodicity_timedelta + last_push_date < datetime.datetime.today():
-        # Pushes informations, if any
 
       #After sending the aggregated file we remove all the valid xml reports
       for filename in filename_delete_list:
