@@ -27,42 +27,39 @@
 #
 ##############################################################################
 
+import argparse
+import ConfigParser
+from hashlib import md5
+from lxml import etree
 import logging
 import os
-import sys
 import pkg_resources
+from random import random
+import socket
+import subprocess
+import StringIO
+import sys
+import tempfile
+import time
+import traceback
 import warnings
 if sys.version_info < (2, 6):
   warnings.warn('Used python version (%s) is old and have problems with'
       ' IPv6 connections' % sys.version.split('\n')[0])
-import socket
-import subprocess
-import traceback
-import time
-#from time import strftime
-
-from SlapObject import Software, Partition, WrongPermissionError, \
-    PathDoesNotExistError
-import argparse
-import ConfigParser
-from utils import updateFile
-from utils import createPrivateDirectory
-from utils import setRunning
-from utils import setFinished
-from utils import getSoftwareUrlHash
-from slapos import slap
-from slapos.slap.slap import ServerError
-from utils import dropPrivileges
-from utils import SlapPopen
-from svcbackend import launchSupervisord
-import tempfile
-from time import strftime
-import StringIO
-from lxml import etree
-from random import random
 
 from slapos.slap.slap import NotFoundError
-from hashlib import md5
+from slapos.slap.slap import ServerError
+from SlapObject import Software, Partition, WrongPermissionError, \
+    PathDoesNotExistError
+from svcbackend import launchSupervisord
+from utils import createPrivateDirectory
+from utils import dropPrivileges
+from utils import getSoftwareUrlHash
+from utils import setRunning
+from utils import setFinished
+from utils import SlapPopen
+from utils import updateFile
+from slapos import slap
 
 MANDATORY_PARAMETER_LIST = [
     'computer_id',
@@ -737,7 +734,7 @@ class Slapgrid(object):
                "<source></source>" \
                "<destination></destination>" \
                "</arrow>" \
-               % (strftime("%Y-%m-%d at %H:%M:%S"),
+               % (time.strftime("%Y-%m-%d at %H:%M:%S"),
                   self.computer_id)
 
     for computer_partition_usage in computer_partition_usage_list:
