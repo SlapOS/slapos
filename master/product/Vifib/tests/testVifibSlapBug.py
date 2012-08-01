@@ -13,6 +13,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       PersonRequestSoftwareInstance \
       Tic \
       Logout \
+      CallConfirmOrderedSaleOrderAlarm \
+      CleanTic \
+      CallVifibTriggerBuildAlarm \
+      CleanTic \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
