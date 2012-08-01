@@ -117,6 +117,7 @@ packing_list = module.newContent(\n
   price_currency="currency_module/EUR",\n
   activate_kw=activate_kw\n
 )\n
+packing_list.startBuilding()\n
 packing_list.newContent(\n
   portal_type="Purchase Packing List Line",\n
   resource_uid=service_uid,\n

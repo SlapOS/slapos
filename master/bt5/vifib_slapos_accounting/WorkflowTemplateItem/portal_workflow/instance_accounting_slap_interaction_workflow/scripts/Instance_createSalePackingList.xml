@@ -70,6 +70,7 @@ packing_list = packing_list_module.newContent(\n
   price_currency=delivery.getPriceCurrency(),\n
   start_date=DateTime())\n
 \n
+packing_list.startBuilding()\n
 packing_list_line = packing_list.newContent(\n
   portal_type=\'Sale Packing List Line\',\n
   resource=service.getRelativeUrl(),\n

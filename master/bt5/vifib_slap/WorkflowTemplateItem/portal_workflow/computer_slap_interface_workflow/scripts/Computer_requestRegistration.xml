@@ -66,6 +66,7 @@ internal_packing_list_module = portal.restrictedTraverse(internal_packing_list_i
 internal_packing_list = internal_packing_list_module.newContent(\n
   portal_type=\'Internal Packing List\',\n
 )\n
+internal_packing_list.startBuilding()\n
 \n
 # User has to access his person profile\n
 person_value = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
