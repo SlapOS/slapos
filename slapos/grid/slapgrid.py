@@ -122,9 +122,6 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="SlapOS configuration file.")
   parser.add_argument("--now", action="store_true", default=False,
     help="Launch slapgrid without delay.")
-  parser.add_argument("--develop", action="store_true", default=False,
-    help="Launch slapgrid in develop mode. In develop mode, slapgrid-sr "
-        "ignores .completed file.")
   parser.add_argument("--only_sr",
     help="Force the update of a single software release (use url hash),"
          "event if is already installed. This option will make all others "
@@ -376,7 +373,6 @@ class Slapgrid(object):
                shacache_key_file=None,
                shadir_cert_file=None,
                shadir_key_file=None,
-               develop=False,
                software_release_filter_list=None,
                computer_partition_filter_list=None):
     """Makes easy initialisation of class parameters"""
