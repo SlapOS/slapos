@@ -80,56 +80,52 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """
   parser = argparse.ArgumentParser()
   parser.add_argument("--instance-root",
-                    help="The instance root directory location.")
+      help="The instance root directory location.")
   parser.add_argument("--software-root",
-                    help="The software_root directory location.")
+      help="The software_root directory location.")
   parser.add_argument("--master-url",
-                    help="The master server URL. Mandatory.")
+      help="The master server URL. Mandatory.")
   parser.add_argument("--computer-id",
-                    help="The computer id defined in the server.")
+      help="The computer id defined in the server.")
   parser.add_argument("--supervisord-socket",
-                    help="The socket supervisor will use.")
+      help="The socket supervisor will use.")
   parser.add_argument("--supervisord-configuration-path",
-                    help="The location where supervisord configuration "
-                           "will be stored.")
-  parser.add_argument("--usage-report-periodicity",
-                    type=int, default="24",
-                    help="The periodicity of usage report sends, in hours.")
-  parser.add_argument("--buildout", help="Location of buildout binary.",
-                    default=None)
+      help="The location where supervisord configuration will be stored.")
+  parser.add_argument("--usage-report-periodicity", type=int, default="24",
+      help="The periodicity of usage report sends, in hours.")
+  parser.add_argument("--buildout", default=None,
+      help="Location of buildout binary.")
   parser.add_argument("--pidfile",
-                    help="The location where pidfile will be created.")
+      help="The location where pidfile will be created.")
   parser.add_argument("--logfile",
-                    help="The location where slapgrid logfile will be "
-                           "created.")
+      help="The location where slapgrid logfile will be created.")
   parser.add_argument("--key_file", help="SSL Authorisation key file.")
   parser.add_argument("--cert_file",
       help="SSL Authorisation certificate file.")
-  parser.add_argument("--signature_private_key_file", help="Signature private "
-      "key file.")
-  parser.add_argument("--master_ca_file", help="Root certificate of SlapOS "
-      "master key.")
+  parser.add_argument("--signature_private_key_file",
+      help="Signature private key file.")
+  parser.add_argument("--master_ca_file",
+      help="Root certificate of SlapOS master key.")
   parser.add_argument("--certificate_repository_path",
       help="Path to directory where downloaded certificates would be stored.")
   parser.add_argument("-c", "--console", action="store_true", default=False,
       help="Enables console output and live output from subcommands.")
   parser.add_argument("-v", "--verbose", action="store_true", default=False,
       help="Be verbose.")
-  parser.add_argument("--promise-timeout",
-                      type=int, default=3,
-                      help="Promise timeout in seconds.")
+  parser.add_argument("--promise-timeout", type=int, default=3,
+      help="Promise timeout in seconds.")
   parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
       help="SlapOS configuration file.")
   parser.add_argument("--now", action="store_true", default=False,
-    help="Launch slapgrid without delay.")
+      help="Launch slapgrid without delay.")
   parser.add_argument("--only_sr",
-    help="Force the update of a single software release (use url hash),"
-         "event if is already installed. This option will make all others "
-         "sofware releases be ignored.")
+      help="Force the update of a single software release (use url hash),"
+           "event if is already installed. This option will make all others "
+           "sofware releases be ignored.")
   parser.add_argument("--only_cp",
-    help="Update a single or a list of computer partitions "
-         "(ie.:slappartX, slappartY),"
-         "this option will make all others computer partitions be ignored.")
+      help="Update a single or a list of computer partitions "
+           "(ie.:slappartX, slappartY),"
+           "this option will make all others computer partitions be ignored.")
 
 
   # Parses arguments
