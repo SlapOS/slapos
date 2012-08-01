@@ -39,35 +39,6 @@ import subprocess
 from slapos.recipe.librecipe import GenericSlapRecipe
 from slapos.recipe.librecipe import GenericBaseRecipe
 
-def promise_func(args):
-
-    output = subprocess.check_output(
-        [args['lxc-info'], '-n', args['name']]
-    )
-
-    if 'RUNNING' in output:
-        return 0
-    else:
-        return 127
-
-
-
-class Promise(GenericBaseRecipe):
-
-    def install(self):
-        return [
-            self.createPythonScript(
-                self.options['promise'],
-                'slapos.recipe.container.promise_func',
-                {
-                    'lxc-info': self.options['lxc-info'],
-                    'name': self.options['slapcontainer-name']
-                }
-            )
-        ]
-
-
-
 class Recipe(GenericSlapRecipe):
 
     def _options(self, options):
