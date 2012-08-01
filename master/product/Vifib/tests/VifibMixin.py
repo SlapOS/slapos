@@ -251,6 +251,7 @@ class testVifibMixin(ERP5TypeTestCase):
                                   ):
 
       person = person.getObject()
+      person.fixConsistency()
       if isTransitionPossible(person, 'validate'):
         person.validate()
       for assignment in person.contentValues(portal_type='Assignment'):
