@@ -90,33 +90,33 @@ class Software(object):
     tarpath = os.path.join(cache_dir, tarname)
     # Check if we can download from cache
     if (not os.path.exists(self.software_path)) \
-      and download_network_cached(
-          self.download_binary_cache_url,
-          self.download_binary_dir_url,
-          self.url, self.software_root,
-          self.software_url_hash,
-          tarpath, self.logger,
-          self.signature_certificate_list,
-          self.binary_cache_url_blacklist):
-        tar = tarfile.open(tarpath)
+        and download_network_cached(
+            self.download_binary_cache_url,
+            self.download_binary_dir_url,
+            self.url, self.software_root,
+            self.software_url_hash,
+            tarpath, self.logger,
+            self.signature_certificate_list,
+            self.binary_cache_url_blacklist):
+      tar = tarfile.open(tarpath)
+      try:
+        self.logger.info("Extracting archive of cached software release...")
+        tar.extractall(path=self.software_root)
+      finally:
+        tar.close()
+    else:
+      self._install_from_buildout()
+      if (self.software_root and self.url and self.software_url_hash \
+                             and self.upload_binary_cache_url \
+                             and self.upload_binary_dir_url):
+        self.logger.info("Creating archive of software release...")
+        tar = tarfile.open(tarpath, "w:gz")
         try:
-          self.logger.info("Extracting archive of cached software release...")
-          tar.extractall(path=self.software_root)
+          tar.add(self.software_path, arcname=self.software_url_hash)
         finally:
           tar.close()
-    else:
-        self._install_from_buildout()
-        if (self.software_root and self.url and self.software_url_hash \
-                               and self.upload_binary_cache_url \
-                               and self.upload_binary_dir_url):
-          self.logger.info("Creating archive of software release...")
-          tar = tarfile.open(tarpath, "w:gz")
-          try:
-            tar.add(self.software_path, arcname=self.software_url_hash)
-          finally:
-            tar.close()
-          self.logger.info("Trying to upload archive of software release...")
-          upload_network_cached(
+        self.logger.info("Trying to upload archive of software release...")
+        upload_network_cached(
             self.software_root,
             self.url, self.software_url_hash,
             self.upload_binary_cache_url,
