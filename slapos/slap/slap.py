@@ -586,6 +586,8 @@ class ConnectionHelper:
           raise socket.error(str(e) + self.error_message_timeout)
         raise ssl.SSLError(str(e) + self.ssl_error_message_connect_fail)
       except socket.error, e:
+        if e.message == "timed out":
+          raise socket.error(str(e) + self.error_message_timeout)
         raise socket.error(self.error_message_connect_fail + str(e))
       # check self.response.status and raise exception early
       if self.response.status == httplib.REQUEST_TIMEOUT:
