@@ -70,9 +70,8 @@ port = ${ipv6toipv4:ipv6-port}
 
 [ipv6toipv4]
 recipe = slapos.cookbook:ipv6toipv4
-conf-path = ${directory:etc}/${:base-name}.conf
 runner-path = ${directory:service}/${:base-name}
-haproxy-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+tunnel6-path = {{ parameter_dict['tunnel6'] }}/bin/6tunnel
 shell-path = {{ parameter_dict['dash'] }}/bin/dash
 ipv4 = ${cloudooo-instance:ip}
 ipv6 = ${slap-network-information:global-ipv6}

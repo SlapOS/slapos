@@ -32,9 +32,8 @@ port = 11000
 
 [ipv6toipv4]
 recipe = slapos.cookbook:ipv6toipv4
-conf-path = ${directory:etc}/${:base-name}.conf
 runner-path = ${directory:service}/${:base-name}
-haproxy-path = {{ haproxy_location }}/sbin/haproxy
+tunnel6-path = {{ tunnel6_location }}/bin/6tunnel
 shell-path = {{ dash_location }}/bin/dash
 ipv4 = ${memcached-instance:ip}
 ipv6 = ${slap-network-information:global-ipv6}
