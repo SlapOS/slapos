@@ -1,9 +1,8 @@
 {% if software_type == slap_software_type -%}
 {% set current_port = 2000 -%}
 {% set part_list = [] -%}
-{% set storage_dict = {} -%}
-{% set zodb_dict = {} -%}
-{% set tidstorage_dict = slapparameter_dict.get('tidstorage-dict') -%}
+{% set zeo_dict = {} -%}
+{% set zodb_list = [] -%}
 {% set known_tid_storage_identifier_dict = {} -%}
 {% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 {% macro zodb(base_name, storage_type, port) -%}
@@ -12,18 +11,11 @@
 XXX: This template only supports exactly one IPv6 per
 partition. No more (undefined result), no less (IndexError).
 -#}
+{% set ipv4 = (ipv4_set | list)[0] -%}
 {% set ipv6 = (ipv6_set | list)[0] -%}
-{% set tidstorage_ip = ipv6 -%}
+{% set tidstorage_ip = ipv4 -%}
 {% set tidstorage_port = 6001 -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
-[buildout]
-extends =
-  {{ parameter_dict['instance-logrotate-cfg'] }}
-parts +=
-  publish
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
 
 [zeo-base]
 recipe = slapos.cookbook:zeo
@@ -32,47 +24,91 @@ pid-path = ${directory:run}/${:base-name}.pid
 conf-path = ${directory:etc}/${:base-name}.conf
 wrapper-path = ${directory:services}/${:base-name}
 binary-path = {{ bin_directory }}/runzeo
-# TODO: check ipv6 actually works
+# TODO: check ipv4 actually works
 # TODO: setup ZEO secure auth & cryptography
-ip = {{ ipv6 }}
+ip = {{ ipv4 }}
 
-{% for export_id, mountpoint_dict in slapparameter_dict['zodb-dict'].items() -%}
-{%   do storage_dict.setdefault(
+[ipv6toipv4-base]
+recipe = slapos.cookbook:ipv6toipv4
+runner-path = ${directory:services}/${:base-name}
+tunnel6-path = {{ parameter_dict['tunnel6'] }}/bin/6tunnel
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+ipv4 = {{ ipv4 }}
+ipv6 = {{ ipv6 }}
+
+{% for export_id, mountpoint_dict in json_module.loads(slapparameter_dict['zodb-dict']).items() -%}
+{%   do zeo_dict.setdefault(
        mountpoint_dict.get('storage_ident', 'default'), []
      ).append((
        export_id,
        mountpoint_dict.get('storage_dict', {}),
      )) -%}
 {% endfor -%}
-{% for storage_ident, export_list in storage_dict.items() -%}
-{%   set key_template = "((('" ~ tidstorage_ip ~ "', " ~ tidstorage_port ~ "),), '%s')" -%}
+
+
+{% set next_current_port = {'next_port': current_port} -%}
+{% for storage_ident, export_list in zeo_dict.items() -%}
+{%   set key_template = (('' ~ ipv4, current_port),) -%}
+{%   set storage_list = [] -%}
 {%   for export_id, storage_dict in export_list -%}
-{%     do zodb_dict.__setitem__(export_id, {
-         'server': ipv6 ~ ':' ~ current_port,
-         'storage': export_id,
-       }) -%}
-{#     TODO: generate sane defaults for storage_dict['path'] and tidstorage_dict[export_id]['path'] -#}
-{%     if tidstorage_dict -%}
-{%       do known_tid_storage_identifier_dict.__setitem__(key_template % (export_id, ), (
-           storage_dict['path'],
-           tidstorage_dict[export_id]['path'],
-           tidstorage_dict[export_id]['url_substitute'],
-         )) -%}
-{%     endif -%}
+
+{%     do storage_list.append("storage-name=%s zodb-path=${directory:zodb}/%s.fs" % (export_id, export_id)) -%}
+
+{%     do storage_dict.__setitem__('server', '[' ~ ipv6 ~ ']:' ~ current_port) -%}
+{%     do storage_dict.__setitem__('storage', export_id) -%}
+{%     do storage_dict.__setitem__('name', export_id) -%}
+{%     do zodb_list.append([
+           export_id,
+           storage_dict.pop('mount-point', ''),
+           storage_dict.pop('zope-cache-size', ''),
+           'zeoclient',
+           storage_dict
+       ]) -%}
+
+{%     do known_tid_storage_identifier_dict.__setitem__(
+         json_module.dumps((key_template, export_id )), (
+           "${directory:zodb}/%s.fs" % export_id,
+           "${directory:backup-zodb}/%s" % export_id,
+           zodb_list[-1][1],
+       )) -%}
+
+{#     TODO: generate sane defaults for zeo_dict['path'] and tidstorage_dict[export_id]['path'] -#}
+
+
 {%   endfor -%}
-[{{ section(base_name) }}]
+[{{ section("instanciate-zeo-" + storage_ident) }}]
 < = zeo-base
 base-name = zeo-{{ storage_ident }}
 port = {{ current_port }}
-storage = {{ dumps(export_list) }}
-{%   set current_port = current_port + 1 -%}
-{% endfor -%}
+storage = 
+  {{ storage_list | join('\n  ') }}
 
-{% if tidstorage_dict -%}
+[{{ section("instanciate-zeo-" + storage_ident + "-tunnel") }}]
+< = ipv6toipv4-base
+base-name = zeo-{{ storage_ident }}-tunnel
+ipv6-port = {{ current_port }}
+ipv4-port = {{ current_port }}
+
+[{{ section("promise-zeo-" + storage_ident) }}]
+recipe = slapos.cookbook:check_port_listening
+hostname = {{ "${instanciate-zeo-" + storage_ident + ":ip}" }}
+port = {{ current_port }}
+path = ${directory:promises}/zeo-{{ storage_ident }}
+
+[{{ section("promise-zeo-" + storage_ident + "-tunnel") }}]
+recipe = slapos.cookbook:check_port_listening
+hostname = {{ "${instanciate-zeo-" + storage_ident + "-tunnel:ipv6}" }}
+port = {{ current_port }}
+path = ${directory:promises}/zeo-{{ storage_ident }}-tunnel
+
+{%   set current_port = current_port + 1 -%}
+{%   do next_current_port.__setitem__('next_port', current_port) -%}
+{% endfor -%}
+{% set current_port = next_current_port['next_port'] -%}
+
 [tidstorage]
 recipe = slapos.cookbook:tidstorage
-known-tid-storage-identifier-dict = {{ known_tid_storage_identifier_dict }}
-base-url = {{ slapparameter_dict['tidstorage-base-url-template'] }}
+known-tid-storage-identifier-dict = {{ json_module.dumps(known_tid_storage_identifier_dict) }}
 configuration-path = ${directory:etc}/tidstorage.py
 ip = {{ tidstorage_ip }}
 port = {{ tidstorage_port }}
@@ -87,7 +123,26 @@ tidstorage-wrapper = ${directory:services}/tidstoraged
 repozo-wrapper = ${buildout:bin-directory}/tidstorage-repozo
 # TODO: stunnel/TLS
 
-[cron-entry-tidstorage-backup]
+[{{ section("tidstorage-tunnel") }}]
+< = ipv6toipv4-base
+base-name = tidstorage-tunnel
+ipv6-port = {{ current_port }}
+ipv4-port = ${tidstorage:port}
+{% set current_port = current_port + 1 -%}
+
+[{{ section("promise-tidstorage") }}]
+recipe = slapos.cookbook:check_port_listening
+hostname = ${tidstorage:ip}
+port = ${tidstorage:port}
+path = ${directory:promises}/tidstorage
+
+[{{ section("promise-tidstorage-tunnel") }}]
+recipe = slapos.cookbook:check_port_listening
+hostname = ${tidstorage-tunnel:ipv6}
+port = ${tidstorage-tunnel:ipv6-port}
+path = ${directory:promises}/tidstorage
+
+[{{ section("cron-entry-tidstorage-backup") }}]
 # TODO:
 # - configurable periodicity
 # - configurable full/incremental
@@ -106,28 +161,34 @@ name = tidstorage
 log = ${tidstorage:logfile-name}
 post = {{ bin_directory }}/killpidfromfile ${tidstorage:pidfile-name} SIGHUP
 
-{% else -%}
-[tidstorage]
-# Dummy section, backups are disabled
-ip =
-port =
-
-{% endif -%}
 [publish]
 recipe = slapos.cookbook:publish
-zodb-storage-type = zeoclient
-zodb-dict = {{ dumps(zodb_dict) }}
-tidstorage-ip = ${tidstorage:ip}
-tidstorage-port = ${tidstorage:port}
+zodb-list = {{ json_module.dumps(zodb_list) }}
+tidstorage-ip = ${tidstorage-tunnel:ipv6}
+tidstorage-port = ${tidstorage-tunnel:ipv6-port}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
 etc = ${buildout:directory}/etc
 services = ${:etc}/run
-srv = ${buildout:directory}/run
-tidstorage = ${:srv}/tidstorage
+promises = ${:etc}/promise
+srv = ${buildout:directory}/srv
+backup = ${:srv}/backup
+backup-zodb = ${:backup}/zodb
+tidstorage = ${:run}/tidstorage
+zodb = ${:srv}/zodb
 var = ${buildout:directory}/var
 log = ${:var}/log
 run = ${:var}/run
+
+[buildout]
+extends =
+  {{ parameter_dict['instance-logrotate-cfg'] }}
+parts +=
+  {{ part_list | join('\n  ') }}
+  publish
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
 
 {% endif %}
