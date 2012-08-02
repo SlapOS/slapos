@@ -39,14 +39,8 @@ class Recipe(GenericBaseRecipe):
       ipv4=self.options['ipv4'],
       ipv4_port=self.options['ipv4-port'],
       shell_path=self.options['shell-path'],
-      haproxy_path=self.options['haproxy-path'],
-      conf_path=self.options['conf-path'],
+      tunnel6_path=self.options['tunnel6-path'],
     )
-
-    configuration_path = self.createFile(
-      self.options['conf-path'],
-      self.substituteTemplate(self.getTemplateFilename('configuration.cfg.in'),
-                              config))
 
     runner_path = self.createExecutable(
       self.options['runner-path'],
@@ -54,5 +48,5 @@ class Recipe(GenericBaseRecipe):
                               config))
 
 
-    return [runner_path, configuration_path]
+    return [runner_path]
 
