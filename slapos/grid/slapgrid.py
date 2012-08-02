@@ -113,6 +113,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="SlapOS configuration file.")
   parser.add_argument("--now", action="store_true", default=False,
       help="Launch slapgrid without delay.")
+  parser.add_argument("--develop", action="store_true", default=False,
+      help="Launch slapgrid in develop mode. In develop mode, slapgrid-sr "
+           "ignores .completed file.")
   parser.add_argument("--only_sr",
       help="Force the update of a single software release (use url hash),"
            "event if is already installed. This option will make all others "
@@ -275,6 +278,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             develop=option_dict.get('develop', False),
             software_release_filter_list=option_dict.get('only_sr', None),
             computer_partition_filter_list=option_dict.get('only_cp', None),
+            develop=option_dict.get('develop', False)
             ),
           option_dict])
 
@@ -362,6 +366,7 @@ class Slapgrid(object):
                shacache_key_file=None,
                shadir_cert_file=None,
                shadir_key_file=None,
+               develop=False,
                software_release_filter_list=None,
                computer_partition_filter_list=None):
     """Makes easy initialisation of class parameters"""
@@ -491,8 +496,7 @@ class Slapgrid(object):
             shadir_key_file=self.shadir_key_file)
         if state == 'available':
           completed_tag = os.path.join(software_path, '.completed')
-          if self.develop or \
-            (not os.path.exists(completed_tag) and \
+          if self.develop or (not os.path.exists(completed_tag) and \
                  len(self.software_release_filter_list) == 0) or \
              url_hash in self.software_release_filter_list:
             try:
