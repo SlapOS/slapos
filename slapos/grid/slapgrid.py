@@ -278,7 +278,6 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             develop=option_dict.get('develop', False),
             software_release_filter_list=option_dict.get('only_sr', None),
             computer_partition_filter_list=option_dict.get('only_cp', None),
-            develop=option_dict.get('develop', False)
             ),
           option_dict])
 
