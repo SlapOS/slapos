@@ -143,7 +143,7 @@ class Recipe(object):
       except AttributeError:
         status = 'unknown'
       error_message = 'Connection parameter %s not found. '\
-          'Requested instance is currently %s. If this error persists, '\
+          'Status of requested instance is: %s. If this error persists, '\
           'check status of this instance.' % (self.failed, status)
       self.logger.error(error_message)
       raise KeyError(error_message)
