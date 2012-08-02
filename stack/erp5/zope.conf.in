@@ -43,7 +43,7 @@ products {{ instance_products }}
 </product-config>
 
 {% endif -%}
-{% if 'timerserver-interval' in parameter_dict -%}
+{% if parameter_dict.get('timerserver-interval', 0) -%}
 %import timerserver
 <timer-server>
   interval {{ parameter_dict['timerserver-interval'] }}
