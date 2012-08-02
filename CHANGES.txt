@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.26.3 (Unreleased)
+0.27 (Unreleased)
 -----------------
 
  * slapformat: Raise correct error when no IPv6 is available on selected
@@ -11,6 +11,7 @@ Changes
        (folder_id)
      - only_cp filter which computer patition, will be runned. it can be a
        list, splited by comman (slappartX,slappartY ...) [Rafael Monnerat]
+ * Cleanup unused option (--usage-report-periodicity). [Cedric de Saint Martin]
 
 0.26.2 (2012-07-09)
 -----------------
