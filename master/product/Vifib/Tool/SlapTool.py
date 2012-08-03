@@ -953,7 +953,7 @@ class SlapTool(BaseTool):
     computer_partition = software_instance.getAggregateValue(portal_type="Computer Partition")
     timestamp = int(computer_partition.getModificationDate())
 
-    newtimestamp = int(software_instance.getModificationDate())
+    newtimestamp = int(software_instance.getBangTimestamp(int(software_instance.getModificationDate())))
     if (newtimestamp > timestamp):
       timestamp = newtimestamp
 
@@ -980,8 +980,8 @@ class SlapTool(BaseTool):
             'xml': slave_instance.getTextContent(),
             'connection_xml': slave_instance.getConnectionXml(),
           })
-          newtimestamp = int(slave_instance.getModificationDate())
-          if (newtimestamp > timestamp):
+          newtimestamp = int(slave_instance.getBangTimestamp(int(software_instance.getModificationDate())))                  
+          if (newtimestamp > timestamp):                                            
             timestamp = newtimestamp
     return {
       'xml': software_instance.getTextContent(),
@@ -992,7 +992,7 @@ class SlapTool(BaseTool):
       'slap_software_release_url': software_instance.getRootSoftwareReleaseUrl(),
       'slave_instance_list': slave_instance_list,
       'ip_list': ip_list,
-      'timestamp': "%s" % timestamp,
+      'timestamp': "%i" % timestamp,
     }
 
   @UnrestrictedMethod
