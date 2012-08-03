@@ -67,7 +67,7 @@ def launchSupervisord(socket, configuration_file):
         break
       else:
         if status['statename'] == 'RUNNING' and status['statecode'] == 1:
-          logger.info('Supervisord already running.')
+          logger.debug('Supervisord already running.')
           return
         elif status['statename'] == 'SHUTDOWN_STATE' and status['statecode'] == 6:
           logger.info('Supervisor in shutdown procedure, will check again later.')
