@@ -113,6 +113,7 @@ tmp = ${buildout:directory}/tmp
 var = ${buildout:directory}/var
 zodb = ${:srv}/zodb
 zodb-backup = ${:backup}/zodb
+erp5-ca-dir-backup = ${:backup}/erp5-ca-dir
 
 #############################
 # Binary symlinking
@@ -499,6 +500,13 @@ repozo-binary = {{ bin_directory }}/repozo
 tidstorage-wrapper = ${directory:services}/tidstoraged
 repozo-wrapper = ${buildout:bin-directory}/tidstorage-repozo
 
+[cron-entry-erp5-ca-backup]
+< = cron-base
+recipe = slapos.cookbook:cron.d
+name = erp5-ca-backup
+frequency = 0 0 * * *
+command = ${buildout:bin-directory}/cp -a ${directory:erp5-ca-dir}/* ${directory:erp5-ca-dir-backup}
+
 [cron-entry-tidstorage-backup]
 < = cron-base
 recipe = slapos.cookbook:cron.d
@@ -525,6 +533,7 @@ parts =
   erp5-certificate-authority
   tidstorage
   cron-entry-tidstorage-backup
+  cron-entry-erp5-ca-backup
   logrotate-entry-tidstorage
   binary-link
   erp5-promise
