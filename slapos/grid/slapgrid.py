@@ -114,8 +114,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--now", action="store_true", default=False,
       help="Launch slapgrid without delay.")
   parser.add_argument("--develop", action="store_true", default=False,
-      help="Launch slapgrid in develop mode. In develop mode, slapgrid-sr "
-           "ignores .completed file.")
+      help="Launch slapgrid in develop mode. In develop mode, slapgrid "
+           "will process all Softare Releases and/or Computer Partitions.")
   parser.add_argument("--only_sr",
       help="Force the update of a single software release (use url hash),"
            "event if is already installed. This option will make all others "
@@ -610,7 +610,7 @@ class Slapgrid(object):
       instance_path = os.path.join(
         self.instance_root, computer_partition_id)
       timestamp_path = os.path.join(instance_path, '.timestamp')
-      if os.path.exists(timestamp_path):
+      if (not self.develop) and os.path.exists(timestamp_path):
         old_timestamp = open(timestamp_path).read()
         parameter_dict = computer_partition.getInstanceParameterDict()
         if 'timestamp' in parameter_dict:
