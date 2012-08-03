@@ -30,7 +30,7 @@ recipe = slapos.cookbook:generic.mysql
 
 # Options
 user = user
-parallel-test-database-amount = 100
+parallel-test-database-amount = ${slap-parameter:test-database-amount}
 port = 45678
 ip = ${slap-network-information:global-ipv6}
 database = erp5
