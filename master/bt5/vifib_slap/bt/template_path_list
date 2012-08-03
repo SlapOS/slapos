@@ -1,4 +1,3 @@
-portal_alarms/cleanup_archived_hs_instances
 portal_alarms/confirm_ordered_sale_order
 portal_alarms/confirm_planned_sale_invoice_transaction
 portal_alarms/deliver_subscription_sale_packing_list
