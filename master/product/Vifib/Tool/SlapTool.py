@@ -143,13 +143,20 @@ class SlapTool(BaseTool):
     """
 
     def _getComputerInformation(computer_id, user):
+      user_document = self.getPortalObject().portal_catalog.getResultValue(
+        reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
+      user_type = user_document.getPortalType()
       self.REQUEST.response.setHeader('Content-Type', 'text/xml')
       slap_computer = Computer(computer_id)
       parent_uid = self._getComputerUidByReference(computer_id)
 
       slap_computer._computer_partition_list = []
-      slap_computer._software_release_list = \
+      if user_type == 'Computer':
+        slap_computer._software_release_list = \
            self._getSoftwareReleaseValueListForComputer(computer_id)
+      else:
+        slap_computer._software_release_list = []
+
       for computer_partition in self.getPortalObject().portal_catalog(
                       parent_uid=parent_uid,
                       portal_type="Computer Partition"):
@@ -171,19 +178,31 @@ class SlapTool(BaseTool):
 
     Reuses slap library for easy marshalling.
     """
-    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
-    slap_computer = Computer(computer_id)
-    parent_uid = self._getComputerUidByReference(computer_id)
-
-    slap_computer._computer_partition_list = []
-    slap_computer._software_release_list = \
-         self._getSoftwareReleaseValueListForComputer(computer_id, full=True)
-    for computer_partition in self.getPortalObject().portal_catalog(
-                    parent_uid=parent_uid,
-                    portal_type="Computer Partition"):
-      slap_computer._computer_partition_list.append(
-          self._getSlapPartitionByPackingList(computer_partition.getObject()))
-    return xml_marshaller.xml_marshaller.dumps(slap_computer)
+    def _getFullComputerInformation(computer_id, user):
+      user_document = self.getPortalObject().portal_catalog.getResultValue(
+        reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
+      user_type = user_document.getPortalType()
+      self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+      slap_computer = Computer(computer_id)
+      parent_uid = self._getComputerUidByReference(computer_id)
+  
+      slap_computer._computer_partition_list = []
+      if user_type == 'Computer':
+        slap_computer._software_release_list = \
+           self._getSoftwareReleaseValueListForComputer(computer_id, full=True)
+      else:
+        slap_computer._software_release_list = []
+      for computer_partition in self.getPortalObject().portal_catalog(
+                      parent_uid=parent_uid,
+                      validation_state="validated",
+                      portal_type="Computer Partition"):
+        slap_computer._computer_partition_list.append(
+            self._getSlapPartitionByPackingList(computer_partition.getObject()))
+      return xml_marshaller.xml_marshaller.dumps(slap_computer)
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
+    return CachingMethod(_getFullComputerInformation,
+                         id='_getFullComputerInformation',
+                         cache_factory='slap_cache_factory')(computer_id, user)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getComputerPartitionCertificate')
