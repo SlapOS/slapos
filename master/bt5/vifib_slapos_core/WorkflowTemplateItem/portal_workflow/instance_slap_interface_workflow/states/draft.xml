@@ -22,6 +22,7 @@
             <key> <string>transitions</string> </key>
             <value>
               <tuple>
+                <string>bang</string>
                 <string>request_start</string>
                 <string>request_stop</string>
               </tuple>
