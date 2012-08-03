@@ -1,5 +1,6 @@
 {% if slap_software_type == software_type -%}
 {% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
 #############################
 #
 # Request erp5 production environnment
@@ -26,6 +27,9 @@ return = url-sphinx url-sphinx-sql
 [request-mariadb]
 <=request-common
 name = MariaDB DataBase
+config = 
+  test-database-amount
+config-test-database-amount = ${slap-parameter:test-database-amount}
 software-type = mariadb
 sla-computer_guid = ${slap-parameter:mariadb-computer-guid}
 
@@ -49,66 +53,11 @@ name = KumoFS
 software-type = kumofs
 sla-computer_guid = ${slap-parameter:kumofs-computer-guid}
 
-[request-zope-base]
-<=request-common
-return =
-  zope-address-list
-config =
-  mysql-url
-  memcached-url
-  cloudooo-url
-  kumofs-url
-  sphinx-url-sphinx
-  sphinx-url-sphinx-sql
-  smtp-url
-  bt5
-  bt5-repository-url
-  zodb-dict
-  tidstorage-ip
-  tidstorage-port
-  zope-instance-number
-config-mysql-url = ${request-mariadb:connection-url}
-config-memcached-url = ${request-memcached:connection-url}
-config-cloudooo-url = ${request-cloudooo:connection-url}
-config-kumofs-url = ${request-kumofs:connection-url}
-config-sphinx-url-sphinx = ${request-sphinx:connection-url-sphinx}
-config-sphinx-url-sphinx-sql = ${request-sphinx:connection-url-sphinx-sql}
-config-bt5 = ${slap-parameter:bt5}
-config-bt5-repository-url = ${slap-parameter:bt5-repository-url}
-config-smtp-url = ${slap-parameter:smtp-url}
-config-zodb-dict = ${request-zodb:connection-zodb-dict}
-config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
-config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
-software-type = production-zope
-
-[slap-parameter]
-# Default value if no computer_guid is specified for each type
-sphinx-computer-guid = ${slap-connection:computer-id}
-mariadb-computer-guid = ${slap-connection:computer-id}
-cloudooo-computer-guid = ${slap-connection:computer-id}
-memcached-computer-guid = ${slap-connection:computer-id}
-kumofs-computer-guid = ${slap-connection:computer-id}
-zodb-computer-guid = ${slap-connection:computer-id}
-cloudooo-json =
-bt5 = erp5_full_text_myisam_catalog
-  erp5_configurator_standard
-  erp5_configurator_maxma_demo
-  erp5_configurator_ung
-  erp5_configurator_run_my_doc
-bt5-repository-url = {{ local_bt5_repository }}
-smtp-url = smtp://localhost:25/
-
-[basedirectory]
-recipe = slapos.cookbook:mkdirectory
-etc = ${buildout:directory}/etc/run
-
 [request-zodb]
 < = request-common
+name = zodb
 return =
-  zodb-storage-type
-# (str)
-# Storage type, suitable for zope.conf (ex: "zeoclient").
-  zodb-dict
+  zodb-list
 # (dict)
 # key (str)
 #   (same as config-zodb-dict)
@@ -137,112 +86,129 @@ config =
 #     "storage_dict" (dict, optional)
 #       Storage-type-specific parameters. For example, it can be used to tell where
 #       a ZEO filestorage database is located.
-  tidstorage-dict
-# (dict, optional)
-# Backup parameters for tidstorage-related backup scripts.
-# Set to None if no backup is desired.
-# key (str)
-#   Possible keys and associated value types:
-#   "zodb_dict" (dict, mandatory)
-#     key (str)
-#       (same as zodb-dict)
-#     value (dict)
-#       key (str)
-#         Possible keys and associated value types:
-#         "url_substitute" (str, mandatory)
-#           Value to substitute to "%s" in tidstorage-base-url-template to
-#           trigger a no-op change in storage.
-#         "path" (str, optional)
-#           Path to store backups of this zodb into.
-#   "timestamp_path" (str, optional)
-#     Path to backup timestamp file.
-  tidstorage-base-url-template
-# (str, None)
-# URL template base used by TIDStorage to modify all mountpoints upon startup.
-# ex: 'http://example.com:1080/%s/serialize'
-# Note that it needs to contain exactly one "%s" conversion specification,
-# which gets substituted with ZODB mountpoint by TIDStorage server.
-# Ignored when tidstorage-dict is None.
+
 {# TODO: make libslap able to generate nested, complex values without having to resort to SR-level parsing -#}
-config-zodb-dict = {{ json_module.loads(slapparameter_dict['zodb-dict']) }}
-config-tidstorage-dict = {{ slapparameter_dict.get('tidstorage-dict') }}
-# TODO: auto-generate from one zope (distributing node)
-config-tidstorage-base-url-template = {{ slapparameter_dict.get('tidstorage-base-url-template') }}
+config-zodb-dict = {{ slapparameter_dict['zodb-dict'] }}
 software-type = {{ slapparameter_dict['zodb-software-type'] }}
 sla-computer_guid = ${slap-parameter:zodb-computer-guid}
 
-{% set i = 0 -%}
+[request-zope-base]
+<=request-common
+return =
+  zope-address-list
+config =
+  mysql-url
+  memcached-url
+  cloudooo-url
+  kumofs-url
+  sphinx-url-sphinx
+  sphinx-url-sphinx-sql
+  smtp-url
+  bt5
+  bt5-repository-url
+  zodb-list
+  tidstorage-ip
+  tidstorage-port
+  instance-count
+  thread-amount
+  timerserver-interval
+  timezone
+  site-id
+config-mysql-url = ${request-mariadb:connection-url}
+config-memcached-url = ${request-memcached:connection-url}
+config-cloudooo-url = ${request-cloudooo:connection-url}
+config-kumofs-url = ${request-kumofs:connection-url}
+config-sphinx-url-sphinx = ${request-sphinx:connection-url-sphinx}
+config-sphinx-url-sphinx-sql = ${request-sphinx:connection-url-sphinx-sql}
+config-bt5 = ${slap-parameter:bt5}
+config-bt5-repository-url = ${slap-parameter:bt5-repository-url}
+config-smtp-url = ${slap-parameter:smtp-url}
+config-zodb-list = ${request-zodb:connection-zodb-list}
+# config-zodb-dict = ${request-zodb:connection-zodb-dict}
+# config-zodb-storage-type  = ${request-zodb:connection-zodb-storage-type}
+config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
+config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
+config-timezone = ${slap-parameter:timezone}
+config-site-id = ${slap-parameter:site-id}
+software-type = production-zope
+
 {% set zope_family_dict = {} -%}
-{% for instance_count, zope_parameter_dict in json_module.loads(slapparameter_dict.get('zope-partition-list', '[[1, {}]]')) -%}
-{%   set name = 'zope-' ~ i -%}
-{%   set i = i + 1 -%}
-{%   do zope_family_dict.setdefault(zope_parameter_dict.get('family'), []).append(name) -%}
-[{{ name }}]
+{% for custom_name, zope_parameter_dict in json_module.loads(slapparameter_dict.get('zope-partition-dict', '{}')).items() -%}
+{%   set name = 'zope-' ~ custom_name -%}
+{%   do zope_family_dict.setdefault(zope_parameter_dict.get('family'), []).append('request-' ~ name) -%}
+[{{ 'request-' ~ name }}]
 < = request-zope-base
 name = {{ name }}
-config-zope-instance-count = {{ instance_count }}
+config-instance-count = {{ zope_parameter_dict.get('instance-count', 1) }}
+config-thread-amount = {{ zope_parameter_dict.get('thread-amount', 1) }}
+config-timerserver-interval = {{ zope_parameter_dict.get('timerserver-interval', 0) }}
 sla-computer_guid = {{ zope_parameter_dict.get('computer_guid', '${slap-connection:computer-id}') }}
 {% endfor %}
+
 [request-backend-base]
 < = request-common
+software-type = balancer
 return = url
-config =
-  zope-address-list
-  haproxy-maxconn
-  haproxy-server-check-path
-  apache-access-control-string
-  apache-ssl-authentication
-  apache-backend-path
-  ca
 # XXX: should those really be same for all backends ?
 config-haproxy-maxconn = {{ slapparameter_dict.get('haproxy-maxconn', 1) }}
 config-haproxy-server-check-path = {{ slapparameter_dict.get('haproxy-server-check-path', '/') }}
 config-apache-access-control-string = {{ slapparameter_dict.get('apache-access-control-string', '') }}
 config-apache-ssl-authentication = {{ slapparameter_dict.get('apache-ssl-authentication', '0') }}
 config-apache-backend-path = {{ slapparameter_dict.get('apache-backend-path', '/') % {'site_id': slapparameter_dict['site_id']} }}
-config-ca = {{ json_module.loads(slapparameter_dict['ca']) }}
+config-ca = {{ slapparameter_dict['ca'] }}
 
-[request-frontend-base]
-{% if 'frontend-software-url' in slapparameter_dict -%}
-< = request-common
-software-url = {{ slapparameter_dict['frontend-software-url'] }}
-software-type = {{ slapparameter_dict.get('frontend-software-type', 'RootSoftwareInstance') }}
-sla = instance_guid
-sla-instance_guid = {{ slapparameter_dict['frontend-instance-guid'] }}
-slave = true
-{% set config_dict = {
-  'type': 'zope',
-} -%}
-{% if 'frontend-domain' in slapparameter_dict -%}
-{%   do config_dict.__setitem__('custom_domain', slapparameter_dict['frontend-domain']) -%}
-{% endif -%}
-config = url {{ config_dict.keys() | join(' ') }}
-{% for name, value in config_dict.items() -%}
-config-{{ name }} = {{ value }}
-{% endfor -%}
-return = site_url
-{% endif -%}
-
-{% set i = 0 -%}
-{% for zope_section_id_list in zope_family_dict.values() -%}
-{%   set backend_name = 'backend-' ~ i -%}
-{%   set frontend_name = 'frontend-' ~ i -%}
-{%   do part_list.append(frontend_name) -%}
-{%   set i = i + 1 -%}
-[{{ backend_name }}]
+{% for family_name, zope_section_id_list in zope_family_dict.items() -%}
+{%   set backend_name = 'backend-' ~ family_name -%}
+{%   set frontend_name = 'frontend-' ~ family_name -%}
+[{{ section(backend_name) }}]
 < = request-backend-base
-name = {{ backend_name }}
-config-zope-address-list =
-{% for zope_section_id in zope_section_id_list %}{{ '    ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}{% endfor %}
-
-[{{ frontend_name }}]
-< = request-frontend-base
-name = {{ frontend_name }}
-config-url = {{ '${' ~ backend_name ~ ':connection-url}' }}
+config =
+  zope-name-list
+  haproxy-maxconn
+  haproxy-server-check-path
+  apache-access-control-string
+  apache-ssl-authentication
+  apache-backend-path
+  ca
+{% for zope_section_id in zope_section_id_list %}
+  {{ 'zope-' ~ zope_section_id ~ '-address-list' }}
 {% endfor %}
+name = {{ backend_name }}
+sla-computer_guid = ${slap-parameter:zodb-computer-guid}
+config-zope-name-list = {{ json_module.dumps(zope_section_id_list) }}
+{% for zope_section_id in zope_section_id_list %}
+config-zope-{{ zope_section_id }}-address-list = {{ '${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
+{% endfor %}
+
+{% endfor %}
+
+#############################
+#
+# Global buildout parameters
+#
+#############################
+[slap-parameter]
+# Default value if no computer_guid is specified for each type
+sphinx-computer-guid = ${slap-connection:computer-id}
+mariadb-computer-guid = ${slap-connection:computer-id}
+cloudooo-computer-guid = ${slap-connection:computer-id}
+memcached-computer-guid = ${slap-connection:computer-id}
+kumofs-computer-guid = ${slap-connection:computer-id}
+zodb-computer-guid = ${slap-connection:computer-id}
+cloudooo-json =
+bt5 = erp5_full_text_myisam_catalog
+  erp5_configurator_standard
+  erp5_configurator_maxma_demo
+  erp5_configurator_ung
+  erp5_configurator_run_my_doc
+bt5-repository-url = {{ local_bt5_repository }}
+smtp-url = smtp://localhost:25/
+timezone = Europe/Paris
+site-id = erp5
+test-database-amount = 0
+
 [buildout]
 parts =
-  basedirectory
   {{ part_list | join('\n  ') }}
 
 eggs-directory = {{ eggs_directory }}
