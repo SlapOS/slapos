@@ -159,6 +159,7 @@ class SlapTool(BaseTool):
 
       for computer_partition in self.getPortalObject().portal_catalog(
                       parent_uid=parent_uid,
+                      validation_state="validated",
                       portal_type="Computer Partition"):
         slap_computer._computer_partition_list.append(
             self._getSlapPartitionByPackingList(computer_partition.getObject()))
