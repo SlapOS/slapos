@@ -32,7 +32,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     transaction_list = list(set(transaction_list))
     self.assertEquals(1, len(transaction_list))
 
-    return transaction_list[0].getObject().getParentValue()
+    return transaction_list[0].getObject()
 
   def stepCheckRegistrationAccounting(self, sequence, **kw):
     """
