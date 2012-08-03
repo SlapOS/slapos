@@ -85,7 +85,7 @@
 \n
 # Getting existing partitions\n
 existing_partition_dict = {}\n
-for c in context.contentValues():\n
+for c in context.contentValues(portal_type="Computer Partition"):\n
   existing_partition_dict[c.getReference()] = c\n
 \n
 # update computer data\n
