@@ -610,7 +610,8 @@ class Slapgrid(object):
       instance_path = os.path.join(
         self.instance_root, computer_partition_id)
       timestamp_path = os.path.join(instance_path, '.timestamp')
-      if (not self.develop) and os.path.exists(timestamp_path):
+      if computer_partition_id not in self.computer_partition_filter_list and \
+          (not self.develop) and os.path.exists(timestamp_path):
         old_timestamp = open(timestamp_path).read()
         parameter_dict = computer_partition.getInstanceParameterDict()
         if 'timestamp' in parameter_dict:
