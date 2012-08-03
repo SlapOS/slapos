@@ -74,6 +74,7 @@ if (state in (started, stopped)):\n
     new_delivery.start()\n
     new_delivery.stop()\n
     new_delivery.deliver()\n
+    new_delivery.startBuilding()\n
 </string> </value>
         </item>
         <item>

@@ -155,6 +155,7 @@ else:\n
         packing_list.confirm()\n
       elif (state == destroyed):\n
         packing_list.confirm()\n
+      packing_list.startBuilding()\n
 \n
   elif delivery.getPortalType() == "Sale Packing List":\n
     line_list = delivery.contentValues(portal_type="Sale Packing List Line")\n

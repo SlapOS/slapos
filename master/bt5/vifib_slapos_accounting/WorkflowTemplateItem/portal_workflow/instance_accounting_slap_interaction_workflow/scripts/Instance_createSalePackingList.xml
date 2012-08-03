@@ -81,7 +81,6 @@ packing_list_line = packing_list.newContent(\n
 )\n
 \n
 \n
-packing_list.startBuilding()\n
 return packing_list\n
 </string> </value>
         </item>
