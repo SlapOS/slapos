@@ -448,11 +448,64 @@ class SlapTool(BaseTool):
     """
     # Try to get the computer partition to raise an exception if it doesn't
     # exist
-    self._getComputerPartitionDocument(
+    portal = self.getPortalObject()
+    computer_partition_document = self._getComputerPartitionDocument(
           computer_reference, computer_partition_reference)
-    return xml_marshaller.xml_marshaller.dumps(
-        SlapComputerPartition(computer_reference,
-        computer_partition_reference))
+    slap_partition = SlapComputerPartition(computer_reference,
+        computer_partition_reference)
+    slap_partition._software_release_document = None
+    slap_partition._requested_state = 'destroyed'
+    slap_partition._need_modification = 0
+    software_instance = None
+
+    if computer_partition_document.getSlapState() == 'busy':
+      software_instance_list = portal.portal_catalog(
+          portal_type="Software Instance",
+          default_aggregate_uid=computer_partition_document.getUid(),
+          validation_state="validated",
+          limit=2,
+          )
+      software_instance_count = len(software_instance_list)
+      if software_instance_count == 1:
+        software_instance = software_instance_list[0].getObject()
+      elif software_instance_count > 1:
+        # XXX do not prevent the system to work if one partition is broken
+        raise NotImplementedError, "Too many instances %s linked to %s" % \
+          ([x.path for x in software_instance_list],
+           computer_partition_document.getRelativeUrl())
+
+    if software_instance is not None:
+      # trick client side, that data has been synchronised already for given
+      # document
+      slap_partition._synced = True
+      state = software_instance.getSlapState()
+      if state == "stop_requested":
+        slap_partition._requested_state = 'stopped'
+      if state == "start_requested":
+        slap_partition._requested_state = 'started'
+
+      slap_partition._software_release_document = SoftwareRelease(
+            software_release=software_instance.getRootSoftwareReleaseUrl(),
+            computer_guid=computer_reference)
+
+      slap_partition._need_modification = 1
+
+      parameter_dict = self._getSoftwareInstanceAsParameterDict(
+                                                       software_instance)
+      # software instance has to define an xml parameter
+      slap_partition._parameter_dict = self._instanceXmlToDict(
+        parameter_dict.pop('xml'))
+      slap_partition._connection_dict = self._instanceXmlToDict(
+        parameter_dict.pop('connection_xml'))
+      for slave_instance_dict in parameter_dict.get("slave_instance_list", []):
+        if slave_instance_dict.has_key("connection_xml"):
+          slave_instance_dict.update(self._instanceXmlToDict(
+            slave_instance_dict.pop("connection_xml")))
+        if slave_instance_dict.has_key("xml"):
+          slave_instance_dict.update(self._instanceXmlToDict(
+            slave_instance_dict.pop("xml")))
+      slap_partition._parameter_dict.update(parameter_dict)
+    return xml_marshaller.xml_marshaller.dumps(slap_partition)
 
   ####################################################
   # Internal methods
