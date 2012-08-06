@@ -132,7 +132,7 @@ class Recipe(GenericSlapRecipe):
         self.setConnectionDict(
             dict(url="%s%s" % (site_url, slave['resource']),
                  domainname=self.options['domain'],
-                 port=self.options['port'],
+                 port=str(self.options['port']),
                  resource=slave['resource']),
             slave['reference'])
       except:
