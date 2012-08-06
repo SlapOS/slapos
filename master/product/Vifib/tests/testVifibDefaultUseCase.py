@@ -612,8 +612,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         portal_type="Sale Invoice Transaction",
         simulation_state="planned"):
       invoice = invoice.getObject()
-      if len(invoice.contentValues(portal_type='Invoice Line')) > 0:
-        invoice.confirm()
+      invoice.SaleInvoiceTransaction_confirmPlanned(
+        # force invoice confirmation (or moving to next month)
+        this_month=invoice.getStartDate() + 1
+        )
 
   def stepCheckWaitingInvoice(self, sequence, **kw):
     """
