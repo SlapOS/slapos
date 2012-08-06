@@ -108,9 +108,14 @@ Temporary note: equivalent of old slapgrid-supervisord + slapgrid-supervisorctl.
 slapos node register
 ~~~~~~~~~~~~~~~~~~~~
 Usage:
-  slapos node register <username in SlapOS Master>
+  slapos node register <username in SlapOS Master> <desired node name>
 
-Node will register itself, if not already done, to the SlapOS Master defined in configuration file, and will generate SlapOS configuration file. Will ask for user password and will issue a warning if Node is already configured.
+Node will register itself, if not already done, to the SlapOS Master defined in configuration file, and will generate SlapOS configuration file.
+Asks for user's password.
+
+XXX-Cedric should be like this: If desired node name is already taken, will raise an error.
+
+If Node is already registered (slapos.cfg and certificate already present), Issues a warning, backups original configuration and creates new one.
 
 
 slapos node software
