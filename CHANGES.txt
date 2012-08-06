@@ -11,7 +11,12 @@ Changes
        (folder_id)
      - only_cp filter which computer patition, will be runned. it can be a
        list, splited by comman (slappartX,slappartY ...) [Rafael Monnerat]
- * Cleanup unused option (--usage-report-periodicity). [Cedric de Saint Martin]
+ * slapgrid: Cleanup unused option (--usage-report-periodicity). [Cedric de
+   Saint Martin]
+ * slapgrid: --develop will work also for Computer Partitions. [Cedric de Saint
+   Martin]
+ * slaplib: setConnectionDict won't call Master if parameters haven't changed.
+   [Cedric de Saint Martin]
 
 0.26.2 (2012-07-09)
 -----------------
