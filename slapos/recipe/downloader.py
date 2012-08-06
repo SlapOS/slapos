@@ -26,15 +26,33 @@
 ##############################################################################
 
 import os
-import subprocess
+import urllib
+import hashlib
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+BUFFER_SIZE = 1024
+
 def service(args):
     if not os.path.exists(args['confirm']):
-        subprocess.check_call([args['wget'], args['image'],
-                               '-O', args['output']])
+        urllib.urlretrieve(args['url'], args['output'])
+
+        if args['md5'] is not None:
+            # XXX: Find a better way to do a md5sum
+            md5sum = hashlib.md5()
+            with open(args['output'], 'r') as output:
+                file_buffer = output.read(BUFFER_SIZE)
+                while len(file_buffer) > 0:
+                    md5sum.update(file_buffer)
+                    file_buffer = output.read(BUFFER_SIZE)
+
+            if args['md5'] != md5sum.hexdigest():
+                return 127 # Not-null return code
+
+        # Just a touch on args['confirm'] file
         open(args['confirm'], 'w').close()
+
+    return 0
 
 
 
@@ -43,15 +61,19 @@ class Recipe(GenericBaseRecipe):
     def install(self):
         path_list = []
 
+        md5sum = self.options.get('md5sum', '')
+        if len(md5sum) == 0:
+            md5sum = None
+
         path_list.append(
             self.createPythonScript(
                 self.options['binary'],
-                'slapos.recipe.rootfs.service',
+                'slapos.recipe.downloader.service',
                 {
-                    'wget': self.options['wget-binary'],
-                    'image': self.options['image-url'],
-                    'output': self.options['downloaded-image'],
-                    'confirm': self.options['downloaded-image-complete']
+                    'url': self.options['url'],
+                    'md5': md5sum,
+                    'output': self.options['downloaded-file'],
+                    'confirm': self.options['downloaded-file-complete']
                 }
             )
         )
