@@ -128,6 +128,8 @@ class Recipe:
     for key, value in self.buildout['slap_connection'].iteritems():
       # XXX: Waiting for SlapBaseRecipe to use dash instead of underscores
       buildout.set('slap-connection', key.replace('_', '-'), value)
+    # XXX: Needed for lxc. Use non standard API
+    buildout.set('slap-connection', 'requested', self.computer_partition._requested_state)
 
     work_directory = os.path.abspath(self.buildout['buildout'][
       'directory'])

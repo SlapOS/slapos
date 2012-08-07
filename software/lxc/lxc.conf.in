@@ -1,3 +1,5 @@
+# %(requested)s
+
 lxc.utsname = %(name)s
 
 lxc.network.type = veth
