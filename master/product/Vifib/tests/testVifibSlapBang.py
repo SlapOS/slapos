@@ -66,7 +66,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
     slap_computer_partition.bang(self.bang_message)
-    sequence.edit(expected_bang_count=sequence.get('expected_bang_count', 0) + 1)
+    sequence.edit(expected_bang_count=sequence.get('expected_bang_count', 2) + 1)
 
   def stepSetCurrentSoftwareInstanceS1(self, sequence, **kw):
     S1 = self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid'])
@@ -208,7 +208,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     slap_computer = self.slap.registerComputer(
       sequence['computer_reference'])
     slap_computer.bang(self.bang_message)
-    sequence.edit(expected_bang_count=sequence.get('expected_bang_count', 0) + 5)
+    sequence.edit(expected_bang_count=sequence.get('expected_bang_count', 2) + 5)
 
   def stepCheckComputerBangMessage(self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
