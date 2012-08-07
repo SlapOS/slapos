@@ -108,14 +108,45 @@ Temporary note: equivalent of old slapgrid-supervisord + slapgrid-supervisorctl.
 slapos node register
 ~~~~~~~~~~~~~~~~~~~~
 Usage:
-  slapos node register <username in SlapOS Master> <desired node name>
+******
+::
+
+  slapos node register <desired node name> [--interface-name interface] [--master-url url] [--partition-number number] [--ipv4-local-network network] [--ipv6-interface interface]
+
+Asks for user's vifib account then password.
 
 Node will register itself, if not already done, to the SlapOS Master defined in configuration file, and will generate SlapOS configuration file.
-Asks for user's password.
 
 XXX-Cedric should be like this: If desired node name is already taken, will raise an error.
 
-If Node is already registered (slapos.cfg and certificate already present), Issues a warning, backups original configuration and creates new one.
+If Node is already registered (slapos.cfg and certificate already present), issues a warning, backups original configuration and creates new one.
+
+XXX-Cedric should check for IPv6 in selected interface
+
+Defaults:
+*********
+  * --interface-name defaults to "eth0"
+  * --master-url defaults to "https://slap.vifib.com"
+  * --partition-number number defaults to "10"
+  * --ipv4-local-network defaults to 10.0.0.0/16
+
+Notes:
+******
+  * "IPv6 interface" won't be set if not explicitly written.
+
+Examples:
+*********
+  * Register computer named "mycomputer" to vifib::
+
+      slapos register mycomputer
+
+  * Register computer named "mycomputer" to vifib using br0 as primary interface, tap0 as IPv6 interface and different local ipv4 subnet::
+
+      slapos register mycomputer --interface-name br0 --ipv6-interface tap0 --ipv4-local-network 11.0.0.0/16
+
+  * Register computer named "mycomputer" to another SlapOS master accessible via https://slap.myownslaposmaster.com (Note that this address should be the "slap" webservice URL, not web URL)::
+
+      slapos register mycomputer --master-url https://slap.myownslaposmaster.com
 
 
 slapos node software
