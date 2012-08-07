@@ -85,8 +85,8 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     )
 
   def checkSoftwareInstanceBangMessage(self, count, software_instance):
-    bang_list = [q for q in software_instance.Base_getWorkflowHistoryItemList(
-      'instance_slap_interface_workflow')
+    bang_list = [q for q in reversed(software_instance\
+      .Base_getWorkflowHistoryItemList('instance_slap_interface_workflow'))
       if q.action == 'bang']
     self.assertEqual(count, len(bang_list))
     self.assertEqual(self.bang_message, bang_list[0].comment)
