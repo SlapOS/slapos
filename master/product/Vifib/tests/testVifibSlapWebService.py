@@ -2461,7 +2461,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
     computer = self.slap.registerComputer(computer_guid)
-    self.assertEquals([], computer.getSoftwareReleaseList())
+    self.assertEquals([], [q for q in computer.getSoftwareReleaseList() \
+      if q.getState() != 'destroyed'])
 
   def stepCheckDestroyedStateGetSoftwareReleaseListCall(self, sequence, **kw):
     """
