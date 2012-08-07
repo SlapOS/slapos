@@ -2921,7 +2921,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         specialise='sale_trade_condition_module/vifib_trade_condition',
         source='organisation_module/vifib_internet',
         source_section='organisation_module/vifib_internet',
-        source_decision='organisation_module/vifib_internet',
         # XXX Hardcoded values
         destination='person_module/test_vifib_customer',
         destination_section='person_module/test_vifib_customer',
