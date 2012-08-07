@@ -581,12 +581,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepCheckComputerPartitionNoInstanceUpdateSalePackingList(self,
-      sequence, **kw):
-    self._checkComputerPartitionNoSalePackingList(
-        self.portal.portal_preferences.getPreferredInstanceUpdateResource(),
-        sequence)
-
   def test_computer_bang_not_called_on_destroying_destroyed(self):
     """Check that bang is ignoring destruction in progress and
        destroyed computer partitions"""
@@ -599,10 +593,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       ComputerBang
       Tic
       SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
 
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
@@ -619,10 +609,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       ComputerBang
       Tic
       SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
 
       LoginERP5TypeTestCase
       CheckSiteConsistency
@@ -701,10 +687,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       ComputerBang
       Tic
       SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
 
       LoginERP5TypeTestCase
       CheckSiteConsistency
