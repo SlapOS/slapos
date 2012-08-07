@@ -5,9 +5,9 @@ master_url = https://slap.vifib.com/
 # Replace computer_id by the unique identifier of your computer on vifib.net,
 # starting by COMP-
 computer_id = COMP-12345
-key_file = /etc/opt/slapos/key
-cert_file = /etc/opt/slapos/certificate
-certificate_repository_path = /etc/opt/slapos/pki/
+key_file = /etc/opt/slapos/ssl/computer.key
+cert_file =  /etc/opt/slapos/ssl/computer.crt
+certificate_repository_path = /etc/opt/slapos/ssl/partition_pki
 
 [slapformat]
 # Replace by your network interface like eth0, eth1, slapbr0...
