@@ -1,5 +1,4 @@
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.tests.backportUnittest import expectedFailure
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
@@ -31,35 +30,6 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
       CheckNotFoundComputerPartitionErrorAfterRegisterCall \
       CleanTic \
       SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  @expectedFailure
-  def test_ComputerPartition_error_SetupResource_CancelledState(self):
-    """
-    Check that calling ComputerPartition.error works in
-    cancelled state with the setup resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-      LoginDefaultUser \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      Logout \
-      \
-      SlapLoginCurrentComputer \
-      CheckSuccessComputerPartitionErrorCall \
-      Tic \
-      SlapLogout \
-      \
-      LoginDefaultUser \
-      CheckSalePackingListErrorText \
-      Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
