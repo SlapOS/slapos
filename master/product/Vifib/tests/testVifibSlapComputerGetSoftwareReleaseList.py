@@ -246,7 +246,7 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetSoftwareReleaseListCall \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -265,7 +265,7 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetSoftwareReleaseListCall \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
       SlapLogout' + self.prepare_software_release_cleanup_confirmed_packing_list + '\
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetSoftwareReleaseListCall \
@@ -294,7 +294,7 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetSoftwareReleaseListCall \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -315,7 +315,7 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckEmptyComputerGetSoftwareReleaseListCall \
+      CheckSuccessComputerGetSoftwareReleaseListCall \
       SlapLogout' + self.prepare_software_release_cleanup_confirmed_packing_list + '\
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetSoftwareReleaseListCall \
