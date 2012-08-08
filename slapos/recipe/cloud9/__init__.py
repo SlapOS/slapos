@@ -24,27 +24,37 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import random
+from slapos.recipe.librecipe import GenericBaseRecipe
 import os
 
-from slapos.recipe.librecipe import GenericBaseRecipe
-
 class Recipe(GenericBaseRecipe):
+  """Deploy a fully operational cloud9 service."""
 
-  def __init__(self, buildout, name, options):
-    if os.path.exists(options['storage-path']):
-      open_file = open(options['storage-path'], 'r')
-      options['mac-address'] = open_file.read()
-      open_file.close()
-
-    if options.get('mac-address', '') == '':
-      # First octet has to represent a locally administered address
-      octet_list = [254] + [random.randint(0x00, 0xff) for x in range(5)]
-      options['mac-address'] = ':'.join(['%02x' % x for x in octet_list])
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
+  def _options(self, options):
+    self.ip = options['ip'].strip()
+    self.port = options['port'].strip()
+    self.git = options['git-binary'].strip()
+    self.node_executable = options['node-binary'].strip()
+    self.cloud9 = options['cloud9'].strip()
+    self.workdir = options['working-directory'].strip()
+    self.wrapper = options['wrapper'].strip()
+    # Set cloud9 access URL
+    options['access-url'] = 'http://[%s]:%s' % (self.ip, self.port)
 
   def install(self):
-    open_file = open(self.options['storage-path'], 'w')
-    open_file.write(self.options['mac-address'])
-    open_file.close()
-    return [self.options['storage-path']]
+    path_list = []
+
+    environment = {
+        'PATH': os.path.dirname(self.git) + ':' + os.environ['PATH'],
+    }
+
+    cloud9_args = [self.node_executable, self.cloud9, '-l', self.ip, '-p',
+        self.port, '-w', self.workdir]
+
+    wrapper = self.createPythonScript(self.wrapper,
+        'slapos.recipe.librecipe.execute.executee',
+        (cloud9_args, environment)
+    )
+    path_list.append(wrapper)
+
+    return path_list

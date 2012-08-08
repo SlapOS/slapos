@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -24,27 +24,36 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import random
-import os
-
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
+  """
+  Slapmonitor instance configuration.
+  """
 
   def __init__(self, buildout, name, options):
-    if os.path.exists(options['storage-path']):
-      open_file = open(options['storage-path'], 'r')
-      options['mac-address'] = open_file.read()
-      open_file.close()
-
-    if options.get('mac-address', '') == '':
-      # First octet has to represent a locally administered address
-      octet_list = [254] + [random.randint(0x00, 0xff) for x in range(5)]
-      options['mac-address'] = ':'.join(['%02x' % x for x in octet_list])
     return GenericBaseRecipe.__init__(self, buildout, name, options)
 
   def install(self):
-    open_file = open(self.options['storage-path'], 'w')
-    open_file.write(self.options['mac-address'])
-    open_file.close()
-    return [self.options['storage-path']]
+    config = dict(
+      pid_file_path=self.options['pid-file'],
+      consumption_log_path=self.options['consumption-log-path'],
+      database_path=self.options['database-path'],
+      slapreport_path = self.options['slapreport-path'],
+      logbox_ip = self.options['logbox-ip'],
+      logbox_port = self.options['logbox-port'],
+      logbox_user = self.options['logbox-user'],
+      logbox_passwd = self.options['logbox-passwd'],
+      shell_path=self.options['shell-path'],
+    )
+
+    # Runners
+    runner_path = self.createExecutable(
+      self.options['path'],
+      self.substituteTemplate(self.getTemplateFilename('slapreport_run.in'),
+                              config))
+
+    return [runner_path]
+
+  def update(self):
+    pass

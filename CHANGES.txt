@@ -1,10 +1,58 @@
 Changes
 =======
 
-0.53 (Unreleased)
+0.60 (Unreleased)
 -----------------
 
-  * No change yet.
+
+0.59 (2012-07-12)
+-----------------
+
+  * Zabbix: add temperature monitoring using custom commands.
+
+0.58 (2012-07-06)
+-----------------
+
+  * Agent rewrite. [Vincent Pelletier]
+
+0.57 (2012-06-22)
+-----------------
+
+  * Do not use system curl. [Romain Courteaud]
+
+0.56 (2012-06-18)
+-----------------
+
+  * Add signalwrapper, generate.mac, generate.password recipes. [Romain
+    Courteaud]
+
+0.55 (2012-06-18)
+-----------------
+
+  * Add slapmonitor and slapreport recipes. [Mohamadou Mbengue]
+
+0.54.1 (2012-06-18)
+-----------------
+
+  * Fix 0.54 release containing wrong code in request.py.
+
+0.54 (2012-06-18)
+-----------------
+
+  * Apache frontend: won't block sending slave informations to SlapOS Master
+    in case of problem from one slave instance.[Cedric de Saint Martin]
+  * Apache frontend will send IP informations for slaves in case slave is about
+    custom domain. [Cedric de Saint Martin]
+  * Ability to use LAMP applications without configuration. [Cedric de Saint
+    Martin]
+  * Users can specify custom domain in LAMP applications. [Cedric de Saint
+    Martin]
+
+0.53 (2012-06-07)
+-----------------
+
+  * Switch slaprunner into generic recipe, and add cloud9 recipe. [Cedric de
+    Saint Martin]
 
 0.52 (2012-05-16)
 -----------------
