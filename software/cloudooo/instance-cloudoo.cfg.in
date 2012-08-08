@@ -1,9 +1,7 @@
-{% set json = json_module.loads(parameter_dict.get('cloudooo-json', '{}')) -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 [buildout]
 parts =
   publish-cloudooo-connection-information
-  cloudooo-instance
   cloudooo-test-runner
 
 eggs-directory = {{ eggs_directory }}
@@ -58,7 +56,7 @@ recipe = slapos.cookbook:fontconfig
 conf-path = ${rootdirectory:etc}/font.conf
 font-system-folder = {{ parameter_dict['fonts'] }}
 font-folder = ${directory:font}
-url-list = {{ json.get('font_url_list', []) | join(' ') }}
+url-list =
 service-folder = ${basedirectory:services}
 onetimedownload_path = {{ bin_directory }}/onetimedownload
 

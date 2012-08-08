@@ -1,9 +1,14 @@
 Changes
 =======
 
-0.58 (Unreleased)
+0.59 (Unreleased)
 -----------------
 
+
+0.58 (2012-07-06)
+-----------------
+
+  * Agent rewrite. [Vincent Pelletier]
 
 0.57 (2012-06-22)
 -----------------

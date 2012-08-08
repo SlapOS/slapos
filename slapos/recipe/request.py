@@ -83,7 +83,7 @@ class Recipe(object):
   failed = None
 
   def __init__(self, buildout, name, options):
-    logger = logging.getLogger(name)
+    self.logger = logging.getLogger(name)
 
     slap = slapmodule.slap()
 
@@ -104,7 +104,7 @@ class Recipe(object):
       return_parameters = [str(parameter).strip()
         for parameter in options['return'].split()]
     else:
-      logger.debug("No parameter to return to main instance."
+      self.logger.debug("No parameter to return to main instance."
         "Be careful about that...")
 
     software_type = options.get('software-type', 'RootInstanceSoftware')
@@ -143,7 +143,7 @@ class Recipe(object):
       except AttributeError:
         status = 'unknown'
       error_message = 'Connection parameter %s not found. '\
-          'Requested instance is currently %s. If this error persists, '\
+          'Status of requested instance is: %s. If this error persists, '\
           'check status of this instance.' % (self.failed, status)
       self.logger.error(error_message)
       raise KeyError(error_message)

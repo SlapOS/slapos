@@ -8,6 +8,7 @@ parts =
   cron-entry-logrotate
   cron-entry-mariadb-backup
   binary-link
+  promise
 
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
@@ -156,6 +157,7 @@ bin = ${buildout:directory}/bin
 recipe = slapos.cookbook:mkdirectory
 log = ${rootdirectory:var}/log
 services = ${rootdirectory:etc}/run
+promise = ${rootdirectory:etc}/promise
 run = ${rootdirectory:var}/run
 backup = ${rootdirectory:srv}/backup
 
@@ -171,3 +173,8 @@ mariadb-data = ${rootdirectory:srv}/mariadb
 logrotate-backup = ${basedirectory:backup}/logrotate
 logrotate-entries = ${rootdirectory:etc}/logrotate.d
 
+[promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${basedirectory:promise}/mariadb
+hostname = ${mariadb-instance:ip}
+port = ${mariadb-instance:port}
