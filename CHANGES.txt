@@ -19,12 +19,12 @@ Changes
    [Cedric de Saint Martin]
 
 0.26.2 (2012-07-09)
------------------
+-------------------
 
  * Define UTF-8 encoding in SlapOS Node codebase, as defined in PEP-263.
 
 0.26.1 (2012-07-06)
------------------
+-------------------
 
  * slapgrid-sr: Add --develop option to make it ignore .completed files.
  * SLAP library: it is now possible to fetch whole dict of connection
