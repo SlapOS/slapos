@@ -111,13 +111,14 @@ Usage:
 ******
 ::
 
-  slapos node register <desired node name> [--interface-name interface] [--master-url url] [--partition-number number] [--ipv4-local-network network] [--ipv6-interface interface]
+  slapos node register <desired node name> [--interface-name interface] [--master-url url <--master-url-web url>] [--partition-number number] [--ipv4-local-network network] [--ipv6-interface interface]
 
 Asks for user's vifib account then password.
 
 Node will register itself, if not already done, to the SlapOS Master defined in configuration file, and will generate SlapOS configuration file.
 
 XXX-Cedric should be like this: If desired node name is already taken, will raise an error.
+XXX-Cedric: --master-url-web url will disappear in REST API. Currently, "register" uses SlapOS master web URL to register computer, so it needs the web URL (like http://www.vifib.net)
 
 If Node is already registered (slapos.cfg and certificate already present), issues a warning, backups original configuration and creates new one.
 
@@ -144,9 +145,9 @@ Examples:
 
       slapos register mycomputer --interface-name br0 --ipv6-interface tap0 --ipv4-local-network 11.0.0.0/16
 
-  * Register computer named "mycomputer" to another SlapOS master accessible via https://slap.myownslaposmaster.com (Note that this address should be the "slap" webservice URL, not web URL)::
+  * Register computer named "mycomputer" to another SlapOS master accessible via https://www.myownslaposmaster.com, and SLAP webservice accessible via https://slap.myownslaposmaster.com (Note that this address should be the "slap" webservice URL, not web URL)::
 
-      slapos register mycomputer --master-url https://slap.myownslaposmaster.com
+      slapos register mycomputer --master-url https://slap.myownslaposmaster.com --master-url-web https://www.myownslaposmaster.com
 
 
 slapos node software
