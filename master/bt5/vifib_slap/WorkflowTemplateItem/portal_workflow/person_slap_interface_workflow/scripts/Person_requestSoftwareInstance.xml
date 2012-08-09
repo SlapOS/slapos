@@ -93,7 +93,7 @@ if (instance_xml == empty_parameter) or (instance_xml.startswith(empty_parameter
 hosting_subscription_portal_type = "Hosting Subscription"\n
 \n
 tag = "%s_%s_inProgress" % (person.getUid(), \n
-                               software_title)\n
+                               software_title.encode(\'hex\'))\n
 \n
 if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
   # The software instance is already under creation but can not be fetched from catalog\n

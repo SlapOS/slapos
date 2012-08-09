@@ -458,7 +458,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       'test_vifib_customer').getUid()
     software_title = sequence['root_software_instance_title']
     tag = "%s_%s_inProgress" % (person_uid,
-                                   software_title)
+                                   software_title.encode('hex'))
 
     self.assertNotEqual(0, self.portal.portal_activities.
       countMessageWithTag(tag))
