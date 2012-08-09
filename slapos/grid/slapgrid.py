@@ -809,62 +809,69 @@ class Slapgrid(object):
     #We loop on the different computer partitions
     computer_partition_list = slap_computer_usage.getComputerPartitionList()
     for computer_partition in computer_partition_list:
-      computer_partition_id = computer_partition.getId()
-
-      #We want execute all the script in the report folder
-      instance_path = os.path.join(self.instance_root,
-          computer_partition.getId())
-      report_path = os.path.join(instance_path, 'etc', 'report')
-      if os.path.isdir(report_path):
-        script_list_to_run = os.listdir(report_path)
-      else:
-        script_list_to_run = []
-
-      #We now generate the pseudorandom name for the xml file
-      # and we add it in the invocation_list
-      f = tempfile.NamedTemporaryFile()
-      name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
-      path_to_slapreport = os.path.join(instance_path, 'var', 'xml_report',
-          name_xml)
-
-      failed_script_list = []
-      for script in script_list_to_run:
-
-        invocation_list = []
-        invocation_list.append(os.path.join(instance_path, 'etc', 'report',
-          script))
-        #We add the xml_file name in the invocation_list
-        #f = tempfile.NamedTemporaryFile()
-        #name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
-        #path_to_slapreport = os.path.join(instance_path, 'var', name_xml)
-
-        invocation_list.append(path_to_slapreport)
-        #Dropping privileges
-        uid, gid = None, None
-        stat_info = os.stat(instance_path)
-        #stat sys call to get statistics informations
-        uid = stat_info.st_uid
-        gid = stat_info.st_gid
-        kw = dict()
-        if not self.console:
-          kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        process_handler = SlapPopen(invocation_list,
-          preexec_fn=lambda: dropPrivileges(uid, gid),
-          cwd=os.path.join(instance_path, 'etc', 'report'),
-          env=None, **kw)
-        result = process_handler.communicate()[0]
-        if self.console:
-          result = 'Please consult messages above'
-        if process_handler.returncode is None:
-          process_handler.kill()
-        if process_handler.returncode != 0:
-          clean_run = False
-          failed_script_list.append("Script %r failed with %s." % (script,
-              result))
-          logger.warning("Failed to run %r, the result was. \n%s" %
-            (invocation_list, result))
-        if len(failed_script_list):
-          computer_partition.error('\n'.join(failed_script_list))
+      try:
+        computer_partition_id = computer_partition.getId()
+        
+        #We want execute all the script in the report folder
+        instance_path = os.path.join(self.instance_root,
+            computer_partition.getId())
+        report_path = os.path.join(instance_path, 'etc', 'report')
+        if os.path.isdir(report_path):
+          script_list_to_run = os.listdir(report_path)
+        else:
+          script_list_to_run = []
+        
+        #We now generate the pseudorandom name for the xml file
+        # and we add it in the invocation_list
+        f = tempfile.NamedTemporaryFile()
+        name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
+        path_to_slapreport = os.path.join(instance_path, 'var', 'xml_report',
+            name_xml)
+        
+        failed_script_list = []
+        for script in script_list_to_run:
+          invocation_list = []
+          invocation_list.append(os.path.join(instance_path, 'etc', 'report',
+            script))
+          #We add the xml_file name in the invocation_list
+          #f = tempfile.NamedTemporaryFile()
+          #name_xml = '%s.%s' % ('slapreport', os.path.basename(f.name))
+          #path_to_slapreport = os.path.join(instance_path, 'var', name_xml)
+        
+          invocation_list.append(path_to_slapreport)
+          #Dropping privileges
+          uid, gid = None, None
+          stat_info = os.stat(instance_path)
+          #stat sys call to get statistics informations
+          uid = stat_info.st_uid
+          gid = stat_info.st_gid
+          kw = dict()
+          if not self.console:
+            kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+          process_handler = SlapPopen(invocation_list,
+            preexec_fn=lambda: dropPrivileges(uid, gid),
+            cwd=os.path.join(instance_path, 'etc', 'report'),
+            env=None, **kw)
+          result = process_handler.communicate()[0]
+          if self.console:
+            result = 'Please consult messages above'
+          if process_handler.returncode is None:
+            process_handler.kill()
+          if process_handler.returncode != 0:
+            clean_run = False
+            failed_script_list.append("Script %r failed with %s." % (script,
+                result))
+            logger.warning("Failed to run %r, the result was. \n%s" %
+              (invocation_list, result))
+          if len(failed_script_list):
+            computer_partition.error('\n'.join(failed_script_list))
+      # Whatever happens, don't stop processing other instances
+      except Exception:
+        computer_partition_id = computer_partition.getId()
+        exception = traceback.format_exc()
+        issue = "Cannot run usage script(s) for %r: %s" % (
+            computer_partition_id, exception)
+        logger.info(issue)
 
     #Now we loop through the different computer partitions to report
     report_usage_issue_cp_list = []
