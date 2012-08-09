@@ -944,26 +944,26 @@ class Slapgrid(object):
         software_url = computer_partition.getSoftwareRelease().getURI()
       except NotFoundError:
         software_url = None
-      software_path = os.path.join(self.software_root,
-            getSoftwareUrlHash(software_url))
-      local_partition = Partition(
-        software_path=software_path,
-        instance_path=os.path.join(self.instance_root,
-            computer_partition.getId()),
-        supervisord_partition_configuration_path=os.path.join(
-          self.supervisord_configuration_directory, '%s.conf' %
-          computer_partition_id),
-        supervisord_socket=self.supervisord_socket,
-        computer_partition=computer_partition,
-        computer_id=self.computer_id,
-        partition_id=computer_partition_id,
-        server_url=self.master_url,
-        software_release_url=software_url,
-        certificate_repository_path=self.certificate_repository_path,
-        console=self.console, buildout=self.buildout
-        )
       if computer_partition.getState() == "destroyed":
         try:
+          software_path = os.path.join(self.software_root,
+                getSoftwareUrlHash(software_url))
+          local_partition = Partition(
+            software_path=software_path,
+            instance_path=os.path.join(self.instance_root,
+                computer_partition.getId()),
+            supervisord_partition_configuration_path=os.path.join(
+              self.supervisord_configuration_directory, '%s.conf' %
+              computer_partition_id),
+            supervisord_socket=self.supervisord_socket,
+            computer_partition=computer_partition,
+            computer_id=self.computer_id,
+            partition_id=computer_partition_id,
+            server_url=self.master_url,
+            software_release_url=software_url,
+            certificate_repository_path=self.certificate_repository_path,
+            console=self.console, buildout=self.buildout
+            )
           local_partition.stop()
           try:
             computer_partition.stopped()
@@ -973,6 +973,11 @@ class Slapgrid(object):
             raise
           except Exception:
             pass
+          if computer_partition.getId() in report_usage_issue_cp_list:
+            logger.info('Ignoring destruction of %r, as not report usage was '
+              'sent' % computer_partition.getId())
+            continue
+          local_partition.destroy()
         except (SystemExit, KeyboardInterrupt):
           exception = traceback.format_exc()
           computer_partition.error(exception)
@@ -982,11 +987,6 @@ class Slapgrid(object):
           exception = traceback.format_exc()
           computer_partition.error(exception)
           logger.error(exception)
-        if computer_partition.getId() in report_usage_issue_cp_list:
-          logger.info('Ignoring destruction of %r, as not report usage was '
-            'sent' % computer_partition.getId())
-          continue
-        local_partition.destroy()
         try:
           computer_partition.destroyed()
         except slap.NotFoundError:
