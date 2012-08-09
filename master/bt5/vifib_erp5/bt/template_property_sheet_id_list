@@ -1,5 +1,6 @@
 VifibAssignmentConstraint
 VifibPersonConstraint
+VifibComputerPartitionConstraint
 VifibEmailConstraint
 VifibComputerConstraint
 VifibSoftwareProductConstraint
