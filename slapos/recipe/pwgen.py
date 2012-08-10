@@ -42,4 +42,5 @@ class Recipe(GenericBaseRecipe):
     options['password'] = password
 
   def install(self):
+    os.chmod(self.options['file'], 0600)
     return []
