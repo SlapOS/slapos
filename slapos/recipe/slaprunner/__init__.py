@@ -58,7 +58,7 @@ class Recipe(GenericBaseRecipe):
         supervisord_config=os.path.join(self.instance_directory, 'etc',
           'supervisord.conf'),
         runner_workdir=self.workdir,
-        etc=self.etc,
+        etc_dir=self.options['etc_dir'],
         runner_host=self.ipv6,
         runner_port=self.runner_port,
         ipv4_address=self.ipv4,
