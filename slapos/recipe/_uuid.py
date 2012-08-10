@@ -52,4 +52,4 @@ class Recipe(GenericBaseRecipe):
         options['uuid'] = generated_uuid.hex
 
     def install(self):
-        return [self.options['cache-file']]
+        return []
