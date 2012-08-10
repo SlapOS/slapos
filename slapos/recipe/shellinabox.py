@@ -72,6 +72,14 @@ def shellinabox(args):
     '-p', args['port'],
   ]
 
+  # XXX: By default shellinbox drop privileges
+  #      switching to nobody:nogroup user.
+  # This force root.
+  if group == 'root':
+    command_line.extend(['-g', group])
+  if user == 'root':
+    command_line.extend(['-u', group])
+
   os.execv(command_line[0], command_line)
 
 
