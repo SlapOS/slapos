@@ -28,6 +28,7 @@ from getpass import getpass
 import pwd
 import grp
 import os
+import shlex
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -38,7 +39,9 @@ def login_shell(args):
   if entered_password != password:
     return 1
   else:
-    os.execl(args['shell'], args['shell'])
+    commandline = shlex.split(args['shell'])
+    path = commandline[0]
+    os.execv(path, commandline)
 
 def shellinabox(args):
   certificate_dir = args['certificate_dir']
