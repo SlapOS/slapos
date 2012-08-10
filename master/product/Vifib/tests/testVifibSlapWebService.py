@@ -1407,7 +1407,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
                   Tic \
                   Logout \
                   SlapLoginCurrentComputer \
-                  CheckEmptyComputerGetSoftwareReleaseListCall \
+                  CheckSuccessComputerGetSoftwareReleaseListCall \
                   SlapLogout ' + \
                   prepare_software_release_confirmed_packing_list + '\
                   LoginDefaultUser \
