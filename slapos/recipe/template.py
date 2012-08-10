@@ -24,17 +24,23 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import os
+
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
 
     def install(self):
         mapping = self.options.copy()
-        for key in ('output', 'template', 'recipe', ):
-            del mapping[key]
+        for key in ('output', 'template', 'recipe', 'mode'):
+            if key in mapping:
+                del mapping[key]
 
         with open(self.options['output'], 'w') as output, \
              open(self.options['template'], 'r') as template:
             output.write(template.read() % mapping)
+
+        if 'mode' in self.options:
+            os.chmod(self.options['output'], int(self.options['mode'], 8))
 
         return [self.options['output'], ]
