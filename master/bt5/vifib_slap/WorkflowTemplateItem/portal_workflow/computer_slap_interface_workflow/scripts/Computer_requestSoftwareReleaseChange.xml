@@ -95,7 +95,7 @@ current_delivery_line = portal.portal_catalog.getResultValue(\n
   limit=1\n
 )\n
 \n
-if current_delivery_line is not None and current_delivery_line.getResourceUid() == service_uid and current_delivery_line.getSimulationState() != \'delivered\':\n
+if current_delivery_line is not None and current_delivery_line.getResourceUid() == service_uid and current_delivery_line.getSimulationState() not in [\'stopped\', \'delivered\']:\n
   # change installation in progress\n
   return\n
 \n
@@ -126,7 +126,6 @@ packing_list.newContent(\n
 )\n
 \n
 packing_list.confirm(activate_kw=activate_kw)\n
-packing_list.startBuilding()\n
 
 
 ]]></string> </value>
