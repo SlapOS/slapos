@@ -111,7 +111,7 @@ Usage:
 ******
 ::
 
-  slapos node register <desired node name> [--interface-name interface] [--master-url url <--master-url-web url>] [--partition-number number] [--ipv4-local-network network] [--ipv6-interface interface]
+  slapos node register <desired node name> [--interface-name interface] [--master-url url <--master-url-web url>] [--partition-number number] [--ipv4-local-network network] [--ipv6-interface interface] [--create-tap]
 
 Asks for user's vifib account then password.
 
@@ -124,12 +124,15 @@ If Node is already registered (slapos.cfg and certificate already present), issu
 
 XXX-Cedric should check for IPv6 in selected interface
 
+XXX-Cedric: explain each argument.
+
 Defaults:
 *********
   * --interface-name defaults to "eth0"
   * --master-url defaults to "https://slap.vifib.com"
   * --partition-number number defaults to "10"
   * --ipv4-local-network defaults to 10.0.0.0/16
+  * --create-tap defaults to false
 
 Notes:
 ******
@@ -148,6 +151,10 @@ Examples:
   * Register computer named "mycomputer" to another SlapOS master accessible via https://www.myownslaposmaster.com, and SLAP webservice accessible via https://slap.myownslaposmaster.com (Note that this address should be the "slap" webservice URL, not web URL)::
 
       slapos register mycomputer --master-url https://slap.myownslaposmaster.com --master-url-web https://www.myownslaposmaster.com
+
+  * Register computer named "mycomputer" to vifib, and ask to create tap interface to be able to host KVMs::
+
+      slapos register mycomputer --create-tap
 
 
 slapos node software
