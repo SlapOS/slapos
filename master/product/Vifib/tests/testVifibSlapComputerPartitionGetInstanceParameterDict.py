@@ -130,7 +130,7 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
       Logout \
       LoginERP5TypeTestCase \
       FillTimestamp \
-      Logout
+      Logout \
       SlapLoginCurrentSoftwareInstance \
       CheckComputerPartitionGetInstanceParameterDictResult \
       SlapLogout \
