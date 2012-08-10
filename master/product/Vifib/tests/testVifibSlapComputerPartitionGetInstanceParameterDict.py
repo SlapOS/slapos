@@ -104,6 +104,9 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
+      LoginERP5TypeTestCase \
+      FillTimestamp \
+      Logout \
       SlapLoginCurrentSoftwareInstance \
       CheckMinimalParametersTransmitted \
       SlapLogout \
@@ -125,6 +128,9 @@ class TestVifibSlapComputerPartitionGetInstanceParameterDict(TestVifibSlapWebSer
       SetSoftwareInstanceValidXML \
       Tic \
       Logout \
+      LoginERP5TypeTestCase \
+      FillTimestamp \
+      Logout
       SlapLoginCurrentSoftwareInstance \
       CheckComputerPartitionGetInstanceParameterDictResult \
       SlapLogout \

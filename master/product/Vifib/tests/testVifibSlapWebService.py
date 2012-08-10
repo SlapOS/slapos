@@ -3412,6 +3412,17 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     computer_partition.getInstanceParameterDict()
 
+  def stepFillTimestamp(self, sequence, **kw):
+    get = self.portal.portal_catalog.getResultValue
+    timestamp = int(get(uid=sequence['computer_partition_uid']\
+      ).getModificationDate())
+    instance = get(uid=sequence['software_instance_uid'])
+    newtimestamp = int(instance.getBangTimestamp(int(
+      instance.getModificationDate())))
+    if (newtimestamp > timestamp):
+      timestamp = newtimestamp
+    sequence['partition_timestamp'] = timestamp
+
   def stepCheckMinimalParametersTransmitted(self, sequence, **kw):
     """
     Check that slap.registerComputerPartition raises a NotFound error
@@ -3435,6 +3446,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
                        'requested_software_type'),
         'slave_instance_list': [],
         'ip_list': [],
+        'timestamp': sequence['partition_timestamp']
     }
     self.assertSameDict(expected, result)
 
@@ -3536,6 +3548,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         'test_parameter': 'lala',
         'slave_instance_list': [],
         'ip_list': [],
+        'timestamp': sequence['partition_timestamp']
     }
     self.assertSameDict(expected, result)
 
