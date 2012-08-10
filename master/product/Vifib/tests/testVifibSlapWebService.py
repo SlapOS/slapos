@@ -1939,6 +1939,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.assertTrue('value' in server_xml)
     # check that returned dict has no change
     REMOTE_USER = software_instance.getReference()
+    # re-register the partition, in order to re-read data from server
+    # as registerComputerPartition sends immediately synchronised computer
+    # partition, it is required to re-fetch it
+    slap_computer_partition = self.slap.registerComputerPartition(
+        computer.getReference(), computer_partition.getReference())
     self.assertEqual('value',
         slap_computer_partition.getConnectionParameter('parameter'))
 
