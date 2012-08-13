@@ -3421,7 +3421,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       instance.getModificationDate())))
     if (newtimestamp > timestamp):
       timestamp = newtimestamp
-    sequence['partition_timestamp'] = timestamp
+    sequence['partition_timestamp'] = str(timestamp)
 
   def stepCheckMinimalParametersTransmitted(self, sequence, **kw):
     """
