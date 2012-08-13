@@ -62,7 +62,7 @@ hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscrip
 \n
 # Instance can be moved from one requester to another\n
 # Prevent creating two instances with the same title\n
-tag = "%s_%s_inProgress" % (hosting_subscription.getUid(), software_title.encode(\'hex\'))\n
+tag = "%s_%s_inProgress" % (hosting_subscription.getUid(), software_title)\n
 if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
   # The software instance is already under creation but can not be fetched from catalog\n
   # As it is not possible to fetch informations, it is better to raise an error\n

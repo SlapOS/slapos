@@ -221,7 +221,7 @@ def BrowserID_checkUserExistence(self):
   except KeyError:
     return False
   user = user_dict['login']
-  tag = '%s_user_creation_in_progress' % user.encode('hex')
+  tag = '%s_user_creation_in_progress' % user
   person_list = getUserByLogin(self.getPortalObject(), user)
   if len(person_list) == 0:
     if self.getPortalObject().portal_activities.countMessageWithTag(tag) == 0:
