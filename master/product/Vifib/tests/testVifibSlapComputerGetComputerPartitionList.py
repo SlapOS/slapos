@@ -699,50 +699,11 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepSetSoftwareInstanceValidConnectionXML(self, sequence, **kw):
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    software_instance.edit(connection_xml="")
-
-  def stepDamageSoftwareInstanceSlaXml(self, sequence, **kw):
-    instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    if instance.getPortalType() == "Software Instance":
-      shared = False
-    elif instance.getPortalType() == "Slave Instance":
-      shared = True
-    else:
-      raise NotImplementedError
-    self.assertRaises(ValidationFailed, instance.requestStart,
-        software_release=instance.getRootSoftwareReleaseUrl(),
-        instance_xml=instance.getTextContent(),
-        software_type=instance.getSourceReference(),
-        sla_xml="""DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""",
-        shared=shared,
-        )
-
   def stepDamageSoftwareInstanceConnectionXml(self, sequence, **kw):
     instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
     instance.edit(connection_xml="""
     DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""")
-
-  def stepDamageSoftwareInstanceXml(self, sequence, **kw):
-    instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    if instance.getPortalType() == "Software Instance":
-      shared = False
-    elif instance.getPortalType() == "Slave Instance":
-      shared = True
-    else:
-      raise NotImplementedError
-    self.assertRaises(ValidationFailed, instance.requestStart,
-        software_release=instance.getRootSoftwareReleaseUrl(),
-        instance_xml="""DAMAGED<BAD?xml XMLversion="1.0" encoding="utf-8"?>""",
-        software_type=instance.getSourceReference(),
-        sla_xml=instance.getSlaXml(),
-        shared=shared,
-        )
 
   def stepCheckDamageSoftwareInstanceSiteConsistency(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
@@ -756,7 +717,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     consistency_error = consistency_error_list[0]
     self.assertEqual(consistency_error.getObject().getPath(),
       software_instance.getPath())
-    self.assertTrue('Sla XML is invalid' in str(consistency_error.getMessage()))
+    self.assertTrue('Connection XML is invalid' in str(consistency_error.getMessage()))
     self.assertTrue(self.portal.portal_alarms.vifib_check_consistency.sense())
     self.checkDivergency()
 
@@ -767,27 +728,8 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_string = self\
       .prepare_install_requested_computer_partition_sequence_string + """
       LoginDefaultUser
-      DamageSoftwareInstanceXml
-      Logout
-
-      SlapLoginCurrentComputer
-      CheckSuccessComputerGetComputerPartitionCall
-      Tic
-      SlapLogout
-
-      LoginDefaultUser
       SetSoftwareInstanceValidXML
       DamageSoftwareInstanceConnectionXml
-      Logout
-
-      SlapLoginCurrentComputer
-      CheckSuccessComputerGetComputerPartitionCall
-      Tic
-      SlapLogout
-
-      LoginDefaultUser
-      SetSoftwareInstanceValidConnectionXML
-      DamageSoftwareInstanceSlaXml
       Logout
 
       SlapLoginCurrentComputer
