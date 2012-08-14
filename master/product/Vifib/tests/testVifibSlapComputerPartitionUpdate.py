@@ -199,6 +199,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
+        SetDeliveryLineAmountEqualTwo
         CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
@@ -259,6 +260,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
+        SetDeliveryLineAmountEqualTwo
         CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
@@ -359,6 +361,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
+        SetDeliveryLineAmountEqualTwo
         CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
@@ -445,7 +448,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         Logout
 
         LoginDefaultUser
-        CheckComputerPartitionNoInstanceUpdateSalePackingList
+        CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
 
         LoginERP5TypeTestCase
