@@ -603,19 +603,29 @@ class Slapgrid(object):
     clean_run = True
     for computer_partition in self.getComputerPartitionList():
       computer_partition_id = computer_partition.getId()
+
+      # Check if we defined explicit list of partitions to process.
+      # If so, if current partition not in this list, skip.
       if len(self.computer_partition_filter_list) > 0 and \
            (computer_partition_id not in self.computer_partition_filter_list):
         continue
 
-      instance_path = os.path.join(
-        self.instance_root, computer_partition_id)
+      instance_path = os.path.join(self.instance_root, computer_partition_id)
+
+      # Try to get partition timestamp (last modification date)
       timestamp_path = os.path.join(instance_path, '.timestamp')
+      parameter_dict = computer_partition.getInstanceParameterDict()
+      if 'timestamp' in parameter_dict:
+        timestamp = parameter_dict['timestamp']
+      else:
+        timestamp = None
+
+      # Check if timestamp from server is more recent than local one.
+      # If not: it's not worth processing this partition (nothing has changed).
       if computer_partition_id not in self.computer_partition_filter_list and \
           (not self.develop) and os.path.exists(timestamp_path):
         old_timestamp = open(timestamp_path).read()
-        parameter_dict = computer_partition.getInstanceParameterDict()
-        if 'timestamp' in parameter_dict:
-          timestamp = parameter_dict['timestamp']
+        if timestamp:
           try:
             if int(timestamp) <= int(old_timestamp):
               continue
@@ -643,7 +653,6 @@ class Slapgrid(object):
         software_release_url=software_url,
         certificate_repository_path=self.certificate_repository_path,
         console=self.console, buildout=self.buildout)
-      # There are no conditions to try to instanciate partition
       try:
         computer_partition_state = computer_partition.getState()
         if computer_partition_state == "started":
@@ -672,6 +681,10 @@ class Slapgrid(object):
             (computer_partition_id, computer_partition_state)
           computer_partition.error(error_string)
           raise NotImplementedError(error_string)
+        # If partition has been successfully processed, write timestamp
+        if timestamp:
+          timestamp_path = os.path.join(instance_path, '.timestamp')
+          open(timestamp_path, 'w').write(timestamp)
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         computer_partition.error(exception)

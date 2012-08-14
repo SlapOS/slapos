@@ -406,11 +406,6 @@ class Partition(object):
           partition_supervisor_configuration)
     self.updateSupervisor()
 
-    parameter_dict = self.computer_partition.getInstanceParameterDict()
-    if 'timestamp' in parameter_dict:
-      timestamp_path = os.path.join(self.instance_path, '.timestamp')
-      open(timestamp_path, 'w').write(parameter_dict['timestamp'])
-
   def start(self):
     """Asks supervisord to start the instance. If this instance is not
     installed, we install it.
