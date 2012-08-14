@@ -10,33 +10,53 @@ offline = true
 
 [publish-cloudooo-connection-information]
 recipe = slapos.cookbook:publishurl
-url = cloudooo://${cloudooo-instance:ip}:${cloudooo-instance:port}/
+url = cloudooo://${haproxy:ip}:${haproxy:port}/
 
-[cloudooo-instance]
+[cloudooo-base]
 recipe = slapos.cookbook:generic.cloudooo
-
-# Network options
 ip = ${slap-network-information:local-ipv4}
-port = 23000
-openoffice-port = 23060
-
-# Paths
-configuration-file = ${rootdirectory:etc}/cloudooo.cfg
 wrapper = ${basedirectory:services}/cloudooo
-
-# Paths: Data
-data-directory = ${directory:cloudooo-data}
-
 environment =
   LD_LIBRARY_PATH = {{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['zlib'] }}/lib
   FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
   PATH = ${binary-link:target-directory}
-
 # Binary information
 # cloudooo specific configuration
 ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
 ooo-paster = {{ bin_directory }}/cloudooo_paster
 ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
+
+{% set cloudooo_port = 23000 -%}
+{% for index in range(slapparameter_dict.get('backend_count', 1)) -%}
+{%   set name = 'cloudooo-' ~ index -%}
+[{{ section(name) }}]
+< = cloudooo-base
+port = {{ cloudooo_port }}
+openoffice-port = {{ cloudooo_port + 1 }}
+configuration-file = ${rootdirectory:etc}/{{ name }}.cfg
+
+{%   set cloudooo_port = cloudooo_port + 2 -%}
+{% endfor -%}
+
+[haproxy]
+recipe = slapos.cookbook:haproxy
+name = haproxy
+conf-path = ${directory:etc}/haproxy.cfg
+ip = {{ ipv4 }}
+port = 8001
+maxconn = {{ slapparameter_dict['haproxy-maxconn'] }}
+# XXX: should be optional (check recipe code)
+server-check-path = {{ slapparameter_dict['haproxy-server-check-path'] }}
+wrapper-path = ${directory:services}/haproxy
+binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+backend-list =
+{%- for section_name in section_list %}
+  {{ "${" ~ section_name ~ ":ip}:${" ~ section_name ~ ":port}" }}
+{%- endfor %}
+
+[cloudooo-instance]
+# Paths: Data
+data-directory = ${directory:cloudooo-data}
 
 [cloudooo-test-runner]
 recipe = slapos.cookbook:cloudooo.test
