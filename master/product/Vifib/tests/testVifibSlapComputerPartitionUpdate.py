@@ -4,6 +4,8 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from random import random
 from Products.ERP5Type.tests.backportUnittest import skip
 from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
+import transaction
+from _mysql_exceptions import DataError
 
 class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
   def stepRequestSoftwareInstanceUpdate(self, sequence, **kw):
@@ -467,18 +469,33 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
     software_release = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_release_uid'])
-    software_title = self.id() + str(random())
     person.requestSoftwareInstance(
       software_release=software_release.getUrlString(),
-      software_title=software_title,
+      software_title=self.root_software_instance_title,
       software_type="RootSoftwareInstance",
       instance_xml=self.minimal_correct_xml,
       sla_xml="",
       shared=False,
       state="started")
-    sequence.edit(root_software_instance_title=software_title)
+    sequence.edit(root_software_instance_title=self.root_software_instance_title)
+
+  def stepPersonRequestSoftwareInstanceNoTicRaisesDataError(self, sequence, **kw):
+    person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
+    software_release = self.portal.portal_catalog.getResultValue(
+        uid=sequence['software_release_uid'])
+    person.requestSoftwareInstance(
+      software_release=software_release.getUrlString(),
+      software_title=self.root_software_instance_title,
+      software_type="RootSoftwareInstance",
+      instance_xml=self.minimal_correct_xml,
+      sla_xml="",
+      shared=False,
+      state="started")
+    self.assertRaises(DataError, self.commit)
+    transaction.abort()
 
   def test_update_not_created_person_request_in_progress(self):
+    self.root_software_instance_title = self.id() + str(random())
     sequence_list = SequenceList()
     sequence_string = self.prepare_published_software_release + \
       self.prepare_formated_computer + """
@@ -511,6 +528,38 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       """
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
+
+  def test_update_not_created_person_request_in_progress_long_title(self):
+    self.root_software_instance_title = 'a' * 256 # longer then SQL column size
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      LoginTestVifibCustomer
+      PersonRequestSoftwareInstanceNoTicRaisesDataError
+      Logout
+
+      # and this that test finishes
+      # it is proven that person data are begin in progress
+      # but there is no way to request software instance update as...
+      # ...it does not exists yet
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+      """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
 
 def test_suite():
   suite = unittest.TestSuite()
