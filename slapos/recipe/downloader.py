@@ -28,26 +28,60 @@
 import os
 import urllib
 import hashlib
+import tempfile
+import shutil
+import subprocess
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 BUFFER_SIZE = 1024
 
 def service(args):
+    environ = os.environ.copy()
+    environ.update(PATH=args['path'])
     if not os.path.exists(args['confirm']):
-        urllib.urlretrieve(args['url'], args['output'])
+        tmpdir = tempfile.mkdtemp()
+        try:
+            # XXX: Hardcoded path
+            tmpoutput = os.path.join(tmpdir, 'downloaded')
+            urllib.urlretrieve(args['url'], tmpoutput)
 
-        if args['md5'] is not None:
-            # XXX: Find a better way to do a md5sum
-            md5sum = hashlib.md5()
-            with open(args['output'], 'r') as output:
-                file_buffer = output.read(BUFFER_SIZE)
-                while len(file_buffer) > 0:
-                    md5sum.update(file_buffer)
+            if args['md5'] is not None:
+                # XXX: we need to find a better way to do a md5sum
+                md5sum = hashlib.md5()
+                with open(args['output'], 'r') as output:
                     file_buffer = output.read(BUFFER_SIZE)
+                    while len(file_buffer) > 0:
+                        md5sum.update(file_buffer)
+                        file_buffer = output.read(BUFFER_SIZE)
 
-            if args['md5'] != md5sum.hexdigest():
-                return 127 # Not-null return code
+                if args['md5'] != md5sum.hexdigest():
+                    return 127 # Not-null return code
+
+            if not args['archive']:
+                os.rename(tmpoutput, args['output'])
+            else:
+                # XXX: hardcoding path
+                extract_dir = os.path.join(tmpdir, 'extract')
+                os.mkdir(extract_dir)
+                subprocess.check_call(
+                    ['tar', '-x', '-f', tmpoutput,
+                            '-C', extract_dir,
+                    ],
+                    env=environ,
+                )
+                archive_content = os.listdir(extract_dir)
+                if len(archive_content) == 1 and \
+                   os.path.isfile(os.path.join(extract_dir,
+                                               archive_content[0])):
+                    os.rename(os.path.join(extract_dir,
+                                           archive_content[0]),
+                              args['output'])
+                else:
+                    return 127 # Not-null return code
+
+        finally:
+            shutil.rmtree(tmpdir)
 
         # Just a touch on args['confirm'] file
         open(args['confirm'], 'w').close()
@@ -65,16 +99,20 @@ class Recipe(GenericBaseRecipe):
         if len(md5sum) == 0:
             md5sum = None
 
+        keywords = {
+            'url': self.options['url'],
+            'md5': md5sum,
+            'output': self.options['downloaded-file'],
+            'confirm': self.options['downloaded-file-complete'],
+            'archive': self.optionIsTrue('archive', False),
+        }
+        if keywords['archive']:
+            keywords['path'] = self.options['path']
         path_list.append(
             self.createPythonScript(
                 self.options['binary'],
                 'slapos.recipe.downloader.service',
-                {
-                    'url': self.options['url'],
-                    'md5': md5sum,
-                    'output': self.options['downloaded-file'],
-                    'confirm': self.options['downloaded-file-complete']
-                }
+                keywords,
             )
         )
 
