@@ -51,6 +51,9 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
+portal.portal_catalog.searchAndActivate(portal_type=\'Computer Partition\', method_id=\'updateLocalRolesOnSecurityGroups\', activate_kw={\'tag\': \'Computer_updateLocalRoles\'})\n
+return "ok"\n
+\n
 portal.portal_catalog.searchAndActivate(portal_type=\'Computer\', method_id=\'Computer_updateLocalRoles\', activate_kw={\'tag\': \'Computer_updateLocalRoles\'})\n
 \n
 portal.computer_module.activate(after_tag=\'Computer_updateLocalRoles\').Folder_reindexAll()\n
