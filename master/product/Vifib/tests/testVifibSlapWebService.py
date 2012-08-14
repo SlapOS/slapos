@@ -4609,6 +4609,8 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Tic
       Logout
 
+      """ + self.stabilise_accounting + """
+
       LoginWebUser
       PersonRequestSoftwareInstance
       Tic
