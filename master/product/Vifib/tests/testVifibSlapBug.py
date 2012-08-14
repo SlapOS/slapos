@@ -1589,6 +1589,8 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
 
+      """ + self.stabilise_accounting + """
+
       LoginWebUser
       CustomerRegisterNewComputer
       Tic
