@@ -25,3 +25,5 @@ lxc.cgroup.devices.allow = c 5:2 rwm
 lxc.cgroup.devices.allow = c 254:0 rwm
 
 lxc.rootfs = %(rootfs)s
+
+lxc.cap.drop = sys_module sys_time sys_chroot mknod
