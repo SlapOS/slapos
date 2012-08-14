@@ -6,6 +6,8 @@ Changes
 
  * slapgrid-ur: when destroying (not reporting), only care about instances to
    destroy, completely ignore others. [Cedric de Saint Martin]
+ * Set .timestamp in partitions ONLY after slapgrid thinks it's okay (promises,
+   ...). [Cedric de Saint Martin]
 
 0.27 (2012-08-08)
 -----------------
