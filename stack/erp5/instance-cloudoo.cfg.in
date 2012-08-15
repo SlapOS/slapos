@@ -1,0 +1,73 @@
+{% if software_type == slap_software_type -%}
+{% set json = json_module.loads(parameter_dict.get('cloudooo-json', '{}')) -%}
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+[buildout]
+parts =
+  publish-cloudooo-connection-information
+  cloudooo-instance
+  promise
+  promise-openoffice
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[publish-cloudooo-connection-information]
+recipe = slapos.cookbook:publishurl
+url = cloudooo://${cloudooo-instance:ip}:${cloudooo-instance:port}/
+
+[cloudooo-instance]
+recipe = slapos.cookbook:generic.cloudooo
+
+# Network options
+ip = ${slap-network-information:local-ipv4}
+port = 23000
+openoffice-port = 23060
+
+# Paths
+configuration-file = ${directory:etc}/cloudooo.cfg
+wrapper = ${directory:service}/cloudooo
+
+# Paths: Data
+data-directory = ${directory:cloudooo-data}
+
+environment =
+  LD_LIBRARY_PATH = {{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['zlib'] }}/lib
+  FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
+
+# Binary information
+# cloudooo specific configuration
+ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
+ooo-paster = {{ bin_directory }}/cloudooo_paster
+ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
+
+[fontconfig-instance]
+recipe = slapos.cookbook:fontconfig
+conf-path = ${directory:etc}/font.conf
+font-system-folder = {{ parameter_dict['fonts'] }}
+font-folder = ${directory:font}
+url-list = {{ json.get('font_url_list', []) | join(' ') }}
+service-folder = ${directory:service}
+onetimedownload_path = {{ bin_directory }}/onetimedownload
+
+[promise]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/cloudooo
+hostname = ${cloudooo-instance:ip}
+port = ${cloudooo-instance:port}
+
+[promise-openoffice]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/openoffice
+hostname = ${cloudooo-instance:ip}
+port = ${cloudooo-instance:openoffice-port}
+
+# rest of parts are candidates for some generic stuff
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+srv = ${buildout:directory}/srv
+service = ${:etc}/run
+promise = ${:etc}/promise
+cloudooo-data = ${:srv}/cloudooo
+font = ${:srv}/font
+{% endif %}
