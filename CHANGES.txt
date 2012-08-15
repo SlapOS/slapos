@@ -4,7 +4,7 @@ Changes
 0.61 (Unreleased)
 -----------------
 
-  * No change yet.
+  * Add "debug" option for slaprunner. [Alain Takoudjou]
 
 0.60 (2012-08-13)
 -----------------
