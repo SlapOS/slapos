@@ -217,6 +217,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         SlapLogout
 
         LoginDefaultUser
+        SetDeliveryLineAmountEqualOne
         CheckComputerPartitionInstanceHostingSalePackingListStopped
         CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         Logout
@@ -278,6 +279,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         SlapLogout
 
         LoginDefaultUser
+        SetDeliveryLineAmountEqualOne
         CheckComputerPartitionInstanceHostingSalePackingListStopped
         CheckComputerPartitionInstanceUpdateSalePackingListDelivered
         CheckUpdateSalePackingListErrorText
