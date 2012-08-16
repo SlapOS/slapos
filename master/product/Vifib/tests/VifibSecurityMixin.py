@@ -209,17 +209,3 @@ class testVifibSecurityMixin(SecurityTestCase, testVifibMixin):
     Logout
     """
     self.logout()
-
-  def stepAddObject(self, sequence=None, sequence_list=None, **kw):
-    """
-    Add an object in the module
-    """
-    portal = self.getPortal()
-    portal_type = sequence.get('object_portal_type')
-    module = portal.getDefaultModule(portal_type)
-    obj = module.newContent(portal_type=portal_type)
-    sequence.edit(
-      obj_id=obj.getId()
-    )
-    transaction.commit()
-    self.tic()
