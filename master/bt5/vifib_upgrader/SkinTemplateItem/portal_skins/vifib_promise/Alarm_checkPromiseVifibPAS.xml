@@ -55,7 +55,24 @@
 portal = context.getPortalObject()\n
 \n
 def getPASDictDifference(portal, d):\n
-  raise NotImplementedError\n
+  error_list = []\n
+  pas_list = portal.acl_users.objectValues()\n
+  pas_meta_type_set = set([q.meta_type for q in pas_list])\n
+  for meta_type, plugin_list in d.iteritems():\n
+    if meta_type not in pas_meta_type_set:\n
+      error_list.append(\'Missing plugin %r.\' % meta_type)\n
+    else:\n
+      plugin = [q for q in pas_list if q.meta_type==meta_type][0]\n
+      active_list = []\n
+      for plugin_type_info in plugin.plugins.listPluginTypeInfo():\n
+        interface_name = plugin_type_info[\'id\']\n
+        interface = plugin_type_info[\'interface\']\n
+        if plugin.testImplements(interface):\n
+          if plugin.getId() in [q[0] for q in plugin.plugins.listPlugins(interface)]:\n
+            active_list.append(interface_name)\n
+      if plugin_list != active_list:\n
+        error_list.append(\'%r missing activation, expeced %s got %s.\' % (meta_type, \', \'.join(plugin_list), \', \'.join(active_list)))\n
+  return error_list\n
 \n
 def mergePASDict(portal, s):\n
   raise NotImplementedError\n
