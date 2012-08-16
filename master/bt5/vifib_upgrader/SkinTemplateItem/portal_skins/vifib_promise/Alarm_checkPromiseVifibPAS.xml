@@ -104,6 +104,7 @@ else:\n
   summary = "Nothing to do."\n
   detail = ""\n
 \n
+active_result = ActiveResult()\n
 active_result.edit(\n
   summary=summary, \n
   severity=severity,\n
