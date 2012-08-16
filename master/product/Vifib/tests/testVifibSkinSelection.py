@@ -121,6 +121,7 @@ vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
@@ -221,6 +222,7 @@ vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
@@ -323,6 +325,7 @@ vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
@@ -420,6 +423,7 @@ vifib_core
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
@@ -514,6 +518,7 @@ vifib_core
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
@@ -608,6 +613,7 @@ vifib_core
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
@@ -706,6 +712,7 @@ vifib_core
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
@@ -803,6 +810,7 @@ vifib_core
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
@@ -897,6 +905,7 @@ vifib_core
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
@@ -990,6 +999,7 @@ vifib_core
 vifib_forge_release
 vifib_open_trade
 vifib_payzen
+vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_rest_api
