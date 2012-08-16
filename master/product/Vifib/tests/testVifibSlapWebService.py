@@ -1044,6 +1044,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SetPurchasePackingListLineSetupResource
       SetPurchasePackingListLineAggregate
       ConfirmPurchasePackingList
+      StartBuildingPurchasePackingList
       Tic
       CheckConfirmedPurchasePackingList
       Logout
@@ -1058,6 +1059,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SetPurchasePackingListLineCleanupResource
       SetPurchasePackingListLineAggregate
       ConfirmPurchasePackingList
+      StartBuildingPurchasePackingList
       Tic
       CheckConfirmedPurchasePackingList
       Logout
@@ -1087,6 +1089,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SetPurchasePackingListLineAccountingResource
       SetPurchasePackingListLineAggregate
+      StartBuildingPurchasePackingList
       ConfirmPurchasePackingList
       Tic
       Logout
@@ -1363,6 +1366,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SetPurchasePackingListLineSetupResource
       SetPurchasePackingListLineAggregate
+      StartBuildingPurchasePackingList
       ConfirmPurchasePackingList
       StopPurchasePackingList
       Tic
@@ -2496,6 +2500,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.assertEquals(1, len(computer.getSoftwareReleaseList()))
     self.assertTrue(isinstance(computer.getSoftwareReleaseList()[0],
                                slap.SoftwareRelease))
+
+  def stepStartBuildingPurchasePackingList(self, sequence, **kw):
+    delivery = self.portal.portal_catalog.getResultValue(
+      uid=sequence['purchase_packing_list_uid'])
+    delivery.startBuilding()
 
   def stepCreatePurchasePackingList(self, sequence, **kw):
     """
