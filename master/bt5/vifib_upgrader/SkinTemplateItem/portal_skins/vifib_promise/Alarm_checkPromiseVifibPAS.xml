@@ -93,10 +93,10 @@ promise_dict = {\n
 }\n
 \n
 pas_difference = getPASDictDifference(portal, promise_dict)\n
-if pas_difference is not None:\n
+if len(pas_difference) != 0:\n
   severity = 1\n
   summary = "PAS not configured as expected"\n
-  detail = "Difference %s" % (pas_difference, )\n
+  detail = "Difference %s" % (\'\\n\'.join(pas_difference), )\n
   if fixit:\n
     mergePASDict(portal, promise_dict)\n
 else:\n
