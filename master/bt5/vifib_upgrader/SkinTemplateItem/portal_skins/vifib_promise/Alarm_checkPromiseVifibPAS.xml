@@ -87,7 +87,7 @@ promise_dict = {\n
   \'ERP5 Facebook Extraction Plugin\': [\n
         \'IExtractionPlugin\',\n
   ],\n
-  \' ERP5 Google Extraction Plugin\': [\n
+  \'ERP5 Google Extraction Plugin\': [\n
         \'IExtractionPlugin\',\n
   ]\n
 }\n
