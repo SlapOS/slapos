@@ -204,14 +204,13 @@ else:\n
         instance.edit(causality_value=new_delivery)\n
       else:\n
         raise NotImplementedError\n
-    if new_delivery is not None:\n
-      new_delivery.startBuilding()\n
-\n
     elif (service_relative_url == cleanup_service_relative_url):\n
       raise NotImplementedError, "Not update should be allowed"\n
-\n
     else:\n
       raise NotImplementedError\n
+\n
+    if new_delivery is not None:\n
+      new_delivery.startBuilding()\n
 </string> </value>
         </item>
         <item>
