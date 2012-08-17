@@ -10,10 +10,6 @@ Changes
 -----------------
 
   * Add "debug" option for slaprunner. [Alain Takoudjou]
-  * Add cloud9 stable version to slaprunner. [Alain Takoudjou]
-  * Update node.js to v0.6.21. [Cedric de Saint Martin]
-  * Add promise to slaprunner. [Jean-Baptiste Petre]
-  * Slaprunner: Pin new version of hexagonit.recipe.download. [Cedric de Saint Martin]
 
 0.60 (2012-08-13)
 -----------------
