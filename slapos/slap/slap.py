@@ -352,11 +352,6 @@ class ComputerPartition(SlapDocument):
   def __getinitargs__(self):
     return (self._computer_id, self._partition_id, )
 
-  # XXX: As request is decorated with _syncComputerPartitionInformation it
-  #      will raise ResourceNotReady really early -- just after requesting,
-  #      and not when try to access to real partition is required.
-  #      To have later raising (like in case of calling methods), the way how
-  #      Computer Partition data are fetch from server shall be delayed
   @_syncComputerPartitionInformation
   def request(self, software_release, software_type, partition_reference,
               shared=False, partition_parameter_kw=None, filter_kw=None,
