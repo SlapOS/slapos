@@ -1,13 +1,15 @@
 Changes
 =======
 
-0.27.1 (Unreleased)
+0.28 (2012-08-17)
 -----------------
 
- * slapgrid-ur: when destroying (not reporting), only care about instances to
-   destroy, completely ignore others. [Cedric de Saint Martin]
+ * Introduce "slapos node register" command, that will register computer to
+   SlapOS Master (vifib.net by default) for you. [Cédric Le Ninivin]
  * Set .timestamp in partitions ONLY after slapgrid thinks it's okay (promises,
    ...). [Cedric de Saint Martin]
+ * slapgrid-ur: when destroying (not reporting), only care about instances to
+   destroy, completely ignore others. [Cedric de Saint Martin]
 
 0.27 (2012-08-08)
 -----------------
