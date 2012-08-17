@@ -1,6 +1,5 @@
 #!%(shell_path)s
 
-DAEMON_OPTS="-a %(varnish_ip)s:%(varnishd_server_port)s \
-             -n %(varnish_instance_name)s"
+DAEMON_OPTS="-a -n %(varnish_instance_name)s"
 
 exec %(varnishlog_binary)s ${DAEMON_OPTS} "$@"

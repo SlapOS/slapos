@@ -49,23 +49,23 @@ class SheepDogTestBed(BaseSlapRecipe):
 
   def run_sheepdog_test(self):
     """ Launch sheepdog test process. """
-    
+
     sheepdog_test_config = {}
     sheepdog_test_config.update(self.options)
     sheepdog_test_config.update(self.parameter_dict)
 
     sheepdog_test_config['address'] = self.getGlobalIPv6Address()
     sheepdog_test_config['report_path'] = self.log_directory
-    
+
     if 'nb_server_max' not in sheepdog_test_config:
       sheepdog_test_config['nb_server_max'] = 0
-    
+
     if 'nb_tester_max' not in sheepdog_test_config:
       sheepdog_test_config['nb_tester_max'] = 3
-    
+
     if 'nb_thread' not in sheepdog_test_config:
       sheepdog_test_config['nb_thread'] = 1
-    
+
     if 'nb_request' not in sheepdog_test_config:
       sheepdog_test_config['nb_request'] = 1000
 
@@ -81,7 +81,7 @@ class SheepDogTestBed(BaseSlapRecipe):
     sheepdog_test_connection = {}
     sheepdog_test_connection['url'] = "http://["+sheepdog_test_config['address']+"]:5000/"
     self.computer_partition.setConnectionDict(sheepdog_test_connection)
-    
+
     nosqltester_manager_wrapper_template_location = pkg_resources.resource_filename(
                                              __name__, os.path.join(
                                              'template', 'nosqltester_manager_run.in'))

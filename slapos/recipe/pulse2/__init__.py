@@ -43,17 +43,17 @@ class Recipe(BaseSlapRecipe):
     document_root = self.createDataDirectory('htdocs')
     self.createHtdocs(self.options['source'].strip(), document_root)
     url = self.installApache(document_root)
-    
+
     # MySQL
     mysql_conf = self.installMysqlServer(self.getLocalIPv4Address(), 45678)
-    
+
     # LDAP
     ldap_port = dict()
-    
+
     # Pulse
     mmc_core_conf = self.installPulse2(ip=self.getLocalIPv4Address(),
         port=11000, ldap_host=ldap_conf['host'], ldap_port=ldap_conf['port'])
-        
+
     ca_conf = self.installCertificateAuthority()
     key, certificate = self.requestCertificate('Pulse')
 
@@ -61,7 +61,7 @@ class Recipe(BaseSlapRecipe):
         self.getLocalIPv4Address(), 12345, pulse_conf['inventory_port'],
         certificate, key, ca_conf['ca_crl'],
         ca_conf['certificate_authority_path'])
-    
+
     self.linkBinary()
     self.setConnectionDict(dict(
       stunnel_inventory_ip = stunnel_conf['public_ip'],
@@ -92,7 +92,7 @@ class Recipe(BaseSlapRecipe):
       os.symlink(target, link)
       self.logger.debug('Created link %r -> %r' % (link, target))
       self.path_list.append(link)
-  
+
   def installCrond(self):
     timestamps = self.createDataDirectory('cronstamps')
     cron_output = os.path.join(self.log_directory, 'cron-output')
@@ -114,7 +114,7 @@ class Recipe(BaseSlapRecipe):
       )[0]
     self.path_list.append(wrapper)
     return cron_d
-  
+
   def installLogrotate(self):
     """Installs logortate main configuration file and registers its to cron"""
     logrotate_d = os.path.abspath(os.path.join(self.etc_directory,
@@ -247,26 +247,26 @@ class Recipe(BaseSlapRecipe):
         ldap_logfile_path= os.path.join(self.log_directory, 'ldap.log'),
         mmc_core_binary=self.options['mmc_core_binary']
     )
-    
-    #TODO write function that takes all templates in subdir and creates conf 
+
+    #TODO write function that takes all templates in subdir and creates conf
     # files, keeping same dir structure.
     mmc_conf_path = self.createConfigurationFile(os.path.join("mmc",
         "agent", "config.ini"), self.substituteTemplate(
         self.getTemplateFilename(os.path.join("mmc_conf",
         "agent", "config.ini.in")), config))
     config['mmc_core_config_file'] = mysql_conf_path
-    
+
     self.path_list.append(self.createRunningWrapper('mmc-core',
       self.substituteTemplate(self.getTemplateFilename('mmc-core.in'),
         config)))
 
 
-    
+
     return dict(memcached_url='%s:%s' %
         (config['memcached_ip'], config['memcached_port']),
         memcached_ip=config['memcached_ip'],
         memcached_port=config['memcached_port'])
-  
+
   def createHtdocs(self, source, document_root):
     source = self.options['source'].strip()
     document_root = self.createDataDirectory('htdocs')
@@ -282,7 +282,7 @@ class Recipe(BaseSlapRecipe):
         shutil.copytree(path, os.path.join(document_root, p))
       else:
         shutil.copy2(path, os.path.join(document_root, p))
-  
+
   def installApache(self, document_root, ip=None, port=None):
     if ip is None:
       ip=self.getGlobalIPv6Address()

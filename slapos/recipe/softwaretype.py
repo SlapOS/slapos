@@ -120,7 +120,7 @@ class Recipe:
                  self.getLocalIPv4Address())
     buildout.set('slap-network-information', 'global-ipv6',
                  self.getGlobalIPv6Address())
-    buildout.set('slap-network-information', 'network-interface', 
+    buildout.set('slap-network-information', 'network-interface',
                  self.getNetworkInterface())
 
     # Copy/paste slap_connection
