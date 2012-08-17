@@ -12,6 +12,8 @@ from App.Common import rfc1123_date
 from DateTime import DateTime
 import time
 
+from Products.ERP5Type.tests.backportUnittest import skip
+
 class Simulator:
   def __init__(self, outfile, method):
     self.outfile = outfile
@@ -169,6 +171,7 @@ class VifibSlaposRestAPIV1Mixin(VifibSlaposRestAPIV1MixinBase):
       set([str])
     )
 
+@skip('Undecided.')
 class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
   def test_not_logged_in(self):
     self.connection.request(method='POST',
@@ -456,6 +459,7 @@ class TestInstanceRequest(VifibSlaposRestAPIV1Mixin):
     self.assertPersonRequestSimulatorEmpty()
     # and with correct ones are set by default
 
+@skip('Undecided.')
 class TestInstanceOPTIONS(VifibSlaposRestAPIV1Mixin):
   def test_OPTIONS_not_logged_in(self):
     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
@@ -470,6 +474,7 @@ class TestInstanceOPTIONS(VifibSlaposRestAPIV1Mixin):
     self.assertResponseNoContentType()
     self.assertPersonRequestSimulatorEmpty()
 
+@skip('Undecided.')
 class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
   def afterSetUp(self):
     VifibSlaposRestAPIV1Mixin.afterSetUp(self)
@@ -515,6 +520,7 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
     software_instance.recursiveImmediateReindexObject()
     transaction.commit()
 
+@skip('Undecided.')
 class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
   def test_non_existing(self):
     non_existing = 'software_instance_module/' + self.generateNewId()
@@ -723,6 +729,7 @@ class TestInstanceGET(VifibSlaposRestAPIV1InstanceMixin):
     self.assertBasicResponse()
     self.assertResponseCode(404)
 
+@skip('Undecided.')
 class TestInstanceGETcertificate(VifibSlaposRestAPIV1InstanceMixin):
   def test(self):
     self.connection.request(method='GET',
@@ -817,6 +824,7 @@ class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
       [{'recargs': args, 'reckwargs': kwargs,
       'recmethod': 'bang'}])
 
+@skip('Undecided.')
 class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
   def test(self):
     kwargs = {'log': 'This is cool log!', 'bang_tree': True}
@@ -975,6 +983,7 @@ class TestInstancePOSTbang(VifibSlaposRestAPIV1BangMixin):
     self.assertEqual({'log': 'bool is not unicode.'}, self.json_response)
     self.assertInstanceBangSimulatorEmpty()
 
+@skip('Undecided.')
 class TestInstancePUT(VifibSlaposRestAPIV1InstanceMixin):
   def afterSetUp(self):
     super(TestInstancePUT, self).afterSetUp()
@@ -1142,6 +1151,7 @@ class TestInstancePUT(VifibSlaposRestAPIV1InstanceMixin):
     self.assertResponseCode(204)
     self.assertInstancePUTSimulatorEmpty()
 
+@skip('Undecided.')
 class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
   def assertLastModifiedHeader(self):
     calculated = rfc1123_date(self.portal.software_instance_module\
@@ -1285,6 +1295,7 @@ class TestInstanceGETlist(VifibSlaposRestAPIV1InstanceMixin):
     self.assertTrue('Bearer realm="' in auth)
     self.assertPersonRequestSimulatorEmpty()
 
+@skip('Undecided.')
 class TestComputerPUT(VifibSlaposRestAPIV1MixinBase):
   def createComputer(self):
     computer = self.cloneByPath(
