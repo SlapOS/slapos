@@ -1,0 +1,95 @@
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+[buildout]
+parts =
+  publish-cloudooo-connection-information
+  cloudooo-test-runner
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[publish-cloudooo-connection-information]
+recipe = slapos.cookbook:publishurl
+url = cloudooo://${cloudooo-instance:ip}:${cloudooo-instance:port}/
+
+[cloudooo-instance]
+recipe = slapos.cookbook:generic.cloudooo
+
+# Network options
+ip = ${slap-network-information:local-ipv4}
+port = 23000
+openoffice-port = 23060
+
+# Paths
+configuration-file = ${rootdirectory:etc}/cloudooo.cfg
+wrapper = ${basedirectory:services}/cloudooo
+
+# Paths: Data
+data-directory = ${directory:cloudooo-data}
+
+environment =
+  LD_LIBRARY_PATH = {{ parameter_dict['file'] }}/lib:{{ parameter_dict['fontconfig'] }}/lib:{{ parameter_dict['freetype'] }}/lib:{{ parameter_dict['libICE'] }}/lib:{{ parameter_dict['libpng12'] }}/lib:{{ parameter_dict['libSM'] }}/lib:{{ parameter_dict['libX11'] }}/lib:{{ parameter_dict['libXau'] }}/lib:{{ parameter_dict['libXdmcp'] }}/lib:{{ parameter_dict['libXext'] }}/lib:{{ parameter_dict['libxcb'] }}/lib:{{ parameter_dict['libXrender'] }}/lib:{{ parameter_dict['zlib'] }}/lib
+  FONTCONFIG_FILE = ${fontconfig-instance:conf-path}
+  PATH = ${binary-link:target-directory}
+
+# Binary information
+# cloudooo specific configuration
+ooo-binary-path = {{ parameter_dict['libreoffice-bin'] }}/program
+ooo-paster = {{ bin_directory }}/cloudooo_paster
+ooo-uno-path = {{ parameter_dict['libreoffice-bin'] }}/basis-link/program
+
+[cloudooo-test-runner]
+recipe = slapos.cookbook:cloudooo.test
+
+prepend-path = ${buildout:bin-directory}
+run-unit-test = ${buildout:bin-directory}/runUnitTest
+run-test-suite = ${buildout:bin-directory}/runTestSuite
+
+ooo-paster = ${cloudooo-instance:ooo-paster}
+configuration-file = ${cloudooo-instance:configuration-file}
+
+run-unit-test-binary = {{ bin_directory }}/runCloudoooUnitTest
+run-test-suite-binary = {{ bin_directory }}/runCloudoooTestSuite
+
+[fontconfig-instance]
+recipe = slapos.cookbook:fontconfig
+conf-path = ${rootdirectory:etc}/font.conf
+font-system-folder = {{ parameter_dict['fonts'] }}
+font-folder = ${directory:font}
+url-list =
+service-folder = ${basedirectory:services}
+onetimedownload_path = {{ bin_directory }}/onetimedownload
+
+[binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${rootdirectory:bin}
+link-binary =
+  {{ parameter_dict['coreutils'] }}/bin/basename
+  {{ parameter_dict['coreutils'] }}/bin/cat
+  {{ parameter_dict['coreutils'] }}/bin/cp
+  {{ parameter_dict['coreutils'] }}/bin/ls
+  {{ parameter_dict['coreutils'] }}/bin/tr
+  {{ parameter_dict['coreutils'] }}/bin/uname
+  {{ parameter_dict['coreutils'] }}/bin/dirname
+  {{ parameter_dict['imagemagick'] }}/bin/convert
+  {{ parameter_dict['imagemagick'] }}/bin/identify
+  {{ parameter_dict['poppler'] }}/bin/pdfinfo
+  {{ parameter_dict['poppler'] }}/bin/pdftotext
+  {{ parameter_dict['poppler'] }}/bin/pdftohtml
+  {{ parameter_dict['pdftk'] }}/bin/pdftk
+
+# rest of parts are candidates for some generic stuff
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+services = ${rootdirectory:etc}/run
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+cloudooo-data = ${rootdirectory:srv}/cloudooo
+font = ${rootdirectory:srv}/font
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+srv = ${buildout:directory}/srv
+bin = ${buildout:directory}/bin

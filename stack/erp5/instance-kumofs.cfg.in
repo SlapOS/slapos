@@ -1,0 +1,139 @@
+[buildout]
+parts =
+  publish-kumofs-connection-information
+  kumofs-instance
+  logrotate
+  logrotate-entry-kumofs
+  cron
+  cron-entry-logrotate
+  promise-kumofs-server
+  promise-kumofs-server-listen
+  promise-kumofs-gateway
+  promise-kumofs-manager
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[publish-kumofs-connection-information]
+recipe = slapos.cookbook:publishurl
+url = memcached://${kumofs-instance:ip}:${kumofs-instance:gateway-port}/
+
+[kumofs-instance]
+recipe = slapos.cookbook:generic.kumofs
+
+# Network options
+ip = ${slap-network-information:local-ipv4}
+manager-port = 13101
+server-port = 13201
+server-listen-port = 13202
+gateway-port = 13301
+
+# Paths: Running wrappers
+gateway-wrapper = ${basedirectory:services}/kumofs_gateway
+manager-wrapper = ${basedirectory:services}/kumofs_manager
+server-wrapper = ${basedirectory:services}/kumofs_server
+
+# Paths: Data
+data-directory = ${directory:kumofs-data}
+
+# Paths: Logs
+kumo-gateway-log = ${basedirectory:log}/kumo-gateway.log
+kumo-manager-log = ${basedirectory:log}/kumo-manager.log
+kumo-server-log = ${basedirectory:log}/kumo-server.log
+
+# Binary information
+kumo-gateway-binary = {{ kumo_location }}/bin/kumo-gateway
+kumo-manager-binary = {{ kumo_location }}/bin/kumo-manager
+kumo-server-binary = {{ kumo_location }}/bin/kumo-server
+shell-path = {{ dash_location }}/bin/dash
+
+[logrotate-entry-kumofs]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = kumofs
+log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log}
+  ${kumofs-instance:kumo-server-log}
+
+# rest of parts are candidates for some generic stuff
+
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = {{ logrotate_location }}/usr/sbin/logrotate
+gzip-binary = {{ gzip_location }}/bin/gzip
+gunzip-binary = {{ gzip_location }}/bin/gunzip
+# Directories
+wrapper = ${rootdirectory:bin}/logrotate
+conf = ${rootdirectory:etc}/logrotate.conf
+logrotate-entries = ${directory:logrotate-entries}
+backup = ${directory:logrotate-backup}
+state-file = ${rootdirectory:srv}/logrotate.status
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = ${rootdirectory:var}/log
+services = ${rootdirectory:etc}/run
+promise = ${rootdirectory:etc}/promise
+run = ${rootdirectory:var}/run
+backup = ${rootdirectory:srv}/backup
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+cron-entries = ${rootdirectory:etc}/cron.d
+crontabs = ${rootdirectory:etc}/crontabs
+cronstamps = ${rootdirectory:etc}/cronstamps
+logrotate-backup = ${basedirectory:backup}/logrotate
+logrotate-entries = ${rootdirectory:etc}/logrotate.d
+kumofs-data = ${rootdirectory:srv}/kumofs
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc
+var = ${buildout:directory}/var
+srv = ${buildout:directory}/srv
+bin = ${buildout:directory}/bin
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = {{ dcron_location }}/sbin/crond
+cron-entries = ${directory:cron-entries}
+crontabs = ${directory:crontabs}
+cronstamps = ${directory:cronstamps}
+catcher = ${cron-simplelogger:wrapper}
+binary = ${basedirectory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = ${rootdirectory:bin}/cron_simplelogger
+log = ${basedirectory:log}/cron.log
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = ${logrotate:wrapper}
+
+# Deploy zope promises scripts
+[promise-template]
+recipe = slapos.cookbook:check_port_listening
+path = ${basedirectory:promise}/kumofs
+hostname = ${kumofs-instance:ip}
+port = ${kumofs-instance:server-listen-port}
+
+[promise-kumofs-server]
+<= promise-template
+port = ${kumofs-instance:server-port}
+
+[promise-kumofs-server-listen]
+<= promise-template
+port = ${kumofs-instance:server-listen-port}
+
+[promise-kumofs-gateway]
+<= promise-template
+port = ${kumofs-instance:gateway-port}
+
+[promise-kumofs-manager]
+<= promise-template
+port = ${kumofs-instance:manager-port}

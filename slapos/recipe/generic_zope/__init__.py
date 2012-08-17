@@ -93,7 +93,6 @@ class Recipe(GenericBaseRecipe):
 
     # Create zope configuration file
     zope_config = dict(
-        products=self.options['products'],
         thread_amount=self.options['thread-amount'],
         zodb_root_path=self.options['zodb-path'],
         zodb_cache_size=int(self.options['zodb-cache-size']),
@@ -112,14 +111,7 @@ class Recipe(GenericBaseRecipe):
     zope_config['z2_log'] = self.options['z2-log']
     zope_config['pid-filename'] = self.options['pid-file']
     zope_config['lock-filename'] = self.options['lock-file']
-    prefixed_products = []
-    for product in reversed(zope_config['products'].split()):
-      product = product.strip()
-      if product:
-        prefixed_products.append('products %s' % product)
-    prefixed_products.insert(0, 'products %s' % self.options[
-      'instance-products'])
-    zope_config['products'] = '\n'.join(prefixed_products)
+    zope_config['products'] = 'products %s' % self.options['instance-products']
     zope_config['address'] = '%s:%s' % (self.options['ip'], self.options['port'])
     zope_config.update(dump_url=self.options['deadlock-path'],
       secret=self.options['deadlock-password'])
