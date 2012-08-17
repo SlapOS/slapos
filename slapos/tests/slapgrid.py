@@ -466,7 +466,7 @@ buildout = /path/to/buildout/binary
         '--key_file', self.fake_file_descriptor.name,
         '--master_ca_file', self.fake_file_descriptor.name,
         '--certificate_repository_path', self.certificate_repository_path,
-        '-c', self.slapos_config_descriptor.name)
+        '-c', self.slapos_config_descriptor.name, '--now')
 
     self.signature_key_file_descriptor = tempfile.NamedTemporaryFile()
     self.signature_key_file_descriptor.seek(0)
