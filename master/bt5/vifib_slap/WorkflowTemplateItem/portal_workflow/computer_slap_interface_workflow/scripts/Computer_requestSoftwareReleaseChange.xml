@@ -126,6 +126,7 @@ packing_list.newContent(\n
 )\n
 \n
 packing_list.confirm(activate_kw=activate_kw)\n
+packing_list.startBuilding()\n
 
 
 ]]></string> </value>
