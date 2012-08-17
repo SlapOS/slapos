@@ -43,6 +43,7 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     module = self.portal.getDefaultModule("Organisation")
     organisation = module.newContent(portal_type="Organisation",
                                      reference="vifib-support")
+    self.markManualCreation(organisation)
     organisation.validate()
 
     #Install website

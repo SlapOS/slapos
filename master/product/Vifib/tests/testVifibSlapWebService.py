@@ -740,6 +740,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       reference=computer_reference,
       destination_reference=computer_reference,
     )
+    self.markManualCreation(computer)
     return computer, computer_reference
 
   def stepCreateDraftComputer(self, sequence, **kw):
@@ -1573,6 +1574,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     service = module.newContent(
         portal_type=self.service_portal_type,
         title="A custom accounting service")
+    self.markManualCreation(service)
     service.validate()
     sequence.edit(service_uid=service.getUid())
 
@@ -1660,6 +1662,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer_partition = computer.newContent(
         portal_type=self.computer_partition_portal_type,
         reference=partition_reference)
+    self.markManualCreation(computer_partition)
     # Mark newly created computer partition as free by default
     computer_partition.markFree()
     sequence.edit(computer_partition_uid=computer_partition.getUid())
@@ -1744,6 +1747,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         portal_type=self.software_product_portal_type,
         title=title,
         )
+    self.markManualCreation(software_product)
     sequence.edit(software_product_uid=software_product.getUid())
 
   def stepValidateSoftwareProduct(self, sequence, **kw):
@@ -1770,6 +1774,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         reference=url,
         contributor_value=self.portal.person_module.test_vifib_user_developer,
         url_string=url)
+    self.markManualCreation(software_release)
     sequence.edit(software_release_uid=software_release.getUid())
 
   def stepCheckUnexistingSoftwareRelease(self, sequence, **kw):
@@ -2525,6 +2530,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         destination_decision='person_module/test_vifib_customer',
         price_currency='currency_module/EUR',
         )
+    self.markManualCreation(order)
     sequence.edit(purchase_packing_list_uid=order.getUid())
 
   def stepCreatePurchasePackingListLine(self, sequence, **kw):
@@ -2536,6 +2542,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     line = order.newContent(
         portal_type=self.purchase_packing_list_line_portal_type,
         quantity=1)
+    self.markManualCreation(line)
     sequence.edit(purchase_packing_list_line_uid=line.getUid())
 
   def stepSetPurchasePackingListLineAggregate(self, sequence, **kw):
@@ -2945,6 +2952,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         price_currency='currency_module/EUR',
         start_date=DateTime(),
         )
+    self.markManualCreation(order)
     sequence.edit(sale_packing_list_uid=order.getUid())
 
   def stepCreateSalePackingListLine(self, sequence, **kw):
@@ -2958,6 +2966,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         quantity=1,
         price=1
         )
+    self.markManualCreation(line)
     sequence.edit(sale_packing_list_line_uid=line.getUid())
 
   def stepSetSalePackingListLineSetupResource(self, sequence, **kw):

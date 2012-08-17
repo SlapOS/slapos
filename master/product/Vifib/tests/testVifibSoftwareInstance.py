@@ -10,6 +10,7 @@ class TestVifibSoftwareInstance(testVifibMixin):
   def _test_si_tree(self):
     software_instance = self.portal.software_instance_module.newContent(
       portal_type='Software Instance')
+    self.markManualCreation(software_instance)
     self.checkConnected = software_instance.checkConnected
     self.checkNotCyclic = software_instance.checkNotCyclic
 

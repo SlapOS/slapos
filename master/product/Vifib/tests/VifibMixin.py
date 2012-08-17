@@ -257,6 +257,10 @@ class testVifibMixin(ERP5TypeTestCase):
         if isTransitionPossible(assignment, 'open'):
           assignment.open()
 
+  def markManualCreation(self, document):
+    self.portal.portal_workflow.doActionFor(document, 'edit_action',
+      comment='Manually created by test.')
+
   def prepareVifibAccountingPeriod(self):
     vifib = self.portal.organisation_module['vifib_internet']
     year = DateTime().year()
@@ -274,6 +278,7 @@ class testVifibMixin(ERP5TypeTestCase):
     if accounting_period is None:
       accounting_period = vifib.newContent(portal_type='Accounting Period',
         start_date=start_date, stop_date=stop_date)
+      self.markManualCreation(accounting_period)
       accounting_period.start()
 
   def setupVifibMachineAuthenticationPlugin(self):

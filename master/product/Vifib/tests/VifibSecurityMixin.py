@@ -87,6 +87,7 @@ class testVifibSecurityMixin(SecurityTestCase, testVifibMixin):
         career_role='internal',
 #         password='hackme',
       )
+      self.markManualCreation(person)
       if user_name != 'manager':
         self.assertTrue(user.has_permission('Access contents information',
                                             person))
@@ -107,6 +108,7 @@ class testVifibSecurityMixin(SecurityTestCase, testVifibMixin):
         start_date = '01/01/1900',
         stop_date = '01/01/2900',
       )
+      self.markManualCreation(assignment)
       if user_name != 'manager':
         self.assertTrue(user.has_permission('Access contents information',
                                             assignment))
