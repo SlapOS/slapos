@@ -597,8 +597,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       shared=kw.get('shared', False),
       state=kw['state'])
 
-    software_instance_portal_type = kw.get("instance_portal_type",
-                                  self.software_instance_portal_type)
     software_instance = self.portal.REQUEST.get('request_instance')
     hosting_subscription = self.portal.REQUEST.get('request_hosting_subscription')
     if (software_instance is not None):
@@ -3266,8 +3264,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepSelectCurrentlyUsedSalePackingListUid(self, sequence, **kw):
     """Sets sale_packing_list_uid to currently used to mach Computer Partition
     and Software Instance"""
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=sequence['computer_partition_uid'])
     software_instance = self.portal.portal_catalog.getResultValue(
         portal_type="Software Instance",
         default_aggregate_uid=sequence['computer_partition_uid'])

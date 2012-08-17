@@ -4,7 +4,6 @@ from Products.ERP5Type.tests.backportUnittest import skip
 import transaction
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
-from Products.DCWorkflow.DCWorkflow import ValidationFailed
 
 class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin):
   ########################################
