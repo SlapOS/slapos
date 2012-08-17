@@ -58,6 +58,7 @@ setup(name=name,
           'slapgrid-supervisord = slapos.grid.svcbackend:supervisord',
           'slapproxy = slapos.proxy:main',
           'bang = slapos.bang:main',
+          'slapos = slapos.slapos:main',
         ]
       },
       test_suite="slapos.tests",
