@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.28.1 (Unreleased)
+0.28.1 (2012-08-17)
 -------------------
 
- * No change yet.
+ * Resolved critical naming conflict
 
 0.28 (2012-08-17)
 -----------------
