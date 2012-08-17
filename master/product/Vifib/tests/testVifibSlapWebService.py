@@ -1178,6 +1178,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SetSalePackingListLineCleanupResource
       SetSalePackingListLineAggregate
+      StartBuildingSalePackingList
       ConfirmSalePackingList
       Tic
       """
@@ -1264,6 +1265,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SetSalePackingListLineAccountingResource \
       SetSalePackingListLineAggregate \
       Tic \
+      StartBuildingSalePackingList \
       ConfirmSalePackingList \
       Tic \
       CheckComputerPartitionAccoutingResourceSalePackingListConfirmed \
@@ -1380,6 +1382,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SetSalePackingListLineSetupResource
       SetSalePackingListLineAggregate
+      StartBuildingSalePackingList
       ConfirmSalePackingList
       Tic
   """
@@ -1394,6 +1397,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SetSalePackingListLineSetupResource
       SetSalePackingListLineAggregate
+      StartBuildingSalePackingList
       ConfirmSalePackingList
       Tic
       SetComputerPartitionQuantity
@@ -2952,6 +2956,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         )
     self.markManualCreation(order)
     sequence.edit(sale_packing_list_uid=order.getUid())
+
+  def stepStartBuildingSalePackingList(self, sequence, **kw):
+    delivery = self.portal.portal_catalog.getResultValue(
+      uid=sequence['sale_packing_list_uid'])
+    delivery.startBuilding()
 
   def stepCreateSalePackingListLine(self, sequence, **kw):
     """
