@@ -140,10 +140,10 @@ class SoftwareInstance(SlapDocument):
 """Exposed exceptions"""
 # XXX Why do we need to expose exceptions?
 class ResourceNotReady(Exception):
-  pass
+  zope.interface.implements(interface.IResourceNotReady)
 
 class ServerError(Exception):
-  pass
+  zope.interface.implements(interface.IServerError)
 
 class NotFoundError(Exception):
   zope.interface.implements(interface.INotFoundError)
