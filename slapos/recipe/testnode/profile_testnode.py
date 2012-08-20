@@ -126,8 +126,8 @@ def run(args):
           subprocess.check_call([config['git_binary'], 'checkout', '--force',
             '--track', '-b', config['branch'], 'origin/'+config['branch']],
             cwd=repository_clone)
-        subprocess.check_call([config['git_binary'], 'pull', '--rebase'],
-            cwd=repository_clone)
+        subprocess.check_call([config['git_binary'], 'reset', '--hard',
+          '@{upstream}'], cwd=repository_clone)
       except Exception:
         print 'Retrying git in 60s'
         time.sleep(60)

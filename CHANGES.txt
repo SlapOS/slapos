@@ -1,9 +1,26 @@
 Changes
 =======
 
-0.60 (Unreleased)
+0.61 (Unreleased)
 -----------------
 
+* No change yet.
+
+0.61 (2012-08-17)
+-----------------
+
+  * Add "debug" option for slaprunner. [Alain Takoudjou]
+
+0.60 (2012-08-13)
+-----------------
+
+  * New recipe: requestoptional, like "request", but won't fail if instance is
+    not ready. [Cedric de Saint Martin]
+  * Update zabbix to return strings as parameters. [Cedric de Saint Martin]
+  * Add check in check_url_promise in case of empty URL. [Cedric de Saint
+    Martin]
+  * Upgrade slaprunner recipe to be compatible with newest version. [Alain
+    Takoudjou]
 
 0.59 (2012-07-12)
 -----------------
@@ -91,7 +108,7 @@ Changes
     [Cedric de Saint Martin]
   * Apache Frontend: listens to plain http port as well to redirect to https.
     [Cedric de Saint Martin]
-  
+
 0.49 (2012-05-10)
 -----------------
 
@@ -157,7 +174,7 @@ Changes
 -----------------
 
  * apache_frontend initial release. [Cedric de Saint Martin]
- 
+
 0.39 (2012-02-20)
 -----------------
 
@@ -210,7 +227,7 @@ Changes
 0.32 (2011-10-28)
 -----------------
 
-  * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will 
+  * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will
    configure PHP application instance when needed. [Alain Takoudjou Kamdem]
 
 0.31 (2011-10-16)

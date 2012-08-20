@@ -4,7 +4,7 @@ import fileinput
 
 def setup(args):
     mysql_port, mysql_host, mysql_user, mysql_password, mysql_database, base_url, htdocs = args
-    
+
     admin_dir = "admin-" + mysql_user
     admin_include_file = os.path.join(htdocs, admin_dir + "/includes/configure.php")
     searchPattern = "/admin"

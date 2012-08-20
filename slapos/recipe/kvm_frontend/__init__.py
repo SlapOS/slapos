@@ -26,6 +26,7 @@
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe, GenericSlapRecipe
 import json
+import traceback
 import zc.buildout
 
 class Recipe(GenericSlapRecipe):
@@ -127,11 +128,15 @@ class Recipe(GenericSlapRecipe):
     # Send connection parameters of slave instances
     site_url = "https://%s:%s/" % (self.options['domain'], self.options['port'])
     for slave in rewrite_rule_list:
-      self.setConnectionDict(
-          dict(url="%s%s" % (site_url, slave['resource']),
-               domainname=self.options['domain'],
-               port=self.options['port'],
-               resource=slave['resource']),
-          slave['reference'])
+      try:
+        self.setConnectionDict(
+            dict(url="%s%s" % (site_url, slave['resource']),
+                 domainname=self.options['domain'],
+                 port=str(self.options['port']),
+                 resource=slave['resource']),
+            slave['reference'])
+      except:
+        self.logger.fatal("Error while sending slave %s informations: %s",
+           slave['reference'], traceback.format_exc())
 
     return [map_file, conf_file, runner_path]
