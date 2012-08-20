@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="VifibShadowAuthenticationPlugin" module="Products.Vifib.VifibShadowAuthenticationPlugin"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>vifib_shadow</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
