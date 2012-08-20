@@ -111,9 +111,9 @@ Usage:
 ******
 ::
 
-  slapos node register <desired node name> [--interface-name interface] [--master-url url <--master-url-web url>] [--partition-number number] [--ipv4-local-network network] [--ipv6-interface interface] [--create-tap]
+  slapos node register <DESIRED NODE NAME> [--login LOGIN [--password PASSWORD]] [--interface-name INTERFACE] [--master-url URL <--master-url-web URL>] [--partition-number NUMBER] [--ipv4-local-network NETWORK] [--ipv6-interface INTERFACE] [--create-tap] [--dry-run]
 
-Asks for user's vifib account then password.
+If login is not provided, asks for user's vifib account then password.
 
 Node will register itself, if not already done, to the SlapOS Master defined in configuration file, and will generate SlapOS configuration file.
 
@@ -124,19 +124,21 @@ If Node is already registered (slapos.cfg and certificate already present), issu
 
 XXX-Cedric should check for IPv6 in selected interface
 
-XXX-Cedric: explain each argument.
-
-Defaults:
-*********
-  * --interface-name defaults to "eth0"
-  * --master-url defaults to "https://slap.vifib.com"
-  * --partition-number number defaults to "10"
-  * --ipv4-local-network defaults to 10.0.0.0/16
-  * --create-tap defaults to false
+Parameters:
+***********
+--login LOGIN                  Your SlapOS Master login. If not provided, asks it interactively.
+--password PASSWORD            Your SlapOS Master password. If not provided, asks it interactively. NOTE: giving password as parameter should be avoided for security reasons.
+--interface-name INTERFACE     Use interface as primary interface. IP of Partitions will be added to it. Defaults to "eth0".
+--master-url URL               URL of SlapOS Master REST API. defaults to "https://slap.vifib.com".
+--master-url-web URL           URL of SlapOS Master web access. defaults to "https://www.vifib.com".
+--partition-number NUMBER      Number of partitions that will have your SlapOS Node. defaults to "10".
+--ipv4-local-network NETWORK   Subnetwork used to assign local IPv4 addresses. It should be a not used network in order to avoid conflicts. defaults to 10.0.0.0/16.
+-t, --create-tap                   Will trigger creation of one virtual "tap" interface per Partition and attach it to primary interface. Requires primary interface to be a bridge. defaults to false. Needed to host virtual machines.
+-n, --dry-run                      Don't touch to anything in the filesystem. Used to debug.
 
 Notes:
 ******
-  * "IPv6 interface" won't be set if not explicitly written.
+  * "IPv6 interface" and "create tap" won't be put at all in the SlapOS Node configuration file if not explicitly written.
 
 Examples:
 *********
