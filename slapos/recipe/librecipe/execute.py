@@ -64,22 +64,20 @@ child_pg = None
 def executee(args):
   """Portable execution with process replacement and environment manipulation"""
   exec_list = list(args[0])
-  environment = args[1]
-  env = os.environ.copy()
-  for k,v in environment.iteritems():
-    env[k] = v
-  os.execve(exec_list[0], exec_list + sys.argv[1:], env)
+  environment_overriding = args[1]
+  exec_env = os.environ.copy()
+  exec_env.update(environment_overriding)
+  os.execve(exec_list[0], exec_list + sys.argv[1:], exec_env)
 
 def executee_wait(args):
   """Portable execution with process replacement and environment manipulation"""
   exec_list = list(args[0])
   file_list = list(args[1])
-  environment = args[2]
-  env = os.environ.copy()
-  for k,v in environment.iteritems():
-    env[k] = v
+  environment_overriding = args[2]
+  exec_env = os.environ.copy()
+  exec_env.update(environment_overriding)
   _wait_files_creation(file_list)
-  os.execve(exec_list[0], exec_list + sys.argv[1:], env)
+  os.execve(exec_list[0], exec_list + sys.argv[1:], exec_env)
 
 def sig_handler(signal, frame):
   print 'Received signal %r, killing children and exiting' % signal
