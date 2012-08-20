@@ -54,68 +54,58 @@
 \n
 portal = context.getPortalObject()\n
 \n
-def getPASDictDifference(portal, d):\n
+def mergePASDictDifference(portal, d, fixit):\n
+  plugins = portal.acl_users.plugins\n
   error_list = []\n
-  pas_list = portal.acl_users.objectValues()\n
-  pas_meta_type_set = set([q.meta_type for q in pas_list])\n
-  for meta_type, plugin_list in d.iteritems():\n
-    if meta_type not in pas_meta_type_set:\n
-      error_list.append(\'Missing plugin %r.\' % meta_type)\n
-    else:\n
-      plugin = [q for q in pas_list if q.meta_type==meta_type][0]\n
-      active_list = []\n
-      for plugin_type_info in plugin.plugins.listPluginTypeInfo():\n
-        interface_name = plugin_type_info[\'id\']\n
-        interface = plugin_type_info[\'interface\']\n
-        if plugin.testImplements(interface):\n
-          if plugin.getId() in [q[0] for q in plugin.plugins.listPlugins(interface)]:\n
-            active_list.append(interface_name)\n
-      if plugin_list != active_list:\n
-        error_list.append(\'%r missing activation, expeced %s got %s.\' % (meta_type, \', \'.join(plugin_list), \', \'.join(active_list)))\n
+  plugin_type_info = plugins.listPluginTypeInfo()\n
+  for plugin, active_list in d.iteritems():\n
+    plugin_info = [q for q in plugin_type_info if q[\'id\'] == plugin][0]\n
+    found_list = plugins.listPlugins(plugin_info[\'interface\'])\n
+    meta_type_list = [q[1].meta_type for q in found_list]\n
+    for expected in active_list:\n
+      if expected not in meta_type_list:\n
+        error = \'Plugin %s missing %s.\' % (plugin, expected)\n
+        if fixit:         \n
+          existing = [q for q in portal.acl_users.objectValues() if q.meta_type == expected]\n
+          if len(existing) == 0:\n
+            error_list.append(\'%s not found\' % expected)\n
+          else:\n
+            plugins.activatePlugin(plugin_info[\'interface\'], existing[0].getId())\n
+            error += \' Fixed.\'\n
+        error_list.append(error)\n
+   \n
+            \n
+\n
   return error_list\n
 \n
-def mergePASDict(portal, s):\n
-  raise NotImplementedError\n
-\n
 promise_dict = {\n
-  \'Vifib Machine Authentication Plugin\': [\n
-        \'IExtractionPlugin\',\n
-        \'IAuthenticationPlugin\',\n
-        \'IGroupsPlugin\',\n
-        \'IUserEnumerationPlugin\'\n
+  \'IExtractionPlugin\': [\n
+    \'Vifib Machine Authentication Plugin\',\n
+    \'Vifib Browser ID Extraction Plugin\',\n
+    \'Vifib Facebook Server Extraction Plugin\',\n
+    \'Vifib Google Server Extraction Plugin\',\n
+    \'ERP5 Bearer Extraction Plugin\',\n
+    \'ERP5 Facebook Extraction Plugin\',\n
+    \'ERP5 Google Extraction Plugin\',\n
   ],\n
-  \'Vifib Shadow Authentication Plugin\': [\n
-        \'IAuthenticationPlugin\',\n
-        \'IGroupsPlugin\',\n
-        \'IUserEnumerationPlugin\'\n
+  \'IAuthenticationPlugin\': [\n
+    \'Vifib Machine Authentication Plugin\',\n
+    \'Vifib Shadow Authentication Plugin\',\n
   ],\n
-  \'Vifib Browser ID Extraction Plugin\': [\n
-        \'IExtractionPlugin\',\n
+  \'IGroupsPlugin\': [\n
+    \'Vifib Machine Authentication Plugin\',\n
+    \'Vifib Shadow Authentication Plugin\',\n
   ],\n
-  \'Vifib Facebook Server Extraction Plugin\': [\n
-        \'IExtractionPlugin\',\n
-  ],\n
-  \'Vifib Google Server Extraction Plugin\': [\n
-        \'IExtractionPlugin\',\n
-  ],\n
-  \'ERP5 Bearer Extraction Plugin\': [\n
-        \'IExtractionPlugin\',\n
-  ],\n
-  \'ERP5 Facebook Extraction Plugin\': [\n
-        \'IExtractionPlugin\',\n
-  ],\n
-  \'ERP5 Google Extraction Plugin\': [\n
-        \'IExtractionPlugin\',\n
+  \'IUserEnumerationPlugin\': [\n
+    \'Vifib Machine Authentication Plugin\',\n
+    \'Vifib Shadow Authentication Plugin\'\n
   ]\n
 }\n
-\n
-pas_difference = getPASDictDifference(portal, promise_dict)\n
+pas_difference = mergePASDictDifference(portal, promise_dict, fixit)\n
 if len(pas_difference) != 0:\n
   severity = 1\n
   summary = "PAS not configured as expected"\n
-  detail = "Difference %s" % (\'\\n\'.join(pas_difference), )\n
-  if fixit:\n
-    mergePASDict(portal, promise_dict)\n
+  detail = "Difference:\\n%s" % (\'\\n\'.join(pas_difference), )\n
 else:\n
   severity = 0\n
   summary = "Nothing to do."\n
