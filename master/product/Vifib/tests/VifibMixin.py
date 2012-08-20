@@ -281,38 +281,6 @@ class testVifibMixin(ERP5TypeTestCase):
       self.markManualCreation(accounting_period)
       accounting_period.start()
 
-  def setupVifibMachineAuthenticationPlugin(self):
-    """Sets up Vifib Authentication plugin"""
-    pas = self.getPortal().acl_users
-    vifib_auth_list = [q for q in pas.objectValues() \
-        if q.meta_type == 'Vifib Machine Authentication Plugin']
-    if len(vifib_auth_list) == 0:
-      vifib_dispacher = pas.manage_addProduct['Vifib']
-      vifib_dispacher.addVifibMachineAuthenticationPlugin('vifib_auth')
-      vifib_auth = pas.vifib_auth
-    else:
-      if len(vifib_auth_list) > 1:
-        raise ValueError('More then one Vifib authentication')
-      vifib_auth = vifib_auth_list[0]
-    vifib_auth.manage_activateInterfaces(('IAuthenticationPlugin',
-        'IExtractionPlugin', 'IGroupsPlugin', 'IUserEnumerationPlugin'))
-
-  def setupVifibShadowAuthenticationPlugin(self):
-    """Sets up Vifib Authentication plugin"""
-    pas = self.getPortal().acl_users
-    vifib_auth_list = [q for q in pas.objectValues() \
-        if q.meta_type == 'Vifib Shadow Authentication Plugin']
-    if len(vifib_auth_list) == 0:
-      vifib_dispacher = pas.manage_addProduct['Vifib']
-      vifib_dispacher.addVifibShadowAuthenticationPlugin('vifib_auth_shadow')
-      vifib_auth = pas.vifib_auth_shadow
-    else:
-      if len(vifib_auth_list) > 1:
-        raise ValueError('More then one Vifib Shadow authentication')
-      vifib_auth = vifib_auth_list[0]
-    vifib_auth.manage_activateInterfaces(('IAuthenticationPlugin',
-        'IGroupsPlugin', 'IUserEnumerationPlugin'))
-
   def bootstrapSite(self):
     """
     Manager has to create an administrator user first.
@@ -338,8 +306,8 @@ class testVifibMixin(ERP5TypeTestCase):
 
     self.logMessage("Bootstrap Vifib Without Security...")
     self.login()
-    self.setupVifibMachineAuthenticationPlugin()
-    self.setupVifibShadowAuthenticationPlugin()
+    # setup Vifib PAS
+    self.portal.portal_alarms.vifib_promise_pas.solve()
     self.prepareTestUsers()
     self.prepareVifibAccountingPeriod()
     transaction.commit()
