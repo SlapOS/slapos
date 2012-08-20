@@ -137,6 +137,7 @@ setup(name=name,
           'generic.varnish = slapos.recipe.generic_varnish:Recipe',
           'webchecker = slapos.recipe.web_checker:Recipe',
           'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
+          'condor = slapos.recipe.condor:Recipe',
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
