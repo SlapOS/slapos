@@ -95,8 +95,8 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
     Tic \
     SetSalePackingListLineCleanupResource \
     SetSalePackingListLineAggregate \
-    StartBuildingSalePackingList \
     ConfirmSalePackingList \
+    StartBuildingSalePackingList \
     Tic \
     Logout \
     """

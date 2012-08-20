@@ -587,8 +587,8 @@ class TestVifibSlapComputerGetSoftwareReleaseList(TestVifibSlapWebServiceMixin):
       Tic \
       SetPurchasePackingListLineSetupResource \
       SetPurchasePackingListLineAggregate \
-      StartBuildingPurchasePackingList \
       ConfirmPurchasePackingList \
+      StartBuildingPurchasePackingList \
       Tic \
       Logout \
       SlapLoginCurrentComputer \

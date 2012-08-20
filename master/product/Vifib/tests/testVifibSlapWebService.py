@@ -1088,8 +1088,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SetPurchasePackingListLineAccountingResource
       SetPurchasePackingListLineAggregate
-      StartBuildingPurchasePackingList
       ConfirmPurchasePackingList
+      StartBuildingPurchasePackingList
       Tic
       Logout
       LoginDefaultUser
@@ -1367,9 +1367,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SetPurchasePackingListLineSetupResource
       SetPurchasePackingListLineAggregate
-      StartBuildingPurchasePackingList
       ConfirmPurchasePackingList
       StopPurchasePackingList
+      StartBuildingPurchasePackingList
       Tic
   """
 
@@ -1382,8 +1382,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SetSalePackingListLineSetupResource
       SetSalePackingListLineAggregate
-      StartBuildingSalePackingList
       ConfirmSalePackingList
+      StartBuildingSalePackingList
       Tic
   """
 
@@ -1397,8 +1397,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SetSalePackingListLineSetupResource
       SetSalePackingListLineAggregate
-      StartBuildingSalePackingList
       ConfirmSalePackingList
+      StartBuildingSalePackingList
       Tic
       SetComputerPartitionQuantity
       Tic
