@@ -15,7 +15,7 @@ Note:
 
  * Default pid file for Node commands is: /var/run/[slapos-node-software.pid | slapos-node-instance.pid | slapos-node-report.pid].
 
- * Default SlapOS Master is http://www.vifib.net. It can be changed by altering configuration files. XXX How to ship slapos with this? Should package (.deb, ...) include slapos.cfg with only master_url inside?
+ * Default SlapOS Master is http://www.vifib.net. It can be changed by altering configuration files.
 
 
 
