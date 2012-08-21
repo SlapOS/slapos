@@ -47,6 +47,9 @@ setup(name=name,
                       # accessing templates
       entry_points={
         'console_scripts': [
+          # One entry point to control them all
+          'slapos = slapos.entry:main',
+          # Deprecated entry points
           'slapconsole = slapos.console:run',
           'slapos-request = slapos.console:request',
           'slapformat = slapos.format:main',
@@ -58,7 +61,6 @@ setup(name=name,
           'slapgrid-supervisord = slapos.grid.svcbackend:supervisord',
           'slapproxy = slapos.proxy:main',
           'bang = slapos.bang:main',
-          'slapos = slapos.entry:main',
         ]
       },
       test_suite="slapos.tests",

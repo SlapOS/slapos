@@ -26,19 +26,98 @@
 #
 ##############################################################################
 
+import argparse
 import sys
-from register.register import main as node_register
+from slapos.bang import main as bang
+from slapos.console import run as console
+from slapos.console import request as request
+from slapos.format import main as format
+from slapos.grid.slapgrid import runComputerPartition as instance
+from slapos.grid.slapgrid import runSoftwareRelease as software
+from slapos.grid.slapgrid import runUsageReport as report
+from slapos.grid.svcbackend import supervisord
+from slapos.grid.svcbackend import supervisorctl
+from slapos.register.register import main as register
 
+class EntryPointNotImplementedError(NotImplementedError):
+  def __init__(self, *args, **kw_args):
+    NotImplementedError.__init__(self, *args, **kw_args)
+
+def showUsage():
+  # We are out of option. We have to admit it: no other option than error.
+  # XXX Real error message
+  
+  sys.exit(1)
+
+def dispatch(command, is_node):
+  """ Dispatch to correct SlapOS module.
+  Here we could use introspection to get rid of the big "if" statements,
+  but we want to control every input.
+  """
+  if is_node:
+    if command in 'register':
+      register()
+    elif command == 'software':
+      software()
+    elif command == 'instance':
+      instance()
+    elif command == 'report':
+      report()
+    elif command == 'bang':
+      bang()
+    elif command == 'format':
+      format()
+    elif command in ['start', 'stop', 'status', 'tail']:
+      supervisord()
+      supervisorctl()
+    else:
+      supervisord()
+  elif command == 'request':
+    request()
+  elif command == 'supply':
+    raise EntryPointNotImplementedError(command)
+  elif command == 'start':
+    raise EntryPointNotImplementedError(command)
+  elif command == 'stop':
+    raise EntryPointNotImplementedError(command)
+  elif command == 'console':
+    console()
+  else:
+    return False
 
 def main():
-  if len(sys.argv) < 3:
-    print "Usage: slapos node register NODE_NAME [options]"
-    print "%s: error: Incorrect number of arguments" % sys.argv[0] 
-    return 0
-  "Run default configuration."
-  if sys.argv[1] == "node" and sys.argv[2] == "register":
-    sys.argv=sys.argv[2:]
-    node_register()
-  else :
-    print "Usage: slapos node register NODE_NAME [options]"
-    print "%s: error: Incorrect arguments" % sys.argv[0] 
+  """
+  Main entry point of SlapOS Node. Used to dispatch commands to python
+  module responsible of the operation.
+  """
+  description = "XXX TODO"
+  # Parse arguments
+  parser = argparse.ArgumentParser(description=description)
+  parser.add_argument('command')
+  parser.add_argument('argument_list', nargs=argparse.REMAINDER)
+
+  # If "node" arg is the first: we strip it and set a switch
+  # XXX do it with argparse
+  if len(sys.argv) > 1 and sys.argv[1] == "node":
+    sys.argv=sys.argv[1:]
+    is_node = True
+  else:
+    is_node = False
+
+  namespace = parser.parse_args()
+
+  # Set sys.argv for the sub-entry point that we will call
+  command_line = [namespace.command]
+  command_line.extend(namespace.argument_list)
+  sys.argv = command_line
+
+  # If configuration file is not given: define it arbitrarily
+  # If client commands: use ~/.slapos.cfg
+  # If node commands: use /etc/opt/slapos/slapos.cfg
+  # XXX TODO
+  try:
+    if not dispatch(namespace.command, is_node):
+      parser.print_help()
+  except EntryPointNotImplementedError, exception:
+    # XXX more graceful
+    print 'Not implemented: %s' % exception
