@@ -165,32 +165,33 @@ extra-context =
     key tesseract_location dynamic-template-zope-parameters:tesseract
     key w3m_location dynamic-template-zope-parameters:w3m
 
-[template-erp5-development-parameters]
+[template-erp5-single-parameters]
 bin-directory = {{ bin_directory }}
 openssl = {{ openssl_location }}
 local_bt5_repository = {{ local_bt5_repository  }}
 dash = {{ dash_location }}
 curl = {{ curl_location }}
 
-[template-erp5-development]
+[template-erp5-single]
 < = jinja2-template-base
-template = {{ template_erp5_development }}
-filename = instance-erp5-development.cfg
+template = {{ template_erp5_single }}
+filename = instance-erp5-single.cfg
 # XXX: duplicates above section, so less is modified in template in this
 # commit. Should be replaced by a "section" line (preserving template_zope
 # definition).
 extra-context =
-    key bin_directory template-erp5-development-parameters:bin-directory
-    key openssl_location template-erp5-development-parameters:openssl
-    key curl_location template-erp5-development-parameters:curl
-    key dash_location template-erp5-development-parameters:dash
+    key bin_directory template-erp5-single-parameters:bin-directory
+    key openssl_location template-erp5-single-parameters:openssl
+    key curl_location template-erp5-single-parameters:curl
+    key dash_location template-erp5-single-parameters:dash
     key template_zope dynamic-template-zope:rendered
-    key local_bt5_repository template-erp5-development-parameters:local_bt5_repository
+    key local_bt5_repository template-erp5-single-parameters:local_bt5_repository
 
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
-default = ${template-erp5-development:rendered}
-production = {{ template_erp5_production }}
+default = ${template-erp5-single:rendered}
+production = {{ template_erp5_cluster }}
+cluster = {{ template_erp5_cluster }}
 kumofs = {{ template_kumofs }}
 memcached = {{ template_memcached }}
 cloudooo = ${dynamic-template-cloudooo:rendered}
