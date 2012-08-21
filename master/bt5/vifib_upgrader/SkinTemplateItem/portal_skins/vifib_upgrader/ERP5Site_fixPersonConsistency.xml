@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal.portal_catalog.searchAndActivate(method_id=\'fixConsistency\', portal_type=\'Person\')\n
+            <value> <string>context.getPortalObject().portal_catalog.searchAndActivate(method_id=\'fixConsistency\', portal_type=\'Person\')\n
 \n
 return \'ok\'\n
 </string> </value>
