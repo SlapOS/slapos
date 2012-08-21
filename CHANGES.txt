@@ -1,10 +1,13 @@
 Changes
 =======
 
-0.61 (Unreleased)
+0.62 (2012-08-21)
 -----------------
 
-* No change yet.
+  * Add "wrapper" recipe. [Antoine Catton]
+  * Add "gitinit" recipe. [Antoine Catton]
+  * librecipe.execute code clean up and factorization. [Antoine Catton]
+  * Add "template" recipe. [Antoine Catton]
 
 0.61 (2012-08-17)
 -----------------
