@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+GIT_PROJECT_ROOT="%(projectdir)s" GIT_HTTP_EXPORT_ALL= exec "%(githttpbackend)s" $@

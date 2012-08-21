@@ -1,0 +1,6 @@
+$projectroot = '%(projectdir)s';
+
+$site_name = '%(sitename)s';
+
+# Beautiful URLs
+$feature{'pathinfo'}{'default'} = [1];
