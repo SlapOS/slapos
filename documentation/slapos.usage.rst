@@ -144,19 +144,19 @@ Examples:
 *********
   * Register computer named "mycomputer" to vifib::
 
-      slapos register mycomputer
+      slapos node register mycomputer
 
   * Register computer named "mycomputer" to vifib using br0 as primary interface, tap0 as IPv6 interface and different local ipv4 subnet::
 
-      slapos register mycomputer --interface-name br0 --ipv6-interface tap0 --ipv4-local-network 11.0.0.0/16
+      slapos node register mycomputer --interface-name br0 --ipv6-interface tap0 --ipv4-local-network 11.0.0.0/16
 
   * Register computer named "mycomputer" to another SlapOS master accessible via https://www.myownslaposmaster.com, and SLAP webservice accessible via https://slap.myownslaposmaster.com (Note that this address should be the "slap" webservice URL, not web URL)::
 
-      slapos register mycomputer --master-url https://slap.myownslaposmaster.com --master-url-web https://www.myownslaposmaster.com
+      slapos node register mycomputer --master-url https://slap.myownslaposmaster.com --master-url-web https://www.myownslaposmaster.com
 
   * Register computer named "mycomputer" to vifib, and ask to create tap interface to be able to host KVMs::
 
-      slapos register mycomputer --create-tap
+      slapos node register mycomputer --create-tap
 
 
 slapos node software
