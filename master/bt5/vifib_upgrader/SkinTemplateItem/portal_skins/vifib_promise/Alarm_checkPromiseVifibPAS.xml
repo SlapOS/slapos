@@ -84,7 +84,7 @@ promise_dict = {\n
     \'Vifib Browser ID Extraction Plugin\',\n
     \'Vifib Facebook Server Extraction Plugin\',\n
     \'Vifib Google Server Extraction Plugin\',\n
-    \'ERP5 Bearer Extraction Plugin\',\n
+#    \'ERP5 Bearer Extraction Plugin\',\n
     \'ERP5 Facebook Extraction Plugin\',\n
     \'ERP5 Google Extraction Plugin\',\n
   ],\n
