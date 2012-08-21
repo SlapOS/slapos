@@ -1,8 +1,9 @@
 worker_processes {{ param_html5as['nb_workers'] }};
 
-user nouser nogroup;
 pid {{ param_html5as['path_pid'] }};
 error_log {{ param_html5as['path_error_log'] }};
+
+daemon off;
 
 events {
 	worker_connections 1024;
@@ -20,11 +21,6 @@ http {
         server_name _;
 
         keepalive_timeout 5;
-        client_body_temp_path {{ param_html5as['path_tmp'] }}/client_body_temp;
-        proxy_temp_path {{ param_html5as['path_tmp'] }}/proxy_temp;
-        fastcgi_temp_path {{ param_html5as['path_tmp'] }}/fastcgi_temp;
-        uwsgi_temp_path {{ param_html5as['path_tmp'] }}/uwsgi_temp;
-        scgi_temp_path {{ param_html5as['path_tmp'] }}/scgi_temp;
 
         # path for static files
         root {{ param_html5as['docroot'] }};
