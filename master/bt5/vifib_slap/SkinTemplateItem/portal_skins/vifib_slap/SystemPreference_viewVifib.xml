@@ -110,7 +110,13 @@
                 <item>
                     <key> <string>right</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>my_preferred_vifib_facebook_application_id</string>
+                        <string>my_preferred_vifib_facebook_application_secret</string>
+                        <string>my_preferred_vifib_rest_api_login_check</string>
+                        <string>my_preferred_vifib_google_application_id</string>
+                        <string>my_preferred_vifib_google_application_secret</string>
+                      </list>
                     </value>
                 </item>
               </dictionary>

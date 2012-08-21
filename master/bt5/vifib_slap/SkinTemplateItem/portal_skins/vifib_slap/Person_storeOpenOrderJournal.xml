@@ -51,12 +51,12 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query\n
+from Products.ERP5Type.DateUtils import addToDate\n
 portal = context.getPortalObject()\n
 \n
 kw = {}\n
 if modification_date is not None:\n
-  kw[\'modification_date\'] = Query(modification_date=modification_date, range="min")\n
-\n
+  kw[\'modification_date\'] = Query(modification_date=addToDate(modification_date, to_add={\'hour\': -1}), range="min")\n
 remove_hosting_list = []\n
 add_kw_list = []\n
 start_date_tuple_list = []\n

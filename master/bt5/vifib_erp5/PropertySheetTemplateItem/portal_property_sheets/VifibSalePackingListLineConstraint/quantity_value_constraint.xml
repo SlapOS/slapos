@@ -66,7 +66,7 @@
         </item>
         <item>
             <key> <string>test_tales_expression</string> </key>
-            <value> <string>python: context.getSimulationState() != \'cancelled\'</string> </value>
+            <value> <string>python: context.getSimulationState() != \'cancelled\' and context.getSpecialise() != \'sale_trade_condition_module/vifib_simple_trade_condition\'</string> </value>
         </item>
       </dictionary>
     </pickle>

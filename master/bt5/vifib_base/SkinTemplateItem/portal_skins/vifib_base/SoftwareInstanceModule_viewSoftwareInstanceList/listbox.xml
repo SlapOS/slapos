@@ -87,6 +87,14 @@
                           <string>Type</string>
                         </tuple>
                         <tuple>
+                          <string>translated_validation_state_title</string>
+                          <string>Validation State</string>
+                        </tuple>
+                        <tuple>
+                          <string>translated_slap_state_title</string>
+                          <string>Slap State</string>
+                        </tuple>
+                        <tuple>
                           <string>source_reference</string>
                           <string>Software Type</string>
                         </tuple>
@@ -101,10 +109,6 @@
                         <tuple>
                           <string>modification_date</string>
                           <string>Modification Date</string>
-                        </tuple>
-                        <tuple>
-                          <string>translated_validation_state_title</string>
-                          <string>Validation State</string>
                         </tuple>
                       </list>
                     </value>
@@ -124,6 +128,14 @@
                         <tuple>
                           <string>translated_portal_type</string>
                           <string>Type</string>
+                        </tuple>
+                        <tuple>
+                          <string>translated_validation_state_title</string>
+                          <string>Validation State</string>
+                        </tuple>
+                        <tuple>
+                          <string>translated_slap_state_title</string>
+                          <string>Slap State</string>
                         </tuple>
                       </list>
                     </value>

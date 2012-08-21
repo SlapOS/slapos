@@ -75,6 +75,7 @@
                     <key> <string>bottom</string> </key>
                     <value>
                       <list>
+                        <string>listbox</string>
                         <string>my_destroy_button</string>
                       </list>
                     </value>
@@ -82,10 +83,7 @@
                 <item>
                     <key> <string>center</string> </key>
                     <value>
-                      <list>
-                        <string>your_instance_xml</string>
-                        <string>my_update_button</string>
-                      </list>
+                      <list/>
                     </value>
                 </item>
                 <item>
@@ -102,19 +100,22 @@
                     <value>
                       <list>
                         <string>my_title</string>
-                        <string>listbox</string>
+                        <string>my_root_software_release_url</string>
+                        <string>my_source_reference</string>
                         <string>last_event_listbox</string>
                         <string>my_translated_slap_state_title</string>
+                        <string>your_instance_xml</string>
+                        <string>my_update_button</string>
+                        <string>my_start_button</string>
+                        <string>my_stop_button</string>
+                        <string>your_connection_listbox</string>
                       </list>
                     </value>
                 </item>
                 <item>
                     <key> <string>right</string> </key>
                     <value>
-                      <list>
-                        <string>my_start_button</string>
-                        <string>my_stop_button</string>
-                      </list>
+                      <list/>
                     </value>
                 </item>
               </dictionary>

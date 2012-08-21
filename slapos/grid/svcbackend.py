@@ -1,12 +1,14 @@
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
 # consequences resulting from its eventual inadequacies and bugs
 # End users who are looking for a ready-to-use solution with commercial
-# guarantees and support are strongly adviced to contract a Free Software
+# guarantees and support are strongly advised to contract a Free Software
 # Service Company
 #
 # This program is Free Software; you can redistribute it and/or
@@ -65,7 +67,7 @@ def launchSupervisord(socket, configuration_file):
         break
       else:
         if status['statename'] == 'RUNNING' and status['statecode'] == 1:
-          logger.info('Supervisord already running.')
+          logger.debug('Supervisord already running.')
           return
         elif status['statename'] == 'SHUTDOWN_STATE' and status['statecode'] == 6:
           logger.info('Supervisor in shutdown procedure, will check again later.')

@@ -54,13 +54,16 @@
 
 portal = context.getPortalObject()\n
 \n
-instance_xml = """<?xml version="1.0" encoding="utf-8"?>\n
+instance_xml = """<?xml version=\'1.0\' encoding=\'utf-8\'?>\n
 <instance>\n
-<parameter id="nbd_ip">2a01:e35:2e27:460:e2cb:4eff:fed9:48dc</parameter>\n
-<parameter id="nbd_port">1024</parameter>\n
-</instance>\n
-"""\n
-url = "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.68:/software/kvm/software.cfg"\n
+  <parameter id="frontend-instance-guid">SOFTINST-11031</parameter>\n
+  <parameter id="frontend-software-type">frontend</parameter>\n
+  <parameter id="nbd_port">1024</parameter>\n
+  <parameter id="nbd_ip">debian.nbd.vifib.net</parameter>\n
+  <parameter id="frontend-software-url">http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg</parameter>\n
+</instance>"""\n
+url = "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg"\n
+software_type = "kvm"\n
 \n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
@@ -69,7 +72,7 @@ request_kw = {}\n
 request_kw.update(\n
   software_release=url,\n
   software_title="Vifib KVM %i" % portal.portal_ids.generateNewId(id_group=("vifib", "kvm"), default=1),\n
-  software_type="RootSoftwareInstance",\n
+  software_type=software_type,\n
   instance_xml=instance_xml,\n
   sla_xml="",\n
   shared=False,\n

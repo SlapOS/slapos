@@ -13,6 +13,10 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       PersonRequestSoftwareInstance \
       Tic \
       Logout \
+      CallConfirmOrderedSaleOrderAlarm \
+      CleanTic \
+      CallVifibTriggerBuildAlarm \
+      CleanTic \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
       Logout \
@@ -43,27 +47,13 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
         .prepare_stopped_computer_partition_sequence_string + """
       LoginTestVifibCustomer
       RequestSoftwareInstanceStart
-      RequestSoftwareInstanceStartRaisesValueError
+      RequestSoftwareInstanceStart
       Tic
       Logout
 
       LoginDefaultUser
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
-    """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_bug_doubleClickOnStart_serializeIsCalled(self):
-    sequence_list = SequenceList()
-    sequence_string = self\
-        .prepare_stopped_computer_partition_sequence_string + """
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceStartCheckSerializeIsCalled
 
       LoginERP5TypeTestCase
       CheckSiteConsistency
@@ -85,20 +75,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       LoginDefaultUser
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
-
-      LoginERP5TypeTestCase
-      CheckSiteConsistency
-      Logout
-      """
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_bug_doubleClickOnDestroy_serializeIsCalled(self):
-    sequence_list = SequenceList()
-    sequence_string = self\
-        .prepare_installed_computer_partition_sequence_string + """
-      LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroyCheckSerializeIsCalled
 
       LoginERP5TypeTestCase
       CheckSiteConsistency
@@ -328,7 +304,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
 
       # ...and request destruction
@@ -338,6 +314,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 
@@ -445,7 +422,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
 
       # Now request destruction of second software instance...
@@ -456,6 +433,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
       Logout
 
@@ -534,7 +512,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceSetupSalePackingListDelivered
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered
       CheckComputerPartitionIsFree
-      CheckComputerPartitionNoInstanceHostingSalePackingList
+      CheckComputerPartitionInstanceHostingSalePackingListDelivered
       Logout
 
       LoginERP5TypeTestCase
@@ -567,18 +545,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       CheckComputerPartitionInstanceCleanupSalePackingListCancelled
       Logout
 
-      # So all packing lists are finished, but one is cancelled,
-      # time to request destruction...
-
-      LoginDefaultUser
-      RequestSoftwareInstanceDestroy
-      Tic
-      Logout
-
-      LoginDefaultUser
-      CheckComputerPartitionInstanceCleanupSalePackingListConfirmed
-      Logout
-
       # ...and destroy it
 
       SlapLoginCurrentComputer
@@ -587,7 +553,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CheckComputerPartitionInstanceCleanupSalePackingListDelivered
+      CheckComputerPartitionInstanceCleanupSalePackingListCancelled
       CheckComputerPartitionIsFree
       Logout
 
@@ -1212,6 +1178,9 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepSetSequenceSoftwareInstanceRequestedStateDestroyed(self, sequence, **kw):
+    sequence['requested_state'] = 'destroyed'
+
   def test_request_new_with_destroyed_while_looking_for_partition_reference(self):
     """Prove that having destroyed SI allows to request new one with same
       reference, when destruction was done while looking for new partition"""
@@ -1229,7 +1198,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
 
-      SetRandomRequestedReference
+      SetRandomRequestedReferenceAndTitle
       SlapLoginTestVifibCustomer
       PersonRequestSlapSoftwareInstancePrepare
       Tic
@@ -1251,7 +1220,8 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginTestVifibCustomer
-      RequestSoftwareInstanceDestroy
+      SetSequenceSoftwareInstanceStateDestroyed
+      PersonRequestSoftwareInstance
       Tic
       Logout
 
@@ -1363,6 +1333,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SetRequestedComputerPartition
       CheckComputerPartitionNoInstanceHostingSalePackingList
       CheckComputerPartitionInstanceSetupSalePackingListDelivered
+      Tic
       Logout
 
       LoginERP5TypeTestCase
@@ -1384,6 +1355,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       """
 
       LoginTestVifibCustomer
+      SetSequenceSoftwareInstanceStateStopped
       PersonRequestSoftwareInstance
       Tic
       Logout
@@ -1616,6 +1588,8 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       PayRegistrationPayment
       Tic
       Logout
+
+      """ + self.stabilise_accounting + """
 
       LoginWebUser
       CustomerRegisterNewComputer

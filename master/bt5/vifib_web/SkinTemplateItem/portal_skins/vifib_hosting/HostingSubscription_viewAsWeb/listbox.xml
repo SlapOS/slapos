@@ -17,6 +17,7 @@
                 <string>select</string>
                 <string>selection_name</string>
                 <string>title</string>
+                <string>url_columns</string>
               </list>
             </value>
         </item>
@@ -152,6 +153,21 @@
                 <item>
                     <key> <string>title</string> </key>
                     <value> <string>My Software Instances</string> </value>
+                </item>
+                <item>
+                    <key> <string>url_columns</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>title</string>
+                          <string>Base_getNonEditableAbsoluteUrl</string>
+                        </tuple>
+                        <tuple>
+                          <string>status</string>
+                          <string>Base_getNonEditableAbsoluteUrl</string>
+                        </tuple>
+                      </list>
+                    </value>
                 </item>
               </dictionary>
             </value>

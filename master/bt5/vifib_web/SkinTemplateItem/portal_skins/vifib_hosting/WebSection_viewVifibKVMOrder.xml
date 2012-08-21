@@ -103,7 +103,11 @@
                 <item>
                     <key> <string>normal</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>your_user_preparation_facebook</string>
+                        <string>your_user_preparation_google</string>
+                        <string>your_user_preparation_browser_id</string>
+                      </list>
                     </value>
                 </item>
                 <item>

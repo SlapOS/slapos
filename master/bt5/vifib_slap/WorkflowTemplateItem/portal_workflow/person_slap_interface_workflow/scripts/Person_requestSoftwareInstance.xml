@@ -73,6 +73,23 @@ except KeyError:\n
 if is_slave not in [True, False]:\n
   raise ValueError, "shared should be a boolean"\n
 \n
+empty_parameter = """<?xml version="1.0" encoding="utf-8"?>\n
+<instance>\n
+</instance>"""\n
+empty_parameter2 = """<?xml version=\'1.0\' encoding=\'utf-8\'?>\n
+<instance/>"""\n
+\n
+\n
+# XXX Hardcode default parameter\n
+if (instance_xml == empty_parameter) or (instance_xml.startswith(empty_parameter2)):\n
+  if software_release_url_string == "http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5-frontend:/software/erp5/software.cfg":  \n
+    instance_xml = """<?xml version="1.0" encoding="utf-8"?>\n
+<instance>\n
+<parameter id="frontend-instance-guid">SOFTINST-9238</parameter>\n
+<parameter id="frontend-software-url">http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg</parameter>\n
+</instance>\n
+"""\n
+\n
 hosting_subscription_portal_type = "Hosting Subscription"\n
 \n
 tag = "%s_%s_inProgress" % (person.getUid(), \n
@@ -86,13 +103,13 @@ if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
 # Check if it already exists\n
 request_hosting_subscription_list = portal.portal_catalog(\n
   portal_type=hosting_subscription_portal_type,\n
-  title=software_title,\n
+  title={\'query\': software_title, \'key\': \'ExactMatch\'},\n
   validation_state="validated",\n
-  default_destination_section=person.getRelativeUrl(),\n
+  default_destination_section_uid=person.getUid(),\n
   limit=2,\n
   )\n
 if len(request_hosting_subscription_list) > 1:\n
-  raise NotImplementedError, "Too many hosting subscription %s found" % software_title\n
+  raise NotImplementedError, "Too many hosting subscription %s found %s" % (software_title, [x.path for x in request_hosting_subscription_list])\n
 elif len(request_hosting_subscription_list) == 1:\n
   request_hosting_subscription = request_hosting_subscription_list[0].getObject()\n
   if (request_hosting_subscription.getSlapState() == "destroy_requested") or \\\n

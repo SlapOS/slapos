@@ -53,8 +53,16 @@
             <value> <string encoding="cdata"><![CDATA[
 
 isTransitionPossible = context.getPortalObject().portal_workflow.isTransitionPossible\n
-if context.getSimulationState() == \'planned\' and context.getStartDate() < this_month and isTransitionPossible(context, \'confirm\'):\n
-  context.confirm()\n
+if context.getSimulationState() == \'planned\' and context.getStartDate() < this_month:\n
+  if len(context.getMovementList()) > 0:\n
+    if isTransitionPossible(context, \'confirm\'):\n
+      context.confirm(comment=\'Confirmed as ready to be accounted.\')\n
+      # as user will not have any invoice in planned state create new one, a bit later, in order to have current state reindexed\n
+      context.getDestinationValue().activate(after_path_and_method_id=(context.getPath(), (\'recursiveImmediateReindexObject\', \'immediateReindexObject\'))).fixConsistency()\n
+  else:\n
+    old_date = context.getStartDate()\n
+    context.setStartDate(this_month)\n
+    context.portal_workflow.doActionFor(context, \'edit_action\', comment=\'Moved date from %s to %s in order to move to new month.\' % (old_date, context.getStartDate()))\n
 
 
 ]]></string> </value>

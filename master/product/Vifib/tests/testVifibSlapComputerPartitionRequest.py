@@ -216,7 +216,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       LoginDefaultUser \
       CheckComputerPartitionInstanceCleanupSalePackingListDelivered \
       CheckComputerPartitionIsFree \
-      CheckOpenOrderLineRemoved \
       Logout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -315,7 +314,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLogout \
       \
       LoginDefaultUser \
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered \
+      CheckComputerPartitionInstanceHostingSalePackingListStopped \
       Logout \
       \
       LoginERP5TypeTestCase \
@@ -357,6 +356,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       self.prepare_install_requested_computer_partition_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
       DirectRequestComputerPartitionHttpRequestTimeoutResponseWithoutState \
+      Tic \
       Tic \
       SlapLogout \
       \
@@ -611,7 +611,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
       Tic
-      CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
       CallConfirmOrderedSaleOrderAlarm
       Tic
@@ -704,13 +703,6 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Logout
 
       SlapLoginCurrentSoftwareInstance
-      RequestSlaveInstanceFromComputerPartition
-      Tic
-      CheckRaisesNotFoundComputerPartitionParameterDict
-      LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
-      Tic
-      Logout
       RequestSlaveInstanceFromComputerPartition
       Tic
       SlapLogout
@@ -1060,7 +1052,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
        SlapLogout \
        \
        LoginDefaultUser \
-       CheckComputerPartitionInstanceHostingSalePackingListStarted \
+       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
        Logout \
        LoginERP5TypeTestCase \
        CheckSiteConsistency \
@@ -1221,6 +1213,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       self.prepare_install_requested_computer_partition_sequence_string + '\
       SlapLoginCurrentSoftwareInstance \
       DirectRequestComputerPartitionHttpRequestTimeoutResponseWithoutStateAndSharedTrue \
+      Tic \
       Tic \
       SlapLogout \
       LoginERP5TypeTestCase \

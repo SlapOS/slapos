@@ -1,6 +1,12 @@
 image_module/vifib.cloud
 image_module/vifib.kvm
 image_module/vifib.rack
+portal_caches/browser_id_auth_token_cache_factory
+portal_caches/browser_id_auth_token_cache_factory/persistent_cache_plugin
+portal_caches/facebook_server_auth_token_cache_factory
+portal_caches/facebook_server_auth_token_cache_factory/persistent_cache_plugin
+portal_caches/google_server_auth_token_cache_factory
+portal_caches/google_server_auth_token_cache_factory/persistent_cache_plugin
 web_page_module/vifib*
 web_site_module/cash
 web_site_module/cash/**

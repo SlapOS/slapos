@@ -4,20 +4,43 @@ from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 
 class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
 
+  def _getRegistrationInvoice(self, person):
+    transaction_list = self.portal.portal_catalog(
+      resource_relative_url=self.portal.portal_preferences\
+        .getPreferredRegistrationResource(),
+      portal_type="Invoice Line",
+      **{'movement.destination_uid': person.getUid()}
+      )
+    self.assertEquals(1, len(transaction_list))
+
+    return transaction_list[0].getObject().getParentValue()
+
+  def _getMonthlyInvoice(self, person):
+    line_list = self.portal.portal_catalog(
+      resource_relative_url=[
+        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
+        self.portal.portal_preferences.getPreferredInstanceHostingResource(),
+        self.portal.portal_preferences.getPreferredInstanceCleanupResource(),
+        self.portal.portal_preferences.getPreferredInstanceUpdateResource(),
+        self.portal.portal_preferences.getPreferredInstanceSubscriptionResource(),
+      ],
+      portal_type="Invoice Line",
+      **{'movement.destination_uid': person.getUid()}
+      )
+
+    transaction_list = [line.getParentValue() for line in line_list]
+    transaction_list = list(set(transaction_list))
+    self.assertEquals(1, len(transaction_list))
+
+    return transaction_list[0].getObject()
+
   def stepCheckRegistrationAccounting(self, sequence, **kw):
     """
     """
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
 
-    # Check that one sale invoice has been generated for the user
-    transaction_list = self.portal.portal_catalog(
-      portal_type="Sale Invoice Transaction",
-      destination_section_relative_url=person.getRelativeUrl(),
-      )
-    self.assertEquals(1, len(transaction_list))
-
-    sale_invoice = transaction_list[0].getObject()
+    sale_invoice = self._getRegistrationInvoice(person)
 
     # Check invoice creation
     self.assertEquals(
@@ -172,14 +195,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
 
-    # Check that one sale invoice has been generated for the user
-    transaction_list = self.portal.portal_catalog(
-      portal_type="Sale Invoice Transaction",
-      destination_section_relative_url=person.getRelativeUrl(),
-      )
-    self.assertEquals(1, len(transaction_list))
-
-    sale_invoice = transaction_list[0].getObject()
+    sale_invoice = self._getRegistrationInvoice(person)
 
     # Check invoice creation
     self.assertEquals(
@@ -465,7 +481,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     # 1 invoice line is expected
     invoice_line_list = sale_invoice.contentValues(
         portal_type="Invoice Line")
-    self.assertEquals(3, len(invoice_line_list))
+    self.assertEquals(4, len(invoice_line_list))
 
     service_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_setup'][0]
@@ -473,6 +489,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         if x.getResource() == 'service_module/vifib_instance_subscription'][0]
     hosting_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_hosting'][0]
+    update_line = [x for x in invoice_line_list \
+        if x.getResource() == 'service_module/vifib_instance_update'][0]
 
     self.assertEquals(True, service_line.hasPrice())
     self.assertAlmostEquals(0, service_line.getPrice(), 3)
@@ -485,6 +503,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals(True, hosting_line.hasPrice())
     self.assertAlmostEquals(0, hosting_line.getPrice(), 3)
     self.assertEquals(1, hosting_line.getQuantity())
+
+    self.assertEquals(True, update_line.hasPrice())
+    self.assertAlmostEquals(0, update_line.getPrice(), 3)
+    self.assertEquals(1, update_line.getQuantity())
 
     # 0 transaction line
     transaction_line_list = sale_invoice.contentValues(
@@ -551,7 +573,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     # 1 invoice line is expected
     invoice_line_list = sale_invoice.contentValues(
         portal_type="Invoice Line")
-    self.assertEquals(4, len(invoice_line_list))
+    self.assertEquals(5, len(invoice_line_list))
 
     service_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_setup'][0]
@@ -561,6 +583,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         if x.getResource() == 'service_module/vifib_instance_hosting'][0]
     destroy_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_cleanup'][0]
+    update_line = [x for x in invoice_line_list \
+        if x.getResource() == 'service_module/vifib_instance_update'][0]
 
     self.assertEquals(True, service_line.hasPrice())
     self.assertAlmostEquals(0, service_line.getPrice(), 3)
@@ -577,6 +601,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals(True, destroy_line.hasPrice())
     self.assertAlmostEquals(0, destroy_line.getPrice(), 3)
     self.assertEquals(1, destroy_line.getQuantity())
+
+    self.assertEquals(True, update_line.hasPrice())
+    self.assertAlmostEquals(0, update_line.getPrice(), 3)
+    self.assertEquals(2, update_line.getQuantity())
 
     # 0 transaction line
     transaction_line_list = sale_invoice.contentValues(
@@ -596,7 +624,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         portal_type="Sale Invoice Transaction",
         simulation_state="planned"):
       invoice = invoice.getObject()
-      invoice.confirm()
+      invoice.SaleInvoiceTransaction_confirmPlanned(
+        # force invoice confirmation (or moving to next month)
+        this_month=invoice.getStartDate() + 1
+        )
 
   def stepCheckWaitingInvoice(self, sequence, **kw):
     """
@@ -604,15 +635,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
 
-    # Check that 2 sale invoice has been generated for the user
-    transaction_list = self.portal.portal_catalog(
-      portal_type="Sale Invoice Transaction",
-      destination_section_relative_url=person.getRelativeUrl(),
-      sort_on=(('creation_date', 'DESC'),),
-      )
-    self.assertEquals(2, len(transaction_list))
-
-    sale_invoice = transaction_list[0].getObject()
+    sale_invoice = self._getMonthlyInvoice(person)
 
     # Check invoice creation
     self.assertEquals(
@@ -642,10 +665,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertAlmostEquals(
       1, sale_invoice.getTotalPrice(), 3)
 
-    # 5 invoice lines are expected
+    # 6 invoice lines are expected
     invoice_line_list = sale_invoice.contentValues(
         portal_type="Invoice Line")
-    self.assertEquals(5, len(invoice_line_list))
+    self.assertEquals(6, len(invoice_line_list))
 
     service_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_setup'][0]
@@ -655,6 +678,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         if x.getResource() == 'service_module/vifib_instance_hosting'][0]
     destroy_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_cleanup'][0]
+    update_line = [x for x in invoice_line_list \
+        if x.getResource() == 'service_module/vifib_instance_update'][0]
     tax_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_tax'][0]
 
@@ -673,6 +698,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals(True, destroy_line.hasPrice())
     self.assertAlmostEquals(0, destroy_line.getPrice(), 3)
     self.assertEquals(1, destroy_line.getQuantity())
+
+    self.assertEquals(True, update_line.hasPrice())
+    self.assertAlmostEquals(0, update_line.getPrice(), 3)
+    self.assertEquals(2, update_line.getQuantity())
 
     self.assertEquals(True, tax_line.hasPrice())
     self.assertAlmostEquals(0.196, tax_line.getPrice(), 3)
@@ -782,15 +811,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
 
-    # Check that 2 sale invoice has been generated for the user
-    transaction_list = self.portal.portal_catalog(
-      portal_type="Sale Invoice Transaction",
-      destination_section_relative_url=person.getRelativeUrl(),
-      sort_on=(('creation_date', 'DESC'),),
-      )
-    self.assertEquals(2, len(transaction_list))
-
-    sale_invoice = transaction_list[0].getObject()
+    sale_invoice = self._getMonthlyInvoice(person)
 
     # Check invoice creation
     self.assertEquals(
@@ -823,7 +844,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     # 5 invoice lines are expected
     invoice_line_list = sale_invoice.contentValues(
         portal_type="Invoice Line")
-    self.assertEquals(5, len(invoice_line_list))
+    self.assertEquals(6, len(invoice_line_list))
 
     service_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_setup'][0]
@@ -833,6 +854,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         if x.getResource() == 'service_module/vifib_instance_hosting'][0]
     destroy_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_cleanup'][0]
+    update_line = [x for x in invoice_line_list \
+        if x.getResource() == 'service_module/vifib_instance_update'][0]
     tax_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_tax'][0]
 
@@ -851,6 +874,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals(True, destroy_line.hasPrice())
     self.assertAlmostEquals(0, destroy_line.getPrice(), 3)
     self.assertEquals(1, destroy_line.getQuantity())
+
+    self.assertEquals(True, update_line.hasPrice())
+    self.assertAlmostEquals(0, update_line.getPrice(), 3)
+    self.assertEquals(2, update_line.getQuantity())
 
     self.assertEquals(True, tax_line.hasPrice())
     self.assertAlmostEquals(0.196, tax_line.getPrice(), 3)
@@ -1061,6 +1088,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         \
         SlapLogout \
         Tic \
+        CallVifibTriggerBuildAlarm \
+        CleanTic \
+        CallVifibExpandDeliveryLineAlarm \
+        CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallStopConfirmedSaleInvoiceTransactionAlarm \
@@ -1093,15 +1124,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue(sequence[
       'web_user'])
 
-    # Check that 2 sale invoice has been generated for the user
-    transaction_list = self.portal.portal_catalog(
-      portal_type="Sale Invoice Transaction",
-      destination_section_relative_url=person.getRelativeUrl(),
-      sort_on=(('creation_date', 'DESC'),),
-      )
-    self.assertEquals(2, len(transaction_list))
-
-    sale_invoice = transaction_list[0].getObject()
+    sale_invoice = self._getMonthlyInvoice(person)
 
     # Check invoice creation
     self.assertEquals(
@@ -1134,7 +1157,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     # 5 invoice lines are expected
     invoice_line_list = sale_invoice.contentValues(
         portal_type="Invoice Line")
-    self.assertEquals(5, len(invoice_line_list))
+    self.assertEquals(6, len(invoice_line_list))
 
     service_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_setup'][0]
@@ -1144,6 +1167,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         if x.getResource() == 'service_module/vifib_instance_hosting'][0]
     destroy_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_instance_cleanup'][0]
+    update_line = [x for x in invoice_line_list \
+        if x.getResource() == 'service_module/vifib_instance_update'][0]
     tax_line = [x for x in invoice_line_list \
         if x.getResource() == 'service_module/vifib_tax'][0]
 
@@ -1162,6 +1187,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals(True, destroy_line.hasPrice())
     self.assertAlmostEquals(0, destroy_line.getPrice(), 3)
     self.assertEquals(2, destroy_line.getQuantity())
+
+    self.assertEquals(True, update_line.hasPrice())
+    self.assertAlmostEquals(0, update_line.getPrice(), 3)
+    self.assertEquals(6, update_line.getQuantity())
 
     self.assertEquals(True, tax_line.hasPrice())
     self.assertAlmostEquals(0.196, tax_line.getPrice(), 3)

@@ -61,7 +61,8 @@ if related_simulation_movement_path_list is None:\n
 invoice = context\n
 \n
 # if installed erp5_simplified_invoicing, set resource from price currency\n
-if not invoice.Invoice_isAdvanced():\n
+#if not invoice.Invoice_isAdvanced():\n
+if 1:\n
   if not invoice.getResource():\n
     invoice.setResource(invoice.getPriceCurrency())\n
 \n

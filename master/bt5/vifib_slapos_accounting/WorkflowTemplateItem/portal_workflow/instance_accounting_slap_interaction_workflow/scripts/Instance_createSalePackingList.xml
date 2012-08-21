@@ -80,6 +80,7 @@ packing_list_line = packing_list.newContent(\n
   price=service.getSaleSupplyLineBasePrice(),\n
 )\n
 \n
+\n
 return packing_list\n
 </string> </value>
         </item>

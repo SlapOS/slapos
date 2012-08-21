@@ -66,18 +66,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
     slap_computer_partition.bang(self.bang_message)
-
-  def stepProcessSoftwareInstanceList(self, sequence, **kw):
-    S0 = self.portal.portal_catalog.getResultValue(uid=sequence['S0_uid'])
-    S0.startComputerPartition()
-    S1 = self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid'])
-    S1.stopComputerPartition()
-    S2 = self.portal.portal_catalog.getResultValue(uid=sequence['S2_uid'])
-    S2.stopComputerPartition()
-    S3 = self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid'])
-    S3.stopComputerPartition()
-    S4 = self.portal.portal_catalog.getResultValue(uid=sequence['S4_uid'])
-    S4.stopComputerPartition()
+    sequence.edit(expected_bang_count=sequence.get('expected_bang_count', 2) + 1)
 
   def stepSetCurrentSoftwareInstanceS1(self, sequence, **kw):
     S1 = self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid'])
@@ -95,31 +84,36 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
         .getAggregateValue(portal_type='Computer Partition').getReference()
     )
 
-  def checkSoftwareInstanceBangMessage(self, software_instance):
-    bang_list = [q for q in software_instance.Base_getWorkflowHistoryItemList(
-      'instance_slap_interface_workflow')
+  def checkSoftwareInstanceBangMessage(self, count, software_instance):
+    bang_list = [q for q in reversed(software_instance\
+      .Base_getWorkflowHistoryItemList('instance_slap_interface_workflow'))
       if q.action == 'bang']
-    self.assertEqual(5, len(bang_list))
+    self.assertEqual(count, len(bang_list))
     self.assertEqual(self.bang_message, bang_list[0].comment)
 
   def stepCheckS0BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S0_uid']))
 
   def stepCheckS1BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid']))
 
   def stepCheckS2BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S1_uid']))
 
   def stepCheckS3BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid']))
 
   def stepCheckS4BangMessage(self, sequence, **kw):
     self.checkSoftwareInstanceBangMessage(
+      sequence['expected_bang_count'],
       self.portal.portal_catalog.getResultValue(uid=sequence['S3_uid']))
 
   def test_bang_computer_partition_complex_tree(self):
@@ -160,8 +154,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ProcessSoftwareInstanceList
-      Tic
       SetCurrentSoftwareInstanceS1
       Logout
 
@@ -183,8 +175,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      ProcessSoftwareInstanceList
-      Tic
       SetCurrentSoftwareInstanceS3
       Logout
 
@@ -218,6 +208,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     slap_computer = self.slap.registerComputer(
       sequence['computer_reference'])
     slap_computer.bang(self.bang_message)
+    sequence.edit(expected_bang_count=sequence.get('expected_bang_count', 2) + 5)
 
   def stepCheckComputerBangMessage(self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
@@ -590,12 +581,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepCheckComputerPartitionNoInstanceUpdateSalePackingList(self,
-      sequence, **kw):
-    self._checkComputerPartitionNoSalePackingList(
-        self.portal.portal_preferences.getPreferredInstanceUpdateResource(),
-        sequence)
-
   def test_computer_bang_not_called_on_destroying_destroyed(self):
     """Check that bang is ignoring destruction in progress and
        destroyed computer partitions"""
@@ -608,10 +593,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       ComputerBang
       Tic
       SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
 
       SlapLoginCurrentComputer
       SoftwareInstanceDestroyed
@@ -628,10 +609,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       ComputerBang
       Tic
       SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
 
       LoginERP5TypeTestCase
       CheckSiteConsistency
@@ -710,10 +687,6 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       ComputerBang
       Tic
       SlapLogout
-
-      LoginDefaultUser
-      CheckComputerPartitionNoInstanceUpdateSalePackingList
-      Logout
 
       LoginERP5TypeTestCase
       CheckSiteConsistency

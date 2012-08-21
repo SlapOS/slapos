@@ -2,6 +2,7 @@
 from Products.Vifib.tests.testVifibSlapWebService import \
   TestVifibSlapWebServiceMixin
 import transaction
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
 
@@ -324,6 +325,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
       state=state,
     )
 
+  @expectedFailure
   def test_Person_requestSoftwareInstance_updateHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 

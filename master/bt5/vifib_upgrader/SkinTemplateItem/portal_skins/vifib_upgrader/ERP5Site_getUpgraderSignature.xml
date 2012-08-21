@@ -67,64 +67,84 @@ ALARM_DICT = {\n
 }\n
 \n
 REQUIRED_BT5_ID_LIST = (\n
+# core of core\n
+  \'erp5_mysql_innodb_catalog\',\n
   \'erp5_core\',\n
   \'erp5_property_sheets\',\n
   \'erp5_xhtml_style\',\n
+# erp5\n
   \'erp5_base\',\n
-  \'erp5_jquery_ui\',\n
-  \'erp5_rss_style\',\n
   \'erp5_accounting\',\n
-  \'erp5_credential\',\n
   \'erp5_crm\',\n
-  \'erp5_open_trade\',\n
-  \'erp5_payzen_secure_payment\',\n
+  \'erp5_accounting_l10n_fr\',\n
+  \'erp5_dms\',\n
+  \'erp5_computer_immobilisation\',\n
+  \'erp5_credential\',\n
+  \'erp5_discount_resource\',\n
+  \'erp5_commerce\',\n
+  \'erp5_pdm\',\n
+  \'erp5_knowledge_pad\',\n
+  \'erp5_forge\',\n
+  \'erp5_legacy_tax_system\',\n
+  \'erp5_invoicing\',\n
+  \'erp5_ingestion\',\n
+  \'erp5_item\',\n
+  \'erp5_km\'\n
+  \'erp5_simulation\',\n
+  \'erp5_trade\',\n
+  \'erp5_ui_test_core\',\n
+  \'erp5_tax_resource\',\n
+  \'erp5_system_event\',\n
+  \'erp5_ui_test\',\n
+  \'erp5_secure_payment\',\n
   \'erp5_web\',\n
-  \'erp5_bearer_token\',\n
-  \'vifib_slapos_core\',\n
+  \'erp5_project\',\n
+  \'erp5_credential_oauth2\',\n
+# vifib\n
   \'vifib_base\',\n
-  \'vifib_mysql_innodb_catalog\',\n
-  \'vifib_forge_release\',\n
-  \'vifib_open_trade\',\n
-  \'vifib_slap\',\n
-  \'vifib_software_pdm\',\n
+  \'vifib_slapos_core\',\n
   \'vifib_web\',\n
-  \'vifib_payzen\',\n
-  \'vifib_web_ui_test\',\n
+  \'vifib_slap\',\n
   \'vifib_agent\',\n
-  \'vifib_data\',\n
-  \'vifib_data_web\',\n
   \'vifib_slapos_accounting\',\n
   \'vifib_erp5\',\n
+  \'vifib_web_ui_test\',\n
+  \'vifib_slapos_rest_api_tool_portal_type\',\n
+  \'vifib_slapos_rest_api\',\n
+  \'vifib_slapos_rest_api_v1\',\n
+  \'vifib_data\',\n
+  \'vifib_data_web\',\n
+  \'vifib_data_simulation\',\n
 )\n
 \n
 REINSTALLABLE_BT5_ID_LIST = ()\n
 \n
 # items to keep even if marked by BT5 to \'Remove\'\n
 KEEP_ORIGINAL_DICT = {\n
-  \'vifib_base\': (\n
-    \'software_instance_module\',\n
-    \'portal_types/Slave Instance\',\n
-    \'portal_types/Software Instance\',\n
-    \'portal_types/Software Instance Module\',\n
-    \'allowed_content_types/Software Instance Module\',\n
-    \'base_category_list/Slave Instance\',\n
-    \'base_category_list/Software Instance\',\n
-    \'base_category_list/Software Instance Module\',\n
-    \'property_sheet_list/Slave Instance\',\n
-    \'property_sheet_list/Software Instance\',\n
-    \'property_sheet_list/Item\',\n
-    \'portal_workflow/software_instance_slap_interface_workflow\',\n
-  ),\n
-  \'vifib_open_trade\': (\n
-    \'hosting_subscription_module\',\n
-    \'portal_types/Hosting Subscription\',\n
-    \'portal_types/Hosting Subscription Module\',\n
-    \'property_sheet_list/Hosting Subscription\',\n
-    \'allowed_content_types/Hosting Subscription Module\',\n
-    \'base_category_list/Hosting Subscription\',\n
-    \'base_category_list/Hosting Subscription Module\',\n
-    \'portal_type_workflow_chain/Hosting Subscription\',\n
-  ),\n
+#  \'vifib_base\': (\n
+#    \'software_instance_module\',\n
+#    \'portal_types/Slave Instance\',\n
+#    \'portal_types/Software Instance\',\n
+#    \'portal_types/Software Instance Module\',\n
+#    \'allowed_content_types/Software Instance Module\',\n
+#    \'base_category_list/Slave Instance\',\n
+#    \'base_category_list/Software Instance\',\n
+#    \'base_category_list/Software Instance Module\',\n
+#    \'property_sheet_list/Slave Instance\',\n
+#    \'property_sheet_list/Software Instance\',\n
+#    \'property_sheet_list/Item\',\n
+#    \'portal_workflow/software_instance_slap_interface_workflow\',\n
+#  ),\n
+#  \'vifib_open_trade\': (\n
+#    \'hosting_subscription_module\',\n
+#    \'portal_types/Hosting Subscription\',\n
+#    \'portal_types/Hosting Subscription Module\',\n
+#    \'property_sheet_list/Hosting Subscription\',\n
+#    \'allowed_content_types/Hosting Subscription Module\',\n
+#    \'base_category_list/Hosting Subscription\',\n
+#    \'base_category_list/Hosting Subscription Module\',\n
+#    \'portal_type_workflow_chain/Hosting Subscription\',\n
+#  ),\n
 }\n
 \n
 # Items which need validation at upgrade time\n
@@ -134,6 +154,12 @@ INTEGRITY_VERIFICATION_SCRIPT_ID_LIST = ( )\n
 \n
 ALARM_TOOL_CONFIGURATION_LIST = ( )\n
 \n
+WORKFLOW_CHAIN_DICT = context.getPortalObject().portal_workflow.getWorkflowChainDict()\n
+\n
+WORKFLOW_CHAIN_DICT.update(**{\n
+  \'chain_Slave Instance\': \'edit_workflow, instance_accounting_slap_interaction_workflow, instance_slap_interface_workflow, item_workflow, local_permission_vifib_interaction_workflow, slap_interaction_workflow\',\n
+  \'chain_Software Instance\': \'edit_workflow, instance_accounting_slap_interaction_workflow, instance_slap_interface_workflow, item_workflow, local_permission_vifib_interaction_workflow, slap_interaction_workflow\',\n
+})\n
 \n
 FINALIZE_ALARM_SCRIPT = ( )\n
 \n
@@ -148,6 +174,7 @@ signature_dict = {\n
  , \'validation_dict\': VALIDATION_DICT\n
  , \'integrity_verification_script_id_list\': INTEGRITY_VERIFICATION_SCRIPT_ID_LIST\n
  , \'alarm_tool_configuration_list\' : ALARM_TOOL_CONFIGURATION_LIST\n
+ , \'workflow_chain_dict\': WORKFLOW_CHAIN_DICT\n
  # , \'finalize_upgrade_script_list\': FINALIZE_ALARM_SCRIPT\n
 }\n
 \n

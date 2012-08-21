@@ -55,7 +55,7 @@
 if state is None:\n
   state = {\'start_requested\': \'started\', \'destroy_requested\': \'destroyed\', \'stop_requested\': \'stopped\'}[context.getSlapState()]\n
 \n
-person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
+person = context.getDestinationSectionValue()\n
 person.requestSoftwareInstance(\n
   state=state,\n
   software_release=context.getRootSoftwareReleaseUrl(),\n

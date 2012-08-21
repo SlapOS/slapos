@@ -9,3 +9,5 @@
 /parts/
 /slapos.core.egg-info/
 /master/bt5/bt5list
+/master/Products
+/master/product/__init__.py

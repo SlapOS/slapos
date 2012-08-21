@@ -57,7 +57,7 @@ invoice_line = portal.portal_catalog.getResultValue(\n
   resource_relative_url=portal.portal_preferences.getPreferredRegistrationResource(),\n
   portal_type="Invoice Line",\n
   # XXX Hardcoded\n
-  simulation_state=["stopped", "delivered"],\n
+  simulation_state=["confirmed", "stopped", "delivered"],\n
   **{\'movement.destination_uid\': person.getUid()})\n
 \n
 if invoice_line is None:\n
@@ -92,8 +92,8 @@ if invoice_line is None:\n
 \n
     # force tracking causality state\n
     invoice.startBuilding()\n
-    invoice.plan(**kw)\n
-    invoice.confirm(**kw)\n
+    invoice.plan(comment=\'Initialised by fixing consistency.\', **kw)\n
+    invoice.confirm(comment=\'Initialised by fixing consistency.\', **kw)\n
 </string> </value>
         </item>
         <item>

@@ -1,12 +1,14 @@
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
 # consequences resulting from its eventual inadequacies and bugs
 # End users who are looking for a ready-to-use solution with commercial
-# guarantees and support are strongly adviced to contract a Free Software
+# guarantees and support are strongly advised to contract a Free Software
 # Service Company
 #
 # This program is Free Software; you can redistribute it and/or
@@ -24,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
 import logging
 import os
 import shutil
@@ -51,7 +54,8 @@ class Software(object):
       upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
       shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
       download_binary_cache_url=None, upload_binary_cache_url=None,
-      download_binary_dir_url=None, upload_binary_dir_url=None):
+      download_binary_dir_url=None, upload_binary_dir_url=None,
+      binary_cache_url_blacklist = []):
     """Initialisation of class parameters
     """
     self.url = url
@@ -74,41 +78,45 @@ class Software(object):
     self.upload_binary_cache_url = upload_binary_cache_url
     self.download_binary_dir_url = download_binary_dir_url
     self.upload_binary_dir_url = upload_binary_dir_url
+    self.binary_cache_url_blacklist = binary_cache_url_blacklist
 
   def install(self):
     """ Fetches binary cache if possible.
     Installs from buildout otherwise.
     """
+    self.logger.info("Installing software release %s..." % self.url)
     tarname = self.software_url_hash
     cache_dir = tempfile.mkdtemp()
     tarpath = os.path.join(cache_dir, tarname)
+    # Check if we can download from cache
     if (not os.path.exists(self.software_path)) \
-      and download_network_cached(
-          self.download_binary_cache_url,
-          self.download_binary_dir_url,
-          self.url, self.software_root,
-          self.software_url_hash,
-          tarpath, self.logger,
-          self.signature_certificate_list):
-        tar = tarfile.open(tarpath)
+        and download_network_cached(
+            self.download_binary_cache_url,
+            self.download_binary_dir_url,
+            self.url, self.software_root,
+            self.software_url_hash,
+            tarpath, self.logger,
+            self.signature_certificate_list,
+            self.binary_cache_url_blacklist):
+      tar = tarfile.open(tarpath)
+      try:
+        self.logger.info("Extracting archive of cached software release...")
+        tar.extractall(path=self.software_root)
+      finally:
+        tar.close()
+    else:
+      self._install_from_buildout()
+      if (self.software_root and self.url and self.software_url_hash \
+                             and self.upload_binary_cache_url \
+                             and self.upload_binary_dir_url):
+        self.logger.info("Creating archive of software release...")
+        tar = tarfile.open(tarpath, "w:gz")
         try:
-          self.logger.info("Extracting archive of cached software release...")
-          tar.extractall(path=self.software_root)
+          tar.add(self.software_path, arcname=self.software_url_hash)
         finally:
           tar.close()
-    else:
-        self._install_from_buildout()
-        if (self.software_root and self.url and self.software_url_hash \
-                               and self.upload_binary_cache_url \
-                               and self.upload_binary_dir_url):
-          self.logger.info("Creating archive of software release...")
-          tar = tarfile.open(tarpath, "w:gz")
-          try:
-            tar.add(self.software_path, arcname=self.software_url_hash)
-          finally:
-            tar.close()
-          self.logger.info("Trying to upload archive of software release...")
-          upload_network_cached(
+        self.logger.info("Trying to upload archive of software release...")
+        upload_network_cached(
             self.software_root,
             self.url, self.software_url_hash,
             self.upload_binary_cache_url,
@@ -120,12 +128,11 @@ class Software(object):
             self.shadir_cert_file,
             self.shadir_key_file)
     shutil.rmtree(cache_dir)
-      
+
   def _install_from_buildout(self):
     """ Fetches buildout configuration from the server, run buildout with
     it. If it fails, we notify the server.
     """
-    self.logger.info("Installing software release %s..." % self.url)
     root_stat_info = os.stat(self.software_root)
     os.environ = utils.getCleanEnvironment(pwd.getpwuid(root_stat_info.st_uid
       ).pw_dir)
@@ -260,8 +267,6 @@ class Partition(object):
     """ Creates configuration file from template in software_path, then
     installs the software partition with the help of buildout
     """
-    # XXX: Shall be no op in case if revision had not changed
-    #      It requires implementation of revision on server
     self.logger.info("Installing Computer Partition %s..." \
         % self.computer_partition.getId())
     # Checks existence and permissions of Partition directory
@@ -280,7 +285,6 @@ class Partition(object):
     os.environ = utils.getCleanEnvironment(pwd.getpwuid(
       instance_stat_info.st_uid).pw_dir)
     # Generates buildout part from template
-    # TODO how to fetch the good template? Naming conventions?
     template_location = os.path.join(self.software_path, 'template.cfg')
     config_location = os.path.join(self.instance_path, 'buildout.cfg')
     self.logger.debug("Copying %r to %r" % (template_location, config_location))

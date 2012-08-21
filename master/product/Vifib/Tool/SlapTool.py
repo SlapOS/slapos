@@ -143,15 +143,23 @@ class SlapTool(BaseTool):
     """
 
     def _getComputerInformation(computer_id, user):
+      user_document = self.getPortalObject().portal_catalog.getResultValue(
+        reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
+      user_type = user_document.getPortalType()
       self.REQUEST.response.setHeader('Content-Type', 'text/xml')
       slap_computer = Computer(computer_id)
       parent_uid = self._getComputerUidByReference(computer_id)
 
       slap_computer._computer_partition_list = []
-      slap_computer._software_release_list = \
+      if user_type == 'Computer':
+        slap_computer._software_release_list = \
            self._getSoftwareReleaseValueListForComputer(computer_id)
+      else:
+        slap_computer._software_release_list = []
+
       for computer_partition in self.getPortalObject().portal_catalog(
                       parent_uid=parent_uid,
+                      validation_state="validated",
                       portal_type="Computer Partition"):
         slap_computer._computer_partition_list.append(
             self._getSlapPartitionByPackingList(computer_partition.getObject()))
@@ -171,19 +179,31 @@ class SlapTool(BaseTool):
 
     Reuses slap library for easy marshalling.
     """
-    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
-    slap_computer = Computer(computer_id)
-    parent_uid = self._getComputerUidByReference(computer_id)
-
-    slap_computer._computer_partition_list = []
-    slap_computer._software_release_list = \
-         self._getSoftwareReleaseValueListForComputer(computer_id, full=True)
-    for computer_partition in self.getPortalObject().portal_catalog(
-                    parent_uid=parent_uid,
-                    portal_type="Computer Partition"):
-      slap_computer._computer_partition_list.append(
-          self._getSlapPartitionByPackingList(computer_partition.getObject()))
-    return xml_marshaller.xml_marshaller.dumps(slap_computer)
+    def _getFullComputerInformation(computer_id, user):
+      user_document = self.getPortalObject().portal_catalog.getResultValue(
+        reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
+      user_type = user_document.getPortalType()
+      self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+      slap_computer = Computer(computer_id)
+      parent_uid = self._getComputerUidByReference(computer_id)
+  
+      slap_computer._computer_partition_list = []
+      if user_type == 'Computer':
+        slap_computer._software_release_list = \
+           self._getSoftwareReleaseValueListForComputer(computer_id, full=True)
+      else:
+        slap_computer._software_release_list = []
+      for computer_partition in self.getPortalObject().portal_catalog(
+                      parent_uid=parent_uid,
+                      validation_state="validated",
+                      portal_type="Computer Partition"):
+        slap_computer._computer_partition_list.append(
+            self._getSlapPartitionByPackingList(computer_partition.getObject()))
+      return xml_marshaller.xml_marshaller.dumps(slap_computer)
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
+    return CachingMethod(_getFullComputerInformation,
+                         id='_getFullComputerInformation',
+                         cache_factory='slap_cache_factory')(computer_id, user)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getComputerPartitionCertificate')
@@ -428,11 +448,64 @@ class SlapTool(BaseTool):
     """
     # Try to get the computer partition to raise an exception if it doesn't
     # exist
-    self._getComputerPartitionDocument(
+    portal = self.getPortalObject()
+    computer_partition_document = self._getComputerPartitionDocument(
           computer_reference, computer_partition_reference)
-    return xml_marshaller.xml_marshaller.dumps(
-        SlapComputerPartition(computer_reference,
-        computer_partition_reference))
+    slap_partition = SlapComputerPartition(computer_reference,
+        computer_partition_reference)
+    slap_partition._software_release_document = None
+    slap_partition._requested_state = 'destroyed'
+    slap_partition._need_modification = 0
+    software_instance = None
+
+    if computer_partition_document.getSlapState() == 'busy':
+      software_instance_list = portal.portal_catalog(
+          portal_type="Software Instance",
+          default_aggregate_uid=computer_partition_document.getUid(),
+          validation_state="validated",
+          limit=2,
+          )
+      software_instance_count = len(software_instance_list)
+      if software_instance_count == 1:
+        software_instance = software_instance_list[0].getObject()
+      elif software_instance_count > 1:
+        # XXX do not prevent the system to work if one partition is broken
+        raise NotImplementedError, "Too many instances %s linked to %s" % \
+          ([x.path for x in software_instance_list],
+           computer_partition_document.getRelativeUrl())
+
+    if software_instance is not None:
+      # trick client side, that data has been synchronised already for given
+      # document
+      slap_partition._synced = True
+      state = software_instance.getSlapState()
+      if state == "stop_requested":
+        slap_partition._requested_state = 'stopped'
+      if state == "start_requested":
+        slap_partition._requested_state = 'started'
+
+      slap_partition._software_release_document = SoftwareRelease(
+            software_release=software_instance.getRootSoftwareReleaseUrl(),
+            computer_guid=computer_reference)
+
+      slap_partition._need_modification = 1
+
+      parameter_dict = self._getSoftwareInstanceAsParameterDict(
+                                                       software_instance)
+      # software instance has to define an xml parameter
+      slap_partition._parameter_dict = self._instanceXmlToDict(
+        parameter_dict.pop('xml'))
+      slap_partition._connection_dict = self._instanceXmlToDict(
+        parameter_dict.pop('connection_xml'))
+      for slave_instance_dict in parameter_dict.get("slave_instance_list", []):
+        if slave_instance_dict.has_key("connection_xml"):
+          slave_instance_dict.update(self._instanceXmlToDict(
+            slave_instance_dict.pop("connection_xml")))
+        if slave_instance_dict.has_key("xml"):
+          slave_instance_dict.update(self._instanceXmlToDict(
+            slave_instance_dict.pop("xml")))
+      slap_partition._parameter_dict.update(parameter_dict)
+    return xml_marshaller.xml_marshaller.dumps(slap_partition)
 
   ####################################################
   # Internal methods
@@ -709,7 +782,8 @@ class SlapTool(BaseTool):
           portal.portal_preferences.getPreferredInstanceCleanupResource()]:
         if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
           delivery.stop()
-        delivery.deliver()
+        if portal.portal_workflow.isTransitionPossible(delivery, 'deliver'):
+          delivery.deliver()
 
         # XXX Integrate with REST API
         # Code duplication will be needed until SlapTool is removed
@@ -842,7 +916,16 @@ class SlapTool(BaseTool):
         raise SoftwareInstanceNotReady
       else:
         parameter_dict = self._getSoftwareInstanceAsParameterDict(requested_software_instance)
+
+        # software instance has to define an xml parameter
+        xml = self._instanceXmlToDict(
+          parameter_dict.pop('xml'))
+        connection_xml = self._instanceXmlToDict(
+          parameter_dict.pop('connection_xml'))
+
         software_instance = SoftwareInstance(**parameter_dict)
+        software_instance._parameter_dict = xml
+        software_instance._connection_dict = connection_xml
         return xml_marshaller.xml_marshaller.dumps(software_instance)
 
   ####################################################
@@ -921,6 +1004,11 @@ class SlapTool(BaseTool):
   def _getSoftwareInstanceAsParameterDict(self, software_instance):
     portal = software_instance.getPortalObject()
     computer_partition = software_instance.getAggregateValue(portal_type="Computer Partition")
+    timestamp = int(computer_partition.getModificationDate())
+
+    newtimestamp = int(software_instance.getBangTimestamp(int(software_instance.getModificationDate())))
+    if (newtimestamp > timestamp):
+      timestamp = newtimestamp
 
     ip_list = []
     for internet_protocol_address in computer_partition.contentValues(portal_type='Internet Protocol Address'):
@@ -945,6 +1033,9 @@ class SlapTool(BaseTool):
             'xml': slave_instance.getTextContent(),
             'connection_xml': slave_instance.getConnectionXml(),
           })
+          newtimestamp = int(slave_instance.getBangTimestamp(int(software_instance.getModificationDate())))                  
+          if (newtimestamp > timestamp):                                            
+            timestamp = newtimestamp
     return {
       'xml': software_instance.getTextContent(),
       'connection_xml': software_instance.getConnectionXml(),
@@ -954,6 +1045,7 @@ class SlapTool(BaseTool):
       'slap_software_release_url': software_instance.getRootSoftwareReleaseUrl(),
       'slave_instance_list': slave_instance_list,
       'ip_list': ip_list,
+      'timestamp': "%i" % timestamp,
     }
 
   @UnrestrictedMethod

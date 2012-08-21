@@ -37,12 +37,13 @@ document_classes = updateGlobals(this_module, globals(),
 object_classes = ()
 content_classes = ()
 content_constructors = ()
-from Tool import SlapTool, VifibRestApiV1Tool
-portal_tools = ( SlapTool.SlapTool, VifibRestApiV1Tool.VifibRestApiV1Tool)
+from Tool import SlapTool, VifibRestApiTool
+portal_tools = ( SlapTool.SlapTool, VifibRestApiTool.VifibRestApiTool)
 from Products.PluggableAuthService.PluggableAuthService import registerMultiPlugin
 
 import VifibMachineAuthenticationPlugin
 import VifibShadowAuthenticationPlugin
+import VifibCookieHashExtractionPlugin
 
 def initialize(context):
   import Document
@@ -69,6 +70,36 @@ def initialize(context):
                          , icon='www/portal.gif'
                          )
 
+  context.registerClass( VifibCookieHashExtractionPlugin.VifibFacebookServerExtractionPlugin
+                         , permission=ManageUsers
+                         , constructors=(
+                            VifibCookieHashExtractionPlugin.manage_addVifibFacebookServerExtractionPluginForm,
+                            VifibCookieHashExtractionPlugin.addVifibFacebookServerExtractionPlugin, )
+                         , visibility=None
+                         , icon='www/portal.gif'
+                         )
+
+  context.registerClass( VifibCookieHashExtractionPlugin.VifibGoogleServerExtractionPlugin
+                         , permission=ManageUsers
+                         , constructors=(
+                            VifibCookieHashExtractionPlugin.manage_addVifibGoogleServerExtractionPluginForm,
+                            VifibCookieHashExtractionPlugin.addVifibGoogleServerExtractionPlugin, )
+                         , visibility=None
+                         , icon='www/portal.gif'
+                         )
+
+  context.registerClass( VifibCookieHashExtractionPlugin.VifibBrowserIDExtractionPlugin
+                         , permission=ManageUsers
+                         , constructors=(
+                            VifibCookieHashExtractionPlugin.manage_addVifibBrowserIDExtractionPluginForm,
+                            VifibCookieHashExtractionPlugin.addVifibBrowserIDExtractionPlugin, )
+                         , visibility=None
+                         , icon='www/portal.gif'
+                         )
+
 
 registerMultiPlugin(VifibMachineAuthenticationPlugin.VifibMachineAuthenticationPlugin.meta_type)
 registerMultiPlugin(VifibShadowAuthenticationPlugin.VifibShadowAuthenticationPlugin.meta_type)
+registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibFacebookServerExtractionPlugin.meta_type)
+registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibGoogleServerExtractionPlugin.meta_type)
+registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibBrowserIDExtractionPlugin.meta_type)

@@ -50,17 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-portal = context.getPortalObject()\n
-\n
-if not instance_xml:\n
-  instance_xml = """<?xml version="1.0" encoding="utf-8"?>\n
-  <instance>\n
-  <parameter id="nbd_ip">2a01:e35:2e27:460:e2cb:4eff:fed9:48dc</parameter>\n
-  <parameter id="nbd_port">1024</parameter>\n
-  </instance>\n
-  """\n
+            <value> <string>portal = context.getPortalObject()\n
 \n
 if not service_title:\n
   service_title = "Vifib KVM %i" % portal.portal_ids.generateNewId(id_group=("vifib", "kvm"), default=1),\n
@@ -84,9 +74,7 @@ person.requestSoftwareInstance(**request_kw)\n
 \n
 message = context.Base_translateString("Your instance is under creation. Please wait few minutes for partitions to appear.")\n
 return context.REQUEST.get(\'request_hosting_subscription\').Base_redirect(keep_items={\'portal_status_message\': message})\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>

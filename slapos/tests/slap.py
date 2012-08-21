@@ -45,6 +45,7 @@ class SlapMixin(unittest.TestCase):
       self.server_url = 'http://localhost/'
     else:
       self.server_url = self._server_url
+    print 'Testing against SLAP server %r' % self.server_url
 
   def tearDown(self):
     if self._server_url is None:
@@ -81,7 +82,7 @@ class TestSlap(SlapMixin):
 
   def test_slap_initialisation(self):
     """
-    Asserts that slap initialisation works properly in case of 
+    Asserts that slap initialisation works properly in case of
     passing correct url
     """
     slap_instance = slapos.slap.slap()
@@ -91,17 +92,17 @@ class TestSlap(SlapMixin):
 
   def test_slap_initialisation_wrong_url(self):
     """
-    Asserts that slap initialisation raises exception when passed url 
+    Asserts that slap initialisation raises exception when passed url
     is not correct
     """
     server_url = 'https://user:pass@server/path/path?parameter=notAcceptable'
     slap_instance = slapos.slap.slap()
-    self.assertRaises(AttributeError, 
+    self.assertRaises(AttributeError,
                       slap_instance.initializeConnection, server_url)
 
   def test_registerComputer_with_new_guid(self):
     """
-    Asserts that calling slap.registerComputer with new guid returns 
+    Asserts that calling slap.registerComputer with new guid returns
     Computer object
     """
     computer_guid = self._getTestComputerId()
@@ -112,7 +113,7 @@ class TestSlap(SlapMixin):
 
   def test_registerComputer_with_existing_guid(self):
     """
-    Asserts that calling slap.registerComputer with already used guid 
+    Asserts that calling slap.registerComputer with already used guid
     returns Computer object
     """
     computer_guid = self._getTestComputerId()
@@ -128,7 +129,7 @@ class TestSlap(SlapMixin):
   # SoftwareRelease is currently used as suboject of Slap transmission object
   def test_registerSoftwareRelease_with_new_uri(self):
     """
-    Asserts that calling slap.registerSoftwareRelease with new guid 
+    Asserts that calling slap.registerSoftwareRelease with new guid
     returns SoftwareRelease object
     """
     software_release_uri = 'http://server/' + self._getTestComputerId()
@@ -140,7 +141,7 @@ class TestSlap(SlapMixin):
 
   def test_registerSoftwareRelease_with_existing_uri(self):
     """
-    Asserts that calling slap.registerSoftwareRelease with already 
+    Asserts that calling slap.registerSoftwareRelease with already
     used guid returns SoftwareRelease object
     """
     software_release_uri = 'http://server/' + self._getTestComputerId()
@@ -156,7 +157,7 @@ class TestSlap(SlapMixin):
 
   def test_registerComputerPartition_new_partition_id_known_computer_guid(self):
     """
-    Asserts that calling slap.registerComputerPartition on known computer 
+    Asserts that calling slap.registerComputerPartition on known computer
     returns ComputerPartition object
     """
     self.computer_guid = self._getTestComputerId()
@@ -165,13 +166,13 @@ class TestSlap(SlapMixin):
     self.partition_id = 'PARTITION_01'
     self.slap.registerComputer(self.computer_guid)
 
-    partition = self.slap.registerComputerPartition(self.computer_guid, 
+    partition = self.slap.registerComputerPartition(self.computer_guid,
                                                     self.partition_id)
     self.assertTrue(isinstance(partition, slapos.slap.ComputerPartition))
 
   def test_registerComputerPartition_existing_partition_id_known_computer_guid(self):
     """
-    Asserts that calling slap.registerComputerPartition on known computer 
+    Asserts that calling slap.registerComputerPartition on known computer
     returns ComputerPartition object
     """
     self.test_registerComputerPartition_new_partition_id_known_computer_guid()
@@ -181,7 +182,7 @@ class TestSlap(SlapMixin):
 
   def test_registerComputerPartition_unknown_computer_guid(self):
     """
-    Asserts that calling slap.registerComputerPartition on unknown 
+    Asserts that calling slap.registerComputerPartition on unknown
     computer raises (not defined yet) exception
     """
     computer_guid = self._getTestComputerId()
@@ -211,7 +212,7 @@ class TestComputer(SlapMixin):
 
   def test_computer_getComputerPartitionList_only_partition(self):
     """
-    Asserts that calling Computer.getComputerPartitionList with only 
+    Asserts that calling Computer.getComputerPartitionList with only
     Computer Partitions returns empty list
     """
     self.computer_guid = self._getTestComputerId()
@@ -225,7 +226,7 @@ class TestComputer(SlapMixin):
 
   def test_computer_reportUsage_non_valid_xml_raises(self):
     """
-    Asserts that calling Computer.reportUsage with non DTD 
+    Asserts that calling Computer.reportUsage with non DTD
     (not defined yet) XML raises (not defined yet) exception
     """
     self.computer_guid = self._getTestComputerId()
@@ -240,7 +241,7 @@ class TestComputer(SlapMixin):
 
   def test_computer_reportUsage_valid_xml_invalid_partition_raises(self):
     """
-    Asserts that calling Computer.reportUsage with DTD (not defined 
+    Asserts that calling Computer.reportUsage with DTD (not defined
     yet) XML which refers to invalid partition raises (not defined yet)
     exception
     """
@@ -429,7 +430,7 @@ class TestComputerPartition(SlapMixin):
 
   def _test_new_computer_partition_state(self, state):
     """
-    Helper method to automate assertions of failing states on new Computer 
+    Helper method to automate assertions of failing states on new Computer
     Partition
     """
     self.computer_guid = self._getTestComputerId()
@@ -443,28 +444,28 @@ class TestComputerPartition(SlapMixin):
 
   def test_available_new_ComputerPartition_raises(self):
     """
-    Asserts that calling ComputerPartition.available on new partition 
+    Asserts that calling ComputerPartition.available on new partition
     raises (not defined yet) exception
     """
     self._test_new_computer_partition_state('available')
 
   def test_building_new_ComputerPartition_raises(self):
     """
-    Asserts that calling ComputerPartition.building on new partition raises 
+    Asserts that calling ComputerPartition.building on new partition raises
     (not defined yet) exception
     """
     self._test_new_computer_partition_state('building')
 
   def test_started_new_ComputerPartition_raises(self):
     """
-    Asserts that calling ComputerPartition.started on new partition raises 
+    Asserts that calling ComputerPartition.started on new partition raises
     (not defined yet) exception
     """
     self._test_new_computer_partition_state('started')
 
   def test_stopped_new_ComputerPartition_raises(self):
     """
-    Asserts that calling ComputerPartition.stopped on new partition raises 
+    Asserts that calling ComputerPartition.stopped on new partition raises
     (not defined yet) exception
     """
     self._test_new_computer_partition_state('stopped')
@@ -489,7 +490,7 @@ class TestSoftwareRelease(SlapMixin):
 
   def _test_new_software_release_state(self, state):
     """
-    Helper method to automate assertions of failing states on new Software 
+    Helper method to automate assertions of failing states on new Software
     Release
     """
     self.software_release_uri = 'http://server/' + self._getTestComputerId()
@@ -502,14 +503,14 @@ class TestSoftwareRelease(SlapMixin):
 
   def test_available_new_SoftwareRelease_raises(self):
     """
-    Asserts that calling SoftwareRelease.available on new software release 
+    Asserts that calling SoftwareRelease.available on new software release
     raises (not defined yet) exception
     """
     self._test_new_software_release_state('available')
 
   def test_building_new_SoftwareRelease_raises(self):
     """
-    Asserts that calling SoftwareRelease.building on new software release 
+    Asserts that calling SoftwareRelease.building on new software release
     raises (not defined yet) exception
     """
     self._test_new_software_release_state('building')
@@ -589,7 +590,6 @@ class TestOpenOrder(SlapMixin):
     self.assertTrue(requested_partition_id, computer_partition.getId())
 
 if __name__ == '__main__':
-  print 'Testing against SLAP server %r' % SERVER_URL
   print 'You can point to any SLAP server by setting TEST_SLAP_SERVER_URL '\
       'environment variable'
   unittest.main()

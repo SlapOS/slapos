@@ -68,12 +68,13 @@ if (state in (started, stopped)):\n
       new_delivery = context.Instance_createSalePackingList(state_change, portal.restrictedTraverse(update_service_relative_url))\n
     else:\n
       new_delivery = delivery.Base_createCloneDocument(batch_mode=1)\n
-    new_delivery.edit(start_date=DateTime(), stop_date=DateTime())\n
+    new_delivery.edit(start_date=DateTime(), stop_date=DateTime(), causality_value=None)\n
     new_delivery.contentValues(portal_type="Sale Packing List Line")[0].edit(resource=update_service_relative_url)\n
     new_delivery.confirm()\n
     new_delivery.start()\n
     new_delivery.stop()\n
     new_delivery.deliver()\n
+    new_delivery.startBuilding()\n
 </string> </value>
         </item>
         <item>

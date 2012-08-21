@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.26-dev'
+version = '0.28.2'
 name = 'slapos.core'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -27,6 +27,8 @@ setup(name=name,
         ],
       keywords='slapos core',
       license='GPLv3',
+      url='http://www.slapos.org',
+      author='VIFIB',
       namespace_packages=['slapos'],
       packages=find_packages(),
       include_package_data=True,
@@ -56,6 +58,7 @@ setup(name=name,
           'slapgrid-supervisord = slapos.grid.svcbackend:supervisord',
           'slapproxy = slapos.proxy:main',
           'bang = slapos.bang:main',
+          'slapos = slapos.entry:main',
         ]
       },
       test_suite="slapos.tests",

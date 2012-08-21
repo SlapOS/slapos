@@ -87,6 +87,7 @@ class testVifibSecurityMixin(SecurityTestCase, testVifibMixin):
         career_role='internal',
 #         password='hackme',
       )
+      self.markManualCreation(person)
       if user_name != 'manager':
         self.assertTrue(user.has_permission('Access contents information',
                                             person))
@@ -107,6 +108,7 @@ class testVifibSecurityMixin(SecurityTestCase, testVifibMixin):
         start_date = '01/01/1900',
         stop_date = '01/01/2900',
       )
+      self.markManualCreation(assignment)
       if user_name != 'manager':
         self.assertTrue(user.has_permission('Access contents information',
                                             assignment))
@@ -209,17 +211,3 @@ class testVifibSecurityMixin(SecurityTestCase, testVifibMixin):
     Logout
     """
     self.logout()
-
-  def stepAddObject(self, sequence=None, sequence_list=None, **kw):
-    """
-    Add an object in the module
-    """
-    portal = self.getPortal()
-    portal_type = sequence.get('object_portal_type')
-    module = portal.getDefaultModule(portal_type)
-    obj = module.newContent(portal_type=portal_type)
-    sequence.edit(
-      obj_id=obj.getId()
-    )
-    transaction.commit()
-    self.tic()

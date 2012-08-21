@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2010, 2011 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
 from optparse import OptionParser, Option
 from xml_marshaller import xml_marshaller
 import ConfigParser
@@ -179,7 +181,7 @@ class Computer(object):
   def __getinitargs__(self):
     return (self.reference, self.interface)
 
-  def getAddress(self):
+  def getAddress(self, allow_tap=False):
     """
     Return a list of the interface address not attributed to any partition, (which
     are therefore free for the computer itself).
@@ -201,11 +203,16 @@ class Computer(object):
       if address_dict['addr'] not in computer_partition_address_list:
         return address_dict
 
-    # all addresses on interface are for partition, so lets add new one
-    computer_tap = Tap('compdummy')
-    computer_tap.createWithOwner(User('root'), attach_to_tap=True)
-    self.interface.addTap(computer_tap)
-    return self.interface.addAddr()
+    if allow_tap:
+      # all addresses on interface are for partition, so lets add new one
+      computer_tap = Tap('compdummy')
+      computer_tap.createWithOwner(User('root'), attach_to_tap=True)
+      self.interface.addTap(computer_tap)
+      return self.interface.addAddr()
+
+    # Can't find address
+    raise NoAddressOnInterface('No valid IPv6 found on %s.' %
+        self.interface.name)
 
   def send(self, config):
     """
@@ -230,7 +237,7 @@ class Computer(object):
       raise slap.NotFoundError("%s\nERROR : This SlapOS node is not recognised by "
           "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
           "like 'COMP-123' and is correct.\nError is : 404 Not Found." % error)
-    return 
+    return
 
   def dump(self, path_to_xml):
     """
@@ -304,7 +311,7 @@ class Computer(object):
     if alter_network and self.address is not None:
       self.interface.addAddr(self.address, self.netmask)
 
-    for path in self.instance_root, self.software_root: 
+    for path in self.instance_root, self.software_root:
       if not os.path.exists(path):
         os.makedirs(path, 0755)
       else:
@@ -670,7 +677,7 @@ class Interface(object):
 
   def _addSystemAddress(self, address, netmask, ipv6=True):
     """Adds system address to interface
-    
+
     Returns True if address was added successfully.
 
     Returns False if there was issue.
@@ -851,10 +858,6 @@ class Parser(OptionParser):
              help="Don't actually do anything.",
              default=False,
              action="store_true"),
-      Option("-b", "--no_bridge",
-             help="Don't use bridge but use real interface like eth0.",
-             default=False,
-             action="store_true"),
       Option("-v", "--verbose",
              default=False,
              action="store_true",
@@ -867,6 +870,10 @@ class Parser(OptionParser):
         help="Shall slapformat alter user database [default: True]"),
       Option('--alter_network', choices=['True', 'False'],
         help="Shall slapformat alter network configuration [default: True]"),
+      Option('--now',
+             help="Launch slapformat without delay",
+             default=False,
+             action="store_true"),
       ])
 
   def check_args(self, args):
@@ -979,7 +986,7 @@ def run(config):
   computer.instance_root = config.instance_root
   computer.software_root = config.software_root
   config.logger.info('Updating computer')
-  address = computer.getAddress()
+  address = computer.getAddress(config.create_tap)
   computer.address = address['addr']
   computer.netmask = address['netmask']
 
@@ -1006,7 +1013,7 @@ def run(config):
     computer_definition.write(open(filepath, 'w'))
     config.logger.info('Stored computer definition in %r' % filepath)
   computer.construct(alter_user=config.alter_user,
-      alter_network=config.alter_network, create_tap=not config.no_bridge)
+      alter_network=config.alter_network, create_tap=config.create_tap)
 
   # Dumping and sending to the erp5 the current configuration
   if not config.dry_run:
@@ -1020,6 +1027,7 @@ class Config(object):
   cert_file = None
   alter_network = None
   alter_user = None
+  create_tap = None
   computer_xml = None
   logger = None
   log_file = None
@@ -1048,6 +1056,11 @@ class Config(object):
     """
     self.key_file = None
     self.cert_file = None
+
+    # set up logging
+    self.logger = logging.getLogger("slapformat")
+    self.logger.setLevel(logging.INFO)
+
     # Set options parameters
     for option, value in option_dict.__dict__.items():
       setattr(self, option, value)
@@ -1067,11 +1080,18 @@ class Config(object):
         'tap_base_name', 'ipv4_local_network', 'ipv6_interface']:
       if getattr(self, parameter, None) is None:
         setattr(self, parameter, None)
-        
+
     # Backward compatibility
     if not getattr(self, "interface_name", None) \
         and getattr(self, "bridge_name", None):
       setattr(self, "interface_name", self.bridge_name)
+      self.logger.warning('bridge_name option is deprecated and should be '
+          'replaced by interface_name.')
+    if not getattr(self, "create_tap", None) \
+        and getattr(self, "no_bridge", None):
+      setattr(self, "create_tap", not self.no_bridge)
+      self.logger.warning('no_bridge option is deprecated and should be '
+          'replaced by create_tap.')
 
     # Set defaults lately
     if self.alter_network is None:
@@ -1080,15 +1100,15 @@ class Config(object):
       self.alter_user = 'True'
     if self.software_user is None:
       self.software_user = 'slapsoft'
+    if self.create_tap is None:
+      self.create_tap = True
 
-    # set up logging
-    self.logger = logging.getLogger("slapformat")
-    self.logger.setLevel(logging.INFO)
+    # Configure logging
     if self.console:
       self.logger.addHandler(logging.StreamHandler())
 
     # Convert strings to booleans
-    for o in ['alter_network', 'alter_user', 'no_bridge']:
+    for o in ['alter_network', 'alter_user', 'create_tap']:
       attr = getattr(self, o)
       if isinstance(attr, str):
         if attr.lower() == 'true':
@@ -1105,12 +1125,12 @@ class Config(object):
     if not self.dry_run:
       if self.alter_user:
         self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
-      if not self.no_bridge:
+      if self.create_tap:
         self.checkRequiredBinary(['tunctl'])
       if self.alter_network:
         self.checkRequiredBinary(['ip'])
     # Required, even for dry run
-    if self.alter_network and not self.no_bridge:
+    if self.alter_network and self.create_tap:
       self.checkRequiredBinary(['brctl'])
 
     # Check if root is needed
@@ -1118,7 +1138,7 @@ class Config(object):
       root_needed = True
     else:
       root_needed = False
-    
+
     # check root
     if root_needed and os.getuid() != 0:
       message = "Root rights are needed"
@@ -1137,11 +1157,21 @@ class Config(object):
           "%(name)s - %(levelname)s - %(message)s"))
         self.logger.addHandler(file_handler)
         self.logger.info('Configured logging to file %r' % self.log_file)
+
     # Check mandatory options
     for parameter in ('computer_id', 'instance_root', 'master_url',
                       'software_root', 'computer_xml'):
       if not getattr(self, parameter, None):
         raise UsageError("Parameter '%s' is not defined." % parameter)
+
+    # Check existence of SSL certificate files, if defined
+    for attribute in ['key_file', 'cert_file', 'master_ca_file']:
+      file_location = getattr(self, attribute, None)
+      if file_location is not None:
+        if not os.path.exists(file_location):
+          self.logger.fatal('File %r does not exist or is no readable.' %
+              file_location)
+          sys.exit(1)
 
     self.logger.info("Started.")
     if self.verbose:
@@ -1149,8 +1179,8 @@ class Config(object):
       self.logger.debug("Verbose mode enabled.")
     if self.dry_run:
       self.logger.info("Dry-run mode enabled.")
-    if self.no_bridge:
-      self.logger.info("No-bridge mode enabled.")
+    if self.create_tap:
+      self.logger.info("Tap creation mode enabled.")
 
     # Calculate path once
     self.computer_xml = os.path.abspath(self.computer_xml)
@@ -1193,6 +1223,12 @@ def main(*args):
       config.logger.debug(' '.join(argument_list))
       return dry_callAndRead(argument_list, raise_on_error)
     callAndRead = logging_callAndRead
+  # Add delay between 0 and 1 hour
+  if not config.now:
+    duration = float(60*60) * random.random()
+    print("Sleeping for %s seconds. To disable this feature, " \
+                    "use with --now parameter in manual." % duration)
+    time.sleep(duration)
   try:
     run(config)
   except:

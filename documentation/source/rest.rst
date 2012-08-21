@@ -1,6 +1,17 @@
 SlapOS Master REST API (v1)
 ***************************
 
+Introduction
+------------
+
+This is so called REST interface to Vifib which uses HTTP protocol.
+
+API_BASE
+++++++++
+
+``"API_BASE"`` is server side path of the interface. In case of Vifib.net it
+is...
+
 Authentication
 --------------
 
@@ -11,29 +22,81 @@ As API is going to be used in environments which support TLS communication
 channel, but do not, or support is cumbersome, support X509 keys OAuth-2 will
 be proposed by library.
 
-Token based authentication
-++++++++++++++++++++++++++
+Internal authentication
++++++++++++++++++++++++
+
+**Note**: This authentication mechanism will change. Avoid implementation for now.
 
 In case if client of API does not fulfill X509 authentication it has a chance
 to use token based authentication (after obtaining proper token).
 
 Client application HAVE TO use ``"Authorization"`` header, even if OAuth-2
-allows other ways (like hvaing token in GET parameter or as form one).
+allows other ways (like having token in GET parameter or as form one).
 They were not implemented as begin fragile from security point of view.
 
 Example of using Bearer token::
 
-  GET /api/v1/instance/{instance_id} HTTP/1.1
+  GET /API_BASE/instance/{instance_id} HTTP/1.1
   Host: example.com
   Accept: application/json
   Authorization: Bearer 7Fjfp0ZBr1KtDRbnfVdmIw
+
+
+External authentication
++++++++++++++++++++++++
+
+It is possible to use Facebook and Google as Authorization Server with Oauth 2.0
+access tokens.  Client shall fetch `access_token` as described in:
+
+ * https://developers.facebook.com/docs/authentication/client-side/ (Facebook)
+ * https://developers.google.com/accounts/docs/OAuth2Login (Google)
+
+Such token shall be passed in `Authorization` header, in case of Facebook::
+
+  GET /API_BASE/instance/{instance_id} HTTP/1.1
+  Host: example.com
+  Accept: application/json
+  Authorization: Facebook retrieved_access_token
+
+and in case of Google::
+
+  GET /API_BASE/instance/{instance_id} HTTP/1.1
+  Host: example.com
+  Accept: application/json
+  Authorization: Google retrieved_access_token
+
+
+The client is responsible for having its own application ID and
+configure it that user basic information and email will be available after
+using `access_token`, for example by fetching token after query like::
+
+  https://www.facebook.com/dialog/oauth?client_id=FB_ID&response_type=token&redirect_uri=APP_URL&scope=email
+
+While passing access token Vifib.net server will contact proper Authorization
+Server (Google or Facebook) and use proper user profile. In case of first time
+usage of the service the user will be automatically created, so application
+shall be prepared to support HTTP ``"202 Accepted"`` code, as described in `Response status code`_.
+
+Facebook notes
+~~~~~~~~~~~~~~
+
+While requesting Facebook access token it is required to set ``scope`` value
+to ``email``.
+
+Vifib.net will use those data to create users.
+
+Google notes
+~~~~~~~~~~~~
+
+While requesting Google access token it is required to set ``scope`` value
+to ``https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email``.
+
+Vifib.net will use those data to create users.
 
 Exchange format
 ---------------
 
 SlapOS master will support both XML and JSON formats for input and output.
-
-The Accept header is required and responsible for format selection.
 
 Response status code
 --------------------
@@ -58,6 +121,17 @@ applied..
 
 ``OPTIONS`` requests will return ``"204 No Content"`` response with headers
 informing about possible method usage.
+
+``"202 Accepted"`` with json response with status can be returned in order to
+indicate that request was correct, but some asynchronous opertions are disallow
+to finish it, for example user being in creation process::
+
+  HTTP/1.1 202 Accepted
+  Content-Type: application/json; charset=utf-8
+
+  {
+    "status": "User under creation."
+  }
 
 Common Error Responses
 ++++++++++++++++++++++
@@ -99,97 +173,6 @@ Request to non existing resource made.
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 Unexpected error.
 
-Introsepcation Methods
-**********************
-
-Fetching list of access urls
-----------------------------
-
-Explain acccess points in dictionary.
-
-Client is expected to ask about connection points before doing any request.
-
-In case if required mapping is defined on client side, but server does not
-expose this information, it means, that such capability is not available on
-server side and should not be used.
-
-In case if client does not support exposed mapping it is allowed to ignore
-them.
-
-Client shall be aware that one API can be spanned across many servers and that
-all urls are given as abolute ones.
-
-Endpoint to invoke required action is in ``url`` object, where values in
-``{}`` shall be replaced with corresponding access urls. For example
-``instance_url`` shall be replaced with obtained URL of instance (by request
-or list).
-
-``method`` is required method on URL.
-
-All required parameters, if any, are in ``required`` object.
-
-All optional understandable parameters, if any, are in ``optional`` object.
-
-In case if access point requires authentication, then ``authentication`` will be set to ``true``.
-
-`Request`::
-
-  GET / HTTP/1.1
-  Host: example.com
-  Accept: application/json
-
-`No Expected Request Body`
-
-Extract of possible response::
-
-  HTTP/1.1 200 OK
-  Content-Type: application/json; charset=utf-8
-
-  {
-    "instance_bang": {
-      "authentication": true,
-      "url": "{instance_url}/bang",
-      "method": "POST",
-      "required": {
-        "log": "unicode"
-      },
-      "optional": {}
-    },
-    "instance_list": {
-      "authentication": true,
-      "url": "http://three.example.com/instance",
-      "method": "GET",
-      "required": {},
-      "optional": {}
-    },
-    "register_computer": {
-      "authentication": true,
-      "url": "http://two.example.com/computer",
-      "method": "POST",
-      "required": {
-        "title": "unicode"
-      },
-    },
-    "request_instance": {
-      "authentication": true,
-      "url": "http://one.example.com/instance",
-      "method": "POST",
-      "required": {
-         "status": "unicode",
-         "slave": "bool",
-         "title": "unicode",
-         "software_release": "unicode",
-         "software_type": "unicode",
-         "parameter": "object",
-         "sla": "object"
-      },
-      "optional": {}
-    }
-  }
-
-All documentation here will refer to named access points except otherwise
-stated. The access point will appear in ``[]`` after method name.
-
 Instance Methods
 ****************
 
@@ -200,7 +183,7 @@ Ask for list of instances.
 
 `Request`::
 
-  GET [instance_list] HTTP/1.1
+  GET /API_BASE/instance HTTP/1.1
   Host: example.com
   Accept: application/json
 
@@ -228,7 +211,7 @@ Request a new instantiation of a software.
 
 `Request`::
 
-  POST [request_instance] HTTP/1.1
+  POST /API_BASE/instance HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -293,7 +276,7 @@ Request all instance information.
 
 `Request`::
 
-  GET [instance_info] HTTP/1.1
+  GET /API_BASE/<instance_path> HTTP/1.1
   Host: example.com
   Accept: application/json
 
@@ -346,7 +329,7 @@ Request the instance certificates.
 
 `Request`::
 
-  GET [instance_certificate] HTTP/1.1
+  GET /API_BASE/<instance_path>/certificate HTTP/1.1
   Host: example.com
   Accept: application/json
 
@@ -378,7 +361,7 @@ Trigger the re-instantiation of all partitions in the instance tree
 
 `Request`::
 
-  POST [instance_bang] HTTP/1.1
+  POST /API_BASE/<instance_path>/bang HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -404,7 +387,7 @@ Modify the instance information and status.
 
 `Request`::
 
-  PUT [instance_edit] HTTP/1.1
+  PUT /API_BASE/<instance_path> HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -455,7 +438,7 @@ Add a new computer in the system.
 
 `Request`::
 
-  POST [register_computer] HTTP/1.1
+  POST /API_BASE/computer HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -489,7 +472,7 @@ Get the status of a computer
 
 `Request`::
 
-  GET [computer_info] HTTP/1.1
+  GET /API_BASE/<computer_path> HTTP/1.1
   Host: example.com
   Accept: application/json
 
@@ -535,7 +518,7 @@ Modify computer information in the system
 
 `Request`::
 
-  PUT [computer_edit] HTTP/1.1
+  PUT /API_BASE/<computer_path> HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -578,7 +561,7 @@ Request to supply a new software release on a computer
 
 `Request`::
 
-  POST [computer_supply] HTTP/1.1
+  POST /API_BASE/<computer_path>/supply HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -605,7 +588,7 @@ Request update on all partitions
 
 `Request`::
 
-  POST [computer_bang] HTTP/1.1
+  POST /API_BASE/<computer_path>/bang HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8
@@ -631,7 +614,7 @@ Report computer usage
 
 `Request`::
 
-  POST [computer_report] HTTP/1.1
+  POST /API_BASE/<computer_path>/report HTTP/1.1
   Host: example.com
   Accept: application/json
   Content-Type: application/json; charset=utf-8

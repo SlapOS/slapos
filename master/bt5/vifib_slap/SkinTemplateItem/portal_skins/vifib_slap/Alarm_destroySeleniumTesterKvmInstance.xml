@@ -65,6 +65,7 @@ setup_service = portal.restrictedTraverse(portal.portal_preferences.getPreferred
 portal.portal_catalog.searchAndActivate(\n
   portal_type="Hosting Subscription",\n
   owner=person_reference,\n
+  validation_state="validated",\n
   method_id=\'HostingSubcription_requestDestructionSeleniumTester\',\n
   method_kw={\'tag\': tag},\n
   activate_kw={\'tag\': tag},\n

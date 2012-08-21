@@ -153,15 +153,13 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginTestVifibCustomer
-      SlaveInstanceStopComputerPartitionInstallation
-      Tic
       SlaveInstanceStarted
       Tic
       SlaveInstanceStopped
       Tic
       Logout
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       SlapLoginCurrentComputer
       CheckEmptySlaveInstanceListFromOneComputerPartition
       Logout
@@ -215,7 +213,9 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       Tic
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
+      CleanTic
       CallConfirmOrderedSaleOrderAlarm
       Tic
       LoginTestVifibCustomer
@@ -320,7 +320,9 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginTestVifibCustomer
+      SetSoftwareTitleRandom
       PersonRequestSoftwareInstance
+      CleanTic
       CallConfirmOrderedSaleOrderAlarm
       Tic
       SelectDifferentSoftwareReleaseUri
@@ -349,6 +351,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + """
       Tic
       LoginAsCustomerA
+      SetSoftwareTitleRandom
       PersonRequestSlaveInstance
       Tic
       SlapLogout
@@ -408,7 +411,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       SetDeliveryLineAmountEqualOne
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       CheckComputerPartitionInstanceSetupSalePackingListDelivered
       LoginTestVifibCustomer
       RequestStopSoftwareInstanceFromCurrentComputerPartition
@@ -416,7 +419,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       SoftwareInstanceStopped
       Tic
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       StartSoftwareInstanceFromCurrentComputerPartition
       Tic
       SoftwareInstanceStarted
@@ -430,8 +433,6 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SoftwareInstanceStarted
       Tic
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
-      SetDeliveryLineAmountEqualZero
       CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
       LoginTestVifibCustomer
@@ -455,7 +456,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SetDeliveryLineAmountEqualOne
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       RequestStopSoftwareInstanceFromCurrentComputerPartition
       Tic
       SlapLoginCurrentComputer
@@ -467,7 +468,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLoginCurrentComputer
       SoftwareInstanceStarted
       Tic
-      CheckComputerPartitionInstanceHostingSalePackingListStarted
+      CheckComputerPartitionInstanceHostingSalePackingListConfirmed
       Logout
 
       LoginERP5TypeTestCase
@@ -540,7 +541,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      CheckComputerPartitionInstanceHostingSalePackingListDelivered
+      CheckComputerPartitionInstanceHostingSalePackingListStopped
       Logout
 
       LoginERP5TypeTestCase
@@ -608,9 +609,11 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
       SlapLogout
       LoginDefaultUser
       CallConfirmOrderedSaleOrderAlarm
+      Tic
       SlapLogout
       LoginTestVifibCustomer
       CheckSlaveInstanceSecurityWithDifferentCustomer
+      Tic
       SlapLogout
 
       LoginERP5TypeTestCase
@@ -719,6 +722,12 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
         portal_type='Slave Instance')
     sequence['software_instance_uid'] = slave_instance.getUid()
 
+  def stepCheckComputerPartitionInstanceUpdateSalePackingListDelivered(self,
+      sequence, **kw):
+    self._checkComputerPartitionSalePackingListState('delivered',
+        self.portal.portal_preferences.getPreferredInstanceUpdateResource(),
+        sequence)
+
   def test_SlaveInstance_change_parameter_dict_after_request(self):
     """
       Check that request to change the parameter dict from a Slave Instance
@@ -766,7 +775,7 @@ class TestVifibSlapWebServiceSlaveInstance(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetSoftwareInstanceAsCurrentRequestedSlave
-      CheckComputerPartitionInstanceUpdateSalePackingListConfirmed
+      CheckComputerPartitionInstanceUpdateSalePackingListDelivered
       Logout
       SlapLoginCurrentComputer
       CheckSuccessComputerGetComputerPartitionCall

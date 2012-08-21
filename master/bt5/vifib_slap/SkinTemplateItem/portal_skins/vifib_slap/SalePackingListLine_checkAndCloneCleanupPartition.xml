@@ -94,6 +94,7 @@ if newer_newest_movement is not None:\n
   new_cleanup_delivery = cleanup_delivery.Base_createCloneDocument(batch_mode=1)\n
   new_cleanup_delivery.setStartDate(DateTime())\n
   cleanup_delivery.cancel(comment=\'Cancelled as newer clone is created: %s\' % new_cleanup_delivery.getPath())\n
+  new_cleanup_delivery.startBuilding()\n
   new_cleanup_delivery.confirm(comment=\'Replaced too old cleanup delivery: %s\' % cleanup_delivery.getPath())\n
 
 

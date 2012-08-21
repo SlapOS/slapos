@@ -32,7 +32,7 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckStoppedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -54,7 +54,7 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckDestroyedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -71,7 +71,7 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.prepare_building_computer_partition_sequence_string + '\
       SlapLoginCurrentComputer \
-      CheckStoppedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -103,25 +103,18 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
     delivered state with the setup resource
     """
     sequence_list = SequenceList()
+
     sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
+      LoginTestVifibCustomer \
+      SetSequenceSoftwareInstanceStateStopped \
+      PersonRequestSoftwareInstance \
+      Tic \
+      Logout \
       LoginDefaultUser \
-      StartSalePackingList \
-      StopSalePackingList \
-      \
-      CallVifibUpdateDeliveryCausalityStateAlarm \
-      CleanTic \
-      \
-      DeliverSalePackingList \
-      Tic \
       CheckComputerPartitionInstanceSetupSalePackingListDelivered \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      CheckComputerPartitionInstanceHostingSalePackingListCancelled \
-      CheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists \
       Logout \
       SlapLoginCurrentComputer \
-      CheckDestroyedComputerPartitionGetStateCall \
+      CheckStoppedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -160,7 +153,7 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckStoppedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -423,7 +416,7 @@ class TestVifibSlapComputerPartitionGetState(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       SlapLoginCurrentComputer \
-      CheckStoppedComputerPartitionGetStateCall \
+      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginDefaultUser \
       SetHostingAfterSetupStartDate \

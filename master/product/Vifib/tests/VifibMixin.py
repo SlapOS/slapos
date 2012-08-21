@@ -87,6 +87,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_project',
       'erp5_xhtml_jquery_style',
       'erp5_credential',
+      'erp5_credential_oauth2',
       'erp5_km',
       'erp5_web_download_theme',
       'erp5_tiosafe_core',
@@ -97,7 +98,8 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_ui_test',
       'vifib_slapos_core',
       'vifib_slapos_core_test',
-      'vifib_slapos_rest_api_v1_portal_type',
+      'vifib_slapos_rest_api_tool_portal_type',
+      'vifib_slapos_rest_api',
       'vifib_slapos_rest_api_v1',
       'vifib_slapos_accounting',
       'vifib_mysql_innodb_catalog',
@@ -207,6 +209,31 @@ class testVifibMixin(ERP5TypeTestCase):
       self.bootstrapSite()
       self.portal._p_changed = 1
       transaction.commit()
+    self.stabiliseAccounting()
+
+  def stabiliseAccounting(self):
+      self.stepCallVifibUpdateDeliveryCausalityStateAlarm()
+      self.tic()
+      self.stepCallVifibExpandDeliveryLineAlarm()
+      self.tic()
+      self.stepCallVifibTriggerBuildAlarm()
+      self.tic()
+      self.stepCallVifibUpdateDeliveryCausalityStateAlarm()
+      self.tic()
+      self.stepCallVifibExpandDeliveryLineAlarm()
+      self.tic()
+      self.stepCallVifibTriggerBuildAlarm()
+      self.tic()
+      self.stepCallVifibUpdateDeliveryCausalityStateAlarm()
+      self.tic()
+      self.stepCallStopConfirmedSaleInvoiceTransactionAlarm()
+      self.tic()
+      self.stepCallVifibExpandDeliveryLineAlarm()
+      self.tic()
+      self.stepCallVifibTriggerBuildAlarm()
+      self.tic()
+      self.stepCallVifibUpdateDeliveryCausalityStateAlarm()
+      self.tic()
 
   def getDefaultSitePreferenceId(self):
     """Default id, usefull method to override
@@ -230,6 +257,10 @@ class testVifibMixin(ERP5TypeTestCase):
         if isTransitionPossible(assignment, 'open'):
           assignment.open()
 
+  def markManualCreation(self, document):
+    self.portal.portal_workflow.doActionFor(document, 'edit_action',
+      comment='Manually created by test.')
+
   def prepareVifibAccountingPeriod(self):
     vifib = self.portal.organisation_module['vifib_internet']
     year = DateTime().year()
@@ -247,39 +278,8 @@ class testVifibMixin(ERP5TypeTestCase):
     if accounting_period is None:
       accounting_period = vifib.newContent(portal_type='Accounting Period',
         start_date=start_date, stop_date=stop_date)
+      self.markManualCreation(accounting_period)
       accounting_period.start()
-
-  def setupVifibMachineAuthenticationPlugin(self):
-    """Sets up Vifib Authentication plugin"""
-    pas = self.getPortal().acl_users
-    vifib_auth_list = [q for q in pas.objectValues() \
-        if q.meta_type == 'Vifib Machine Authentication Plugin']
-    if len(vifib_auth_list) == 0:
-      vifib_dispacher = pas.manage_addProduct['Vifib']
-      vifib_dispacher.addVifibMachineAuthenticationPlugin('vifib_auth')
-      vifib_auth = pas.vifib_auth
-    else:
-      if len(vifib_auth_list) > 1:
-        raise ValueError('More then one Vifib authentication')
-      vifib_auth = vifib_auth_list[0]
-    vifib_auth.manage_activateInterfaces(('IAuthenticationPlugin',
-        'IExtractionPlugin', 'IGroupsPlugin', 'IUserEnumerationPlugin'))
-
-  def setupVifibShadowAuthenticationPlugin(self):
-    """Sets up Vifib Authentication plugin"""
-    pas = self.getPortal().acl_users
-    vifib_auth_list = [q for q in pas.objectValues() \
-        if q.meta_type == 'Vifib Shadow Authentication Plugin']
-    if len(vifib_auth_list) == 0:
-      vifib_dispacher = pas.manage_addProduct['Vifib']
-      vifib_dispacher.addVifibShadowAuthenticationPlugin('vifib_auth_shadow')
-      vifib_auth = pas.vifib_auth_shadow
-    else:
-      if len(vifib_auth_list) > 1:
-        raise ValueError('More then one Vifib Shadow authentication')
-      vifib_auth = vifib_auth_list[0]
-    vifib_auth.manage_activateInterfaces(('IAuthenticationPlugin',
-        'IGroupsPlugin', 'IUserEnumerationPlugin'))
 
   def bootstrapSite(self):
     """
@@ -306,8 +306,8 @@ class testVifibMixin(ERP5TypeTestCase):
 
     self.logMessage("Bootstrap Vifib Without Security...")
     self.login()
-    self.setupVifibMachineAuthenticationPlugin()
-    self.setupVifibShadowAuthenticationPlugin()
+    # setup Vifib PAS
+    self.portal.portal_alarms.vifib_promise_pas.solve()
     self.prepareTestUsers()
     self.prepareVifibAccountingPeriod()
     transaction.commit()
@@ -378,14 +378,14 @@ class testVifibMixin(ERP5TypeTestCase):
   def stepCheckSiteConsistency(self, **kw):
     self.portal.portal_alarms.vifib_check_consistency.activeSense()
     transaction.commit()
-    super(testVifibMixin, self).stepTic(**kw)
+    self.tic()
     self.assertEqual([], self.portal.portal_alarms.vifib_check_consistency\
         .Alarm_getConsistencyCheckReportLineList())
     self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
     self.checkDivergency()
 
   def stepCleanTic(self, **kw):
-    super(testVifibMixin, self).stepTic(**kw)
+    self.tic()
 
   def stepTic(self, **kw):
     def activateAlarm():
@@ -408,13 +408,13 @@ class testVifibMixin(ERP5TypeTestCase):
     activateAlarm()
     transaction.commit()
 
-    super(testVifibMixin, self).stepTic(**kw)
+    self.tic()
 
     # retrigger activateAlarm after tic
     activateAlarm()
     transaction.commit()
 
     # tic after activateAlarm
-    super(testVifibMixin, self).stepTic(**kw)
+    self.tic()
 
     self.checkDivergency()

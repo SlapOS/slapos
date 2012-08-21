@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -11,8 +12,8 @@
 # Service Company
 #
 # This program is Free Software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 3
+# modify it under the terms of the GNU Lesser General Public License
+# as published by the Free Software Foundation; either version 2.1
 # of the License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -20,14 +21,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
+# You should have received a copy of the GNU Lesser General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
 __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
            "Supply", "OpenOrder", "NotFoundError", "Unauthorized",
-           "ResourceNotReady"]
+           "ResourceNotReady", "ServerError"]
 
 from interface import slap as interface
 from xml_marshaller import xml_marshaller
@@ -41,6 +42,8 @@ import zope.interface
 """
 Simple, easy to (un)marshall classes for slap client/server communication
 """
+
+DEFAULT_SOFTWARE_TYPE = 'default'
 
 # httplib.HTTPSConnection with key verification
 class HTTPSConnectionCA(httplib.HTTPSConnection):
@@ -64,7 +67,11 @@ class HTTPSConnectionCA(httplib.HTTPSConnection):
 
 
 class SlapDocument:
-  pass
+  def __init__(self, connection_helper=None):
+    if connection_helper is not None:
+      # Do not require connection_helper to be provided, but when it's not,
+      # cause failures when accessing _connection_helper property.
+      self._connection_helper = connection_helper
 
 class SoftwareRelease(SlapDocument):
   """
@@ -79,6 +86,7 @@ class SoftwareRelease(SlapDocument):
 
     XXX **kw args only kept for compatibility
     """
+    SlapDocument.__init__(self, kw.pop('connection_helper', None))
     self._software_instance_list = []
     if software_release is not None:
       software_release = software_release.encode('UTF-8')
@@ -100,17 +108,17 @@ class SoftwareRelease(SlapDocument):
 
   def available(self):
     self._connection_helper.POST('/availableSoftwareRelease', {
-      'url': self._software_release, 
+      'url': self._software_release,
       'computer_id': self._computer_guid})
 
   def building(self):
     self._connection_helper.POST('/buildingSoftwareRelease', {
-      'url': self._software_release, 
+      'url': self._software_release,
       'computer_id': self._computer_guid})
 
   def destroyed(self):
     self._connection_helper.POST('/destroyedSoftwareRelease', {
-      'url': self._software_release, 
+      'url': self._software_release,
       'computer_id': self._computer_guid})
 
   def getState(self):
@@ -176,16 +184,24 @@ class OpenOrder(SlapDocument):
       }
     if software_type is not None:
       request_dict['software_type'] = software_type
+    else:
+      # Let's enforce a default software type
+      request_dict['software_type'] = DEFAULT_SOFTWARE_TYPE
     try:
       self._connection_helper.POST('/requestComputerPartition', request_dict)
     except ResourceNotReady:
-      return ComputerPartition(request_dict=request_dict)
+      return ComputerPartition(
+        request_dict=request_dict,
+        connection_helper=self._connection_helper,
+      )
     else:
       xml = self._connection_helper.response.read()
       software_instance = xml_marshaller.loads(xml)
       computer_partition = ComputerPartition(
         software_instance.slap_computer_id.encode('UTF-8'),
-        software_instance.slap_computer_partition_id.encode('UTF-8'))
+        software_instance.slap_computer_partition_id.encode('UTF-8'),
+        connection_helper=self._connection_helper,
+      )
       if shared:
         computer_partition._synced = True
         computer_partition._connection_dict = software_instance._connection_dict
@@ -197,21 +213,32 @@ def _syncComputerInformation(func):
   Synchronize computer object with server information
   """
   def decorated(self, *args, **kw):
-    computer = self._connection_helper.getComputerInformation(self._computer_id)
+    if getattr(self, '_synced', 0):
+      return func(self, *args, **kw)
+    # XXX: This is a ugly way to keep backward compatibility,
+    # We should stablise slap library soon.
+    try:
+      computer = self._connection_helper.getFullComputerInformation(self._computer_id)
+    except NotFoundError:
+      computer = self._connection_helper.getComputerInformation(self._computer_id)
     for key, value in computer.__dict__.items():
       if isinstance(value, unicode):
         # convert unicode to utf-8
         setattr(self, key, value.encode('utf-8'))
       else:
         setattr(self, key, value)
+    setattr(self, '_synced', True)
+    for computer_partition in self.getComputerPartitionList():
+      setattr(computer_partition, '_synced', True)
     return func(self, *args, **kw)
-  return decorated 
+  return decorated
 
 class Computer(SlapDocument):
 
   zope.interface.implements(interface.IComputer)
 
-  def __init__(self, computer_id):
+  def __init__(self, computer_id, connection_helper=None):
+    SlapDocument.__init__(self, connection_helper)
     self._computer_id = computer_id
 
   def __getinitargs__(self):
@@ -225,10 +252,14 @@ class Computer(SlapDocument):
 
     Raise an INotFoundError if computer_guid doesn't exist.
     """
+    for software_relase in self._software_release_list:
+      software_relase._connection_helper = self._connection_helper
     return self._software_release_list
 
   @_syncComputerInformation
   def getComputerPartitionList(self):
+    for computer_partition in self._computer_partition_list:
+      computer_partition._connection_helper = self._connection_helper
     return [x for x in self._computer_partition_list if x._need_modification]
 
   def reportUsage(self, computer_usage):
@@ -255,7 +286,12 @@ def _syncComputerPartitionInformation(func):
   def decorated(self, *args, **kw):
     if getattr(self, '_synced', 0):
       return func(self, *args, **kw)
-    computer = self._connection_helper.getComputerInformation(self._computer_id)
+    # XXX: This is a ugly way to keep backward compatibility,
+    # We should stablise slap library soon.
+    try:
+      computer = self._connection_helper.getFullComputerInformation(self._computer_id)
+    except NotFoundError:
+      computer = self._connection_helper.getComputerInformation(self._computer_id)
     found_computer_partition = None
     for computer_partition in computer._computer_partition_list:
       if computer_partition.getId() == self.getId():
@@ -290,6 +326,7 @@ def _syncComputerPartitionInformation(func):
           setattr(self, key, new_dict)
         else:
           setattr(self, key, value)
+    setattr(self, '_synced', True)
     return func(self, *args, **kw)
   return decorated
 
@@ -298,7 +335,9 @@ class ComputerPartition(SlapDocument):
 
   zope.interface.implements(interface.IComputerPartition)
 
-  def __init__(self, computer_id=None, partition_id=None, request_dict=None):
+  def __init__(self, computer_id=None, partition_id=None, request_dict=None,
+      connection_helper=None):
+    SlapDocument.__init__(self, connection_helper)
     if request_dict is not None and (computer_id is not None or
         partition_id is not None):
       raise TypeError('request_dict conflicts with computer_id and '
@@ -334,6 +373,10 @@ class ComputerPartition(SlapDocument):
       raise ValueError("Unexpected type of filter_kw '%s'" % \
                        filter_kw)
 
+    # Let enforce a default software type
+    if software_type is None:
+      software_type = DEFAULT_SOFTWARE_TYPE
+
     request_dict = { 'computer_id': self._computer_id,
         'computer_partition_id': self._partition_id,
         'software_release': software_release,
@@ -348,13 +391,18 @@ class ComputerPartition(SlapDocument):
     try:
       self._connection_helper.POST('/requestComputerPartition', request_dict)
     except ResourceNotReady:
-      return ComputerPartition(request_dict=request_dict)
+      return ComputerPartition(
+        request_dict=request_dict,
+        connection_helper=self._connection_helper,
+      )
     else:
       xml = self._connection_helper.response.read()
       software_instance = xml_marshaller.loads(xml)
       computer_partition = ComputerPartition(
         software_instance.slap_computer_id.encode('UTF-8'),
-        software_instance.slap_computer_partition_id.encode('UTF-8'))
+        software_instance.slap_computer_partition_id.encode('UTF-8'),
+        connection_helper=self._connection_helper,
+      )
       if shared:
         computer_partition._synced = True
         computer_partition._connection_dict = getattr(software_instance,
@@ -425,6 +473,10 @@ class ComputerPartition(SlapDocument):
     return getattr(self, '_parameter_dict', None) or {}
 
   @_syncComputerPartitionInformation
+  def getConnectionParameterDict(self):
+    return getattr(self, '_connection_dict', None) or {}
+
+  @_syncComputerPartitionInformation
   def getSoftwareRelease(self):
     """
     Returns the software release associate to the computer partition.
@@ -436,11 +488,20 @@ class ComputerPartition(SlapDocument):
       return self._software_release_document
 
   def setConnectionDict(self, connection_dict, slave_reference=None):
-    self._connection_helper.POST('/setComputerPartitionConnectionXml', {
-      'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
-      'connection_xml': xml_marshaller.dumps(connection_dict),
-      'slave_reference': slave_reference})
+    if self.getConnectionParameterDict() != connection_dict:
+      self._connection_helper.POST('/setComputerPartitionConnectionXml', {
+          'computer_id': self._computer_id,
+          'computer_partition_id': self._partition_id,
+          'connection_xml': xml_marshaller.dumps(connection_dict),
+          'slave_reference': slave_reference})
+
+  @_syncComputerPartitionInformation
+  def getInstanceParameter(self, key):
+    parameter_dict = getattr(self, '_parameter_dict', None) or {}
+    if key in parameter_dict:
+      return parameter_dict[key]
+    else:
+      raise NotFoundError("%s not found" % key)
 
   @_syncComputerPartitionInformation
   def getConnectionParameter(self, key):
@@ -473,7 +534,7 @@ class ComputerPartition(SlapDocument):
 #       result = func(self, *args, **kw)
 #       setattr(self, key, result)
 #       return result
-#   return decorated 
+#   return decorated
 
 class ConnectionHelper:
   error_message_timeout = "\nThe connection timed out. Please try again later."
@@ -495,6 +556,10 @@ class ConnectionHelper:
 
   def getComputerInformation(self, computer_id):
     self.GET('/getComputerInformation?computer_id=%s' % computer_id)
+    return xml_marshaller.loads(self.response.read())
+
+  def getFullComputerInformation(self, computer_id):
+    self.GET('/getFullComputerInformation?computer_id=%s' % computer_id)
     return xml_marshaller.loads(self.response.read())
 
   def connect(self):
@@ -522,6 +587,8 @@ class ConnectionHelper:
           raise socket.error(str(e) + self.error_message_timeout)
         raise ssl.SSLError(str(e) + self.ssl_error_message_connect_fail)
       except socket.error, e:
+        if e.message == "timed out":
+          raise socket.error(str(e) + self.error_message_timeout)
         raise socket.error(self.error_message_connect_fail + str(e))
       # check self.response.status and raise exception early
       if self.response.status == httplib.REQUEST_TIMEOUT:
@@ -575,55 +642,40 @@ class slap:
 
   def initializeConnection(self, slapgrid_uri, key_file=None, cert_file=None,
       master_ca_file=None, timeout=60):
-    self._initialiseConnectionHelper(slapgrid_uri, key_file, cert_file,
-        master_ca_file, timeout)
-
-  def _initialiseConnectionHelper(self, slapgrid_uri, key_file, cert_file,
-      master_ca_file, timeout):
-    SlapDocument._slapgrid_uri = slapgrid_uri
     scheme, netloc, path, query, fragment = urlparse.urlsplit(
-        SlapDocument._slapgrid_uri)
+        slapgrid_uri)
     if not(query == '' and fragment == ''):
       raise AttributeError('Passed URL %r issue: not parseable'%
-          SlapDocument._slapgrid_uri)
-    if scheme not in ('http', 'https'):
-      raise AttributeError('Passed URL %r issue: there is no support for %r p'
-          'rotocol' % (SlapDocument._slapgrid_uri, scheme))
+          slapgrid_uri)
 
     if scheme == 'http':
       connection_wrapper = httplib.HTTPConnection
-    else:
+    elif scheme == 'https':
       if master_ca_file is not None:
         connection_wrapper = HTTPSConnectionCA
       else:
         connection_wrapper = httplib.HTTPSConnection
-    slap._connection_helper = \
-      SlapDocument._connection_helper = ConnectionHelper(connection_wrapper,
+    else:
+      raise AttributeError('Passed URL %r issue: there is no support for %r p'
+          'rotocol' % (slapgrid_uri, scheme))
+    self._connection_helper = ConnectionHelper(connection_wrapper,
           netloc, path, key_file, cert_file, master_ca_file, timeout)
-
-  def _register(self, klass, *registration_argument_list):
-    if len(registration_argument_list) == 1 and type(
-        registration_argument_list[0]) == type([]):
-      # in case if list is explicitly passed and there is only one
-      # argument in registration convert it to list
-      registration_argument_list = registration_argument_list[0]
-    document = klass(*registration_argument_list)
-    return document
 
   def registerSoftwareRelease(self, software_release):
     """
     Registers connected representation of software release and
     returns SoftwareRelease class object
     """
-    return SoftwareRelease(software_release=software_release)
+    return SoftwareRelease(software_release=software_release,
+      connection_helper=self._connection_helper,
+    )
 
   def registerComputer(self, computer_guid):
     """
     Registers connected representation of computer and
     returns Computer class object
     """
-    self.computer_guid = computer_guid
-    return self._register(Computer, computer_guid)
+    return Computer(computer_guid, connection_helper=self._connection_helper)
 
   def registerComputerPartition(self, computer_guid, partition_id):
     """
@@ -633,11 +685,14 @@ class slap:
     self._connection_helper.GET('/registerComputerPartition?' \
         'computer_reference=%s&computer_partition_reference=%s' % (
           computer_guid, partition_id))
-    xml = self._connection_helper.response.read()
-    return xml_marshaller.loads(xml)
+    result = xml_marshaller.loads(self._connection_helper.response.read())
+    # XXX: dirty hack to make computer partition usable. xml_marshaller is too
+    # low-level for our needs here.
+    result._connection_helper = self._connection_helper
+    return result
 
   def registerOpenOrder(self):
-    return OpenOrder()
+    return OpenOrder(connection_helper=self._connection_helper)
 
   def registerSupply(self):
-    return Supply()
+    return Supply(connection_helper=self._connection_helper)

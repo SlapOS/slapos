@@ -1,12 +1,14 @@
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
+# All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
 # consequences resulting from its eventual inadequacies and bugs
 # End users who are looking for a ready-to-use solution with commercial
-# guarantees and support are strongly adviced to contract a Free Software
+# guarantees and support are strongly advised to contract a Free Software
 # Service Company
 #
 # This program is Free Software; you can redistribute it and/or
@@ -154,11 +156,11 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
   config = Config()
   options, arguments = RequestParser(usage=usage).check_args()
   config.setConfig(options, arguments[0])
-  
+
   local = init(config)
-  
+
   # Request instance
-  # XXX-Cedric : support things like : 
+  # XXX-Cedric : support things like :
   # --instance-type std --configuration-size 23 --computer-region europe/france
   # XXX-Cedric : add support for xml_parameter
   software_url = arguments[1]
@@ -194,6 +196,6 @@ examples :
   >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
   config = Config()
   config.setConfig(*Parser(usage=usage).check_args())
-  
+
   local = init(config)
   __import__("code").interact(banner="", local=local)
