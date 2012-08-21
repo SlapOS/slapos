@@ -1,0 +1,63 @@
+PidFile "%(pidfile)s"
+Listen %(ip)s:%(port)s
+ServerAdmin someone@email
+
+ErrorLog "%(errorlog)s"
+LogLevel warn
+
+ScriptSock "%(cgidsock)s"
+
+<Directory />
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+</Directory>
+
+Alias "/static/" "%(gitwebstaticdir)s"
+<Directory "%(gitwebstaticdir)s">
+    Options FollowSymLinks
+    Order deny,allow
+    Allow from all
+</Directory>
+
+# This is Static Accelerated git pull
+AliasMatch "^/(.*/objects/[0-9a-f]{2}/[0-9a-f]{38})$"          "%(projectdir)s/$1"
+AliasMatch "^/(.*/objects/pack/pack-[0-9a-f]{40}.(pack|idx))$" "%(projectdir)s/$1"
+
+# When it can't be statically delivered, we rely on git-http-backend
+ScriptAliasMatch \
+        "(?x)^/(.*/(HEAD | \
+                        info/refs | \
+                        objects/info/[^/]+ | \
+                        git-(upload|receive)-pack))$" \
+        "%(githttpbackend)s/$1"
+
+# Everything else is gitweb interface
+ScriptAlias "/"                                                "%(gitwebscript)s/"
+
+<Location />
+    Order deny,allow
+    Allow from all
+</Location>
+
+<LocationMatch "^/.*/git-receive-pack$">
+    AuthType Basic
+    AuthName "Git Push Access"
+    AuthBasicProvider file
+    AuthUserFile "%(passwdfile)s"
+    Require valid-user
+    SetEnv REMOTE_USER $REDIRECT_REMOTE_USER
+</LocationMatch>
+
+
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule autoindex_module modules/mod_autoindex.so
+LoadModule cgid_module modules/mod_cgid.so
+LoadModule env_module modules/mod_env.so
+LoadModule unixd_module modules/mod_unixd.so
