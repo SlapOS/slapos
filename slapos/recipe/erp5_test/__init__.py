@@ -27,6 +27,9 @@
 from slapos.recipe.librecipe import GenericBaseRecipe
 import urlparse
 
+# The follow recipes should be unified somehow in order to improve
+# code mantainence.
+
 class Recipe(GenericBaseRecipe):
   def install(self):
     testinstance = self.options['test-instance-path']
@@ -70,5 +73,28 @@ class Recipe(GenericBaseRecipe):
         call_list=[self.options['run-test-suite-binary'],
           '--db_list', ','.join(mysql_connection_string_list),
           ] + common_list, **common_dict)]))
+
+    return path_list
+
+class CloudoooRecipe(GenericBaseRecipe):
+  def install(self):
+    path_list = []
+    common_dict = dict(
+        prepend_path=self.options['prepend-path'],
+    )
+    common_list = [
+           "--paster_path", self.options['ooo-paster'],
+           self.options['configuration-file']
+          ]
+    run_unit_test_path = self.createPythonScript(self.options['run-unit-test'],
+        __name__ + '.test.runUnitTest', [dict(
+        call_list=[self.options['run-unit-test-binary'],
+          ] + common_list, **common_dict)])
+
+    path_list.append(run_unit_test_path)
+    path_list.append(self.createPythonScript(self.options['run-test-suite'],
+        __name__ + '.test.runTestSuite', [dict(
+        call_list=[self.options['run-test-suite-binary'],
+          ], **common_dict)]))
 
     return path_list
