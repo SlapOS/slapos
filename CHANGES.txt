@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.28.3 (2012-08-22)
+-------------------
+
+ * Avoid artificial tap creation on system check. [Łukasz Nowak]
+
 0.28.2 (2012-08-17)
 -------------------
 
