@@ -1,0 +1,47 @@
+commit 00ad19d4dba5c05401125d4217dc8f4e7fd9403a
+Author: David Ward <david.ward@ll.mit.edu>
+Date:   Fri May 4 00:50:15 2012 +0200
+
+    lxc-setcap/lxc-setuid: add autoconf expansion for $libexecdir
+    
+    Support new default location for LXCINITDIR.
+    
+    Signed-off-by: David Ward <david.ward@ll.mit.edu>
+    Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
+
+diff --git a/configure.ac b/configure.ac
+index c2bf4b0..0c8aa69 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -40,6 +40,7 @@ AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enable_examples" = "xyes"])
+ AS_AC_EXPAND(PREFIX, $prefix)
+ AS_AC_EXPAND(LIBDIR, $libdir)
+ AS_AC_EXPAND(BINDIR, $bindir)
++AS_AC_EXPAND(LIBEXECDIR, $libexecdir)
+ AS_AC_EXPAND(INCLUDEDIR, $includedir)
+ AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
+ AS_AC_EXPAND(DATADIR, $datadir)
+diff --git a/src/lxc/lxc-setcap.in b/src/lxc/lxc-setcap.in
+index 52d4b48..71e3710 100644
+--- a/src/lxc/lxc-setcap.in
++++ b/src/lxc/lxc-setcap.in
+@@ -84,6 +84,7 @@ lxc_dropcaps()
+ shortoptions='hd'
+ longoptions='help'
+ libdir=@LIBDIR@
++libexecdir=@LIBEXECDIR@
+ localstatedir=@LOCALSTATEDIR@
+ 
+ getopt=$(getopt -o $shortoptions --longoptions  $longoptions -- "$@")
+diff --git a/src/lxc/lxc-setuid.in b/src/lxc/lxc-setuid.in
+index 0919eac..020dfae 100644
+--- a/src/lxc/lxc-setuid.in
++++ b/src/lxc/lxc-setuid.in
+@@ -81,6 +81,7 @@ lxc_dropuid()
+ shortoptions='hd'
+ longoptions='help'
+ libdir=@LIBDIR@
++libexecdir=@LIBEXECDIR@
+ localstatedir=@LOCALSTATEDIR@
+ 
+ getopt=$(getopt -o $shortoptions --longoptions  $longoptions -- "$@")

@@ -24,37 +24,32 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import subprocess
+
+import uuid
+
 import os
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
 
-  def _options(self, options):
-    if not os.path.exists(self.options['file']):
-      password = subprocess.check_output([self.options['pwgen-binary'], '-1']).strip()
-      with open(self.options['file'], 'w') as password_file:
-        password_file.write(password)
-    else:
-      with open(self.options['file'], 'r') as password_file:
-        password = password_file.read()
-    options['password'] = password
+    def _options(self, options):
+        write = True
+        if os.path.exists(options['cache-file']):
+            with open(options['cache-file'], 'r') as cache_file:
+                try:
+                    generated_uuid = uuid.UUID(hex=cache_file.read())
+                    write = False
+                except ValueError:
+                    generated_uuid = uuid.uuid4()
+        else:
+            generated_uuid = uuid.uuid4()
 
-  def install(self):
-    os.chmod(self.options['file'], 0600)
-    return []
+        if write:
+            with open(options['cache-file'], 'w') as cache_file:
+                cache_file.write(generated_uuid.hex)
 
-class StablePasswordGeneratorRecipe(GenericBaseRecipe):
-  """
-  The purpose of this class is to generate a password which doesn't change
-  from one execution to the next (hence "stable"), so the generated password
-  doesn't change on each slapgrid-cp execution.
+        options['uuid'] = generated_uuid.hex
 
-  See GenericBaseRecipe.generatePassword .
-  """
-
-  def _options(self, options):
-    options['password'] = self.generatePassword()
-
-  update = install = lambda self: []
+    def install(self):
+        return []
