@@ -1,10 +1,13 @@
 Changes
 =======
 
-0.63 (Unrelease)
+0.63 (2012-08-22)
 ----------------
 
-  * No changes yet.
+  * Add the ability to run command line in shellinabox. [Antoine Catton]
+  * Add the ability to run shellinabox as root. (for LXC purpose) [Antoine Catton]
+  * Add "uuid" recipe. [Antoine Catton]
+  * Add "downloader" recipe. [Antoine Catton]
 
 0.62 (2012-08-21)
 -----------------
