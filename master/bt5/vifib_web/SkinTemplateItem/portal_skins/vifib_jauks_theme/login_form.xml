@@ -57,6 +57,9 @@
           <tal:block tal:condition="python: request.get(\'came_from\', None) is not None">\n
             <h1 i18n:translate="" i18n:domain="ui">You do not have enough permissions to access this page.</h1>\n
           </tal:block>\n
+          <tal:block tal:condition="python: request.get(\'form_id\', None) is not None">\n
+            <tal:block tal:define="came_from python: request.set(\'came_from\', \'/\'.join([here.getWebSiteValue().absolute_url(), request.get(\'form_id\', None)]))"></tal:block>\n
+          </tal:block>\n
           <input tal:condition="exists: request/came_from"\n
                  type="hidden" name="came_from"\n
                  tal:attributes="value request/came_from" />\n

@@ -232,7 +232,7 @@
 <tr><td align=center><br></td></tr>\n
 <tr><td align=center><img src="vifib.kvm?format=png&display=xsmall"></td></tr>\n
 <tr><td align=center><br></td></tr>\n
-<tr><td align=center><a class="nolabel validate alignr" href="./login_form">Login to Order your VM</a></td></tr>\n
+<tr><td align=center><a class="nolabel validate alignr" href="./login_form?form_id=WebSection_orderVifibKVM">Order your VM</a></td></tr>\n
 <tr><td align=center><br></td></tr>\n
 </table>\n
 </div>\n
