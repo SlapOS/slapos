@@ -102,15 +102,14 @@ class CloudoooRecipe(GenericBaseRecipe):
 class EggTestRecipe(GenericBaseRecipe):
   def install(self):
     path_list = []
-    common_dict = dict(
-        prepend_path=self.options['prepend-path'],
-    )
+    common_dict = dict()
+     #   prepend_path=self.options['prepend-path'],
+    #)
     common_list = [ "--source-core-path-list", self.options['test-list']]
-    path_list.append(run_unit_test_path)
     path_list.append(self.createPythonScript(self.options['run-test-suite'],
         __name__ + '.test.runTestSuite', [dict(
         call_list=[self.options['run-test-suite-binary'],
-          ], **common_dict)]))
+          ] + common_list, **common_dict)]))
 
     return path_list
 
