@@ -50,7 +50,7 @@ def fallback_call(function):
 @fallback_call
 def download_network_cached(cache_url, dir_url, software_url, software_root,
                             key, path, logger, signature_certificate_list,
-                            binary_cache_url_blacklist=None):
+                            download_from_binary_cache_url_blacklist=None):
     """Downloads from a network cache provider
 
     return True if download succeeded.
@@ -61,7 +61,7 @@ def download_network_cached(cache_url, dir_url, software_url, software_root,
     if not(cache_url and dir_url and software_url and software_root):
         return False
 
-    for url in binary_cache_url_blacklist:
+    for url in download_from_binary_cache_url_blacklist:
       if software_url.startswith(url):
         return False
 

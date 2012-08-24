@@ -238,11 +238,18 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   else:
     signature_certificate_list = None
 
-
-  # Parse cache / binary options
-  option_dict["binary-cache-url-blacklist"] = [
-      url.strip() for url in option_dict.get("binary-cache-url-blacklist", ""
-          ).split('\n') if url]
+  # Parse cache / binary cache options
+  # Backward compatibility about "binary-cache-url-blacklist" deprecated option
+  if option_dict.get("binary-cache-url-blacklist") and not \
+      option_dict.get("download-from-binary-cache-url-blacklist"):
+    option_dict["download-from-binary-cache-url-blacklist"] = \
+        option_dict["binary-cache-url-blacklist"]
+  option_dict["download-from-binary-cache-url-blacklist"] = [
+      url.strip() for url in option_dict.get(
+          "download-from-binary-cache-url-blacklist", "").split('\n') if url]
+  option_dict["upload-to-binary-cache-url-blacklist"] = [
+      url.strip() for url in option_dict.get(
+          "upload-to-binary-cache-url-blacklist", "").split('\n') if url]
 
   # Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
   # SlapOS Nodes configured with cron.
@@ -274,8 +281,10 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
               option_dict.get('download-binary-cache-url', None),
             upload_binary_cache_url=\
               option_dict.get('upload-binary-cache-url', None),
-            binary_cache_url_blacklist=\
-                option_dict.get('binary-cache-url-blacklist', []),
+            download_from_binary_cache_url_blacklist=\
+                option_dict.get('download-from-binary-cache-url-blacklist', []),
+            upload_to_binary_cache_url_blacklist=\
+                option_dict.get('upload-to-binary-cache-url-blacklist', []),
             upload_cache_url=option_dict.get('upload-cache-url', None),
             download_binary_dir_url=\
               option_dict.get('download-binary-dir-url', None),
@@ -370,7 +379,8 @@ class Slapgrid(object):
                signature_certificate_list=None,
                download_binary_cache_url=None,
                upload_binary_cache_url=None,
-               binary_cache_url_blacklist=None,
+               download_from_binary_cache_url_blacklist=None,
+               upload_to_binary_cache_url_blacklist=None,
                upload_cache_url=None,
                download_binary_dir_url=None,
                upload_binary_dir_url=None,
@@ -403,7 +413,10 @@ class Slapgrid(object):
     self.signature_certificate_list = signature_certificate_list
     self.download_binary_cache_url = download_binary_cache_url
     self.upload_binary_cache_url = upload_binary_cache_url
-    self.binary_cache_url_blacklist = binary_cache_url_blacklist
+    self.download_from_binary_cache_url_blacklist = \
+        download_from_binary_cache_url_blacklist
+    self.upload_to_binary_cache_url_blacklist = \
+        upload_to_binary_cache_url_blacklist
     self.upload_cache_url = upload_cache_url
     self.download_binary_dir_url = download_binary_dir_url
     self.upload_binary_dir_url = upload_binary_dir_url
@@ -505,7 +518,10 @@ class Slapgrid(object):
             signature_certificate_list=self.signature_certificate_list,
             download_binary_cache_url=self.download_binary_cache_url,
             upload_binary_cache_url=self.upload_binary_cache_url,
-            binary_cache_url_blacklist=self.binary_cache_url_blacklist,
+            download_from_binary_cache_url_blacklist=\
+                self.download_from_binary_cache_url_blacklist,
+            upload_to_binary_cache_url_blacklist=\
+                self.upload_to_binary_cache_url_blacklist,
             upload_cache_url=self.upload_cache_url,
             download_binary_dir_url=self.download_binary_dir_url,
             upload_binary_dir_url=self.upload_binary_dir_url,
