@@ -55,7 +55,8 @@ class Software(object):
       shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
       download_binary_cache_url=None, upload_binary_cache_url=None,
       download_binary_dir_url=None, upload_binary_dir_url=None,
-      binary_cache_url_blacklist = []):
+      download_from_binary_cache_url_blacklist = [],
+      upload_to_binary_cache_url_blacklist = []):
     """Initialisation of class parameters
     """
     self.url = url
@@ -78,7 +79,10 @@ class Software(object):
     self.upload_binary_cache_url = upload_binary_cache_url
     self.download_binary_dir_url = download_binary_dir_url
     self.upload_binary_dir_url = upload_binary_dir_url
-    self.binary_cache_url_blacklist = binary_cache_url_blacklist
+    self.download_from_binary_cache_url_blacklist = \
+        download_from_binary_cache_url_blacklist
+    self.upload_to_binary_cache_url_blacklist = \
+        upload_to_binary_cache_url_blacklist
 
   def install(self):
     """ Fetches binary cache if possible.
@@ -97,7 +101,7 @@ class Software(object):
             self.software_url_hash,
             tarpath, self.logger,
             self.signature_certificate_list,
-            self.binary_cache_url_blacklist):
+            self.download_from_binary_cache_url_blacklist):
       tar = tarfile.open(tarpath)
       try:
         self.logger.info("Extracting archive of cached software release...")
@@ -106,9 +110,18 @@ class Software(object):
         tar.close()
     else:
       self._install_from_buildout()
+
+      # Upload to binary cache if possible
+      blacklisted = False
+      for url in self.upload_to_binary_cache_url_blacklist:
+        if self.url.startswith(url):
+          blacklisted = True
+          self.logger.debug("Can't download from binary cache: "
+              "Software Release URL is blacklisted.")
       if (self.software_root and self.url and self.software_url_hash \
                              and self.upload_binary_cache_url \
-                             and self.upload_binary_dir_url):
+                             and self.upload_binary_dir_url \
+                             and not blacklisted):
         self.logger.info("Creating archive of software release...")
         tar = tarfile.open(tarpath, "w:gz")
         try:
