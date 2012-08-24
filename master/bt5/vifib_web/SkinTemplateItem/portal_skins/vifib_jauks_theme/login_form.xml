@@ -60,9 +60,6 @@
           <tal:block tal:condition="python: request.get(\'came_from\', None) is not None">\n
             <tal:block tal:define="dummy python: request.RESPONSE.setCookie(\'redirect_after_login\', request.get(\'came_from\'), path=\'/\')"></tal:block>\n
           </tal:block>\n
-          <input tal:condition="exists: request/came_from"\n
-                 type="hidden" name="came_from"\n
-                 tal:attributes="value request/came_from" />\n
           <fieldset>\n
             <script src="https://browserid.org/include.js" type="text/javascript"></script>  \n
             <div class="field nolabel validate widthAuto forgotten_password" tal:define="facebook_login python: \'./login_with_facebook?came_from=\' + request.get(\'came_from\', \'\'); google_login python: \'./login_with_google?came_from=\' + request.get(\'came_from\', \'\')">\n
