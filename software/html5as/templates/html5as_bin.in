@@ -2,4 +2,8 @@
 # BEWARE: This file is operated by slapgrid
 # BEWARE: It will be overwritten automatically
 
+# Download website tarball
+exec {{ param_html5as['path_curl'] }} -sO {{ download_url }}
+
+# Run nginx
 exec {{ param_html5as['bin_nginx'] }} -c {{ param_html5as['path_nginx_conf'] }}
