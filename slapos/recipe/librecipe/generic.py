@@ -36,6 +36,10 @@ import pkg_resources
 import zc.buildout
 
 class GenericBaseRecipe(object):
+  """Boilerplate class for all Buildout recipes providing helpful methods like
+     creating configuration file, creating wrappers, generating passwords, etc.
+     Can be extended in SlapOS recipes to ease development.
+  """
 
   TRUE_VALUES = ['y', 'yes', '1', 'true']
   FALSE_VALUES = ['n', 'no', '0', 'false']
@@ -125,6 +129,15 @@ class GenericBaseRecipe(object):
         'template/%s' % template_name)
 
   def generatePassword(self, len_=32):
+    """
+    The purpose of this method is to generate a password which doesn't change
+    from one execution to the next, so the generated password doesn't change
+    on each slapgrid-cp execution.
+
+    Currently, it returns a hardcoded password because no decision has been
+    taken on where a generated password should be kept (so it is generated
+    once only).
+    """
     # TODO: implement a real password generator which remember the last
     # call.
     return "insecure"
@@ -145,9 +158,6 @@ class GenericBaseRecipe(object):
     * if the host is an ipv6 address, brackets will be added to surround it.
 
     """
-    # XXX-Antoine: I didn't find any standard module to join an url with
-    # login, password, ipv6 host and port.
-    # So instead of copy and past in every recipe I factorized it right here.
     netloc = ''
     if auth is not None:
       auth = tuple(auth)

@@ -38,7 +38,7 @@ class Recipe(GenericSlapRecipe):
   def _install(self):
     ip = self.options['ip']
     backend_url = self.parameter_dict['tidstorage-url']
-    backend_ip, backend_port = self._getBackendServer(backend_url)
+    backend_server, backend_port = self._getBackendServer(backend_url)
     varnishd_manager_port = int(self.options['manager-port'])
     varnishd_server_port = int(self.options['server-port'])
     path_list = []
@@ -53,9 +53,8 @@ class Recipe(GenericSlapRecipe):
       varnish_data=self.options['varnish-data'],
       shell_path=self.options['shell-path'],
       vcl_file=self.options['vcl-file'],
-      backend_ip = backend_ip,
-      backend_port = backend_port,
-      backend_server = "[%s]" % backend_ip,
+      backend_port=backend_port,
+      backend_server=backend_server,
     )
 
     path_list.append(self.createExecutable(self.options['varnishd-wrapper'],
@@ -70,7 +69,7 @@ class Recipe(GenericSlapRecipe):
     return path_list
 
   def _getBackendServer(self, url):
-    r = re.compile('\/\/\[(.*)\]:(\d*)')
+    r = re.compile('\/\/(\[.+\]|[\d.]+):(\d*)')
     result = r.search(url)
     ip = result.groups()[0]
     port = result.groups()[1]

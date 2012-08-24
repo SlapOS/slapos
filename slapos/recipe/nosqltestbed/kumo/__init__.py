@@ -43,14 +43,14 @@ class KumoTestBed(object):
 
     kumo_cloud_config['address'] = recipe.getGlobalIPv6Address()
     kumo_cloud_config['report_path'] = recipe.log_directory
-    
+
     kumo_cloud_config.setdefault('max_server', 4)
     kumo_cloud_config.setdefault('max_tester', 5)
     kumo_cloud_config.setdefault('nb_thread', 32)
     kumo_cloud_config.setdefault('nb_request', 1024000)
     kumo_cloud_config.setdefault('erp5_publish_url', '')
     kumo_cloud_config.setdefault('erp5_publish_project', '')
-    
+
     computer_guid_list = []
     computer_guid_list.append("COMP-23") # manager
     computer_guid_list.append("COMP-13") # server 1
@@ -62,9 +62,9 @@ class KumoTestBed(object):
     computer_guid_list.append("COMP-14") # tester 3
     computer_guid_list.append("COMP-20") # tester 4
     computer_guid_list.append("COMP-19") # tester 5
-    
+
     kumo_cloud_config.setdefault('computer_guid_list', ":".join(computer_guid_list))
-    
+
     kumo_cloud_config['software_release_url'] = recipe.software_release_url
     kumo_cloud_config['server_url'] = recipe.server_url
     kumo_cloud_config['key_file'] = recipe.key_file

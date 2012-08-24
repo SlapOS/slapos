@@ -29,37 +29,85 @@ import logging
 from slapos import slap as slapmodule
 
 class Recipe(object):
+  """
+  Request a partition to a slap master.
+  Can provide parameters to that partition and fetches its connection
+  parameters.
+
+  Input:
+    server-url
+    key-file (optional)
+    cert-file (optional)
+      Used to contact slap master.
+
+    computer-id
+    partition-id
+      Current partition's identifiers.
+      Must match key's credentials if given.
+
+    name (optional, defaults to section name)
+      Name (reference) of requested partition.
+
+    software-url
+      URL of a software definition to request an instance of.
+
+    software-type
+      Software type of requested instance, among those provided by the
+      definition from software-url.
+
+    slave (optional, defaults to false)
+      Set to "true" when requesting a slave instance, ie just setting a set of
+      parameters in an existing instance.
+
+    sla (optional)
+      Whitespace-separated list of Service Level Agreement names.
+      Each name must correspond to a "sla-<name>" option.
+      Used to specify what a suitable partition would be.
+      Possible names depend on master's capabilities.
+
+    config (optional)
+      Whitespace-separated list of partition parameter names.
+      Each name must correspond to a "config-<name>" option.
+      Possible names depend on requested partition's software type.
+
+    return (optional)
+      Whitespace-separated list of expected partition-published value names.
+      Options will be created from them, in the form of "connection-<name>"
+      As long as requested partition doesn't publish all those values,
+      installation of request section will fail.
+      Possible names depend on requested partition's software type.
+
+    Output:
+      See "return" input key.
+  """
+  failed = None
 
   def __init__(self, buildout, name, options):
     self.logger = logging.getLogger(name)
 
     slap = slapmodule.slap()
 
-    self.software_release_url = options['software-url']
+    software_url = options['software-url']
+    name = options['name']
 
     slap.initializeConnection(options['server-url'],
                               options.get('key-file'),
                               options.get('cert-file'),
                              )
-    computer_partition = slap.registerComputerPartition(
-      options['computer-id'], options['partition-id'])
-    self.request = computer_partition.request
+    request = slap.registerComputerPartition(
+      options['computer-id'], options['partition-id']).request
 
-    self.isSlave = False
-    if 'slave' in options:
-      self.isSlave = options['slave'].lower() in ['y', 'yes', 'true', '1']
+    isSlave = options.get('slave', '').lower() in ['y', 'yes', 'true', '1']
 
-    self.return_parameters = []
+    return_parameters = []
     if 'return' in options:
-      self.return_parameters = [str(parameter).strip()
-                               for parameter in options['return'].split()]
+      return_parameters = [str(parameter).strip()
+        for parameter in options['return'].split()]
     else:
       self.logger.debug("No parameter to return to main instance."
-                          "Be careful about that...")
+        "Be careful about that...")
 
-    software_type = 'RootInstanceSoftware'
-    if 'software-type' in options:
-      software_type = options['software-type']
+    software_type = options.get('software-type', 'RootInstanceSoftware')
 
     filter_kw = {}
     if 'sla' in options:
@@ -72,15 +120,14 @@ class Recipe(object):
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
 
-    self.instance = self.request(options['software-url'], software_type,
-      options.get('name', name), partition_parameter_kw=partition_parameter_kw,
-      filter_kw=filter_kw, shared=self.isSlave)
+    self.instance = instance = request(software_url, software_type,
+      name, partition_parameter_kw=partition_parameter_kw,
+      filter_kw=filter_kw, shared=isSlave)
 
-    self.failed = None
-    for param in self.return_parameters:
+    for param in return_parameters:
       try:
         options['connection-%s' % param] = str(
-            self.instance.getConnectionParameter(param))
+          instance.getConnectionParameter(param))
       except slapmodule.NotFoundError:
         options['connection-%s' % param] = ''
         if self.failed is None:
@@ -92,12 +139,14 @@ class Recipe(object):
       try:
         status = self.instance.getState()
       except slapmodule.NotFoundError:
-        status = "not ready yet, please try again"
-      # XXX-Cedric : currently raise an error. So swallow it...
+        status = 'not ready yet, please try again'
       except AttributeError:
-        status = "unknown"
-      raise KeyError("Connection parameter %s not found. "
-          "Status of requested instance is : %s." % (self.failed, status))
+        status = 'unknown'
+      error_message = 'Connection parameter %s not found. '\
+          'Status of requested instance is: %s. If this error persists, '\
+          'check status of this instance.' % (self.failed, status)
+      self.logger.error(error_message)
+      raise KeyError(error_message)
     return []
 
   update = install

@@ -22,6 +22,9 @@ result = zope_connection.getresponse()
 
 if result.status == 204: # and (result.read() == "False"):
 
+  # Use a new connection
+  zope_connection = httplib.HTTPConnection(host)
+
   # Create the expected ERP5 instance
   zope_connection.request(
     'POST', '/manage_addProduct/ERP5/manage_addERP5Site',
@@ -32,4 +35,11 @@ if result.status == 204: # and (result.read() == "False"):
       'cmf_activity_sql_connection_string': mysql_url,
     }),
     headers=header_dict)
+  # Wait for the erp5 response, to prevent multiple requests
+  # been done by the same script.
+  result = zope_connection.getresponse()
 
+  # Read result make sure the site really finished to 
+  #created the ERP5 site.
+  result.read()
+  print "ERP5 site created."

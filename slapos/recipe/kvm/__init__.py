@@ -25,7 +25,6 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
-import binascii
 import os
 import sys
 
@@ -33,11 +32,6 @@ class Recipe(GenericBaseRecipe):
   """
   kvm instance configuration.
   """
-
-  def __init__(self, buildout, name, options):
-    options['passwd'] = binascii.hexlify(os.urandom(4))
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
-
   def install(self):
     config = dict(
       tap_interface=self.options['tap'],
