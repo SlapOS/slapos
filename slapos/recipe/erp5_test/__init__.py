@@ -99,13 +99,13 @@ class CloudoooRecipe(GenericBaseRecipe):
 
     return path_list
 
-class SlapUnitTestRecipe(GenericBaseRecipe):
+class EggTestRecipe(GenericBaseRecipe):
   def install(self):
     path_list = []
     common_dict = dict(
         prepend_path=self.options['prepend-path'],
     )
-    common_list = []
+    common_list = [ "--source-core-path-list", self.options['test-list']]
     path_list.append(run_unit_test_path)
     path_list.append(self.createPythonScript(self.options['run-test-suite'],
         __name__ + '.test.runTestSuite', [dict(
