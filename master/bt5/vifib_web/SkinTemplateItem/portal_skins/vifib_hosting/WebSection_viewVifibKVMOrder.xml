@@ -118,8 +118,8 @@
                         <string>your_payment_preparation_js</string>
                         <string>your_payment_in_progress_js</string>
                         <string>your_order_button</string>
-                        <string>your_software_button</string>
                         <string>your_login_button</string>
+                        <string>your_software_button</string>
                       </list>
                     </value>
                 </item>
