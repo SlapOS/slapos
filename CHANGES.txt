@@ -1,10 +1,11 @@
 Changes
 =======
 
-0.64 (Unrelease)
+0.64 (2012-08-27)
 ----------------
 
-  * No change yet.
+  * Fix: remove "template" recipe which was collinding with slapos.recipe.template.
+    [Antoine Catton]
 
 0.63 (2012-08-22)
 ----------------
