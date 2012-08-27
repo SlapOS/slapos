@@ -1,10 +1,10 @@
-# %(requested)s
+# ${slap-connection:requested}
 
-lxc.utsname = %(name)s
+lxc.utsname = ${uuid:uuid}
 
 lxc.network.type = veth
-lxc.network.link = %(bridge)s
-lxc.network.veth.pair = %(interface)s
+lxc.network.link = ${:bridge}
+lxc.network.veth.pair = ${:interface}
 lxc.network.name = eth0
 lxc.network.flags = up
 
@@ -24,6 +24,6 @@ lxc.cgroup.devices.allow = c 136:* rwm
 lxc.cgroup.devices.allow = c 5:2 rwm
 lxc.cgroup.devices.allow = c 254:0 rwm
 
-lxc.rootfs = %(rootfs)s
+lxc.rootfs = ${rootfs:downloaded-file}
 
 lxc.cap.drop = sys_module sys_time sys_chroot mknod
