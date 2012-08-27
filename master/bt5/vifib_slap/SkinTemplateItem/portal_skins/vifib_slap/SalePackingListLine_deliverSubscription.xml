@@ -50,12 +50,13 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>delivery = context.getParentValue()\n
+            <value> <string>comment = \'Subscription Packing List Deliver Action Alarm\'\n
+delivery = context.getParentValue()\n
 state = delivery.getSimulationState()\n
 if state in (\'confirmed\', \'started\'):\n
-  delivery.stop()\n
+  delivery.stop(comment=comment)\n
 if state == \'stopped\':\n
-  delivery.deliver()\n
+  delivery.deliver(comment=comment)\n
 </string> </value>
         </item>
         <item>
