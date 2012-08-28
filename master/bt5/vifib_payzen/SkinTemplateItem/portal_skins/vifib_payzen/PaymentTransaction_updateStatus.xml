@@ -65,7 +65,7 @@ if context.getSimulationState() not in [\'planned\', \'confirmed\']:\n
 if context.getSimulationState() == \'confirmed\':\n
   portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).updateStatus()\n
   return\n
-else:\n
+elif context.PaymentTransaction_getPreviousPayzenId() is not None:\n
   context.setStartDate(DateTime())\n
   context.updateCausalityState()\n
   portal.system_event_module.newContent(title=\'Transaction %s Payzen registration\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).registerPayzen()\n
