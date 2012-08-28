@@ -48,7 +48,7 @@ def _wait_files_creation(file_list):
 def execute(args):
   """Portable execution with process replacement"""
   # XXX: Kept for backward compatibility
-  generic_exec([args[0], None, None])
+  generic_exec([args, None, None])
 
 def execute_wait(args):
   """Execution but after all files in args[1] exists"""

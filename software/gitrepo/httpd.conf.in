@@ -1,11 +1,11 @@
-PidFile "%(pidfile)s"
-Listen %(ip)s:%(port)s
+PidFile "${:pid-file}"
+Listen ${slap-network-information:global-ipv6}:${:port}
 ServerAdmin someone@email
 
-ErrorLog "%(errorlog)s"
+ErrorLog "${:error-log}"
 LogLevel warn
 
-ScriptSock "%(cgidsock)s"
+ScriptSock "${:cgid-sock}"
 
 <Directory />
     AllowOverride None
@@ -13,38 +13,41 @@ ScriptSock "%(cgidsock)s"
     Deny from all
 </Directory>
 
-Alias "/static/" "%(gitwebstaticdir)s"
-<Directory "%(gitwebstaticdir)s">
+Alias "/static/" "${:gitweb-static-dir}"
+<Directory "${:gitweb-static-dir}">
     Options FollowSymLinks
     Order deny,allow
     Allow from all
 </Directory>
 
 # This is Static Accelerated git pull
-AliasMatch "^/(.*/objects/[0-9a-f]{2}/[0-9a-f]{38})$"          "%(projectdir)s/$1"
-AliasMatch "^/(.*/objects/pack/pack-[0-9a-f]{40}.(pack|idx))$" "%(projectdir)s/$1"
+AliasMatch "^/(.*/objects/[0-9a-f]{2}/[0-9a-f]{38})$"          "${:project-dir}/$1"
+AliasMatch "^/(.*/objects/pack/pack-[0-9a-f]{40}.(pack|idx))$" "${:project-dir}/$1"
 
 # When it can't be statically delivered, we rely on git-http-backend
 ScriptAliasMatch \
         "(?x)^/(.*/(HEAD | \
                         info/refs | \
                         objects/info/[^/]+ | \
-                        git-(upload|receive)-pack))$" \
-        "%(githttpbackend)s/$1"
+                        git-(upload|receive)-pack))(/push)?$" \
+        "${:git-http-backend}/$1"
 
 # Everything else is gitweb interface
-ScriptAlias "/"                                                "%(gitwebscript)s/"
+ScriptAlias "/"                                                "${:gitweb-script}/"
 
 <Location />
     Order deny,allow
     Allow from all
+    RewriteEngine On
+    RewriteCond %{QUERY_STRING} service=git-receive-pack
+    RewriteRule ^(.*)$ $1/push [END]
 </Location>
 
-<LocationMatch "^/.*/git-receive-pack$">
+<LocationMatch "(^/.*/git-receive-pack|/push)$">
     AuthType Basic
     AuthName "Git Push Access"
     AuthBasicProvider file
-    AuthUserFile "%(passwdfile)s"
+    AuthUserFile "${:passwd-file}"
     Require valid-user
     SetEnv REMOTE_USER $REDIRECT_REMOTE_USER
 </LocationMatch>
@@ -60,4 +63,5 @@ LoadModule authz_user_module modules/mod_authz_user.so
 LoadModule autoindex_module modules/mod_autoindex.so
 LoadModule cgid_module modules/mod_cgid.so
 LoadModule env_module modules/mod_env.so
+LoadModule rewrite_module modules/mod_rewrite.so
 LoadModule unixd_module modules/mod_unixd.so
