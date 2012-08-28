@@ -314,7 +314,7 @@ Registration Payment Information are being updated. Please wait a while.
             <key> <string>_text</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-python: (here.ERP5Site_getAuthenticatedMemberPersonValue().Person_countPayment() == 0 or here.ERP5Site_getAuthenticatedMemberPersonValue().Person_countPayment([\'planned\']) > 0) and here.ERP5Site_getAuthenticatedMemberPersonValue().Person_getOutstandingPayment() is None
+python: here.ERP5Site_getAuthenticatedMemberPersonValue() is not None and (here.ERP5Site_getAuthenticatedMemberPersonValue().Person_countPayment() == 0 or here.ERP5Site_getAuthenticatedMemberPersonValue().Person_countPayment([\'planned\']) > 0) and here.ERP5Site_getAuthenticatedMemberPersonValue().Person_getOutstandingPayment() is None
 
 ]]></string> </value>
         </item>

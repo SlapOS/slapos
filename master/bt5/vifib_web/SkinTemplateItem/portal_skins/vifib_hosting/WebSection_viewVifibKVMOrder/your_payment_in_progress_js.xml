@@ -314,7 +314,7 @@ Registration Payment is begin processed. It will take some time.
             <key> <string>_text</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-python: here.ERP5Site_getAuthenticatedMemberPersonValue().Person_countPayment([\'confirmed\']) > 0
+python: here.ERP5Site_getAuthenticatedMemberPersonValue() is not None and here.ERP5Site_getAuthenticatedMemberPersonValue().Person_countPayment([\'confirmed\']) > 0
 
 ]]></string> </value>
         </item>

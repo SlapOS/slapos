@@ -145,7 +145,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: here.ERP5Site_getAuthenticatedMemberPersonValue().Person_getOutstandingPayment() is not None</string> </value>
+            <value> <string>python: here.ERP5Site_getAuthenticatedMemberPersonValue() is not None and here.ERP5Site_getAuthenticatedMemberPersonValue().Person_getOutstandingPayment() is not None</string> </value>
         </item>
       </dictionary>
     </pickle>
