@@ -8,17 +8,9 @@
 
 ## Parameter ##
 
-download_url (string)
-
-usage: 
-
-`<instance>
-  <parameter id="download_url">{{ your website tarball }}</parameter>
-</instance>`
+download_url (string) :required
 
 Details :
-
-* Instance must have [download_url] parameter
 
 * Only tarball (tar) is supported
 
@@ -28,4 +20,4 @@ Details :
 
 ## How it works ##
 
-Each time you (re)start your instance, html5as will remove previous website then download tarball and extract it in docroot directory.
+Each time you (re)start your instance or update parameters, html5as will remove previous website then download tarball and extract it in docroot directory.
