@@ -1,6 +1,6 @@
-$projectroot = '%(projectdir)s';
+$projectroot = '${git-repos:base-directory}';
 
-$site_name = '%(sitename)s';
+$site_name = '${slap-parameter:title}';
 
 # Beautiful URLs
 $feature{'pathinfo'}{'default'} = [1];

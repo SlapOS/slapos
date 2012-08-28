@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.63-dev'
+version = '0.65-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -130,7 +130,6 @@ setup(name=name,
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'stunnel = slapos.recipe.stunnel:Recipe',
           'symbolic.link = slapos.recipe.symbolic_link:Recipe',
-          'template = slapos.recipe.template:Recipe',
           'testnode = slapos.recipe.testnode:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',
           'urlparse = slapos.recipe._urlparse:Recipe',
