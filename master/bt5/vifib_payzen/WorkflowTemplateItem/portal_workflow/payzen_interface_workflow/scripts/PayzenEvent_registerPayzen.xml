@@ -64,7 +64,8 @@ service = portal.portal_secure_payments.find()\n
 \n
 previous_id = transaction.PaymentTransaction_getPreviousPayzenId()\n
 if previous_id is None:\n
-  raise ValueError(\'No previous id found\')\n
+  payzen_event.confirm(comment=\'No previous id found\')\n
+  return\n
 \n
 previous_date, previous_id = previous_id.split(\'_\')\n
 today = DateTime().toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d\')\n
