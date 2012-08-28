@@ -58,7 +58,8 @@ integration_tool = portal.restrictedTraverse(portal.portal_preferences.getPrefer
 \n
 transaction_id = integration_tool.getMappingFromCategory(\'causality/%s\' % payment_transaction.getRelativeUrl())\n
 if transaction_id == \'Causality/%s\' % payment_transaction.getRelativeUrl():\n
-  raise ValueError(\'Transaction not registered in payzen integration tool\')\n
+  payzen_event.confirm(comment=\'Transaction not registered in payzen integration tool\')\n
+  return\n
 transaction_id = transaction_id.split(\'/\')[1]\n
 transmissionDate, transactionId = transaction_id.split(\'_\')\n
 \n
