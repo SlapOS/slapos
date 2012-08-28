@@ -67,7 +67,8 @@ if context.PaymentTransaction_getPreviousPayzenId() is not None and context.getS
   context.updateCausalityState()\n
   portal.system_event_module.newContent(title=\'Transaction %s Payzen registration\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).registerPayzen()\n
 else:\n
-  portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).updateStatus()\n
+  if portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite()).getMappingFromCategory(\'causality/%s\' % context.getRelativeUrl()) != \'Causality/%s\' % context.getRelativeUrl():\n
+    portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).updateStatus()\n
 </string> </value>
         </item>
         <item>
