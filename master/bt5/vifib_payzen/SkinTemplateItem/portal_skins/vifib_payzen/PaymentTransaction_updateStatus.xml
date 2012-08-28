@@ -62,9 +62,7 @@ except ValueError, e:\n
 if context.getSimulationState() not in [\'planned\', \'confirmed\']:\n
   return\n
 \n
-previous_id = context.PaymentTransaction_getPreviousPayzenId()\n
-\n
-if context.getSimulationState() == \'confirmed\' or previous_id is None:\n
+if context.getSimulationState() == \'confirmed\':\n
   portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).updateStatus()\n
   return\n
 else:\n
