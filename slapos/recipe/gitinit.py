@@ -41,7 +41,5 @@ class Recipe(GenericBaseRecipe):
             if not os.path.exists(absolute_path):
                 check_call([self.options['git-binary'], 'init',
                             '--bare', absolute_path])
-                check_call([self.options['git-binary'], 'config', 'http.receivepack', 'true'],
-                           cwd=absolute_path)
 
         return []
