@@ -983,6 +983,49 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals('account_module/bank', sale_line.getSource())
     self.assertEquals('account_module/bank', sale_line.getDestination())
 
+  def stepStoreCurrentPlannedConfirmedAccountingWorkflowCount(self, sequence,
+    **kw):
+    # there shall be no divergency
+    count = 0
+    current_skin = self.app.REQUEST.get('portal_skin', 'View')
+    try:
+      # Note: Worklists are cached, so in order to have next correct result
+      # clear cache
+      self.clearCache()
+      self.changeSkin('RSS')
+      for q in self.portal.ERP5Site_getWorklistObjectList():
+        if q.title.startswith("Accounting Transactions to Start"):
+          count = q.count
+          break
+    finally:
+      self.changeSkin(current_skin)
+    sequence['planned_confirmed_accounting_workflow_count'] = count
+
+  def stepCheckCurrentPlannedConfirmedAccountingWorkflowCount(self, sequence,
+    **kw):
+    # there shall be no divergency
+    count = 0
+    current_skin = self.app.REQUEST.get('portal_skin', 'View')
+    try:
+      # Note: Worklists are cached, so in order to have next correct result
+      # clear cache
+      self.clearCache()
+      self.changeSkin('RSS')
+      for q in self.portal.ERP5Site_getWorklistObjectList():
+        if q.title.startswith("Accounting Transactions to Start"):
+          count = q.count
+          break
+    finally:
+      self.changeSkin(current_skin)
+
+    self.assertEqual(count, sequence[
+      'planned_confirmed_accounting_workflow_count'])
+
+  def stepDecreaseCurrentPlannedConfirmedAccountingWorkflowCount(self,
+    sequence, **kw):
+    sequence['planned_confirmed_accounting_workflow_count'] = sequence[
+      'planned_confirmed_accounting_workflow_count'] - 1
+
   def test_default_use_case(self):
     """Test full default use case.
 
@@ -998,12 +1041,19 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     sequence_string = \
       self.prepare_installed_software_release_sequence_string + \
       self.register_new_user_sequence_string + '\
+        LoginTestVifibAdmin \
+        StoreCurrentPlannedConfirmedAccountingWorkflowCount \
+        Logout \
         LoginWebUser \
         CheckRegistrationAccounting \
         PayPayment \
         Tic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
+        Logout \
+        LoginTestVifibAdmin \
+        DecreaseCurrentPlannedConfirmedAccountingWorkflowCount \
+        CheckCurrentPlannedConfirmedAccountingWorkflowCount \
         Logout \
         LoginWebUser \
         CheckPaidRegistrationAccounting \
@@ -1103,6 +1153,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CallVifibUpdateDeliveryCausalityStateAlarm\
         CleanTic \
         \
+        LoginTestVifibAdmin \
+        StoreCurrentPlannedConfirmedAccountingWorkflowCount \
+        Logout \
         LoginWebUser \
         CheckWaitingInvoice \
         Tic \
@@ -1111,6 +1164,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CheckPaidInvoice \
+        LoginTestVifibAdmin \
+        DecreaseCurrentPlannedConfirmedAccountingWorkflowCount \
+        CheckCurrentPlannedConfirmedAccountingWorkflowCount \
+        Logout \
         LoginERP5TypeTestCase \
         CheckSiteConsistency \
         Logout \
