@@ -36,10 +36,14 @@ class Recipe(GenericBaseRecipe):
     def install(self):
 
         repolist = json.loads(self.options['repos'])
-        for repo in repolist:
+        for repo, desc in repolist.iteritems():
             absolute_path = os.path.join(self.options['base-directory'], '%s.git' % repo)
             if not os.path.exists(absolute_path):
                 check_call([self.options['git-binary'], 'init',
                             '--bare', absolute_path])
+                # XXX: Hardcoded path
+                description_filename = os.path.join(absolute_path, 'description')
+                with open(description_filename, 'w') as description_file:
+                    description_file.write(desc)
 
         return []
