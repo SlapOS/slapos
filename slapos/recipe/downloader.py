@@ -59,7 +59,7 @@ def service(args):
                     return 127 # Not-null return code
 
             if not args['archive']:
-                os.rename(tmpoutput, args['output'])
+                shutil.move(tmpoutput, args['output'])
             else:
                 # XXX: hardcoding path
                 extract_dir = os.path.join(tmpdir, 'extract')
@@ -74,8 +74,8 @@ def service(args):
                 if len(archive_content) == 1 and \
                    os.path.isfile(os.path.join(extract_dir,
                                                archive_content[0])):
-                    os.rename(os.path.join(extract_dir,
-                                           archive_content[0]),
+                    shutil.move(os.path.join(extract_dir,
+                                             archive_content[0]),
                               args['output'])
                 else:
                     return 127 # Not-null return code
