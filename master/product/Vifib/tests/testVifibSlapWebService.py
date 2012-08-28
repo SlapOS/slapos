@@ -924,7 +924,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         sequence['computer_partition_reference'])
     computer_partition.building()
 
-  def stepPayRegistrationPayment(self, sequence, **kw):
+  def stepPayPayment(self, sequence, **kw):
     """
     """
     payment = self.portal.portal_catalog.getResultValue(
@@ -4628,7 +4628,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Tic
       CallAcceptSubmittedCredentialsAlarm
       Tic
-      PayRegistrationPayment
+      PayPayment
       Tic
       Logout
 

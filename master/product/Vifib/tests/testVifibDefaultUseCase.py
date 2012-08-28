@@ -1000,7 +1000,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       self.register_new_user_sequence_string + '\
         LoginWebUser \
         CheckRegistrationAccounting \
-        PayRegistrationPayment \
+        PayPayment \
         Tic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
@@ -1106,7 +1106,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         LoginWebUser \
         CheckWaitingInvoice \
         Tic \
-        PayRegistrationPayment \
+        PayPayment \
         Tic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
@@ -1306,7 +1306,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       self.register_new_user_sequence_string + '\
         LoginWebUser \
         CheckRegistrationAccounting \
-        PayRegistrationPayment \
+        PayPayment \
         Tic \
         Logout \
         LoginWebUser \
@@ -1451,7 +1451,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         \
         LoginWebUser \
-        PayRegistrationPayment \
+        PayPayment \
         Tic \
         CheckComplexInvoice \
         LoginERP5TypeTestCase \

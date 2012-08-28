@@ -1585,7 +1585,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CallVifibTriggerBuildAlarm
       Tic
-      PayRegistrationPayment
+      PayPayment
       Tic
       Logout
 
