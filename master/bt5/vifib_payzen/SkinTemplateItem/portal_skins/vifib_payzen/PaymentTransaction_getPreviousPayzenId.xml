@@ -54,7 +54,7 @@
 transaction = context\n
 portal = transaction.getPortalObject()\n
 integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
-state_list = portal.getPortalCurrentInventoryStateList() + portal.getPortalTransitInventoryStateList() + portal.getPortalReservedInventoryStateList()\n
+state_list = portal.getPortalCurrentInventoryStateList() + portal.getPortalTransitInventoryStateList()\n
 previous_transaction = portal.portal_catalog.getResultValue(\n
   destination_section_uid = transaction.getDestinationSectionUid(),\n
   portal_type=transaction.getPortalType(),\n
