@@ -167,6 +167,7 @@ class AddAuthorizedKey(GenericBaseRecipe):
     path_list.append(ssh)
 
     authorized_keys = AuthorizedKeysFile(os.path.join(ssh, 'authorized_keys'))
-    authorized_keys.append(self.options['key'])
+    for key in self.options['key'].split(' '):
+      authorized_keys.append(key)
 
     return path_list

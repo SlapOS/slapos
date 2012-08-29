@@ -28,6 +28,7 @@ import logging
 
 from slapos import slap as slapmodule
 
+
 class Recipe(object):
   """
   Request a partition to a slap master.
@@ -98,8 +99,9 @@ class Recipe(object):
       options['computer-id'], options['partition-id']).request
 
     isSlave = options.get('slave', '').lower() in ['y', 'yes', 'true', '1']
-
+    print '\n Slave : %s \n' % self.isSlave
     return_parameters = []
+    self.return_parameters = []
     if 'return' in options:
       return_parameters = [str(parameter).strip()
         for parameter in options['return'].split()]
@@ -119,7 +121,10 @@ class Recipe(object):
       for config_parameter in options['config'].split():
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
-
+    print 'from : %s \n' % options['partition-id']
+    print 'requested %s (%s), parameters : %s \n\n' % (options['name'],
+                                                       software_type,
+                                                       partition_parameter_kw)
     self.instance = instance = request(software_url, software_type,
       name, partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=isSlave)
@@ -129,9 +134,14 @@ class Recipe(object):
         options['connection-%s' % param] = str(
           instance.getConnectionParameter(param))
       except slapmodule.NotFoundError:
-        options['connection-%s' % param] = ''
-        if self.failed is None:
-          self.failed = param
+        try:
+          self.instance._synced = False
+          options['connection-%s' % param] = str(
+              self.instance.getConnectionParameter(param))
+        except slapmodule.NotFoundError:
+          options['connection-%s' % param] = ''
+          if self.failed is None:
+            self.failed = param
 
   def install(self):
     if self.failed is not None:

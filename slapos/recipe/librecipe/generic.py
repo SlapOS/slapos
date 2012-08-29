@@ -31,6 +31,8 @@ import inspect
 import re
 import urllib
 import urlparse
+from slapos import slap as slapmodule
+from json import loads as unjson
 
 import pkg_resources
 import zc.buildout
@@ -90,7 +92,7 @@ class GenericBaseRecipe(object):
 
   def createPythonScript(self, name, absolute_function, arguments=''):
     """Create a python script using zc.buildout.easy_install.scripts
-
+ok o
      * function should look like 'module.function', or only 'function'
        if it is a builtin function."""
     absolute_function = tuple(absolute_function.rsplit('.', 1))
@@ -127,6 +129,17 @@ class GenericBaseRecipe(object):
     name = caller_frame.f_globals['__name__']
     return pkg_resources.resource_filename(name,
         'template/%s' % template_name)
+
+  def getComputerPartitionInstanceParameterDict(self):
+    slap_connection = self.buildout['slap-connection']
+    slap = slapmodule.slap()
+    slap.initializeConnection(slap_connection['server-url'],
+							  slap_connection.get('key-file'),
+							  slap_connection.get('cert-file'))
+
+    computer_partition = slap.registerComputerPartition(slap_connection['computer-id'],
+                                                        slap_connection['partition-id'])
+    return computer_partition.getInstanceParameterDict()
 
   def generatePassword(self, len_=32):
     """
