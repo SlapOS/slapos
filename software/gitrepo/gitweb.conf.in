@@ -4,3 +4,4 @@ $site_name = '${slap-parameter:title}';
 
 # Beautiful URLs
 $feature{'pathinfo'}{'default'} = [1];
+$feature{'blame'}{'default'} = [1];
