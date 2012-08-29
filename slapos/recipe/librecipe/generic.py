@@ -32,7 +32,6 @@ import re
 import urllib
 import urlparse
 from slapos import slap as slapmodule
-from json import loads as unjson
 
 import pkg_resources
 import zc.buildout
