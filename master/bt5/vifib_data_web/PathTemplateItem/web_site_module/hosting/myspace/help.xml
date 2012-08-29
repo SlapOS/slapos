@@ -73,7 +73,7 @@
         </item>
         <item>
             <key> <string>custom_render_method_id</string> </key>
-            <value> <string>WebSection_viewHelpRender</string> </value>
+            <value> <string>WebSection_redirectToDocumentationSite</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -105,7 +105,7 @@
         </item>
         <item>
             <key> <string>visible</string> </key>
-            <value> <int>0</int> </value>
+            <value> <int>1</int> </value>
         </item>
       </dictionary>
     </pickle>
