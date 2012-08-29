@@ -24,29 +24,28 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.recipe.librecipe import GenericBaseRecipe
+from slapos.recipe.librecipe import GenericSlapRecipe
 
 import sys
 import os
 
 
-class Recipe(GenericBaseRecipe):
+class Recipe(GenericSlapRecipe):
   """ This class provides the installation of the resilience
       script on the partition.
   """
 
-  def install(self):
+  def _install(self):
     path_list = []
-    param_dict = self.getComputerPartitionInstanceParameterDict()
-    self_id = int(param_dict['number'])
-    ip = param_dict['ip-list'].split(' ')
+    self_id = int(self.parameter_dict['number'])
+    ip = self.parameter_dict['ip-list'].split(' ')
     print 'Creating bully script with  ips : %s\n' % ip
     slap_connection = self.buildout['slap-connection']
 
     path_conf = os.path.join(self.options['script'], 'conf.in')
-    path_bully = os.path.join(self.options['script'], param_dict['script'])
+    path_bully = os.path.join(self.options['script'], self.parameter_dict['script'])
     path_bully_new = os.path.join(self.options['script'], 'new.py')
-    path_run = os.path.join(self.options['run'], param_dict['wrapper'])
+    path_run = os.path.join(self.options['run'], self.parameter_dict['wrapper'])
     print 'paths: %s\n%s\n' % (path_run, path_bully)
     bully_conf = dict(self_id=self_id,
                       ip_list=ip,
@@ -58,7 +57,7 @@ class Recipe(GenericBaseRecipe):
                       computer_id=slap_connection['computer-id'],
                       partition_id=slap_connection['partition-id'],
                       software=slap_connection['software-release-url'],
-                      namebase=param_dict['namebase'],
+                      namebase=self.parameter_dict['namebase'],
                       confpath=path_conf)
     try:
       conf = self.createFile(path_conf,
