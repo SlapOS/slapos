@@ -111,13 +111,19 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   assertUserCanAccessDocument =\
       AssertPermissionMethod(Permissions.AccessContentsInformation)
 
-  def afterSetUp(self):
+  def fakeSlapAuth(self):
     fakeSlapAuth()
+
+  def unfakeSlapAuth(self):
+    unfakeSlapAuth()
+
+  def afterSetUp(self):
+    self.fakeSlapAuth()
     testVifibMixin.afterSetUp(self)
     self.server_url = self.portal.portal_slap.absolute_url()
 
   def beforeTearDown(self):
-    unfakeSlapAuth()
+    self.unfakeSlapAuth()
     super(testVifibMixin, self).beforeTearDown()
 
   def _loginAsUser(self, username):
