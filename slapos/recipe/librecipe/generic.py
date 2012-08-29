@@ -31,7 +31,6 @@ import inspect
 import re
 import urllib
 import urlparse
-from slapos import slap as slapmodule
 
 import pkg_resources
 import zc.buildout
@@ -128,17 +127,6 @@ class GenericBaseRecipe(object):
     name = caller_frame.f_globals['__name__']
     return pkg_resources.resource_filename(name,
         'template/%s' % template_name)
-
-  def getComputerPartitionInstanceParameterDict(self):
-    slap_connection = self.buildout['slap-connection']
-    slap = slapmodule.slap()
-    slap.initializeConnection(slap_connection['server-url'],
-							  slap_connection.get('key-file'),
-							  slap_connection.get('cert-file'))
-
-    computer_partition = slap.registerComputerPartition(slap_connection['computer-id'],
-                                                        slap_connection['partition-id'])
-    return computer_partition.getInstanceParameterDict()
 
   def generatePassword(self, len_=32):
     """
