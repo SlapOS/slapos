@@ -92,7 +92,7 @@ class GenericBaseRecipe(object):
 
   def createPythonScript(self, name, absolute_function, arguments=''):
     """Create a python script using zc.buildout.easy_install.scripts
-ok o
+
      * function should look like 'module.function', or only 'function'
        if it is a builtin function."""
     absolute_function = tuple(absolute_function.rsplit('.', 1))
