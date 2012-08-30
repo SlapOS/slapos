@@ -156,8 +156,9 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertSortedListEqual(os.listdir(self.software_root), [])
 
   def test_one_partition(self):
-    def server_response(self, path, method, body, header):
+    def server_response(self_httplib, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
+      self.sequence.append(parsed_url.path)
       if method == 'GET':
         parsed_qs = urlparse.parse_qs(parsed_url.query)
       else:
@@ -183,7 +184,10 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
         return (200, {}, '')
       else:
         return (404, {}, '')
+
     httplib.HTTPConnection._callback = server_response
+    self.sequence = []
+
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
     partition_path = os.path.join(self.instance_root, '0')
@@ -206,11 +210,15 @@ touch worked""")
       'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'stoppedComputerPartition'])
 
   def test_one_partition_started(self):
 
-    def server_response(self, path, method, body, header):
+    def server_response(self_httplib, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
+      self.sequence.append(parsed_url.path)
       if method == 'GET':
         parsed_qs = urlparse.parse_qs(parsed_url.query)
       else:
@@ -233,11 +241,16 @@ touch worked""")
         return (200, {}, '')
       if parsed_url.path == 'startedComputerPartition' and \
             method == 'POST' and 'computer_partition_id' in parsed_qs:
+        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
+        self.started = True
         return (200, {}, '')
       else:
         return (404, {}, '')
 
     httplib.HTTPConnection._callback = server_response
+    self.sequence = []
+    self.started = False
+
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
     partition_path = os.path.join(self.instance_root, '0')
@@ -272,11 +285,17 @@ chmod 755 etc/run/wrapper
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'startedComputerPartition'])
+    self.assertTrue(self.started)
+
 
   def test_one_partition_started_stopped(self):
 
-    def server_response(self, path, method, body, header):
+    def server_response(self_httplib, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
+      self.sequence.append(parsed_url.path)
       if method == 'GET':
         parsed_qs = urlparse.parse_qs(parsed_url.query)
       else:
@@ -299,11 +318,16 @@ chmod 755 etc/run/wrapper
         return (200, {}, '')
       if parsed_url.path == 'startedComputerPartition' and \
             method == 'POST' and 'computer_partition_id' in parsed_qs:
+        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
+        self.started = True
         return (200, {}, '')
       else:
         return (404, {}, '')
 
     httplib.HTTPConnection._callback = server_response
+    self.started = True
+    self.sequence = []
+
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
     partition_path = os.path.join(self.instance_root, '0')
@@ -350,8 +374,13 @@ chmod 755 etc/run/wrapper
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])
-    def server_response(self, path, method, body, header):
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'startedComputerPartition'])
+    self.assertTrue(self.started)
+    def server_response(self_httplib, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
+      self.sequence.append(parsed_url.path)
       if method == 'GET':
         parsed_qs = urlparse.parse_qs(parsed_url.query)
       else:
@@ -374,11 +403,16 @@ chmod 755 etc/run/wrapper
         return (200, {}, '')
       if parsed_url.path == 'stoppedComputerPartition' and \
             method == 'POST' and 'computer_partition_id' in parsed_qs:
+        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
+        self.stopped = True
         return (200, {}, '')
       else:
         return (404, {}, '')
     httplib.HTTPConnection._callback = server_response
+    self.stopped = False
+    self.sequence = []
     self.setSlapgrid()
+
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
@@ -393,11 +427,17 @@ chmod 755 etc/run/wrapper
         break
       time.sleep(0.2)
     self.assertTrue(found)
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'stoppedComputerPartition'])
+    self.assertTrue(self.stopped)
+
 
   def test_one_partition_stopped_started(self):
 
-    def server_response(self, path, method, body, header):
+    def server_response(self_httplib, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
+      self.sequence.append(parsed_url.path)
       if method == 'GET':
         parsed_qs = urlparse.parse_qs(parsed_url.query)
       else:
@@ -420,11 +460,16 @@ chmod 755 etc/run/wrapper
         return (200, {}, '')
       if parsed_url.path == 'stoppedComputerPartition' and \
             method == 'POST' and 'computer_partition_id' in parsed_qs:
+        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
+        self.stopped = True
         return (200, {}, '')
       else:
         return (404, {}, '')
 
     httplib.HTTPConnection._callback = server_response
+    self.stopped = False
+    self.sequence = []
+
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
     partition_path = os.path.join(self.instance_root, '0')
@@ -452,9 +497,14 @@ chmod 755 etc/run/wrapper
       'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'stoppedComputerPartition'])
+    self.assertTrue(self.stopped)
 
-    def server_response(self, path, method, body, header):
+    def server_response(self_httplib, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
+      self.sequence.append(parsed_url.path)
       if method == 'GET':
         parsed_qs = urlparse.parse_qs(parsed_url.query)
       else:
@@ -482,6 +532,9 @@ chmod 755 etc/run/wrapper
         return (404, {}, '')
 
     httplib.HTTPConnection._callback = server_response
+    self.started = True
+    self.sequence = []
+
     self.setSlapgrid()
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
@@ -499,6 +552,11 @@ chmod 755 etc/run/wrapper
         break
       time.sleep(0.2)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'startedComputerPartition'])
+    self.assertTrue(self.started)
+
 
 class TestSlapgridArgumentTuple(unittest.TestCase):
   """
@@ -981,11 +1039,6 @@ else
   exit 127
 fi""" % {'worked_file': worked_file, 'lockfile': lockfile})
       os.chmod(promise, 0777)
-      print "-------------------------------------------"
-      print open(promise,'r').read()
-      print "-------------------------------------------"
-
-
     self.assertFalse(self.grid.processComputerPartitionList())
     for file_ in promises_files:
       self.assertTrue(os.path.isfile(file_))
