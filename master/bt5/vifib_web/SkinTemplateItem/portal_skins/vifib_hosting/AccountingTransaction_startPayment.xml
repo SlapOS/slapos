@@ -123,8 +123,10 @@ payzen_dict.update(\n
   vads_url_return=getattr(callback, \'return\').absolute_url() + \'?\' + query\n
 )\n
 system_event.confirm()\n
+result = service.navigate(page_template=\'payzen_payment\', pay=\'Click to pay\', payzen_dict=payzen_dict)\n
+system_event.newContent(title=\'Shown Page\', portal_type=\'Payzen Event Message\', text_content=result)\n
 system_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
-return service.navigate(page_template=\'payzen_payment\', pay=\'Click to pay\', payzen_dict=payzen_dict)\n
+return result\n
 </string> </value>
         </item>
         <item>
