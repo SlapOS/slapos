@@ -14,6 +14,22 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
   def unfakeSlapAuth(self):
     pass
 
+  def stepCheckRelatedSystemEvent(self, sequence):
+    # use catalog to select exactly interesting events
+    # as there might be more because of running alarms
+    event = self.portal.portal_catalog(
+       portal_type='Payzen Event',
+       title='User navigation script for %s' % sequence['payment'].getTitle(),
+       limit=2)
+    self.assertEqual(1, len(event))
+    event = event[0]
+    self.assertEqual(event.getValidationState(), 'acknowledged')
+    message = event.objectValues()
+    self.assertEqual(1, len(message))
+    message = message[0]
+    self.assertEqual(message.getTitle(), 'Shown Page')
+    self.assertEqual(message.getTextContent(), sequence['payment_page'])
+
   def stepCheckPaymentPage(self, sequence):
     callback = self.portal.web_site_module.hosting.payzen_callback
     query = make_query(dict(transaction=sequence['payment'].getRelativeUrl()))
@@ -104,6 +120,7 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
       LoginERP5TypeTestCase \
       CheckPaymentPage \
       Tic \
+      CheckRelatedSystemEvent \
     '
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
