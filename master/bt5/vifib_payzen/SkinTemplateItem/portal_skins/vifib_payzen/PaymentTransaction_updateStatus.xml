@@ -62,13 +62,19 @@ except ValueError, e:\n
 if context.getSimulationState() not in [\'planned\', \'confirmed\']:\n
   return\n
 \n
-if context.PaymentTransaction_getPreviousPayzenId() is not None and context.getSimulationState() == \'planned\':\n
+transaction_id = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite()\\\n
+  ).getMappingFromCategory(\'causality/%s\' % context.getRelativeUrl())\n
+if transaction_id != \'Causality/%s\' % context.getRelativeUrl():\n
+  transaction_id = transaction_id.split(\'/\')[1]\n
+else:\n
+  transaction_id = None\n
+\n
+if transaction_id is not None:\n
+  portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).updateStatus()\n
+elif context.PaymentTransaction_getPreviousPayzenId() is not None and context.getSimulationState() == \'planned\':\n
   context.setStartDate(DateTime())\n
   context.updateCausalityState()\n
   portal.system_event_module.newContent(title=\'Transaction %s Payzen registration\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).registerPayzen()\n
-else:\n
-  if portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite()).getMappingFromCategory(\'causality/%s\' % context.getRelativeUrl()) != \'Causality/%s\' % context.getRelativeUrl():\n
-    portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(), portal_type=\'Payzen Event\', source_value=service, destination_value=context).updateStatus()\n
 </string> </value>
         </item>
         <item>
