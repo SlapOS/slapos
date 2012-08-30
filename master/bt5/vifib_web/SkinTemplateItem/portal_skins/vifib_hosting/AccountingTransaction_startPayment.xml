@@ -82,7 +82,7 @@ system_event_kw = {\n
   \'source_value\': service,\n
   \'destination_value\': context,\n
 }\n
-system_event = portal.system_event_module.newContent(title=\'User navigation script\', **system_event_kw)\n
+system_event = portal.system_event_module.newContent(title=\'User navigation script for %s\' % context.getTitle(), **system_event_kw)\n
 \n
 if today != current_today or integration_site.getMappingFromCategory(\'causality/%s\' % context.getRelativeUrl()) == \'Causality/%s\' % context.getRelativeUrl():\n
   # new or too old transaction\n
