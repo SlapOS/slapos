@@ -51,6 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string># TODO: Return configured web page in case of system issues.\n
+from ZTUtils import make_query\n
 from DateTime import DateTime\n
 portal = context.getPortalObject()\n
 service = portal.portal_secure_payments.find()\n
@@ -106,6 +107,7 @@ if today != current_today or integration_site.getMappingFromCategory(\'causality
 context.setStartDate(now)\n
 context.updateCausalityState()\n
 callback = context.getWebSiteValue().payzen_callback\n
+query = make_query(dict(transaction=context.getRelativeUrl()))\n
 payzen_dict = {}\n
 payzen_dict.update(\n
   vads_currency=integration_site.getMappingFromCategory(\'resource/currency_module/%s\' % context.getResourceReference()).split(\'/\')[-1],\n
@@ -113,12 +115,12 @@ payzen_dict.update(\n
   vads_trans_date=now.toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d%H%M%S\'),\n
   vads_trans_id=transaction_id,\n
   vads_language=\'en\',\n
-  vads_url_cancel=callback.cancel.absolute_url(),\n
-  vads_url_error=callback.error.absolute_url(),\n
-  vads_url_referral=callback.referral.absolute_url(),\n
-  vads_url_refused=callback.refused.absolute_url(),\n
-  vads_url_success=callback.success.absolute_url(),\n
-  vads_url_return=getattr(callback, \'return\').absolute_url()\n
+  vads_url_cancel=callback.cancel.absolute_url() + \'?\' + query,\n
+  vads_url_error=callback.error.absolute_url() + \'?\' + query,\n
+  vads_url_referral=callback.referral.absolute_url() + \'?\' + query,\n
+  vads_url_refused=callback.refused.absolute_url() + \'?\' + query,\n
+  vads_url_success=callback.success.absolute_url() + \'?\' + query,\n
+  vads_url_return=getattr(callback, \'return\').absolute_url() + \'?\' + query\n
 )\n
 system_event.confirm()\n
 system_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
