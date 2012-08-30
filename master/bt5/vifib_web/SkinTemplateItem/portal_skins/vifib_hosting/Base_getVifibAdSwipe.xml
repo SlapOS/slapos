@@ -139,8 +139,9 @@ In you need commercial support for ERP5, go to <a href="http://www.erp5.com">erp
 \n
 $("#vifib_swipe")\n
   .css({\n
-    "background-color": "white",\n
-    "color": "black",\n
+    "background-color": "black",\n
+    "color": "red",\n
+    "font-size": "3em",\n
     "min-width": "100%",\n
     "min-height": "5em",\n
   })\n
