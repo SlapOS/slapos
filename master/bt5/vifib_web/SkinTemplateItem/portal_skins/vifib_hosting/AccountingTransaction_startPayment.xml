@@ -71,10 +71,7 @@ if integration_site.getMappingFromCategory(\'causality/%s\' % context.getRelativ
   current_id = integration_site.getMappingFromCategory(\'causality/%s\' % context.getRelativeUrl())\n
   current_today, transaction_id = current_id.split(\'_\')\n
 \n
-if transaction_id is not None:\n
-  context.PaymentTransaction_updateStatus()\n
-elif previous_id is not None:\n
-  context.PaymentTransaction_registerPayzen()\n
+context.PaymentTransaction_updateStatus()\n
 \n
 if context.getSimulationState() == \'confirmed\':\n
   message = context.Base_translateString("Payment was automatically registered to PayZen system.")\n
