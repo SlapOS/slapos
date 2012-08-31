@@ -50,11 +50,13 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># This script returns an iterable of the paths to standard JavaScript objects.\n
+            <value> <string>result_list = context.AcknowledgementTool_getUserUnreadAcknowledgementList()\n
+if len(result_list):\n
+  result_list = [result_list[0]]\n
+result_list = [\'{"text_content": "%s", "acknowledge_url": "%s"}\' % (x[\'text_content\'], x[\'acknowledge_url\']) for x in result_list]\n
 \n
-return (\'jquery/core/jquery.js\',\n
-        \'vifib_hosting_js/erp5_acknowledgement.js\',\n
-        \'vifib_hosting_js/vifib_hosting.js\',)\n
+context.REQUEST.RESPONSE.setHeader(\'Content-Type\', \'application/json\')\n
+return \'{"result": [%s]}\' % \', \'.join(result_list)\n
 </string> </value>
         </item>
         <item>
@@ -63,7 +65,7 @@ return (\'jquery/core/jquery.js\',\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Site_getJavaScriptRelativeUrlList</string> </value>
+            <value> <string>AcknowledgementTool_getUserUnreadAcknowledgementJSON</string> </value>
         </item>
       </dictionary>
     </pickle>
