@@ -149,8 +149,34 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepCheckPlannedRegisteredPayment(self, sequence):
+    self.assertEqual(sequence['payment'].getSimulationState(), 'confirmed')
+    self.assertEqual(self.portal.portal_catalog.countResults(portal_type='Payzen Event',
+      default_destination_uid=sequence['payment'].getUid(),
+      limit=3)[0][0], 2)
+    raise NotImplementedError('Not finished checks.')
+
   def test_PaymentTransaction_updateStatus_planned_registered(self):
-    raise NotImplementedError
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginWebUser \
+      CallStartPaymentOnPlannedPayment \
+      CleanTic \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckPaymentPage \
+      CleanTic \
+      CheckRelatedSystemEvent \
+      Logout \
+      LoginWebUser \
+      CallUpdateStatusOnPlannedPayment \
+      CleanTic \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckPlannedRegisteredPayment \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   def test_PaymentTransaction_updateStatus_confirmed_no_change(self):
     raise NotImplementedError
