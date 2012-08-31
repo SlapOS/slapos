@@ -151,8 +151,8 @@ class testVifibMixin(ERP5TypeTestCase):
     # avoid resetting prepared site
     if payzen.getServiceUsername() is None:
       payzen.setServiceUsername('12345')
-    if payzen.getServicePassword() is None:
-      payzen.setServicePassowrd('09876')
+    if payzen.getServicePassword() == '':
+      payzen.setServicePassword('09876')
 
   def setupPortalCertificateAuthority(self):
     """Sets up portal_certificate_authority"""
