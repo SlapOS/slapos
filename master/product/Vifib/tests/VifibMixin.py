@@ -146,6 +146,14 @@ class testVifibMixin(ERP5TypeTestCase):
   def isLiveTest(self):
     return 'ERP5TypeLiveTestCase' in [q.__name__ for q in self.__class__.mro()]
 
+  def setupPayZenInterface(self):
+    payzen = self.portal.portal_secure_payments.vifib_payzen
+    # avoid resetting prepared site
+    if payzen.getServiceUsername() is None:
+      payzen.setServiceUsername('12345')
+    if payzen.getgetServicePassword() is None:
+      payzen.setServicePassowrd('09876')
+
   def setupPortalCertificateAuthority(self):
     """Sets up portal_certificate_authority"""
     if self.isLiveTest():
@@ -196,6 +204,7 @@ class testVifibMixin(ERP5TypeTestCase):
     finally:
       setSecurityManager(sm)
     self.setupPortalCertificateAuthority()
+    self.setupPayZenInterface()
     import random
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
     self.portal.portal_caches._p_changed = 1
