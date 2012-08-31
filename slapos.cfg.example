@@ -31,6 +31,21 @@ ipv4_local_network = 10.0.0.0/16
 download-binary-cache-url = http://www.shacache.org/shacache
 download-cache-url = https://www.shacache.org/shacache
 download-binary-dir-url = http://www.shacache.org/shadir
+
+# Configuration to Upload Configuration for Binary cache
+#upload-binary-dir-url = https://www.shacache.org/shadir
+#upload-binary-cache-url = https://www.shacache.org/shacache
+#signature_private_key_file = /etc/opt/slapos/shacache/signature.key
+#signature_certificate_file = /etc/opt/slapos/shacache/signature.cert
+#upload-cache-url = https://www.shacache.org/shacache
+#shacache-cert-file = /etc/opt/slapos/shacache/shacache.cert
+#shacache-key-file = /etc/opt/slapos/shacache/shacache.key
+#upload-binary-dir-url = https://www.shacache.org/shadir
+#upload-binary-cache-url = https://www.shacache.org/shacache
+#upload-dir-url = https://www.shacache.org/shadir
+#shadir-cert-file = /etc/opt/slapos/shacache/shacache.cert
+#shadir-key-file = /etc/opt/slapos/shacache/shacache.key
+
 # List of signatures of uploaders we trust:
 #   Romain Courteaud
 #   Sebastien Robin
