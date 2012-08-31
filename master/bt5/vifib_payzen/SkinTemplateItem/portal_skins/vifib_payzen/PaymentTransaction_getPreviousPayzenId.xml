@@ -68,7 +68,7 @@ if previous_transaction is None:\n
 \n
 previous_id = None\n
 possible_previous_id =  integration_site.getMappingFromCategory(\'causality/%s\' % previous_transaction.getRelativeUrl())\n
-if possible_previous_id != \'Causality/%s\' % transaction.getRelativeUrl():\n
+if possible_previous_id != \'Causality/%s\' % previous_transaction.getRelativeUrl():\n
   previous_id = possible_previous_id.split(\'/\')[1]\n
 \n
 return previous_id\n
