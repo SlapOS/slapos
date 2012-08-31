@@ -19,7 +19,7 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     # as there might be more because of running alarms
     event = self.portal.portal_catalog(
        portal_type='Payzen Event',
-       title='User navigation script for %s' % sequence['payment'].getTitle(),
+       default_destination_uid=sequence['payment'].getUid(),
        limit=2)
     self.assertEqual(1, len(event))
     event = event[0]
@@ -120,11 +120,10 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     sequence_string = self.register_new_user_sequence_string + '\
       LoginWebUser \
       CallStartPaymentOnPlannedPayment \
-      Tic \
+      CleanTic \
       Logout \
       LoginERP5TypeTestCase \
       CheckPaymentPage \
-      Tic \
       CheckRelatedSystemEvent \
     '
     sequence_list.addSequenceString(sequence_string)
