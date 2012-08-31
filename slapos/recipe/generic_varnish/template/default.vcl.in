@@ -23,10 +23,6 @@ backend default {
 
 # Called at the beginning of a request, after the complete request has been received and parsed
 sub vcl_recv {
-    # Force lookup if the request is a no-cache request from the client
-    if (req.http.cache-control ~ "no-cache") {
-        ban_url(req.url);
-    }
     # Pass any requests that Varnish does not understand straight to the backend.
     if (req.request != "GET" &&
         req.request != "HEAD" &&
