@@ -110,6 +110,11 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     finally:
       self.changeSkin(current_skin)
 
+  def stepCallUpdateStatusOnPlannedPayment(self, sequence, **kw):
+    sequence['payment'] = self.portal.portal_catalog.getResultValue(
+      portal_type="Payment Transaction", simulation_state="planned")
+    sequence['payment'].PaymentTransaction_updateStatus()
+
   def test_AccountingTransaction_startPayment(self):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
@@ -125,8 +130,24 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  def stepCheckPlannedUnknownPayment(self, sequence):
+    self.assertEqual(sequence['payment'].getSimulationState(), 'planned')
+    self.assertEqual(self.portal.portal_catalog.countResults(portal_type='Payzen Event',
+      default_destination_uid=sequence['payment'].getUid(),
+      limit=1)[0][0], 0)
+
   def test_PaymentTransaction_updateStatus_planned_unknown(self):
-    raise NotImplementedError
+    sequence_list = SequenceList()
+    sequence_string = self.register_new_user_sequence_string + '\
+      LoginWebUser \
+      CallUpdateStatusOnPlannedPayment \
+      Tic \
+      Logout \
+      LoginERP5TypeTestCase \
+      CheckPlannedUnknownPayment \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
 
   def test_PaymentTransaction_updateStatus_planned_registered(self):
     raise NotImplementedError
