@@ -138,6 +138,7 @@ setup(name=name,
           'webchecker = slapos.recipe.web_checker:Recipe',
           'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
           'condor = slapos.recipe.condor:Recipe',
+          'boinc = slapos.recipe.boinc:Recipe',
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
