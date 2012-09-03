@@ -216,7 +216,7 @@ def dropPrivileges(uid, gid):
     pass
   else:
     raise ValueError('%s it was possible to go back to uid = %r and gid = '
-        '%r which is fatal.' % message_pre, current_uid, current_gid)
+        '%r which is fatal.' % (message_pre, current_uid, current_gid))
   logger.info('Succesfully dropped privileges to uid=%r gid=%r' % (uid, gid))
 
 
