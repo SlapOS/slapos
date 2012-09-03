@@ -57,10 +57,6 @@ portal = context.getPortalObject()\n
 service = portal.portal_secure_payments.find()\n
 integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
 \n
-if context.getSimulationState() != \'planned\':\n
-  message = context.Base_translateString("Payment already registered.")\n
-  return context.getWebSiteValue().Base_redirect(keep_items={\'portal_status_message\': message})\n
-\n
 now = DateTime()\n
 today = now.toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d\')\n
 current_today = today\n
@@ -70,12 +66,10 @@ if integration_site.getMappingFromCategory(\'causality/%s\' % context.getRelativ
   current_id = integration_site.getMappingFromCategory(\'causality/%s\' % context.getRelativeUrl())\n
   current_today, transaction_id = current_id.split(\'_\')\n
 \n
-context.PaymentTransaction_updateStatus()\n
-\n
-if context.getSimulationState() == \'confirmed\':\n
-  message = context.Base_translateString("Payment was automatically registered to PayZen system.")\n
+if current_id is not None:\n
+  message = context.Base_translateString("Payment already registered.")\n
   return context.getWebSiteValue().Base_redirect(keep_items={\'portal_status_message\': message})\n
-  \n
+\n
 system_event_kw = {\n
   \'portal_type\': \'Payzen Event\',\n
   \'source_value\': service,\n
@@ -83,24 +77,23 @@ system_event_kw = {\n
 }\n
 system_event = portal.system_event_module.newContent(title=\'User navigation script for %s\' % context.getTitle(), **system_event_kw)\n
 \n
-if today != current_today or integration_site.getMappingFromCategory(\'causality/%s\' % context.getRelativeUrl()) == \'Causality/%s\' % context.getRelativeUrl():\n
-  # new or too old transaction\n
-  transaction_id = str(portal.portal_ids.generateNewId(\n
-    id_group=\'%s_%s\' % (service.getRelativeUrl(), today),\n
-    id_generator=\'uid\')).zfill(6)\n
+transaction_id = str(portal.portal_ids.generateNewId(\n
+  id_group=\'%s_%s\' % (service.getRelativeUrl(), today),\n
+  id_generator=\'uid\')).zfill(6)\n
 \n
-  mapping_id = \'%s_%s\' % (today, transaction_id)\n
-  try:\n
-    integration_site.getCategoryFromMapping(\'Causality/%s\' % mapping_id, create_mapping_line=True, create_mapping=True)\n
-  except ValueError:\n
-    mapping = integration_site.Causality[mapping_id]\n
-    mapping.setDestinationReference(\'causality/%s\' % context.getRelativeUrl())\n
-    if current_today != today:\n
-      # Cleanup as integration site does not support multiple mappings to with external site\n
-      integration_site.Causality.deleteContent(current_id.split(\'/\')[1])\n
-  else:\n
-    system_event.confirm(comment=\'Key %s already found!\' % mapping_id)\n
-    return \'There was system issue\'\n
+mapping_id = \'%s_%s\' % (today, transaction_id)\n
+try:\n
+  integration_site.getCategoryFromMapping(\'Causality/%s\' % mapping_id, create_mapping_line=True, create_mapping=True)\n
+except ValueError:\n
+  mapping = integration_site.Causality[mapping_id]\n
+  mapping.setDestinationReference(\'causality/%s\' % context.getRelativeUrl())\n
+  if current_today != today:\n
+    # Cleanup as integration site does not support multiple mappings to with external site\n
+    integration_site.Causality.deleteContent(current_id.split(\'/\')[1])\n
+else:\n
+  system_event.confirm(comment=\'Key %s already found!\' % mapping_id)\n
+  return \'There was system issue\'\n
+\n
 \n
 context.AccountingTransaction_updateStartDate(now)\n
 context.updateCausalityState()\n
