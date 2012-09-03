@@ -102,7 +102,7 @@ if today != current_today or integration_site.getMappingFromCategory(\'causality
     system_event.confirm(comment=\'Key %s already found!\' % mapping_id)\n
     return \'There was system issue\'\n
 \n
-context.setStartDate(now)\n
+context.AccountingTransaction_updateStartDate(now)\n
 context.updateCausalityState()\n
 callback = context.getWebSiteValue().payzen_callback\n
 query = make_query(dict(transaction=context.getRelativeUrl()))\n
