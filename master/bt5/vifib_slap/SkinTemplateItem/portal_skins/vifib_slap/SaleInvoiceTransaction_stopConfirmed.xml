@@ -52,10 +52,11 @@
             <key> <string>_body</string> </key>
             <value> <string>isTransitionPossible = context.getPortalObject().portal_workflow.isTransitionPossible\n
 if context.getSimulationState() == \'confirmed\' and len(context.checkConsistency()) == 0 and context.getCausalityState() == \'solved\':\n
+  comment = \'Stopped by alarm as all actions in confirmed state are ready.\'\n
   if isTransitionPossible(context, \'start\'):\n
-    context.start()\n
+    context.start(comment=comment)\n
   if isTransitionPossible(context, \'stop\'):\n
-    context.stop()\n
+    context.stop(comment=comment)\n
 </string> </value>
         </item>
         <item>
