@@ -117,7 +117,7 @@ def getCleanEnvironment(home_path='/tmp'):
   changed_env['HOME'] = env['HOME'] = home_path
   for k in sorted(changed_env.iterkeys()):
     logger.debug('Overriden %s = %r' % (k,changed_env[k]))
-  logger.debug('Removed from environement: %s' % ', '.join(sorted(removed_env)))
+  logger.debug('Removed from environment: %s' % ', '.join(sorted(removed_env)))
   return env
 
 
