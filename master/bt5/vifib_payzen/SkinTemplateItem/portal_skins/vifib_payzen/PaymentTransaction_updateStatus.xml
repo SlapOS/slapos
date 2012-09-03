@@ -59,22 +59,29 @@ service = None\n
 def addTicket(transaction):\n
   portal = transaction.getPortalObject()\n
   ticket = portal.portal_catalog.getResultValue(portal_type=\'Support Request\',\n
-    default_source_project_uid=transaction.getUid(), validation_state=\'validated\')\n
+    default_source_project_uid=transaction.getUid(),\n
+    validation_state=\'validated\')\n
   tag = \'ticket_creation_%s\' % transaction.getUid()\n
   activate_kw={\'tag\': tag}\n
-  if ticket is None and portal.portal_activities.countMessageWithTag(tag) == 0:\n
+  if ticket is None and \\\n
+      portal.portal_activities.countMessageWithTag(tag) == 0:\n
     ticket = portal.support_request_module.newContent(\n
       portal_type=\'Support Request\',\n
       source_project_uid=transaction.getUid(),\n
       activate_kw=activate_kw)\n
-    ticket.validate(comment=\'New automatic ticket for %s\' % transaction.getTitle())\n
+    ticket.validate(comment=\'New automatic ticket for %s\' % \\\n
+      transaction.getTitle())\n
     return ticket\n
   return None\n
 \n
 try:\n
   service = portal.portal_secure_payments.find()\n
 except ValueError, e:\n
-  portal.system_event_module.newContent(title=\'Transaction %s cannot be updated, because of service error: %s\' % (context.getTitle(), e), portal_type=\'Payzen Event\', source_value=service, destination_value=context).confirm()\n
+  portal.system_event_module.newContent(\n
+    title=\'Transaction %s cannot be updated, because of service error: %s\' % \\\n
+      (context.getTitle(), e), portal_type=\'Payzen Event\',\n
+      source_value=service, destination_value=context)\\\n
+    .confirm()\n
   return\n
 \n
 def createRequestManualPaymentTicket(transaction):\n
@@ -85,15 +92,19 @@ def createRequestManualPaymentTicket(transaction):\n
   if ticket is not None:\n
     tag = \'site_message_creation_%s\' % transaction.getUid()\n
     activate_kw={\'tag\': tag}\n
-    site_message = portal.portal_catalog.getResultValue(portal_type=\'Site Message\',\n
-      default_follow_up_uid=ticket.getUid())\n
-    if site_message is None and portal.portal_activities.countMessageWithTag(tag) == 0:\n
-      site_message = portal.event_module.newContent(portal_type=\'Site Message\',\n
+    site_message = portal.portal_catalog.getResultValue(\n
+      portal_type=\'Site Message\', default_follow_up_uid=ticket.getUid())\n
+    if site_message is None and \\\n
+        portal.portal_activities.countMessageWithTag(tag) == 0:\n
+      site_message = portal.event_module.newContent(\n
+        portal_type=\'Site Message\',\n
         start_date=DateTime(),\n
         destination_uid=transaction.getDestinationSectionUid(),\n
         follow_up=ticket.getRelativeUrl(),\n
         source_uid=transaction.getSourceSectionUid(),\n
-        text_content=\'Please pay your payment by clicking <a href="%s/AccountingTransaction_startPayment">here</a>.\' % transaction.getRelativeUrl(),\n
+        text_content=\'Please pay your payment by clicking <a \'\\\n
+          \'href="%s/AccountingTransaction_startPayment">here</a>.\' % \\\n
+            transaction.getRelativeUrl(),\n
         activate_kw=activate_kw)\n
       site_message.start(comment=\'Requested manual payment.\')\n
 \n
@@ -115,20 +126,22 @@ if state == \'confirmed\':\n
   context.start(comment=comment)\n
 \n
 elif state == \'started\':\n
-  transaction_id = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite()\\\n
+  transaction_id = portal.restrictedTraverse(\n
+    portal.portal_preferences.getPreferredPayzenIntegrationSite()\n
     ).getMappingFromCategory(\'causality/%s\' % context.getRelativeUrl())\n
   if transaction_id != \'Causality/%s\' % context.getRelativeUrl():\n
     transaction_id = transaction_id.split(\'/\')[1]\n
   else:\n
     transaction_id = None\n
-  \n
+\n
   if transaction_id is None:\n
     # manual payment shall be done\n
     # check if there is open ticket if not open it\n
     createRequestManualPaymentTicket(context)\n
   else:\n
     # so the payment is registered in payzen\n
-    portal.system_event_module.newContent(title=\'Transaction %s Payzen status update\' % context.getTitle(),\n
+    portal.system_event_module.newContent(\n
+      title=\'Transaction %s Payzen status update\' % context.getTitle(),\n
       portal_type=\'Payzen Event\',\n
       source_value=service,\n
       destination_value=context).updateStatus()\n
