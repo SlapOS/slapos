@@ -135,9 +135,8 @@ elif state == \'started\':\n
     transaction_id = None\n
 \n
   if transaction_id is None:\n
-    # manual payment shall be done\n
-    # check if there is open ticket if not open it\n
-    createRequestManualPaymentTicket(context)\n
+    # inform administrators\n
+    addTicket(context)\n
   else:\n
     # so the payment is registered in payzen\n
     portal.system_event_module.newContent(\n
