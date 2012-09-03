@@ -53,7 +53,8 @@
             <value> <string>portal = context.getPortalObject()\n
 portal.portal_catalog.searchAndActivate(\n
       portal_type="Payment Transaction", \n
-      simulation_state=["planned", "confirmed"],\n
+      simulation_state=["confirmed"],\n
+      causality_state=["solved"],\n
       method_id=\'PaymentTransaction_updateStatus\',\n
       packet_size=1, # just one to minimise errors\n
       activate_kw={\'tag\': tag}\n
@@ -67,7 +68,7 @@ context.activate(after_tag=tag).getId()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_updatePayzenPaymentTransaction</string> </value>
+            <value> <string>Alarm_updatePayzenConfirmedPaymentTransaction</string> </value>
         </item>
       </dictionary>
     </pickle>
