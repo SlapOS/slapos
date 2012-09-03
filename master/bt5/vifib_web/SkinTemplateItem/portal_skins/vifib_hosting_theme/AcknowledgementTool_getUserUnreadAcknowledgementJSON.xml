@@ -53,10 +53,14 @@
             <value> <string>result_list = context.AcknowledgementTool_getUserUnreadAcknowledgementList()\n
 if len(result_list):\n
   result_list = [result_list[0]]\n
-result_list = [\'{"text_content": "%s", "acknowledge_url": "%s"}\' % (x[\'text_content\'], x[\'acknowledge_url\']) for x in result_list]\n
+\n
+import json\n
+result = {\n
+  "result": [{"text_content": "%s" % x[\'text_content\'], "acknowledge_url": "%s" % x[\'acknowledge_url\']} for x in result_list]\n
+}\n
 \n
 context.REQUEST.RESPONSE.setHeader(\'Content-Type\', \'application/json\')\n
-return \'{"result": [%s]}\' % \', \'.join(result_list)\n
+return json.dumps(result)\n
 </string> </value>
         </item>
         <item>
