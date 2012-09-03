@@ -51,12 +51,18 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>from Products.ERP5Type.Message import translateString\n
+from DateTime import DateTime\n
 \n
 payment_transaction = context\n
+\n
+if payment_transaction.getStartDate() is None:\n
+  payment_transaction.setStartDate(DateTime())\n
 \n
 # initialize accounting_workflow to planned state\n
 if payment_transaction.getSimulationState() == "draft":\n
   payment_transaction.plan(comment=translateString("Initialised by Delivery Builder."))\n
+if payment_transaction.getSimulationState() == "planned":\n
+  payment_transaction.confirm(comment=translateString("Initialised by Delivery Builder."))\n
 \n
 if payment_transaction.getCausalityState() == "draft":\n
   # First set the payment transaction in the building state on the causality workflow\n
