@@ -360,4 +360,4 @@ def createPrivateDirectory(path):
   if permission not in ('0700'):
     raise WrongPermissionError('Wrong permissions in %s ' \
                                         ': is %s, should be 0700'
-                                        % path, permission)
+                                        % (path, permission))
