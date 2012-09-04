@@ -100,13 +100,15 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
       '\n'.join([q for q in difflib.unified_diff(expected.split('\n'),
         sequence['payment_page'].split('\n'))]))
 
-  def stepCallStartPaymentOnPlannedPayment(self, sequence, **kw):
+  def stepCallStartPaymentOnConfirmedPayment(self, sequence, **kw):
     current_skin = self.app.REQUEST.get('portal_skin', 'View')
     try:
       self.changeSkin('Hosting')
       sequence['payment'] = self.portal.portal_catalog.getResultValue(
-        portal_type="Payment Transaction", simulation_state="planned")
-      sequence['payment_page'] = sequence['payment'].__of__(self.portal.web_site_module.hosting).AccountingTransaction_startPayment()
+        portal_type="Payment Transaction", simulation_state="confirmed")
+      sequence['payment_page'] = sequence['payment'].__of__(
+        self.portal.web_site_module.hosting
+          ).AccountingTransaction_startPayment()
     finally:
       self.changeSkin(current_skin)
 
@@ -119,7 +121,7 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
       LoginWebUser \
-      CallStartPaymentOnPlannedPayment \
+      CallStartPaymentOnConfirmedPayment \
       CleanTic \
       Logout \
       LoginERP5TypeTestCase \
@@ -159,7 +161,7 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
       LoginWebUser \
-      CallStartPaymentOnPlannedPayment \
+      CallStartPaymentOnConfirmedPayment \
       CleanTic \
       Logout \
       LoginERP5TypeTestCase \
