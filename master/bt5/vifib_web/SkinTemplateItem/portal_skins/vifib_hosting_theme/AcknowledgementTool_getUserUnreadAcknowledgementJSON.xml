@@ -50,14 +50,19 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>result_list = context.AcknowledgementTool_getUserUnreadAcknowledgementList()\n
-if len(result_list):\n
-  result_list = [result_list[0]]\n
+            <value> <string>import json\n
+person = context.ERP5Site_getAuthenticatedMemberPersonValue()\n
+if person is not None:\n
+  result_list = context.AcknowledgementTool_getUserUnreadAcknowledgementList()\n
+  if len(result_list):\n
+    result_list = [result_list[0]]\n
 \n
-import json\n
-result = {\n
-  "result": [{"text_content": "%s" % x[\'text_content\'], "acknowledge_url": "%s" % x[\'acknowledge_url\']} for x in result_list]\n
-}\n
+\n
+  result = {\n
+    "result": [{"text_content": "%s" % x[\'text_content\'], "acknowledge_url": "%s" % x[\'acknowledge_url\']} for x in result_list]\n
+  }\n
+else:\n
+  result = {\'result\': []}\n
 \n
 context.REQUEST.RESPONSE.setHeader(\'Content-Type\', \'application/json\')\n
 return json.dumps(result)\n
