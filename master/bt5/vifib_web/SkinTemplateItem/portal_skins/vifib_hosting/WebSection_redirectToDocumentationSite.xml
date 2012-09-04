@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>return context.REQUEST.RESPONSE.redirect(\'http://www.slapos.org\')\n
+            <value> <string>return context.REQUEST.RESPONSE.redirect(\'http://community.slapos.org\')\n
 </string> </value>
         </item>
         <item>
