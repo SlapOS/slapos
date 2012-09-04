@@ -1152,13 +1152,14 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm\
         CleanTic \
-        \
-        LoginTestVifibAdmin \
-        Logout \
-        LoginWebUser \
         CallVifibPayzenUpdateConfirmedPaymentAlarm \
         CleanTic \
+        \
+        LoginTestVifibAdmin \
         StoreCurrentToPostAccountingWorkflowCount \
+        Logout \
+        \
+        LoginWebUser \
         CheckWaitingInvoice \
         Tic \
         PayPayment \
