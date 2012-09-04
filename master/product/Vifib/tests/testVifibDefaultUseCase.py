@@ -983,7 +983,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals('account_module/bank', sale_line.getSource())
     self.assertEquals('account_module/bank', sale_line.getDestination())
 
-  def stepStoreCurrentPlannedConfirmedAccountingWorkflowCount(self, sequence,
+  def stepStoreCurrentToPostAccountingWorkflowCount(self, sequence,
     **kw):
     # there shall be no divergency
     count = 0
@@ -994,14 +994,14 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       self.clearCache()
       self.changeSkin('RSS')
       for q in self.portal.ERP5Site_getWorklistObjectList():
-        if q.title.startswith("Accounting Transactions to Start"):
+        if q.title.startswith("Accounting Transactions to Post"):
           count = q.count
           break
     finally:
       self.changeSkin(current_skin)
-    sequence['planned_confirmed_accounting_workflow_count'] = count
+    sequence['to_post_transaction_count'] = count
 
-  def stepCheckCurrentPlannedConfirmedAccountingWorkflowCount(self, sequence,
+  def stepCheckCurrentToPostAccountingWorkflowCount(self, sequence,
     **kw):
     # there shall be no divergency
     count = 0
@@ -1012,19 +1012,19 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       self.clearCache()
       self.changeSkin('RSS')
       for q in self.portal.ERP5Site_getWorklistObjectList():
-        if q.title.startswith("Accounting Transactions to Start"):
+        if q.title.startswith("Accounting Transactions to Post"):
           count = q.count
           break
     finally:
       self.changeSkin(current_skin)
 
     self.assertEqual(count, sequence[
-      'planned_confirmed_accounting_workflow_count'])
+      'to_post_transaction_count'])
 
-  def stepDecreaseCurrentPlannedConfirmedAccountingWorkflowCount(self,
+  def stepDecreaseCurrentToPostAccountingWorkflowCount(self,
     sequence, **kw):
-    sequence['planned_confirmed_accounting_workflow_count'] = sequence[
-      'planned_confirmed_accounting_workflow_count'] - 1
+    sequence['to_post_transaction_count'] = sequence[
+      'to_post_transaction_count'] - 1
 
   def test_default_use_case(self):
     """Test full default use case.
@@ -1042,7 +1042,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       self.prepare_installed_software_release_sequence_string + \
       self.register_new_user_sequence_string + '\
         LoginTestVifibAdmin \
-        StoreCurrentPlannedConfirmedAccountingWorkflowCount \
+        StoreCurrentToPostAccountingWorkflowCount \
         Logout \
         LoginWebUser \
         CheckRegistrationAccounting \
@@ -1052,8 +1052,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         Logout \
         LoginTestVifibAdmin \
-        DecreaseCurrentPlannedConfirmedAccountingWorkflowCount \
-        CheckCurrentPlannedConfirmedAccountingWorkflowCount \
+        DecreaseCurrentToPostAccountingWorkflowCount \
+        CheckCurrentToPostAccountingWorkflowCount \
         Logout \
         LoginWebUser \
         CheckPaidRegistrationAccounting \
@@ -1154,9 +1154,11 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         \
         LoginTestVifibAdmin \
-        StoreCurrentPlannedConfirmedAccountingWorkflowCount \
         Logout \
         LoginWebUser \
+        CallVifibPayzenUpdateConfirmedPaymentAlarm \
+        CleanTic \
+        StoreCurrentToPostAccountingWorkflowCount \
         CheckWaitingInvoice \
         Tic \
         PayPayment \
@@ -1165,8 +1167,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CheckPaidInvoice \
         LoginTestVifibAdmin \
-        DecreaseCurrentPlannedConfirmedAccountingWorkflowCount \
-        CheckCurrentPlannedConfirmedAccountingWorkflowCount \
+        DecreaseCurrentToPostAccountingWorkflowCount \
+        CheckCurrentToPostAccountingWorkflowCount \
         Logout \
         LoginERP5TypeTestCase \
         CheckSiteConsistency \
