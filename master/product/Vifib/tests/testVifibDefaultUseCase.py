@@ -1509,6 +1509,10 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibTriggerBuildAlarm \
         CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        CallVifibPayzenUpdateConfirmedPaymentAlarm \
+        CleanTic \
         \
         LoginWebUser \
         PayPayment \
