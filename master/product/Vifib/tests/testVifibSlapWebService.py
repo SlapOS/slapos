@@ -1520,7 +1520,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       \
       LoginDefaultUser \
       CallConfirmOrderedSaleOrderAlarm \
-      Tic \
+      CleanTic \
+      CallVifibExpandConfirmedSaleOrderAlarm \
+      CleanTic \
+      CallVifibTriggerBuildAlarm \
+      CleanTic \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
       SetSelectedComputerPartition \
       SelectCurrentlyUsedSalePackingListUid \
       Logout \
