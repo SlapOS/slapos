@@ -30,7 +30,7 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     self.assertEqual(message.getTitle(), 'Shown Page')
     self.assertEqual(message.getTextContent(), sequence['payment_page'])
 
-  def stepCheckPaymentPage(self, sequence):
+  def getExpectedUserPage(self, sequence):
     callback = self.portal.web_site_module.hosting.payzen_callback
     query = make_query(dict(transaction=sequence['payment'].getRelativeUrl()))
     integration_site = self.portal.restrictedTraverse(self.portal\
@@ -64,6 +64,7 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     self.portal.portal_secure_payments.vifib_payzen._getFieldList(data_dict)
     data_dict['action'] = self.portal.portal_secure_payments\
       .vifib_payzen.default_link.getUrlString()
+
     expected = \
       '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w'\
       '3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n<html xmlns="http://www.w3.or'\
@@ -96,6 +97,10 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
       ' <input type="hidden" name="vads_amount" value="%(vads_amount)s">\n\n\n'\
       '  <input type="hidden" name="vads_version" value="V2">\n\n<input type="s'\
       'ubmit" value="Click to pay">\n</form>\n</body>\n</html>' % data_dict
+    return expected
+
+  def stepCheckPaymentPage(self, sequence):
+    expected = self.getExpectedUserPage(sequence)
     self.assertEqual(sequence['payment_page'], expected,
       '\n'.join([q for q in difflib.unified_diff(expected.split('\n'),
         sequence['payment_page'].split('\n'))]))
@@ -150,13 +155,29 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepCheckPlannedRegisteredPayment(self, sequence):
+  def stepCheckRegisteredPayment(self, sequence):
     self.assertEqual(sequence['payment'].getSimulationState(), 'started')
-    self.assertEqual(self.portal.portal_catalog.countResults(
+    event_list = self.portal.portal_catalog(
       portal_type='Payzen Event',
       default_destination_uid=sequence['payment'].getUid(),
-      limit=3)[0][0], 2)
-    raise NotImplementedError('Not finished checks.')
+      limit=2)
+    self.assertEqual(len(event_list), 1)
+    event = event_list[0]
+
+    self.assertEqual(event.getTitle(),
+      'User navigation script for %s' % sequence['payment'].getTitle())
+
+    message_list = event.contentValues(portal_type='Payzen Event Message')
+
+    self.assertEqual(len(message_list), 1)
+
+    message = message_list[0]
+    expected = self.getExpectedUserPage(sequence)
+
+    self.assertEqual(message.getTextContent(), expected,
+      '\n'.join([q for q in difflib.unified_diff(expected.split('\n'),
+        message.getTextContent().split('\n'))]))
+
 
   def test_PaymentTransaction_updateStatus_planned_registered(self):
     sequence_list = SequenceList()
