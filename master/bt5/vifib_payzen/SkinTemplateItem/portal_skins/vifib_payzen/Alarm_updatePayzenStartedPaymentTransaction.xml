@@ -50,14 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>from DateTime import DateTime\n
+from Products.ZSQLCatalog.SQLCatalog import Query\n
+from Products.ERP5Type.DateUtils import addToDate\n
+\n
+portal = context.getPortalObject()\n
 portal.portal_catalog.searchAndActivate(\n
       portal_type="Payment Transaction", \n
       simulation_state=["started"],\n
       causality_state=["solved"],\n
       method_id=\'PaymentTransaction_updateStatus\',\n
       packet_size=1, # just one to minimise errors\n
-      activate_kw={\'tag\': tag}\n
+      activate_kw={\'tag\': tag},\n
+      **{\'delivery.start_date\': Query(range="max",\n
+        **{\'delivery.start_date\': addToDate(\n
+            DateTime().latestTime(),\n
+            to_add={\'day\': -1})} )}\n
       )\n
 context.activate(after_tag=tag).getId()\n
 </string> </value>
