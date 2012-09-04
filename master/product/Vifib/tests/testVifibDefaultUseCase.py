@@ -160,7 +160,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       None,
       payment.getSpecialise())
     self.assertEquals(
-      'planned',
+      'confirmed',
       payment.getSimulationState())
     self.assertAlmostEquals(
       0, payment.getTotalPrice(), 3)
@@ -777,7 +777,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       None,
       payment.getSpecialise())
     self.assertEquals(
-      'planned',
+      'confirmed',
       payment.getSimulationState())
     self.assertAlmostEquals(
       0, payment.getTotalPrice(), 3)
