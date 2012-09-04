@@ -142,7 +142,7 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
         .getUid(),
       limit=1)[0][0], 0)
 
-  def test_PaymentTransaction_updateStatus_planned_unknown(self):
+  def test_PaymentTransaction_unknown(self):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
       LoginWebUser \
@@ -179,7 +179,7 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
         message.getTextContent().split('\n'))]))
 
 
-  def test_PaymentTransaction_updateStatus_planned_registered(self):
+  def test_PaymentTransaction_registered(self):
     sequence_list = SequenceList()
     sequence_string = self.register_new_user_sequence_string + '\
       LoginWebUser \
@@ -201,10 +201,10 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_PaymentTransaction_updateStatus_confirmed_no_change(self):
+  def test_PaymentTransaction_updateStatus_registered_no_change(self):
     raise NotImplementedError
 
-  def test_PaymentTransaction_updateStatus_confirmed_paid(self):
+  def test_PaymentTransaction_updateStatus_registered_paid(self):
     raise NotImplementedError
 
 
