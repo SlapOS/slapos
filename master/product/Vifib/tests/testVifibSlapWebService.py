@@ -1506,6 +1506,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CleanTic \
       CallVifibUpdateDeliveryCausalityStateAlarm \
       CleanTic \
+      CallVifibPayzenUpdateConfirmedPaymentAlarm \
+      CleanTic \
       Logout'
 
   create_new_user_instance_sequence_string = '\
