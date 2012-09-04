@@ -105,7 +105,7 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     try:
       self.changeSkin('Hosting')
       sequence['payment'] = self.portal.portal_catalog.getResultValue(
-        portal_type="Payment Transaction", simulation_state="confirmed")
+        portal_type="Payment Transaction", simulation_state="started")
       sequence['payment_page'] = sequence['payment'].__of__(
         self.portal.web_site_module.hosting
           ).AccountingTransaction_startPayment()
