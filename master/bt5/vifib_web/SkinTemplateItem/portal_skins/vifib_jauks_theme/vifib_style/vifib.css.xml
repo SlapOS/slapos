@@ -193,6 +193,10 @@ background:url(<tal:block tal:replace="images_path"/>user.png) no-repeat scroll 
 /*      Footer       */\n
 /**********************/\n
 \n
+.hidden_label > label {\n
+  display:none;\n
+}\n
+\n
 #footer{position:relative;width:100%;line-height:120px;height:120px;\n
 \tcolor:#e1fbff;font-size:15px;background:url(<tal:block tal:replace="images_path"/>foot.png) repeat-x center center}\n
 #footer a{text-decoration:none;color:#e1fbff}\n
