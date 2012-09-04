@@ -935,9 +935,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     """
     payment = self.portal.portal_catalog.getResultValue(
         portal_type="Payment Transaction",
-        simulation_state="planned")
-    payment.setStartDate(DateTime())
-    payment.confirm()
+        simulation_state="confirmed")
     payment.start()
     payment.stop()
 
