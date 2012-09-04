@@ -1088,6 +1088,7 @@ custom
 vifib_upgrader
 vifib_upgrader_20120423
 vifib_upgrader_before_201208
+vifib_upgrader_before_201209
 vifib_agent
 vifib_base
 vifib_core
