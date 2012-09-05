@@ -4,6 +4,7 @@ account_module/capital
 account_module/coll_vat
 account_module/equipments
 account_module/inventories
+computer_network_module
 account_module/payable
 account_module/profit_loss
 account_module/purchase
