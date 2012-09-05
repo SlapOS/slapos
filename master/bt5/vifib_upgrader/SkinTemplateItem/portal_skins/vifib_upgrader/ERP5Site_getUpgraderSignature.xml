@@ -55,7 +55,9 @@
   specification of an upgrader.\n
 """\n
 \n
-raise NotImplementedError(\'Do it manually\')\n
+script.log(\'Do it manually\')\n
+return {}\n
+\n
 \n
 BEFORE_TRIGGERED_BT5_SCRIPT_ID_DICT = {\n
 }\n
