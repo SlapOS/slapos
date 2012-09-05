@@ -70,10 +70,10 @@ else:\n
      software_instance_portal_type \n
 # support SLA\n
 if "computer_guid" in filter_kw:\n
-  query_kw["parent_reference"] = filter_kw["computer_guid"]\n
+  query_kw["parent_reference"] = filter_kw.pop("computer_guid")\n
 if "instance_guid" in filter_kw:\n
   portal = context.getPortalObject()\n
-  instance = portal.portal_catalog.getResultValue(portal_type="Software Instance", reference=filter_kw["instance_guid"])\n
+  instance = portal.portal_catalog.getResultValue(portal_type="Software Instance", reference=filter_kw.pop("instance_guid"))\n
   if instance is None:\n
     # XXX Other user do not have access to the instance document...\n
     if filter_kw["instance_guid"] == "SOFTINST-9238":\n
@@ -90,6 +90,31 @@ if "instance_guid" in filter_kw:\n
       query_kw["uid"] = partition_uid\n
     else:\n
       query_kw["uid"] = "-1"\n
+\n
+computer_base_category_list = [\n
+  \'cpu_core\',\n
+  \'cpu_frequency\',\n
+  \'cpu_type\',\n
+  \'local_area_network_type\',\n
+  \'memory_size\',\n
+  \'memory_type\',\n
+  \'storage_capacity\',\n
+  \'storage_interface\',\n
+  \'storage_redundancy\',\n
+]\n
+for base_category in computer_base_category_list:\n
+  if base_category in filter_kw:\n
+    category_relative_url = "%s" % filter_kw.pop(base_category)\n
+    # XXX Small protection to prevent entering strange strings\n
+    category = context.getPortalObject().portal_categories[base_category].restrictedTraverse(category_relative_url, None)\n
+    if category is None:\n
+      query_kw["uid"] = "-1"\n
+    else:\n
+      query_kw["%s_uid" % base_category] = category.getUid()\n
+\n
+if filter_kw.keys():\n
+  # XXX Drop all unexpected keys\n
+  query_kw["uid"] = "-1"\n
 \n
 SQL_WINDOW_SIZE = 50\n
 \n
