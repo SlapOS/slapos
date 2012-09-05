@@ -1,7 +1,5 @@
 Account
 Account Module
-Computer Network
-Computer Network Module
 Accounting Period
 Accounting Transaction
 Accounting Transaction Module
@@ -18,6 +16,10 @@ Component
 Component Module
 Computer
 Computer Module
+Computer Module
+Computer Model Module
+Computer Network
+Computer Network Module
 Computer Partition
 Contribution Tool
 Credential Update Module
