@@ -5,6 +5,7 @@ from Products.Vifib.tests.testVifibSlapWebService import \
 from Products.ERP5Type.tests.Sequence import SequenceList
 from ZTUtils import make_query
 import difflib
+from Products.ERP5Type.tests.backportUnittest import skip
 
 class TestVifibPayZen(TestVifibSlapWebServiceMixin):
 
@@ -201,9 +202,11 @@ class TestVifibPayZen(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Test not ready.')
   def test_PaymentTransaction_updateStatus_registered_no_change(self):
     raise NotImplementedError
 
+  @skip('Test not ready.')
   def test_PaymentTransaction_updateStatus_registered_paid(self):
     raise NotImplementedError
 
