@@ -188,7 +188,7 @@ class SlapTool(BaseTool):
       parent_uid = self._getComputerUidByReference(computer_id)
   
       slap_computer._computer_partition_list = []
-      if user_type == 'Computer':
+      if user_type in ('Computer', 'Person'):
         slap_computer._software_release_list = \
            self._getSoftwareReleaseValueListForComputer(computer_id, full=True)
       else:
