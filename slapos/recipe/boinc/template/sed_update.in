@@ -1,0 +1,14 @@
+#!%(dash)s
+if [ $# -ne 2 ]
+then
+   echo not enough argument.
+   echo ARGS: appname installroot
+
+else
+
+sed -i.old -e "/<\/boinc>/i\<app>\n<name>$1</name>\n<user_friendly_name>$1</user_friendly_name>\n</app>" $2/project.xml
+
+sed -i.old -e "/<\/daemons>/i\<daemon>\n<cmd>\nsample_bitwise_validator -d 3 -app $1\n</cmd>\n</daemon>" $2/config.xml
+sed -i.old -e "/<\/daemons>/i\<daemon>\n<cmd>\nsample_assimilator -d 3 -app $1\n</cmd>\n</daemon>" $2/config.xml
+
+fi

@@ -51,6 +51,8 @@ class Recipe(GenericBaseRecipe):
     self.sourcedir = options['source'].strip()
     self.home = options['home'].strip()
     self.project = options['project'].strip()
+    self.fullname = options['fullname'].strip()
+    self.copyright = options['copyright'].strip()
     self.project_config = options['project-config'].strip()
     self.installroot = options['installroot'].strip()
     self.boinc_egg = os.path.join(self.package, 'lib/python2.7/site-packages')
@@ -182,7 +184,9 @@ class Recipe(GenericBaseRecipe):
         xadd=os.path.join(self.installroot, 'bin/xadd'),
         environment=environment,
         service_status=service_status,
-        project=niceprojectname
+        project=niceprojectname,
+        fullname=self.fullname,
+        copyright=self.copyright
     )
     start_service = self.createPythonScript(
       os.path.join(self.wrapperdir, 'config_project'),
@@ -190,7 +194,7 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(start_service)
 
-    #Generate Boinc project wrapper
+    #Generate Boinc start project wrapper
     start_args = [os.path.join(self.installroot, 'bin/start')]
     start_wrapper = self.createPythonScript(os.path.join(self.wrapperdir,
         'start_project'),
@@ -201,4 +205,79 @@ class Recipe(GenericBaseRecipe):
 
     return path_list
 
-  update=install
+  update = install
+
+
+class App(GenericBaseRecipe):
+  """This recipe allow to deploy an scientific applications using boinc
+  Note that recipe use depend on boinc-server parameter"""
+
+
+  def install(self):
+
+    path_list = []
+    package = self.options['boinc'].strip()
+    #Define environment variable here
+    boinc_egg = os.path.join(package, 'lib/python2.7/site-packages')
+    developegg = self.options['develop-egg'].strip()
+    python_path = boinc_egg + ":" + os.environ['PYTHONPATH']
+    home = self.options['home'].strip()
+    perl = self.options['perl-binary'].strip()
+    svn = self.options['svn-binary'].strip()
+    pythonbin = self.options['python-binary'].strip()
+    for f in os.listdir(developegg):
+      dir = os.path.join(developegg, f)
+      if os.path.isdir(dir):
+        python_path += ":" + dir
+    bin_dir = os.path.join(home, 'bin')
+    environment = dict(
+        PATH=svn + ':' + bin_dir + ':' + perl + ':' + os.environ['PATH'],
+        PYTHONPATH=python_path,
+        PYTHON=pythonbin
+    )
+
+    #generate project.xml and config.xml script updater
+    bash = os.path.join(home, 'bin', 'update_config.sh')
+    sh_script = self.createFile(bash,
+        self.substituteTemplate(self.getTemplateFilename('sed_update.in'),
+        dict(dash=self.options['dash'].strip()))
+    )
+    path_list.append(sh_script)
+    os.chmod(bash , 0700)
+
+    service_status = os.path.join(home, '.start_service')
+    installroot = self.options['installroot'].strip()
+    version = self.options['version'].strip()
+    platform = self.options['platform'].strip()
+    apps_dir = os.path.join(installroot, 'apps')
+    appname = self.options['app-name'].strip()
+    bin_name = appname +"_"+ version +"_"+ \
+        platform +  self.options['extension'].strip()
+    application = os.path.join(apps_dir, appname, version, platform)
+    wrapperdir = self.options['wrapper-dir'].strip()
+    project = self.options['project'].strip()
+
+    parameter = dict(installroot=installroot, project=project,
+            appname=appname, binary_name=bin_name,
+            version=version, platform=platform,
+            application=application, environment=environment,
+            service_status=service_status,
+            wu_name=self.options['wu-name'].strip(),
+            wu_number=self.options['wu-number'].strip(),
+            t_result=self.options['template-result'].strip(),
+            t_wu=self.options['template-wu'].strip(),
+            t_input=self.options['input-file'].strip(),
+            binary=self.options['binary'].strip(),
+            bash=bash,
+    )
+    deploy_app = self.createPythonScript(
+      os.path.join(wrapperdir, appname),
+      '%s.configure.deployApp' % __name__, parameter
+    )
+    path_list.append(deploy_app)
+
+    return path_list
+
+  update = install
+
+  

@@ -139,6 +139,7 @@ setup(name=name,
           'signalwrapper= slapos.recipe.signal_wrapper:Recipe',
           'condor = slapos.recipe.condor:Recipe',
           'boinc = slapos.recipe.boinc:Recipe',
+          'boinc.app = slapos.recipe.boinc:App',
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',
