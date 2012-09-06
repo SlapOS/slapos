@@ -1,8 +1,8 @@
 import sys
 import subprocess
-    
+
 def executeRunner(args):
-  """Start the instance configure. this may run a python script, move or/and rename 
+  """Start the instance configure. this may run a python script, move or/and rename
   file or directory when dondition is filled. the condition may be when file exist or when an entry
   exist into database.
   """
