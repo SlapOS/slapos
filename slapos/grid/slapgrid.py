@@ -167,7 +167,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       missing_mandatory_parameter_list.append(mandatory_parameter)
 
   if 'all' in option_dict:
-    option_dict.set('develop',True)
+    option_dict['develop'] = True
 
   repository_required = False
   if 'key_file' in option_dict:
