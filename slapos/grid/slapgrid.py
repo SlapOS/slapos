@@ -116,6 +116,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--develop", action="store_true", default=False,
       help="Launch slapgrid in develop mode. In develop mode, slapgrid "
            "will process all Softare Releases and/or Computer Partitions.")
+  parser.add_argument("--all", action="store_true", default=False,
+      help="Launch slapgrid to process all Softare Releases"
+           "and/or Computer Partitions.")
   parser.add_argument("--only_sr",
       help="Force the update of a single software release (use url hash),"
            "event if is already installed. This option will make all others "
@@ -162,6 +165,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   for mandatory_parameter in MANDATORY_PARAMETER_LIST:
     if not mandatory_parameter in option_dict:
       missing_mandatory_parameter_list.append(mandatory_parameter)
+
+  if 'all' in option_dict:
+    option_dict.set('develop',True)
 
   repository_required = False
   if 'key_file' in option_dict:
