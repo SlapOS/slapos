@@ -39,6 +39,10 @@ def runTestSuite(args):
     env['INSTANCE_HOME'] = d['instance_home']
     env['REAL_INSTANCE_HOME'] = d['instance_home']
 
+  # If defined, will add (and replace if existing) envvars to environment.
+  if 'environment' in d:
+    env.update(d['environment'])
+
   # Deal with Shebang size limitation
   executable_filepath = d['call_list'][0]
   file_object = open(executable_filepath, 'r')
