@@ -260,7 +260,7 @@ class Computer(SlapDocument):
   def getComputerPartitionList(self):
     for computer_partition in self._computer_partition_list:
       computer_partition._connection_helper = self._connection_helper
-    return [x for x in self._computer_partition_list if x._need_modification]
+    return [x for x in self._computer_partition_list ]
 
   def reportUsage(self, computer_usage):
     if computer_usage == "":
