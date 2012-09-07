@@ -1,10 +1,33 @@
 Changes
 =======
 
-0.64 (Unrelease)
-----------------
+0.65 (2012-09-07)
+-----------------
 
   * No change yet.
+
+0.65 (2012-09-07)
+-----------------
+
+  * Add egg_test, recipe allowing to do "python setup.py test" on a list of
+    eggs. [Rafael Monnerat, Cedric de Saint Martin]
+
+0.64.2 (2012-08.28)
+-------------------
+
+  * Specify description on gitinit recipe. [Antoine Catton]
+
+0.64.1 (2012-08-28)
+-------------------
+
+  * Fix: minor fix on downloader recipe in order to allow cross-device renaming.
+    [Antoine Catton]
+
+0.64 (2012-08-27)
+----------------
+
+  * Fix: remove "template" recipe which was collinding with slapos.recipe.template.
+    [Antoine Catton]
 
 0.63 (2012-08-22)
 ----------------

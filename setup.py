@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.63-dev'
+version = '0.66-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -50,7 +50,7 @@ setup(name=name,
           'check_port_listening = slapos.recipe.check_port_listening:Recipe',
           'check_url_available = slapos.recipe.check_url_available:Recipe',
           'cloud9 = slapos.recipe.cloud9:Recipe',
-          'cloudooo.test = slapos.recipe.cloudooo_test:Recipe',
+          'cloudooo.test = slapos.recipe.erp5_test:CloudoooRecipe',
           'cron.d = slapos.recipe.dcron:Part',
           'cron = slapos.recipe.dcron:Recipe',
           'davstorage = slapos.recipe.davstorage:Recipe',
@@ -59,6 +59,7 @@ setup(name=name,
           'dropbear.client = slapos.recipe.dropbear:Client',
           'dropbear = slapos.recipe.dropbear:Recipe',
           'duplicity = slapos.recipe.duplicity:Recipe',
+          'egg_test = slapos.recipe.erp5_test:EggTestRecipe',
           'equeue = slapos.recipe.equeue:Recipe',
           'erp5.bootstrap = slapos.recipe.erp5_bootstrap:Recipe',
           'erp5.promise = slapos.recipe.erp5_promise:Recipe',
@@ -130,7 +131,6 @@ setup(name=name,
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'stunnel = slapos.recipe.stunnel:Recipe',
           'symbolic.link = slapos.recipe.symbolic_link:Recipe',
-          'template = slapos.recipe.template:Recipe',
           'testnode = slapos.recipe.testnode:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',
           'urlparse = slapos.recipe._urlparse:Recipe',

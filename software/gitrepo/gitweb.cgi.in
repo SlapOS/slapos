@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-GITWEB_CONFIG="%(gitwebconf)s" exec "%(perl)s" "%(gitweb)s" $@
+GITWEB_CONFIG='${gitweb-conf:output}' exec '${:perl}' '${:gitweb}' $@

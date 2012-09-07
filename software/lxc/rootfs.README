@@ -3,6 +3,9 @@ explaining how to generate a debian rootfs.
 
 This can be used in order to generate any rootfs.
 
+NB: A ready to use rootfs is available at :
+  http://[2001:380:e0c:155:5054:ff:fe5d:a604]/debian-wheezy.tar.xz
+
 Requirements:
 =============
 
