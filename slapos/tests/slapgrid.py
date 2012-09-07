@@ -37,7 +37,6 @@ class BasicMixin:
       self.master_url, self.computer_id, self.supervisord_socket,
       self.supervisord_configuration_path, self.usage_report_periodicity,
       self.buildout)
-
   
   def tearDown(self):
     # XXX: Hardcoded pid, as it is not configurable in slapos
@@ -556,6 +555,105 @@ chmod 755 etc/run/wrapper
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'startedComputerPartition'])
     self.assertTrue(self.started)
+
+
+  def test_one_partition_timestamp(self):
+    def server_response(self_httplib, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      self.sequence.append(parsed_url.path)
+      if method == 'GET':
+        parsed_qs = urlparse.parse_qs(parsed_url.query)
+      else:
+        parsed_qs = urlparse.parse_qs(body)
+      if parsed_url.path == 'getFullComputerInformation' and \
+         'computer_id' in parsed_qs:
+        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'])
+        slap_computer._software_release_list = []
+        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'],
+            '0')
+        partition._need_modification = True
+        sr = slapos.slap.SoftwareRelease()
+        sr._software_release = 'http://sr/'
+        partition._software_release_document = sr
+        partition._requested_state = 'stopped'
+        partition._parameter_dict = {'timestamp': self.timestamp} 
+        slap_computer._computer_partition_list = [partition]
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
+      if parsed_url.path == 'availableComputerPartition' and \
+            method == 'POST' and 'computer_partition_id' in parsed_qs:
+        return (200, {}, '')
+      if parsed_url.path == 'stoppedComputerPartition' and \
+            method == 'POST' and 'computer_partition_id' in parsed_qs:
+        return (200, {}, '')
+      else:
+        return (404, {}, '')
+
+    httplib.HTTPConnection._callback = server_response
+    self.sequence = []
+    self.timestamp = str(time.time())
+
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'template.cfg'), 'w').write(
+      """[buildout]""")
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
+      'var'])
+    partition = os.path.join(self.instance_root, '0')
+    self.assertSortedListEqual(os.listdir(partition), ['.timestamp','worked',
+      'buildout.cfg'])
+    self.assertSortedListEqual(os.listdir(self.software_root),
+      [software_hash])
+
+    def server_response(self_httplib, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      self.sequence.append(parsed_url.path)
+      if method == 'GET':
+        parsed_qs = urlparse.parse_qs(parsed_url.query)
+      else:
+        parsed_qs = urlparse.parse_qs(body)
+      if parsed_url.path == 'getFullComputerInformation' and \
+         'computer_id' in parsed_qs:
+        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'])
+        slap_computer._software_release_list = []
+        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'],
+            '0')
+        partition._need_modification = False
+        sr = slapos.slap.SoftwareRelease()
+        sr._software_release = 'http://sr/'
+        partition._software_release_document = sr
+        partition._requested_state = 'stopped'
+        partition._parameter_dict = {'timestamp': self.timestamp} 
+        slap_computer._computer_partition_list = [partition]
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
+      if parsed_url.path == 'availableComputerPartition' and \
+            method == 'POST' and 'computer_partition_id' in parsed_qs:
+        return (200, {}, '')
+      if parsed_url.path == 'stoppedComputerPartition' and \
+            method == 'POST' and 'computer_partition_id' in parsed_qs:
+        return (200, {}, '')
+      else:
+        return (404, {}, '')
+
+    self.setSlapgrid()
+    self.grid.develop = True
+    httplib.HTTPConnection._callback = server_response
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'stoppedComputerPartition', 'getFullComputerInformation'])
+
+
 
 
 class TestSlapgridArgumentTuple(unittest.TestCase):
