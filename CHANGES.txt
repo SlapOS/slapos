@@ -1,10 +1,11 @@
 Changes
 =======
 
-0.65 (Unrelease)
-----------------
+0.65 (2012-09-07)
+-----------------
 
-  * No change yet.
+  * Add egg_test, recipe allowing to do "python setup.py test" on a list of
+    eggs. [Rafael Monnerat, Cedric de Saint Martin]
 
 0.64.2 (2012-08.28)
 -------------------
