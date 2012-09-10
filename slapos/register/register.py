@@ -292,14 +292,14 @@ def register(config):
       user_id = get_login()
       if check_login(user_id,config.master_url_web): break
       config.logger.warning ("Wrong login/password")
-  elif config.password == None :
-    if not check_login(base64.encodestring('%s:%s' % (config.login,getpass()))[:-1],config.master_url_web):
-      config.logger.error ("Wrong login/password")
-      return 1
   else:
-    if not check_login(base64.encodestring('%s:%s' % (config.login,config.password))[:-1],config.master_url_web):
+    if config.password == None :
+      config.password = getpass()
+    user_id = base64.encodestring('%s:%s' % (config.login,config.password))[:-1]
+    if not check_login(user_id,config.master_url_web):
       config.logger.error ("Wrong login/password")
       return 1
+
   # Get source code of page having certificate and key 
   certificate_key = get_certificates(user_id,config.node_name,config.master_url_web)
   # Parse certificate and key and get computer id
