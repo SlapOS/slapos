@@ -154,6 +154,7 @@ Examples:
 
       slapos node register mycomputer --master-url https://slap.myownslaposmaster.com --master-url-web https://www.myownslaposmaster.com
 
+XXX-Cedric : To be implemented
   * Register computer named "mycomputer" to vifib, and ask to create tap interface to be able to host KVMs::
 
       slapos node register mycomputer --create-tap
