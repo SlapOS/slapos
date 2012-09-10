@@ -1,10 +1,10 @@
 Changes
 =======
 
-0.28.6 (unreleased)
+0.28.6 (2012-09-10)
 -----------------
 
- * No changes yet.
+ * register now use slapos.cfg.example from master. [Cédric Le Ninivin]
 
 0.28.5 (2012-08-23)
 -----------------
