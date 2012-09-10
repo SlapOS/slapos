@@ -41,6 +41,7 @@ setup(name=name,
       'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
                                # XML
       'zope.interface', # slap library implementes interfaces
+      'zc.buildout',
         ] + additional_install_requires,
       zip_safe=False, # proxy depends on Flask, which has issues with
                       # accessing templates
