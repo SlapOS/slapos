@@ -94,6 +94,12 @@ class Parser(OptionParser):
              help="User password on Vifib master webservice",
              default=None,
              type=str),
+      Option("-t", "--create-tap",
+             help="""Will trigger creation of one virtual "tap" interface per \
+Partition and attach it to primary interface. Requires primary interface to be \
+ a bridge. defaults to false. Needed to host virtual machines.""",
+             default=False,
+             action="store_true"),
       Option("-n", "--dry-run",
              help="Simulate the execution steps",
              default=False,
@@ -258,7 +264,8 @@ def slapconfig(config):
   slapformatconfig = dict(
     interface_name=config.interface_name,
     ipv4_local_network=config.ipv4_local_network,
-    partition_amount=config.partition_number
+    partition_amount=config.partition_number,
+    create_tap=config.create_tap
     )
   for key in slapformatconfig :
     configuration_example_parser.set('slapformat',key,slapformatconfig[key])
