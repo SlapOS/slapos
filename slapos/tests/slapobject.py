@@ -15,8 +15,8 @@ class FakeCallAndRead:
     self.external_command_list.extend(additional_buildout_parametr_list)
 
 FakeCallAndRead = FakeCallAndRead()
-utils.bootstrapBuildout = FakeCallAndRead
-utils.launchBuildout = FakeCallAndRead
+#utils.bootstrapBuildout = FakeCallAndRead
+#utils.launchBuildout = FakeCallAndRead
 
 class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
   """
