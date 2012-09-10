@@ -28,13 +28,14 @@
 
 
 import base64
+import ConfigParser
 from getpass import getpass
 import logging
 from optparse import OptionParser, Option
 import os
-import pkg_resources
 import shutil
 import sys
+import tempfile
 import urllib2
 
 
@@ -111,8 +112,6 @@ class Parser(OptionParser):
     if options.password != None and options.login == None :
       self.error("Please enter your login with your password")
 
-    if options.ipv6_interface != '' :
-      options.ipv6_interface = ('ipv6_interface = ' + options.ipv6_interface)
 
     return options, node_name
 
@@ -183,62 +182,98 @@ def save_former_config(config):
       else: break
     config.logger.info( "Former slapos configuration detected in %s moving to %s" % (former_slapos_configuration,saved_slapos_configuration))
     shutil.move(former_slapos_configuration,saved_slapos_configuration)
+
+def get_slapos_conf_example():
+  """
+  Get slapos.cfg.example and return its path
+  """
+  register_server_url = "http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/slapos.cfg.example"
+  request = urllib2.Request(register_server_url)
+  url = urllib2.urlopen(request)  
+  page = url.read()
+  info, path = tempfile.mkstemp()
+  slapos_cfg_example = open(path,'w')
+  slapos_cfg_example.write(page)
+  slapos_cfg_example.close()
+  return path
     
 
 
 def slapconfig(config):
   """Base Function to configure slapos in /etc/opt/slapos"""
   dry_run = config.dry_run
-  try:    
-    # Create slapos configuration directory if needed
-    slap_configuration_directory = os.path.normpath(config.slapos_configuration)
-    slap_configuration_file = os.path.join(slap_configuration_directory, 'slapos.cfg')
-    if not os.path.exists(slap_configuration_directory):
-      config.logger.info ("Creating directory: %s" % slap_configuration_directory)
-      if not dry_run:
-        os.mkdir(slap_configuration_directory, 0711)
-    
-    user_certificate_repository_path = os.path.join(slap_configuration_directory,'ssl')
-    if not os.path.exists(user_certificate_repository_path):
-      config.logger.info ("Creating directory: %s" % user_certificate_repository_path)
-      if not dry_run:
-        os.mkdir(user_certificate_repository_path, 0711)
- 
-    key_file = os.path.join(user_certificate_repository_path, 'key') 
-    cert_file = os.path.join(user_certificate_repository_path, 'certificate')
-    for (src, dst) in [(config.key, key_file), (config.certificate,
-        cert_file)]:
-      config.logger.info ("Copying to %r, and setting minimum privileges" % dst)
-      if not dry_run:
-        destination = open(dst,'w')
-        destination.write(''.join(src))
-        destination.close()
-        os.chmod(dst, 0600)
-        os.chown(dst, 0, 0)
+  # Create slapos configuration directory if needed
+  slap_configuration_directory = os.path.normpath(config.slapos_configuration)
 
-    certificate_repository_path = os.path.join(slap_configuration_directory,'ssl','partition_pki')
-    if not os.path.exists(certificate_repository_path):
-      config.logger.info ("Creating directory: %s" % certificate_repository_path)
-      if not dry_run:
-        os.mkdir(certificate_repository_path, 0711)
-    
-    # Put slapgrid configuration file
-    config.logger.info ("Creating slap configuration: %s" % slap_configuration_file)
+  if not os.path.exists(slap_configuration_directory):
+    config.logger.info ("Creating directory: %s" % slap_configuration_directory)
     if not dry_run:
-      open(slap_configuration_file, 'w').write(
-        pkg_resources.resource_stream(__name__,
-                                      'templates/slapos.cfg.in').read() % dict(
-          computer_id=config.computer_id, master_url=config.master_url,
-          key_file=key_file, cert_file=cert_file,
-          certificate_repository_path=certificate_repository_path,
-          partition_amount=config.partition_number,
-          interface=config.interface_name,
-          ipv4_network=config.ipv4_local_network,
-          ipv6_interface=config.ipv6_interface
-          ))
-    config.logger.info ("SlapOS configuration: DONE")
-  finally:
-    return 0
+      os.mkdir(slap_configuration_directory, 0711)
+  
+  user_certificate_repository_path = os.path.join(slap_configuration_directory,'ssl')
+  if not os.path.exists(user_certificate_repository_path):
+    config.logger.info ("Creating directory: %s" % user_certificate_repository_path)
+    if not dry_run:
+      os.mkdir(user_certificate_repository_path, 0711)
+ 
+  key_file = os.path.join(user_certificate_repository_path, 'key') 
+  cert_file = os.path.join(user_certificate_repository_path, 'certificate')
+  for (src, dst) in [(config.key, key_file), (config.certificate,
+      cert_file)]:
+    config.logger.info ("Copying to %r, and setting minimum privileges" % dst)
+    if not dry_run:
+      destination = open(dst,'w')
+      destination.write(''.join(src))
+      destination.close()
+      os.chmod(dst, 0600)
+      os.chown(dst, 0, 0)
+
+  certificate_repository_path = os.path.join(slap_configuration_directory,'ssl','partition_pki')
+  if not os.path.exists(certificate_repository_path):
+    config.logger.info ("Creating directory: %s" % certificate_repository_path)
+    if not dry_run:
+      os.mkdir(certificate_repository_path, 0711)
+  
+  # Put slapos configuration file
+  slap_configuration_file = os.path.join(slap_configuration_directory, 
+                                           'slapos.cfg')
+  config.logger.info ("Creating slap configuration: %s" 
+                      % slap_configuration_file)
+
+  # Get example configuration file
+  slapos_cfg_example = get_slapos_conf_example()
+  configuration_example_parser = ConfigParser.RawConfigParser()
+  configuration_example_parser.read(slapos_cfg_example)  
+  os.remove(slapos_cfg_example)
+
+  # prepare slapos section
+  slaposconfig = dict(
+    computer_id=config.computer_id, master_url=config.master_url,
+    key_file=key_file, cert_file=cert_file,
+    certificate_repository_path=certificate_repository_path)
+  for key in slaposconfig :
+    configuration_example_parser.set('slapos',key,slaposconfig[key])
+
+  # prepare slapformat
+  slapformatconfig = dict(
+    interface_name=config.interface_name,
+    ipv4_local_network=config.ipv4_local_network,
+    partition_amount=config.partition_number
+    )
+  for key in slapformatconfig :
+    configuration_example_parser.set('slapformat',key,slapformatconfig[key])
+  
+  if not config.ipv6_interface == '':
+    configuration_example_parser.set('slapformat','ipv6_interface'
+                                     ,config.ipv6_interface)
+
+  if not dry_run:
+    file = open(slap_configuration_file,"w")
+    configuration_example_parser.write(file)
+    file.close()
+   
+  config.logger.info ("SlapOS configuration: DONE")
+
 
 # Class containing all parameters needed for configuration
 class Config:
