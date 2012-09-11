@@ -14,6 +14,20 @@ import time
 
 from Products.ERP5Type.tests.backportUnittest import skip
 
+def _getMemcachedDict(self):
+  return self.getPortal().portal_memcached.getMemcachedDict(
+    key_prefix='slap_tool',
+    plugin_path='portal_memcached/default_memcached_plugin')
+
+def _logAccess(self, user_reference, context_reference, text):
+  memcached_dict = self._getMemcachedDict()
+  value = json.dumps({
+    'user': '%s' % user_reference,
+    'created_at': '%s' % rfc1123_date(DateTime()),
+    'text': '%s' % text,
+  })
+  memcached_dict[context_reference] = value
+
 class Simulator:
   def __init__(self, outfile, method):
     self.outfile = outfile
@@ -50,6 +64,25 @@ class CustomHeaderHTTPConnection(httplib.HTTPConnection):
     kwargs['headers'] = headers
     return httplib.HTTPConnection.request(self, *args, **kwargs)
 
+def VifibSlaposRestAPIV1MixinBase_afterSetUp(self):
+#   self.setupVifibMachineAuthenticationPlugin()
+  self.test_random_id = self.generateNewId()
+  self.access_control_allow_headers = 'some, funny, headers, ' \
+    'always, expected, %s' % self.test_random_id
+
+  self.document_list = []
+  self.portal = self.getPortalObject()
+
+  self.api_url = self.portal.portal_vifib_rest_api.v1.getAPIRoot()
+  self.api_scheme, self.api_netloc, self.api_path, self.api_query, \
+    self.api_fragment = urlparse.urlsplit(self.api_url)
+
+  self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
+    custom_header={
+      'Access-Control-Request-Headers': self.access_control_allow_headers,
+      'Content-Type': 'application/json',
+    })
+
 class VifibSlaposRestAPIV1MixinBase(TestVifibSlapWebServiceMixin):
   def generateNewId(self):
     return str(self.getPortalObject().portal_ids.generateNewId(
@@ -64,23 +97,7 @@ class VifibSlaposRestAPIV1MixinBase(TestVifibSlapWebServiceMixin):
       self.response.getheader('Cache-Control'))
 
   def afterSetUp(self):
-    self.setupVifibMachineAuthenticationPlugin()
-    self.test_random_id = self.generateNewId()
-    self.access_control_allow_headers = 'some, funny, headers, ' \
-      'always, expected, %s' % self.test_random_id
-
-    self.document_list = []
-    self.portal = self.getPortalObject()
-
-    self.api_url = self.portal.portal_vifib_rest_api.v1.getAPIRoot()
-    self.api_scheme, self.api_netloc, self.api_path, self.api_query, \
-      self.api_fragment = urlparse.urlsplit(self.api_url)
-
-    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
-      custom_header={
-        'Access-Control-Request-Headers': self.access_control_allow_headers,
-        'Content-Type': 'application/json',
-      })
+    VifibSlaposRestAPIV1MixinBase_afterSetUp(self)
 
   def beforeTearDown(self):
     pass
@@ -109,6 +126,20 @@ class VifibSlaposRestAPIV1MixinBase(TestVifibSlapWebServiceMixin):
   def assertResponseNoContentType(self):
     self.assertEqual(self.response.getheader('Content-Type'), None)
 
+def VifibSlaposRestAPIV1Mixin_afterSetUp(self):
+  VifibSlaposRestAPIV1MixinBase_afterSetUp(self)
+#   self.setupVifibMachineAuthenticationPlugin()
+
+  self.person_request_simulator = tempfile.mkstemp()[1]
+  self.customer, self.customer_reference = self.createPerson()
+  self.customer.requestSoftwareInstance = Simulator(self.person_request_simulator,
+    'requestSoftwareInstance')
+  transaction.commit()
+
+def VifibSlaposRestAPIV1Mixin_beforeTearDown(self):
+  if os.path.exists(self.person_request_simulator):
+    os.unlink(self.person_request_simulator)
+
 class VifibSlaposRestAPIV1Mixin(VifibSlaposRestAPIV1MixinBase):
   def createPerson(self):
     customer = self.cloneByPath('person_module/template_member')
@@ -128,18 +159,10 @@ class VifibSlaposRestAPIV1Mixin(VifibSlaposRestAPIV1MixinBase):
     return customer, customer_reference
 
   def afterSetUp(self):
-    super(VifibSlaposRestAPIV1Mixin, self).afterSetUp()
-    self.setupVifibMachineAuthenticationPlugin()
-
-    self.person_request_simulator = tempfile.mkstemp()[1]
-    self.customer, self.customer_reference = self.createPerson()
-    self.customer.requestSoftwareInstance = Simulator(self.person_request_simulator,
-      'requestSoftwareInstance')
-    transaction.commit()
+    VifibSlaposRestAPIV1Mixin_afterSetUp(self)
 
   def beforeTearDown(self):
-    if os.path.exists(self.person_request_simulator):
-      os.unlink(self.person_request_simulator)
+    VifibSlaposRestAPIV1Mixin_beforeTearDown(self)
 
   def assertPersonRequestSimulatorEmpty(self):
     self.assertEqual(open(self.person_request_simulator).read(), '')
@@ -474,11 +497,13 @@ class TestInstanceOPTIONS(VifibSlaposRestAPIV1Mixin):
     self.assertResponseNoContentType()
     self.assertPersonRequestSimulatorEmpty()
 
-@skip('Undecided.')
+def VifibSlaposRestAPIV1InstanceMixin_afterSetUp(self):
+  VifibSlaposRestAPIV1Mixin_afterSetUp(self)
+  self.software_instance = self.createSoftwareInstance(self.customer)
+
 class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
   def afterSetUp(self):
-    VifibSlaposRestAPIV1Mixin.afterSetUp(self)
-    self.software_instance = self.createSoftwareInstance(self.customer)
+    VifibSlaposRestAPIV1InstanceMixin_afterSetUp(self)
 
   def assertLastModifiedHeader(self):
     calculated = rfc1123_date(self.software_instance.getModificationDate())
@@ -800,18 +825,24 @@ class TestInstanceGETcertificate(VifibSlaposRestAPIV1InstanceMixin):
     self.assertBasicResponse()
     self.assertResponseCode(404)
 
+def VifibSlaposRestAPIV1BangMixin_afterSetUp(self):
+  VifibSlaposRestAPIV1BangMixin_afterSetUp(self)
+  self.instance_bang_simulator = tempfile.mkstemp()[1]
+  self.software_instance.bang = Simulator(
+    self.instance_bang_simulator, 'bang')
+  transaction.commit()
+
+def VifibSlaposRestAPIV1BangMixin_beforeTearDown(self):
+  VifibSlaposRestAPIV1BangMixin_beforeTearDown()
+  if os.path.exists(self.instance_bang_simulator):
+    os.unlink(self.instance_bang_simulator)
+
 class VifibSlaposRestAPIV1BangMixin(VifibSlaposRestAPIV1InstanceMixin):
   def afterSetUp(self):
-    super(VifibSlaposRestAPIV1BangMixin, self).afterSetUp()
-    self.instance_bang_simulator = tempfile.mkstemp()[1]
-    self.software_instance.bang = Simulator(
-      self.instance_bang_simulator, 'bang')
-    transaction.commit()
+    VifibSlaposRestAPIV1BangMixin_afterSetUp(self)
 
   def beforeTearDown(self):
-    super(VifibSlaposRestAPIV1BangMixin, self).beforeTearDown()
-    if os.path.exists(self.instance_bang_simulator):
-      os.unlink(self.instance_bang_simulator)
+    VifibSlaposRestAPIV1BangMixin_beforeTearDown(self)
 
   def assertInstanceBangSimulatorEmpty(self):
     self.assertEqual(open(self.instance_bang_simulator).read(), '')
@@ -1594,3 +1625,132 @@ class TestComputerPUT(VifibSlaposRestAPIV1MixinBase):
     self.assertEqual({'software_0': ['Missing key "log".']},
       self.json_response)
     self.assertComputerPUTSimulatorEmpty()
+
+class TestStatusGET(VifibSlaposRestAPIV1InstanceMixin):
+  def afterSetUp(self):
+    VifibSlaposRestAPIV1Mixin_afterSetUp(self)
+
+  def createComputer(self):
+    computer = self.cloneByPath(
+      'computer_module/template_computer')
+    computer.edit(reference='C' + self.test_random_id)
+    computer.validate()
+    computer.manage_setLocalRoles(self.customer_reference,
+      ['Assignee'])
+    transaction.commit()
+    computer.recursiveImmediateReindexObject()
+    transaction.commit()
+    return computer
+
+  def assertCacheControlHeader(self):
+    self.assertEqual('max-age=300, private',
+      self.response.getheader('Cache-Control'))
+
+  def test_non_existing_status(self):
+    non_existing = 'system_event_module/' + self.generateNewId()
+    try:
+      self.portal.restrictedTraverse(non_existing)
+    except KeyError:
+      pass
+    else:
+      raise AssertionError('It was impossible to test')
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'status',
+      non_existing]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def test_something_else(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'status',
+      self.customer.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(404)
+
+  def _storeJson(self, key, json):
+    memcached_dict = self.getPortalObject().portal_memcached.\
+      getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+    memcached_dict[key] = json
+
+  def test_on_computer(self):
+    self.computer = self.createComputer()
+    reference = self.computer.getReference()
+    value = json.dumps({'foo': reference})
+    self._storeJson(reference, value)
+    transaction.commit()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'status',
+      self.computer.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    value = json.loads(value)
+    value['@document'] = self.computer.getRelativeUrl()
+    self.assertEqual(value, self.json_response)
+
+  def test_on_instance(self):
+    self.software_instance = self.createSoftwareInstance(self.customer)
+    reference = self.software_instance.getReference()
+    value = json.dumps({'bar': reference})
+    self._storeJson(reference, value)
+    transaction.commit()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'status',
+      self.software_instance.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    value = json.loads(value)
+    value['@document'] = self.software_instance.getRelativeUrl()
+    self.assertEqual(value, self.json_response)
+
+  def test_no_data_in_memcached(self):
+    self.computer = self.createComputer()
+    reference = self.computer.getReference()
+    value = json.dumps({'foo': reference})
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'status',
+      self.computer.getRelativeUrl()]),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertEquals(self.json_response['user'], 'SlapOS Master')
+
+  def test_search_no_status(self):
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'status']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(204)
+
+  def test_search_existing_instance(self):
+    self.software_instance = self.createSoftwareInstance(self.customer)
+    transaction.commit()
+    self.connection.request(method='GET',
+      url='/'.join([self.api_path, 'status']),
+      headers={'REMOTE_USER': self.customer_reference})
+    self.prepareResponse()
+    self.assertBasicResponse()
+    self.assertResponseCode(200)
+    self.assertCacheControlHeader()
+    self.assertResponseJson()
+    self.assertEqual({
+      'list': ['/'.join([self.api_url, 'status',
+                         self.software_instance.getRelativeUrl()])]
+      }, self.json_response)
