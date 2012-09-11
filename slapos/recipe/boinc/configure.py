@@ -94,7 +94,7 @@ def services(args):
   user_profile = os.path.join(args['installroot'], 'html/user_profile')
   forum_file = os.path.join(args['installroot'], 'html/ops/create_forums.php')
   project_inc = os.path.join(args['installroot'], 'html/project/project.inc')
-  cmd = "chmod 02770 -R %s %s, %s %s %s" % (upload, inc,
+  cmd = "chmod 02700 -R %s %s, %s %s %s" % (upload, inc,
               languages, compiled, user_profile)
   os.system("chmod g+w -R " + args['installroot'])
   os.system(cmd)
@@ -157,7 +157,7 @@ def deployApp(args):
           args['appname']+'_result'))
   shutil.copy(args['t_wu'], os.path.join(args['templates'],
           args['appname']+'_wu'))
-  shutil.copy(args['t_input'], args['inputfile'])
+  os.symlink(args['t_input'], args['inputfile'])
   shutil.copy(args['binary'], os.path.join(args['application'],
         args['binary_name']))
 
