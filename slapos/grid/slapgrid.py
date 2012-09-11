@@ -412,7 +412,7 @@ class Slapgrid(object):
       self.software_release_filter_list = \
           software_release_filter_list.split(",")
     else:
-      self.software_release_filter_list= []
+      self.software_release_filter_list = []
     self.computer_partition_filter_list = []
     if computer_partition_filter_list is not None:
       self.computer_partition_filter_list = \
