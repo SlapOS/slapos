@@ -66,6 +66,9 @@ import xml_marshaller
 import StringIO
 import pkg_resources
 from Products.Vifib.Conduit import VifibConduit
+import json
+from DateTime import DateTime
+from App.Common import rfc1123_date
 class SoftwareInstanceNotReady(Exception):
   pass
 
@@ -166,6 +169,7 @@ class SlapTool(BaseTool):
       return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
+    self._logAccess(user, user, '#access %s' % computer_id)
     return CachingMethod(_getComputerInformation,
                          id='_getComputerInformation',
                          cache_factory='slap_cache_factory')(computer_id, user)
@@ -201,6 +205,7 @@ class SlapTool(BaseTool):
             self._getSlapPartitionByPackingList(computer_partition.getObject()))
       return xml_marshaller.xml_marshaller.dumps(slap_computer)
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
+    self._logAccess(user, user, '#access %s' % computer_id)
     return CachingMethod(_getFullComputerInformation,
                          id='_getFullComputerInformation',
                          cache_factory='slap_cache_factory')(computer_id, user)
@@ -276,6 +281,9 @@ class SlapTool(BaseTool):
     """
     Add an error for a software Release workflow
     """
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(user, computer_id, '#error while installing %s' % url)
     return self._softwareReleaseError(url, computer_id, error_log)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -511,6 +519,20 @@ class SlapTool(BaseTool):
   # Internal methods
   ####################################################
 
+  def _getMemcachedDict(self):
+    return self.getPortalObject().portal_memcached.getMemcachedDict(
+      key_prefix='slap_tool',
+      plugin_path='portal_memcached/default_memcached_plugin')
+
+  def _logAccess(self, user_reference, context_reference, text):
+    memcached_dict = self._getMemcachedDict()
+    value = json.dumps({
+      'user': '%s' % user_reference,
+      'created_at': '%s' % rfc1123_date(DateTime()),
+      'text': '%s' % text,
+    })
+    memcached_dict[context_reference] = value
+
   def _validateXML(self, to_be_validated, xsd_model):
     """Will validate the xml file"""
     #We parse the XSD model
@@ -704,9 +726,14 @@ class SlapTool(BaseTool):
     """
     Add an error for the software Instance Workflow
     """
-    return self._getSoftwareInstanceForComputerPartition(
+    instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id).reportComputerPartitionError(
+        computer_partition_id)
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(user, instance.getReference(), 
+                    '#error while instanciating')
+    return instance.reportComputerPartitionError(
                                      comment=error_log)
 
   @convertToREST
