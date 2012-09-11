@@ -491,6 +491,74 @@ class ComputerPublisher(GenericPublisher):
     self.REQUEST.response.setStatus(204)
     return self.REQUEST.response
 
+class StatusPublisher(GenericPublisher):
+
+  @responseSupport()
+  def __call__(self):
+    """Log GET support"""
+    if self.REQUEST['REQUEST_METHOD'] == 'POST':
+      self.REQUEST.response.setStatus(404)
+      return self.REQUEST.response
+    elif self.REQUEST['REQUEST_METHOD'] == 'GET':
+      if self.REQUEST['traverse_subpath']:
+        self.__status_info()
+      else:
+        self.__status_list()
+
+  def __status_list(self):
+    kw = dict(
+      portal_type=('Computer', 'Software Instance'),
+    )
+    d = {"list": []}
+    a = d['list'].append
+    for si in self.getPortalObject().portal_catalog(**kw):
+      a('/'.join([self.getAPIRoot(), 'status', si.getRelativeUrl()]))
+    try:
+      d['list'][0]
+    except IndexError:
+      # no results, so nothing to return
+      self.REQUEST.response.setStatus(204)
+    else:
+      self.REQUEST.response.setStatus(200)
+      self.REQUEST.response.setHeader('Cache-Control', 
+                                      'max-age=300, private')
+      self.REQUEST.response.setBody(jsonify(d))
+    return self.REQUEST.response
+
+  # XXX Use a decated document to keep the history
+  @extractDocument(['Computer', 'Software Instance'])
+#   @supportModifiedSince('document_url')
+  def __status_info(self):
+    certificate = False
+    document = self.restrictedTraverse(self.document_url)
+    try:
+      memcached_dict = self.getPortalObject().portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+      try:
+        d = memcached_dict[document.getReference()]
+      except KeyError:
+        d = {
+          "user": "SlapOS Master",
+          'created_at': '%s' % rfc1123_date(DateTime()),
+          "text": "#error no data found for %s" % document.getReference()
+        }
+      else:
+        d = json.loads(d)
+    except Exception:
+      LOG('VifibRestApiV1', ERROR,
+        'Problem while trying to generate status information:', error=True)
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(jsonify({'error':
+        'There is system issue, please try again later.'}))
+    else:
+      d['@document'] = self.document_url
+      self.REQUEST.response.setStatus(200)
+      self.REQUEST.response.setHeader('Cache-Control', 
+                                      'max-age=300, private')
+      self.REQUEST.response.setBody(jsonify(d))
+    return self.REQUEST.response
+
 class VifibRestAPIV1(Implicit):
   security = ClassSecurityInfo()
   security.declareObjectProtected(Permissions.AccessContentsInformation)
@@ -511,6 +579,12 @@ class VifibRestAPIV1(Implicit):
   def computer(self):
     """Computer publisher"""
     return ComputerPublisher().__of__(self)
+
+  security.declarePublic('log')
+  @ComputedAttribute
+  def status(self):
+    """Status publisher"""
+    return StatusPublisher().__of__(self)
 
   @responseSupport(True)
   def OPTIONS(self, *args, **kwargs):
