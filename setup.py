@@ -140,6 +140,7 @@ setup(name=name,
           'condor = slapos.recipe.condor:Recipe',
           'boinc = slapos.recipe.boinc:Recipe',
           'boinc.app = slapos.recipe.boinc:App',
+          'boinc.client = slapos.recipe.boinc:Client',
         ],
         'slapos.recipe.nosqltestbed.plugin': [
           'kumo = slapos.recipe.nosqltestbed.kumo:KumoTestBed',

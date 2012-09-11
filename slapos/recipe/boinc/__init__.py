@@ -280,4 +280,25 @@ class App(GenericBaseRecipe):
 
   update = install
 
+
+class Client(GenericBaseRecipe):
+  """Deploy a fully fonctionnal boinc client connected to a boinc server instance"""
+
+  def install(self):
+    path_list = []
+    boincbin = self.options['boinc-bin'].strip()
+    installdir = self.options['install-dir'].strip()
+    url = self.options['server-url'].strip()
+    key = self.options['key'].strip()
+    boinc_wrapper = self.options['client-wrapper'].strip()
+
+    #Generate wrapper for boinc_client
+    client_wrapper = self.createPythonScript(boinc_wrapper,
+        'slapos.recipe.librecipe.execute.execute',
+        ([boincbin, '--dir', installdir, '--attach_project', url, key])
+    )
+    path_list.append(client_wrapper)
+    return path_list
+
+  update = install
   
