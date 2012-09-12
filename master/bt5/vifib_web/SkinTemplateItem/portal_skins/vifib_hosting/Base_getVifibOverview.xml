@@ -120,7 +120,6 @@ encode : function (input) {\n
         var created_at = new Date(Date.parse(data.created_at)),\n
           now = new Date(),\n
           context = $(this);\n
-        console.log(data[\'@document\']);\n
         if (/#ok/.test(data.text) & (now - created_at < 300000)) {\n
           $(this).attr("class", "monitoring_ok")\n
                  .attr("title", data.text)\n
@@ -180,9 +179,6 @@ encode : function (input) {\n
             update_status(status_context);\n
           });\n
         }\n
-      },\n
-      error: function(jqXHR, textStatus, errorThrown) {\n
-        console.log(jqXHR.status);\n
       },\n
       complete: function() {\n
         var context = $(this);\n
