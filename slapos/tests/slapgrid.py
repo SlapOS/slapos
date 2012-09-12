@@ -897,7 +897,7 @@ exit 0""" % {'worked_file': worked_file})
     with open(succeed, 'w') as f:
       f.write("""#!/usr/bin/env sh
 touch "%(worked_file)s"
-echo -n Error 1>&2
+echo Error 1>&2
 exit 127""" % {'worked_file': worked_file})
     os.chmod(succeed, 0777)
     self.assertFalse(self.grid.processComputerPartitionList())
