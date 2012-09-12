@@ -95,7 +95,8 @@
                     <key> <string>normal</string> </key>
                     <value>
                       <list>
-                        <string>your_title</string>
+                        <string>my_section_title</string>
+                        <string>my_translated_description</string>
                         <string>your_ad</string>
                       </list>
                     </value>
