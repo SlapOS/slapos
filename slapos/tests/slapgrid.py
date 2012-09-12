@@ -1197,9 +1197,9 @@ exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
   def test_slapgrid_processes_partition_after_global_timeout(self):
     """
     """
-    raise NotImplemented()
+    raise NotImplementedError()
 
   def test_slapgrid_processes_partition_after_timeout_defined_by_software_release(self):
     """
     """
-    raise NotImplemented()
+    raise NotImplementedError()
