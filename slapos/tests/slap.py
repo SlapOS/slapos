@@ -87,8 +87,10 @@ class TestSlap(SlapMixin):
     """
     slap_instance = slapos.slap.slap()
     slap_instance.initializeConnection(self.server_url)
-    self.assertTrue(slapos.slap.SlapDocument._connection_helper.host in self.server_url)
-    self.assertTrue(slapos.slap.SlapDocument._connection_helper.path in self.server_url)
+    self.assertTrue(
+        slap_instance._connection_helper.host in self.server_url)
+    self.assertTrue(
+        slap_instance._connection_helper.path in self.server_url)
 
   def test_slap_initialisation_wrong_url(self):
     """
