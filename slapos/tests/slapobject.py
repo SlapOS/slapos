@@ -15,8 +15,8 @@ class FakeCallAndRead:
     self.external_command_list.extend(additional_buildout_parametr_list)
 
 FakeCallAndRead = FakeCallAndRead()
-#utils.bootstrapBuildout = FakeCallAndRead
-#utils.launchBuildout = FakeCallAndRead
+originalBootstrapBuildout = utils.bootstrapBuildout
+originalLaunchBuildout = utils.launchBuildout
 
 class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
   """
@@ -34,9 +34,19 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     self.shadir_cert_file = '/path/to/shadir/cert/file'
     self.shadir_key_file = '/path/to/shadir/key/file'
 
+    # Monkey patch utils module
+    utils.bootstrapBuildout = FakeCallAndRead
+    utils.launchBuildout = FakeCallAndRead
+
   def tearDown(self):
+    global originalBootstrapBuildout
+    global originalLaunchBuildout
     BasicMixin.tearDown(self)
     FakeCallAndRead.external_command_list = []
+
+    # Un-monkey patch utils module
+    utils.bootstrapBuildout = originalBootstrapBuildout
+    utils.launchBuildout = originalLaunchBuildout
 
   # Test methods
   def test_software_install_with_networkcache(self):
