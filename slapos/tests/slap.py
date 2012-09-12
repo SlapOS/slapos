@@ -46,6 +46,8 @@ class SlapMixin(unittest.TestCase):
     else:
       self.server_url = self._server_url
     print 'Testing against SLAP server %r' % self.server_url
+    self.slap = slapos.slap.slap()
+    self.partition_id = 'PARTITION_01'
 
   def tearDown(self):
     if self._server_url is None:
@@ -162,14 +164,25 @@ class TestSlap(SlapMixin):
     Asserts that calling slap.registerComputerPartition on known computer
     returns ComputerPartition object
     """
-    self.computer_guid = self._getTestComputerId()
-    self.slap = slapos.slap.slap()
+    computer_guid = self._getTestComputerId()
+    partition_id = self.partition_id
     self.slap.initializeConnection(self.server_url)
-    self.partition_id = 'PARTITION_01'
-    self.slap.registerComputer(self.computer_guid)
+    self.slap.registerComputer(computer_guid)
 
-    partition = self.slap.registerComputerPartition(self.computer_guid,
-                                                    self.partition_id)
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'registerComputerPartition' and \
+         parsed_qs['computer_reference'][0] == computer_guid and \
+         parsed_qs['computer_partition_reference'][0] == partition_id:
+        partition = slapos.slap.ComputerPartition(
+            computer_guid, partition_id)
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(partition))
+      else:
+        return (404, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
+    partition = self.slap.registerComputerPartition(computer_guid, partition_id)
     self.assertTrue(isinstance(partition, slapos.slap.ComputerPartition))
 
   def test_registerComputerPartition_existing_partition_id_known_computer_guid(self):
@@ -178,7 +191,7 @@ class TestSlap(SlapMixin):
     returns ComputerPartition object
     """
     self.test_registerComputerPartition_new_partition_id_known_computer_guid()
-    partition = self.slap.registerComputerPartition(self.computer_guid,
+    partition = self.slap.registerComputerPartition(self._getTestComputerId(),
         self.partition_id)
     self.assertTrue(isinstance(partition, slapos.slap.ComputerPartition))
 
@@ -187,6 +200,7 @@ class TestSlap(SlapMixin):
     Asserts that calling slap.registerComputerPartition on unknown
     computer raises (not defined yet) exception
     """
+    raise NotImplementedError()
     computer_guid = self._getTestComputerId()
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
