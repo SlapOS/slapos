@@ -1,4 +1,4 @@
---version:7
+--version:9
 CREATE TABLE IF NOT EXISTS software%(version)s (url VARCHAR(255) UNIQUE);
 CREATE TABLE IF NOT EXISTS computer%(version)s (
   address VARCHAR(255),
@@ -11,9 +11,17 @@ CREATE TABLE IF NOT EXISTS partition%(version)s (
   software_release VARCHAR(255),
   xml TEXT,
   connection_xml TEXT,
+  slave_instance_list TEXT,
   software_type VARCHAR(255),
   partition_reference VARCHAR(255),
   requested_by VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS slave%(version)s (
+  reference VARCHAR(255) UNIQUE,
+  connection_xml TEXT,
+  hosted_by VARCHAR(255),
+  asked_by VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS partition_network%(version)s (
