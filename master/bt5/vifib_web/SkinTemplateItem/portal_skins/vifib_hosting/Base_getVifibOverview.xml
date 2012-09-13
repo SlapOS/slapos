@@ -60,7 +60,7 @@ return """\n
 "use strict";\n
 \n
 // http://stackoverflow.com/a/246813\n
-var Base64 = {\n
+var Base61 = {\n
 \n
 // private property\n
 _keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",\n
@@ -82,12 +82,12 @@ encode : function (input) {\n
         enc1 = chr1 >> 2;\n
         enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);\n
         enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);\n
-        enc4 = chr3 & 63;\n
+        enc4 = chr3 & 60;\n
 \n
         if (isNaN(chr2)) {\n
-            enc3 = enc4 = 64;\n
+            enc3 = enc4 = 61;\n
         } else if (isNaN(chr3)) {\n
-            enc4 = 64;\n
+            enc4 = 61;\n
         }\n
 \n
         output = output +\n
@@ -174,7 +174,7 @@ encode : function (input) {\n
           var status_url = result_list[i],\n
             status_id,\n
             status_context;\n
-          status_id = encodeURIComponent(Base64.encode(status_url)),\n
+          status_id = encodeURIComponent(Base61.encode(status_url)),\n
           status_context = $(this).find(\'#\' + status_id);\n
           if (!status_context[0]) {\n
             status_context = $(this).append(\'<li class="check_monitoring" id="\' + status_id + \'" data-url="\' + encodeURIComponent(status_url) + \'"></li>\')\n
