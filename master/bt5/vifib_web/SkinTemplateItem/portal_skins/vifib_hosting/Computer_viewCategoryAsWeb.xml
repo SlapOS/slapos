@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string>WebSection_requestSoftwareReleaseInstallation</string> </value>
+            <value> <string>Base_edit</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -86,13 +86,7 @@
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list>
-                        <string>listbox_software_release</string>
-                        <string>listbox_parent_state</string>
-                        <string>listbox_image</string>
-                        <string>listbox_installation_state</string>
-                        <string>listbox_usage</string>
-                      </list>
+                      <list/>
                     </value>
                 </item>
                 <item>
@@ -101,10 +95,16 @@
                       <list>
                         <string>my_title</string>
                         <string>my_reference</string>
-                        <string>your_system_message</string>
-                        <string>your_allocation_scope_update</string>
-                        <string>your_category_update</string>
-                        <string>listbox</string>
+                        <string>my_cpu_core</string>
+                        <string>my_cpu_frequency</string>
+                        <string>my_cpu_type</string>
+                        <string>my_local_area_network_type</string>
+                        <string>my_memory_size</string>
+                        <string>my_memory_type</string>
+                        <string>my_storage_capacity</string>
+                        <string>my_storage_interface</string>
+                        <string>my_storage_redundancy</string>
+                        <string>your_back_link</string>
                       </list>
                     </value>
                 </item>
@@ -119,7 +119,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_viewAsWeb</string> </value>
+            <value> <string>Computer_viewCategoryAsWeb</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -127,7 +127,7 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>Computer_viewAsWeb</string> </value>
+            <value> <string>Computer_viewCategoryAsWeb</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
@@ -143,7 +143,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Install New Software</string> </value>
+            <value> <string>Update</string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>
