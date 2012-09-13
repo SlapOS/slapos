@@ -54,6 +54,7 @@
 \n
 return (\'jquery/core/jquery.js\',\n
         \'vifib_hosting_js/erp5_acknowledgement.js\',\n
+        \'vifib_hosting_js/vifib_monitoring.js\',\n
         \'vifib_hosting_js/vifib_hosting.js\',)\n
 </string> </value>
         </item>
