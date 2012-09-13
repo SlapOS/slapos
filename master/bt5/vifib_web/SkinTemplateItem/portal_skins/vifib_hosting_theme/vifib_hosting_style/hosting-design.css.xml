@@ -110,6 +110,10 @@ padding-left:100px;\n
 background:url(<tal:block tal:replace="img_folder"/>help_active.png) no-repeat scroll left center transparent;\n
 padding-left:100px;\n
 }\n
+.monitoring h1 {\n
+background:url(<tal:block tal:replace="img_folder"/>monitoring_active.png) no-repeat scroll left center transparent;\n
+padding-left:100px;\n
+}\n
 \n
 #shopping_cart_renderer .listbox tr:nth-child(2n) {\n
 background:none repeat scroll 0 0 #FFFFFF;\n

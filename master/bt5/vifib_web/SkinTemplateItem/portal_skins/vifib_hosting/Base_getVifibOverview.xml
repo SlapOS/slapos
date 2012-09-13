@@ -120,14 +120,18 @@ encode : function (input) {\n
         var created_at = new Date(Date.parse(data.created_at)),\n
           now = new Date(),\n
           context = $(this);\n
-        console.log(data[\'@document\']);\n
-        if (/#ok/.test(data.text) & (now - created_at < 300000)) {\n
+        // 5 minute for computer. 1 day for instance.\n
+        if (/#ok/.test(data.text) & /computer_module/.test(data[\'@document\']) & (now - created_at < 300000)) {\n
           $(this).attr("class", "monitoring_ok")\n
-                 .attr("title", data.text)\n
+                 .attr("title", data.text + " (" + created_at + ")" )\n
+                 .html("<a href=\'" + data[\'@document\'] + "\'></a>");\n
+        } else if (/#ok/.test(data.text) & /software_instance_module/.test(data[\'@document\']) & (now - created_at < 86400000)) {\n
+          $(this).attr("class", "monitoring_ok")\n
+                 .attr("title", data.text + " (" + created_at + ")" )\n
                  .html("<a href=\'" + data[\'@document\'] + "\'></a>");\n
         } else {\n
           $(this).attr("class", "monitoring_error")\n
-                 .attr("title", data.text)\n
+                 .attr("title", data.text + " (" + created_at + ")" )\n
                  .html("<a href=\'" + data[\'@document\'] + "\'></a>");\n
         }\n
         setTimeout(function () {\n
@@ -180,9 +184,6 @@ encode : function (input) {\n
             update_status(status_context);\n
           });\n
         }\n
-      },\n
-      error: function(jqXHR, textStatus, errorThrown) {\n
-        console.log(jqXHR.status);\n
       },\n
       complete: function() {\n
         var context = $(this);\n

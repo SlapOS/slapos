@@ -104,6 +104,10 @@
                           <string>free_partition</string>
                           <string>Free Partition Count</string>
                         </tuple>
+                        <tuple>
+                          <string>allocation_scope_translated_title</string>
+                          <string>Allocation Scope</string>
+                        </tuple>
                       </list>
                     </value>
                 </item>

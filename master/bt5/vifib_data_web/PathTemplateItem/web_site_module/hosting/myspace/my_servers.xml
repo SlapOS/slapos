@@ -90,6 +90,10 @@
             <value> <string>my_servers</string> </value>
         </item>
         <item>
+            <key> <string>int_index</string> </key>
+            <value> <int>4</int> </value>
+        </item>
+        <item>
             <key> <string>portal_type</string> </key>
             <value> <string>Web Section</string> </value>
         </item>

@@ -343,6 +343,66 @@ class InstancePublisher(GenericPublisher):
     self.REQUEST.response.setBody(jsonify({'status':'processing'}))
     return self.REQUEST.response
 
+  @requireHeader({'Content-Type': '^application/json.*'})
+  @requireJson(dict(
+    slave=bool,
+    software_release=(unicode, encode_utf8),
+    title=(unicode, encode_utf8),
+    software_type=(unicode, encode_utf8),
+    parameter=(dict, etreeXml),
+    sla=(dict, etreeXml),
+    status=(unicode, encode_utf8),
+  ))
+  def __allocable(self):
+    request_dict = {}
+
+    if self.jbody['status'] not in ['started', 'stopped', 'destroyed']:
+      self.REQUEST.response.setStatus(400)
+      self.REQUEST.response.setBody(jsonify(
+        {'status': 'Status shall be one of: started, stopped, destroyed.'}))
+      return self.REQUEST.response
+    try:
+      user = self.restrictedTraverse(self.user_url)
+      user_portal_type = user.getPortalType()
+      if user_portal_type == 'Person':
+        pass
+      elif user_portal_type == 'Software Instance':
+        hosting_subscription = user.getSpecialiseValue(
+          portal_type="Hosting Subscription")
+        user = hosting_subscription.getDestinationSectionValue(
+          portal_type="Person")
+      else:
+        raise NotImplementedError, "Can not get Person document"
+      open_order = self.portal_catalog.getResultValue(
+        portal_type='Open Sale Order',
+        default_destination_decision_uid=user.getUid(),
+        validation_state='validated')
+      tmp_instance = self.software_instance_module.newContent(
+        portal_type="Software Instance",
+        sla_xml=self.jbody['sla'],
+        temp_object=1,
+      )
+      result = open_order.OpenSaleOrder_findPartition(
+        self.jbody['software_release'],
+        self.jbody['software_type'],
+        ('Software Instance', 'Slave Instance')[int(self.jbody['slave'])],
+        tmp_instance.getSlaXmlAsDict(),
+        test_mode=True)
+    except Exception:
+      transaction.abort()
+      LOG('VifibRestApiV1', ERROR,
+        'Problem with person.allocable:', error=True)
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(jsonify({'error':
+        'There is system issue, please try again later.'}))
+      return self.REQUEST.response
+
+    self.REQUEST.response.setStatus(200)
+    self.REQUEST.response.setHeader('Cache-Control', 
+                                    'no-cache, no-store')
+    self.REQUEST.response.setBody(jsonify({'result': result}))
+    return self.REQUEST.response
+
   @extractDocument(['Software Instance', 'Slave Instance'])
   @supportModifiedSince('document_url')
   def __instance_info(self):
@@ -424,7 +484,10 @@ class InstancePublisher(GenericPublisher):
         self.__request()
     elif self.REQUEST['REQUEST_METHOD'] == 'GET':
       if self.REQUEST['traverse_subpath']:
-        self.__instance_info()
+        if self.REQUEST['traverse_subpath'][-1] == 'request':
+          self.__allocable()
+        else:
+          self.__instance_info()
       else:
         self.__instance_list()
 
