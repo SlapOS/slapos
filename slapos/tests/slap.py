@@ -233,6 +233,30 @@ class TestComputer(SlapMixin):
     computer_guid = self._getTestComputerId()
     slap = self.slap
     slap.initializeConnection(self.server_url)
+
+    partition_id = 'PARTITION_01'
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'registerComputerPartition' and \
+         'computer_reference' in parsed_qs and \
+         'computer_partition_reference' in parsed_qs:
+        slap_partition = slapos.slap.ComputerPartition(
+          parsed_qs['computer_reference'][0],
+          parsed_qs['computer_partition_reference'][0])
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
+      elif parsed_url.path == 'getFullComputerInformation' and \
+         'computer_id' in parsed_qs:
+        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
+        slap_computer._software_release_list = []
+        slap_computer._computer_partition_list = []
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
+      elif parsed_url.path == 'requestComputerPartition':
+        return (408, {}, '')
+      else:
+        return (404, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
     computer = self.slap.registerComputer(computer_guid)
     self.assertEqual(computer.getComputerPartitionList(), [])
 
