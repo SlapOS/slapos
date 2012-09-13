@@ -22,7 +22,7 @@ class BasicMixin:
     logging.basicConfig(level=logging.DEBUG)
     self.setSlapgrid()
 
-  def setSlapgrid(self,develop=False):
+  def setSlapgrid(self, develop=False):
     self.software_root = os.path.join(self._tempdir, 'software')
     self.instance_root = os.path.join(self._tempdir, 'instance')
     if getattr(self, 'master_url', None) is None:
@@ -36,9 +36,9 @@ class BasicMixin:
     self.grid = slapgrid.Slapgrid(self.software_root, self.instance_root,
       self.master_url, self.computer_id, self.supervisord_socket,
       self.supervisord_configuration_path, self.usage_report_periodicity,
-      self.buildout,develop=develop)
+      self.buildout, develop=develop)
 
-  
+
   def tearDown(self):
     # XXX: Hardcoded pid, as it is not configurable in slapos
     svc = os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')
@@ -132,7 +132,7 @@ touch worked""")
     BasicMixin.tearDown(self)
 
 
-def _server_response (self_test,_requested_state,timestamp=None):
+def _server_response (self_test, _requested_state, timestamp=None):
   def server_response(self_httplib, path, method, body, header):
     parsed_url = urlparse.urlparse(path.lstrip('/'))
     self_test.sequence.append(parsed_url.path)
@@ -427,8 +427,8 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     self.sequence = []
     self.timestamp = str(int(time.time()))
     self.started = False
-    httplib.HTTPConnection._callback = _server_response(self,'stopped',
-                                                             self.timestamp)
+    httplib.HTTPConnection._callback = _server_response(
+        self, 'stopped', self.timestamp)
 
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
@@ -448,18 +448,20 @@ touch worked""")
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition), ['.timestamp','worked',
-      'buildout.cfg'])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [software_hash])
+    self.assertSortedListEqual(
+        os.listdir(partition), ['.timestamp', 'worked', 'buildout.cfg'])
+    self.assertSortedListEqual(
+        os.listdir(self.software_root), [software_hash])
     timestamp_path = os.path.join(partition_path, '.timestamp')
 
     self.setSlapgrid()
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertTrue(self.timestamp in open(timestamp_path,'r').read())
     self.assertEqual(self.sequence,
-                     ['getFullComputerInformation', 'availableComputerPartition',
-                      'stoppedComputerPartition', 'getFullComputerInformation'])
+                     ['getFullComputerInformation',
+                      'availableComputerPartition',
+                      'stoppedComputerPartition',
+                      'getFullComputerInformation'])
 
 
   def test_partition_timestamp_develop(self):
@@ -467,8 +469,8 @@ touch worked""")
     self.sequence = []
     self.timestamp = str(int(time.time()))
     self.started = False
-    httplib.HTTPConnection._callback = _server_response(self,'stopped',
-                                                             self.timestamp)
+    httplib.HTTPConnection._callback = _server_response(
+        self, 'stopped', self.timestamp)
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
     partition_path = os.path.join(self.instance_root, '0')
@@ -487,10 +489,10 @@ touch worked""")
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition), ['.timestamp','worked',
-      'buildout.cfg'])
-    self.assertSortedListEqual(os.listdir(self.software_root),
-      [software_hash])
+    self.assertSortedListEqual(
+        os.listdir(partition), ['.timestamp','worked', 'buildout.cfg'])
+    self.assertSortedListEqual(
+        os.listdir(self.software_root), [software_hash])
 
     self.setSlapgrid(develop=True)
     self.assertTrue(self.grid.processComputerPartitionList())
@@ -509,8 +511,8 @@ touch worked""")
     self.sequence = []
     self.timestamp = str(int(time.time()))
     self.started = False
-    httplib.HTTPConnection._callback = _server_response(self,'stopped',
-                                                             self.timestamp)
+    httplib.HTTPConnection._callback = _server_response(
+        self,'stopped', self.timestamp)
 
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
@@ -530,15 +532,14 @@ touch worked""")
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition), ['.timestamp','worked',
-      'buildout.cfg'])
+    self.assertSortedListEqual(os.listdir(partition),
+                               ['.timestamp','worked', 'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])
 
     self.setSlapgrid()
-    httplib.HTTPConnection._callback = _server_response(self,
-                                                        'stopped',
-                                                        str(int(self.timestamp)-1))    
+    httplib.HTTPConnection._callback = _server_response(
+        self, 'stopped', str(int(self.timestamp)-1))
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertEqual(self.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -572,8 +573,8 @@ touch worked""")
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition), ['.timestamp','worked',
-      'buildout.cfg'])
+    self.assertSortedListEqual(os.listdir(partition),
+                               ['.timestamp','worked', 'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])
     httplib.HTTPConnection._callback = _server_response(self,
@@ -615,8 +616,8 @@ touch worked""")
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
     partition = os.path.join(self.instance_root, '0')
-    self.assertSortedListEqual(os.listdir(partition), ['.timestamp','worked',
-      'buildout.cfg'])
+    self.assertSortedListEqual(os.listdir(partition),
+                               ['.timestamp','worked', 'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
       [software_hash])
     httplib.HTTPConnection._callback = _server_response(self,
