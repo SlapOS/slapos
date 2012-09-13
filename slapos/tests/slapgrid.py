@@ -38,6 +38,7 @@ class BasicMixin:
       self.supervisord_configuration_path, self.usage_report_periodicity,
       self.buildout,develop=develop)
 
+  
   def tearDown(self):
     # XXX: Hardcoded pid, as it is not configurable in slapos
     svc = os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')
@@ -177,8 +178,6 @@ def _server_response (self_test,_requested_state,timestamp=None):
   return server_response
 
 
-
-
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
 
   def test_nothing_to_do(self):
@@ -203,7 +202,6 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
     self.assertSortedListEqual(os.listdir(self.software_root), [])
 
   def test_one_partition(self):
-
     self.sequence = []
     httplib.HTTPConnection._callback = _server_response(self,
       _requested_state='stopped')
@@ -235,11 +233,9 @@ touch worked""")
                       'stoppedComputerPartition'])
 
   def test_one_partition_started(self):
-
     self.sequence = []
     self.started = False
     httplib.HTTPConnection._callback = _server_response(self,'started')
-
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
     partition_path = os.path.join(self.instance_root, '0')
@@ -281,7 +277,6 @@ chmod 755 etc/run/wrapper
 
 
   def test_one_partition_started_stopped(self):
-
     self.started = True
     self.sequence = []
     httplib.HTTPConnection._callback = _server_response(self,'started')
@@ -363,7 +358,6 @@ chmod 755 etc/run/wrapper
 
 
   def test_one_partition_stopped_started(self):
-
     self.stopped = False
     self.sequence = []
     httplib.HTTPConnection._callback = _server_response(self,'stopped')
@@ -633,8 +627,6 @@ touch worked""")
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition', 'getFullComputerInformation',
                       'availableComputerPartition','stoppedComputerPartition',])
-
-
 
 
 class TestSlapgridArgumentTuple(unittest.TestCase):
@@ -1177,10 +1169,17 @@ fi""" % {'worked_file': worked_file, 'lockfile': lockfile})
       with open(promise, 'w') as f:
         f.write("""#!/usr/bin/env sh
 touch "%(worked_file)s"
+<<<<<<< HEAD
 if [ ! -f %(lockfile)s ]
 then
   touch "%(lockfile)s"
 else
+=======
+if [ ! -f %(lockfile)s ] 
+then
+  touch "%(lockfile)s" 
+else 
+>>>>>>> master
   sleep 5
 fi
 exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
