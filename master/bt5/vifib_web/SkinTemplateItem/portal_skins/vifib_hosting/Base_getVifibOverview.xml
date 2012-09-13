@@ -54,7 +54,7 @@
 
 tool = context.getPortalObject().portal_vifib_rest_api\n
 return """\n
-<ul id="vifib_monitoring" data-status-search=""></ul>\n
+<ul id="vifib_monitoring"></ul>\n
 \n
 <script>\n
 "use strict";\n
