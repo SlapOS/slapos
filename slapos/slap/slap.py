@@ -96,11 +96,23 @@ class SoftwareRelease(SlapDocument):
   def __getinitargs__(self):
     return (self._software_release, self._computer_guid, )
 
+  def getComputerId(self):
+    if not self._computer_guid:
+      raise NameError('computer_guid has not been defined.')
+    else:
+      return self._computer_guid
+
+  def getURI(self):
+    if not self._software_release:
+      raise NameError('software_release has not been defined.')
+    else:
+      return self._software_release
+
   def error(self, error_log):
     # Does not follow interface
     self._connection_helper.POST('/softwareReleaseError', {
-      'url': self._software_release,
-      'computer_id' : self._computer_guid,
+      'url': self.getURI(),
+      'computer_id' : self.getComputerId(),
       'error_log': error_log})
 
   def getURI(self):
@@ -108,18 +120,18 @@ class SoftwareRelease(SlapDocument):
 
   def available(self):
     self._connection_helper.POST('/availableSoftwareRelease', {
-      'url': self._software_release,
-      'computer_id': self._computer_guid})
+      'url': self.getURI(),
+      'computer_id': self.getComputerId()})
 
   def building(self):
     self._connection_helper.POST('/buildingSoftwareRelease', {
-      'url': self._software_release,
-      'computer_id': self._computer_guid})
+      'url': self.getURI(),
+      'computer_id': self.getComputerId()})
 
   def destroyed(self):
     self._connection_helper.POST('/destroyedSoftwareRelease', {
-      'url': self._software_release,
-      'computer_id': self._computer_guid})
+      'url': self.getURI(),
+      'computer_id': self.getComputerId()})
 
   def getState(self):
     return getattr(self, '_requested_state', 'available')
