@@ -116,6 +116,9 @@ if filter_kw.keys():\n
   # XXX Drop all unexpected keys\n
   query_kw["uid"] = "-1"\n
 \n
+if test_mode:\n
+  return bool(len(context.portal_catalog(limit=1, **query_kw)))\n
+\n
 SQL_WINDOW_SIZE = 50\n
 \n
 # fetch at mot 50 random Computer Partitions, and check if they are ok\n
@@ -154,7 +157,7 @@ return computer_partition.getRelativeUrl()\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>software_release_url, software_type, software_instance_portal_type, filter_kw</string> </value>
+            <value> <string>software_release_url, software_type, software_instance_portal_type, filter_kw, test_mode=False</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
