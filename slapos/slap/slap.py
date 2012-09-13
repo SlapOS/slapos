@@ -655,6 +655,7 @@ class slap:
     self._connection_helper = ConnectionHelper(connection_wrapper,
           netloc, path, key_file, cert_file, master_ca_file, timeout)
 
+  # XXX-Cedric: this method is never used and thus should be removed.
   def registerSoftwareRelease(self, software_release):
     """
     Registers connected representation of software release and
