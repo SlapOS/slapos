@@ -518,21 +518,6 @@ class ComputerPartition(SlapDocument):
         'computer_partition_id=%s' % (self._computer_id, self._partition_id))
     return xml_marshaller.loads(self._connection_helper.response.read())
 
-# def lazyMethod(func):
-#   """
-#   Return a function which stores a computed value in an instance
-#   at the first call.
-#   """
-#   key = '_cache_' + str(id(func))
-#   def decorated(self, *args, **kw):
-#     try:
-#       return getattr(self, key)
-#     except AttributeError:
-#       result = func(self, *args, **kw)
-#       setattr(self, key, result)
-#       return result
-#   return decorated
-
 class ConnectionHelper:
   error_message_timeout = "\nThe connection timed out. Please try again later."
   error_message_connect_fail = "Couldn't connect to the server. Please " \
