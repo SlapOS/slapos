@@ -1,10 +1,20 @@
 Changes
 =======
 
-0.46 (Unreleased)
+0.48 (Unreleased)
 -----------------
 
   * No change yet.
+
+0.47 (2012-04-19)
+-----------------
+
+  * Slap Test Agent [Yingjie Xu]
+
+0.46 (2012/04/12)
+-----------------
+
+  * xvfb and firefox initial release [Romain Courteaud]
 
 0.45 (2012-03-29)
 -----------------

@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,23 +25,27 @@
 #
 #############################################################################
 
-import os
-import sys
-import zc.buildout
-from slapos.recipe.librecipe import BaseSlapRecipe
 from slapos.recipe.librecipe import GenericBaseRecipe
+import sys
 
 class Recipe(GenericBaseRecipe):
   def install(self):
 
-    runner = self.createPythonScript(
-      self.options['runner-path'],
-      __name__+'.testrunner.run',
-      arguments=[self.options['suite-url'], 
-                 self.options['report-url'],
-                 self.options['report-project'],
-                 self.options['browser'],
-                 ])
+    prefjs = self.createFile(
+      self.options['prefsjs-path'],
+      self.substituteTemplate(self.getTemplateFilename('prefs.js'), {}))
 
-    return [runner]
+    config = {
+      'firefox_binary': self.options['firefox-path'],
+      'python_path': sys.executable,
+      'tmp_path': self.options['tmp-path'],
+      'pref_path': prefjs,
+      }
+
+    runner = self.createExecutable(
+      self.options['runner-path'],
+      self.substituteTemplate(self.getTemplateFilename('firefox_run.in'),
+                              config))
+
+    return [runner, prefjs]
 
