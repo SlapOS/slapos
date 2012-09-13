@@ -212,7 +212,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+      interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct()
@@ -231,7 +231,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_user(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+      interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct(alter_user=False)
@@ -246,7 +246,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+      interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct(alter_network=False)
@@ -265,7 +265,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_empty_prepared_no_alter_network_user(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+      interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     computer.construct(alter_network=False, alter_user=False)
@@ -281,7 +281,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_prepared(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+      interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     partition = slapos.format.Partition('partition', '/part_path',
@@ -325,7 +325,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_prepared_no_alter_user(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+      interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     partition = slapos.format.Partition('partition', '/part_path',
@@ -363,7 +363,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+      interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     partition = slapos.format.Partition('partition', '/part_path',
@@ -403,7 +403,7 @@ class TestComputer(SlapformatMixin):
 
   def test_construct_prepared_no_alter_network_user(self):
     computer = slapos.format.Computer('computer',
-      bridge=slapos.format.Bridge('bridge', '127.0.0.1/16'))
+      interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
     computer.instance_root = '/instance_root'
     computer.software_root = '/software_root'
     partition = slapos.format.Partition('partition', '/part_path',
