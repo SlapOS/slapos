@@ -409,47 +409,47 @@ class ComputerPartition(SlapDocument):
   def building(self):
     self._connection_helper.POST('/buildingComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id})
+      'computer_partition_id': self.getId()})
 
   def available(self):
     self._connection_helper.POST('/availableComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id})
+      'computer_partition_id': self.getId()})
 
   def destroyed(self):
     self._connection_helper.POST('/destroyedComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       })
 
   def started(self):
     self._connection_helper.POST('/startedComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       })
 
   def stopped(self):
     self._connection_helper.POST('/stoppedComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       })
 
   def error(self, error_log):
     self._connection_helper.POST('/softwareInstanceError', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       'error_log': error_log})
 
   def bang(self, message):
     self._connection_helper.POST('/softwareInstanceBang', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       'message': message})
 
   def rename(self, new_name, slave_reference=None):
     post_dict = dict(
       computer_id=self._computer_id,
-      computer_partition_id=self._partition_id,
+      computer_partition_id=self.getId(),
       new_name=new_name,
     )
     if slave_reference is not None:
@@ -457,6 +457,8 @@ class ComputerPartition(SlapDocument):
     self._connection_helper.POST('/softwareInstanceRename', post_dict)
 
   def getId(self):
+    if not self._partition_id:
+      raise ResourceNotReady()
     return self._partition_id
 
   @_syncComputerPartitionInformation
