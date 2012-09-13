@@ -225,7 +225,7 @@ class TestComputer(SlapformatMixin):
     self.assertEqual([
       'ip addr list bridge',
       'groupadd slapsoft',
-      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft'
+      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft --system'
       ],
       self.fakeCallAndRead.external_command_list)
 
@@ -259,7 +259,7 @@ class TestComputer(SlapformatMixin):
     self.assertEqual([
       'ip addr list bridge',
       'groupadd slapsoft',
-      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft'
+      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft --system'
       ],
       self.fakeCallAndRead.external_command_list)
 
@@ -309,9 +309,9 @@ class TestComputer(SlapformatMixin):
     self.assertEqual([
       'ip addr list bridge',
       'groupadd slapsoft',
-      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft',
+      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft --system',
       'groupadd testuser',
-      'useradd -d /instance_root/partition -g testuser -s /bin/false -G slapsoft testuser',
+      'useradd -d /instance_root/partition -g testuser -s /bin/false -G slapsoft testuser --system',
       'tunctl -t tap -u testuser',
       'ip link set tap up',
       'brctl show',
@@ -391,9 +391,9 @@ class TestComputer(SlapformatMixin):
     self.assertEqual([
 #      'ip addr list bridge',
       'groupadd slapsoft',
-      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft',
+      'useradd -d /software_root -g slapsoft -s /bin/false slapsoft --system',
       'groupadd testuser',
-      'useradd -d /instance_root/partition -g testuser -s /bin/false -G slapsoft testuser',
+      'useradd -d /instance_root/partition -g testuser -s /bin/false -G slapsoft testuser --system',
 #      'ip addr add ip/255.255.255.255 dev bridge',
 #      'ip addr list bridge',
 #      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
@@ -469,7 +469,7 @@ class TestUser(SlapformatMixin):
     self.assertEqual([
       'groupadd doesnotexistsyet',
       'useradd -d /doesnotexistsyet -g doesnotexistsyet -s /bin/false '\
-        'doesnotexistsyet'
+        'doesnotexistsyet --system'
     ],
       self.fakeCallAndRead.external_command_list)
 
@@ -482,7 +482,7 @@ class TestUser(SlapformatMixin):
     self.assertEqual([
       'groupadd doesnotexistsyet',
       'useradd -d /doesnotexistsyet -g doesnotexistsyet -s /bin/false -G '\
-        'additionalgroup1,additionalgroup2 doesnotexistsyet'
+        'additionalgroup1,additionalgroup2 doesnotexistsyet --system'
       ],
       self.fakeCallAndRead.external_command_list)
 
@@ -494,7 +494,7 @@ class TestUser(SlapformatMixin):
     user.create()
 
     self.assertEqual([
-      'useradd -d /testuser -g testuser -s /bin/false testuser'
+      'useradd -d /testuser -g testuser -s /bin/false testuser --system'
     ],
       self.fakeCallAndRead.external_command_list)
 
