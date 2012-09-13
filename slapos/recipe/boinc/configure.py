@@ -226,15 +226,16 @@ def create_wu(args, env):
   count = int(args['wu_number'])
   launch_args = [os.path.join(args['installroot'], 'bin/create_work'),
         '--appname', args['appname'], '--wu_name', args['wu_name'],
-        '--wu_template', os.path.join(args['templates'], args['appname'] + '_wu'),
-        '--result_template', os.path.join(args['templates'], args['appname'] + '_result'),
-        args['inputfile']]
-  for i in range(count - 1):
-    print "Creating project wroker num %s..." % args['wu_number']
+        '--wu_template', "templates/"+args['appname'] + '_wu',
+        '--result_template', "templates/"+args['appname'] + '_result',
+        args['appname']+'_input']
+  for i in range(count):
+    print "Creating project wroker %s..." % str(i+1)
     launch_args[4] = args['wu_name']+str(i+1)
     process = subprocess.Popen(launch_args, stdout=subprocess.PIPE,
               stderr=subprocess.STDOUT, env=env,
               cwd=args['installroot'])
-    process.communicate()[0]
+    result = process.communicate()[0]
+    print "Result for workunit num % \n%s" (str(i+1), result)
 
     

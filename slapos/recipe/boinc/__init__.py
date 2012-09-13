@@ -173,10 +173,13 @@ class Recipe(GenericBaseRecipe):
 
     #After make_project run configure_script to perform and restart apache php services
     service_status = os.path.join(self.home, '.start_service')
+    readme_file = os.path.join(self.installroot, self.project+'.readme')
+    if os.path.exists(readme_file):
+      os.unlink(readme_file)
     if os.path.exists(service_status):
       os.unlink(service_status)
     parameter = dict(
-        readme=os.path.join(self.installroot, self.project+'.readme'),
+        readme=readme_file,
         htpasswd=self.htpasswd,
         installroot=self.installroot,
         username=slapuser,
