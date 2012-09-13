@@ -37,7 +37,7 @@ class BasicMixin:
       self.master_url, self.computer_id, self.supervisord_socket,
       self.supervisord_configuration_path, self.usage_report_periodicity,
       self.buildout,develop=develop)
-  
+
   def tearDown(self):
     # XXX: Hardcoded pid, as it is not configurable in slapos
     svc = os.path.join(self.instance_root, 'var', 'run', 'supervisord.pid')
@@ -134,7 +134,7 @@ touch worked""")
 def _server_response (self_test,_requested_state,timestamp=None):
   def server_response(self_httplib, path, method, body, header):
     parsed_url = urlparse.urlparse(path.lstrip('/'))
-    self_test.sequence.append(parsed_url.path)      
+    self_test.sequence.append(parsed_url.path)
     if method == 'GET':
       parsed_qs = urlparse.parse_qs(parsed_url.query)
     else:
@@ -150,7 +150,7 @@ def _server_response (self_test,_requested_state,timestamp=None):
       partition._software_release_document = sr
       partition._requested_state = _requested_state
       if not timestamp == None :
-        partition._parameter_dict = {'timestamp': timestamp} 
+        partition._parameter_dict = {'timestamp': timestamp}
       slap_computer._computer_partition_list = [partition]
       return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
     if parsed_url.path == 'availableComputerPartition' and \
@@ -173,7 +173,7 @@ def _server_response (self_test,_requested_state,timestamp=None):
       return (200, {}, '')
     else:
       return (404, {}, '')
-  
+
   return server_response
 
 
@@ -457,16 +457,16 @@ touch worked""")
     self.assertSortedListEqual(os.listdir(partition), ['.timestamp','worked',
       'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
-      [software_hash])    
+      [software_hash])
     timestamp_path = os.path.join(partition_path, '.timestamp')
 
-    self.setSlapgrid()    
+    self.setSlapgrid()
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertTrue(self.timestamp in open(timestamp_path,'r').read())
     self.assertEqual(self.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition', 'getFullComputerInformation'])
-  
+
 
   def test_partition_timestamp_develop(self):
 
@@ -549,7 +549,7 @@ touch worked""")
     self.assertEqual(self.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition', 'getFullComputerInformation'])
-  
+
 
 
   def test_partition_timestamp_new_timestamp(self):
@@ -585,9 +585,9 @@ touch worked""")
     httplib.HTTPConnection._callback = _server_response(self,
                                                         'stopped',
                                                         str(int(self.timestamp)+1))
-    self.setSlapgrid()    
+    self.setSlapgrid()
     self.assertTrue(self.grid.processComputerPartitionList())
-    self.setSlapgrid()    
+    self.setSlapgrid()
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertEqual(self.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -627,7 +627,7 @@ touch worked""")
       [software_hash])
     httplib.HTTPConnection._callback = _server_response(self,
                                                         'stopped')
-    self.setSlapgrid()    
+    self.setSlapgrid()
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertEqual(self.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -1177,10 +1177,10 @@ fi""" % {'worked_file': worked_file, 'lockfile': lockfile})
       with open(promise, 'w') as f:
         f.write("""#!/usr/bin/env sh
 touch "%(worked_file)s"
-if [ ! -f %(lockfile)s ] 
+if [ ! -f %(lockfile)s ]
 then
-  touch "%(lockfile)s" 
-else 
+  touch "%(lockfile)s"
+else
   sleep 5
 fi
 exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
