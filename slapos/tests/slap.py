@@ -198,16 +198,26 @@ class TestSlap(SlapMixin):
   def test_registerComputerPartition_unknown_computer_guid(self):
     """
     Asserts that calling slap.registerComputerPartition on unknown
-    computer raises (not defined yet) exception
+    computer raises NotFoundError exception
     """
-    raise NotImplementedError()
     computer_guid = self._getTestComputerId()
-    self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
-
     partition_id = 'PARTITION_01'
 
-    self.assertRaises(UndefinedYetException,
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'registerComputerPartition' and \
+         parsed_qs['computer_reference'][0] == computer_guid and \
+         parsed_qs['computer_partition_reference'][0] == partition_id:
+        partition = slapos.slap.ComputerPartition(
+            computer_guid, partition_id)
+        return (404, {}, '')
+      else:
+        return (0, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(slapos.slap.NotFoundError,
         self.slap.registerComputerPartition, computer_guid, partition_id)
 
 class TestComputer(SlapMixin):
@@ -553,32 +563,44 @@ class TestSoftwareRelease(SlapMixin):
     software_release = self.slap.registerSoftwareRelease(
         self.software_release_uri)
     method = getattr(software_release, state)
-    self.assertRaises(UndefinedYetException, method)
+    self.assertRaises(NameError, method)
 
   def test_available_new_SoftwareRelease_raises(self):
     """
     Asserts that calling SoftwareRelease.available on new software release
-    raises (not defined yet) exception
+    raises NameError exception
     """
     self._test_new_software_release_state('available')
 
   def test_building_new_SoftwareRelease_raises(self):
     """
     Asserts that calling SoftwareRelease.building on new software release
-    raises (not defined yet) exception
+    raises NameError exception
     """
     self._test_new_software_release_state('building')
 
   def test_error_new_SoftwareRelease_works(self):
     """
-    Asserts that calling SoftwareRelease.error on new software release works
+    Asserts that calling SoftwareRelease.error on software release works
     """
-    self.software_release_uri = 'http://server/' + self._getTestComputerId()
-    self.slap = slapos.slap.slap()
-    self.slap.initializeConnection(self.server_url)
-    software_release = self.slap.registerSoftwareRelease(
-        self.software_release_uri)
-    # XXX: Interface does not define return value
+    computer_guid = self._getTestComputerId()
+    software_release_uri = 'http://server/' + self._getTestComputerId()
+    slap = self.slap
+    slap.initializeConnection(self.server_url)
+
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(body)
+      if parsed_url.path == 'softwareReleaseError' and \
+         parsed_qs['computer_id'][0] == computer_guid and \
+         parsed_qs['url'][0] == software_release_uri and \
+         parsed_qs['error_log'][0] == 'some error':
+        return (200, {}, '')
+      return (404, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
+    software_release = self.slap.registerSoftwareRelease(software_release_uri)
+    software_release._computer_guid = computer_guid
     software_release.error('some error')
 
 class TestOpenOrder(SlapMixin):
