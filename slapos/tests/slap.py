@@ -50,8 +50,7 @@ class SlapMixin(unittest.TestCase):
     self.partition_id = 'PARTITION_01'
 
   def tearDown(self):
-    if self._server_url is None:
-      self._unpatchHttplib()
+    self._unpatchHttplib()
 
   def _patchHttplib(self):
     """Overrides httplib"""
