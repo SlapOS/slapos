@@ -399,7 +399,7 @@ class InstancePublisher(GenericPublisher):
 
     self.REQUEST.response.setStatus(200)
     self.REQUEST.response.setHeader('Cache-Control', 
-                                    'max-age=300, private')
+                                    'no-cache, no-store')
     self.REQUEST.response.setBody(jsonify({'result': result}))
     return self.REQUEST.response
 
