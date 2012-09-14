@@ -95,6 +95,10 @@
                     <value>
                       <list>
                         <tuple>
+                          <string>monitoring_status</string>
+                          <string>Status</string>
+                        </tuple>
+                        <tuple>
                           <string>title</string>
                           <string>Title</string>
                         </tuple>
@@ -104,7 +108,7 @@
                         </tuple>
                         <tuple>
                           <string>status</string>
-                          <string>Status</string>
+                          <string>State</string>
                         </tuple>
                       </list>
                     </value>
@@ -116,6 +120,10 @@
                         <tuple>
                           <string>image</string>
                           <string>image</string>
+                        </tuple>
+                        <tuple>
+                          <string>monitoring_status</string>
+                          <string>Status</string>
                         </tuple>
                       </list>
                     </value>
