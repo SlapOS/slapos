@@ -101,6 +101,8 @@
                       <list>
                         <string>my_title</string>
                         <string>my_reference</string>
+                        <string>your_monitoring_status</string>
+                        <string>your_monitoring_status_js</string>
                         <string>your_system_message</string>
                         <string>your_allocation_scope_update</string>
                         <string>your_category_update</string>
