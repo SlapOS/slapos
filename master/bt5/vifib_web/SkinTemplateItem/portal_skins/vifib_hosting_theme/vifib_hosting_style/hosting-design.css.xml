@@ -192,26 +192,32 @@ ul#vifib_monitoring li {\n
   width: 2em;\n
 }\n
 \n
-ul#vifib_monitoring li a {\n
+a.check_monitoring {\n
+  background-color: grey;\n
   display: block;\n
   height: 2em;\n
   width: 2em;\n
 }\n
 \n
-li.check_monitoring {\n
-  background-color: grey;\n
-}\n
-\n
-li.monitoring_ok {\n
+a.monitoring_ok {\n
   background-color: green;\n
+  display: block;\n
+  height: 2em;\n
+  width: 2em;\n
 }\n
 \n
-li.monitoring_error {\n
+a.monitoring_error {\n
   background-color: red;\n
+  display: block;\n
+  height: 2em;\n
+  width: 2em;\n
 }\n
 \n
-li.monitoring_failed {\n
+a.monitoring_failed {\n
   background-color: orange;\n
+  display: block;\n
+  height: 2em;\n
+  width: 2em;\n
 }\n
 </tal:block>
 

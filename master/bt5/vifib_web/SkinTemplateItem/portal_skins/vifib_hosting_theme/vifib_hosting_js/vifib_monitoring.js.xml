@@ -114,15 +114,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
         if (/#ok/.test(data.text) & /computer_module/.test(data[\'@document\']) & (now - created_at < 300000)) {\n
           $(this).attr("class", "monitoring_ok")\n
                  .attr("title", data.text + " (" + created_at + ")" )\n
-                 .html("<a href=\'" + data[\'@document\'] + "\'></a>");\n
+                 .attr("href", data[\'@document\']);\n
         } else if (/#ok/.test(data.text) & /software_instance_module/.test(data[\'@document\']) & (now - created_at < 86400000)) {\n
           $(this).attr("class", "monitoring_ok")\n
                  .attr("title", data.text + " (" + created_at + ")" )\n
-                 .html("<a href=\'" + data[\'@document\'] + "\'></a>");\n
+                 .attr("href", data[\'@document\']);\n
         } else {\n
           $(this).attr("class", "monitoring_error")\n
                  .attr("title", data.text + " (" + created_at + ")" )\n
-                 .html("<a href=\'" + data[\'@document\'] + "\'></a>");\n
+                 .attr("href", data[\'@document\']);\n
         }\n
         setTimeout(function () {\n
           update_status(context);\n
@@ -146,10 +146,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
     });\n
   };\n
 \n
-  search_document_list = function (context, base_url) {\n
-    var start = parseInt(context.attr("data-start") || "0", 10),\n
-      i = 0,\n
-      list_url = base_url + "/v1/status/"; // XXX Hardcoded\n
+  search_document_list = function (context, list_url) {\n
 \n
     $.ajax({\n
       type: \'GET\',\n
@@ -158,7 +155,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
       async: true,\n
       context: context, \n
       success: function(data) {\n
-        var result_list = data.list || [];\n
+        var result_list = data.list || [],\n
+          i;\n
 \n
         for (i=0; i<result_list.length; i += 1) {\n
           var status_url = result_list[i],\n
@@ -167,8 +165,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
           status_id = encodeURIComponent(Base61.encode(status_url)),\n
           status_context = $(this).find(\'#\' + status_id);\n
           if (!status_context[0]) {\n
-            status_context = $(this).append(\'<li class="check_monitoring" id="\'\n
-+ status_id + \'" data-url="\' + encodeURIComponent(status_url) + \'"></li>\')\n
+            status_context = $(this).append(\'<li><a class="check_monitoring" id="\'\n
++ status_id + \'" data-url="\' + encodeURIComponent(status_url) + \'"></a></li>\')\n
                                     .find(\'#\' + status_id);\n
           }\n
           setTimeout(function () {\n
@@ -188,22 +186,31 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
 \n
 \n
   methods = {\n
-    init: function (base_url) {\n
-      var context = $(this);\n
+    fill_list: function (base_url) {\n
+      var context = $(this),\n
+        list_url = base_url + "/v1/status/"; // XXX Hardcoded\n
       setTimeout(function () {\n
-        search_document_list(context, base_url);\n
+        search_document_list(context, list_url);\n
+      });\n
+      return context;\n
+    },\n
+    check_status: function (base_url, relative_path) {\n
+      var context = $(this),\n
+        status_url = base_url + "/v1/status/" + relative_path; // XXX Hardcoded\n
+      context.attr("data-url", encodeURIComponent(status_url));\n
+      setTimeout(function () {\n
+        update_status(context);\n
       });\n
       return context;\n
     },\n
   };\n
 \n
-  $.fn.vifibmonitoring = function () {\n
-    var result,\n
-      method = "init";\n
+  $.fn.vifibmonitoring = function (method) {\n
+    var result;\n
     if (methods.hasOwnProperty(method)) {\n
       result = methods[method].apply(\n
         this,\n
-        Array.prototype.slice.call(arguments, 0)\n
+        Array.prototype.slice.call(arguments, 1)\n
       );\n
     } else {\n
       $.error(\'Method \' + method +\n
