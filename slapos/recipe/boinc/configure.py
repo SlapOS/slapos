@@ -44,9 +44,10 @@ def checkMysql(args):
                           db = args['database'])
       conn.close()
       print "Successfully connect to MySQL database... "
-      file = open(args['file_status'], 'w')
-      file.write("starting")
-      file.close()
+      if args.has_key('file_status'):
+        file = open(args['file_status'], 'w')
+        file.write("starting")
+        file.close()
       break
     except Exception, ex:
       print "The result is: \n" + ex.message
@@ -55,6 +56,11 @@ def checkMysql(args):
 
 
 def services(args):
+  """This function configure a new installed boinc project instance"""
+  print "Checking if needed to install or reinstall Boinc-server..."
+  if not args['drop_install']:
+    print "Not need to install Boinc-server...skipped"
+    return
   #Sleep until file 'boinc_project'.readme exist
   while True:
     print "Search for file %s..." % args['readme']
@@ -121,6 +127,25 @@ def services(args):
   status = open(args['service_status'], "w")
   status.write("started")
   status.close()
+
+def restart_boinc(args):
+  """Stop (if currently is running state) and start all Boinc service"""
+  if args['drop_install']:
+    while True:
+      print "Search for file %s..." % args['service_status']
+      if not os.path.exists(args['service_status']):
+        print "File not found... sleep for 3 secondes"
+        time.sleep(3)
+      else:
+        break
+  else:
+    checkMysql(args)
+  print "Restart Boinc..."
+  binstart = os.path.join(args['installroot'], 'bin/start')
+  binstop = os.path.join(args['installroot'], 'bin/stop')
+  os.system(binstop)
+  os.system(binstart)
+  print "Done."
 
 def deployApp(args):
   print "Cheking if needed to install %s..." % args['appname']
@@ -235,7 +260,6 @@ def create_wu(args, env):
     process = subprocess.Popen(launch_args, stdout=subprocess.PIPE,
               stderr=subprocess.STDOUT, env=env,
               cwd=args['installroot'])
-    result = process.communicate()[0]
-    print "Result for workunit num % \n%s" (str(i+1), result)
+    process.communicate()[0]
 
     

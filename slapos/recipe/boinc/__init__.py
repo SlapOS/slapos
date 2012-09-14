@@ -84,6 +84,23 @@ class Recipe(GenericBaseRecipe):
     self.mysqlhost = options['mysql-host'].strip()
     self.mysqlport = options['mysql-port'].strip()
 
+  def haschanges(self):
+    config_file = os.path.join(self.home, '.config')
+    current = [self.fullname, self.copyright, self.port,
+        self.password, self.mysqlhost, self.installroot,
+        self.project, self.passwd, self.ipv6]
+    previous = []
+    result = False
+    if os.path.exists(config_file):
+      previous = open(config_file, 'r').read().split('#')
+    #Check if config has changed
+    if len(current) != len(set(current).intersection(set(previous))) or \
+        not os.path.exists(self.installroot) or \
+        not os.path.exists(os.path.join(self.home, '.start_service')):
+      result = True
+    open(config_file, 'w').write('#'.join(current))
+    return result
+
   def install(self):
     path_list = []
     make_project = os.path.join(self.package, 'bin/make_project')
@@ -157,12 +174,19 @@ class Recipe(GenericBaseRecipe):
     )
 
     # Generate make project wrapper file
+    readme_file = os.path.join(self.installroot, self.project+'.readme')
     launch_args = [make_project, '--url_base', url_base, "--db_name",
               self.database, "--db_user", self.username, "--db_passwd",
               self.password, "--project_root", self.installroot, "--db_host",
               self.mysqlhost, "--user_name", slapuser, "--srcdir",
-              self.sourcedir, "--no_query", "--delete_prev_inst",
-              "--drop_db_first", self.project, niceprojectname]
+              self.sourcedir, "--no_query"]
+    drop_install = self.haschanges()
+    if drop_install:
+      #Allow to restart Boinc installation from the begining
+      launch_args += ["--delete_prev_inst", "--drop_db_first"]
+      if os.path.exists(readme_file):
+        os.unlink(readme_file)
+    launch_args += [self.project, niceprojectname]
 
     install_wrapper = self.createPythonScript(os.path.join(self.wrapperdir,
         'make_project'),
@@ -173,11 +197,6 @@ class Recipe(GenericBaseRecipe):
 
     #After make_project run configure_script to perform and restart apache php services
     service_status = os.path.join(self.home, '.start_service')
-    readme_file = os.path.join(self.installroot, self.project+'.readme')
-    if os.path.exists(readme_file):
-      os.unlink(readme_file)
-    if os.path.exists(service_status):
-      os.unlink(service_status)
     parameter = dict(
         readme=readme_file,
         htpasswd=self.htpasswd,
@@ -189,7 +208,8 @@ class Recipe(GenericBaseRecipe):
         service_status=service_status,
         project=niceprojectname,
         fullname=self.fullname,
-        copyright=self.copyright
+        copyright=self.copyright,
+        drop_install=drop_install
     )
     start_service = self.createPythonScript(
       os.path.join(self.wrapperdir, 'config_project'),
@@ -199,10 +219,15 @@ class Recipe(GenericBaseRecipe):
 
     #Generate Boinc start project wrapper
     start_args = [os.path.join(self.installroot, 'bin/start')]
+    boinc_parameter = dict(service_status=service_status,
+        installroot=self.installroot, drop_install=drop_install,
+        mysql_port=self.mysqlport, mysql_host=self.mysqlhost,
+        mysql_user=self.username, mysql_password=self.password,
+        database=self.database, python_path=python_path)
     start_wrapper = self.createPythonScript(os.path.join(self.wrapperdir,
-        'start_project'),
-        'slapos.recipe.librecipe.execute.executee_wait',
-        (start_args, [service_status], environment)
+        'start_boinc'),
+        '%s.configure.restart_boinc' % __name__,
+        boinc_parameter
     )
     path_list.append(start_wrapper)
 
