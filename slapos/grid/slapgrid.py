@@ -114,8 +114,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--now", action="store_true", default=False,
       help="Launch slapgrid without delay.")
   parser.add_argument("--develop", action="store_true", default=False,
-      help="Launch slapgrid in develop mode. In develop mode, slapgrid "
-           "will process all Softare Releases and/or Computer Partitions.")
+      help="Deprecated, same as --all.")
   parser.add_argument("--all", action="store_true", default=False,
       help="Launch slapgrid to process all Softare Releases"
            "and/or Computer Partitions.")
