@@ -490,7 +490,7 @@ class ComputerPartition(SlapDocument):
     """
     Returns the software release associate to the computer partition.
     """
-    if self._software_release_document is None:
+    if not getattr(self, '_software_release_document', None):
       raise NotFoundError("No software release information for partition %s" %
           self.getId())
     else:
