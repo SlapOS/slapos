@@ -148,6 +148,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
 \n
   search_document_list = function (context, list_url) {\n
 \n
+    context.attr(\'data-list-url\', list_url);\n
     $.ajax({\n
       type: \'GET\',\n
       url: list_url,\n
@@ -177,7 +178,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
       complete: function() {\n
         var context = $(this);\n
         setTimeout(function () {\n
-          search_document_list(context, base_url);\n
+          search_document_list(context, context.attr(\'data-list-url\'));\n
         }, 60000);\n
       },\n
     });\n
