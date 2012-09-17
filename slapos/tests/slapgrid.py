@@ -232,6 +232,33 @@ touch worked""")
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition'])
 
+  def test_one_free_partition(self):
+    """
+    Test if slapgrid don't process "free" partition
+    """
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'getFullComputerInformation' and \
+         'computer_id' in parsed_qs:
+        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'])
+        slap_computer._software_release_list = []
+        slap_computer._computer_partition_list = []
+        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
+            '0')
+        partition._software_release_document = None
+        slap_computer._computer_partition_list = [partition]
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
+      else:
+        return (404, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['etc', 'var'])
+    self.assertSortedListEqual(os.listdir(self.software_root), [])
+
   def test_one_partition_started(self):
     self.sequence = []
     self.started = False
