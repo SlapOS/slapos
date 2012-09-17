@@ -107,6 +107,52 @@ def supportModifiedSince(document_url_id):
 def encode_utf8(s):
   return s.encode('utf-8')
 
+def requireParameter(json_dict, optional_key_list=None):
+  if optional_key_list is None:
+    optional_key_list = []
+  def outer(fn):
+    def wrapperRequireJson(self, *args, **kwargs):
+
+      self.jbody = {}
+
+      error_dict = {}
+      for key, type_ in json_dict.iteritems():
+        if key not in self.REQUEST:
+          if key not in optional_key_list:
+            error_dict[key] = 'Missing.'
+        else:
+          value = self.REQUEST[key]
+          method = None
+          if type(type_) in (tuple, list):
+            type_, method = type_
+          if type_ == unicode:
+            value = '"%s"' % value
+          try:
+            value = json.loads(value)
+          except Exception:
+            error_dict[key] = 'Malformed value.'
+          else:
+            if not isinstance(value, type_):
+              error_dict[key] = '%s is not %s.' % (type(value
+                ).__name__, type_.__name__)
+            if method is None:
+              self.jbody[key] = value
+            else:
+              try:
+                self.jbody[key] = method(value)
+              except Exception:
+                error_dict[key] = 'Malformed value.'
+
+      if error_dict:
+        self.REQUEST.response.setStatus(400)
+        self.REQUEST.response.setBody(jsonify(error_dict))
+        return self.REQUEST.response
+      return fn(self, *args, **kwargs)
+    wrapperRequireJson.__doc__ = fn.__doc__
+    return wrapperRequireJson
+
+  return outer
+
 def requireJson(json_dict, optional_key_list=None):
   if optional_key_list is None:
     optional_key_list = []
@@ -343,24 +389,13 @@ class InstancePublisher(GenericPublisher):
     self.REQUEST.response.setBody(jsonify({'status':'processing'}))
     return self.REQUEST.response
 
-  @requireHeader({'Content-Type': '^application/json.*'})
-  @requireJson(dict(
+  @requireParameter(dict(
     slave=bool,
     software_release=(unicode, encode_utf8),
-    title=(unicode, encode_utf8),
     software_type=(unicode, encode_utf8),
-    parameter=(dict, etreeXml),
-    sla=(dict, etreeXml),
-    status=(unicode, encode_utf8),
+    sla=dict,
   ))
   def __allocable(self):
-    request_dict = {}
-
-    if self.jbody['status'] not in ['started', 'stopped', 'destroyed']:
-      self.REQUEST.response.setStatus(400)
-      self.REQUEST.response.setBody(jsonify(
-        {'status': 'Status shall be one of: started, stopped, destroyed.'}))
-      return self.REQUEST.response
     try:
       user = self.restrictedTraverse(self.user_url)
       user_portal_type = user.getPortalType()
@@ -377,16 +412,11 @@ class InstancePublisher(GenericPublisher):
         portal_type='Open Sale Order',
         default_destination_decision_uid=user.getUid(),
         validation_state='validated')
-      tmp_instance = self.software_instance_module.newContent(
-        portal_type="Software Instance",
-        sla_xml=self.jbody['sla'],
-        temp_object=1,
-      )
       result = open_order.OpenSaleOrder_findPartition(
         self.jbody['software_release'],
         self.jbody['software_type'],
         ('Software Instance', 'Slave Instance')[int(self.jbody['slave'])],
-        tmp_instance.getSlaXmlAsDict(),
+        self.jbody['sla'],
         test_mode=True)
     except Exception:
       transaction.abort()
