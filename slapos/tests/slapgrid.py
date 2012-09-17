@@ -1170,17 +1170,10 @@ fi""" % {'worked_file': worked_file, 'lockfile': lockfile})
       with open(promise, 'w') as f:
         f.write("""#!/usr/bin/env sh
 touch "%(worked_file)s"
-<<<<<<< HEAD
 if [ ! -f %(lockfile)s ]
 then
   touch "%(lockfile)s"
 else
-=======
-if [ ! -f %(lockfile)s ] 
-then
-  touch "%(lockfile)s" 
-else 
->>>>>>> master
   sleep 5
 fi
 exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
