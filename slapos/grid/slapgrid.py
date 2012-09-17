@@ -246,7 +246,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   if maximal_delay > 0:
     duration = int(maximal_delay * random())
     logging.info("Sleeping for %s seconds. To disable this feature, " \
-                    "check maximal_delay parameter in manual." % duration)
+                    "check --now parameter in slapgrid help." % duration)
     time.sleep(duration)
 
   # Return new Slapgrid instance and options
