@@ -42,6 +42,7 @@ setup(name=name,
         'zc.buildout': [
           'agent = slapos.recipe.agent:Recipe',
           'apache.frontend = slapos.recipe.apache_frontend:Recipe',
+	  'apacheperl = slapos.recipe.apacheperl:Recipe', 
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
           'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
