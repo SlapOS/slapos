@@ -170,9 +170,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
 + status_id + \'" data-url="\' + encodeURIComponent(status_url) + \'"></a></li>\')\n
                                     .find(\'#\' + status_id);\n
           }\n
-          setTimeout(function () {\n
-            update_status(status_context);\n
-          });\n
+          (function(new_context) {\n
+            setTimeout(function () {\n
+              update_status(new_context);\n
+            });\n
+          })(status_context);\n
         }\n
       },\n
       complete: function() {\n
