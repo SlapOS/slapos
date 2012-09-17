@@ -4,7 +4,8 @@ Changes
 0.28.8 (Unreleased)
 -------------------
 
- * No change yet.
+ * slapgrid: Don't process free partitions (regression introduced in 0.28.7).
+   [Cedric de Saint Martin]
 
 0.28.7 (2012-09-14)
 -------------------
