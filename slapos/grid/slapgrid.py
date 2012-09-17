@@ -611,6 +611,13 @@ class Slapgrid(object):
     for computer_partition in self.getComputerPartitionList():
       computer_partition_id = computer_partition.getId()
 
+      try:
+        software_url = computer_partition.getSoftwareRelease().getURI()
+        # XXX should test status as well. But getState() returns default value.
+      except NotFoundError:
+        # No Software Release information: skip.
+        continue
+
       # Check if we defined explicit list of partitions to process.
       # If so, if current partition not in this list, skip.
       if len(self.computer_partition_filter_list) > 0 and \
@@ -640,10 +647,7 @@ class Slapgrid(object):
             os.remove(timestamp_path)
             exception = traceback.format_exc()
             logger.error(exception)
-      try:
-        software_url = computer_partition.getSoftwareRelease().getURI()
-      except NotFoundError:
-        software_url = None
+
       software_path = os.path.join(self.software_root,
             getSoftwareUrlHash(software_url))
       local_partition = Partition(
