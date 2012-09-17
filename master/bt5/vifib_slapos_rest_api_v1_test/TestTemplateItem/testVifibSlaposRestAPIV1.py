@@ -4,6 +4,7 @@ from Products.Vifib.tests.testVifibSlapWebService import \
 from Products.ERP5Type.Base import WorkflowMethod
 import transaction
 import httplib
+import urllib
 import urlparse
 import json
 import tempfile
@@ -836,32 +837,8 @@ class TestInstanceAllocableGET(VifibSlaposRestAPIV1InstanceMixin):
     auth = self.response.getheader('WWW-Authenticate')
     self.assertTrue(auth is not None)
     self.assertTrue('Bearer realm="' in auth)
-    self.assertPersonRequestSimulatorEmpty()
 
-  def test_no_json(self):
-    self.connection.request(method='GET',
-      url='/'.join([self.api_path, 'instance', 'request']),
-      headers={'REMOTE_USER': self.customer_reference})
-    self.prepareResponse()
-    self.assertBasicResponse()
-    self.assertResponseCode(400)
-    self.assertResponseJson()
-    self.assertEqual({'error': "Data is not json object."}, self.json_response)
-    self.assertPersonRequestSimulatorEmpty()
-
-  def test_bad_json(self):
-    self.connection.request(method='GET',
-      url='/'.join([self.api_path, 'instance', 'request']),
-      body='This is not JSON',
-      headers={'REMOTE_USER': self.customer_reference})
-    self.prepareResponse()
-    self.assertBasicResponse()
-    self.assertResponseCode(400)
-    self.assertResponseJson()
-    self.assertEqual({'error': "Data is not json object."}, self.json_response)
-    self.assertPersonRequestSimulatorEmpty()
-
-  def test_empty_json(self):
+  def test_empty_parameter(self):
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'instance', 'request']),
       body='{}',
@@ -871,118 +848,58 @@ class TestInstanceAllocableGET(VifibSlaposRestAPIV1InstanceMixin):
     self.assertResponseCode(400)
     self.assertResponseJson()
     self.assertEqual({
-        "status": "Missing.",
         "slave": "Missing.",
-        "title": "Missing.",
         "software_release": "Missing.",
         "software_type": "Missing.",
-        "parameter": "Missing.",
         "sla": "Missing."},
       self.json_response)
-    self.assertPersonRequestSimulatorEmpty()
 
-  def test_status_slave_missing_json(self):
+  def test_bad_sla_json(self):
+    kwargs = {
+      'software_release': 'http://example.com/example.cfg',
+      'sla': 'This is not JSON',
+      'software_type': 'type_provided_by_the_software',
+      'slave': 'true'}
     self.connection.request(method='GET',
-      url='/'.join([self.api_path, 'instance', 'request']),
-      body="""
-{
-  "title": "My unique instance", 
-  "software_release": "http://example.com/example.cfg", 
-  "software_type": "type_provided_by_the_software", 
-  "parameter": {
-    "Custom1": "one string", 
-    "Custom2": "one float", 
-    "Custom3": [
-      "abc", 
-      "def"
-    ]
-  }, 
-  "sla": {
-    "computer_id": "COMP-0"
-  }
-}""",
+      url='/'.join([self.api_path, 'instance', 'request']) + \
+          '?%s' % urllib.urlencode(kwargs),
       headers={'REMOTE_USER': self.customer_reference})
     self.prepareResponse()
     self.assertBasicResponse()
     self.assertResponseCode(400)
     self.assertResponseJson()
-    self.assertEqual({
-        "status": "Missing.",
-        "slave": "Missing."
-        },
-      self.json_response)
-    self.assertPersonRequestSimulatorEmpty()
+    self.assertEqual({'sla': "Malformed value."}, self.json_response)
 
   def test_slave_not_bool(self):
     kwargs = {
-      'parameter': {
-        'Custom1': 'one string',
-        'Custom2': 'one float',
-        'Custom3': ['abc', 'def']},
-      'title': 'My unique instance',
       'software_release': 'http://example.com/example.cfg',
-      'status': 'started',
-      'sla': {
-        'computer_id': 'COMP-0'},
+      'sla': json.dumps({
+        'computer_id': 'COMP-0'}),
       'software_type': 'type_provided_by_the_software',
-      'slave': "True"}
+      'slave': 'this is not a JSON boolean'}
     self.connection.request(method='GET',
-      url='/'.join([self.api_path, 'instance', 'request']),
-      body=json.dumps(kwargs),
+      url='/'.join([self.api_path, 'instance', 'request']) + \
+          '?%s' % urllib.urlencode(kwargs),
       headers={'REMOTE_USER': self.customer_reference})
     self.prepareResponse()
     self.assertBasicResponse()
     self.assertResponseCode(400)
     self.assertResponseJson()
     self.assertEqual({
-        "slave": "unicode is not bool.",
+        "slave": "Malformed value.",
         },
       self.json_response)
-    self.assertPersonRequestSimulatorEmpty()
-
-  def test_incorrect_status(self):
-    kwargs = {
-      'parameter': {
-        'Custom1': 'one string',
-        'Custom2': 'one float',
-        'Custom3': ['abc', 'def']},
-      'title': 'My unique instance',
-      'software_release': 'http://example.com/example.cfg',
-      'status': 'badstatus',
-      'sla': {
-        'computer_id': 'COMP-0'},
-      'software_type': 'type_provided_by_the_software',
-      'slave': True}
-    self.connection.request(method='GET',
-      url='/'.join([self.api_path, 'instance', 'request']),
-      body=json.dumps(kwargs),
-      headers={'REMOTE_USER': self.customer_reference})
-    self.prepareResponse()
-    self.assertBasicResponse()
-    self.assertResponseCode(400)
-    self.assertResponseJson()
-    self.assertEqual({
-        "status": "Status shall be one of: started, stopped, destroyed.",
-        },
-      self.json_response)
-    self.assertPersonRequestSimulatorEmpty()
 
   def test_correct(self):
     kwargs = {
-      'parameter': {
-        'Custom1': 'one string',
-        'Custom2': 'one float',
-        'Custom3': ['abc', 'def']},
-      'title': 'My unique instance',
       'software_release': 'http://example.com/example.cfg',
-      'status': 'started',
-      'sla': {
-        'computer_id': 'COMP-0'},
+      'sla': json.dumps({
+        'computer_id': 'COMP-0'}),
       'software_type': 'type_provided_by_the_software',
-      'slave': True}
+      'slave': 'true'}
     self.connection.request(method='GET',
-      url='/'.join([self.api_path, 'instance', 'request']),
-      body=json.dumps(kwargs),
+      url='/'.join([self.api_path, 'instance', 'request']) + \
+          '?%s' % urllib.urlencode(kwargs),
       headers={'REMOTE_USER': self.customer_reference})
     self.prepareResponse()
     self.assertBasicResponse()
@@ -991,22 +908,16 @@ class TestInstanceAllocableGET(VifibSlaposRestAPIV1InstanceMixin):
 
   def test_additional_key_json(self):
     kw_request = {
-      'parameter': {
-        'Custom1': 'one string',
-        'Custom2': 'one float',
-        'Custom3': ['abc', 'def']},
-      'title': 'My unique instance',
       'software_release': 'http://example.com/example.cfg',
-      'status': 'started',
-      'sla': {
-        'computer_id': 'COMP-0'},
+      'sla': json.dumps({
+        'computer_id': 'COMP-0'}),
       'software_type': 'type_provided_by_the_software',
-      'slave': True}
+      'slave': 'true'}
     kwargs = kw_request.copy()
     kwargs.update(**{'wrong_key': 'Be ignored'})
     self.connection.request(method='GET',
-      url='/'.join([self.api_path, 'instance', 'request']),
-      body=json.dumps(kwargs),
+      url='/'.join([self.api_path, 'instance', 'request']) + \
+          '?%s' % urllib.urlencode(kwargs),
       headers={'REMOTE_USER': self.customer_reference})
     self.prepareResponse()
     self.assertBasicResponse()
@@ -1041,54 +952,51 @@ class TestInstanceAllocableGET(VifibSlaposRestAPIV1InstanceMixin):
 #         "error": "There is system issue, please try again later.",
 #         },
 #       self.json_response)
-#     self.assertPersonRequestSimulatorEmpty()
 
-  def test_content_negotiation_headers(self):
-    self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
-      custom_header={
-        'Access-Control-Request-Headers': self.access_control_allow_headers
-      })
-    kwargs = {
-      'parameter': {
-        'Custom1': 'one string',
-        'Custom2': 'one float',
-        'Custom3': ['abc', 'def']},
-      'title': 'My unique instance',
-      'software_release': 'http://example.com/example.cfg',
-      'status': 'started',
-      'sla': {
-        'computer_id': 'COMP-0'},
-      'software_type': 'type_provided_by_the_software',
-      'slave': True}
-    self.connection.request(method='GET',
-      url='/'.join([self.api_path, 'instance', 'request']),
-      body=json.dumps(kwargs),
-      headers={'REMOTE_USER': self.customer_reference})
-    self.prepareResponse()
-    self.assertBasicResponse()
-    self.assertResponseCode(400)
-    self.assertResponseJson()
-    self.assertEqual({
-      'Content-Type': "Header with value '^application/json.*' is required."},
-      self.json_response)
-    self.assertPersonRequestSimulatorEmpty()
-
-    # now check with incorrect headers
-    self.connection.request(method='GET',
-      url='/'.join([self.api_path, 'instance', 'request']),
-      body=json.dumps(kwargs),
-      headers={'REMOTE_USER': self.customer_reference,
-        'Content-Type': 'please/complain',
-        'Accept': 'be/silent'})
-    self.prepareResponse()
-    self.assertBasicResponse()
-    self.assertResponseCode(400)
-    self.assertResponseJson()
-    self.assertEqual({
-      'Content-Type': "Header with value '^application/json.*' is required."},
-      self.json_response)
-    self.assertPersonRequestSimulatorEmpty()
-    # and with correct ones are set by default
+#   def test_content_negotiation_headers(self):
+#     self.connection = CustomHeaderHTTPConnection(host=self.api_netloc,
+#       custom_header={
+#         'Access-Control-Request-Headers': self.access_control_allow_headers
+#       })
+#     kwargs = {
+#       'parameter': {
+#         'Custom1': 'one string',
+#         'Custom2': 'one float',
+#         'Custom3': ['abc', 'def']},
+#       'title': 'My unique instance',
+#       'software_release': 'http://example.com/example.cfg',
+#       'status': 'started',
+#       'sla': {
+#         'computer_id': 'COMP-0'},
+#       'software_type': 'type_provided_by_the_software',
+#       'slave': True}
+#     self.connection.request(method='GET',
+#       url='/'.join([self.api_path, 'instance', 'request']),
+#       body=json.dumps(kwargs),
+#       headers={'REMOTE_USER': self.customer_reference})
+#     self.prepareResponse()
+#     self.assertBasicResponse()
+#     self.assertResponseCode(400)
+#     self.assertResponseJson()
+#     self.assertEqual({
+#       'Content-Type': "Header with value '^application/json.*' is required."},
+#       self.json_response)
+# 
+#     # now check with incorrect headers
+#     self.connection.request(method='GET',
+#       url='/'.join([self.api_path, 'instance', 'request']),
+#       body=json.dumps(kwargs),
+#       headers={'REMOTE_USER': self.customer_reference,
+#         'Content-Type': 'please/complain',
+#         'Accept': 'be/silent'})
+#     self.prepareResponse()
+#     self.assertBasicResponse()
+#     self.assertResponseCode(400)
+#     self.assertResponseJson()
+#     self.assertEqual({
+#       'Content-Type': "Header with value '^application/json.*' is required."},
+#       self.json_response)
+#     # and with correct ones are set by default
 
 def VifibSlaposRestAPIV1BangMixin_afterSetUp(self):
   VifibSlaposRestAPIV1BangMixin_afterSetUp(self)
