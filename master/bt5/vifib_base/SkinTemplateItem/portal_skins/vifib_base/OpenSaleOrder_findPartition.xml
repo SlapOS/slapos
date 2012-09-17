@@ -106,7 +106,7 @@ for base_category in computer_base_category_list:\n
   if base_category in filter_kw:\n
     category_relative_url = "%s" % filter_kw.pop(base_category)\n
     # XXX Small protection to prevent entering strange strings\n
-    category = context.getPortalObject().portal_categories[base_category].restrictedTraverse(category_relative_url, None)\n
+    category = context.getPortalObject().portal_categories[base_category].restrictedTraverse(str(category_relative_url), None)\n
     if category is None:\n
       query_kw["uid"] = "-1"\n
     else:\n
