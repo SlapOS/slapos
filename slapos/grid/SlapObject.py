@@ -285,7 +285,10 @@ class Partition(object):
     os.environ = utils.getCleanEnvironment(pwd.getpwuid(
       instance_stat_info.st_uid).pw_dir)
     # Generates buildout part from template
-    template_location = os.path.join(self.software_path, 'template.cfg')
+    template_location = os.path.join(self.software_path, 'instance.cfg')
+    # Backward compatibility: "instance.cfg" file was named "template.cfg".
+    if not os.path.exists(template_location):
+      template_location = os.path.join(self.software_path, 'template.cfg')
     config_location = os.path.join(self.instance_path, 'buildout.cfg')
     self.logger.debug("Copying %r to %r" % (template_location, config_location))
     try:
