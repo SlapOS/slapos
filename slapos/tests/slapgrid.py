@@ -802,7 +802,7 @@ class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
     self.started = False
 
     instance_path = self._create_instance('0')
-    software_hash = self._bootstrap()
+    self._bootstrap()
 
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
@@ -863,7 +863,7 @@ exit 127""" % {'worked_file': worked_file})
     self.started = False
 
     instance_path = self._create_instance('0')
-    software_hash = self._bootstrap()
+    self._bootstrap()
 
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
@@ -928,7 +928,7 @@ exit 0""" % {'worked_file': worked_file})
     self.started = False
 
     instance_path = self._create_instance('0')
-    software_hash = self._bootstrap()
+    self._bootstrap()
 
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
@@ -996,7 +996,7 @@ exit 127""" % {'worked_file': worked_file})
     self.started = False
 
     instance_path = self._create_instance('0')
-    software_hash = self._bootstrap()
+    self._bootstrap()
 
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
@@ -1058,7 +1058,7 @@ exit 0""" % {'worked_file': worked_file})
     self.started = False
 
     instance_path = self._create_instance('0')
-    software_hash = self._bootstrap()
+    self._bootstrap()
 
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
@@ -1130,7 +1130,7 @@ exit 0""" % {'worked_file': worked_file_2})
     self.started = False
 
     instance_path = self._create_instance('0')
-    software_hash = self._bootstrap()
+    self._bootstrap()
 
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
@@ -1144,11 +1144,11 @@ exit 0""" % {'worked_file': worked_file_2})
       with open(promise, 'w') as f:
         f.write("""#!/usr/bin/env sh
 touch "%(worked_file)s"
-if [ ! -f %(lockfile)s ] 
+if [ ! -f %(lockfile)s ]
 then
-  touch "%(lockfile)s" 
-  exit 0 
-else 
+  touch "%(lockfile)s"
+  exit 0
+else
   exit 127
 fi""" % {'worked_file': worked_file, 'lockfile': lockfile})
       os.chmod(promise, 0777)
@@ -1203,7 +1203,7 @@ fi""" % {'worked_file': worked_file, 'lockfile': lockfile})
     self.started = False
 
     instance_path = self._create_instance('0')
-    software_hash = self._bootstrap()
+    self._bootstrap()
 
     promise_path = os.path.join(instance_path, 'etc', 'promise')
     os.makedirs(promise_path)
