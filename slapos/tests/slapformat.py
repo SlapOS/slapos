@@ -205,11 +205,12 @@ class TestComputer(SlapformatMixin):
     computer = slapos.format.Computer('computer')
     self.assertEqual(computer.getAddress(), {'netmask': None, 'addr': None})
 
+  @unittest.skip("Not implemented")
   def test_construct_empty(self):
     computer = slapos.format.Computer('computer')
     computer.construct()
-    raise NotImplementedError
 
+  @unittest.skip("Not implemented")
   def test_construct_empty_prepared(self):
     computer = slapos.format.Computer('computer',
       interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
@@ -244,6 +245,7 @@ class TestComputer(SlapformatMixin):
       'ip addr list bridge',],
       self.fakeCallAndRead.external_command_list)
 
+  @unittest.skip("Not implemented")
   def test_construct_empty_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
       interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
@@ -279,6 +281,7 @@ class TestComputer(SlapformatMixin):
       ],
       self.fakeCallAndRead.external_command_list)
 
+  @unittest.skip("Not implemented")
   def test_construct_prepared(self):
     computer = slapos.format.Computer('computer',
       interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
@@ -361,6 +364,7 @@ class TestComputer(SlapformatMixin):
     ],
       self.fakeCallAndRead.external_command_list)
 
+  @unittest.skip("Not implemented")
   def test_construct_prepared_no_alter_network(self):
     computer = slapos.format.Computer('computer',
       interface=slapos.format.Interface('bridge', '127.0.0.1/16'))
