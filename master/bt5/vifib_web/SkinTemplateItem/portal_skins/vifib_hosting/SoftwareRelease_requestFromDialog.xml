@@ -55,6 +55,19 @@
 if not service_title:\n
   service_title = "Vifib KVM %i" % portal.portal_ids.generateNewId(id_group=("vifib", "kvm"), default=1),\n
 \n
+hosting_subscription = portal.portal_catalog.getResultValue(\n
+  portal_type=\'Hosting Subscription\',\n
+  validation_state="validated",\n
+  select_expression=\'title\',\n
+  title={\'query\': service_title, \'key\': \'ExactMatch\'}\n
+  )\n
+\n
+if hosting_subscription is not None:\n
+  return context.Base_redirect(dialog_id,\n
+                        keep_items={\'portal_status_message\':context.Base_translateString(\n
+                          "You already have service named ${service_title}. Please choose different unique name.", mapping={\'service_title\': service_title})})\n
+\n
+\n
 url = context.getUrlString()\n
 \n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
@@ -78,7 +91,7 @@ return context.REQUEST.get(\'request_hosting_subscription\').Base_redirect(keep_
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>service_title=None, instance_xml=None</string> </value>
+            <value> <string>dialog_id, service_title=None, instance_xml=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
