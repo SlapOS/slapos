@@ -98,6 +98,8 @@
                         <string>your_ad</string>
                         <string>your_instance_xml</string>
                         <string>your_description</string>
+                        <string>your_monitoring_status</string>
+                        <string>your_monitoring_status_js</string>
                       </list>
                     </value>
                 </item>

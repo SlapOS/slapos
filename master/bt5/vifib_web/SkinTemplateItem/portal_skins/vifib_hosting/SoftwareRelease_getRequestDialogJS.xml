@@ -50,14 +50,50 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># This script returns an iterable of the paths to standard JavaScript objects.\n
+            <value> <string encoding="cdata"><![CDATA[
+
+tool = context.getPortalObject().portal_vifib_rest_api\n
+return """\n
+<script>\n
+$(document).ready(function () {\n
+  var current_context = $(".allocable_to_check"),\n
+    checkallocable;\n
 \n
-return (\'jquery/core/jquery.js\',\n
-        \'vifib_hosting_js/erp5_acknowledgement.js\',\n
-        \'vifib_hosting_js/vifib_monitoring.js\',\n
-        \'vifib_hosting_js/vifib_allocable.js\',\n
-        \'vifib_hosting_js/vifib_hosting.js\',)\n
-</string> </value>
+  checkallocable = function (context) {\n
+    $.vifiballocable({\n
+      context: context,\n
+      url: \'%s/v1/instance/request\', \n
+      slave: false, \n
+      software_release: context.attr("data-url"), \n
+      software_type: "default", \n
+      sla: {},\n
+      success: function(data) {\n
+        if (data.result === true) {\n
+          $(this).text("There is space!");\n
+        } else {\n
+          $(this).text("Sorry, no space left in the cloud :(");\n
+        }\n
+      }, \n
+      error: function(data) {\n
+        $(this).text("Unable to check if there is space");\n
+      }, \n
+      complete: function () {\n
+        var context = $(this);\n
+        setTimeout(function() {\n
+          checkallocable(context);\n
+          }, 60000);\n
+      },\n
+    });\n
+  };\n
+  checkallocable(current_context);\n
+});\n
+\n
+\n
+</script>\n
+""" % tool.absolute_url()\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -65,7 +101,7 @@ return (\'jquery/core/jquery.js\',\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Site_getJavaScriptRelativeUrlList</string> </value>
+            <value> <string>SoftwareRelease_getRequestDialogJS</string> </value>
         </item>
       </dictionary>
     </pickle>
