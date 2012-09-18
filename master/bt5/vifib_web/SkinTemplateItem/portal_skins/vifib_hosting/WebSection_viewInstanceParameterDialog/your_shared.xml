@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>your_slave</string> </value>
+            <value> <string>your_shared</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
