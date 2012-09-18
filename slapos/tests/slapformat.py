@@ -333,6 +333,8 @@ class TestComputer(SlapformatMixin):
     computer.software_root = '/software_root'
     partition = slapos.format.Partition('partition', '/part_path',
       slapos.format.User('testuser'), [], None)
+    global USER_LIST
+    USER_LIST=['testuser']
     partition.tap = slapos.format.Tap('tap')
     computer.partition_list = [partition]
     global INTERFACE_DICT
