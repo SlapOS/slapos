@@ -1,6 +1,15 @@
 Changes
 =======
 
+0.29 (2012-09-18)
+-----------------
+
+ * buildout: Migrate slap_connection magic instance profile part to
+   slap-connection, and use variables names separated with '-'. [Cedric de
+	 Saint Martin]
+ * slapgrid: Add support for instance.cfg instance profiles [Cedric de Saint
+   Martin]
+
 0.28.9 (2012-09-18)
 -------------------
 
