@@ -9,6 +9,7 @@ Changes
 	 Saint Martin]
  * slapgrid: Add support for instance.cfg instance profiles [Cedric de Saint
    Martin]
+ * slapgrid-ur: much less calls to master. [Cedric de Saint Martin]
 
 0.28.9 (2012-09-18)
 -------------------
