@@ -240,6 +240,41 @@ touch worked""")
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition'])
 
+  def test_one_partition_instance_cfg(self):
+    """
+    Check that slapgrid processes instance is profile is not named
+    "template.cfg" but "instance.cfg".
+    """
+    self.sequence = []
+    httplib.HTTPConnection._callback = _server_response(self,
+      _requested_state='stopped')
+
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'instance.cfg'), 'w').write(
+      """[buildout]""")
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
+      'var'])
+    partition = os.path.join(self.instance_root, '0')
+    self.assertSortedListEqual(os.listdir(partition), ['worked',
+      'buildout.cfg'])
+    self.assertSortedListEqual(os.listdir(self.software_root),
+      [software_hash])
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'stoppedComputerPartition'])
+
   def test_one_free_partition(self):
     """
     Test if slapgrid don't process "free" partition
