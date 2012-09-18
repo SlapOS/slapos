@@ -979,13 +979,10 @@ class Slapgrid(object):
         report_usage_issue_cp_list.append(computer_partition_id)
 
     for computer_partition in computer_partition_list:
-      computer_partition_id = computer_partition.getId()
-      try:
-        software_url = computer_partition.getSoftwareRelease().getURI()
-      except NotFoundError:
-        software_url = None
       if computer_partition.getState() == "destroyed":
         try:
+          computer_partition_id = computer_partition.getId()
+          software_url = computer_partition.getSoftwareRelease().getURI()
           software_path = os.path.join(self.software_root,
                 getSoftwareUrlHash(software_url))
           local_partition = Partition(

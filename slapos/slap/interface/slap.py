@@ -134,6 +134,12 @@ class ISoftwareRelease(IBuildoutController):
     Returns a string representing the uri of the software release.
     """
 
+  def getComputerId():
+    """
+    Returns a string representing the identifier of the computer where the SR
+    is installed.
+    """
+
   def getState():
     """
     Returns a string representing the expected state of the software
