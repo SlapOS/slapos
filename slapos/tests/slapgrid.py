@@ -13,6 +13,14 @@ import unittest
 import urlparse
 import xml_marshaller
 
+WRAPPER_CONTENT = """#!/bin/sh
+touch worked &&
+mkdir -p etc/run &&
+echo "#!/bin/sh" > etc/run/wrapper &&
+echo "while :; do echo "Working\\nWorking\\n" ; sleep 0.1; done" >> etc/run/wrapper &&
+chmod 755 etc/run/wrapper
+"""
+
 class BasicMixin:
   def assertSortedListEqual(self, list1, list2, msg=None):
     self.assertListEqual(sorted(list1), sorted(list2), msg)
@@ -274,13 +282,7 @@ touch worked""")
       """[buildout]""")
     srbindir = os.path.join(srdir, 'bin')
     os.mkdir(srbindir)
-    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
-touch worked &&
-mkdir -p etc/run &&
-echo "#!/bin/sh" > etc/run/wrapper &&
-echo "while :; do echo "Working\\nWorking\\n" ; done" >> etc/run/wrapper &&
-chmod 755 etc/run/wrapper
-""")
+    open(os.path.join(srbindir, 'buildout'), 'w').write(WRAPPER_CONTENT)
     os.chmod(os.path.join(srbindir, 'buildout'), 0755)
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
@@ -400,13 +402,7 @@ chmod 755 etc/run/wrapper
       """[buildout]""")
     srbindir = os.path.join(srdir, 'bin')
     os.mkdir(srbindir)
-    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
-touch worked &&
-mkdir -p etc/run &&
-echo "#!/bin/sh" > etc/run/wrapper &&
-echo "while :; do echo "Working\\nWorking\\n" ; done" >> etc/run/wrapper &&
-chmod 755 etc/run/wrapper
-""")
+    open(os.path.join(srbindir, 'buildout'), 'w').write(WRAPPER_CONTENT)
     os.chmod(os.path.join(srbindir, 'buildout'), 0755)
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
@@ -682,13 +678,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.sequence = []
     self.started = False
     httplib.HTTPConnection._callback = _server_response(self, 'started')
-    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
-touch worked &&
-mkdir -p etc/run &&
-echo "#!/bin/sh" > etc/run/wrapper &&
-echo "while :; do echo "Working\\nWorking\\n" ; done" >> etc/run/wrapper &&
-chmod 755 etc/run/wrapper
-""")
+    open(os.path.join(srbindir, 'buildout'), 'w').write(WRAPPER_CONTENT)
     os.chmod(os.path.join(srbindir, 'buildout'), 0755)
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
@@ -759,13 +749,7 @@ chmod 755 etc/run/wrapper
     self.sequence = []
     self.started = False
     httplib.HTTPConnection._callback = _server_response(self, 'started')
-    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
-touch worked &&
-mkdir -p etc/run &&
-echo "#!/bin/sh" > etc/run/wrapper &&
-echo "while :; do echo "Working\\nWorking\\n" ; sleep 0.1; done" >> etc/run/wrapper &&
-chmod 755 etc/run/wrapper
-""")
+    open(os.path.join(srbindir, 'buildout'), 'w').write(WRAPPER_CONTENT)
     os.chmod(os.path.join(srbindir, 'buildout'), 0755)
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
