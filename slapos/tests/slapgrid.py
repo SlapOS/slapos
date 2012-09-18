@@ -738,6 +738,26 @@ buildout = /path/to/buildout/binary
     self.assertEquals(self.signature_key_file_descriptor.name,
                           slapgrid_object.signature_private_key_file)
 
+  def test_backward_compatibility_all(self):
+    """
+      Check if giving --all triggers "develop" option.
+    """
+    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    argument_tuple = ("--all",) + self.default_arg_tuple
+    slapgrid_object = parser(*argument_tuple)[0]
+    self.assertTrue(slapgrid_object.develop)
+
+  def test_backward_compatibility_not_all(self):
+    """
+      Check if not giving --all neither --develop triggers "develop"
+      option to be False.
+    """
+    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    argument_tuple = self.default_arg_tuple
+    slapgrid_object = parser(*argument_tuple)[0]
+    self.assertFalse(slapgrid_object.develop)
+
+
 class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
   def test_one_failing_promise(self):
 
