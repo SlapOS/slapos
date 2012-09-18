@@ -1249,4 +1249,3 @@ exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
     """
     # XXX Not implemented
     pass
-
