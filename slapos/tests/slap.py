@@ -273,11 +273,14 @@ class TestComputer(SlapMixin):
         partition_id)
     self.assertEqual(self.computer.getComputerPartitionList(), [])
 
+  @unittest.skip("Not implemented")
   def test_computer_reportUsage_non_valid_xml_raises(self):
     """
     Asserts that calling Computer.reportUsage with non DTD
     (not defined yet) XML raises (not defined yet) exception
     """
+
+
     self.computer_guid = self._getTestComputerId()
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
@@ -288,6 +291,7 @@ class TestComputer(SlapMixin):
     self.assertRaises(UndefinedYetException, self.computer.reportUsage,
         non_dtd_xml)
 
+  @unittest.skip("Not implemented")
   def test_computer_reportUsage_valid_xml_invalid_partition_raises(self):
     """
     Asserts that calling Computer.reportUsage with DTD (not defined
@@ -675,7 +679,6 @@ class TestOpenOrder(SlapMixin):
     requested_partition_id = 'PARTITION_01'
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
-      parsed_qs = urlparse.parse_qs(parsed_url.query)
       from slapos.slap.slap import SoftwareInstance
       slap_partition = SoftwareInstance(
         slap_computer_id=computer_guid,

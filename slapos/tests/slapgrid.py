@@ -1415,6 +1415,7 @@ exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
     self.assertEquals(self.error, 1)
     self.assertFalse(self.started)
 
+  @unittest.skip("Not implemented")
   def test_slapgrid_processes_partition_after_global_timeout(self):
     """
     Test that slapgrid processes again partition after delay defined by
@@ -1423,6 +1424,7 @@ exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
     # XXX Not implemented
     pass
 
+  @unittest.skip("Not implemented")
   def test_slapgrid_processes_partition_after_timeout_defined_by_software_release(self):
     """
     Test that if SR of instance defines a "buildotu delay", slapgrid processes
