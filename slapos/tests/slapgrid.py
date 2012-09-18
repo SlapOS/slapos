@@ -657,6 +657,168 @@ touch worked""")
                       'availableComputerPartition','stoppedComputerPartition',])
 
 
+class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
+  """
+  Test suite about slapgrid-ur
+  """
+
+  def test_slapgrid_destroys_instance_to_be_destroyed(self):
+    """
+    Test than an instance in "destroyed" state is correctly destroyed
+    """
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'template.cfg'), 'w').write(
+      """[buildout]""")
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+
+    # Start the instance
+    self.sequence = []
+    self.started = False
+    httplib.HTTPConnection._callback = _server_response(self, 'started')
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked &&
+mkdir -p etc/run &&
+echo "#!/bin/sh" > etc/run/wrapper &&
+echo "while :; do echo "Working\\nWorking\\n" ; done" >> etc/run/wrapper &&
+chmod 755 etc/run/wrapper
+""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
+      'var'])
+    self.assertSortedListEqual(os.listdir(partition_path), ['.0_wrapper.log',
+      'worked', 'buildout.cfg', 'etc'])
+    tries = 10
+    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    while tries > 0:
+      tries -= 1
+      if os.path.getsize(wrapper_log) > 0:
+        break
+      time.sleep(0.2)
+    self.assertTrue('Working' in open(wrapper_log, 'r').read())
+    self.assertSortedListEqual(os.listdir(self.software_root),
+      [software_hash])
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation',
+                      'availableComputerPartition',
+                      'startedComputerPartition'])
+    self.assertTrue(self.started)
+
+    # Then destroy the instance
+    self.sequence = []
+    httplib.HTTPConnection._callback = _server_response(self, 'destroyed')
+    self.assertTrue(self.grid.agregateAndSendUsage())
+    # Assert partition directory is empty
+    self.assertSortedListEqual(os.listdir(self.instance_root),
+                               ['0', 'etc', 'var'])
+    self.assertSortedListEqual(os.listdir(partition_path), [])
+    self.assertSortedListEqual(os.listdir(self.software_root),
+                               [software_hash])
+    # Assert supervisor stopped process
+    tries = 10
+    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    exists = False
+    while tries > 0:
+      tries -= 1
+      if os.path.exists(wrapper_log):
+        exists = True
+        break
+      time.sleep(0.2)
+    self.assertFalse(exists)
+
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation',
+                      'stoppedComputerPartition',
+                      'destroyedComputerPartition'])
+    self.assertTrue(self.started)
+
+  def test_slapgrid_not_destroy_bad_instance(self):
+    """
+    Checks that slapgrid-ur don't destroy instance not to be destroyed.
+    """
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'template.cfg'), 'w').write(
+      """[buildout]""")
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+
+    # Start the instance
+    self.sequence = []
+    self.started = False
+    httplib.HTTPConnection._callback = _server_response(self, 'started')
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked &&
+mkdir -p etc/run &&
+echo "#!/bin/sh" > etc/run/wrapper &&
+echo "while :; do echo "Working\\nWorking\\n" ; sleep 0.1; done" >> etc/run/wrapper &&
+chmod 755 etc/run/wrapper
+""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
+      'var'])
+    self.assertSortedListEqual(os.listdir(partition_path), ['.0_wrapper.log',
+      'worked', 'buildout.cfg', 'etc'])
+    tries = 20
+    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    while tries > 0:
+      tries -= 1
+      if os.path.getsize(wrapper_log) > 0:
+        break
+      time.sleep(0.2)
+    self.assertTrue('Working' in open(wrapper_log, 'r').read())
+    self.assertSortedListEqual(os.listdir(self.software_root),
+      [software_hash])
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation',
+                      'availableComputerPartition',
+                      'startedComputerPartition'])
+    self.assertTrue(self.started)
+
+    # Then run usage report and see if it is still working
+    self.sequence = []
+    self.assertTrue(self.grid.agregateAndSendUsage())
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
+      'var'])
+    self.assertSortedListEqual(os.listdir(partition_path), ['.0_wrapper.log',
+      'worked', 'buildout.cfg', 'etc'])
+    tries = 10
+    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    while tries > 0:
+      tries -= 1
+      if os.path.getsize(wrapper_log) > 0:
+        break
+      time.sleep(0.2)
+    self.assertTrue('Working' in open(wrapper_log, 'r').read())
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
+      'var'])
+    self.assertSortedListEqual(os.listdir(partition_path), ['.0_wrapper.log',
+      'worked', 'buildout.cfg', 'etc'])
+    tries = 20
+    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    while tries > 0:
+      tries -= 1
+      if os.path.getsize(wrapper_log) > 0:
+        break
+      time.sleep(0.2)
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation'])
+    self.assertTrue(self.started)
+
+
 class TestSlapgridArgumentTuple(unittest.TestCase):
   """
   """
