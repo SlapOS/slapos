@@ -1236,10 +1236,17 @@ exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
 
   def test_slapgrid_processes_partition_after_global_timeout(self):
     """
+    Test that slapgrid processes again partition after delay defined by
+    slapgrid even if .timestamp is up-to-date.
     """
-    raise NotImplementedError()
+    # XXX Not implemented
+    pass
 
   def test_slapgrid_processes_partition_after_timeout_defined_by_software_release(self):
     """
+    Test that if SR of instance defines a "buildotu delay", slapgrid processes
+    again partition after that delay and NOT after delay defined by slapgrid.
     """
-    raise NotImplementedError()
+    # XXX Not implemented
+    pass
+
