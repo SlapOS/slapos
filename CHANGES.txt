@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.28.9 (2012-09-18)
+-------------------
+
+ * slapgrid: Don't process not updated partitions (regression introduced in
+   0.28.7). [Cedric de Saint Martin]
+
 0.28.8 (2012-09-18)
 -------------------
 
