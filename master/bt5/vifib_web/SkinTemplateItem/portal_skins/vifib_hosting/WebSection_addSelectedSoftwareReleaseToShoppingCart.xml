@@ -65,8 +65,10 @@ else:\n
 if kw.has_key(\'came_from\'):\n
   #we override the context to redirect the user to the next web section\n
   context = portal.restrictedTraverse(kw[\'came_from\'])\n
-  \n
-context.WebSection_viewNextStep()\n
+\n
+software_release = portal.portal_catalog.getResultValue(uid=uids[0])\n
+return software_release.Base_redirect(\'SoftwareRelease_viewRequestDialog\')\n
+# context.WebSection_viewNextStep()\n
 </string> </value>
         </item>
         <item>
