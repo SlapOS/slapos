@@ -113,6 +113,9 @@ for base_category in computer_base_category_list:\n
     else:\n
       query_kw["%s_uid" % base_category] = category.getUid()\n
 \n
+query_kw["capacity_scope_uid"] = context.getPortalObject().portal_categories.capacity_scope.open.getUid()\n
+query_kw["allocation_scope_uid"] = context.getPortalObject().portal_categories.allocation_scope.open.getUid()\n
+\n
 if filter_kw.keys():\n
   # XXX Drop all unexpected keys\n
   query_kw["uid"] = "-1"\n
