@@ -3,6 +3,7 @@ import slapos.format
 import unittest
 
 import netaddr
+import socket
 
 # for mocking
 import grp
@@ -45,12 +46,12 @@ class FakeCallAndRead:
         netmask = netaddr.strategy.ipv4.int_to_str(
           netaddr.strategy.ipv4.prefix_to_netmask[int(ip.split('/')[1])])
         ip = ip.split('/')[0]
-        INTERFACE_DICT[interface][2].append({'addr': ip, 'netmask': netmask})
+        INTERFACE_DICT[interface][socket.AF_INET].append({'addr': ip, 'netmask': netmask})
       else:
         netmask = netaddr.strategy.ipv6.int_to_str(
           netaddr.strategy.ipv6.prefix_to_netmask[int(ip.split('/')[1])])
         ip = ip.split('/')[0]
-        INTERFACE_DICT[interface][10].append({'addr': ip, 'netmask': netmask})
+        INTERFACE_DICT[interface][socket.AF_INET6].append({'addr': ip, 'netmask': netmask})
       # stabilise by mangling ip to just ip string
       argument_list[3] = 'ip/%s' % netmask
     elif argument_list[:3] == ['ip', 'addr', 'list']:
@@ -293,9 +294,9 @@ class TestComputer(SlapformatMixin):
     computer.partition_list = [partition]
     global INTERFACE_DICT
     INTERFACE_DICT['bridge'] = {
-      2: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+      socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
         'netmask': '255.255.255.0'}],
-      10: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+      socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
     }
 
     computer.construct()
@@ -339,9 +340,9 @@ class TestComputer(SlapformatMixin):
     computer.partition_list = [partition]
     global INTERFACE_DICT
     INTERFACE_DICT['bridge'] = {
-      2: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+      socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
         'netmask': '255.255.255.0'}],
-      10: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+      socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
     }
 
     computer.construct(alter_user=False)
@@ -378,9 +379,9 @@ class TestComputer(SlapformatMixin):
     computer.partition_list = [partition]
     global INTERFACE_DICT
     INTERFACE_DICT['bridge'] = {
-      2: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+      socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
         'netmask': '255.255.255.0'}],
-      10: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+      socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
     }
 
     computer.construct(alter_network=False)
@@ -418,9 +419,9 @@ class TestComputer(SlapformatMixin):
     computer.partition_list = [partition]
     global INTERFACE_DICT
     INTERFACE_DICT['bridge'] = {
-      2: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
+      socket.AF_INET: [{'addr': '192.168.242.77', 'broadcast': '127.0.0.1',
         'netmask': '255.255.255.0'}],
-      10: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
+      socket.AF_INET6: [{'addr': '2a01:e35:2e27::e59c', 'netmask': 'ffff:ffff:ffff:ffff::'}]
     }
 
     computer.construct(alter_network=False, alter_user=False)
