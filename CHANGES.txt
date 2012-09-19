@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.30 (2012-09-19)
+-----------------
+
+ * Add initial "slave instances" support in slapproxy. [Cedric Le Ninivin]
+ * slapgrid-ur fix: check for partition informations only if we have to
+   destroy it. [Cedric de Saint Martin]
+
 0.29 (2012-09-18)
 -----------------
 
