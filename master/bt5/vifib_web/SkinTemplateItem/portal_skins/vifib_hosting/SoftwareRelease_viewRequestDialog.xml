@@ -99,6 +99,7 @@
                         <string>your_instance_xml</string>
                         <string>your_description</string>
                         <string>your_computer_guid</string>
+                        <string>your_group</string>
                         <string>your_cpu_core</string>
                         <string>your_cpu_frequency</string>
                         <string>your_cpu_type</string>

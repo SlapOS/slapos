@@ -98,6 +98,7 @@ for sla_category_id, sla_category in [\n
   (\'storage_interface\', storage_interface),\n
   (\'storage_redundancy\', storage_redundancy),\n
   (\'computer_guid\', computer_guid),\n
+  (\'group\', group),\n
 ]:\n
   if sla_category:\n
     sla_xml += \'<parameter id="%s">%s</parameter>\' % (sla_category_id, sla_category)\n
@@ -118,7 +119,7 @@ return context.REQUEST.get(\'request_hosting_subscription\').Base_redirect(keep_
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>dialog_id, service_title, instance_xml, computer_guid=\'\', cpu_core=\'\', cpu_frequency=\'\', cpu_type=\'\', local_area_network_type=\'\', memory_size=\'\', memory_type=\'\', storage_capacity=\'\', storage_interface=\'\', storage_redundancy=\'\', **kw</string> </value>
+            <value> <string>dialog_id, service_title, instance_xml, computer_guid=\'\', cpu_core=\'\', cpu_frequency=\'\', cpu_type=\'\', local_area_network_type=\'\', memory_size=\'\', memory_type=\'\', storage_capacity=\'\', storage_interface=\'\', storage_redundancy=\'\', group=\'\', **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

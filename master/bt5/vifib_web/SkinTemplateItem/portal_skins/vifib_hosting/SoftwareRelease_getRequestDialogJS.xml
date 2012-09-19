@@ -74,6 +74,7 @@ $(document).ready(function () {\n
     \'storage_interface\',\n
     \'storage_redundancy\',\n
     \'computer_guid\',\n
+    \'group\',\n
   ];\n
 \n
   checkallocable = function () {\n
