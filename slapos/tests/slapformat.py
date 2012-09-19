@@ -356,12 +356,12 @@ class TestComputer(SlapformatMixin):
       self.test_result.bucket)
     self.assertEqual([
       'ip addr list bridge',
-      'tunctl -t tap -u root',
+      'tunctl -t tap -u testuser',
       'ip link set tap up',
       'brctl show',
       'brctl addif bridge tap',
       'ip addr add ip/255.255.255.255 dev bridge',
-      'ip addr list bridge',
+#      'ip addr list bridge',
       'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
       'ip addr list bridge',
     ],
@@ -434,11 +434,11 @@ class TestComputer(SlapformatMixin):
     ],
       self.test_result.bucket)
     self.assertEqual([
+      'ip addr list bridge',
+      'ip addr add ip/255.255.255.255 dev bridge',
 #      'ip addr list bridge',
-#      'ip addr add ip/255.255.255.255 dev bridge',
-#      'ip addr list bridge',
-#      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
-#      'ip addr list bridge',
+      'ip addr add ip/ffff:ffff:ffff:ffff:: dev bridge',
+      'ip addr list bridge',
     ],
       self.fakeCallAndRead.external_command_list)
 
