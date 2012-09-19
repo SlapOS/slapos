@@ -66,6 +66,7 @@ computer = module.newContent(\n
   title=title,\n
   reference=reference,\n
   destination_reference=certificate_dict["id"],\n
+  capacity_scope=\'open\',\n
 )\n
 \n
 computer.requestComputerRegistration()\n
