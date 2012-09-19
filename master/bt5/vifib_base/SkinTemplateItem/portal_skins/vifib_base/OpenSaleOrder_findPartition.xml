@@ -92,6 +92,7 @@ if "instance_guid" in filter_kw:\n
       query_kw["uid"] = "-1"\n
 \n
 computer_base_category_list = [\n
+  \'group\',\n
   \'cpu_core\',\n
   \'cpu_frequency\',\n
   \'cpu_type\',\n
