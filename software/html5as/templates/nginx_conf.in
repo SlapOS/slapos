@@ -1,0 +1,33 @@
+worker_processes {{ param_html5as['nb_workers'] }};
+
+pid {{ param_html5as['path_pid'] }};
+error_log {{ param_html5as['path_error_log'] }};
+
+daemon off;
+
+events {
+	worker_connections 1024;
+	accept_mutex off;
+}
+
+http {
+	include {{ param_html5as['path_mime_types'] }};
+	default_type application/octet-stream;
+    access_log {{ param_html5as['path_access_log'] }} combined;
+	index index.html;
+
+    server {
+        listen [{{ param_html5as['ip'] }}]:{{ param_html5as['port'] }};
+        server_name _;
+
+        keepalive_timeout 5;
+        client_body_temp_path {{ param_tempdir['client_body_temp_path'] }};
+        proxy_temp_path {{ param_tempdir['proxy_temp_path'] }};
+        fastcgi_temp_path {{ param_tempdir['fastcgi_temp_path'] }};
+        uwsgi_temp_path {{ param_tempdir['uwsgi_temp_path'] }};
+        scgi_temp_path {{ param_tempdir['scgi_temp_path'] }};
+
+        # path for static files
+        root {{ param_html5as['docroot'] }};
+    }
+}

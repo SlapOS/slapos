@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+## This is a very dirty hack
+export PATH_INFO="$${REDIRECT_URL:-$PATH_INFO}"
+
+GIT_PROJECT_ROOT='${git-repos:base-directory}' GIT_HTTP_EXPORT_ALL= exec '${:githttpbackend}' $@

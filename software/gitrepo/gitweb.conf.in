@@ -1,0 +1,9 @@
+$projectroot = '${git-repos:base-directory}';
+
+$site_name = '${slap-parameter:title}';
+
+our @git_base_url_list = qw(${:url-list});
+
+# Beautiful URLs
+$feature{'pathinfo'}{'default'} = [1];
+$feature{'blame'}{'default'} = [1];

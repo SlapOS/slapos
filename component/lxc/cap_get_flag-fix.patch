@@ -1,0 +1,53 @@
+commit 94767c5249b5802a894f6d84f6245ef86f50bff3
+Author: Serge Hallyn <serge.hallyn@ubuntu.com>
+Date:   Fri Jun 29 10:37:07 2012 -0500
+
+    Fix lxc's handling of CAP_LAST_CAP
+    
+    CAP_LAST_CAP in linux/capability.h doesn't always match what the kernel
+    actually supports.  If the kernel supports fewer capabilities, then a
+    cap_get_flag for an unsupported capability returns -EINVAL.
+    
+    Recognize that, and don't fail when initializing capabilities when this
+    happens, rather accept that we've reached the last capability.
+    
+    Signed-off-by: Serge Hallyn <serge.hallyn@ubuntu.com>
+
+diff --git a/src/lxc/caps.c b/src/lxc/caps.c
+index 10a0b4a..c32e7e4 100644
+--- a/src/lxc/caps.c
++++ b/src/lxc/caps.c
+@@ -28,6 +28,7 @@
+ #include <limits.h>
+ #include <sys/prctl.h>
+ #include <sys/capability.h>
++#include <errno.h>
+ 
+ #include "log.h"
+ 
+@@ -90,6 +91,7 @@ int lxc_caps_up(void)
+ 	cap_t caps;
+ 	cap_value_t cap;
+ 	int ret;
++	int lastcap = 0;
+ 
+ 	/* when we are run as root, we don't want to play
+ 	 * with the capabilities */
+@@ -108,9 +110,15 @@ int lxc_caps_up(void)
+ 
+ 		ret = cap_get_flag(caps, cap, CAP_PERMITTED, &flag);
+ 		if (ret) {
+-			ERROR("failed to cap_get_flag: %m");
+-			goto out;
++			if (errno == EINVAL) {
++				INFO("Last supported cap was %d\n", cap-1);
++				break;
++			} else {
++				ERROR("failed to cap_get_flag: %m");
++				goto out;
++			}
+ 		}
++		lastcap = cap;
+ 
+ 		ret = cap_set_flag(caps, CAP_EFFECTIVE, 1, &cap, flag);
+ 		if (ret) {

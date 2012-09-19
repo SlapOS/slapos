@@ -1,0 +1,9 @@
+#! {{ param_html5as['path_shell'] }}
+# BEWARE: This file is operated by slapgrid
+# BEWARE: It will be overwritten automatically
+
+# Remove exsistant website
+rm -r {{ param_html5as['docroot'] }}/*
+
+# Download and extract website tarball into docroot directory
+exec {{ param_html5as['path_curl'] }} -s {{ download_url }} | {{ param_html5as['path_tar'] }} -z -x -C {{ param_html5as['docroot'] }}

@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,27 +25,25 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
-import urlparse
+import sys
 
 class Recipe(GenericBaseRecipe):
+  """
+  Create script that will check if content at "url" is available 
+  (e.g page has a link to itself).
+  """
+
   def install(self):
-    path_list = []
-    common_dict = dict(
-        prepend_path=self.options['prepend-path'],
+    config = {
+      'url': self.options['url'],
+      'shell_path': self.options['dash_path'],
+      'curl_path': self.options['curl_path'],
+    }
+
+    # XXX-Cedric in this script, curl won't check certificate
+    promise = self.createExecutable(
+      self.options['path'],
+      self.substituteTemplate(self.getTemplateFilename('check_page_content.in'), config)
     )
-    common_list = [
-           "--paster_path", self.options['ooo-paster'],
-           self.options['configuration-file']
-          ]
-    run_unit_test_path = self.createPythonScript(self.options['run-unit-test'],
-        __name__ + '.test.runUnitTest', [dict(
-        call_list=[self.options['run-unit-test-binary'],
-          ] + common_list, **common_dict)])
 
-    path_list.append(run_unit_test_path)
-    path_list.append(self.createPythonScript(self.options['run-test-suite'],
-        __name__ + '.test.runTestSuite', [dict(
-        call_list=[self.options['run-test-suite-binary'],
-          ], **common_dict)]))
-
-    return path_list
+    return [promise]
