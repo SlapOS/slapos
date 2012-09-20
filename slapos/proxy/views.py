@@ -413,8 +413,8 @@ def request_slave():
                      [slave_reference], one=True)
   if slave is None :
     execute_db('slave',
-               'INSERT OR IGNORE INTO %s (reference,asked_by) values(:reference,:asked_by)',
-               [slave_reference,partition_id])
+               'INSERT OR IGNORE INTO %s (reference,asked_by,hosted_by) values(:reference,:asked_by,:hosted_by)',
+               [slave_reference,partition_id,partition['reference']])
     slave = execute_db('slave','SELECT * FROM %s WHERE reference=?',
                      [slave_reference], one = True)
 
@@ -427,7 +427,7 @@ def request_slave():
         _connection_dict=xml2dict(slave['connection_xml']),
         xml = instance_xml,
         slap_computer_id=app.config['computer_id'],
-        slap_computer_partition_id=partition['reference'],
+        slap_computer_partition_id=slave['hosted_by'],
         slap_software_release_url=partition['software_release'],
         slap_server_url='slap_server_url',
         slap_software_type=partition['software_type'],
