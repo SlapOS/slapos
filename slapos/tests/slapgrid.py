@@ -715,6 +715,109 @@ touch worked""")
                       'availableComputerPartition','stoppedComputerPartition',])
 
 
+  def test_partition_periodicity_is_not_overloaded_if_forced(self):
+    """
+    If periodicity file in software directory but periodicity is forced
+    periodicity will be the one given by parameter
+    1. We set force_periodicity parameter to True
+    2. We put a periodicity file in the software release directory
+        with an unwanted periodicity
+    3. We process partition list and wait more than unwanted periodicity
+    4. We relaunch, partition should not be processed
+    """
+    self.sequence = []
+    self.timestamp = str(int(time.time()))
+    self.started = False
+
+    unwanted_periodicity = 2
+    self.grid.force_periodicity = True
+
+    httplib.HTTPConnection._callback = _server_response(self,
+                                                        'stopped',
+                                                        self.timestamp)
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'template.cfg'), 'w').write(
+      """[buildout]""")
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+
+    open(os.path.join(srdir, 'periodicity'), 'w').write(
+      """%s""" % (unwanted_periodicity))
+
+    self.assertTrue(self.grid.processComputerPartitionList())
+    time.sleep(unwanted_periodicity + 1)
+
+    self.setSlapgrid()
+    self.grid.force_periodicity = True
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertNotEqual(unwanted_periodicity,self.grid.maximum_periodicity)
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'stoppedComputerPartition', 'getFullComputerInformation'])
+
+
+  def test_one_partition_periodicity_from_file_does_not_disturb_others(self):
+    """
+    If time between last processing of instance and now is superior
+    to periodicity then instance should be proceed
+    1. We set a wanted maximum_periodicity in periodicity file in
+        in software release directory
+    2. We process computer partition and check if wanted_periodicity was
+        used as maximum_periodicty
+    3. We wait for a time superior to wanted_periodicty
+    4. We launch processComputerPartition and check that partition is
+        processed one more time
+    5. We check that modification time of .timestamp was modified
+    """
+    self.sequence = []
+    self.timestamp = str(int(time.time()-5))
+    self.started = False
+    wanted_periodicity = 3
+    httplib.HTTPConnection._callback = _server_response(self,
+                                                        'stopped',
+                                                        self.timestamp)
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'template.cfg'), 'w').write(
+      """[buildout]""")
+    open(os.path.join(srdir, 'periodicity'), 'w').write(
+      """%s""" % wanted_periodicity)
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertNotEqual(wanted_periodicity,self.grid.maximum_periodicity)
+    self.setSlapgrid()
+    last_runtime = os.path.getmtime(os.path.join(partition_path,'.timestamp'))
+    time.sleep(wanted_periodicity + 1)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'stoppedComputerPartition', 'getFullComputerInformation',
+                      'availableComputerPartition','stoppedComputerPartition',
+                      ])
+    self.assertGreater(
+      os.path.getmtime(os.path.join(partition_path,'.timestamp')),
+      last_runtime)
+    self.assertNotEqual(wanted_periodicity,self.grid.maximum_periodicity)
+
+
 class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
   """
   Test suite about slapgrid-ur
@@ -863,131 +966,6 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertEqual(self.sequence,
                      ['getFullComputerInformation'])
     self.assertTrue(self.started)
-
-  def test_partition_periodicity_is_not_overloaded_if_forced(self):
-    """
-    If periodicity file in software directory but periodicity is forced
-    periodicity will be the one given by parameter
-    1. We set force_periodicity parameter to True
-    2. We put a periodicity file in the software release directory
-        with an unwanted periodicity
-    3. We process partition list and check that maximum periodicity
-        is not the one given in file
-    """
-    self.sequence = []
-    self.timestamp = str(int(time.time()))
-    self.started = False
-
-    unwanted_periodicity = 40
-    self.grid.force_periodicity = True
-
-    httplib.HTTPConnection._callback = _server_response(self,
-                                                        'stopped',
-                                                        self.timestamp)
-    os.mkdir(self.software_root)
-    os.mkdir(self.instance_root)
-    partition_path = os.path.join(self.instance_root, '0')
-    os.mkdir(partition_path, 0750)
-    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
-    srdir = os.path.join(self.software_root, software_hash)
-    os.mkdir(srdir)
-    open(os.path.join(srdir, 'template.cfg'), 'w').write(
-      """[buildout]""")
-    open(os.path.join(srdir, 'periodicity'), 'w').write(
-      """%s""" % (unwanted_periodicity))
-    srbindir = os.path.join(srdir, 'bin')
-    os.mkdir(srbindir)
-    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
-touch worked""")
-    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
-    self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertNotEqual(unwanted_periodicity,self.grid.maximum_periodicity)
-
-  def test_partition_periodicity_in_software_overload_if_not_forced(self):
-    """
-    If periodicity file in software directory and it is not forced
-    periodicity will be the one given by file
-    1. We put a periodicity file in the software release directory
-        with wanted periodicity
-    2. We process partition list and check periodicity is the one given in
-        file
-    """
-    self.sequence = []
-    self.timestamp = str(int(time.time()))
-    self.started = False
-    wanted_periodicity = 40
-    httplib.HTTPConnection._callback = _server_response(self,
-                                                        'stopped',
-                                                        self.timestamp)
-    os.mkdir(self.software_root)
-    os.mkdir(self.instance_root)
-    partition_path = os.path.join(self.instance_root, '0')
-    os.mkdir(partition_path, 0750)
-    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
-    srdir = os.path.join(self.software_root, software_hash)
-    os.mkdir(srdir)
-    open(os.path.join(srdir, 'template.cfg'), 'w').write(
-      """[buildout]""")
-    open(os.path.join(srdir, 'periodicity'), 'w').write(
-      """%s""" % wanted_periodicity)
-    srbindir = os.path.join(srdir, 'bin')
-    os.mkdir(srbindir)
-    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
-touch worked""")
-    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
-    self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertEqual(wanted_periodicity,self.grid.maximum_periodicity)
-
-  def test_partition_periodicity_trigger_processing(self):
-    """
-    If time between last processing of instance and now is superior
-    to periodicity then instance should be proceed
-    1. We set a wanted maximum_periodicity in periodicity file in
-        in software release directory
-    2. We process computer partition and check if wanted_periodicity was
-        used as maximum_periodicty
-    3. We wait for a time superior to wanted_periodicty
-    4. We launch processComputerPartition and check that partition is
-        processed one more time
-    5. We check that modification time of .timestamp was modified
-    """
-    self.sequence = []
-    self.timestamp = str(int(time.time()-5))
-    self.started = False
-    wanted_periodicity = 3
-    httplib.HTTPConnection._callback = _server_response(self,
-                                                        'stopped',
-                                                        self.timestamp)
-    os.mkdir(self.software_root)
-    os.mkdir(self.instance_root)
-    partition_path = os.path.join(self.instance_root, '0')
-    os.mkdir(partition_path, 0750)
-    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
-    srdir = os.path.join(self.software_root, software_hash)
-    os.mkdir(srdir)
-    open(os.path.join(srdir, 'template.cfg'), 'w').write(
-      """[buildout]""")
-    open(os.path.join(srdir, 'periodicity'), 'w').write(
-      """%s""" % wanted_periodicity)
-    srbindir = os.path.join(srdir, 'bin')
-    os.mkdir(srbindir)
-    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
-touch worked""")
-    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
-    self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertEqual(wanted_periodicity,self.grid.maximum_periodicity)
-    self.setSlapgrid()
-    last_runtime = os.path.getmtime(os.path.join(partition_path,'.timestamp'))
-    time.sleep(wanted_periodicity + 1)
-    self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertEqual(self.sequence,
-                     ['getFullComputerInformation', 'availableComputerPartition',
-                      'stoppedComputerPartition', 'getFullComputerInformation',
-                      'availableComputerPartition','stoppedComputerPartition',
-                      ])
-    self.assertGreater(
-      os.path.getmtime(os.path.join(partition_path,'.timestamp')),
-      last_runtime)
 
 
 
