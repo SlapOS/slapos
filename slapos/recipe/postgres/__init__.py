@@ -38,16 +38,17 @@ class Recipe(GenericBaseRecipe):
 
     def _options(self, options):
         options['password'] = self.generatePassword()
-        options['url'] = 'postgresql://%(user)s:%(password)s/%(host)s:%(port)s/%(dbname)s' % dict(options, host=options['ipv6_host'].pop())
+        options['url'] = 'postgresql://%(user)s:%(password)s/[%(host)s]:%(port)s/%(dbname)s' % dict(options, host=options['ipv6_host'].pop())
 
 
     def install(self):
-        self.createCluster()
-        self.createConfig()
-        self.createDatabase()
-        self.createRunScript()
-
         pgdata = self.options['pgdata-directory']
+
+        if not os.path.exists(pgdata):
+            self.createCluster()
+            self.createConfig()
+            self.createDatabase()
+            self.createRunScript()
 
         return [
                 os.path.join(pgdata, 'postgresql.conf')
@@ -57,18 +58,16 @@ class Recipe(GenericBaseRecipe):
     def createCluster(self):
         initdb_binary = os.path.join(self.options['bin'], 'initdb')
 
-
         pgdata = self.options['pgdata-directory']
 
-        if not os.path.exists(pgdata):
-            try:
-                subprocess.check_call([initdb_binary,
-                                       '-D', pgdata,
-                                       '-A', 'ident',
-                                       '-E', 'UTF8',
-                                       ])
-            except subprocess.CalledProcessError:
-                raise UserError('Could not create cluster directory in %s' % pgdata)
+        try:
+            subprocess.check_call([initdb_binary,
+                                   '-D', pgdata,
+                                   '-A', 'ident',
+                                   '-E', 'UTF8',
+                                   ])
+        except subprocess.CalledProcessError:
+            raise UserError('Could not create cluster directory in %s' % pgdata)
 
 
     def createConfig(self):
