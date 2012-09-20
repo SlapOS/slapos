@@ -124,6 +124,7 @@ class Recipe(GenericBaseRecipe):
 
 
     def createRunScript(self):
+        # 'exec' the command to control it from supervisor
         content = textwrap.dedent("""\
                 #!/bin/sh
                 exec %(bin)s/postgres \\
