@@ -427,7 +427,7 @@ def request_slave():
         _connection_dict=xml2dict(slave['connection_xml']),
         xml = instance_xml,
         slap_computer_id=app.config['computer_id'],
-        slap_computer_partition_id=slave['hosted_by'],
+        slap_computer_partition_id=partition['reference'],
         slap_software_release_url=partition['software_release'],
         slap_server_url='slap_server_url',
         slap_software_type=partition['software_type'],

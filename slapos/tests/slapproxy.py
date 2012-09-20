@@ -322,8 +322,7 @@ class TestRequest (MasterMixin, unittest.TestCase):
     master_partition_id = self.request('http://sr//', None,
                                     'Maria', 'slappart4')._partition_id
     # Failed request of slave instance
-    with self.assertRaises(TypeError):
-      self.request('http://sr//', None, 'Maria', 'slappart2', shared=True)
+    self.request('http://sr//', None, 'Maria', 'slappart2', shared=True)
     # Get updated information for master partition
     rv = self.app.get('/getFullComputerInformation?computer_id='
                       + self.computer_id)
