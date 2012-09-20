@@ -219,6 +219,72 @@ class TestSlap(SlapMixin):
     self.assertRaises(slapos.slap.NotFoundError,
         self.slap.registerComputerPartition, computer_guid, partition_id)
 
+  def test_getFullComputerInformation_empty_computer_guid(self):
+    """
+    Asserts that calling getFullComputerInformation with empty computer_id
+    raises early, before calling master.
+    """
+    self.slap.initializeConnection(self.server_url)
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        self.slap._connection_helper.getFullComputerInformation, None)
+
+  def test_registerComputerPartition_empty_computer_guid(self):
+    """
+    Asserts that calling registerComputerPartition with empty computer_id
+    raises early, before calling master.
+    """
+    self.slap.initializeConnection(self.server_url)
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        self.slap.registerComputerPartition, None, 'PARTITION_01')
+
+  def test_registerComputerPartition_empty_computer_partition_id(self):
+    """
+    Asserts that calling registerComputerPartition with empty
+    computer_partition_id raises early, before calling master.
+    """
+    self.slap.initializeConnection(self.server_url)
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        self.slap.registerComputerPartition,
+        self._getTestComputerId(), None)
+
+  def test_registerComputerPartition_empty_computer_guid_empty_computer_partition_id(self):
+    """
+    Asserts that calling registerComputerPartition with empty
+    computer_partition_id raises early, before calling master.
+    """
+    self.slap.initializeConnection(self.server_url)
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        self.slap.registerComputerPartition,
+        None, None)
+
 class TestComputer(SlapMixin):
   """
   Tests slapos.slap.slap.Computer class functionality
