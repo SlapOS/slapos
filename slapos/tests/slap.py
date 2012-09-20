@@ -325,6 +325,37 @@ class TestComputer(SlapMixin):
     computer = self.slap.registerComputer(computer_guid)
     self.assertEqual(computer.getComputerPartitionList(), [])
 
+  def _test_computer_empty_computer_guid(self, computer_method):
+    """
+    Helper method checking if calling Computer method with empty id raises
+    early.
+    """
+    self.slap.initializeConnection(self.server_url)
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    computer = self.slap.registerComputer(None)
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        getattr(computer, computer_method))
+
+  def test_computer_getComputerPartitionList_empty_computer_guid(self):
+    """
+    Asserts that calling getComputerPartitionList with empty
+    computer_guid raises early, before calling master.
+    """
+    self._test_computer_empty_computer_guid('getComputerPartitionList')
+
+  def test_computer_getSoftwareReleaseList_empty_computer_guid(self):
+    """
+    Asserts that calling getSoftwareReleaseList with empty
+    computer_guid raises early, before calling master.
+    """
+    self._test_computer_empty_computer_guid('getSoftwareReleaseList')
+
   def test_computer_getComputerPartitionList_only_partition(self):
     """
     Asserts that calling Computer.getComputerPartitionList with only
