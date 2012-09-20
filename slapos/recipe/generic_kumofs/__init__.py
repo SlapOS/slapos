@@ -30,11 +30,6 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 class Recipe(GenericBaseRecipe):
   def install(self):
     ip = self.options['ip']
-    address_family = self.options.get('address-family', 'inet4')
-    if address_family == 'inet6':
-      ip = '[' + ip + ']'
-    elif address_family != 'inet4':
-      raise ValueError('Unsupported address family: %r' % (address_family, ))
     kumo_manager_port = int(self.options['manager-port'])
     kumo_server_port = int(self.options['server-port'])
     kumo_server_listen_port = int(self.options['server-listen-port'])
