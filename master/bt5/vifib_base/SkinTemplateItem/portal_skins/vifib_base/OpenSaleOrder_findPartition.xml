@@ -68,10 +68,17 @@ elif software_instance_portal_type == "Software Instance":\n
 else:\n
   raise NotImplementedError, "Unknown portal type %s" % \\\n
      software_instance_portal_type \n
+\n
 # support SLA\n
+\n
+# Explicit location\n
+explicit_location = False\n
 if "computer_guid" in filter_kw:\n
+  explicit_location = True\n
   query_kw["parent_reference"] = filter_kw.pop("computer_guid")\n
+\n
 if "instance_guid" in filter_kw:\n
+  explicit_location = True\n
   portal = context.getPortalObject()\n
   instance = portal.portal_catalog.getResultValue(portal_type="Software Instance", reference=filter_kw.pop("instance_guid"))\n
   if instance is None:\n
@@ -114,7 +121,9 @@ for base_category in computer_base_category_list:\n
       query_kw["%s_uid" % base_category] = category.getUid()\n
 \n
 query_kw["capacity_scope_uid"] = context.getPortalObject().portal_categories.capacity_scope.open.getUid()\n
-query_kw["allocation_scope_uid"] = context.getPortalObject().portal_categories.allocation_scope.open.getUid()\n
+if not explicit_location:\n
+  # Only allocation on public computer\n
+  query_kw["allocation_scope_uid"] = context.getPortalObject().portal_categories.allocation_scope.open.public.getUid()\n
 \n
 if filter_kw.keys():\n
   # XXX Drop all unexpected keys\n
