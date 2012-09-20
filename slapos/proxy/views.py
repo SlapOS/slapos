@@ -354,13 +354,21 @@ def request_not_shared():
 
 def request_slave():
   """
-  Function to organise link between slave and master
+  Function to organise link between slave and master.
+  Slave information are stored in places:
+  1. slave table having information such as slave reference,
+      connection information to slave (given by slave master),
+      hosted_by and asked_by reference.
+  2. A dictionnary in slave_instance_list of selected slave master
+      in which are stored slave_reference, software_type, slave_title and
+      partition_parameter_kw stored as individual keys.
   """
   software_release = request.form['software_release'].encode()
   # some supported parameters
   software_type = request.form.get('software_type').encode()
   partition_reference = request.form.get('partition_reference', '').encode()
   partition_id = request.form.get('computer_partition_id', '').encode()
+  # Contain slave parameters to be given to slave master
   partition_parameter_kw = request.form.get('partition_parameter_xml', None)
   if partition_parameter_kw :
     partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
@@ -368,6 +376,7 @@ def request_slave():
   else:
     partition_parameter_kw = {}
   instance_xml = dict2xml(partition_parameter_kw)
+  # We will search for a master corresponding to request
   args = []
   a = args.append
   q = 'SELECT * FROM %s WHERE software_release=?'
@@ -379,24 +388,31 @@ def request_slave():
   if partition is None:
     app.logger.warning('No partition corresponding to slave request')
     abort(408)
-  # Define Slave
+
+  # We set slave dictionnary as described in docstring
   new_slave = {}
   slave_reference = partition_id + '_' + partition_reference
   new_slave['slave_title'] = slave_reference
   new_slave['slap_software_type'] = software_type
   new_slave['slave_reference'] = slave_reference
-  for key in partition_parameter_kw :
-    new_slave[key] = partition_parameter_kw[key]
 
-  # Add slave to partition slave_list if not present
+  for key in partition_parameter_kw :
+    if partition_parameter_kw[key] is not None :
+      new_slave[key] = partition_parameter_kw[key]
+
+  # Add slave to partition slave_list if not present else replace information
   slave_instance_list = partition['slave_instance_list']
   if slave_instance_list == None:
     slave_instance_list = []
   else:
     slave_instance_list = xml_marshaller.xml_marshaller.loads(slave_instance_list)
-  if not slave_reference in (x['slave_reference'] for x in slave_instance_list):
-    slave_instance_list.append(new_slave)
+    for x in slave_instance_list:
+      if x['slave_reference'] == slave_reference:
+        slave_instance_list.remove(x)
 
+  slave_instance_list.append(new_slave)
+
+  # Update slave_instance_list in database
   args = []
   a = args.append
   q = 'UPDATE %s SET slave_instance_list=?'
@@ -413,8 +429,8 @@ def request_slave():
                      [slave_reference], one=True)
   if slave is None :
     execute_db('slave',
-               'INSERT OR IGNORE INTO %s (reference,asked_by) values(:reference,:asked_by)',
-               [slave_reference,partition_id])
+               'INSERT OR IGNORE INTO %s (reference,asked_by,hosted_by) values(:reference,:asked_by,:hosted_by)',
+               [slave_reference,partition_id,partition['reference']])
     slave = execute_db('slave','SELECT * FROM %s WHERE reference=?',
                      [slave_reference], one = True)
 

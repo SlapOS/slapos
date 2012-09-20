@@ -864,6 +864,132 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                      ['getFullComputerInformation'])
     self.assertTrue(self.started)
 
+  def test_partition_periodicity_is_not_overloaded_if_forced(self):
+    """
+    If periodicity file in software directory but periodicity is forced
+    periodicity will be the one given by parameter
+    1. We set force_periodicity parameter to True
+    2. We put a periodicity file in the software release directory
+        with an unwanted periodicity
+    3. We process partition list and check that maximum periodicity
+        is not the one given in file
+    """
+    self.sequence = []
+    self.timestamp = str(int(time.time()))
+    self.started = False
+
+    unwanted_periodicity = 40
+    self.grid.force_periodicity = True
+
+    httplib.HTTPConnection._callback = _server_response(self,
+                                                        'stopped',
+                                                        self.timestamp)
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'template.cfg'), 'w').write(
+      """[buildout]""")
+    open(os.path.join(srdir, 'periodicity'), 'w').write(
+      """%s""" % (unwanted_periodicity))
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertNotEqual(unwanted_periodicity,self.grid.maximum_periodicity)
+
+  def test_partition_periodicity_in_software_overload_if_not_forced(self):
+    """
+    If periodicity file in software directory and it is not forced
+    periodicity will be the one given by file
+    1. We put a periodicity file in the software release directory
+        with wanted periodicity
+    2. We process partition list and check periodicity is the one given in
+        file
+    """
+    self.sequence = []
+    self.timestamp = str(int(time.time()))
+    self.started = False
+    wanted_periodicity = 40
+    httplib.HTTPConnection._callback = _server_response(self,
+                                                        'stopped',
+                                                        self.timestamp)
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'template.cfg'), 'w').write(
+      """[buildout]""")
+    open(os.path.join(srdir, 'periodicity'), 'w').write(
+      """%s""" % wanted_periodicity)
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertEqual(wanted_periodicity,self.grid.maximum_periodicity)
+
+  def test_partition_periodicity_trigger_processing(self):
+    """
+    If time between last processing of instance and now is superior
+    to periodicity then instance should be proceed
+    1. We set a wanted maximum_periodicity in periodicity file in
+        in software release directory
+    2. We process computer partition and check if wanted_periodicity was
+        used as maximum_periodicty
+    3. We wait for a time superior to wanted_periodicty
+    4. We launch processComputerPartition and check that partition is
+        processed one more time
+    5. We check that modification time of .timestamp was modified
+    """
+    self.sequence = []
+    self.timestamp = str(int(time.time()-5))
+    self.started = False
+    wanted_periodicity = 3
+    httplib.HTTPConnection._callback = _server_response(self,
+                                                        'stopped',
+                                                        self.timestamp)
+    os.mkdir(self.software_root)
+    os.mkdir(self.instance_root)
+    partition_path = os.path.join(self.instance_root, '0')
+    os.mkdir(partition_path, 0750)
+    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
+    srdir = os.path.join(self.software_root, software_hash)
+    os.mkdir(srdir)
+    open(os.path.join(srdir, 'template.cfg'), 'w').write(
+      """[buildout]""")
+    open(os.path.join(srdir, 'periodicity'), 'w').write(
+      """%s""" % wanted_periodicity)
+    srbindir = os.path.join(srdir, 'bin')
+    os.mkdir(srbindir)
+    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
+touch worked""")
+    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertEqual(wanted_periodicity,self.grid.maximum_periodicity)
+    self.setSlapgrid()
+    last_runtime = os.path.getmtime(os.path.join(partition_path,'.timestamp'))
+    time.sleep(wanted_periodicity + 1)
+    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertEqual(self.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'stoppedComputerPartition', 'getFullComputerInformation',
+                      'availableComputerPartition','stoppedComputerPartition',
+                      ])
+    self.assertGreater(
+      os.path.getmtime(os.path.join(partition_path,'.timestamp')),
+      last_runtime)
+
+
 
 class TestSlapgridArgumentTuple(unittest.TestCase):
   """
@@ -965,6 +1091,24 @@ buildout = /path/to/buildout/binary
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertFalse(slapgrid_object.develop)
 
+  def test_force_periodicity_if_periodicity_not_given(self):
+    """
+      Check if not giving --maximum-periodicity triggers "force_periodicity"
+      option to be false.
+    """
+    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    argument_tuple = self.default_arg_tuple
+    slapgrid_object = parser(*argument_tuple)[0]
+    self.assertFalse(slapgrid_object.force_periodicity)
+
+  def test_force_periodicity_if_periodicity_given(self):
+    """
+      Check if giving --maximum-periodicity triggers "force_periodicity" option.
+    """
+    parser = slapgrid.parseArgumentTupleAndReturnSlapgridObject
+    argument_tuple = ("--maximum-periodicity","40") + self.default_arg_tuple
+    slapgrid_object = parser(*argument_tuple)[0]
+    self.assertTrue(slapgrid_object.force_periodicity)
 
 class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
   def test_one_failing_promise(self):
@@ -1441,21 +1585,3 @@ exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
 
     self.assertEquals(self.error, 1)
     self.assertFalse(self.started)
-
-  @unittest.skip("Not implemented")
-  def test_slapgrid_processes_partition_after_global_timeout(self):
-    """
-    Test that slapgrid processes again partition after delay defined by
-    slapgrid even if .timestamp is up-to-date.
-    """
-    # XXX Not implemented
-    pass
-
-  @unittest.skip("Not implemented")
-  def test_slapgrid_processes_partition_after_timeout_defined_by_software_release(self):
-    """
-    Test that if SR of instance defines a "buildotu delay", slapgrid processes
-    again partition after that delay and NOT after delay defined by slapgrid.
-    """
-    # XXX Not implemented
-    pass

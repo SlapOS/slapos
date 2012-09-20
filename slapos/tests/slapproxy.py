@@ -214,30 +214,25 @@ class MasterMixin(BasicMixin):
                                                  '_parameter_dict', None)
     return computer_partition
 
-  def setComputerPartitionConnectionXml(self, instance):
+
+  def setConnectionDict(self, partition_id,
+                        connection_dict, slave_reference=None):
+    self.app.post('/setComputerPartitionConnectionXml', data = {
+        'computer_id': self.computer_id,
+        'computer_partition_id': partition_id,
+        'connection_xml': xml_marshaller.xml_marshaller.dumps(connection_dict),
+        'slave_reference': slave_reference})
+
+  def getPartitionInformation(self,computer_partition_id):
     """
-    Will send instance connection information to server
-    including from slaves in this partition
+    Return computer information as stored in proxy for corresponding id
     """
-    # Will post information about slaves
-    for slave in instance._parameter_dict['slave_instance_list']:
-          request_dict = {
-            'slave_reference': slave['slave_reference'],
-            'computer_partition_id': instance._partition_id,
-            'connection_xml': xml_marshaller.xml_marshaller.dumps(
-              instance._connection_dict),
-            }
-          self.app.post('/setComputerPartitionConnectionXml',
-                        data = request_dict)
-    # Will post information about instance
-    request_dict = {
-      'slave_reference': None,
-      'computer_partition_id': instance._partition_id,
-      'connection_xml': xml_marshaller.xml_marshaller.dumps(
-        instance._connection_dict),
-      }
-    self.app.post('/setComputerPartitionConnectionXml',
-                        data = request_dict)
+    rv = self.app.get('/getFullComputerInformation?computer_id='
+                      + self.computer_id)
+    computer = xml_marshaller.xml_marshaller.loads(rv.data)
+    for instance in computer._computer_partition_list:
+      if instance._partition_id == computer_partition_id:
+        return instance
 
 
 class TestRequest (MasterMixin, unittest.TestCase):
@@ -307,33 +302,96 @@ class TestRequest (MasterMixin, unittest.TestCase):
     with self.assertRaises(WrongFormat):
       self.request('http://sr//', None, 'Maria', 'slappart2', shared=True)
 
-  def test_slave_request_one_corresponding_partition (self):
+  def test_slave_request_set_parameters (self):
     """
-    Successfull request slave instance follow these steps:
-    1. Provide one corresponding partition
-    2. Ask for Slave instance. Error is raise because it is not ready
-       But slave is added to Master Instance slave list
-    3. Master Instance get updated information (including slave list)
-    4. Master instance post information about slaves and itself
-    5. Ask for slave instance is successfull and return a computer instance
+    Parameters sent in slave request must be put in slave master
+    slave instance list.
+    1. We request a slave instance we defined parameters
+    2. We check parameters are in the dictionnary defining slave in
+        slave master slave_instance_list
     """
     self.add_free_partition(6)
     # Provide partition
     master_partition_id = self.request('http://sr//', None,
                                     'Maria', 'slappart4')._partition_id
-    # Failed request of slave instance
-    with self.assertRaises(TypeError):
-      self.request('http://sr//', None, 'Maria', 'slappart2', shared=True)
+    # First request of slave instance
+    wanted_domain = 'fou.org'
+    self.request('http://sr//', None, 'Maria', 'slappart2', shared=True,
+                 partition_parameter_kw = {'domain':wanted_domain})
     # Get updated information for master partition
-    rv = self.app.get('/getFullComputerInformation?computer_id='
-                      + self.computer_id)
-    computer = xml_marshaller.xml_marshaller.loads(rv.data)
-    for instance in computer._computer_partition_list:
-      if instance._partition_id == master_partition_id:
-        master_partition = instance
+    master_partition = self.getPartitionInformation(master_partition_id)
+
+    our_slave = master_partition._parameter_dict['slave_instance_list'][0]
+    self.assertEqual(our_slave.get('domain'),wanted_domain)
+
+  def test_slave_request_set_parameters_are_updated (self):
+    """
+    Parameters sent in slave request must be put in slave master
+    slave instance list and updated when they change.
+    1. We request a slave instance we defined parameters
+    2. We check parameters are in the dictionnary defining slave in
+        slave master slave_instance_list
+    3. We request same slave instance with changed parameters
+    4. We check parameters are in the dictionnary defining slave in
+        slave master slave_instance_list have changed
+    """
+    self.add_free_partition(6)
+    # Provide partition
+    master_partition_id = self.request('http://sr//', None,
+                                    'Maria', 'slappart4')._partition_id
+    # First request of slave instance
+    wanted_domain_1 = 'crazy.org'
+    self.request('http://sr//', None, 'Maria', 'slappart2', shared=True,
+                 partition_parameter_kw = {'domain':wanted_domain_1})
+    # Get updated information for master partition
+    master_partition = self.getPartitionInformation(master_partition_id)
+    our_slave = master_partition._parameter_dict['slave_instance_list'][0]
+    self.assertEqual(our_slave.get('domain'),wanted_domain_1)
+
+    # Second request of slave instance
+    wanted_domain_2 = 'maluco.org'
+    self.request('http://sr//', None, 'Maria', 'slappart2', shared=True,
+                 partition_parameter_kw = {'domain':wanted_domain_2})
+    # Get updated information for master partition
+    master_partition = self.getPartitionInformation(master_partition_id)
+
+    our_slave = master_partition._parameter_dict['slave_instance_list'][0]
+    self.assertNotEqual(our_slave.get('domain'),wanted_domain_1)
+    self.assertEqual(our_slave.get('domain'),wanted_domain_2)
+
+
+  def test_slave_request_one_corresponding_partition (self):
+    """
+    Successfull request slave instance follow these steps:
+    1. Provide one corresponding partition
+    2. Ask for Slave instance. But no connection parameters
+       But slave is added to Master Instance slave list
+    3. Master Instance get updated information (including slave list)
+    4. Master instance post information about slave connection parameters
+    5. Ask for slave instance is successfull and return a computer instance
+        with connection information
+    """
+    self.add_free_partition(6)
+    # Provide partition
+    master_partition_id = self.request('http://sr//', None,
+                                    'Maria', 'slappart4')._partition_id
+    # First request of slave instance
+    name = 'Maria'
+    requester = 'slappart2'
+    our_slave  = self.request('http://sr//', None,
+                              name, requester, shared=True)
+    self.assertIsInstance(our_slave, slapos.slap.ComputerPartition)
+    self.assertEqual(our_slave._connection_dict,{})
+    # Get updated information for master partition
+    master_partition = self.getPartitionInformation(master_partition_id)
+    slave_for_master = master_partition._parameter_dict['slave_instance_list'][0]
     # Send information about slave
-    self.setComputerPartitionConnectionXml(master_partition)
-    # Successfull slave request
-    self.assertIsInstance(
-      self.request('http://sr//', None, 'Maria', 'slappart2', shared=True),
-      slapos.slap.ComputerPartition)
+    slave_address = {'url':'%s.master.com'}
+    self.setConnectionDict(partition_id=master_partition._partition_id,
+                           connection_dict=slave_address,
+                           slave_reference=slave_for_master['slave_reference'])
+    # Successfull slave request with connection parameters
+    our_slave  = self.request('http://sr//', None,
+                              name, requester, shared=True)
+    self.assertIsInstance(our_slave, slapos.slap.ComputerPartition)
+    self.assertEqual(slave_address, our_slave._connection_dict)

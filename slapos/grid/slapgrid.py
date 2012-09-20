@@ -107,6 +107,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="Enables console output and live output from subcommands.")
   parser.add_argument("-v", "--verbose", action="store_true", default=False,
       help="Be verbose.")
+  parser.add_argument("--maximum-periodicity", type=int, default=None,
+      help="Periodicity at which buildout should be run in instance.")
   parser.add_argument("--promise-timeout", type=int, default=3,
       help="Promise timeout in seconds.")
   parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
@@ -170,6 +172,9 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   if option_dict.get('all') is True:
     option_dict['develop'] = True
 
+  if option_dict.get('maximum_periodicity') is not None:
+    option_dict['force_periodicity'] = True
+
   repository_required = False
   if 'key_file' in option_dict:
     repository_required = True
@@ -232,6 +237,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   else:
     signature_certificate_list = None
 
+
   # Parse cache / binary options
   option_dict["binary-cache-url-blacklist"] = [
       url.strip() for url in option_dict.get("binary-cache-url-blacklist", ""
@@ -285,6 +291,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             develop=option_dict.get('develop', False),
             software_release_filter_list=option_dict.get('only_sr', None),
             computer_partition_filter_list=option_dict.get('only_cp', None),
+            force_periodicity = option_dict.get('force_periodicity', False),
+            maximum_periodicity = option_dict.get('maximum_periodicity', 86400),
             ),
           option_dict])
 
@@ -353,6 +361,8 @@ class Slapgrid(object):
                supervisord_socket,
                supervisord_configuration_path,
                buildout,
+               force_periodicity=False,
+               maximum_periodicity=86400,
                key_file=None,
                cert_file=None,
                signature_private_key_file=None,
@@ -374,7 +384,8 @@ class Slapgrid(object):
                shadir_key_file=None,
                develop=False,
                software_release_filter_list=None,
-               computer_partition_filter_list=None):
+               computer_partition_filter_list=None,
+               ):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
     self.software_root = os.path.abspath(software_root)
@@ -424,6 +435,8 @@ class Slapgrid(object):
     if computer_partition_filter_list is not None:
       self.computer_partition_filter_list = \
           computer_partition_filter_list.split(",")
+    self.maximum_periodicity = maximum_periodicity
+    self.force_periodicity = force_periodicity
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -638,15 +651,31 @@ class Slapgrid(object):
       else:
         timestamp = None
 
+      software_path = os.path.join(self.software_root,
+            getSoftwareUrlHash(software_url))
+
+      # Get periodicity from periodicity file if not forced
+      if not self.force_periodicity:
+        periodicity_path = os.path.join(software_path,'periodicity')
+        if os.path.exists(periodicity_path):
+          try:
+            self.maximum_periodicity = int(open(periodicity_path).read())
+          except ValueError:
+            os.remove(periodicity_path)
+            exception = traceback.format_exc()
+            logger.error(exception)
+
       # Check if timestamp from server is more recent than local one.
       # If not: it's not worth processing this partition (nothing has changed).
       if computer_partition_id not in self.computer_partition_filter_list and \
           (not self.develop) and os.path.exists(timestamp_path):
         old_timestamp = open(timestamp_path).read()
+        last_runtime = int(os.path.getmtime(timestamp_path))
         if timestamp:
           try:
             if int(timestamp) <= int(old_timestamp):
-              continue
+              if int(time.time()) <= (last_runtime + self.maximum_periodicity) :
+                continue
           except ValueError:
             os.remove(timestamp_path)
             exception = traceback.format_exc()
