@@ -53,8 +53,18 @@
             <value> <string>portal = context.getPortalObject()\n
 computer = context\n
 \n
+if allocation_scope == \'open/public\':\n
+  # Public computer capacity is handle by an alarm\n
+  capacity_scope = \'close\'\n
+elif allocation_scope.startswith(\'open\'):\n
+  # Capacity is not handled for \'private\' computers\n
+  capacity_scope = \'open\'\n
+else:\n
+  capacity_scope = \'close\'\n
+\n
 computer.edit(\n
   allocation_scope=allocation_scope,\n
+  capacity_scope=capacity_scope,\n
 )\n
 \n
 sale_supply_line = computer.Computer_getRelatedSaleSupplyLine()\n
