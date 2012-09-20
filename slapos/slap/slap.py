@@ -227,12 +227,7 @@ def _syncComputerInformation(func):
   def decorated(self, *args, **kw):
     if getattr(self, '_synced', 0):
       return func(self, *args, **kw)
-    # XXX: This is a ugly way to keep backward compatibility,
-    # We should stablise slap library soon.
-    try:
-      computer = self._connection_helper.getFullComputerInformation(self._computer_id)
-    except NotFoundError:
-      computer = self._connection_helper.getComputerInformation(self._computer_id)
+    computer = self._connection_helper.getFullComputerInformation(self._computer_id)
     for key, value in computer.__dict__.items():
       if isinstance(value, unicode):
         # convert unicode to utf-8
@@ -300,10 +295,7 @@ def _syncComputerPartitionInformation(func):
       return func(self, *args, **kw)
     # XXX: This is a ugly way to keep backward compatibility,
     # We should stablise slap library soon.
-    try:
-      computer = self._connection_helper.getFullComputerInformation(self._computer_id)
-    except NotFoundError:
-      computer = self._connection_helper.getComputerInformation(self._computer_id)
+    computer = self._connection_helper.getFullComputerInformation(self._computer_id)
     found_computer_partition = None
     for computer_partition in computer._computer_partition_list:
       if computer_partition.getId() == self.getId():
@@ -561,7 +553,13 @@ class ConnectionHelper:
     if not computer_id:
       # XXX-Cedric: should raise something smarter than "NotFound".
       raise NotFoundError(method)
-    self.GET(method)
+    try:
+      self.GET(method)
+    except NotFoundError:
+      # XXX: This is a ugly way to keep backward compatibility,
+      # We should stablise slap library soon.
+      self.GET('/getComputerInformation?computer_id=%s' % computer_id)
+
     return xml_marshaller.loads(self.response.read())
 
   def connect(self):
