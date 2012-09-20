@@ -651,6 +651,9 @@ class Slapgrid(object):
       else:
         timestamp = None
 
+      software_path = os.path.join(self.software_root,
+            getSoftwareUrlHash(software_url))
+
       # Get periodicity from periodicity file if not forced
       if not self.force_periodicity:
         periodicity_path = os.path.join(software_path,'periodicity')
