@@ -214,30 +214,13 @@ class MasterMixin(BasicMixin):
                                                  '_parameter_dict', None)
     return computer_partition
 
-  def setComputerPartitionConnectionXml(self, instance):
-    """
-    Will send instance connection information to server
-    including from slaves in this partition
-    """
-    # Will post information about slaves
-    for slave in instance._parameter_dict['slave_instance_list']:
-          request_dict = {
-            'slave_reference': slave['slave_reference'],
-            'computer_partition_id': instance._partition_id,
-            'connection_xml': xml_marshaller.xml_marshaller.dumps(
-              instance._connection_dict),
-            }
-          self.app.post('/setComputerPartitionConnectionXml',
-                        data = request_dict)
-    # Will post information about instance
-    request_dict = {
-      'slave_reference': None,
-      'computer_partition_id': instance._partition_id,
-      'connection_xml': xml_marshaller.xml_marshaller.dumps(
-        instance._connection_dict),
-      }
-    self.app.post('/setComputerPartitionConnectionXml',
-                        data = request_dict)
+  def setConnectionDict(self, partition_id,
+                        connection_dict, slave_reference=None):
+    self.app.post('/setComputerPartitionConnectionXml', data = {
+        'computer_id': self.computer_id,
+        'computer_partition_id': partition_id,
+        'connection_xml': xml_marshaller.xml_marshaller.dumps(connection_dict),
+        'slave_reference': slave_reference})
 
 
 class TestRequest (MasterMixin, unittest.TestCase):
@@ -311,18 +294,23 @@ class TestRequest (MasterMixin, unittest.TestCase):
     """
     Successfull request slave instance follow these steps:
     1. Provide one corresponding partition
-    2. Ask for Slave instance. Error is raise because it is not ready
+    2. Ask for Slave instance. But no connection parameters
        But slave is added to Master Instance slave list
     3. Master Instance get updated information (including slave list)
-    4. Master instance post information about slaves and itself
+    4. Master instance post information about slave connection parameters
     5. Ask for slave instance is successfull and return a computer instance
     """
     self.add_free_partition(6)
     # Provide partition
     master_partition_id = self.request('http://sr//', None,
                                     'Maria', 'slappart4')._partition_id
-    # Failed request of slave instance
-    self.request('http://sr//', None, 'Maria', 'slappart2', shared=True)
+    # First request of slave instance
+    name = 'Maria'
+    requester = 'slappart2'
+    our_slave  = self.request('http://sr//', None,
+                              name, requester, shared=True)
+    self.assertIsInstance(our_slave, slapos.slap.ComputerPartition)
+    self.assertEqual(our_slave._connection_dict,{})
     # Get updated information for master partition
     rv = self.app.get('/getFullComputerInformation?computer_id='
                       + self.computer_id)
@@ -331,8 +319,17 @@ class TestRequest (MasterMixin, unittest.TestCase):
       if instance._partition_id == master_partition_id:
         master_partition = instance
     # Send information about slave
-    self.setComputerPartitionConnectionXml(master_partition)
-    # Successfull slave request
-    self.assertIsInstance(
-      self.request('http://sr//', None, 'Maria', 'slappart2', shared=True),
-      slapos.slap.ComputerPartition)
+    for slave in master_partition._parameter_dict.get('slave_instance_list'):
+      print slave
+      slave_reference=slave.get('slave_reference')
+      # Check we got the right slave
+      if requester and name in slave_reference:
+        slave_address = {'url':'%s.master.com' % slave_reference}
+        self.setConnectionDict(partition_id=master_partition._partition_id,
+                               connection_dict=slave_address,
+                               slave_reference=slave_reference)
+    # Successfull slave request with connection parameters
+    our_slave  = self.request('http://sr//', None,
+                              name, requester, shared=True)
+    self.assertIsInstance(our_slave, slapos.slap.ComputerPartition)
+    self.assertEqual(slave_address, our_slave._connection_dict)
