@@ -119,6 +119,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data_payzen',
       'vifib_data_simulation',
       'vifib_agent',
+      'vifib_slapos_capacity',
       'vifib_erp5',
       'vifib_test',
       'vifib_slapos_rest_api_v1_test',
