@@ -618,6 +618,9 @@ class Slapgrid(object):
         # No Software Release information: skip.
         continue
 
+      logger.info('Processing Computer Partition %s...' % \
+          computer_partition_id)
+
       # Check if we defined explicit list of partitions to process.
       # If so, if current partition not in this list, skip.
       if len(self.computer_partition_filter_list) > 0 and \
