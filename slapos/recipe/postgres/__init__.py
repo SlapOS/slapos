@@ -38,7 +38,7 @@ class Recipe(GenericBaseRecipe):
 
     def _options(self, options):
         options['password'] = self.generatePassword()
-        options['url'] = 'postgresql://%(user)s:%(password)s/[%(host)s]:%(port)s/%(dbname)s' % dict(options, host=options['ipv6_host'].pop())
+        options['url'] = 'postgresql://%(user)s:%(password)s@[%(host)s]:%(port)s/%(dbname)s' % dict(options, host=options['ipv6_host'].pop())
 
 
     def install(self):
