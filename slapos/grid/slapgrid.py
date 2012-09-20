@@ -599,10 +599,11 @@ class Slapgrid(object):
 
 
   def processComputerPartitionList(self):
-    """Will start supervisord and process each Computer Partition.
+    """
+    Will start supervisord and process each Computer Partition.
     """
     logger = logging.getLogger('ComputerPartitionProcessing')
-    logger.info("Processing computer partitions...")
+    logger.info('Processing computer partitions...')
     # Prepares environment
     self.checkEnvironmentAndCreateStructure()
     self._launchSupervisord()
