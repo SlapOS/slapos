@@ -648,23 +648,24 @@ class Slapgrid(object):
             exception = traceback.format_exc()
             logger.error(exception)
 
-      software_path = os.path.join(self.software_root,
-            getSoftwareUrlHash(software_url))
-      local_partition = Partition(
-        software_path=software_path,
-        instance_path=instance_path,
-        supervisord_partition_configuration_path=os.path.join(
-          self.supervisord_configuration_directory, '%s.conf' %
-          computer_partition_id),
-        supervisord_socket=self.supervisord_socket,
-        computer_partition=computer_partition,
-        computer_id=self.computer_id,
-        partition_id=computer_partition_id,
-        server_url=self.master_url,
-        software_release_url=software_url,
-        certificate_repository_path=self.certificate_repository_path,
-        console=self.console, buildout=self.buildout)
       try:
+        software_path = os.path.join(self.software_root,
+              getSoftwareUrlHash(software_url))
+        local_partition = Partition(
+          software_path=software_path,
+          instance_path=instance_path,
+          supervisord_partition_configuration_path=os.path.join(
+            self.supervisord_configuration_directory, '%s.conf' %
+            computer_partition_id),
+          supervisord_socket=self.supervisord_socket,
+          computer_partition=computer_partition,
+          computer_id=self.computer_id,
+          partition_id=computer_partition_id,
+          server_url=self.master_url,
+          software_release_url=software_url,
+          certificate_repository_path=self.certificate_repository_path,
+          console=self.console, buildout=self.buildout)
+
         computer_partition_state = computer_partition.getState()
         if computer_partition_state == "started":
           local_partition.install()
