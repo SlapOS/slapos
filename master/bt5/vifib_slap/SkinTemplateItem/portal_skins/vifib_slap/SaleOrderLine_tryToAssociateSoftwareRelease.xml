@@ -72,7 +72,8 @@ def getSoftwareRelease(software_release_url):\n
         reference=digest,\n
         version=digest,\n
         url_string=software_release_url,\n
-        language=\'en\'\n
+        language=\'en\',\n
+        activate_kw={\'tag\': tag}\n
       )\n
       software_release_document.publish()\n
   return software_release_document\n
