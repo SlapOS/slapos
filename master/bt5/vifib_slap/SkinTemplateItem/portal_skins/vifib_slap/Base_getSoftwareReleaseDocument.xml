@@ -50,54 +50,34 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from DateTime import DateTime\n
-from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
-from zExceptions import Unauthorized\n
-\n
-def markHistory(document, comment):\n
-  document.portal_workflow.doActionFor(document, action=\'edit_action\', comment=comment)\n
-\n
-state = context.getSimulationState()\n
+            <value> <string># try to find, if needed create and publish\n
 portal = context.getPortalObject()\n
-order = context.getParentValue()\n
-if state in [\'planned\', \'ordered\']:\n
-  instance = context.getAggregateValue(portal_type=[\'Software Instance\', \'Slave Instance\'])\n
-  instance_software_release_url = instance.getRootSoftwareReleaseUrl()\n
-  line_software_release_document = context.getAggregateValue(portal_type=\'Software Release\')\n
-  line_software_release_url = \'\'\n
-  if line_software_release_document is not None:\n
-    line_software_release_url = line_software_release_document.getUrlString()\n
-\n
-  software_release_document = context.Base_getSoftwareReleaseDocument(instance_software_release_url)\n
-\n
-  if line_software_release_url == \'\' or \\\n
-    line_software_release_url != instance_software_release_url:\n
-    if software_release_document is not None:\n
-      # update\n
-      aggregate_value_list = [q for q in context.getAggregateValueList() if q.getPortalType() != \'Software Release\']\n
-      aggregate_value_list.append(software_release_document)\n
-      context.setAggregateValueList(aggregate_value_list)\n
-      if context.getSimulationState() == \'planned\':\n
-        context.getParentValue().order(comment=\'Associated Software Release with %r\' % software_release_document.getUrlString())\n
-      else:\n
-        markHistory(context.getParentValue(), comment=\'Updated Software Release with %r\' % software_release_document.getUrlString())\n
-      return True\n
-    else:\n
-      return False\n
-  else:\n
-    # nothing to do, all asserted\n
-    return True\n
-\n
-return False\n
+software_release_document = portal.portal_catalog.getResultValue(portal_type=\'Software Release\',\n
+  url_string=software_release_url)\n
+if software_release_document is None:\n
+  digest = context.Base_getSha512Hexdiest(software_release_url)\n
+  tag = \'%s_inProgress\' % digest\n
+  if portal.portal_activities.countMessageWithTag(tag) == 0:\n
+    # can create new one\n
+    software_release_document = portal.software_release_module.newContent(\n
+      portal_type=\'Software Release\',\n
+      reference=digest,\n
+      version=digest,\n
+      url_string=software_release_url,\n
+      language=\'en\',\n
+      activate_kw={\'tag\': tag}\n
+    )\n
+    software_release_document.publish(comment=\'Automatically created.\')\n
+return software_release_document\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>software_release_url</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SaleOrderLine_tryToAssociateSoftwareRelease</string> </value>
+            <value> <string>Base_getSoftwareReleaseDocument</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -70,12 +70,14 @@ packing_list = packing_list_module.newContent(\n
   price_currency=delivery.getPriceCurrency(),\n
   start_date=DateTime())\n
 \n
+aggregate_list = sale_order_line.getAggregateList(portal_type=[\'Slave Instance\', \'Software Instance\', \'Hosting Subscription\', \'Computer Partition\'])\n
+aggregate_list.append(software_release_document.getRelativeUrl())\n
 packing_list_line = packing_list.newContent(\n
   portal_type=\'Sale Packing List Line\',\n
   resource=service.getRelativeUrl(),\n
   quantity_unit="unit/piece",\n
   quantity=1,\n
-  aggregate_list=sale_order_line.getAggregateList(),\n
+  aggregate_list=aggregate_list,\n
   # XXX Hardcode price on service\n
   price=service.getSaleSupplyLineBasePrice(),\n
 )\n
@@ -86,7 +88,7 @@ return packing_list\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change, service</string> </value>
+            <value> <string>state_change, service, software_release_document</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

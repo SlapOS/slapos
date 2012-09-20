@@ -122,6 +122,9 @@ else:\n
       if (packing_list  is not None):\n
         instance.edit(causality_value=packing_list)\n
     else:\n
+      software_release_document = instance.Base_getSoftwareReleaseDocument(instance.getRootSoftwareReleaseUrl())\n
+      if software_release_document is None:\n
+        raise NotImplemnetedError(\'Software Release %r not ready yet\' % instance.getRootSoftwareReleaseUrl())\n
       # Create a new packing list from scratch\n
       if (state == started):\n
         service_relative_url = hosting_service_relative_url\n
@@ -130,7 +133,7 @@ else:\n
         service_relative_url = cleanup_service_relative_url\n
         service = cleanup_service\n
 \n
-      packing_list = context.Instance_createSalePackingList(state_change, service)\n
+      packing_list = context.Instance_createSalePackingList(state_change, service, software_release_document)\n
       instance.edit(causality_value=packing_list)\n
 \n
       if (state == started):\n
@@ -146,9 +149,15 @@ else:\n
     service_relative_url = line.getResource()\n
 \n
     def letsclone(service_relative_url):\n
+      software_release_document = instance.Base_getSoftwareReleaseDocument(instance.getRootSoftwareReleaseUrl())\n
+      if software_release_document is None:\n
+        raise NotImplementedError(\'Software Release %r not ready yet\' % instance.getRootSoftwareReleaseUrl())\n
       new_delivery = delivery.Base_createCloneDocument(batch_mode=1)\n
       new_delivery.edit(start_date=DateTime(), stop_date=DateTime(), causality_value=None)\n
-      new_delivery.contentValues(portal_type="Sale Packing List Line")[0].edit(resource=service_relative_url)\n
+      delivery_line = new_delivery.contentValues(portal_type="Sale Packing List Line")[0]\n
+      aggregate_list = delivery_line.getAggregateList(portal_type=[\'Slave Instance\', \'Software Instance\', \'Hosting Subscription\', \'Computer Partition\'])\n
+      aggregate_list.append(software_release_document.getRelativeUrl())\n
+      delivery_line.edit(resource=service_relative_url, aggregate_list=aggregate_list)\n
       return new_delivery\n
 \n
     new_delivery = None\n
