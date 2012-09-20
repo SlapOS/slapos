@@ -39,7 +39,9 @@ from Products.ERP5Type.Tool.BaseTool import BaseTool
 from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from Products.ERP5Type import Permissions
 from Products.ERP5Type.Cache import CachingMethod
+from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
 from lxml import etree
+import time
 try:
   from slapos.slap.slap import Computer
   from slapos.slap.slap import ComputerPartition as SlapComputerPartition
@@ -135,6 +137,44 @@ class SlapTool(BaseTool):
   # Public GET methods
   ####################################################
 
+  def _getCachePlugin(self):
+    return self.getPortalObject().portal_caches\
+      .getRamCacheRoot().get('computer_information_cache_factory')\
+      .getCachePluginList()[0]
+
+  def _fillComputerInformationCache(self, computer_id, user, full):
+    user_document = self.getPortalObject().portal_catalog.getResultValue(
+      reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
+    user_type = user_document.getPortalType()
+    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+    slap_computer = Computer(computer_id)
+    parent_uid = self._getComputerUidByReference(computer_id)
+
+    slap_computer._computer_partition_list = []
+    slap_computer._software_release_list = \
+       self._getSoftwareReleaseValueListForComputer(computer_id, full=full)
+    for computer_partition in self.getPortalObject().portal_catalog(
+                    parent_uid=parent_uid,
+                    validation_state="validated",
+                    portal_type="Computer Partition"):
+      slap_computer._computer_partition_list.append(
+          self._getSlapPartitionByPackingList(computer_partition.getObject()))
+    self._getCachePlugin().set(user, DEFAULT_CACHE_SCOPE,
+      dict (
+        time=time.time(),
+        data=xml_marshaller.xml_marshaller.dumps(slap_computer),
+      ),
+      cache_duration=self.getPortalObject().portal_caches\
+          .getRamCacheRoot().get('computer_information_cache_factory'\
+            ).cache_duration
+      )
+
+  def _activateFillComputerInformationCache(self, computer_id, user, full):
+    tag = 'computer_information_cache_fill_%s' % user
+    if self.getPortalObject().portal_activities.countMessageWithTag(tag) == 0:
+      self.activate(activity='SQLQueue', tag=tag)._fillComputerInformationCache(
+        computer_id, user, full)
+
   def _getComputerInformation(self, computer_id, user, full):
     user_document = self.getPortalObject().portal_catalog.getResultValue(
       reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
@@ -145,6 +185,21 @@ class SlapTool(BaseTool):
 
     slap_computer._computer_partition_list = []
     if user_type in ('Computer', 'Person'):
+      cache_plugin = self._getCachePlugin()
+      try:
+        entry = cache_plugin.get(user, DEFAULT_CACHE_SCOPE)
+      except KeyError:
+        entry = None
+      if entry is not None and type(entry.getValue()) == type({}):
+        result = entry.getValue()['data']
+        if time.time() - entry.getValue()['time'] > 60 * 5:
+          # entry was stored 5 minutes ago, ask for recalculation
+          self._activateFillComputerInformationCache(computer_id, user, full)
+        return result
+      else:
+        self._activateFillComputerInformationCache(computer_id, user, full)
+        self.REQUEST.response.setStatus(503)
+        return self.REQUEST.response
       slap_computer._software_release_list = \
          self._getSoftwareReleaseValueListForComputer(computer_id, full=full)
     else:
