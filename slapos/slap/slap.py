@@ -553,7 +553,15 @@ class ConnectionHelper:
     return xml_marshaller.loads(self.response.read())
 
   def getFullComputerInformation(self, computer_id):
-    self.GET('/getFullComputerInformation?computer_id=%s' % computer_id)
+    """
+    Retrieve from SlapOS Master Computer instance containing all needed
+    informations (Software Releases, Computer Partitions, ...).
+    """
+    method = '/getFullComputerInformation?computer_id=%s' % computer_id
+    if not computer_id:
+      # XXX-Cedric: should raise something smarter than "NotFound".
+      raise NotFoundError(method)
+    self.GET(method)
     return xml_marshaller.loads(self.response.read())
 
   def connect(self):
@@ -677,6 +685,10 @@ class slap:
     Registers connected representation of computer partition and
     returns Computer Partition class object
     """
+    if not computer_guid or not partition_id:
+      # XXX-Cedric: should raise something smarter than NotFound
+      raise NotFoundError
+
     self._connection_helper.GET('/registerComputerPartition?' \
         'computer_reference=%s&computer_partition_reference=%s' % (
           computer_guid, partition_id))
