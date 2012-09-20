@@ -126,7 +126,7 @@ class Recipe(GenericBaseRecipe):
     def createRunScript(self):
         content = textwrap.dedent("""\
                 #!/bin/sh
-                %(bin)s/postgres \\
+                exec %(bin)s/postgres \\
                     -D %(pgdata-directory)s
                 """ % self.options)
         name = os.path.join(self.options['services'], 'postgres-start')
