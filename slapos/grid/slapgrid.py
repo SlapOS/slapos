@@ -623,66 +623,68 @@ class Slapgrid(object):
     # Process Computer Partitions
     clean_run = True
     for computer_partition in self.getComputerPartitionList():
-      computer_partition_id = computer_partition.getId()
-
       try:
-        software_url = computer_partition.getSoftwareRelease().getURI()
-        # XXX should test status as well. But getState() returns default value.
-      except NotFoundError:
-        # No Software Release information: skip.
-        continue
-
-      logger.info('Processing Computer Partition %s...' % \
-          computer_partition_id)
-
-      # Check if we defined explicit list of partitions to process.
-      # If so, if current partition not in this list, skip.
-      if len(self.computer_partition_filter_list) > 0 and \
-           (computer_partition_id not in self.computer_partition_filter_list):
-        continue
-
-      instance_path = os.path.join(self.instance_root, computer_partition_id)
-
-      # Try to get partition timestamp (last modification date)
-      timestamp_path = os.path.join(instance_path, '.timestamp')
-      parameter_dict = computer_partition.getInstanceParameterDict()
-      if 'timestamp' in parameter_dict:
-        timestamp = parameter_dict['timestamp']
-      else:
-        timestamp = None
-
-      software_path = os.path.join(self.software_root,
-            getSoftwareUrlHash(software_url))
-
-      # Get periodicity from periodicity file if not forced
-      if not self.force_periodicity:
-        periodicity_path = os.path.join(software_path,'periodicity')
-        if os.path.exists(periodicity_path):
-          try:
-            self.maximum_periodicity = int(open(periodicity_path).read())
-          except ValueError:
-            os.remove(periodicity_path)
-            exception = traceback.format_exc()
-            logger.error(exception)
-
-      # Check if timestamp from server is more recent than local one.
-      # If not: it's not worth processing this partition (nothing has changed).
-      if computer_partition_id not in self.computer_partition_filter_list and \
-          (not self.develop) and os.path.exists(timestamp_path):
-        old_timestamp = open(timestamp_path).read()
-        last_runtime = int(os.path.getmtime(timestamp_path))
-        if timestamp:
-          try:
-            if int(timestamp) <= int(old_timestamp):
-              if int(time.time()) <= (last_runtime + self.maximum_periodicity) :
-                continue
-          except ValueError:
-            os.remove(timestamp_path)
-            exception = traceback.format_exc()
-            logger.error(exception)
-
-      try:
+        computer_partition_id = computer_partition.getId()
+        try:
+          software_url = computer_partition.getSoftwareRelease().getURI()
+          # XXX should test status as well. But getState() returns default
+          # value.
+        except NotFoundError:
+          # No Software Release information: skip.
+          continue
+        
+        logger.info('Processing Computer Partition %s...' % \
+            computer_partition_id)
+        
+        # Check if we defined explicit list of partitions to process.
+        # If so, if current partition not in this list, skip.
+        if len(self.computer_partition_filter_list) > 0 and \
+             (computer_partition_id not in self.computer_partition_filter_list):
+          continue
+        
+        instance_path = os.path.join(self.instance_root, computer_partition_id)
+        
+        # Try to get partition timestamp (last modification date)
+        timestamp_path = os.path.join(instance_path, '.timestamp')
+        parameter_dict = computer_partition.getInstanceParameterDict()
+        if 'timestamp' in parameter_dict:
+          timestamp = parameter_dict['timestamp']
+        else:
+          timestamp = None
+        
         software_path = os.path.join(self.software_root,
+              getSoftwareUrlHash(software_url))
+        
+        # Get periodicity from periodicity file if not forced
+        if not self.force_periodicity:
+          periodicity_path = os.path.join(software_path,'periodicity')
+          if os.path.exists(periodicity_path):
+            try:
+              self.maximum_periodicity = int(open(periodicity_path).read())
+            except ValueError:
+              os.remove(periodicity_path)
+              exception = traceback.format_exc()
+              logger.error(exception)
+        
+        # Check if timestamp from server is more recent than local one.
+        # If not: it's not worth processing this partition (nothing has
+        # changed).
+        if computer_partition_id not in self.computer_partition_filter_list and \
+            (not self.develop) and os.path.exists(timestamp_path):
+          old_timestamp = open(timestamp_path).read()
+          last_runtime = int(os.path.getmtime(timestamp_path))
+          if timestamp:
+            try:
+              if int(timestamp) <= int(old_timestamp):
+                if int(time.time()) <= (
+                    last_runtime + self.maximum_periodicity) :
+                  continue
+            except ValueError:
+              os.remove(timestamp_path)
+              exception = traceback.format_exc()
+              logger.error(exception)
+        
+          software_path = os.path.join(self.software_root,
               getSoftwareUrlHash(software_url))
         local_partition = Partition(
           software_path=software_path,
