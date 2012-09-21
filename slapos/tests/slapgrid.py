@@ -215,6 +215,130 @@ touch worked""")
     BasicMixin.tearDown(self)
 
 
+class ComputerForTest:
+  def __init__(self,
+               software_root,
+               instance_root,
+               instance_amount=1,
+               software_amount=1):
+    self.instance_amount = instance_amount
+    self.software_amount = software_amount
+    self.software_root = software_root
+    self.instance_root = instance_root
+    self.sequence = []
+    self.set_instances()
+
+  def setInstances(self):
+    self.instance_list = range(0, self.instance_amount)
+    for instance in self.instance_list:
+      name = str(self.instance_list.index(instance))
+      instance = InstanceForTest(self.instance_root, name=name)
+
+  def setSoftwares(self):
+    self.software_list = range(0,self.software_amount)
+    for software in self.software_list:
+      name = str(self.software_list.index(software))
+      software = SoftwareForTest(self.software_root, name=name)
+
+  def getComputer (self, computer_id):
+    slap_computer = slapos.slap.Computer(computer_id)
+    slap_computer._software_release_list = []
+    for instance in self.instance_list:
+      slap_computer._computer_partition_list.append(
+        instance.getInstance(computer_id))
+    return slap_computer
+
+  def getServerResponse(self):
+    def server_response(self_httplib, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      if method == 'GET':
+        parsed_qs = urlparse.parse_qs(parsed_url.query)
+      else:
+        parsed_qs = urlparse.parse_qs(body)
+      if parsed_url.path == 'getFullComputerInformation' and \
+            'computer_id' in parsed_qs:
+        self.sequence.append(parsed_url.path)
+        self.set_computer(parsed_qs['computer_id'][0])
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(self.slap_computer))
+      if method == 'POST' and 'computer_partition_id' in parsed_qs:
+        instance = self.instance_list[parsed_qs['computer_partition_id'][0]]
+        instance.sequence.append(parsed_url.path)
+        if parsed_url.path == 'availableComputerPartition':
+          return (200, {}, '')
+        if parsed_url.path == 'startedComputerPartition':
+          self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
+          instance.state = 'started'
+          return (200, {}, '')
+        if parsed_url.path == 'stoppedComputerPartition':
+          self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
+          instance.state = 'stopped'
+          return (200, {}, '')
+        if parsed_url.path == 'softwareInstanceError':
+          instance.error = True
+          return (200, {}, '')
+        else:
+          return (404, {}, '')
+
+    return server_response
+
+
+class InstanceForTest:
+  """
+  Class containing all needed paramaters and function to simulate instances
+  """
+  def __init___(self, instance_root, name, software):
+    self.instance_root = instance_root
+    self.requested_state = 'stopped'
+    self.software = software
+    self.sequence = []
+    self.name = name
+    if not os.path.isdir(self.instance_root):
+      os.mkdir(self.instance_root)
+    self.partition_path = os.path.join(self.instance_root, self.name)
+    os.mkdir(self.partition_path, 0750)
+    self.timestamp = None
+
+  def getInstance (self, computer_id):
+    partition = slapos.slap.ComputerPartition(computer_id, self.name)
+    partition._software_release_document = self.getSoftware()
+    partition._requested_state = self.requested_state
+    if self.timestamp is not None :
+      partition._parameter_dict = {'timestamp': self.timestamp}
+    return partition
+
+  def getSoftwareRelease (self):
+    sr = slapos.slap.SoftwareRelease()
+    sr._software_release = self.software.name
+    return sr
+
+class SoftwareForTest:
+  def __init__(self, software_root, name=''):
+    self.software_root = software_root
+    self.name = 'http://sr%s/' % name
+    self.sequence = []
+    os.mkdir(self.software_root)
+    self.software_hash = \
+        slapos.grid.utils.getSoftwareUrlHash(self.name)
+    self.srdir = os.path.join(self.software_root, self.software_hash)
+    os.mkdir(self.srdir)
+    self.set_template_cfg()
+    self.srbindir = os.path.join(self.srdir, 'bin')
+    os.mkdir(self.srbindir)
+    self.set_buildout()
+
+  def set_template_cfg (self,template = """[buildout]"""):
+    open(os.path.join(self.srdir, 'template.cfg'), 'w').write(template)
+
+  def set_buildout (self,buildout = """#!/bin/sh
+touch worked"""):
+    open(os.path.join(self.srbindir, 'buildout'), 'w').write(buildout)
+    os.chmod(os.path.join(self.srbindir, 'buildout'), 0755)
+
+  def set_periodicity(self,periodicity):
+    open(os.path.join(self.srdir, 'periodicity'), 'w').write(
+      """%s""" % (periodicity))
+
+
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
 
   def test_nothing_to_do(self):
