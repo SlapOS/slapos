@@ -135,78 +135,6 @@ class MasterMixin(BasicMixin):
 
   def _unmock_sleep(self):
     time.sleep = self.real_sleep
-
-  def _create_instance(self, name=0):
-
-    if not os.path.isdir(self.instance_root):
-      os.mkdir(self.instance_root)
-
-    partition_path = os.path.join(self.instance_root, str(name))
-    os.mkdir(partition_path, 0750)
-    return partition_path
-
-  def _bootstrap(self, periodicity=None):
-    os.mkdir(self.software_root)
-    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
-    srdir = os.path.join(self.software_root, software_hash)
-    os.mkdir(srdir)
-    open(os.path.join(srdir, 'template.cfg'), 'w').write(
-      """[buildout]""")
-    srbindir = os.path.join(srdir, 'bin')
-    os.mkdir(srbindir)
-    open(os.path.join(srbindir, 'buildout'), 'w').write("""#!/bin/sh
-touch worked""")
-    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
-    if periodicity is not None:
-      open(os.path.join(srdir, 'periodicity'), 'w').write(
-        """%s""" % (periodicity))
-    return software_hash
-
-  def _server_response (self, _requested_state, timestamp=None):
-    def server_response(self_httplib, path, method, body, header):
-      parsed_url = urlparse.urlparse(path.lstrip('/'))
-      self.sequence.append(parsed_url.path)
-      if method == 'GET':
-        parsed_qs = urlparse.parse_qs(parsed_url.query)
-      else:
-        parsed_qs = urlparse.parse_qs(body)
-      if parsed_url.path == 'getFullComputerInformation' and \
-            'computer_id' in parsed_qs:
-        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
-        slap_computer._software_release_list = []
-        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
-                                                  '0')
-        sr = slapos.slap.SoftwareRelease()
-        sr._software_release = 'http://sr/'
-        partition._software_release_document = sr
-        partition._requested_state = _requested_state
-        if not timestamp == None :
-          partition._parameter_dict = {'timestamp': timestamp}
-        slap_computer._computer_partition_list = [partition]
-        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
-      if parsed_url.path == 'availableComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        return (200, {}, '')
-      if parsed_url.path == 'startedComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        self.started = True
-        return (200, {}, '')
-      if parsed_url.path == 'stoppedComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        self.stopped = True
-        return (200, {}, '')
-      if parsed_url.path == 'softwareInstanceError' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.error = True
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        return (200, {}, '')
-      else:
-        return (404, {}, '')
-
-    return server_response
-
   def setUp(self):
     self._patchHttplib()
     self._mock_sleep()
@@ -359,6 +287,17 @@ class InstanceForTest:
       sr._software_release = self.software.name
       return sr
     else: return None
+
+  def setPromise (self, promise_name, promise_content):
+    """
+    This function will set promise and return its path
+    """
+    promise_path = os.path.join(self.partition_path, 'etc', 'promise')
+    if not os.path.isdir(promise_path):
+      os.makedirs(promise_path)
+    promise = os.path.join(promise_path,promise_name)
+    open(promise, 'w').write(promise_content)
+    os.chmod(promise, 0777)
 
 
 class SoftwareForTest:
@@ -798,31 +737,17 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     """
     Test than an instance in "destroyed" state is correctly destroyed
     """
-    os.mkdir(self.software_root)
-    os.mkdir(self.instance_root)
-    partition_path = os.path.join(self.instance_root, '0')
-    os.mkdir(partition_path, 0750)
-    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
-    srdir = os.path.join(self.software_root, software_hash)
-    os.mkdir(srdir)
-    open(os.path.join(srdir, 'template.cfg'), 'w').write(
-      """[buildout]""")
-    srbindir = os.path.join(srdir, 'bin')
-    os.mkdir(srbindir)
-
-    # Start the instance
-    self.sequence = []
-    self.started = False
-    httplib.HTTPConnection._callback = self._server_response('started')
-    open(os.path.join(srbindir, 'buildout'), 'w').write(WRAPPER_CONTENT)
-    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
+    instance.software.setBuildout(WRAPPER_CONTENT)
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
-    self.assertSortedListEqual(os.listdir(partition_path), ['.0_wrapper.log',
+    self.assertSortedListEqual(os.listdir(instance.partition_path), ['.0_wrapper.log',
       'worked', 'buildout.cfg', 'etc'])
     tries = 10
-    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
@@ -830,26 +755,26 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       time.sleep(0.2)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.software_root),
-      [software_hash])
-    self.assertEqual(self.sequence,
+      [instance.software.software_hash])
+    self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
                       'availableComputerPartition',
                       'startedComputerPartition'])
-    self.assertTrue(self.started)
+    self.assertEqual(instance.state,'started')
 
     # Then destroy the instance
-    self.sequence = []
-    httplib.HTTPConnection._callback = self._server_response('destroyed')
+    computer.sequence = []
+    instance.requested_state = 'destroyed'
     self.assertTrue(self.grid.agregateAndSendUsage())
     # Assert partition directory is empty
     self.assertSortedListEqual(os.listdir(self.instance_root),
                                ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(partition_path), [])
+    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
     self.assertSortedListEqual(os.listdir(self.software_root),
-                               [software_hash])
+                               [instance.software.software_hash])
     # Assert supervisor stopped process
     tries = 10
-    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     exists = False
     while tries > 0:
       tries -= 1
@@ -859,41 +784,27 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       time.sleep(0.2)
     self.assertFalse(exists)
 
-    self.assertEqual(self.sequence,
+    self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
                       'stoppedComputerPartition',
                       'destroyedComputerPartition'])
-    self.assertTrue(self.started)
+    self.assertEqual(instance.state,'stopped')
 
   def test_slapgrid_not_destroy_bad_instance(self):
     """
     Checks that slapgrid-ur don't destroy instance not to be destroyed.
     """
-    os.mkdir(self.software_root)
-    os.mkdir(self.instance_root)
-    partition_path = os.path.join(self.instance_root, '0')
-    os.mkdir(partition_path, 0750)
-    software_hash = slapos.grid.utils.getSoftwareUrlHash('http://sr/')
-    srdir = os.path.join(self.software_root, software_hash)
-    os.mkdir(srdir)
-    open(os.path.join(srdir, 'template.cfg'), 'w').write(
-      """[buildout]""")
-    srbindir = os.path.join(srdir, 'bin')
-    os.mkdir(srbindir)
-
-    # Start the instance
-    self.sequence = []
-    self.started = False
-    httplib.HTTPConnection._callback = self._server_response('started')
-    open(os.path.join(srbindir, 'buildout'), 'w').write(WRAPPER_CONTENT)
-    os.chmod(os.path.join(srbindir, 'buildout'), 0755)
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
+    instance.software.setBuildout(WRAPPER_CONTENT)
     self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
-      'var'])
-    self.assertSortedListEqual(os.listdir(partition_path), ['.0_wrapper.log',
-      'worked', 'buildout.cfg', 'etc'])
+    self.assertSortedListEqual(os.listdir(self.instance_root),
+                               ['0', 'etc', 'var'])
+    self.assertSortedListEqual(os.listdir(instance.partition_path),
+                               ['.0_wrapper.log', 'worked', 'buildout.cfg', 'etc'])
     tries = 20
-    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
@@ -901,22 +812,23 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       time.sleep(0.2)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.software_root),
-      [software_hash])
-    self.assertEqual(self.sequence,
+      [instance.software.software_hash])
+    self.assertEqual(computer.sequence,
                      ['getFullComputerInformation',
                       'availableComputerPartition',
                       'startedComputerPartition'])
-    self.assertTrue(self.started)
+    self.assertEqual('started',instance.state)
 
     # Then run usage report and see if it is still working
-    self.sequence = []
+    computer.sequence = []
     self.assertTrue(self.grid.agregateAndSendUsage())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
-    self.assertSortedListEqual(os.listdir(partition_path), ['.0_wrapper.log',
-      'worked', 'buildout.cfg', 'etc'])
+    self.assertSortedListEqual(
+      os.listdir(instance.partition_path),
+      ['.0_wrapper.log', 'worked', 'buildout.cfg', 'etc'])
     tries = 10
-    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
@@ -925,18 +837,18 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
-    self.assertSortedListEqual(os.listdir(partition_path), ['.0_wrapper.log',
-      'worked', 'buildout.cfg', 'etc'])
+    self.assertSortedListEqual(os.listdir(instance.partition_path),
+                               ['.0_wrapper.log', 'worked', 'buildout.cfg', 'etc'])
     tries = 20
-    wrapper_log = os.path.join(partition_path, '.0_wrapper.log')
+    wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
         break
       time.sleep(0.2)
-    self.assertEqual(self.sequence,
+    self.assertEqual(computer.sequence,
                      ['getFullComputerInformation'])
-    self.assertTrue(self.started)
+    self.assertEqual('started',instance.state)
 
 
 
@@ -1061,125 +973,34 @@ buildout = /path/to/buildout/binary
 
 class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
   def test_one_failing_promise(self):
-
-    def server_response(self_httplib, path, method, body, header):
-      parsed_url = urlparse.urlparse(path.lstrip('/'))
-
-      if method == 'GET':
-        parsed_qs = urlparse.parse_qs(parsed_url.query)
-      else:
-        parsed_qs = urlparse.parse_qs(body)
-      if parsed_url.path == 'getFullComputerInformation' and \
-         'computer_id' in parsed_qs:
-        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
-        slap_computer._software_release_list = []
-        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
-            '0')
-        sr = slapos.slap.SoftwareRelease()
-        sr._software_release = 'http://sr/'
-        partition._software_release_document = sr
-        partition._requested_state = 'started'
-        slap_computer._computer_partition_list = [partition]
-        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
-      if parsed_url.path == 'availableComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        return (200, {}, '')
-      if parsed_url.path == 'startedComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        self.started = True
-        return (200, {}, '')
-      if parsed_url.path == 'softwareInstanceError' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.error = True
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        return (200, {}, '')
-      else:
-        return (404, {}, '')
-
-    httplib.HTTPConnection._callback = server_response
-    self.fake_waiting_time = 0.2
-    self.error = False
-    self.started = False
-
-    instance_path = self._create_instance('0')
-    self._bootstrap()
-
-    promise_path = os.path.join(instance_path, 'etc', 'promise')
-    os.makedirs(promise_path)
-    fail = os.path.join(promise_path, 'fail')
-    worked_file = os.path.join(instance_path, 'fail_worked')
-    with open(fail, 'w') as f:
-      f.write("""#!/usr/bin/env sh
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
+    worked_file = os.path.join(instance.partition_path, 'fail_worked')
+    fail = ("""#!/usr/bin/env sh
 touch "%(worked_file)s"
 exit 127""" % {'worked_file': worked_file})
-    os.chmod(fail, 0777)
+    instance.setPromise('fail',fail)
     self.assertFalse(self.grid.processComputerPartitionList())
     self.assertTrue(os.path.isfile(worked_file))
-
-    self.assertTrue(self.error)
-    self.assertFalse(self.started)
+    self.assertTrue(instance.error)
+    self.assertNotEqual('started',instance.state)
 
   def test_one_succeeding_promise(self):
-
-    def server_response(self_httplib, path, method, body, header):
-      parsed_url = urlparse.urlparse(path.lstrip('/'))
-
-      if method == 'GET':
-        parsed_qs = urlparse.parse_qs(parsed_url.query)
-      else:
-        parsed_qs = urlparse.parse_qs(body)
-
-      if parsed_url.path == 'getFullComputerInformation' and \
-         'computer_id' in parsed_qs:
-        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
-        slap_computer._software_release_list = []
-        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
-            '0')
-        sr = slapos.slap.SoftwareRelease()
-        sr._software_release = 'http://sr/'
-        partition._software_release_document = sr
-        partition._requested_state = 'started'
-        slap_computer._computer_partition_list = [partition]
-        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
-      if parsed_url.path == 'availableComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        return (200, {}, '')
-      if parsed_url.path == 'startedComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        self.started = True
-        return (200, {}, '')
-      if parsed_url.path == 'softwareInstanceError' and \
-         method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.error = True
-        raise AssertionError('ComputerPartition.error was raised')
-        return (200, {}, '')
-      else:
-        return (404, {}, '')
-
-    httplib.HTTPConnection._callback = server_response
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
     self.fake_waiting_time = 0.2
-    self.error = False
-    self.started = False
-
-    instance_path = self._create_instance('0')
-    self._bootstrap()
-
-    promise_path = os.path.join(instance_path, 'etc', 'promise')
-    os.makedirs(promise_path)
-    succeed = os.path.join(promise_path, 'succeed')
-    worked_file = os.path.join(instance_path, 'succeed_worked')
-    with open(succeed, 'w') as f:
-      f.write("""#!/usr/bin/env sh
+    worked_file = os.path.join(instance.partition_path, 'succeed_worked')
+    succeed = ("""#!/usr/bin/env sh
 touch "%(worked_file)s"
 exit 0""" % {'worked_file': worked_file})
-    os.chmod(succeed, 0777)
+    instance.setPromise('succeed',succeed)
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertTrue(os.path.isfile(worked_file))
 
-    self.assertFalse(self.error)
-    self.assertTrue(self.started)
+    self.assertFalse(instance.error)
+    self.assertEqual(instance.state,'started')
 
   def test_stderr_has_been_sent(self):
     computer = ComputerForTest(self.software_root,self.instance_root)
@@ -1210,7 +1031,6 @@ exit 127""" % {'worked_file': worked_file})
   def test_timeout_works(self):
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
-    httplib.HTTPConnection._callback = computer.getServerResponse()
 
     instance.requested_state = 'started'
     self.fake_waiting_time = 0.2
@@ -1232,134 +1052,36 @@ exit 0""" % {'worked_file': worked_file})
     self.assertIsNone(instance.state)
 
   def test_two_succeeding_promises(self):
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
 
-    def server_response(self_httplib, path, method, body, header):
-      parsed_url = urlparse.urlparse(path.lstrip('/'))
-
-      if method == 'GET':
-        parsed_qs = urlparse.parse_qs(parsed_url.query)
-      else:
-        parsed_qs = urlparse.parse_qs(body)
-
-      if parsed_url.path == 'getFullComputerInformation' and \
-         'computer_id' in parsed_qs:
-        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
-        slap_computer._software_release_list = []
-        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
-            '0')
-        sr = slapos.slap.SoftwareRelease()
-        sr._software_release = 'http://sr/'
-        partition._software_release_document = sr
-        partition._requested_state = 'started'
-        slap_computer._computer_partition_list = [partition]
-        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
-      if parsed_url.path == 'availableComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        return (200, {}, '')
-      if parsed_url.path == 'startedComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        self.started = True
-        return (200, {}, '')
-      if parsed_url.path == 'softwareInstanceError' and \
-         method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.error = True
-        raise AssertionError('ComputerPartition.error was raised')
-        return (200, {}, '')
-      else:
-        return (404, {}, '')
-
-    httplib.HTTPConnection._callback = server_response
     self.fake_waiting_time = 0.2
-    self.error = False
-    self.started = False
 
-    instance_path = self._create_instance('0')
-    self._bootstrap()
-
-    promise_path = os.path.join(instance_path, 'etc', 'promise')
-    os.makedirs(promise_path)
-
-    succeed = os.path.join(promise_path, 'succeed')
-    worked_file = os.path.join(instance_path, 'succeed_worked')
-    with open(succeed, 'w') as f:
-      f.write("""#!/usr/bin/env sh
+    for i in range (0,2):
+      worked_file = os.path.join(instance.partition_path, 'succeed_%s_worked' % i)
+      succeed = ("""#!/usr/bin/env sh
 touch "%(worked_file)s"
 exit 0""" % {'worked_file': worked_file})
-    os.chmod(succeed, 0777)
-
-    succeed_2 = os.path.join(promise_path, 'succeed_2')
-    worked_file_2 = os.path.join(instance_path, 'succeed_2_worked')
-    with open(succeed_2, 'w') as f:
-      f.write("""#!/usr/bin/env sh
-touch "%(worked_file)s"
-exit 0""" % {'worked_file': worked_file_2})
-    os.chmod(succeed_2, 0777)
+      instance.setPromise('succeed_%s' % i, succeed)
 
     self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertTrue(os.path.isfile(worked_file))
-    self.assertTrue(os.path.isfile(worked_file_2))
-
-    self.assertFalse(self.error)
-    self.assertTrue(self.started)
+    for i in range(0,2):
+      worked_file = os.path.join(instance.partition_path, 'succeed_%s_worked' % i)
+      self.assertTrue(os.path.isfile(worked_file))
+    self.assertFalse(instance.error)
+    self.assertEqual(instance.state, 'started')
 
   def test_one_succeeding_one_failing_promises(self):
-
-    def server_response(self_httplib, path, method, body, header):
-      parsed_url = urlparse.urlparse(path.lstrip('/'))
-
-      if method == 'GET':
-        parsed_qs = urlparse.parse_qs(parsed_url.query)
-      else:
-        parsed_qs = urlparse.parse_qs(body)
-
-      if parsed_url.path == 'getFullComputerInformation' and \
-         'computer_id' in parsed_qs:
-        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
-        slap_computer._software_release_list = []
-        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
-            '0')
-        sr = slapos.slap.SoftwareRelease()
-        sr._software_release = 'http://sr/'
-        partition._software_release_document = sr
-        partition._requested_state = 'started'
-        slap_computer._computer_partition_list = [partition]
-        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
-      if parsed_url.path == 'availableComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        return (200, {}, '')
-      if parsed_url.path == 'startedComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        self.started = True
-        return (200, {}, '')
-      if parsed_url.path == 'softwareInstanceError' and \
-         method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.error += 1
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        return (200, {}, '')
-      else:
-        return (404, {}, '')
-
-    httplib.HTTPConnection._callback = server_response
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
     self.fake_waiting_time = 0.2
-    self.error = 0
-    self.started = False
 
-    instance_path = self._create_instance('0')
-    self._bootstrap()
-
-    promise_path = os.path.join(instance_path, 'etc', 'promise')
-    os.makedirs(promise_path)
-
-    promises_files = []
     for i in range(2):
-      promise = os.path.join(promise_path, 'promise_%d' % i)
-      promises_files.append(promise)
-      worked_file = os.path.join(instance_path, 'promise_worked_%d' % i)
-      lockfile = os.path.join(instance_path, 'lock')
-      with open(promise, 'w') as f:
-        f.write("""#!/usr/bin/env sh
+      worked_file = os.path.join(instance.partition_path, 'promise_worked_%d' % i)
+      lockfile = os.path.join(instance.partition_path, 'lock')
+      promise=("""#!/usr/bin/env sh
 touch "%(worked_file)s"
 if [ ! -f %(lockfile)s ]
 then
@@ -1368,71 +1090,20 @@ then
 else
   exit 127
 fi""" % {'worked_file': worked_file, 'lockfile': lockfile})
-      os.chmod(promise, 0777)
+      instance.setPromise('promise_%s'%i,promise)
     self.assertFalse(self.grid.processComputerPartitionList())
-    for file_ in promises_files:
-      self.assertTrue(os.path.isfile(file_))
-
-    self.assertEquals(self.error, 1)
-    self.assertFalse(self.started)
+    self.assertEquals(instance.error, 1)
+    self.assertNotEqual('started',instance.state)
 
   def test_one_succeeding_one_timing_out_promises(self):
-
-    def server_response(self_httplib, path, method, body, header):
-      parsed_url = urlparse.urlparse(path.lstrip('/'))
-
-      if method == 'GET':
-        parsed_qs = urlparse.parse_qs(parsed_url.query)
-      else:
-        parsed_qs = urlparse.parse_qs(body)
-
-      if parsed_url.path == 'getFullComputerInformation' and \
-         'computer_id' in parsed_qs:
-        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
-        slap_computer._software_release_list = []
-        partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
-            '0')
-        sr = slapos.slap.SoftwareRelease()
-        sr._software_release = 'http://sr/'
-        partition._software_release_document = sr
-        partition._requested_state = 'started'
-        slap_computer._computer_partition_list = [partition]
-        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
-      if parsed_url.path == 'availableComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        return (200, {}, '')
-      if parsed_url.path == 'startedComputerPartition' and \
-            method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        self.started = True
-        return (200, {}, '')
-      if parsed_url.path == 'softwareInstanceError' and \
-         method == 'POST' and 'computer_partition_id' in parsed_qs:
-        self.error += 1
-        self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
-        return (200, {}, '')
-      else:
-        return (404, {}, '')
-
-    httplib.HTTPConnection._callback = server_response
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
     self.fake_waiting_time = 0.2
-    self.error = 0
-    self.started = False
-
-    instance_path = self._create_instance('0')
-    self._bootstrap()
-
-    promise_path = os.path.join(instance_path, 'etc', 'promise')
-    os.makedirs(promise_path)
-
-    promises_files = []
     for i in range(2):
-      promise = os.path.join(promise_path, 'promise_%d' % i)
-      promises_files.append(promise)
-      worked_file = os.path.join(instance_path, 'promise_worked_%d' % i)
-      lockfile = os.path.join(instance_path, 'lock')
-      with open(promise, 'w') as f:
-        f.write("""#!/usr/bin/env sh
+      worked_file = os.path.join(instance.partition_path, 'promise_worked_%d' % i)
+      lockfile = os.path.join(instance.partition_path, 'lock')
+      promise = ("""#!/usr/bin/env sh
 touch "%(worked_file)s"
 if [ ! -f %(lockfile)s ]
 then
@@ -1441,12 +1112,9 @@ else
   sleep 5
 fi
 exit 0"""  % {'worked_file': worked_file, 'lockfile': lockfile})
-      os.chmod(promise, 0777)
-
+      instance.setPromise('promise_%d' % i, promise)
 
     self.assertFalse(self.grid.processComputerPartitionList())
-    for file_ in promises_files:
-      self.assertTrue(os.path.isfile(file_))
 
-    self.assertEquals(self.error, 1)
-    self.assertFalse(self.started)
+    self.assertEquals(instance.error, 1)
+    self.assertNotEqual(instance.state,'started')
