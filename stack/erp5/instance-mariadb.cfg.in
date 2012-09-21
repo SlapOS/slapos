@@ -16,7 +16,7 @@ offline = true
 
 [publish-mariadb-url]
 recipe = slapos.cookbook:publishurl
-url = mysql://${mariadb-instance:user}:${mariadb-instance:password}@[${mariadb-instance:ip}]:${mariadb-instance:port}/${mariadb-instance:database}
+url = mysql://${mariadb-instance:user}:${mariadb-instance:password}@${mariadb-instance:ip}:${mariadb-instance:port}/${mariadb-instance:database}
 
 [cron-entry-mariadb-backup]
 <= cron
@@ -32,7 +32,7 @@ recipe = slapos.cookbook:generic.mysql
 user = user
 parallel-test-database-amount = ${slap-parameter:test-database-amount}
 port = 45678
-ip = ${slap-network-information:global-ipv6}
+ip = ${slap-network-information:local-ipv4}
 database = erp5
 test-user = erp5_test
 test-database = erp5_test
