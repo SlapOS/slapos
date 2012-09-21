@@ -306,6 +306,9 @@ touch worked""")
     """
     Test if slapgrid don't process "free" partition
     """
+    self.sequence = []
+    partition_name = '0'
+    partition_path = os.path.join(self.instance_root, partition_name)
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
@@ -315,7 +318,8 @@ touch worked""")
         slap_computer._software_release_list = []
         slap_computer._computer_partition_list = []
         partition = slapos.slap.ComputerPartition(parsed_qs['computer_id'][0],
-            '0')
+            partition_name)
+        partition._requested_state = 'destroyed'
         partition._software_release_document = None
         slap_computer._computer_partition_list = [partition]
         return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
@@ -325,9 +329,13 @@ touch worked""")
 
     os.mkdir(self.software_root)
     os.mkdir(self.instance_root)
+    os.mkdir(partition_path)
     self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertSortedListEqual(os.listdir(self.instance_root), ['etc', 'var'])
+    self.assertSortedListEqual(os.listdir(self.instance_root),
+                               ['0', 'etc', 'var'])
+    self.assertSortedListEqual(os.listdir(partition_path), [])
     self.assertSortedListEqual(os.listdir(self.software_root), [])
+    self.assertEqual(self.sequence, [])
 
   def test_one_partition_started(self):
     self.sequence = []
