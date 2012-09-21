@@ -308,14 +308,10 @@ class testVifibMixin(ERP5TypeTestCase):
 
     self.clearCache()
 
-    # Change module ID generator
-    for module_id in portal.objectIds(spec=('ERP5 Folder',)) + \
-          ["portal_simulation", "portal_activities"]:
-      module = portal.restrictedTraverse(module_id)
-      module.setIdGenerator('_generatePerDayId')
-
     self.logMessage("Bootstrap Vifib Without Security...")
     self.login()
+    # Change module ID generator
+    self.portal.portal_alarms.vifib_promise_module_id_generator.solve()
     # setup Vifib PAS
     self.portal.portal_alarms.vifib_promise_pas.solve()
     self.prepareTestUsers()
