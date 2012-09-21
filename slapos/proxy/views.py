@@ -158,7 +158,7 @@ def getFullComputerInformation():
         partition))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
   else:
-    raise UnauthorizedError, "Only accept request for: %s" % \
+    raise NotFoundError, "Only accept request for: %s" % \
                              app.config['computer_id']
 
 @app.route('/setComputerPartitionConnectionXml', methods=['POST'])
