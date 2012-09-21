@@ -610,7 +610,6 @@ class Slapgrid(object):
     if not promise_present:
       self.logger.info("No promise.")
 
-
   def processComputerPartitionList(self):
     """
     Will start supervisord and process each Computer Partition.
@@ -623,27 +622,41 @@ class Slapgrid(object):
     # Process Computer Partitions
     clean_run = True
     for computer_partition in self.getComputerPartitionList():
+      # Nothing should raise outside of the current loop iteration, so that
+      # even if something is terribly wrong while processing an instance, it
+      # won't prevent processing other ones.
       try:
-        computer_partition_id = computer_partition.getId()
+        # If id or URL is not defined, then it is an empty partition.
         try:
-          software_url = computer_partition.getSoftwareRelease().getURI()
+          computer_partition.getId()
+          computer_partition.getSoftwareRelease().getURI()
           # XXX should test status as well. But getState() returns default
           # value.
         except NotFoundError:
           # No Software Release information: skip.
           continue
-        
-        logger.info('Processing Computer Partition %s...' % \
-            computer_partition_id)
-        
+
+        # Process the partition itself
+        computer_partition_id = computer_partition.getId()
+        software_url = computer_partition.getSoftwareRelease().getURI()
+
+        logger.info('Processing Computer Partition %s...' % computer_partition_id)
+
+        # Sanity checks before processing
+        # Those values should not be None or empty string or any falsy value
+        if not computer_partition_id:
+          raise ValueError('Computer Partition id is empty.')
+        if not software_url:
+          raise ValueError('Software Release URL of Computer Partition is empty.')
+
         # Check if we defined explicit list of partitions to process.
         # If so, if current partition not in this list, skip.
         if len(self.computer_partition_filter_list) > 0 and \
              (computer_partition_id not in self.computer_partition_filter_list):
           continue
-        
+
         instance_path = os.path.join(self.instance_root, computer_partition_id)
-        
+
         # Try to get partition timestamp (last modification date)
         timestamp_path = os.path.join(instance_path, '.timestamp')
         parameter_dict = computer_partition.getInstanceParameterDict()
@@ -651,10 +664,10 @@ class Slapgrid(object):
           timestamp = parameter_dict['timestamp']
         else:
           timestamp = None
-        
+
         software_path = os.path.join(self.software_root,
               getSoftwareUrlHash(software_url))
-        
+
         # Get periodicity from periodicity file if not forced
         if not self.force_periodicity:
           periodicity_path = os.path.join(software_path,'periodicity')
@@ -665,7 +678,7 @@ class Slapgrid(object):
               os.remove(periodicity_path)
               exception = traceback.format_exc()
               logger.error(exception)
-        
+
         # Check if timestamp from server is more recent than local one.
         # If not: it's not worth processing this partition (nothing has
         # changed).
@@ -683,7 +696,7 @@ class Slapgrid(object):
               os.remove(timestamp_path)
               exception = traceback.format_exc()
               logger.error(exception)
-        
+
           software_path = os.path.join(self.software_root,
               getSoftwareUrlHash(software_url))
         local_partition = Partition(
@@ -732,6 +745,8 @@ class Slapgrid(object):
         if timestamp:
           timestamp_path = os.path.join(instance_path, '.timestamp')
           open(timestamp_path, 'w').write(timestamp)
+
+
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         computer_partition.error(exception)
@@ -748,9 +763,9 @@ class Slapgrid(object):
           logger.error('Problem during reporting error, continuing:\n' +
             exception)
 
-
     logger.info("Finished computer partitions...")
     return clean_run
+
 
   def validateXML(self, to_be_validated, xsd_model):
     """Validates a given xml file"""
