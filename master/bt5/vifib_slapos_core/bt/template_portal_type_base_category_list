@@ -2,6 +2,7 @@ Hosting Subscription Module | business_application
 Slave Instance | aggregate
 Slave Instance | specialise
 Software Installation Module | business_application
+Software Installation | aggregate
 Software Instance Module | business_application
 Software Instance | aggregate
 Software Instance | specialise
