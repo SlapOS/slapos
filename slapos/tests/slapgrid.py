@@ -73,6 +73,9 @@ class BasicMixin:
       self.supervisord_configuration_path, self.usage_report_periodicity,
       self.buildout, develop=develop)
 
+  def launchSlapgrid(self,develop=False):
+    self.setSlapgrid(develop=develop)
+    return self.grid.processComputerPartitionList()
 
   def tearDown(self):
     # XXX: Hardcoded pid, as it is not configurable in slapos
@@ -226,23 +229,27 @@ class ComputerForTest:
     self.software_root = software_root
     self.instance_root = instance_root
     self.sequence = []
-    self.set_instances()
+    self.setSoftwares()
+    self.setInstances()
 
   def setInstances(self):
     self.instance_list = range(0, self.instance_amount)
-    for instance in self.instance_list:
-      name = str(self.instance_list.index(instance))
-      instance = InstanceForTest(self.instance_root, name=name)
+    for i in self.instance_list:
+      name = str(i)
+      self.instance_list[i] = InstanceForTest(self.instance_root, name=name,
+                                 software=self.software_list[0])
 
   def setSoftwares(self):
     self.software_list = range(0,self.software_amount)
-    for software in self.software_list:
-      name = str(self.software_list.index(software))
-      software = SoftwareForTest(self.software_root, name=name)
+    for i in self.software_list:
+      name = str(i)
+      self.software_list[i] = SoftwareForTest(self.software_root, name=name)
+      print self.software_list
 
   def getComputer (self, computer_id):
     slap_computer = slapos.slap.Computer(computer_id)
     slap_computer._software_release_list = []
+    slap_computer._computer_partition_list = []
     for instance in self.instance_list:
       slap_computer._computer_partition_list.append(
         instance.getInstance(computer_id))
@@ -251,26 +258,24 @@ class ComputerForTest:
   def getServerResponse(self):
     def server_response(self_httplib, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
+      self.sequence.append(parsed_url.path)
       if method == 'GET':
         parsed_qs = urlparse.parse_qs(parsed_url.query)
       else:
         parsed_qs = urlparse.parse_qs(body)
       if parsed_url.path == 'getFullComputerInformation' and \
             'computer_id' in parsed_qs:
-        self.sequence.append(parsed_url.path)
-        self.set_computer(parsed_qs['computer_id'][0])
-        return (200, {}, xml_marshaller.xml_marshaller.dumps(self.slap_computer))
+        slap_computer = self.getComputer(parsed_qs['computer_id'][0])
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
       if method == 'POST' and 'computer_partition_id' in parsed_qs:
-        instance = self.instance_list[parsed_qs['computer_partition_id'][0]]
+        instance = self.instance_list[int(parsed_qs['computer_partition_id'][0])]
         instance.sequence.append(parsed_url.path)
         if parsed_url.path == 'availableComputerPartition':
           return (200, {}, '')
         if parsed_url.path == 'startedComputerPartition':
-          self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
           instance.state = 'started'
           return (200, {}, '')
         if parsed_url.path == 'stoppedComputerPartition':
-          self.assertEqual(parsed_qs['computer_partition_id'][0], '0')
           instance.state = 'stopped'
           return (200, {}, '')
         if parsed_url.path == 'softwareInstanceError':
@@ -278,7 +283,6 @@ class ComputerForTest:
           return (200, {}, '')
         else:
           return (404, {}, '')
-
     return server_response
 
 
@@ -286,9 +290,11 @@ class InstanceForTest:
   """
   Class containing all needed paramaters and function to simulate instances
   """
-  def __init___(self, instance_root, name, software):
+  def __init__(self, instance_root, name, software):
     self.instance_root = instance_root
     self.requested_state = 'stopped'
+    self.sate = None
+    self.error = False
     self.software = software
     self.sequence = []
     self.name = name
@@ -300,7 +306,7 @@ class InstanceForTest:
 
   def getInstance (self, computer_id):
     partition = slapos.slap.ComputerPartition(computer_id, self.name)
-    partition._software_release_document = self.getSoftware()
+    partition._software_release_document = self.getSoftwareRelease()
     partition._requested_state = self.requested_state
     if self.timestamp is not None :
       partition._parameter_dict = {'timestamp': self.timestamp}
@@ -311,7 +317,9 @@ class InstanceForTest:
     sr._software_release = self.software.name
     return sr
 
+
 class SoftwareForTest:
+
   def __init__(self, software_root, name=''):
     self.software_root = software_root
     self.name = 'http://sr%s/' % name
@@ -321,22 +329,23 @@ class SoftwareForTest:
         slapos.grid.utils.getSoftwareUrlHash(self.name)
     self.srdir = os.path.join(self.software_root, self.software_hash)
     os.mkdir(self.srdir)
-    self.set_template_cfg()
+    self.setTemplateCfg()
     self.srbindir = os.path.join(self.srdir, 'bin')
     os.mkdir(self.srbindir)
-    self.set_buildout()
+    self.setBuildout()
 
-  def set_template_cfg (self,template = """[buildout]"""):
+  def setTemplateCfg (self,template = """[buildout]"""):
     open(os.path.join(self.srdir, 'template.cfg'), 'w').write(template)
 
-  def set_buildout (self,buildout = """#!/bin/sh
+  def setBuildout (self,buildout = """#!/bin/sh
 touch worked"""):
     open(os.path.join(self.srbindir, 'buildout'), 'w').write(buildout)
     os.chmod(os.path.join(self.srbindir, 'buildout'), 0755)
 
-  def set_periodicity(self,periodicity):
+  def setPeriodicity(self,periodicity):
     open(os.path.join(self.srdir, 'periodicity'), 'w').write(
       """%s""" % (periodicity))
+
 
 
 class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
@@ -635,15 +644,11 @@ chmod 755 etc/run/wrapper
 class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
 
   def test_partition_timestamp(self):
-
-    self.sequence = []
-    self.timestamp = str(int(time.time()))
-    self.started = False
-    httplib.HTTPConnection._callback = \
-        self._server_response('stopped', self.timestamp)
-
-    partition_path = self._create_instance()
-    software_hash = self._bootstrap()
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    timestamp = str(int(time.time()))
+    instance.timestamp = timestamp
+    httplib.HTTPConnection._callback = computer.getServerResponse()
 
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
@@ -652,28 +657,23 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     self.assertSortedListEqual(
         os.listdir(partition), ['.timestamp', 'worked', 'buildout.cfg'])
     self.assertSortedListEqual(
-        os.listdir(self.software_root), [software_hash])
-    timestamp_path = os.path.join(partition_path, '.timestamp')
-
+        os.listdir(self.software_root), [instance.software.software_hash])
+    timestamp_path = os.path.join(instance.partition_path, '.timestamp')
     self.setSlapgrid()
     self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertTrue(self.timestamp in open(timestamp_path,'r').read())
-    self.assertEqual(self.sequence,
-                     ['getFullComputerInformation',
-                      'availableComputerPartition',
-                      'stoppedComputerPartition',
-                      'getFullComputerInformation'])
+    self.assertTrue(timestamp in open(timestamp_path,'r').read())
+    self.assertEqual(instance.sequence,
+                     ['availableComputerPartition',
+                      'stoppedComputerPartition'])
 
 
   def test_partition_timestamp_develop(self):
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    timestamp = str(int(time.time()))
+    instance.timestamp = timestamp
+    httplib.HTTPConnection._callback = computer.getServerResponse()
 
-    self.sequence = []
-    self.timestamp = str(int(time.time()))
-    self.started = False
-    httplib.HTTPConnection._callback = \
-        self._server_response('stopped', self.timestamp)
-    partition_path = self._create_instance()
-    software_hash = self._bootstrap()
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
@@ -681,30 +681,21 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     self.assertSortedListEqual(
         os.listdir(partition), ['.timestamp','worked', 'buildout.cfg'])
     self.assertSortedListEqual(
-        os.listdir(self.software_root), [software_hash])
+        os.listdir(self.software_root), [instance.software.software_hash])
 
-    self.setSlapgrid(develop=True)
-    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertTrue(self.launchSlapgrid(develop=True))
+    self.assertTrue(self.launchSlapgrid())
 
-    self.setSlapgrid()
-    self.assertTrue(self.grid.processComputerPartitionList())
-
-    self.assertEqual(self.sequence,
-                     ['getFullComputerInformation', 'availableComputerPartition',
-                      'stoppedComputerPartition', 'getFullComputerInformation',
-                      'availableComputerPartition','stoppedComputerPartition',
-                      'getFullComputerInformation'])
+    self.assertEqual(instance.sequence,
+                     ['availableComputerPartition', 'stoppedComputerPartition',
+                      'availableComputerPartition','stoppedComputerPartition'])
 
   def test_partition_old_timestamp(self):
-
-    self.sequence = []
-    self.timestamp = str(int(time.time()))
-    self.started = False
-    httplib.HTTPConnection._callback = \
-        self._server_response('stopped', self.timestamp)
-
-    partition_path = self._create_instance()
-    software_hash = self._bootstrap()
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    timestamp = str(int(time.time()))
+    instance.timestamp = timestamp
+    httplib.HTTPConnection._callback = computer.getServerResponse()
 
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
@@ -713,70 +704,55 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     self.assertSortedListEqual(os.listdir(partition),
                                ['.timestamp','worked', 'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
-      [software_hash])
-
-    self.setSlapgrid()
-    httplib.HTTPConnection._callback = \
-        self._server_response('stopped', str(int(self.timestamp)-1))
-    self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertEqual(self.sequence,
-                     ['getFullComputerInformation', 'availableComputerPartition',
-                      'stoppedComputerPartition', 'getFullComputerInformation'])
-
+      [instance.software.software_hash])
+    instance.timestamp = str(int(timestamp) - 1)
+    self.assertTrue(self.launchSlapgrid())
+    self.assertEqual(instance.sequence,
+                     ['availableComputerPartition', 'stoppedComputerPartition'])
 
 
   def test_partition_timestamp_new_timestamp(self):
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    timestamp = str(int(time.time()))
+    instance.timestamp = timestamp
+    httplib.HTTPConnection._callback = computer.getServerResponse()
 
-    self.sequence = []
-    self.timestamp = str(int(time.time()))
-    self.started = False
-    httplib.HTTPConnection._callback = self._server_response(
-                                                        'stopped',
-                                                        self.timestamp)
-    partition_path = self._create_instance()
-    software_hash = self._bootstrap()
-    self.assertTrue(self.grid.processComputerPartitionList())
+    self.assertTrue(self.launchSlapgrid())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertSortedListEqual(os.listdir(partition),
                                ['.timestamp','worked', 'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
-      [software_hash])
-    httplib.HTTPConnection._callback = \
-        self._server_response('stopped',str(int(self.timestamp)+1))
-    self.setSlapgrid()
-    self.assertTrue(self.grid.processComputerPartitionList())
-    self.setSlapgrid()
-    self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertEqual(self.sequence,
+      [instance.software.software_hash])
+    instance.timestamp = str(int(timestamp)+1)
+    self.assertTrue(self.launchSlapgrid())
+    self.assertTrue(self.launchSlapgrid())
+    self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition', 'getFullComputerInformation',
                       'availableComputerPartition','stoppedComputerPartition',
                       'getFullComputerInformation'])
 
   def test_partition_timestamp_no_timestamp(self):
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    timestamp = str(int(time.time()))
+    instance.timestamp = timestamp
+    httplib.HTTPConnection._callback = computer.getServerResponse()
 
-    self.sequence = []
-    self.timestamp = str(int(time.time()))
-    self.started = False
-    httplib.HTTPConnection._callback = \
-        self._server_response('stopped',self.timestamp)
-    partition_path = self._create_instance()
-    software_hash = self._bootstrap()
-
-    self.assertTrue(self.grid.processComputerPartitionList())
+    self.launchSlapgrid()
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
     partition = os.path.join(self.instance_root, '0')
     self.assertSortedListEqual(os.listdir(partition),
                                ['.timestamp','worked', 'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
-      [software_hash])
-    httplib.HTTPConnection._callback = self._server_response('stopped')
-    self.setSlapgrid()
-    self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertEqual(self.sequence,
+      [instance.software.software_hash])
+    instance.timestamp = None
+    self.launchSlapgrid()
+    self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition', 'getFullComputerInformation',
                       'availableComputerPartition','stoppedComputerPartition',])
@@ -792,26 +768,25 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     3. We process partition list and wait more than unwanted periodicity
     4. We relaunch, partition should not be processed
     """
-    self.sequence = []
-    self.timestamp = str(int(time.time()))
-    self.started = False
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    timestamp = str(int(time.time()))
 
+    instance.timestamp = timestamp
     unwanted_periodicity = 2
+    instance.software.setPeriodicity(unwanted_periodicity)
     self.grid.force_periodicity = True
 
-    httplib.HTTPConnection._callback = \
-        self._server_response('stopped',self.timestamp)
-    partition_path = self._create_instance()
-    software_hash = self._bootstrap(periodicity = unwanted_periodicity)
+    httplib.HTTPConnection._callback = computer.getServerResponse()
 
-    self.assertTrue(self.grid.processComputerPartitionList())
+    self.launchSlapgrid()
     time.sleep(unwanted_periodicity + 1)
 
     self.setSlapgrid()
     self.grid.force_periodicity = True
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertNotEqual(unwanted_periodicity,self.grid.maximum_periodicity)
-    self.assertEqual(self.sequence,
+    self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition', 'getFullComputerInformation'])
 
@@ -829,27 +804,29 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
         processed one more time
     5. We check that modification time of .timestamp was modified
     """
-    self.sequence = []
-    self.timestamp = str(int(time.time()-5))
-    self.started = False
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    timestamp = str(int(time.time()-5))
+
+    instance.timestamp = timestamp
     wanted_periodicity = 3
-    httplib.HTTPConnection._callback = \
-        self._server_response('stopped', self.timestamp)
-    partition_path = self._create_instance()
-    software_hash = self._bootstrap(periodicity=wanted_periodicity)
-    self.assertTrue(self.grid.processComputerPartitionList())
+    instance.software.setPeriodicity(wanted_periodicity)
+
+    httplib.HTTPConnection._callback = computer.getServerResponse()
+
+    self.launchSlapgrid()
     self.assertNotEqual(wanted_periodicity,self.grid.maximum_periodicity)
-    self.setSlapgrid()
-    last_runtime = os.path.getmtime(os.path.join(partition_path,'.timestamp'))
+    last_runtime = os.path.getmtime(
+      os.path.join(instance.partition_path, '.timestamp'))
     time.sleep(wanted_periodicity + 1)
-    self.assertTrue(self.grid.processComputerPartitionList())
-    self.assertEqual(self.sequence,
+    self.launchSlapgrid()
+    self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'stoppedComputerPartition', 'getFullComputerInformation',
-                      'availableComputerPartition','stoppedComputerPartition',
+                      'availableComputerPartition', 'stoppedComputerPartition',
                       ])
     self.assertGreater(
-      os.path.getmtime(os.path.join(partition_path,'.timestamp')),
+      os.path.getmtime(os.path.join(instance.partition_path,'.timestamp')),
       last_runtime)
     self.assertNotEqual(wanted_periodicity,self.grid.maximum_periodicity)
 
