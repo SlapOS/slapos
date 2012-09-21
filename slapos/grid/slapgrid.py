@@ -68,6 +68,7 @@ MANDATORY_PARAMETER_LIST = [
     'software_root',
 ]
 
+COMPUTER_PARTITION_DESTROYED_STATE = 'destroyed'
 
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Parses arguments either from command line, from method parameters or from
@@ -618,7 +619,6 @@ class Slapgrid(object):
     logger = logging.getLogger('ComputerPartitionProcessing')
 
     computer_partition_id = computer_partition.getId()
-    software_url = computer_partition.getSoftwareRelease().getURI()
 
     logger.info('Processing Computer Partition %s...' % computer_partition_id)
 
@@ -626,8 +626,6 @@ class Slapgrid(object):
     # Those values should not be None or empty string or any falsy value
     if not computer_partition_id:
       raise ValueError('Computer Partition id is empty.')
-    if not software_url:
-      raise ValueError('Software Release URL of Computer Partition is empty.')
 
     # Check if we defined explicit list of partitions to process.
     # If so, if current partition not in this list, skip.
@@ -645,19 +643,31 @@ class Slapgrid(object):
     else:
       timestamp = None
 
-    software_path = os.path.join(self.software_root,
+    try:
+      software_url = computer_partition.getSoftwareRelease().getURI()
+    except NotFoundError:
+      # Problem with instance: SR URI not set.
+      # Try to process it anyway, it may need to be deleted.
+      software_url = None
+    try:
+      software_path = os.path.join(self.software_root,
           getSoftwareUrlHash(software_url))
+    except TypeError:
+      # Problem with instance: SR URI not set.
+      # Try to process it anyway, it may need to be deleted.
+      software_path = None
 
-    # Get periodicity from periodicity file if not forced
-    if not self.force_periodicity:
-      periodicity_path = os.path.join(software_path,'periodicity')
-      if os.path.exists(periodicity_path):
-        try:
-          self.maximum_periodicity = int(open(periodicity_path).read())
-        except ValueError:
-          os.remove(periodicity_path)
-          exception = traceback.format_exc()
-          logger.error(exception)
+    if software_path:
+      # Get periodicity from periodicity file if not forced
+      if not self.force_periodicity:
+        periodicity_path = os.path.join(software_path,'periodicity')
+        if os.path.exists(periodicity_path):
+          try:
+            self.maximum_periodicity = int(open(periodicity_path).read())
+          except ValueError:
+            os.remove(periodicity_path)
+            exception = traceback.format_exc()
+            logger.error(exception)
 
     # Check if timestamp from server is more recent than local one.
     # If not: it's not worth processing this partition (nothing has
@@ -676,9 +686,6 @@ class Slapgrid(object):
           os.remove(timestamp_path)
           exception = traceback.format_exc()
           logger.error(exception)
-
-      software_path = os.path.join(self.software_root,
-          getSoftwareUrlHash(software_url))
 
     local_partition = Partition(
       software_path=software_path,
@@ -707,7 +714,7 @@ class Slapgrid(object):
       computer_partition.available()
       local_partition.stop()
       computer_partition.stopped()
-    elif computer_partition_state == "destroyed":
+    elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
       local_partition.stop()
       try:
         computer_partition.stopped()
@@ -744,14 +751,19 @@ class Slapgrid(object):
       # even if something is terribly wrong while processing an instance, it
       # won't prevent processing other ones.
       try:
-        # If id or URL is not defined, then it is an empty partition.
-        try:
-          computer_partition.getId()
-          computer_partition.getSoftwareRelease().getURI()
-          # XXX should test status as well. But getState() returns default
-          # value.
-        except NotFoundError:
-          # No Software Release information: skip.
+        computer_partition_path = os.path.join(self.instance_root,
+            computer_partition.getId())
+        if not os.path.exists(computer_partition_path):
+          raise NotFoundError('Partition directory %s does not exist.' %
+              computer_partition_path)
+        # Check state of partition. If it is in "destroyed" state, check if it
+        # partition is actually installed in the Computer or if it is "free"
+        # partition
+        # XXX-Cedric: Temporary AND ugly solution to check if an instance
+        # is in the partition. Dangerous because not 100% sure it is empty
+        computer_partition_state = computer_partition.getState()
+        if computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE and \
+           os.listdir(computer_partition_path) == []:
           continue
 
         # Process the partition itself
@@ -1040,7 +1052,7 @@ class Slapgrid(object):
         report_usage_issue_cp_list.append(computer_partition_id)
 
     for computer_partition in computer_partition_list:
-      if computer_partition.getState() == "destroyed":
+      if computer_partition.getState() == COMPUTER_PARTITION_DESTROYED_STATE:
         try:
           computer_partition_id = computer_partition.getId()
           software_url = computer_partition.getSoftwareRelease().getURI()
