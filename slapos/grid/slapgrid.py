@@ -659,11 +659,12 @@ class Slapgrid(object):
 
     if software_path:
       # Get periodicity from periodicity file if not forced
+      periodicity = self.maximum_periodicity
       if not self.force_periodicity:
         periodicity_path = os.path.join(software_path,'periodicity')
         if os.path.exists(periodicity_path):
           try:
-            self.maximum_periodicity = int(open(periodicity_path).read())
+            periodicity = int(open(periodicity_path).read())
           except ValueError:
             os.remove(periodicity_path)
             exception = traceback.format_exc()
@@ -680,7 +681,7 @@ class Slapgrid(object):
         try:
           if int(timestamp) <= int(old_timestamp):
             if int(time.time()) <= (
-                last_runtime + self.maximum_periodicity) :
+                last_runtime + periodicity) :
               return
         except ValueError:
           os.remove(timestamp_path)
