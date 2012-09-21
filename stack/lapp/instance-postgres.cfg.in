@@ -43,7 +43,7 @@ recipe = slapos.cookbook:postgres
 
 # Options
 ipv6_host = $${instance-parameters:ipv6}
-user = user
+user = postgres
 port = 5432
 dbname = db
 # pgdata_directory is created by initdb, and should not exist beforehand.
