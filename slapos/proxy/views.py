@@ -127,21 +127,8 @@ def after_request(response):
 
 @app.route('/getComputerInformation', methods=['GET'])
 def getComputerInformation():
-  computer_id = request.args['computer_id']
-  if app.config['computer_id'] == computer_id:
-    slap_computer = Computer(computer_id)
-    slap_computer._software_release_list = []
-    for sr in execute_db('software', 'select * from %s'):
-      slap_computer._software_release_list.append(SoftwareRelease(
-        software_release=sr['url'], computer_guid=computer_id))
-    slap_computer._computer_partition_list = []
-    for partition in execute_db('partition', 'SELECT * FROM %s'):
-      slap_computer._computer_partition_list.append(partitiondict2partition(
-        partition))
-    return xml_marshaller.xml_marshaller.dumps(slap_computer)
-  else:
-    raise UnauthorizedError, "Only accept request for: %s" % \
-                             app.config['computer_id']
+  # Kept only for backward compatiblity
+  return getFullComputerInformation()
 
 @app.route('/getFullComputerInformation', methods=['GET'])
 def getFullComputerInformation():
