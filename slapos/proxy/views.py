@@ -31,7 +31,7 @@ from flask import g, Flask, request, abort
 import xml_marshaller
 from lxml import etree
 from slapos.slap.slap import Computer, ComputerPartition, \
-    SoftwareRelease, SoftwareInstance
+    SoftwareRelease, SoftwareInstance, NotFoundError
 import sqlite3
 
 app = Flask(__name__)
@@ -72,27 +72,30 @@ def dict2xml(dictionnary):
 def partitiondict2partition(partition):
   slap_partition = ComputerPartition(app.config['computer_id'],
       partition['reference'])
-  slap_partition._requested_state = 'started'
+  slap_partition._software_release_document = None
+  slap_partition._requested_state = 'destroyed'
+  slap_partition._need_modification = 0
+
   if partition['software_release']:
     slap_partition._need_modification = 1
-  else:
-    slap_partition._need_modification = 0
-  slap_partition._parameter_dict = xml2dict(partition['xml'])
-  address_list = []
-  for address in execute_db('partition_network',
-                            'SELECT * FROM %s WHERE partition_reference=?',
-                            [partition['reference']]):
-    address_list.append((address['reference'], address['address']))
-  if not partition['slave_instance_list'] == None:
-    slap_partition._parameter_dict['slave_instance_list'] = \
-        xml_marshaller.xml_marshaller.loads(partition['slave_instance_list'])
-  slap_partition._parameter_dict['ip_list'] = address_list
-  slap_partition._parameter_dict['slap_software_type'] = \
-      partition['software_type']
-  slap_partition._connection_dict = xml2dict(partition['connection_xml'])
-  slap_partition._software_release_document = SoftwareRelease(
+    slap_partition._requested_state = 'started'
+    slap_partition._parameter_dict = xml2dict(partition['xml'])
+    address_list = []
+    for address in execute_db('partition_network',
+                              'SELECT * FROM %s WHERE partition_reference=?',
+                              [partition['reference']]):
+      address_list.append((address['reference'], address['address']))
+    slap_partition._parameter_dict['ip_list'] = address_list
+    slap_partition._parameter_dict['slap_software_type'] = \
+        partition['software_type']
+    if not partition['slave_instance_list'] == None:
+      slap_partition._parameter_dict['slave_instance_list'] = \
+          xml_marshaller.xml_marshaller.loads(partition['slave_instance_list'])
+    slap_partition._connection_dict = xml2dict(partition['connection_xml'])
+    slap_partition._software_release_document = SoftwareRelease(
       software_release=partition['software_release'],
       computer_guid=app.config['computer_id'])
+
   return slap_partition
 
 

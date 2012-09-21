@@ -96,6 +96,27 @@ database_uri = %(tempdir)s/lib/proxy.db
     views.app.config['port'] = config.port
     self.app = views.app.test_client()
 
+  def add_free_partition (self, partition_amount):
+    """
+    Will simulate a slapformat first run
+    and create "partition_amount" partitions
+    """
+    computer_dict = {'reference':self.computer_id,
+                     'address':'123.456.789',
+                     'netmask':'fffffffff',
+                     'partition_list':[]}
+    for i in range(0, partition_amount):
+      partition_example = {'reference':'slappart%s' %i,
+                           'address_list':[]}
+      computer_dict['partition_list'].append(partition_example)
+
+    request_dict = { 'computer_id': self.computer_id,
+                     'xml': xml_marshaller.xml_marshaller.dumps(computer_dict),
+                     }
+    self.app.post('/loadComputerConfigurationFromXML',
+                       data = request_dict)
+
+
   def tearDown(self):
     """
     Remove files generated for test
@@ -137,35 +158,29 @@ class TestInformation(BasicMixin, unittest.TestCase):
     Test that computer information won't be given to a requester different
     from the one specified
     """
-    with self.assertRaises(views.UnauthorizedError):
+    with self.assertRaises(slapos.slap.NotFoundError):
       self.app.get('/getComputerInformation?computer_id='
                       + self.computer_id + '42')
+
+  def test_partition_are_empty (self):
+    """
+    Test that empty partition are empty :)
+    """
+    self.add_free_partition(10)
+    rv = self.app.get('/getFullComputerInformation?computer_id='
+                      + self.computer_id)
+    computer = xml_marshaller.xml_marshaller.loads(rv.data)
+    for slap_partition in computer._computer_partition_list:
+        self.assertIsNone(slap_partition._software_release_document)
+        self.assertEqual(slap_partition._requested_state, 'destroyed')
+        self.assertEqual(slap_partition._need_modification, 0)
+
 
 
 class MasterMixin(BasicMixin):
   """
   Define advanced tool for test proxy simulating behavior slap library tools
   """
-
-  def add_free_partition (self, partition_amount):
-    """
-    Will simulate a slapformat first run
-    and create "partition_amount" partitions
-    """
-    computer_dict = {'reference':self.computer_id,
-                     'address':'123.456.789',
-                     'netmask':'fffffffff',
-                     'partition_list':[]}
-    for i in range(0, partition_amount):
-      partition_example = {'reference':'slappart%s' %i,
-                           'address_list':[]}
-      computer_dict['partition_list'].append(partition_example)
-
-    request_dict = { 'computer_id': self.computer_id,
-                     'xml': xml_marshaller.xml_marshaller.dumps(computer_dict),
-                     }
-    self.app.post('/loadComputerConfigurationFromXML',
-                       data = request_dict)
 
   def request(self, software_release, software_type, partition_reference,
               partition_id,
@@ -239,7 +254,6 @@ class TestRequest (MasterMixin, unittest.TestCase):
   """
   Set of tests for requests
   """
-
   def test_two_request_one_partition_free (self):
     """
     If only one partition is available and two different request are made
