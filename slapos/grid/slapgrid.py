@@ -554,6 +554,7 @@ class Slapgrid(object):
     logger.info("Finished software releases...")
     return clean_run
 
+
   def _launchSupervisord(self):
     launchSupervisord(self.supervisord_socket,
         self.supervisord_configuration_path)
@@ -610,6 +611,123 @@ class Slapgrid(object):
     if not promise_present:
       self.logger.info("No promise.")
 
+  def processComputerPartition(self, computer_partition):
+    """
+    Process a Computer Partition, depending on its state
+    """
+    logger = logging.getLogger('ComputerPartitionProcessing')
+
+    computer_partition_id = computer_partition.getId()
+    software_url = computer_partition.getSoftwareRelease().getURI()
+
+    logger.info('Processing Computer Partition %s...' % computer_partition_id)
+
+    # Sanity checks before processing
+    # Those values should not be None or empty string or any falsy value
+    if not computer_partition_id:
+      raise ValueError('Computer Partition id is empty.')
+    if not software_url:
+      raise ValueError('Software Release URL of Computer Partition is empty.')
+
+    # Check if we defined explicit list of partitions to process.
+    # If so, if current partition not in this list, skip.
+    if len(self.computer_partition_filter_list) > 0 and \
+         (computer_partition_id not in self.computer_partition_filter_list):
+      return
+
+    instance_path = os.path.join(self.instance_root, computer_partition_id)
+
+    # Try to get partition timestamp (last modification date)
+    timestamp_path = os.path.join(instance_path, '.timestamp')
+    parameter_dict = computer_partition.getInstanceParameterDict()
+    if 'timestamp' in parameter_dict:
+      timestamp = parameter_dict['timestamp']
+    else:
+      timestamp = None
+
+    software_path = os.path.join(self.software_root,
+          getSoftwareUrlHash(software_url))
+
+    # Get periodicity from periodicity file if not forced
+    if not self.force_periodicity:
+      periodicity_path = os.path.join(software_path,'periodicity')
+      if os.path.exists(periodicity_path):
+        try:
+          self.maximum_periodicity = int(open(periodicity_path).read())
+        except ValueError:
+          os.remove(periodicity_path)
+          exception = traceback.format_exc()
+          logger.error(exception)
+
+    # Check if timestamp from server is more recent than local one.
+    # If not: it's not worth processing this partition (nothing has
+    # changed).
+    if computer_partition_id not in self.computer_partition_filter_list and \
+        (not self.develop) and os.path.exists(timestamp_path):
+      old_timestamp = open(timestamp_path).read()
+      last_runtime = int(os.path.getmtime(timestamp_path))
+      if timestamp:
+        try:
+          if int(timestamp) <= int(old_timestamp):
+            if int(time.time()) <= (
+                last_runtime + self.maximum_periodicity) :
+              return
+        except ValueError:
+          os.remove(timestamp_path)
+          exception = traceback.format_exc()
+          logger.error(exception)
+
+      software_path = os.path.join(self.software_root,
+          getSoftwareUrlHash(software_url))
+
+    local_partition = Partition(
+      software_path=software_path,
+      instance_path=instance_path,
+      supervisord_partition_configuration_path=os.path.join(
+        self.supervisord_configuration_directory, '%s.conf' %
+        computer_partition_id),
+      supervisord_socket=self.supervisord_socket,
+      computer_partition=computer_partition,
+      computer_id=self.computer_id,
+      partition_id=computer_partition_id,
+      server_url=self.master_url,
+      software_release_url=software_url,
+      certificate_repository_path=self.certificate_repository_path,
+      console=self.console, buildout=self.buildout)
+
+    computer_partition_state = computer_partition.getState()
+    if computer_partition_state == "started":
+      local_partition.install()
+      computer_partition.available()
+      local_partition.start()
+      self._checkPromises(computer_partition)
+      computer_partition.started()
+    elif computer_partition_state == "stopped":
+      local_partition.install()
+      computer_partition.available()
+      local_partition.stop()
+      computer_partition.stopped()
+    elif computer_partition_state == "destroyed":
+      local_partition.stop()
+      try:
+        computer_partition.stopped()
+      except (SystemExit, KeyboardInterrupt):
+        exception = traceback.format_exc()
+        computer_partition.error(exception)
+        raise
+      except Exception:
+        pass
+    else:
+      error_string = "Computer Partition %r has unsupported state: %s" % \
+        (computer_partition_id, computer_partition_state)
+      computer_partition.error(error_string)
+      raise NotImplementedError(error_string)
+
+    # If partition has been successfully processed, write timestamp
+    if timestamp:
+      timestamp_path = os.path.join(instance_path, '.timestamp')
+      open(timestamp_path, 'w').write(timestamp)
+
   def processComputerPartitionList(self):
     """
     Will start supervisord and process each Computer Partition.
@@ -637,115 +755,7 @@ class Slapgrid(object):
           continue
 
         # Process the partition itself
-        computer_partition_id = computer_partition.getId()
-        software_url = computer_partition.getSoftwareRelease().getURI()
-
-        logger.info('Processing Computer Partition %s...' % computer_partition_id)
-
-        # Sanity checks before processing
-        # Those values should not be None or empty string or any falsy value
-        if not computer_partition_id:
-          raise ValueError('Computer Partition id is empty.')
-        if not software_url:
-          raise ValueError('Software Release URL of Computer Partition is empty.')
-
-        # Check if we defined explicit list of partitions to process.
-        # If so, if current partition not in this list, skip.
-        if len(self.computer_partition_filter_list) > 0 and \
-             (computer_partition_id not in self.computer_partition_filter_list):
-          continue
-
-        instance_path = os.path.join(self.instance_root, computer_partition_id)
-
-        # Try to get partition timestamp (last modification date)
-        timestamp_path = os.path.join(instance_path, '.timestamp')
-        parameter_dict = computer_partition.getInstanceParameterDict()
-        if 'timestamp' in parameter_dict:
-          timestamp = parameter_dict['timestamp']
-        else:
-          timestamp = None
-
-        software_path = os.path.join(self.software_root,
-              getSoftwareUrlHash(software_url))
-
-        # Get periodicity from periodicity file if not forced
-        if not self.force_periodicity:
-          periodicity_path = os.path.join(software_path,'periodicity')
-          if os.path.exists(periodicity_path):
-            try:
-              self.maximum_periodicity = int(open(periodicity_path).read())
-            except ValueError:
-              os.remove(periodicity_path)
-              exception = traceback.format_exc()
-              logger.error(exception)
-
-        # Check if timestamp from server is more recent than local one.
-        # If not: it's not worth processing this partition (nothing has
-        # changed).
-        if computer_partition_id not in self.computer_partition_filter_list and \
-            (not self.develop) and os.path.exists(timestamp_path):
-          old_timestamp = open(timestamp_path).read()
-          last_runtime = int(os.path.getmtime(timestamp_path))
-          if timestamp:
-            try:
-              if int(timestamp) <= int(old_timestamp):
-                if int(time.time()) <= (
-                    last_runtime + self.maximum_periodicity) :
-                  continue
-            except ValueError:
-              os.remove(timestamp_path)
-              exception = traceback.format_exc()
-              logger.error(exception)
-
-          software_path = os.path.join(self.software_root,
-              getSoftwareUrlHash(software_url))
-        local_partition = Partition(
-          software_path=software_path,
-          instance_path=instance_path,
-          supervisord_partition_configuration_path=os.path.join(
-            self.supervisord_configuration_directory, '%s.conf' %
-            computer_partition_id),
-          supervisord_socket=self.supervisord_socket,
-          computer_partition=computer_partition,
-          computer_id=self.computer_id,
-          partition_id=computer_partition_id,
-          server_url=self.master_url,
-          software_release_url=software_url,
-          certificate_repository_path=self.certificate_repository_path,
-          console=self.console, buildout=self.buildout)
-
-        computer_partition_state = computer_partition.getState()
-        if computer_partition_state == "started":
-          local_partition.install()
-          computer_partition.available()
-          local_partition.start()
-          self._checkPromises(computer_partition)
-          computer_partition.started()
-        elif computer_partition_state == "stopped":
-          local_partition.install()
-          computer_partition.available()
-          local_partition.stop()
-          computer_partition.stopped()
-        elif computer_partition_state == "destroyed":
-          local_partition.stop()
-          try:
-            computer_partition.stopped()
-          except (SystemExit, KeyboardInterrupt):
-            exception = traceback.format_exc()
-            computer_partition.error(exception)
-            raise
-          except Exception:
-            pass
-        else:
-          error_string = "Computer Partition %r has unsupported state: %s" % \
-            (computer_partition_id, computer_partition_state)
-          computer_partition.error(error_string)
-          raise NotImplementedError(error_string)
-        # If partition has been successfully processed, write timestamp
-        if timestamp:
-          timestamp_path = os.path.join(instance_path, '.timestamp')
-          open(timestamp_path, 'w').write(timestamp)
-
+        self.processComputerPartition(computer_partition)
 
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
