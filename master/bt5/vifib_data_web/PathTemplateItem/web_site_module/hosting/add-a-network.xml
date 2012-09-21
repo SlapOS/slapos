@@ -72,28 +72,22 @@
             </value>
         </item>
         <item>
-            <key> <string>authorization_forced</string> </key>
-            <value> <int>1</int> </value>
+            <key> <string>container_layout</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>custom_render_method_id</string> </key>
-            <value> <string>WebSection_viewMonitoring</string> </value>
-        </item>
-        <item>
-            <key> <string>default_page_displayed</string> </key>
-            <value> <int>0</int> </value>
+            <value> <string>WebSection_viewNetworkInformationDialog</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>This page shows the status of your servers and instances</string> </value>
+            <value> <string>Please enter the new network name</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>monitoring</string> </value>
-        </item>
-        <item>
-            <key> <string>int_index</string> </key>
-            <value> <int>7</int> </value>
+            <value> <string>add-a-network</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -107,11 +101,11 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring</string> </value>
+            <value> <string>Add a network</string> </value>
         </item>
         <item>
             <key> <string>visible</string> </key>
-            <value> <int>1</int> </value>
+            <value> <int>0</int> </value>
         </item>
       </dictionary>
     </pickle>

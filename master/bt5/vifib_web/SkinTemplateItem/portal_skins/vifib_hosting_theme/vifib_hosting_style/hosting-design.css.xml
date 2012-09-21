@@ -115,6 +115,11 @@ background:url(<tal:block tal:replace="img_folder"/>monitoring_active.png) no-re
 padding-left:100px;\n
 }\n
 \n
+.my_networks h1 {\n
+background:url(<tal:block tal:replace="img_folder"/>my_networks_active.png) no-repeat scroll left center transparent;\n
+padding-left:100px;\n
+}\n
+\n
 #shopping_cart_renderer .listbox tr:nth-child(2n) {\n
 background:none repeat scroll 0 0 #FFFFFF;\n
 }\n

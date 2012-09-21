@@ -72,28 +72,26 @@
             </value>
         </item>
         <item>
-            <key> <string>authorization_forced</string> </key>
-            <value> <int>1</int> </value>
+            <key> <string>content_layout</string> </key>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>custom_render_method_id</string> </key>
-            <value> <string>WebSection_viewMonitoring</string> </value>
-        </item>
-        <item>
-            <key> <string>default_page_displayed</string> </key>
-            <value> <int>0</int> </value>
+            <value> <string>WebSection_viewMyNetworksRender</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>This page shows the status of your servers and instances</string> </value>
+            <value> <string>This page is dedicated to administration of your networks.</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>monitoring</string> </value>
+            <value> <string>my_networks</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
-            <value> <int>7</int> </value>
+            <value> <int>5</int> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -107,7 +105,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Monitoring</string> </value>
+            <value> <string>My Networks</string> </value>
         </item>
         <item>
             <key> <string>visible</string> </key>
@@ -118,7 +116,10 @@
   </record>
   <record id="2" aka="AAAAAAAAAAI=">
     <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
     </pickle>
     <pickle>
       <dictionary>
@@ -133,7 +134,10 @@
   </record>
   <record id="3" aka="AAAAAAAAAAM=">
     <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
     </pickle>
     <pickle>
       <dictionary>

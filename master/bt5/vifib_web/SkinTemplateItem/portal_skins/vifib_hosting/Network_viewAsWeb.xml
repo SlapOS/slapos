@@ -35,7 +35,7 @@
         </item>
         <item>
             <key> <string>action</string> </key>
-            <value> <string>Base_edit</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -86,7 +86,9 @@
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>listbox_monitoring_status</string>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -95,18 +97,9 @@
                       <list>
                         <string>my_title</string>
                         <string>my_reference</string>
-                        <string>my_group</string>
-                        <string>my_cpu_core</string>
-                        <string>my_cpu_frequency</string>
-                        <string>my_cpu_type</string>
-                        <string>my_local_area_network_type</string>
-                        <string>my_memory_size</string>
-                        <string>my_memory_type</string>
-                        <string>my_storage_capacity</string>
-                        <string>my_storage_interface</string>
-                        <string>my_storage_redundancy</string>
-                        <string>my_subordination</string>
-                        <string>your_back_link</string>
+                        <string>last_event_listbox</string>
+                        <string>listbox</string>
+                        <string>your_monitoring_status</string>
                       </list>
                     </value>
                 </item>
@@ -121,7 +114,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_viewCategoryAsWeb</string> </value>
+            <value> <string>Network_viewAsWeb</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -129,11 +122,11 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>Computer_viewCategoryAsWeb</string> </value>
+            <value> <string>Network_viewAsWeb</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
-            <value> <string>form_dialog</string> </value>
+            <value> <string>form_view</string> </value>
         </item>
         <item>
             <key> <string>row_length</string> </key>
@@ -145,7 +138,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Update</string> </value>
+            <value> <string>Network</string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>
