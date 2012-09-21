@@ -25,6 +25,7 @@
 #
 ##############################################################################
 
+import md5
 import os
 import sys
 import subprocess
@@ -74,6 +75,7 @@ class Recipe(GenericBaseRecipe):
         pgdata = self.options['pgdata-directory']
 
         with open(os.path.join(pgdata, 'postgresql.conf'), 'wb') as cfg:
+            # XXX TODO listen_addresses
             cfg.write(textwrap.dedent("""\
                     logging_collector = on
                     log_rotation_size = 50MB
@@ -118,7 +120,17 @@ class Recipe(GenericBaseRecipe):
                                   '-D', pgdata,
                                   'postgres',
                                   ], stdin=subprocess.PIPE)
-            p.communicate('CREATE DATABASE %s\n' % self.options['dbname'])
+            password = 'insecure'
+            enc_password = md5.md5(password).hexdigest()
+
+            # to execute multiple commands, all newlines (but the last) must be preceded by backslash.
+            # see http://www.postgresql.org/docs/9.1/static/app-postgres.html
+
+            sql = '\n'.join([
+                    'CREATE DATABASE %s\\\n' % self.options['dbname'],
+                    "CREATE USER '%s' PASSWORD '%s' SUPERUSER'\n" % (self.options['user'], enc_password),
+                ])
+            p.communicate(sql)
         except subprocess.CalledProcessError:
             raise UserError('Could not create database %s' % pgdata)
 
