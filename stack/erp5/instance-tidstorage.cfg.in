@@ -485,7 +485,6 @@ recipe = slapos.cookbook:publish
 [tidstorage]
 recipe = slapos.cookbook:tidstorage
 known-tid-storage-identifier-dict = {{ known_tid_storage_identifier_dict }}
-base-url = http://${zope-admin:ip}:${zope-admin:port}/%s/serialize
 configuration-path = ${directory:etc}/tidstorage.py
 ip = {{ ipv4 }}
 port = 6001

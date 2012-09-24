@@ -197,7 +197,6 @@ memcached = {{ template_memcached }}
 cloudooo = ${dynamic-template-cloudooo:rendered}
 zope = ${dynamic-template-zope:rendered}
 mariadb = {{ template_mariadb }}
-sphinx = {{ template_sphinx }}
 tidstorage = ${dynamic-template-tidstorage:rendered}
 varnish = ${dynamic-template-varnish:rendered}
 
