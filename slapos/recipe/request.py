@@ -28,6 +28,7 @@ import logging
 
 from slapos import slap as slapmodule
 
+DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
 class Recipe(object):
   """
@@ -109,7 +110,7 @@ class Recipe(object):
       self.logger.debug("No parameter to return to main instance."
         "Be careful about that...")
 
-    software_type = options.get('software-type', 'RootInstanceSoftware')
+    software_type = options.get('software-type', DEFAULT_SOFTWARE_TYPE)
 
     filter_kw = {}
     if 'sla' in options:
