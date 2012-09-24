@@ -56,17 +56,23 @@ class Recipe(GenericBaseRecipe):
                                     'zeo-filestorage-snippet.conf.in')
     # Prepare all filestorages
     filestorage_snippet = ""
-    for storage_definition in self.options['storage'].splitlines():
-      storage_definition = storage_definition.strip()
-      if not storage_definition:
-        continue
-      for q in storage_definition.split():
-        if 'storage-name' in q:
-          storage_name = q.split('=')[1].strip()
-        if 'zodb-path' in q:
-          zodb_path = q.split('=')[1].strip()
-      filestorage_snippet += self.substituteTemplate(
-          snippet_filename, dict(storage_name=storage_name, path=zodb_path))
+    storage = self.options['storage']
+    if isinstance(storage, basestring):
+      for storage_definition in storage.splitlines():
+        storage_definition = storage_definition.strip()
+        if not storage_definition:
+          continue
+        for q in storage_definition.split():
+          if 'storage-name' in q:
+            storage_name = q.split('=')[1].strip()
+          if 'zodb-path' in q:
+            zodb_path = q.split('=')[1].strip()
+        filestorage_snippet += self.substituteTemplate(
+            snippet_filename, dict(storage_name=storage_name, path=zodb_path))
+    else:
+      for storage_name, path in storage:
+        filestorage_snippet += self.substituteTemplate(snippet_filename,
+          {'storage_name': storage_name, 'path': path})
 
     config = dict(
       zeo_ip=self.options['ip'],
