@@ -153,3 +153,23 @@ class Recipe(object):
     return []
 
   update = install
+
+class RequestOptional(Recipe):
+  """
+  Request a SlapOS instance. Won't fail if instance is not ready.
+  Same as slapos.cookbook:request, but won't raise in case of problem.
+  """
+  def install(self):
+    if self.failed is not None:
+      # Check instance status to know if instance has been deployed
+      try:
+        status = self.instance.getState()
+      except (slapmodule.NotFoundError, slapmodule.ServerError):
+        status = 'not ready yet'
+      except AttributeError:
+        status = 'unknown'
+      error_message = 'Connection parameter %s not found. '\
+          'Requested instance is currently %s. If this error persists, '\
+          'check status of this instance.' % (self.failed, status)
+      self.logger.error(error_message)
+    return []
