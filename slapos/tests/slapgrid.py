@@ -238,6 +238,9 @@ class ComputerForTest:
         if parsed_url.path == 'stoppedComputerPartition':
           instance.state = 'stopped'
           return (200, {}, '')
+        if parsed_url.path == 'destroyedComputerPartition':
+          instance.state = 'destroyed'
+          return (200, {}, '')
         if parsed_url.path == 'softwareInstanceError':
           instance.error_log = '\n'.join([line for line \
                                    in parsed_qs['error_log'][0].splitlines()
@@ -728,6 +731,72 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     self.assertNotEqual(wanted_periodicity,self.grid.maximum_periodicity)
 
 
+  def test_one_partition_buildout_fail_does_not_disturb_others(self):
+    """
+    1. We set up two instance one using a corrupted buildout
+    2. One will fail but the other one will be processed correctly
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root,2,2)
+    instance0 = computer.instance_list[0]
+    instance1 = computer.instance_list[1]
+    instance1.software = computer.software_list[1]
+    instance0.software.setBuildout("""#!/bin/sh
+return 42""")
+    self.launchSlapgrid()
+    self.assertEqual(instance0.sequence,
+                     ['softwareInstanceError'])
+    self.assertEqual(instance1.sequence,
+                     ['availableComputerPartition', 'stoppedComputerPartition'])
+
+  def test_one_partition_lacking_software_path_does_not_disturb_others(self):
+    """
+    1. We set up two instance but remove software path of one
+    2. One will fail but the other one will be processed correctly
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root,2,2)
+    instance0 = computer.instance_list[0]
+    instance1 = computer.instance_list[1]
+    instance1.software = computer.software_list[1]
+    shutil.rmtree(instance0.software.srdir)
+    self.launchSlapgrid()
+    self.assertEqual(instance0.sequence,
+                     ['softwareInstanceError'])
+    self.assertEqual(instance1.sequence,
+                     ['availableComputerPartition', 'stoppedComputerPartition'])
+
+  def test_one_partition_lacking_software_bin_path_does_not_disturb_others(self):
+    """
+    1. We set up two instance but remove software bin path of one
+    2. One will fail but the other one will be processed correctly
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root,2,2)
+    instance0 = computer.instance_list[0]
+    instance1 = computer.instance_list[1]
+    instance1.software = computer.software_list[1]
+    shutil.rmtree(instance0.software.srbindir)
+    self.launchSlapgrid()
+    self.assertEqual(instance0.sequence,
+                     ['softwareInstanceError'])
+    self.assertEqual(instance1.sequence,
+                     ['availableComputerPartition', 'stoppedComputerPartition'])
+
+  def test_one_partition_lacking_path_does_not_disturb_others(self):
+    """
+    1. We set up two instance but remove path of one
+    2. One will fail but the other one will be processed correctly
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root,2,2)
+    instance0 = computer.instance_list[0]
+    instance1 = computer.instance_list[1]
+    instance1.software = computer.software_list[1]
+    shutil.rmtree(instance0.partition_path)
+    self.launchSlapgrid()
+    self.assertEqual(instance0.sequence,
+                     ['softwareInstanceError'])
+    self.assertEqual(instance1.sequence,
+                     ['availableComputerPartition', 'stoppedComputerPartition'])
+
+
 class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
   """
   Test suite about slapgrid-ur
@@ -788,7 +857,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                      ['getFullComputerInformation',
                       'stoppedComputerPartition',
                       'destroyedComputerPartition'])
-    self.assertEqual(instance.state,'stopped')
+    self.assertEqual(instance.state,'destroyed')
 
   def test_slapgrid_not_destroy_bad_instance(self):
     """
