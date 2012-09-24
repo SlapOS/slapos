@@ -171,5 +171,5 @@ class RequestOptional(Recipe):
       error_message = 'Connection parameter %s not found. '\
           'Requested instance is currently %s. If this error persists, '\
           'check status of this instance.' % (self.failed, status)
-      self.logger.error(error_message)
+      self.logger.warning(error_message)
     return []
