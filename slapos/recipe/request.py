@@ -101,10 +101,9 @@ class Recipe(object):
       options['computer-id'], options['partition-id']).request
 
     return_parameters = []
-    self.return_parameters = []
     if 'return' in options:
       return_parameters = [str(parameter).strip()
-        for parameter in options['return'].split()]
+                          for parameter in options['return'].split()]
     else:
       self.logger.debug("No parameter to return to main instance."
         "Be careful about that...")
@@ -121,10 +120,6 @@ class Recipe(object):
       for config_parameter in options['config'].split():
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
-    print 'from : %s \n' % options['partition-id']
-    print 'requested %s (%s), parameters : %s \n\n' % (options['name'],
-                                                       software_type,
-                                                       partition_parameter_kw)
 
     isSlave = options.get('slave', '').lower() in \
         librecipe.GenericBaseRecipe.TRUE_VALUES
