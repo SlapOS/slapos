@@ -27,6 +27,7 @@
 import logging
 
 from slapos import slap as slapmodule
+import slapos.recipe.librecipe.generic as librecipe
 
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
@@ -99,8 +100,6 @@ class Recipe(object):
     request = slap.registerComputerPartition(
       options['computer-id'], options['partition-id']).request
 
-    isSlave = options.get('slave', '').lower() in ['y', 'yes', 'true', '1']
-    print '\n Slave : %s \n' % self.isSlave
     return_parameters = []
     self.return_parameters = []
     if 'return' in options:
@@ -126,6 +125,9 @@ class Recipe(object):
     print 'requested %s (%s), parameters : %s \n\n' % (options['name'],
                                                        software_type,
                                                        partition_parameter_kw)
+
+    isSlave = options.get('slave', '').lower() in \
+        librecipe.GenericBaseRecipe.TRUE_VALUES
     self.instance = instance = request(software_url, software_type,
       name, partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=isSlave)
