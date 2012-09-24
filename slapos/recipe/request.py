@@ -134,14 +134,9 @@ class Recipe(object):
         options['connection-%s' % param] = str(
           instance.getConnectionParameter(param))
       except slapmodule.NotFoundError:
-        try:
-          self.instance._synced = False
-          options['connection-%s' % param] = str(
-              self.instance.getConnectionParameter(param))
-        except slapmodule.NotFoundError:
-          options['connection-%s' % param] = ''
-          if self.failed is None:
-            self.failed = param
+        options['connection-%s' % param] = ''
+        if self.failed is None:
+          self.failed = param
 
   def install(self):
     if self.failed is not None:
