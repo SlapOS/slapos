@@ -134,7 +134,7 @@ class Recipe(object):
       try:
         options['connection-%s' % param] = str(
           instance.getConnectionParameter(param))
-      except slapmodule.NotFoundError:
+      except (slapmodule.NotFoundError, slapmodule.ServerError):
         options['connection-%s' % param] = ''
         if self.failed is None:
           self.failed = param
@@ -144,7 +144,7 @@ class Recipe(object):
       # Check instance status to know if instance has been deployed
       try:
         status = self.instance.getState()
-      except slapmodule.NotFoundError:
+      except (slapmodule.NotFoundError, slapmodule.ServerError):
         status = 'not ready yet, please try again'
       except AttributeError:
         status = 'unknown'
