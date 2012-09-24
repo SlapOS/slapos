@@ -35,6 +35,7 @@ from zc.buildout import UserError
 from slapos.recipe.librecipe import GenericBaseRecipe
 from slapos.recipe.librecipe import filehash
 
+
 class Recipe(GenericBaseRecipe):
 
     def _options(self, options):
@@ -49,10 +50,12 @@ class Recipe(GenericBaseRecipe):
             self.createCluster()
             self.createConfig()
             self.createDatabase()
+            self.createSuperuser()
             self.createRunScript()
 
         return [
-                os.path.join(pgdata, 'postgresql.conf')
+                # XXX what to return here?
+                # os.path.join(pgdata, 'postgresql.conf')
                 ]
 
 
@@ -98,19 +101,33 @@ class Recipe(GenericBaseRecipe):
 
                     # "local" is for Unix domain socket connections only
                     local   all             all                                     ident
-                    # IPv4 local connections:
                     host    all             all             127.0.0.1/32            md5
-                    # IPv6 local connections:
                     host    all             all             ::1/128                 md5
-                    # Allow replication connections from localhost, by a user with the
-                    # replication privilege.
-                    #local   replication     slapuser4                                ident
-                    #host    replication     slapuser4        127.0.0.1/32            md5
-                    #host    replication     slapuser4        ::1/128                 md5
                     """))
 
 
     def createDatabase(self):
+        self.runPostgresCommand(cmd='CREATE DATABASE "%s"' % self.options['dbname'])
+
+
+    def createSuperuser(self):
+        """
+        Creates a Postgres superuser - other than "slapuser#" for use by the application.
+        """
+        password = 'insecure'
+        enc_password = md5.md5(password).hexdigest()
+        self.runPostgresCommand(cmd="""CREATE USER "%s" PASSWORD '%s' SUPERUSER""" % (self.options['user'], enc_password))
+
+
+    def runPostgresCommand(self, cmd):
+        """
+        Executes a command in single-user mode, with no daemon running.
+
+        Multiple commands can be executed by providing newlines,
+        preceeded by backslash, between them.
+        See http://www.postgresql.org/docs/9.1/static/app-postgres.html
+        """
+
         pgdata = self.options['pgdata-directory']
         postgres_binary = os.path.join(self.options['bin'], 'postgres')
 
@@ -120,23 +137,17 @@ class Recipe(GenericBaseRecipe):
                                   '-D', pgdata,
                                   'postgres',
                                   ], stdin=subprocess.PIPE)
-            password = 'insecure'
-            enc_password = md5.md5(password).hexdigest()
 
-            # to execute multiple commands, all newlines (but the last) must be preceded by backslash.
-            # see http://www.postgresql.org/docs/9.1/static/app-postgres.html
-
-            sql = '\n'.join([
-                    'CREATE DATABASE %s\\\n' % self.options['dbname'],
-                    "CREATE USER '%s' PASSWORD '%s' SUPERUSER'\n" % (self.options['user'], enc_password),
-                ])
-            p.communicate(sql)
+            p.communicate(cmd+'\n')
         except subprocess.CalledProcessError:
             raise UserError('Could not create database %s' % pgdata)
 
 
     def createRunScript(self):
-        # 'exec' the command to control it from supervisor
+        """
+        Creates a script that runs postgres in the foreground.
+        'exec' is used to allow easy control by supervisor.
+        """
         content = textwrap.dedent("""\
                 #!/bin/sh
                 exec %(bin)s/postgres \\
