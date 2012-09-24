@@ -25,6 +25,7 @@
 #
 ##############################################################################
 import slapos.slap
+from slapos.recipe.librecipe import unwrap
 from ConfigParser import RawConfigParser
 from netaddr import valid_ipv4, valid_ipv6
 
@@ -110,11 +111,23 @@ class Recipe(object):
       options['ipv4'] = ipv4_set
       options['ipv6'] = ipv6_set
       options['tap'] = tap_set
-      options['configuration'] = parameter_dict
+      parameter_dict = self._expandParameterDict(options, parameter_dict)
       match = self.OPTCRE_match
       for key, value in parameter_dict.iteritems():
           if match(key) is not None:
               continue
           options['configuration.' + key] = value
 
+  def _expandParameterDict(self, options, parameter_dict):
+      options['configuration'] = parameter_dict
+      return parameter_dict
+
   install = update = lambda self: []
+
+class Serialised(Recipe):
+  def _expandParameterDict(self, options, parameter_dict):
+      options['configuration'] = parameter_dict = unwrap(parameter_dict)
+      if isinstance(parameter_dict, dict):
+          return parameter_dict
+      else:
+          return {}
