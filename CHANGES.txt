@@ -6,7 +6,16 @@ Changes
 
  * Add safety checks before calling SlapOS Master if mandatory instance
    members of SLAP classes are not properly set. Will result in less calls to
-	 SlapOS Master in dirty cases. [Cedric de Saint Martin]
+	 SlapOS Master in dirty cases. (commits 5097e87c9763, 5fad6316a0f6d,
+   f2cd014ea8aa) [Cedric de Saint Martin]
+ * Add "periodicty" functionnality support for instances: if an instance has
+   not been processed by slapgrid after defined time, process it. (commits
+   7609fc7a3d, 56e1c7bfbd) [Cedric Le Ninivin]
+ * slapproxy: Various improvements in slave support (commits 96c6b78b67,
+   bcac5a397d, fbb680f53b)[Cedric Le Ninivin]
+ * slapgrid: bulletproof slapgrid-cp: in case one instance is bad, still
+   processes all other ones. (commits bac94cdb56, 77bc6c75b3d, bd68b88cc3)
+	 [Cedric de Saint Martin]
 
 0.30 (2012-09-19)
 -----------------
