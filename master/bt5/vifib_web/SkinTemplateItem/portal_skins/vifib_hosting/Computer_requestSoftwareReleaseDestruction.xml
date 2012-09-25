@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.requestSoftwareReleaseCleanup(software_release_url=context.portal_catalog.getResultValue(uid=software_release_uid).getUrlString())\n
+            <value> <string>context.requestSoftwareRelease(software_release_url=context.portal_catalog.getResultValue(uid=software_release_uid).getUrlString(), state=\'destroyed\')\n
 context.Base_redirect(\'Computer_viewSoftwareReleaseManageDialog\', keep_items={\'portal_status_message\': \'Requested Destruction\', \'software_release_uid\': software_release_uid})\n
 </string> </value>
         </item>
