@@ -51,22 +51,29 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>computer = context\n
-\n
-from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
 portal = context.getPortalObject()\n
-delivery_line = portal.portal_catalog.getResultValue(\n
-  portal_type=\'Purchase Packing List Line\',\n
-  default_resource_uid=[portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource()).getUid(), portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareCleanupResource()).getUid()],\n
-  default_aggregate_uid=ComplexQuery(\n
-    Query(default_aggregate_uid=computer.getUid()),\n
-    Query(default_aggregate_uid=software_release_uid),\n
-    operator=\'AND\'\n
-  ),\n
-  simulation_state=portal.getPortalCurrentInventoryStateList() + portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList(),\n
-  limit=1,\n
-  sort_on=((\'movement.start_date\', \'DESC\'),),\n
-)\n
 \n
+software_installation_list = self.getPortalObject().portal_catalog(\n
+      portal_type=\'Software Installation\',\n
+      default_aggregate_uid=context.getUid(),\n
+      validation_state=\'validated\',\n
+      limit=1,\n
+      url_string={\'query\': portal.portal_catalog.getResultValue(uid=software_release_uid).getUrlString(), \'key\': \'ExactMatch\'},\n
+    )\n
+\n
+if len(software_installation_list) == 0:\n
+  return \'Destroyed\'  \n
+\n
+software_installation = software_installation_list[0].getObject()\n
+delivery = software_installation.getCausalityValue(portal_type=\'Purchase Packing List\')\n
+if delivery is None:\n
+  s = software_installation.getSlapState()\n
+  if s == \'start_requested\':\n
+    return \'Installation requested\'\n
+  else:\n
+    return \'Destruction requested\'\n
+\n
+delivery_line = delivery.contentValues(portal_type=\'Purchase Packing List Line\')[0]\n
 resource = delivery_line.getResource()\n
 state = delivery_line.getSimulationState()\n
 \n
@@ -78,13 +85,11 @@ if resource == portal.portal_preferences.getPreferredSoftwareSetupResource():\n
   elif state == \'stopped\':\n
     return \'Installed\'\n
   else:\n
-    script.log(delivery_line.getPath())\n
     return \'Destroyed\'\n
 elif resource == portal.portal_preferences.getPreferredSoftwareCleanupResource():\n
   if state == \'confirmed\':\n
     return \'Destruction requested\'\n
   else:\n
-    script.log(delivery_line.getPath())\n
     return \'Destroyed\'\n
 </string> </value>
         </item>
