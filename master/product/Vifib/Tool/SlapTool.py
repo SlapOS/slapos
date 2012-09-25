@@ -729,7 +729,7 @@ class SlapTool(BaseTool):
     if delivery is not None:
       line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
       if line.getResource() == portal.portal_preferences.\
-                                 getPreferredSoftwareSetupResource():
+                                 getPreferredSoftwareCleanupResource():
         if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
           delivery.start(comment=comment)
         if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
