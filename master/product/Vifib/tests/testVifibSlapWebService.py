@@ -76,7 +76,7 @@ def fakeSlapAuth():
 
 def unfakeSlapAuth():
   from httplib import HTTPConnection
-  if getattr(HTTPConnection, '_original_request', None) is None:
+  if getattr(HTTPConnection, '_original_request', None) is not None:
     HTTPConnection.request = HTTPConnection._original_request
     delattr(HTTPConnection, '_original_request')
 
