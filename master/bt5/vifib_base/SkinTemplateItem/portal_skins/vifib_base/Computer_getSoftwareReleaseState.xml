@@ -53,7 +53,7 @@
             <value> <string>computer = context\n
 portal = context.getPortalObject()\n
 \n
-software_installation_list = self.getPortalObject().portal_catalog(\n
+software_installation_list = portal.portal_catalog(\n
       portal_type=\'Software Installation\',\n
       default_aggregate_uid=context.getUid(),\n
       validation_state=\'validated\',\n
