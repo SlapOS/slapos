@@ -12,6 +12,7 @@
               <list>
                 <string>css_class</string>
                 <string>default</string>
+                <string>display_width</string>
                 <string>editable</string>
                 <string>title</string>
               </list>
@@ -19,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>your_software_release_url</string> </value>
+            <value> <string>your_reference</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -56,10 +57,22 @@
             <value>
               <dictionary>
                 <item>
+                    <key> <string>css_class</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>default</string> </key>
                     <value>
                       <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
                     </value>
+                </item>
+                <item>
+                    <key> <string>display_width</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>editable</string> </key>
+                    <value> <string></string> </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
@@ -71,6 +84,10 @@
                 </item>
                 <item>
                     <key> <string>target</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>title</string> </key>
                     <value> <string></string> </value>
                 </item>
               </dictionary>
@@ -87,6 +104,10 @@
                 <item>
                     <key> <string>default</string> </key>
                     <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>display_width</string> </key>
+                    <value> <int>20</int> </value>
                 </item>
                 <item>
                     <key> <string>editable</string> </key>
@@ -106,7 +127,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Software URL</string> </value>
+                    <value> <string>Computer Reference</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -122,7 +143,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.portal_catalog.getResultValue(uid=context.REQUEST.get(\'software_release_uid\')).getUrlString()</string> </value>
+            <value> <string>python: context.getAggregateValue(portal_type=\'Computer\').getReference()</string> </value>
         </item>
       </dictionary>
     </pickle>

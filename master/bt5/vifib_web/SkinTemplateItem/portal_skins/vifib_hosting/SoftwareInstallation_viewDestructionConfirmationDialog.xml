@@ -93,11 +93,11 @@
                     <key> <string>normal</string> </key>
                     <value>
                       <list>
-                        <string>my_title</string>
-                        <string>my_reference</string>
+                        <string>your_title</string>
+                        <string>your_reference</string>
                         <string>your_software_release_title</string>
                         <string>your_software_release_version</string>
-                        <string>your_software_release_url</string>
+                        <string>my_url_string</string>
                         <string>your_state</string>
                         <string>your_usage</string>
                         <string>your_warning</string>
@@ -116,7 +116,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_viewDestructionConfirmationDialog</string> </value>
+            <value> <string>SoftwareInstallation_viewDestructionConfirmationDialog</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>

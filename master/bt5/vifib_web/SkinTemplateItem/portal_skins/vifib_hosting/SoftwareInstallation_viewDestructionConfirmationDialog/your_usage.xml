@@ -20,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>your_state</string> </value>
+            <value> <string>your_usage</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -57,10 +57,22 @@
             <value>
               <dictionary>
                 <item>
+                    <key> <string>css_class</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>default</string> </key>
                     <value>
                       <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
                     </value>
+                </item>
+                <item>
+                    <key> <string>display_width</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>editable</string> </key>
+                    <value> <string></string> </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
@@ -72,6 +84,10 @@
                 </item>
                 <item>
                     <key> <string>target</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>title</string> </key>
                     <value> <string></string> </value>
                 </item>
               </dictionary>
@@ -111,7 +127,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>State</string> </value>
+                    <value> <string>Usage</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -127,7 +143,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.Computer_getSoftwareReleaseState(context.REQUEST.get(\'software_release_uid\'))</string> </value>
+            <value> <string>python: here.getAggregateValue(portal_type=\'Computer\').Computer_getSoftwareReleaseUsage(context.portal_catalog.getResultValue(url_string={\'query\': here.getUrlString(), \'key\': \'ExactMatch\'}, portal_type=\'Software Release\').getUid())</string> </value>
         </item>
       </dictionary>
     </pickle>

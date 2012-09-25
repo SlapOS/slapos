@@ -11,7 +11,6 @@
             <value>
               <list>
                 <string>css_class</string>
-                <string>display_width</string>
                 <string>editable</string>
                 <string>title</string>
               </list>
@@ -19,7 +18,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_reference</string> </value>
+            <value> <string>my_url_string</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -56,6 +55,14 @@
             <value>
               <dictionary>
                 <item>
+                    <key> <string>css_class</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>editable</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -65,6 +72,10 @@
                 </item>
                 <item>
                     <key> <string>target</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>title</string> </key>
                     <value> <string></string> </value>
                 </item>
               </dictionary>
@@ -77,10 +88,6 @@
                 <item>
                     <key> <string>css_class</string> </key>
                     <value> <string>inline</string> </value>
-                </item>
-                <item>
-                    <key> <string>display_width</string> </key>
-                    <value> <int>20</int> </value>
                 </item>
                 <item>
                     <key> <string>editable</string> </key>
@@ -100,7 +107,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Computer Reference</string> </value>
+                    <value> <string>Software URL</string> </value>
                 </item>
               </dictionary>
             </value>

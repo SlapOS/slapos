@@ -12,7 +12,6 @@
               <list>
                 <string>css_class</string>
                 <string>default</string>
-                <string>display_width</string>
                 <string>editable</string>
                 <string>title</string>
               </list>
@@ -20,7 +19,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>your_usage</string> </value>
+            <value> <string>your_software_release_version</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -67,10 +66,6 @@
                     </value>
                 </item>
                 <item>
-                    <key> <string>display_width</string> </key>
-                    <value> <string></string> </value>
-                </item>
-                <item>
                     <key> <string>editable</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -106,10 +101,6 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
-                    <key> <string>display_width</string> </key>
-                    <value> <int>20</int> </value>
-                </item>
-                <item>
                     <key> <string>editable</string> </key>
                     <value> <int>0</int> </value>
                 </item>
@@ -127,7 +118,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Usage</string> </value>
+                    <value> <string>Software Version</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -143,7 +134,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.Computer_getSoftwareReleaseUsage(context.REQUEST.get(\'software_release_uid\'))</string> </value>
+            <value> <string>python: context.portal_catalog.getResultValue(url_string={\'query\': here.getUrlString(), \'key\': \'ExactMatch\'}, portal_type=\'Software Release\').getVersion()</string> </value>
         </item>
       </dictionary>
     </pickle>

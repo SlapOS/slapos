@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>listbox_usage</string> </value>
+            <value> <string>listbox_title</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -144,7 +144,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>listbox_usage</string> </value>
+                    <value> <string>listbox_title</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -160,7 +160,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>cell/Base_getSoftwareReleaseUsageOnComputer</string> </value>
+            <value> <string>python: cell.getPortalObject().portal_catalog.getResultValue(portal_type=\'Software Release\', url_string={\'query\': cell.getUrlString(), \'key\': \'ExactMatch\'}).getAggregateTitle()</string> </value>
         </item>
       </dictionary>
     </pickle>

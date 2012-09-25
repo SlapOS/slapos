@@ -175,6 +175,14 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>image_pre_converted_only</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>image_quality</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>image_resolution</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -303,7 +311,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: cell.getAggregateValue().getDefaultImageAbsoluteUrl()</string> </value>
+            <value> <string>python: cell.getPortalObject().portal_catalog.getResultValue(portal_type=\'Software Release\', url_string={\'query\': cell.getUrlString(), \'key\': \'ExactMatch\'}).getAggregateValue().getDefaultImageAbsoluteUrl()</string> </value>
         </item>
       </dictionary>
     </pickle>

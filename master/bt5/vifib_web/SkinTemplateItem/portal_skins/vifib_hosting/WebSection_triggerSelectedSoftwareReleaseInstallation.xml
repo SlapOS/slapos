@@ -77,11 +77,7 @@ computer = portal.portal_catalog.getResultValue(\n
 \n
 computer.requestSoftwareRelease(software_release_url=item.getUrlString(), state=\'available\')\n
 \n
-params[\'instance_software_product_uid\'] = None\n
-params[\'instance_software_release_uid\'] = None\n
-params[\'computer_uid\'] = None\n
-\n
-return computer.Base_redirect(form_id=\'Computer_viewSoftwareReleaseManageDialog\', keep_items={\'portal_status_message\': \'Requested installation\', \'software_release_uid\': item.getUid()})\n
+return context.restrictedTraverse(context.REQUEST.get(\'software_installation_url\')).Base_redirect(form_id=\'view\', keep_items={\'portal_status_message\': \'Requested installation\'})\n
 </string> </value>
         </item>
         <item>

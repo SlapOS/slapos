@@ -12,14 +12,15 @@
               <list>
                 <string>css_class</string>
                 <string>default</string>
-                <string>editable</string>
+                <string>enabled</string>
+                <string>href</string>
                 <string>title</string>
               </list>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>your_software_release_url</string> </value>
+            <value> <string>my_destroy_button</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -56,7 +57,15 @@
             <value>
               <dictionary>
                 <item>
+                    <key> <string>css_class</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>default</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>enabled</string> </key>
                     <value>
                       <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
                     </value>
@@ -70,7 +79,15 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>href</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>target</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>title</string> </key>
                     <value> <string></string> </value>
                 </item>
               </dictionary>
@@ -82,23 +99,27 @@
               <dictionary>
                 <item>
                     <key> <string>css_class</string> </key>
-                    <value> <string>inline</string> </value>
+                    <value> <string>nolabel cancel validate alignr</string> </value>
                 </item>
                 <item>
                     <key> <string>default</string> </key>
-                    <value> <string></string> </value>
+                    <value> <string>Destroy</string> </value>
                 </item>
                 <item>
-                    <key> <string>editable</string> </key>
+                    <key> <string>enabled</string> </key>
                     <value> <int>0</int> </value>
                 </item>
                 <item>
                     <key> <string>field_id</string> </key>
-                    <value> <string>my_string_field</string> </value>
+                    <value> <string>my_hyperlink</string> </value>
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
                     <value> <string>Base_viewWebFieldLibrary</string> </value>
+                </item>
+                <item>
+                    <key> <string>href</string> </key>
+                    <value> <string>./SoftwareInstallation_viewDestructionConfirmationDialog</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -106,7 +127,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Software URL</string> </value>
+                    <value> <string>Destroy</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -122,7 +143,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.portal_catalog.getResultValue(uid=context.REQUEST.get(\'software_release_uid\')).getUrlString()</string> </value>
+            <value> <string>python: here.getSlapState() != \'destroy_requested\'</string> </value>
         </item>
       </dictionary>
     </pickle>

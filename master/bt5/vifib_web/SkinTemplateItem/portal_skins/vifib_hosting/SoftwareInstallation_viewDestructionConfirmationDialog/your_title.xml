@@ -12,6 +12,7 @@
               <list>
                 <string>css_class</string>
                 <string>default</string>
+                <string>display_width</string>
                 <string>editable</string>
                 <string>title</string>
               </list>
@@ -19,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>your_software_release_version</string> </value>
+            <value> <string>your_title</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -66,6 +67,10 @@
                     </value>
                 </item>
                 <item>
+                    <key> <string>display_width</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>editable</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -101,6 +106,10 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>display_width</string> </key>
+                    <value> <int>20</int> </value>
+                </item>
+                <item>
                     <key> <string>editable</string> </key>
                     <value> <int>0</int> </value>
                 </item>
@@ -118,7 +127,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Software Version</string> </value>
+                    <value> <string>Computer Title</string> </value>
                 </item>
               </dictionary>
             </value>
@@ -134,7 +143,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: context.portal_catalog.getResultValue(uid=context.REQUEST.get(\'software_release_uid\')).getVersion()</string> </value>
+            <value> <string>python: context.getAggregateValue(portal_type=\'Computer\').getTitle()</string> </value>
         </item>
       </dictionary>
     </pickle>
