@@ -393,7 +393,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
 
   def test_one_free_partition(self):
     """
-    Test if slapgrid don't process "free" partition
+    Test if slapgrid cp don't process "free" partition
     """
     computer = ComputerForTest(self.software_root,self.instance_root,
                                software_amount = 0)
@@ -539,6 +539,34 @@ chmod 755 etc/run/wrapper
                      ['getFullComputerInformation', 'availableComputerPartition',
                       'startedComputerPartition'])
     self.assertEqual('started',instance.state)
+
+  def test_one_partition_destroyed(self):
+    """
+    Test that an existing partition with "destroyed" status will only be
+    stopped by slapgrid-cp, not processed
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'destroyed'
+    dummy_file_name = 'dummy_file'
+    dummy_file = open(
+        os.path.join(instance.partition_path, dummy_file_name),
+        'w')
+    dummy_file.write('dummy')
+    dummy_file.close()
+
+    self.assertTrue(self.grid.processComputerPartitionList())
+
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
+      'var'])
+    partition = os.path.join(self.instance_root, '0')
+    self.assertSortedListEqual(os.listdir(partition), [dummy_file_name])
+    self.assertSortedListEqual(os.listdir(self.software_root),
+      [instance.software.software_hash])
+    self.assertEqual(computer.sequence,
+                     ['getFullComputerInformation',
+                      'stoppedComputerPartition'])
+    self.assertEqual('stopped', instance.state)
 
 
 class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
@@ -919,6 +947,23 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                      ['getFullComputerInformation'])
     self.assertEqual('started',instance.state)
 
+  def test_slapgrid_ignore_free_instance(self):
+    """
+    Test than a free instance (so in "destroyed" state, but empty) is ignored.
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    instance = computer.instance_list[0]
+
+    computer.sequence = []
+    instance.requested_state = 'destroyed'
+    self.assertTrue(self.grid.processComputerPartitionList())
+    # Assert partition directory is empty
+    self.assertSortedListEqual(os.listdir(self.instance_root),
+                               ['0', 'etc', 'var'])
+    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
+    self.assertSortedListEqual(os.listdir(self.software_root),
+                               [instance.software.software_hash])
+    self.assertEqual(computer.sequence, ['getFullComputerInformation'])
 
 
 class TestSlapgridArgumentTuple(unittest.TestCase):
