@@ -4,6 +4,10 @@
   <workflow>instance_accounting_slap_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Software Installation</type>
+  <workflow>installation_accounting_slap_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Software Instance</type>
   <workflow>instance_accounting_slap_interaction_workflow</workflow>
  </chain>
