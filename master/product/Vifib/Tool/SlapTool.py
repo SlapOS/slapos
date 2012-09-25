@@ -200,8 +200,6 @@ class SlapTool(BaseTool):
         self._activateFillComputerInformationCache(computer_id, user, full)
         self.REQUEST.response.setStatus(503)
         return self.REQUEST.response
-      slap_computer._software_release_list = \
-         self._getSoftwareReleaseValueListForComputer(computer_id, full=full)
     else:
       slap_computer._software_release_list = []
     for computer_partition in self.getPortalObject().portal_catalog(
