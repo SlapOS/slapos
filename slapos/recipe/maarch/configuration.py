@@ -27,7 +27,20 @@
 
 import ConfigParser
 import lxml.etree
+import md5
 import os
+
+import lxml
+
+def temporary_hack():
+    import sys
+    develop_eggs = '/'.join(lxml.__file__.split('/')[:lxml.__file__.split('/').index('develop-eggs')+1])
+    for egg_folder in os.listdir(develop_eggs):
+        if egg_folder.startswith('psycopg2'):
+            sys.path.append(os.path.join(develop_eggs, egg_folder))
+temporary_hack() # XXX TODO provide psycopg to sys.path by other means
+
+import psycopg2
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -45,17 +58,18 @@ class Recipe(GenericBaseRecipe):
 
         self.update_phpini(php_ini_path=os.path.join(self.options['php_ini_dir'], 'php.ini'))
 
-        # XXX TODO: database schema and initial data
-        # XXX TODO: database schema patch for ipv6
+        self.load_initial_db()
+
         # XXX TODO: document folder
-        # XXX TODO: admin password
+        # XXX TODO: test admin password
 
         # confirm that everything is done, the app will run without further setup
-        self.installed_lock()
+        lck_path = self.installed_lock()
 
         return [
                 apps_config_xml,
                 core_config_xml,
+                lck_path,
                 ]
 
 
@@ -64,9 +78,12 @@ class Recipe(GenericBaseRecipe):
         Create an empty file to mean the setup is completed
         """
         htdocs = self.options['htdocs']
+        lck_path = os.path.join(htdocs, 'installed.lck')
 
-        with open(os.path.join(htdocs, 'installed.lck'), 'w'):
+        with open(lck_path, 'w'):
             pass
+
+        return lck_path
 
 
     def create_apps_config_xml(self):
@@ -126,4 +143,35 @@ class Recipe(GenericBaseRecipe):
         with os.fdopen(os.open(php_ini_path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600), 'w') as fout:
             php_ini.write(fout)
 
+
+    def load_initial_db(self):
+        options = self.options
+
+        conn = psycopg2.connect(host = options['db_host'],
+                                port = options['db_port'],
+                                database = options['db_dbname'],
+                                user = options['db_username'],
+                                password = options['db_password'])
+
+        cur = conn.cursor()
+
+        htdocs = options['htdocs']
+
+        # load the schema
+        with open(os.path.join(htdocs, 'structure.sql')) as fin:
+            cur.execute(fin.read())
+
+        # patch the schema to store long addresses (ipv6)
+        cur.execute('ALTER TABLE HISTORY ALTER COLUMN remote_ip TYPE CHAR(255);')
+
+        with open(os.path.join(htdocs, 'data_mini.sql')) as fin:
+            cur.execute(fin.read())
+
+        # initial admin password
+        enc_password = md5.md5(options['db_password']).hexdigest()
+        cur.execute("UPDATE users SET password=%s WHERE user_id='superadmin';", (enc_password, ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
 
