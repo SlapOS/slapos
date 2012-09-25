@@ -22,9 +22,9 @@
             <key> <string>transitions</string> </key>
             <value>
               <tuple>
-                <string>bang</string>
+                <string>report_error</string>
+                <string>request_destroy</string>
                 <string>request_start</string>
-                <string>request_stop</string>
               </tuple>
             </value>
         </item>

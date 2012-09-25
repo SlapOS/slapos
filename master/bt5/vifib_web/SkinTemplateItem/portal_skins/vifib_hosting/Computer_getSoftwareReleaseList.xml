@@ -54,7 +54,7 @@
 portal = context.getPortalObject()\n
 portal_type = "Software Release"\n
 \n
-url_string_list = context.Computer_getSoftwareReleaseUrlStringList([\'confirmed\', \'started\', \'stopped\'])\n
+url_string_list = context.Computer_getSoftwareReleaseUrlStringList()\n
 if url_string_list:\n
   return context.portal_catalog(\n
     portal_type=portal_type,\n

@@ -676,14 +676,7 @@ class SlapTool(BaseTool):
     Request Software Release installation
     """
     computer_document = self._getComputerDocument(computer_id)
-    if state == 'available':
-      computer_document.requestSoftwareReleaseInstallation(
-        software_release_url=url)
-    elif state == 'destroyed':
-      computer_document.requestSoftwareReleaseCleanup(
-        software_release_url=url)
-    else:
-      raise ValueError('State %s is not supported' % state)
+    computer_document.requestSoftwareRelease(software_release_url=url, state=state)
 
   @convertToREST
   def _buildingSoftwareRelease(self, url, computer_id):
@@ -691,8 +684,16 @@ class SlapTool(BaseTool):
     Reports that Software Release is being build
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.startSoftwareReleaseInstallation(
-      software_release_url=url)
+    software_installation = self._getSoftwareInstallationForComputer(url,
+      computer_document)
+    delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
+      if line.getResource() == portal.portal_preferences.\
+                                 getPreferredSoftwareSetupResource():
+        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
+          delivery.start(comment='Software Release building report.')
 
   @convertToREST
   def _availableSoftwareRelease(self, url, computer_id):
@@ -700,7 +701,19 @@ class SlapTool(BaseTool):
     Reports that Software Release is available
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.stopSoftwareReleaseInstallation(software_release_url=url)
+    software_installation = self._getSoftwareInstallationForComputer(url,
+      computer_document)
+    delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
+      if line.getResource() == portal.portal_preferences.\
+                                 getPreferredSoftwareSetupResource():
+        comment = 'Software Release available report.'
+        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
+          delivery.start(comment=comment)
+        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
+          delivery.stop(comment=comment)
 
   @convertToREST
   def _destroyedSoftwareRelease(self, url, computer_id):
@@ -708,7 +721,24 @@ class SlapTool(BaseTool):
     Reports that Software Release is available
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.cleanupSoftwareReleaseInstallation(software_release_url=url)
+    software_installation = self._getSoftwareInstallationForComputer(url,
+      computer_document)
+    delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
+    comment = 'Software Release destroyed report.'
+    portal = self.getPortalObject()
+    if delivery is not None:
+      line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
+      if line.getResource() == portal.portal_preferences.\
+                                 getPreferredSoftwareSetupResource():
+        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
+          delivery.start(comment=comment)
+        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
+          delivery.stop(comment=comment)
+        if portal.portal_workflow.isTransitionPossible(delivery, 'deliver'):
+          delivery.deliver(comment=comment)
+    if portal.portal_workflow.isTransitionPossible(software_installation,
+        'invalidate'):
+      software_installation.invalidate(comment=comment)
 
   @convertToREST
   def _softwareReleaseError(self, url, computer_id, error_log):
@@ -716,9 +746,9 @@ class SlapTool(BaseTool):
     Add an error for a software Release workflow
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.reportSoftwareReleaseInstallationError(
-                                     comment=error_log,
-                                     software_release_url=url)
+    software_installation = self._getSoftwareInstallationForComputer(url,
+      computer_document)
+    software_installation.reportError(comment=error_log)
 
   @convertToREST
   def _buildingComputerPartition(self, computer_id, computer_partition_id):
@@ -1033,6 +1063,27 @@ class SlapTool(BaseTool):
       return service_document
     raise Unauthorized
 
+  def _getSoftwareInstallationForComputer(self, url, computer_document):
+    software_installation_list = self.getPortalObject().portal_catalog(
+      portal_type='Software Installation',
+      default_aggregate_uid=computer_document.getUid(),
+      validation_state='validated',
+      limit=2,
+      url_string={'query': url, 'key': 'ExactMatch'},
+    )
+
+    l = len(software_installation_list)
+    if l == 1:
+      return software_installation_list[0].getObject()
+    elif l == 0:
+      raise NotFound('No software release %r found on computer %r' % (url,
+        computer_document.getReference()))
+    else:
+      raise ValueError('Wrong list of software releases on %r: %s' % (
+        computer_document.getReference(), ', '.join([q.getRelativeUrl() for q \
+          in software_installation_list])
+      ))
+
   def _getSoftwareInstanceForComputerPartition(self, computer_id,
       computer_partition_id, slave_reference=None):
     computer_partition_document = self._getComputerPartitionDocument(
@@ -1115,23 +1166,19 @@ class SlapTool(BaseTool):
     """Returns list of Software Releases documentsfor computer"""
     computer_document = self._getComputerDocument(computer_reference)
     portal = self.getPortalObject()
-
-    state_list = []
-    state_list.extend(portal.getPortalReservedInventoryStateList())
-    state_list.extend(portal.getPortalTransitInventoryStateList())
-    if full:
-      state_list.extend(portal.getPortalCurrentInventoryStateList())
-
     software_release_list = []
-    for software_release_url_string in computer_document\
-      .Computer_getSoftwareReleaseUrlStringList(state_list):
+    for software_installation in portal.portal_catalog(
+      portal_type='Software Installation',
+      default_aggregate_uid=computer_document.getUid(),
+      validation_state='validated',
+      ):
       software_release_response = SoftwareRelease(
-          software_release=software_release_url_string,
+          software_release=software_installation.getUrlString(),
           computer_guid=computer_reference)
-      software_release_response._requested_state = \
-        computer_document.Computer_getSoftwareReleaseRequestedState(
-          software_release_url_string)
-      software_release_list.append(software_release_response)
+      if software_installation.getSlapState() == 'request_destroy':
+        software_release_response._requested_state = 'destroyed'
+      else:
+        software_release_response._requested_state = 'available'
     return software_release_list
 
   def _reportComputerUsage(self, computer, usage):

@@ -10,7 +10,8 @@
             <key> <string>delegated_list</string> </key>
             <value>
               <list>
-                <string>portal_type</string>
+                <string>all_columns</string>
+                <string>columns</string>
                 <string>selection_name</string>
                 <string>title</string>
               </list>
@@ -73,6 +74,68 @@
             <key> <string>values</string> </key>
             <value>
               <dictionary>
+                <item>
+                    <key> <string>all_columns</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>title</string>
+                          <string>Title</string>
+                        </tuple>
+                        <tuple>
+                          <string>reference</string>
+                          <string>Reference</string>
+                        </tuple>
+                        <tuple>
+                          <string>url_string</string>
+                          <string>URL</string>
+                        </tuple>
+                        <tuple>
+                          <string>translated_validation_state_title</string>
+                          <string>State</string>
+                        </tuple>
+                        <tuple>
+                          <string>translated_slap_state_title</string>
+                          <string>Slap State</string>
+                        </tuple>
+                        <tuple>
+                          <string>creation_date</string>
+                          <string>Creation Date</string>
+                        </tuple>
+                        <tuple>
+                          <string>modification_date</string>
+                          <string>Modification Date</string>
+                        </tuple>
+                      </list>
+                    </value>
+                </item>
+                <item>
+                    <key> <string>columns</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>title</string>
+                          <string>Title</string>
+                        </tuple>
+                        <tuple>
+                          <string>reference</string>
+                          <string>Reference</string>
+                        </tuple>
+                        <tuple>
+                          <string>url_string</string>
+                          <string>URL</string>
+                        </tuple>
+                        <tuple>
+                          <string>translated_validation_state_title</string>
+                          <string>State</string>
+                        </tuple>
+                        <tuple>
+                          <string>translated_slap_state_title</string>
+                          <string>Slap State</string>
+                        </tuple>
+                      </list>
+                    </value>
+                </item>
                 <item>
                     <key> <string>field_id</string> </key>
                     <value> <string>my_list_mode_listbox</string> </value>
