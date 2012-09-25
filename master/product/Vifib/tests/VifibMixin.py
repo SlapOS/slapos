@@ -191,6 +191,19 @@ class testVifibMixin(ERP5TypeTestCase):
         setattr(self, 'stepCall' + convertToUpperCase(alarm.getId()) \
           + 'Alarm', makeCallAlarm(alarm))
 
+  def setUpMemcached(self):
+    from Products.ERP5Type.tests.ERP5TypeTestCase import\
+           _getVolatileMemcachedServerDict, _getPersistentMemcachedServerDict
+    memcached_tool = self.getPortal().portal_memcached
+    # setup default volatile distributed memcached
+    connection_dict = _getVolatileMemcachedServerDict()
+    url_string = '%(hostname)s:%(port)s' % connection_dict
+    memcached_tool.default_memcached_plugin.setUrlString(url_string)
+    # setup default persistent distributed memcached
+    connection_dict = _getPersistentMemcachedServerDict()
+    url_string = '%(hostname)s:%(port)s' % connection_dict
+    memcached_tool.persistent_memcached_plugin.setUrlString(url_string)
+
   def afterSetUp(self, quiet=1, run=run_all_test):
     """
     Create ERP5 user.
@@ -206,6 +219,7 @@ class testVifibMixin(ERP5TypeTestCase):
       setSecurityManager(sm)
     self.setupPortalCertificateAuthority()
     self.setupPayZenInterface()
+    self.setUpMemcached()
     import random
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
     self.portal.portal_caches._p_changed = 1
