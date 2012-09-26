@@ -33,6 +33,13 @@ import os
 
 import lxml
 
+
+# TODO: remove the hack below, used to reach psycopg2
+# XXX: When run inside webrunner, Postgres refuses connection.
+# TODO: make the recipe work inside webrunner
+
+
+
 def temporary_hack():
     # XXX TODO provide psycopg to sys.path by other means
     import sys
@@ -53,6 +60,16 @@ def xpath_set(xml, settings):
 
 
 class Recipe(GenericBaseRecipe):
+    """\
+    This recipe configures a maarch instance to be ready to run,
+    without going through the initial wizard:
+
+     - creation of two xml files from the provided defaults
+     - php.ini as required by Maarch
+     - database setup.
+
+     The superuser password will be the same as the Postgres one.
+    """
 
     def install(self):
         apps_config_xml = self.create_apps_config_xml()
