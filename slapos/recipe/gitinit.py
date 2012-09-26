@@ -24,41 +24,26 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import json
 import os
-import sys
-def runTestSuite(args):
-  env = os.environ.copy()
-  d = args[0]
-  env['PATH'] = ':'.join([d['prepend_path']] + os.environ['PATH'].split(':'))
-  # Deal with Shebang size limitation
-  executable_filepath = d['call_list'][0]
-  file_object = open(executable_filepath, 'r')
-  line = file_object.readline()
-  file_object.close()
-  argument_list = []
-  if line[:2] == '#!':
-    executable_filepath = line[2:].strip()
-    argument_list.append(executable_filepath)
-  argument_list.extend(d['call_list'])
-  argument_list.extend(sys.argv[1:])
-  argument_list.append(env)
-  os.execle(executable_filepath, *argument_list)
 
-def runUnitTest(args):
-  env = os.environ.copy()
-  d = args[0]
-  env['PATH'] = ':'.join([d['prepend_path']] + os.environ.get('PATH', '').split(':'))
-  # Deal with Shebang size limitation
-  executable_filepath = d['call_list'][0]
-  file_object = open(executable_filepath, 'r')
-  line = file_object.readline()
-  file_object.close()
-  argument_list = []
-  if line[:2] == '#!':
-    executable_filepath = line[2:].strip()
-    argument_list.append(executable_filepath)
-  argument_list.extend(d['call_list'])
-  argument_list.extend(sys.argv[1:])
-  argument_list.append(env)
-  os.execle(executable_filepath, *argument_list)
+from subprocess import check_call
 
+from slapos.recipe.librecipe import GenericBaseRecipe
+
+class Recipe(GenericBaseRecipe):
+
+    def install(self):
+
+        repolist = json.loads(self.options['repos'])
+        for repo, desc in repolist.iteritems():
+            absolute_path = os.path.join(self.options['base-directory'], '%s.git' % repo)
+            if not os.path.exists(absolute_path):
+                check_call([self.options['git-binary'], 'init',
+                            '--bare', absolute_path])
+                # XXX: Hardcoded path
+                description_filename = os.path.join(absolute_path, 'description')
+                with open(description_filename, 'w') as description_file:
+                    description_file.write(desc)
+
+        return []

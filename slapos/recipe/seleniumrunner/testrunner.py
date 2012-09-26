@@ -57,7 +57,7 @@ def run(args):
 
   # There is no test that can take more them 24 hours
   timeout = 2.0 * 60 * 60
-  
+
   while True:
     erp5_report = ERP5TestReportHandler(report_url,
         project + '@' + config['suite_name'])
@@ -82,11 +82,11 @@ def run(args):
         if process.pid:
           os.kill(process.pid, signal.SIGTERM)
       print("Test has finished and Firefox has been killed.")
-      
+
       erp5_report.reportFinished(getStatus(config['base_url']).encode("utf-8",
           "replace"))
-      
-      
+
+
       print("Test finished and report sent, sleeping.")
     except urllib2.URLError, urlError:
         print "Error: %s" % urlError.msg

@@ -41,7 +41,7 @@ class Recipe(GenericBaseRecipe):
       'include %s' % logrotate_d,
     ]
 
-    logrotate_conf_file = self.createFile(logrotate_conf_file, 
+    logrotate_conf_file = self.createFile(logrotate_conf_file,
         '\n'.join(logrotate_conf))
 
     state_file = self.options['state-file']

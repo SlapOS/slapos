@@ -158,7 +158,7 @@ class BaseRecipe(BaseSlapRecipe):
     open(destination, 'w').write(open(template, 'r').read() % d)
 
   def configureInstallation(self, document_root, url, mysql_conf):
-    """Start process which can launch python scripts, move or remove files or 
+    """Start process which can launch python scripts, move or remove files or
     directories when installing software.
     """
     if not self.options.has_key('delete') and not self.options.has_key('rename') and not\
@@ -179,7 +179,7 @@ class BaseRecipe(BaseSlapRecipe):
     else:
       argument = argument + ["-f", self.options['file_token'].strip()]
     argument += ["-t", document_root]
-    
+
     if self.options.has_key('delete'):
       delete = ["delete"]
       for fname in self.options['delete'].split(','):
@@ -231,7 +231,7 @@ class Simple(BaseRecipe):
     url = self.installApache(document_root)
     renamed = self.configureInstallation(document_root, url, mysql_conf)
     connectionDict = dict(
-      url=url,      
+      url=url,
       **mysql_conf
     )
     if not renamed == "":
