@@ -41,7 +41,7 @@ setup(name=name,
       zip_safe=True,
       entry_points={
         'zc.buildout': [
-          'addresiliency = slapos.recipe.addres:Recipe',
+          'addresiliency = slapos.recipe.addresiliency:Recipe',
           'agent = slapos.recipe.agent:Recipe',
           'apache.frontend = slapos.recipe.apache_frontend:Recipe',
           'apachephp = slapos.recipe.apachephp:Recipe',
