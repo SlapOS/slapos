@@ -343,10 +343,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
        partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
        filter_kw=sequence.get('requested_filter_dict', {}),
        state=sequence.get('requested_state'))
-    sequence.edit(
-        requested_slap_computer_partition=requested_slap_computer_partition,
-        requested_computer_partition_reference=\
-            requested_slap_computer_partition.getId())
+    try:
+      requested_slap_computer_partition.getId()
+    except slap.ResourceNotReady:
+      pass
+    else:
+      sequence.edit(
+          requested_slap_computer_partition=requested_slap_computer_partition,
+          requested_computer_partition_reference=\
+              requested_slap_computer_partition.getId())
 
   def stepSetCurrentComputerPartitionFromRequestedComputerPartition(self, sequence):
     sequence['computer_partition_reference'] = \
@@ -2024,10 +2029,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     # tic as request is done on slap level library
     self.stepTic()
 
-    sequence.edit(
-        requested_slap_computer_partition=requested_slap_computer_partition,
-        requested_computer_partition_reference=\
-            requested_slap_computer_partition.getId())
+    try:
+      requested_slap_computer_partition.getId()
+    except slap.ResourceNotReady:
+      pass
+    else:
+      sequence.edit(
+          requested_slap_computer_partition=requested_slap_computer_partition,
+          requested_computer_partition_reference=\
+              requested_slap_computer_partition.getId())
 
   def stepRequestSlaveInstanceFromComputerPartitionNotFoundError(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
