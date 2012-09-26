@@ -1,6 +1,17 @@
 Changes
 =======
 
+0.67 (2012-09-26)
+-----------------
+
+  * Add check_page_content promise generator. [Cedric Le Ninivin]
+  * Fix check_url_available recipe. [Cedric de Saint Martin]
+  * Set up timezone database in mariab's mysql table so that we can use
+    timezone conversion function. [Kazuhiko Shiozaki]
+  * Add many resiliency-based recipes [Timothée Lacroix]
+  * Fix and unify request and requestoptional recipes [Cedric de Saint Martin]
+  * Fix Dropbear. [Antoine Catton]
+
 0.66 (2012-09-10)
 -----------------
 
