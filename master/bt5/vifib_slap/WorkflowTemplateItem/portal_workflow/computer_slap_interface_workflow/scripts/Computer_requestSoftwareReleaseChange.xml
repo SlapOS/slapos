@@ -120,6 +120,8 @@ slap_state = software_installation.getSlapState()\n
 if validation_state == \'draft\':\n
   portal.portal_workflow.doActionFor(software_installation,\n
                                            \'validate_action\')\n
+\n
+context.REQUEST.set(\'software_installation_url\', software_installation.getRelativeUrl())\n
 
 
 ]]></string> </value>
