@@ -121,7 +121,7 @@ if can_allocate:\n
 \n
 new_value = None\n
 if can_allocate:\n
-  if computer.getCapacityScope() == \'closed\':\n
+  if computer.getCapacityScope() == \'close\':\n
     new_value = \'open\'\n
 else:\n
   if computer.getCapacityScope() == \'open\':\n
