@@ -34,7 +34,22 @@ from zc.buildout import UserError
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 
+# TODO: read ipv6 host without calling loads() in createConfig()
+
+
 class Recipe(GenericBaseRecipe):
+    """\
+    This recipe creates:
+
+        - a Postgres cluster
+        - configuration to allow connections from IPV6 only (or unix socket)
+        - a superuser with provided name and generated password
+        - a database with provided name
+        - a foreground start script in the services directory
+
+    then adds the connection URL to the options.
+    The URL can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
+    """
 
     def _options(self, options):
         options['password'] = self.generatePassword()
@@ -52,7 +67,7 @@ class Recipe(GenericBaseRecipe):
             self.createRunScript()
 
         return [
-                # XXX what to return here?
+                # XXX should we really return something here?
                 # os.path.join(pgdata, 'postgresql.conf')
                 ]
 
@@ -74,8 +89,9 @@ class Recipe(GenericBaseRecipe):
 
     def createConfig(self):
         from zc.buildout import buildout
-        pgdata = self.options['pgdata-directory']
         host = buildout.loads(self.options['ipv6_host']).pop()      # XXX ugly hack
+
+        pgdata = self.options['pgdata-directory']
 
         with open(os.path.join(pgdata, 'postgresql.conf'), 'wb') as cfg:
             cfg.write(textwrap.dedent("""\
@@ -115,14 +131,16 @@ class Recipe(GenericBaseRecipe):
         """
         Creates a Postgres superuser - other than "slapuser#" for use by the application.
         """
-        user = self.options['user']
-        password = 'insecure'
 
-        # XXX should send it encrypted, didn't work
         # http://postgresql.1045698.n5.nabble.com/Algorithm-for-generating-md5-encrypted-password-not-found-in-documentation-td4919082.html
-        # enc_password = 'md5' + md5.md5(password+user).hexdigest()
 
-        self.runPostgresCommand(cmd="""CREATE USER "%s" ENCRYPTED PASSWORD '%s' SUPERUSER""" % (user, password))
+        user = self.options['user']
+        password = self.options['password']
+
+        # encrypt the password to avoid storing in the logs
+        enc_password = 'md5' + md5.md5(password+user).hexdigest()
+
+        self.runPostgresCommand(cmd="""CREATE USER "%s" ENCRYPTED PASSWORD '%s' SUPERUSER""" % (user, enc_password))
 
 
     def runPostgresCommand(self, cmd):
@@ -141,7 +159,6 @@ class Recipe(GenericBaseRecipe):
             p = subprocess.Popen([postgres_binary,
                                   '--single',
                                   '-D', pgdata,
-                                  '-d', '1',        # debug level, do not output commands
                                   'postgres',
                                   ], stdin=subprocess.PIPE)
 
