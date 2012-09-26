@@ -36,6 +36,7 @@ setup(name=name,
         'xml_marshaller', # need to communication with slapgrid
         'zc.buildout', # plays with buildout
         'zc.recipe.egg', # for scripts generation
+        'pytz', # for timezone database
         ],
       zip_safe=True,
       entry_points={
