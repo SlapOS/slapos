@@ -56,9 +56,10 @@ for software_installation in context.getPortalObject().portal_catalog(\n
   validation_state=\'validated\',\n
   default_aggregate_uid=context.getUid()\n
 ):\n
-  url_string = software_installation.getUrlString()\n
-  if url_string:\n
-    url_string_list.append(url_string)\n
+  if software_installation.getSlapState() == \'start_requested\':\n
+    url_string = software_installation.getUrlString()\n
+    if url_string:\n
+      url_string_list.append(url_string)\n
 return url_string_list\n
 </string> </value>
         </item>
