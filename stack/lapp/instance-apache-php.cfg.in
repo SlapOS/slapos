@@ -286,4 +286,5 @@ db_username = $${postgres-urlparse:username}
 db_password = $${postgres-urlparse:password}
 language = en
 php_ini_dir = $${directory:php-ini-dir}
+root_docservers = $${buildout:directory}/srv/docservers
 
