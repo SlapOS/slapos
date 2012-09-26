@@ -6,7 +6,7 @@
   <value>1</value>
  </item>
  <item key="_filter_expression_archive" type="str">
-  <value>python: context.getPortalType() == 'Purchase Packing List Line' and context.getResource() == context.getPortalObject().portal_preferences.getPreferredSoftwareSetupResource()</value>
+  <value>python: context.getPortalType() == 'Computer'</value>
  </item>
  <item key="_filter_expression_cache_key_archive" type="tuple">
   <value>potral_type</value>

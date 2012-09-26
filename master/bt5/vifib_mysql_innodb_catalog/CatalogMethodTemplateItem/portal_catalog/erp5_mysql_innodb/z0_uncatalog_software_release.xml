@@ -54,7 +54,7 @@
             <key> <string>src</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-DELETE FROM software_release WHERE delivery_line_uid=<dtml-sqlvar uid type=int>\n
+DELETE FROM software_release WHERE computer_uid=<dtml-sqlvar uid type=int>\n
 
 
 ]]></string> </value>

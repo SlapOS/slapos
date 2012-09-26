@@ -59,12 +59,9 @@
         <item>
             <key> <string>src</string> </key>
             <value> <string>CREATE TABLE `software_release` (\n
-  `uid` BIGINT UNSIGNED NOT NULL,\n
   `computer_uid` BIGINT UNSIGNED NOT NULL,\n
-  `delivery_line_uid` BIGINT UNSIGNED NOT NULL,\n
   `url` varchar(255),\n
-  `state` varchar(255),\n
-  PRIMARY KEY (`uid`, `delivery_line_uid`)\n
+  PRIMARY KEY (`computer_uid`, `url`)\n
 ) ENGINE=InnoDB;\n
 </string> </value>
         </item>
