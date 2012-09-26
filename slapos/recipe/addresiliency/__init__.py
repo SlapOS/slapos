@@ -71,13 +71,6 @@ class Recipe(GenericSlapRecipe):
                                      bully_conf))
       path_list.append(script)
 
-      # for testing purposes only
-      scriptNew = self.createExecutable(path_bully_new,
-                                  self.substituteTemplate(
-                                  self.getTemplateFilename('bully_new.py.in'),
-                                  bully_conf))
-      path_list.append(scriptNew)
-
       wrapper = self.createPythonScript(
           path_run,
           'slapos.recipe.librecipe.execute.execute',
