@@ -14,6 +14,7 @@ Sale Invoice Transaction | slap_interaction_workflow
 Sale Packing List Line | slap_interaction_workflow
 Sale Packing List | slap_interaction_workflow
 Slave Instance | slap_interaction_workflow
+Software Installation | slap_interaction_workflow
 Software Instance | slap_interaction_workflow
 Software Release | slap_interaction_workflow
 Virtio Partition | computer_partition_slap_interface_workflow
