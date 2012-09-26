@@ -2093,10 +2093,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     requested_slap_computer_partition = slap_computer_partition.request(**kw)
     self.stepTic()
 
-    sequence.edit(
-        requested_slap_computer_partition=requested_slap_computer_partition,
-        requested_computer_partition_reference=\
-            requested_slap_computer_partition.getId())
+    try:
+      requested_slap_computer_partition.getId()
+    except slap.ResourceNotReady:
+      pass
+    else:
+      sequence.edit(
+          requested_slap_computer_partition=requested_slap_computer_partition,
+          requested_computer_partition_reference=\
+              requested_slap_computer_partition.getId())
 
   def _stepSetSoftwareInstanceChildren(self, sequence, source_reference):
     software_instance_uid = sequence['root_software_instance_uid']
