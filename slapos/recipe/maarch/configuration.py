@@ -26,6 +26,7 @@
 ##############################################################################
 
 import ConfigParser
+import errno
 import lxml.etree
 import md5
 import os
@@ -33,21 +34,22 @@ import os
 import lxml
 
 def temporary_hack():
+    # XXX TODO provide psycopg to sys.path by other means
     import sys
     develop_eggs = '/'.join(lxml.__file__.split('/')[:lxml.__file__.split('/').index('develop-eggs')+1])
     for egg_folder in os.listdir(develop_eggs):
         if egg_folder.startswith('psycopg2'):
             sys.path.append(os.path.join(develop_eggs, egg_folder))
-temporary_hack() # XXX TODO provide psycopg to sys.path by other means
+temporary_hack()
 
 import psycopg2
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+
 def xpath_set(xml, settings):
     for path, value in settings.iteritems():
         xml.xpath(path)[0].text = value
-
 
 
 class Recipe(GenericBaseRecipe):
@@ -60,9 +62,6 @@ class Recipe(GenericBaseRecipe):
 
         self.load_initial_db()
 
-        # XXX TODO: document folder
-        # XXX TODO: test admin password
-
         # confirm that everything is done, the app will run without further setup
         lck_path = self.installed_lock()
 
@@ -71,19 +70,6 @@ class Recipe(GenericBaseRecipe):
                 core_config_xml,
                 lck_path,
                 ]
-
-
-    def installed_lock(self):
-        """\
-        Create an empty file to mean the setup is completed
-        """
-        htdocs = self.options['htdocs']
-        lck_path = os.path.join(htdocs, 'installed.lck')
-
-        with open(lck_path, 'w'):
-            pass
-
-        return lck_path
 
 
     def create_apps_config_xml(self):
@@ -145,10 +131,20 @@ class Recipe(GenericBaseRecipe):
 
 
     def load_initial_db(self):
+        """
+        This method:
+
+         - creates the initial schema
+         - patches the schema for ipv6
+         - loads initial data
+         - sets initial superadmin password
+         - configures and creates docservers directories
+        """
+
         options = self.options
 
         conn = psycopg2.connect(host = options['db_host'],
-                                port = options['db_port'],
+                                port = int(options['db_port']),
                                 database = options['db_dbname'],
                                 user = options['db_username'],
                                 password = options['db_password'])
@@ -171,7 +167,40 @@ class Recipe(GenericBaseRecipe):
         enc_password = md5.md5(options['db_password']).hexdigest()
         cur.execute("UPDATE users SET password=%s WHERE user_id='superadmin';", (enc_password, ))
 
+        # directories described in http://wiki.maarch.org/Maarch_Entreprise/fr/Man/Admin/Stockage
+        for docserver_id, foldername in [
+                ('OFFLINE_1', 'offline'),
+                ('FASTHD_AI', 'ai'),
+                ('OAIS_MAIN_1', 'OAIS_main'),
+                ('OAIS_SAFE_1', 'OAIS_safe'),
+                ('FASTHD_MAN', 'manual'),
+                ('TEMPLATES', 'templates'),
+                ]:
+            full_path = os.path.join(self.options['root_docservers'], foldername)
+            cur.execute('UPDATE docservers SET path_template=%s WHERE docserver_id=%s', (full_path, docserver_id))
+            try:
+                os.makedirs(full_path)
+            except OSError as exc:
+                if exc.errno == errno.EEXIST:
+                    pass
+                else:
+                    raise
+
         conn.commit()
         cur.close()
         conn.close()
+
+
+    def installed_lock(self):
+        """\
+        Create an empty file to mean the setup is completed
+        """
+        htdocs = self.options['htdocs']
+        lck_path = os.path.join(htdocs, 'installed.lck')
+
+        with open(lck_path, 'w'):
+            pass
+
+        return lck_path
+
 
