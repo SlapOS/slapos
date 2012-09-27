@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="State" module="erp5.portal_type"/>
+      <global name="Workflow" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -10,6 +10,23 @@
             <key> <string>_count</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+        <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>state_variable_name</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
             </value>
         </item>
         <item>
@@ -28,27 +45,33 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>destination/workflow_module/vifib_configuration_workflow/64</string>
+                <string>source/workflow_module/slapos_configuration_workflow/1</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>The default SlapOS configuration workflow, used to setup a SlapOS Master</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>11</string> </value>
+            <value> <string>slapos_configuration_workflow</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>State</string> </value>
+            <value> <string>Workflow</string> </value>
+        </item>
+        <item>
+            <key> <string>state_base_category</string> </key>
+            <value> <string>current_state</string> </value>
+        </item>
+        <item>
+            <key> <string>state_variable_name</string> </key>
+            <value> <string>current_state</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Download</string> </value>
+            <value> <string>Slapos Configuration Workflow</string> </value>
         </item>
       </dictionary>
     </pickle>

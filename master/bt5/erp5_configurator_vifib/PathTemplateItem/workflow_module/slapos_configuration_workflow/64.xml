@@ -25,23 +25,11 @@
             </value>
         </item>
         <item>
-            <key> <string>after_script_id</string> </key>
-            <value>
-              <none/>
-            </value>
-        </item>
-        <item>
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>destination/workflow_module/vifib_configuration_workflow/11</string>
+                <string>destination/workflow_module/slapos_configuration_workflow/63</string>
               </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>description</string> </key>
-            <value>
-              <none/>
             </value>
         </item>
         <item>
@@ -50,7 +38,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>14</string> </value>
+            <value> <string>64</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -58,11 +46,13 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Install</string> </value>
+            <value> <string>Finalize</string> </value>
         </item>
         <item>
             <key> <string>transition_form_id</string> </key>
-            <value> <string>BusinessConfiguration_displayVifibDownloadForm</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
       </dictionary>
     </pickle>

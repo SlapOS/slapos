@@ -13,6 +13,23 @@
             </value>
         </item>
         <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>comment</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>_mt_index</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
@@ -25,11 +42,31 @@
             </value>
         </item>
         <item>
+            <key> <string>after_script_id</string> </key>
+            <value> <string>BusinessConfiguration_setupVifibStandardBT5</string> </value>
+        </item>
+        <item>
+            <key> <string>before_script_id</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>destination/workflow_module/vifib_configuration_workflow/63</string>
+                <string>destination/workflow_module/slapos_configuration_workflow/55</string>
               </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>comment</string> </key>
+            <value> <string>Setup all standard bt for ERP5</string> </value>
+        </item>
+        <item>
+            <key> <string>description</string> </key>
+            <value>
+              <none/>
             </value>
         </item>
         <item>
@@ -38,7 +75,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>64</string> </value>
+            <value> <string>56</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -46,13 +83,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Finalize</string> </value>
-        </item>
-        <item>
-            <key> <string>transition_form_id</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>Setup standard BT5</string> </value>
         </item>
       </dictionary>
     </pickle>
