@@ -3,6 +3,7 @@ parts =
   symlinks
   publish
   postgres-instance
+  postgres-promise
 
 
 # Define egg directories to be the one from Software Release
@@ -50,6 +51,14 @@ dbname = db
 pgdata-directory = $${directories:var}/data
 services = $${directories:services}
 bin = $${directories:bin}
+
+
+# Deploy promises scripts
+[postgres-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${basedirectory:promises}/apache
+hostname = $${postgresql:host}
+port = $${postgresql:port}
 
 
 [publish]
