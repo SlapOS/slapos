@@ -43,7 +43,11 @@
         </item>
         <item>
             <key> <string>edit_order</string> </key>
-            <value> <string>[]</string> </value>
+            <value>
+              <list>
+                <string>[]</string>
+              </list>
+            </value>
         </item>
         <item>
             <key> <string>encoding</string> </key>
@@ -110,7 +114,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_viewPublicSoftwareReleaseList</string> </value>
+            <value> <string>WebSection_viewPublicSoftwareProductList</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -118,7 +122,7 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>WebSection_viewPublicSoftwareReleaseList</string> </value>
+            <value> <string>WebSection_viewPublicSoftwareProductList</string> </value>
         </item>
         <item>
             <key> <string>pt</string> </key>
@@ -134,7 +138,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Software Releases</string> </value>
+            <value> <string>Software Products</string> </value>
         </item>
         <item>
             <key> <string>unicode_mode</string> </key>

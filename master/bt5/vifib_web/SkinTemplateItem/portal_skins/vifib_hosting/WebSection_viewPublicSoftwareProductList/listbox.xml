@@ -11,6 +11,7 @@
             <value>
               <list>
                 <string>columns</string>
+                <string>default_params</string>
                 <string>hide_rows_on_no_search_criterion</string>
                 <string>list_method</string>
                 <string>portal_types</string>
@@ -64,6 +65,16 @@
             <value>
               <dictionary>
                 <item>
+                    <key> <string>columns</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>default_params</string> </key>
+                    <value>
+                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                    </value>
+                </item>
+                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string></string> </value>
                 </item>
@@ -72,7 +83,35 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
+                    <key> <string>hide_rows_on_no_search_criterion</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>list_method</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>portal_types</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>select</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>selection_name</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
                     <key> <string>target</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>title</string> </key>
+                    <value> <string></string> </value>
+                </item>
+                <item>
+                    <key> <string>url_columns</string> </key>
                     <value> <string></string> </value>
                 </item>
               </dictionary>
@@ -102,6 +141,21 @@
                     </value>
                 </item>
                 <item>
+                    <key> <string>default_params</string> </key>
+                    <value>
+                      <list>
+                        <tuple>
+                          <string>checked_permission</string>
+                          <string>View</string>
+                        </tuple>
+                        <tuple>
+                          <string>default_aggregate_uid</string>
+                          <string>!= -1</string>
+                        </tuple>
+                      </list>
+                    </value>
+                </item>
+                <item>
                     <key> <string>field_id</string> </key>
                     <value> <string>my_list_mode_listbox</string> </value>
                 </item>
@@ -116,13 +170,18 @@
                 <item>
                     <key> <string>list_method</string> </key>
                     <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+                      <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
                     </value>
                 </item>
                 <item>
                     <key> <string>portal_types</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <tuple>
+                          <string>Software Product</string>
+                          <string>Software Product</string>
+                        </tuple>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -131,7 +190,7 @@
                 </item>
                 <item>
                     <key> <string>selection_name</string> </key>
-                    <value> <string>vifib_public_software_release_selection4</string> </value>
+                    <value> <string>public_software_product_selection</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -139,7 +198,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Software Releases</string> </value>
+                    <value> <string>Software Products</string> </value>
                 </item>
                 <item>
                     <key> <string>url_columns</string> </key>
@@ -168,13 +227,26 @@
   </record>
   <record id="2" aka="AAAAAAAAAAI=">
     <pickle>
+      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <string>python: [(\'default_aggregate_uid\', "!= -1")]</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
       <global name="Method" module="Products.Formulator.MethodField"/>
     </pickle>
     <pickle>
       <dictionary>
         <item>
             <key> <string>method_name</string> </key>
-            <value> <string>Base_getAvailableSoftwareProductList</string> </value>
+            <value> <string>portal_catalog</string> </value>
         </item>
       </dictionary>
     </pickle>
