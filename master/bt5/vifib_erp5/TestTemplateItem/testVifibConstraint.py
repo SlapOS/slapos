@@ -376,6 +376,25 @@ class TestVifibPurchasePackingListLineConstraint(testVifibMixin):
     computer.validate()
     self.assertFalse(consistency_message_state in getMessageList(line))
 
+  def test_aggregate_software_installation(self):
+    consistency_message_existence = 'There should be exactly one Software '\
+      'Installation present in Items'
+
+    line = self.portal.purchase_packing_list_module.newContent(
+      portal_type='Purchase Packing List').newContent(
+        portal_type='Purchase Packing List Line',
+        resource=self.portal.portal_preferences\
+          .getPreferredSoftwareSetupResource())
+
+    self.assertTrue(consistency_message_existence in getMessageList(line))
+
+    software_installation = self.portal.software_installation_module.newContent(
+      portal_type='Software Installation')
+
+    line.setAggregate(software_installation.getRelativeUrl())
+
+    self.assertFalse(consistency_message_existence in getMessageList(line))
+
   def test_aggregate_software_release(self):
     consistency_message_existence = 'There should be exactly one Software '\
       'Release present in Items'
