@@ -763,8 +763,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_release_uid'])
 
-    computer.requestSoftwareReleaseInstallation(
-        software_release_url=software_release.getUrlString())
+    computer.requestSoftwareRelease(
+        software_release_url=software_release.getUrlString(), state='available')
 
   def _createComputer(self):
     # Mimics WebSection_registerNewComputer

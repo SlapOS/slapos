@@ -33,8 +33,8 @@ class TestVifibSlapSupply(TestVifibSlapWebServiceMixin):
     computer = self.portal.portal_catalog.getResultValue(
       uid=sequence['computer_uid'])
     self.assertRaises(NotImplementedError,
-      computer.requestSoftwareReleaseInstallation,
-      software_release_url=sequence['software_release_uri'])
+      computer.requestSoftwareRelease,
+      software_release_url=sequence['software_release_uri'], state='available')
 
   def stepSupplyComputerSoftwareReleaseDestroyed(self, sequence, **kw):
     self.slap = slap.slap()
@@ -49,8 +49,9 @@ class TestVifibSlapSupply(TestVifibSlapWebServiceMixin):
     computer = self.portal.portal_catalog.getResultValue(
       uid=sequence['computer_uid'])
     self.assertRaises(NotImplementedError,
-      computer.requestSoftwareReleaseCleanup,
-      software_release_url=sequence['software_release_uri'])
+      computer.requestSoftwareRelease,
+      software_release_url=sequence['software_release_uri'],
+      state='destroyed')
 
   def test_Supply_supply(self):
     sequence_list = SequenceList()
