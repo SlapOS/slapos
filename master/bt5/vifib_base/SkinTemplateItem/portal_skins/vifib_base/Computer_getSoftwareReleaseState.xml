@@ -59,38 +59,19 @@ software_installation_list = portal.portal_catalog(\n
       validation_state=\'validated\',\n
       limit=1,\n
       url_string={\'query\': portal.portal_catalog.getResultValue(uid=software_release_uid).getUrlString(), \'key\': \'ExactMatch\'},\n
+      sort_on=((\'creation_date\', \'DESC\'),)\n
     )\n
 \n
 if len(software_installation_list) == 0:\n
   return \'Destroyed\'  \n
 \n
 software_installation = software_installation_list[0].getObject()\n
-delivery = software_installation.getCausalityValue(portal_type=\'Purchase Packing List\')\n
-if delivery is None:\n
-  s = software_installation.getSlapState()\n
-  if s == \'start_requested\':\n
-    return \'Installation requested\'\n
-  else:\n
-    return \'Destruction requested\'\n
 \n
-delivery_line = delivery.contentValues(portal_type=\'Purchase Packing List Line\')[0]\n
-resource = delivery_line.getResource()\n
-state = delivery_line.getSimulationState()\n
-\n
-if resource == portal.portal_preferences.getPreferredSoftwareSetupResource():\n
-  if state == \'confirmed\':\n
-    return \'Installation requested\'\n
-  elif state == \'started\':\n
-    return \'Installation in progress\'\n
-  elif state == \'stopped\':\n
-    return \'Installed\'\n
-  else:\n
-    return \'Destroyed\'\n
-elif resource == portal.portal_preferences.getPreferredSoftwareCleanupResource():\n
-  if state == \'confirmed\':\n
-    return \'Destruction requested\'\n
-  else:\n
-    return \'Destroyed\'\n
+s = software_installation.getSlapState()\n
+if s == \'start_requested\':\n
+  return \'Installation requested\'\n
+else:\n
+  return \'Destruction requested\'\n
 </string> </value>
         </item>
         <item>
