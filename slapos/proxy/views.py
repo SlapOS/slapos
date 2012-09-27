@@ -195,6 +195,10 @@ def availableComputerPartition():
 def softwareInstanceError():
   return 'Ignored'
 
+@app.route('/softwareInstanceBang', methods=['POST'])
+def softwareInstanceBang():
+  return 'Ignored'
+
 @app.route('/startedComputerPartition', methods=['POST'])
 def startedComputerPartition():
   return 'Ignored'
