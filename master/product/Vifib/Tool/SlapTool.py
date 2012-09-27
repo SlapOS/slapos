@@ -137,12 +137,17 @@ class SlapTool(BaseTool):
   # Public GET methods
   ####################################################
 
+  def _isTestRun(self):
+    if self.getPortalObject().MailHost.__class__.__name__ == 'DummyMailHost':
+      return True
+    return False
+
   def _getCachePlugin(self):
     return self.getPortalObject().portal_caches\
       .getRamCacheRoot().get('computer_information_cache_factory')\
       .getCachePluginList()[0]
 
-  def _fillComputerInformationCache(self, computer_id, user, full):
+  def _getCacheComputerInformation(self, computer_id, user, full):
     user_document = self.getPortalObject().portal_catalog.getResultValue(
       reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
     user_type = user_document.getPortalType()
@@ -159,10 +164,13 @@ class SlapTool(BaseTool):
                     portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
           self._getSlapPartitionByPackingList(computer_partition.getObject()))
+    return xml_marshaller.xml_marshaller.dumps(slap_computer)
+
+  def _fillComputerInformationCache(self, computer_id, user, full):
     self._getCachePlugin().set(user, DEFAULT_CACHE_SCOPE,
       dict (
         time=time.time(),
-        data=xml_marshaller.xml_marshaller.dumps(slap_computer),
+        data=self._getCacheComputerInformation(computer_id, user, full),
       ),
       cache_duration=self.getPortalObject().portal_caches\
           .getRamCacheRoot().get('computer_information_cache_factory'\
@@ -185,21 +193,24 @@ class SlapTool(BaseTool):
 
     slap_computer._computer_partition_list = []
     if user_type in ('Computer', 'Person'):
-      cache_plugin = self._getCachePlugin()
-      try:
-        entry = cache_plugin.get(user, DEFAULT_CACHE_SCOPE)
-      except KeyError:
-        entry = None
-      if entry is not None and type(entry.getValue()) == type({}):
-        result = entry.getValue()['data']
-        if time.time() - entry.getValue()['time'] > 60 * 1:
-          # entry was stored 1 minutes ago, ask for recalculation
+      if not self._isTestRun():
+        cache_plugin = self._getCachePlugin()
+        try:
+          entry = cache_plugin.get(user, DEFAULT_CACHE_SCOPE)
+        except KeyError:
+          entry = None
+        if entry is not None and type(entry.getValue()) == type({}):
+          result = entry.getValue()['data']
+          if time.time() - entry.getValue()['time'] > 60 * 1:
+            # entry was stored 1 minutes ago, ask for recalculation
+            self._activateFillComputerInformationCache(computer_id, user, full)
+          return result
+        else:
           self._activateFillComputerInformationCache(computer_id, user, full)
-        return result
+          self.REQUEST.response.setStatus(503)
+          return self.REQUEST.response
       else:
-        self._activateFillComputerInformationCache(computer_id, user, full)
-        self.REQUEST.response.setStatus(503)
-        return self.REQUEST.response
+        return self._getCacheComputerInformation(computer_id, user, full)
     else:
       slap_computer._software_release_list = []
     for computer_partition in self.getPortalObject().portal_catalog(
@@ -221,10 +232,13 @@ class SlapTool(BaseTool):
     """
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
     self._logAccess(user, user, '#access %s' % computer_id)
-    return CachingMethod(self._getComputerInformation,
+    if not self._isTestRun():
+      return CachingMethod(self._getComputerInformation,
                          id='_getComputerInformation',
                          cache_factory='slap_cache_factory')(
                             computer_id, user, False)
+    else:
+      return self._getComputerInformation(computer_id, user, False)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getFullComputerInformation')
@@ -237,10 +251,13 @@ class SlapTool(BaseTool):
     """
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
     self._logAccess(user, user, '#access %s' % computer_id)
-    return CachingMethod(self._getComputerInformation,
+    if not self._isTestRun():
+      return CachingMethod(self._getComputerInformation,
                          id='_getFullComputerInformation',
                          cache_factory='slap_cache_factory')(
                             computer_id, user, True)
+    else:
+      return self._getComputerInformation(computer_id, user, True)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getComputerPartitionCertificate')
