@@ -12,5 +12,9 @@ vifib_mysql_innodb_catalog
 vifib_open_trade
 vifib_payzen
 vifib_slap
+vifib_slapos_accounting
+vifib_slapos_capacity
+vifib_slapos_rest_api_v1
 vifib_software_pdm
+vifib_upgrader
 vifib_web
