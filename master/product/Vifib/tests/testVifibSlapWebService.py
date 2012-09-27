@@ -117,42 +117,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def unfakeSlapAuth(self):
     unfakeSlapAuth()
 
-  def fakeGetComputerInformation(self):
-    from slapos.slap.slap import ConnectionHelper, ServerError
-    if getattr(ConnectionHelper, '_oldGetFullComputerInformation', None) is None:
-      ConnectionHelper._oldGetFullComputerInformation = \
-        ConnectionHelper.getFullComputerInformation
-    running_test = self
-
-    def monkeyPatchedGetFullComputerInformation(self, computer_id):
-      try:
-        return self._oldGetFullComputerInformation(computer_id)
-      except ServerError:
-        transaction.commit()
-        running_test.stepCleanTic()
-        transaction.commit()
-        return self._oldGetFullComputerInformation(computer_id)
-
-    ConnectionHelper.getFullComputerInformation = \
-        monkeyPatchedGetFullComputerInformation
-
-  def unfakeGetComputerInformation(self):
-    from slapos.slap.slap import ConnectionHelper
-    if getattr(ConnectionHelper, '_oldGetFullComputerInformation', None) \
-                                                                   is not None:
-      ConnectionHelper.getFullComputerInformation = \
-          ConnectionHelper._oldGetFullComputerInformation
-      delattr(ConnectionHelper, '_oldGetFullComputerInformation',)
-
   def afterSetUp(self):
     self.fakeSlapAuth()
-    self.fakeGetComputerInformation()
     testVifibMixin.afterSetUp(self)
     self.server_url = self.portal.portal_slap.absolute_url()
 
   def beforeTearDown(self):
     self.unfakeSlapAuth()
-    self.unfakeGetComputerInformation()
     super(testVifibMixin, self).beforeTearDown()
 
   def _loginAsUser(self, username):
