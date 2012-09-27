@@ -15,7 +15,9 @@ Changes
    bcac5a397d, fbb680f53b)[Cedric Le Ninivin]
  * slapgrid: bulletproof slapgrid-cp: in case one instance is bad, still
    processes all other ones. (commits bac94cdb56, 77bc6c75b3d, bd68b88cc3)
-	 [Cedric de Saint Martin]
+   [Cedric de Saint Martin]
+ * Add support for "upload to binary cache" URL blacklist [Cedric de Saint
+   Martin]
 
 0.30 (2012-09-19)
 -----------------
