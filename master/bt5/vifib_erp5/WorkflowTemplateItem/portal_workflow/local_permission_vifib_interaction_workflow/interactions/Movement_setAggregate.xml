@@ -68,7 +68,6 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Purchase Packing List Line</string>
                 <string>Sale Order Line</string>
                 <string>Sale Packing List Line</string>
               </list>

@@ -50,17 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-software_release = portal.portal_catalog.getResultValue(\n
-  portal_type="Software Release",\n
-  default_aggregate_uid=context.getUid(),\n
-  validation_state="published",\n
-  sort_on=((\'indexation_timestamp\', \'DESC\')),\n
-  **{\'software_release.state\': [\'delivered\', \'stopped\']}\n
-)\n
-\n
-return software_release.absolute_url() + "/SoftwareRelease_viewRequestDialog"\n
+            <value> <string>software_release = context.getAggregateValue(portal_type=\'Software Release\')\n
+if software_release is not None:\n
+  return software_release.absolute_url() + "/SoftwareRelease_viewRequestDialog"\n
 </string> </value>
         </item>
         <item>

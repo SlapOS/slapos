@@ -77,7 +77,7 @@
         </item>
         <item>
             <key> <string>custom_render_method_id</string> </key>
-            <value> <string>WebSection_viewPublicSoftwareReleaseList</string> </value>
+            <value> <string>WebSection_viewPublicSoftwareProductList</string> </value>
         </item>
         <item>
             <key> <string>default_page_displayed</string> </key>

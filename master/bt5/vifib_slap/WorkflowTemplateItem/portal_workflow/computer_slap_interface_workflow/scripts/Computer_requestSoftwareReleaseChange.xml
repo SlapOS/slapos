@@ -52,88 +52,83 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
 computer = state_change[\'object\']\n
+portal = computer.getPortalObject()\n
 # Get required arguments\n
 kwargs = state_change.kwargs\n
-software_release_url = state_change.kwargs["software_release_url"]\n
 \n
-portal = computer.getPortalObject()\n
+# Required args\n
+# Raise TypeError if all parameters are not provided\n
+try:\n
+  software_release_url = kwargs[\'software_release_url\']\n
+  state = kwargs["state"]\n
+except KeyError:\n
+  raise TypeError("Computer_requestSoftwareReleaseChange takes exactly 2 arguments")\n
 \n
+tag = "%s_%s_inProgress" % (computer.getUid(), \n
+                               software_release_url)\n
 \n
-# Only get one software release\n
-software_release_document_result = portal.portal_catalog(\n
-  portal_type=\'Software Release\', # validation_state=(\'shared\', \'released\', \'published\', \'shared_alive\', \'released_alive\', \'published_alive\'),\n
-  url_string=software_release_url, limit=2)\n
-if len(software_release_document_result) != 1:\n
-  raise ValueError("No software release found for %s %s" % (computer.getRelativeUrl(), software_release_url))\n
+if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
+  # The software instance is already under creation but can not be fetched from catalog\n
+  # As it is not possible to fetch informations, it is better to raise an error\n
+  raise NotImplementedError(tag)\n
+\n
+software_installation_portal_type = \'Software Installation\'\n
+# Check if it already exists\n
+software_installation_list = portal.portal_catalog(\n
+  portal_type=software_installation_portal_type,\n
+  url_string={\'query\': software_release_url, \'key\': \'ExactMatch\'},\n
+  validation_state="validated",\n
+  default_aggregate_uid=computer.getUid(),\n
+  limit=2,\n
+  )\n
+\n
+if len(software_installation_list) > 1:\n
+  raise NotImplementedError("Too many Software Installation %s found %s" % (software_release_url, [x.path for x in software_installation_list]))\n
+elif len(software_installation_list) == 1:\n
+  software_installation = software_installation_list[0].getObject()\n
+  if (software_installation.getSlapState() == "destroy_requested") or \\\n
+     (software_installation.getUrlString() != software_release_url) or \\\n
+     (software_installation.getValidationState() != "validated") or \\\n
+     (software_installation.getAggregate() != computer.getRelativeUrl()):\n
+    raise NotImplementedError("The system was not able to get the expected Software Installation")\n
 else:\n
-  software_release_document = software_release_document_result[0]\n
+  if (state == "destroyed"):\n
+    # No need to create destroyed subscription.\n
+    return\n
+  software_installation_reference = "SOFTINSTALL-%s" % context.getPortalObject().portal_ids\\\n
+      .generateNewId(id_group=\'slap_software_installation_reference\', id_generator=\'uid\')\n
+  software_installation = portal.getDefaultModule(portal_type=software_installation_portal_type).newContent(\n
+    portal_type=software_installation_portal_type,\n
+    reference=software_installation_reference,\n
+    url_string=software_release_url,\n
+    aggregate=computer.getRelativeUrl(),\n
+    activate_kw={\'tag\': tag},\n
+  )\n
 \n
-tag = \'Computer_%s_software_release_%s_change\' % (computer.getUid(), software_release_document.getUid())\n
-if portal.portal_activities.countMessageWithTag(tag) > 0:\n
-  raise NotImplementedError(\'In progress\')\n
-activate_kw = {\'tag\': tag}\n
+# Change desired state\n
+if (state == "available"):\n
+  software_installation.requestStart()\n
+elif (state == "destroyed"):\n
+  software_installation.requestDestroy()\n
+else:\n
+  raise ValueError("state should be available or destroyed, but is %s" % state)\n
 \n
-state_list = []\n
-state_list.extend(portal.getPortalReservedInventoryStateList())\n
-state_list.extend(portal.getPortalTransitInventoryStateList())\n
-state_list.extend([\'stopped\', \'delivered\'])\n
+# Change the state at the end to allow to execute updateLocalRoles only once in the transaction\n
+validation_state = software_installation.getValidationState()\n
+slap_state = software_installation.getSlapState()\n
+if validation_state == \'draft\':\n
+  portal.portal_workflow.doActionFor(software_installation,\n
+                                           \'validate_action\')\n
 \n
-current_delivery_line = portal.portal_catalog.getResultValue(\n
-  portal_type=\'Purchase Packing List Line\',\n
-  simulation_state=state_list,\n
-  default_resource_uid=[\n
-    portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareCleanupResource()).getUid(),\n
-    portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource()).getUid(),\n
-  ],\n
-  sort_on=((\'movement.start_date\', \'DESC\'),),\n
-  aggregate_relative_url=ComplexQuery(\n
-    Query(aggregate_relative_url=software_release_document.getRelativeUrl()),\n
-    Query(aggregate_relative_url=computer.getRelativeUrl()),\n
-    operator="AND"),\n
-  limit=1\n
-)\n
-\n
-if current_delivery_line is not None and current_delivery_line.getResourceUid() == service_uid and current_delivery_line.getSimulationState() not in [\'stopped\', \'delivered\']:\n
-  # change installation in progress\n
-  return\n
-\n
-# XXX Hardcoded values\n
-person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
-\n
-packing_list_portal_type = "Purchase Packing List"\n
-module = portal.getDefaultModule(portal_type=packing_list_portal_type)\n
-packing_list = module.newContent(\n
-  portal_type=packing_list_portal_type,\n
-  start_date=DateTime(),\n
-  destination_value=person,\n
-  destination_section_value=person,\n
-  destination_decision_value=person,\n
-  source_administration_value=person,\n
-  # XXX Hardcoded values\n
-  source="organisation_module/vifib_internet",\n
-  source_section="organisation_module/vifib_internet",\n
-  price_currency="currency_module/EUR",\n
-  activate_kw=activate_kw\n
-)\n
-packing_list.newContent(\n
-  portal_type="Purchase Packing List Line",\n
-  resource_uid=service_uid,\n
-  aggregate_value_list=[software_release_document, computer],\n
-  quantity=1,\n
-  activate_kw=activate_kw\n
-)\n
-\n
-packing_list.confirm(activate_kw=activate_kw)\n
-packing_list.startBuilding()\n
+context.REQUEST.set(\'software_installation_url\', software_installation.getRelativeUrl())\n
 
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change, service_uid</string> </value>
+            <value> <string>state_change</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

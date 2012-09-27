@@ -76,6 +76,10 @@
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Software Installation</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Software Instance</type>
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>
