@@ -96,6 +96,10 @@ class Recipe(GenericBaseRecipe):
         config_xml_default = os.path.join(folder, 'config.xml.default')
         config_xml = os.path.join(folder, 'config.xml')
 
+        # do not overwrite the config.xml file (it can be customized inside the application)
+        if os.path.exists(config_xml):
+            return
+
         content = open(config_xml_default, 'rb').read()
         xml = lxml.etree.fromstring(content)
 
@@ -120,6 +124,10 @@ class Recipe(GenericBaseRecipe):
         folder = os.path.join(options['htdocs'], 'core/xml')
         config_xml_default = os.path.join(folder, 'config.xml.default')
         config_xml = os.path.join(folder, 'config.xml')
+
+        # do not overwrite the config.xml file (it can be customized inside the application)
+        if os.path.exists(config_xml):
+            return
 
         content = open(config_xml_default, 'rb').read()
         xml = lxml.etree.fromstring(content)
@@ -167,6 +175,12 @@ class Recipe(GenericBaseRecipe):
                                 password = options['db_password'])
 
         cur = conn.cursor()
+
+        # skip everything if the tables have already been created
+        cur.execute("SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='docservers';")
+        if cur.rowcount == 1:
+            conn.close()
+            return
 
         htdocs = options['htdocs']
 
