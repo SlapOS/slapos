@@ -1177,6 +1177,7 @@ class SlapTool(BaseTool):
         software_release_response._requested_state = 'destroyed'
       else:
         software_release_response._requested_state = 'available'
+      software_release_list.append(software_release_response)
     return software_release_list
 
   def _reportComputerUsage(self, computer, usage):
