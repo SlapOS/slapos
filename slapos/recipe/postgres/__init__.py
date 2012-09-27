@@ -34,7 +34,7 @@ from zc.buildout import UserError
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 
-# TODO: read ipv6 host without calling loads() in createConfig()
+# TODO: read ipv6 host without calling loads()
 
 
 class Recipe(GenericBaseRecipe):
@@ -51,9 +51,25 @@ class Recipe(GenericBaseRecipe):
     The URL can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
     """
 
+    def fetch_host(self, options):
+        """
+        Returns a string represtation of ipv6_host.
+        May receive a regular string, a set or a string serialized by buildout.
+        """
+        from zc.buildout import buildout
+        ipv6_host = options['ipv6_host']
+
+        if ipv6_host.startswith(buildout.SERIALISED_VALUE_MAGIC):
+            return buildout.loads(ipv6_host).pop()
+        elif isinstance(ipv6_host, set):
+            return ipv6_host.pop()
+        else:
+            return ipv6_host
+
+
     def _options(self, options):
         options['password'] = self.generatePassword()
-        options['url'] = 'postgresql://%(user)s:%(password)s@[%(host)s]:%(port)s/%(dbname)s' % dict(options, host=options['ipv6_host'].pop())
+        options['url'] = 'postgresql://%(user)s:%(password)s@[%(host)s]:%(port)s/%(dbname)s' % dict(options, host=self.fetch_host(options))
 
 
     def install(self):
@@ -88,9 +104,6 @@ class Recipe(GenericBaseRecipe):
 
 
     def createConfig(self):
-        from zc.buildout import buildout
-        host = buildout.loads(self.options['ipv6_host']).pop()      # XXX ugly hack
-
         pgdata = self.options['pgdata-directory']
 
         with open(os.path.join(pgdata, 'postgresql.conf'), 'wb') as cfg:
@@ -106,7 +119,7 @@ class Recipe(GenericBaseRecipe):
                     lc_numeric = 'en_US.UTF-8'
                     lc_time = 'en_US.UTF-8'
                     default_text_search_config = 'pg_catalog.english'
-                    """ % host))
+                    """ % self.fetch_host(self.options)))
 
 
         with open(os.path.join(pgdata, 'pg_hba.conf'), 'wb') as cfg:
