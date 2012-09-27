@@ -56,7 +56,7 @@ bin = $${directories:bin}
 # Deploy promises scripts
 [postgres-promise]
 recipe = slapos.cookbook:check_port_listening
-path = $${basedirectory:promises}/apache
+path = $${directories:promises}/apache
 hostname = $${postgresql:host}
 port = $${postgresql:port}
 
