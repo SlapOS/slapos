@@ -14,6 +14,7 @@ CODE=$(%(curl_path)s -k -sL $URL -w %%{http_code} -o /dev/null)
 if [ ! $CODE ]; then
   echo "$URL is not available (server not reachable)." >&2
   exit 1
+fi
 
 if [ $CODE -eq 000 ]; then
   echo "$URL is not available (server not reachable)." >&2
