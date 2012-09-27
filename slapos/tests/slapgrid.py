@@ -965,9 +965,10 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                                [instance.software.software_hash])
     self.assertEqual(computer.sequence, ['getFullComputerInformation'])
 
-
-class TestSlapgridArgumentTuple(unittest.TestCase):
+class SlapgridInitialization(unittest.TestCase):
   """
+  "Abstract" class setting setup and teardown for TestSlapgridArgumentTuple
+  and TestSlapgridConfigurationFile.
   """
 
   def setUp(self):
@@ -1004,6 +1005,11 @@ buildout = /path/to/buildout/binary
     self.slapos_config_descriptor.close()
     self.signature_key_file_descriptor.close()
     shutil.rmtree(self.certificate_repository_path, True)
+
+class TestSlapgridArgumentTuple(SlapgridInitialization):
+  """
+  Test suite about arguments given to slapgrid command.
+  """
 
   def test_empty_argument_tuple(self):
     """
@@ -1084,6 +1090,126 @@ buildout = /path/to/buildout/binary
     argument_tuple = ("--maximum-periodicity","40") + self.default_arg_tuple
     slapgrid_object = parser(*argument_tuple)[0]
     self.assertTrue(slapgrid_object.force_periodicity)
+
+class TestSlapgridConfigurationFile(SlapgridInitialization):
+  
+  def test_upload_binary_cache_blacklist(self):
+    """
+      Check if giving --upload-to-binary-cache-url-blacklist triggers option.
+    """
+    self.slapos_config_descriptor.write("""
+[slapos]
+software_root = /opt/slapgrid
+instance_root = /srv/slapgrid
+master_url = https://slap.vifib.com/
+computer_id = your computer id
+buildout = /path/to/buildout/binary
+[networkcache]
+upload-to-binary-cache-url-blacklist =
+  http://1
+  http://2/bla
+""" % dict(fake_file=self.fake_file_descriptor.name))
+    self.slapos_config_descriptor.seek(0)
+    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+        *self.default_arg_tuple)[0]
+    self.assertEqual(
+        slapgrid_object.upload_to_binary_cache_url_blacklist,
+        ['http://1', 'http://2/bla']
+    )
+    self.assertEqual(
+        slapgrid_object.download_from_binary_cache_url_blacklist,
+        []
+    )
+
+  def test_download_binary_cache_blacklist(self):
+    """
+      Check if giving --download-from-binary-cache-url-blacklist triggers option.
+    """
+    self.slapos_config_descriptor.write("""
+[slapos]
+software_root = /opt/slapgrid
+instance_root = /srv/slapgrid
+master_url = https://slap.vifib.com/
+computer_id = your computer id
+buildout = /path/to/buildout/binary
+[networkcache]
+download-from-binary-cache-url-blacklist =
+  http://1
+  http://2/bla
+""" % dict(fake_file=self.fake_file_descriptor.name))
+    self.slapos_config_descriptor.seek(0)
+    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+        *self.default_arg_tuple)[0]
+    self.assertEqual(
+        slapgrid_object.upload_to_binary_cache_url_blacklist,
+        []
+    )
+    self.assertEqual(
+        slapgrid_object.download_from_binary_cache_url_blacklist,
+        ['http://1', 'http://2/bla']
+    )
+
+  def test_upload_download_binary_cache_blacklist(self):
+    """
+      Check if giving both --download-from-binary-cache-url-blacklist
+      and --upload-to-binary-cache-url-blacklist triggers options.
+    """
+    self.slapos_config_descriptor.write("""
+[slapos]
+software_root = /opt/slapgrid
+instance_root = /srv/slapgrid
+master_url = https://slap.vifib.com/
+computer_id = your computer id
+buildout = /path/to/buildout/binary
+[networkcache]
+upload-to-binary-cache-url-blacklist =
+  http://1
+  http://2/bla
+download-from-binary-cache-url-blacklist =
+  http://3
+  http://4/bla
+""" % dict(fake_file=self.fake_file_descriptor.name))
+    self.slapos_config_descriptor.seek(0)
+    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+        *self.default_arg_tuple)[0]
+    self.assertEqual(
+        slapgrid_object.upload_to_binary_cache_url_blacklist,
+        ['http://1', 'http://2/bla']
+    )
+    self.assertEqual(
+        slapgrid_object.download_from_binary_cache_url_blacklist,
+        ['http://3', 'http://4/bla']
+    )
+
+  def test_backward_compatibility_download_binary_cache_blacklist(self):
+    """
+      Check if giving both --binary-cache-url-blacklist
+      and --upload-to-binary-cache-blacklist triggers options.
+    """
+    self.slapos_config_descriptor.write("""
+[slapos]
+software_root = /opt/slapgrid
+instance_root = /srv/slapgrid
+master_url = https://slap.vifib.com/
+computer_id = your computer id
+buildout = /path/to/buildout/binary
+[networkcache]
+binary-cache-url-blacklist =
+  http://1
+  http://2/bla
+""" % dict(fake_file=self.fake_file_descriptor.name))
+    self.slapos_config_descriptor.seek(0)
+    slapgrid_object = slapgrid.parseArgumentTupleAndReturnSlapgridObject(
+        *self.default_arg_tuple)[0]
+    self.assertEqual(
+        slapgrid_object.upload_to_binary_cache_url_blacklist,
+        []
+    )
+    self.assertEqual(
+        slapgrid_object.download_from_binary_cache_url_blacklist,
+        ['http://1', 'http://2/bla']
+    )
+
 
 class TestSlapgridCPWithMasterPromise(MasterMixin, unittest.TestCase):
   def test_one_failing_promise(self):
