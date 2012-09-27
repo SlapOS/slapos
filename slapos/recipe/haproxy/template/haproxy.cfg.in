@@ -29,13 +29,4 @@ defaults
   # to render a page
   option forceclose
 
-listen %(name)s %(ip)s:%(port)s
-  cookie  SERVERID insert
-  balance roundrobin
-
 %(server_text)s
-
-  option httpchk GET %(server_check_path)s
-
-  stats uri /haproxy
-  stats realm Global\ statistics
