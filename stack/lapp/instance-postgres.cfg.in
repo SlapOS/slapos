@@ -56,8 +56,9 @@ bin = $${directories:bin}
 # Deploy promises scripts
 [postgres-promise]
 recipe = slapos.cookbook:check_port_listening
-path = $${directories:promises}/apache
-hostname = $${postgres-instance:ipv6_host}
+path = $${directories:promises}/postgres
+#hostname = $${postgres-instance:ipv6_host}
+hostname = $${slap-network-information:global-ipv6}
 port = $${postgres-instance:port}
 
 
