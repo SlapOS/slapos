@@ -133,7 +133,7 @@ class Recipe(GenericBaseRecipe):
                     host    all             all             127.0.0.1/32            md5
                     host    all             all             ::1/128                 md5
                     host    all             all             %s/128                  md5
-                    """ % host))
+                    """ % self.fetch_host(self.options)))
 
 
     def createDatabase(self):
