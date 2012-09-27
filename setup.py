@@ -59,6 +59,7 @@ setup(name=name,
           'slapproxy = slapos.proxy:main',
           'bang = slapos.bang:main',
           'slapos = slapos.entry:main',
+          'watchdog = slapos.grid.watchdog:main',
         ]
       },
       test_suite="slapos.tests",

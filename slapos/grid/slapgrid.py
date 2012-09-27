@@ -451,6 +451,17 @@ class Slapgrid(object):
           computer_partition_filter_list.split(",")
     self.maximum_periodicity = maximum_periodicity
     self.force_periodicity = force_periodicity
+    # XXX hardcoded watchdog_path
+    self.watchdog_path = '/opt/slapos/bin/watchdog'
+
+  def getWatchdogLine(self):
+    invocation_list = [self.watchdog_path]
+    invocation_list.append("--master-url '%s' " % self.master_url)
+    if self.key_file is not None and self.cert_file is not None:
+      invocation_list.append("--cert-file %s" % self.cert_file)
+      invocation_list.append("--key-file %s" % self.key_file)
+    invocation_list.append("--computer-id '%s'" % self.computer_id)
+    return ' '.join(invocation_list)
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -486,6 +497,7 @@ class Slapgrid(object):
             supervisord_pidfile=os.path.abspath(os.path.join(
               self.instance_root, 'var', 'run', 'supervisord.pid')),
             supervisord_logfile_backups='10',
+            watchdog_command = self.getWatchdogLine(),
           ))
     except (WrongPermissionError, PathDoesNotExistError) as error:
       raise error

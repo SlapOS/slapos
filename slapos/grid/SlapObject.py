@@ -43,6 +43,7 @@ from exception import BuildoutFailedError, WrongPermissionError, \
     PathDoesNotExistError
 from networkcache import download_network_cached, upload_network_cached
 import tarfile
+from watchdog import getWatchdogID
 
 REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 
@@ -237,6 +238,7 @@ class Partition(object):
     self.software_path = software_path
     self.instance_path = instance_path
     self.run_path = os.path.join(self.instance_path, 'etc', 'run')
+    self.service_path = os.path.join(self.instance_path, 'etc', 'service')
     self.supervisord_partition_configuration_path = \
         supervisord_partition_configuration_path
     self.supervisord_socket = supervisord_socket
@@ -275,6 +277,26 @@ class Partition(object):
     uid = stat_info.st_uid
     gid = stat_info.st_gid
     return (uid, gid)
+
+  def addServiceToGroup(self, partition_id,
+                        runner_list, path, extension = ''):
+    uid, gid = self.getUserGroupId()
+    program_partition_template = pkg_resources.resource_stream(__name__,
+            'templates/program_partition_supervisord.conf.in').read()
+    for runner in runner_list:
+      self.partition_supervisor_configuration += '\n' + \
+          program_partition_template % dict(
+        program_id='_'.join([partition_id, runner]),
+        program_directory=self.instance_path,
+        program_command=os.path.join(path, runner),
+        program_name=runner+extension,
+        instance_path=self.instance_path,
+        user_id=uid,
+        group_id=gid,
+        # As supervisord has no environment to inherit setup minimalistic one
+        HOME=pwd.getpwuid(uid).pw_dir,
+        USER=pwd.getpwuid(uid).pw_name,
+      )
 
   def install(self):
     """ Creates configuration file from template in software_path, then
@@ -384,42 +406,35 @@ class Partition(object):
     self.logger.info("Generating supervisord config file from template...")
     # check if CP/etc/run exists and it is a directory
     # iterate over each file in CP/etc/run
+    # iterate over each file in CP/etc/service adding WatchdogID to their name
     # if at least one is not 0750 raise -- partition has something funny
     runner_list = []
+    service_list = []
     if os.path.exists(self.run_path):
       if os.path.isdir(self.run_path):
         runner_list = os.listdir(self.run_path)
-    if len(runner_list) == 0:
-      self.logger.warning('No runners found for partition %r' %
+    if os.path.exists(self.service_path):
+      if os.path.isdir(self.service_path):
+        service_list = os.listdir(self.service_path)
+    if len(runner_list) == 0 and len(service_list) == 0:
+      self.logger.warning('No runners nor services found for partition %r' %
           self.partition_id)
       if os.path.exists(self.supervisord_partition_configuration_path):
         os.unlink(self.supervisord_partition_configuration_path)
     else:
       partition_id = self.computer_partition.getId()
-      program_partition_template = pkg_resources.resource_stream(__name__,
-          'templates/program_partition_supervisord.conf.in').read()
       group_partition_template = pkg_resources.resource_stream(__name__,
           'templates/group_partition_supervisord.conf.in').read()
-      partition_supervisor_configuration = group_partition_template % dict(
+      self.partition_supervisor_configuration = group_partition_template % dict(
           instance_id=partition_id,
           program_list=','.join(['_'.join([partition_id, runner])
-            for runner in runner_list]))
-      for runner in runner_list:
-        partition_supervisor_configuration += '\n' + \
-            program_partition_template % dict(
-          program_id='_'.join([partition_id, runner]),
-          program_directory=self.instance_path,
-          program_command=os.path.join(self.run_path, runner),
-          program_name=runner,
-          instance_path=self.instance_path,
-          user_id=uid,
-          group_id=gid,
-          # As supervisord has no environment to inherit setup minimalistic one
-          HOME=pwd.getpwuid(uid).pw_dir,
-          USER=pwd.getpwuid(uid).pw_name,
-        )
+            for runner in runner_list+service_list]))
+      # Same method to add to service and run 
+      self.addServiceToGroup(partition_id, runner_list,self.run_path)
+      self.addServiceToGroup(partition_id, service_list,self.service_path,
+                             extension=getWatchdogID())
       utils.updateFile(self.supervisord_partition_configuration_path,
-          partition_supervisor_configuration)
+          self.partition_supervisor_configuration)
     self.updateSupervisor()
 
   def start(self):

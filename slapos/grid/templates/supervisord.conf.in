@@ -18,3 +18,7 @@ logfile-backups = %(supervisord_logfile_backups)s
 [unix_http_server]
 file=%(supervisord_socket)s
 chmod=0700
+
+[eventlistener:watchdog]
+command=%(watchdog_command)s
+events=PROCESS_STATE_EXITED, PROCESS_STATE_FATAL
