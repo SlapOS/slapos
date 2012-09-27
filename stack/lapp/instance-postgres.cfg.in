@@ -43,7 +43,7 @@ symlink_base = ${postgresql:location}/bin
 recipe = slapos.cookbook:postgres
 
 # Options
-ipv6_host = $${instance-parameters:ipv6}
+ipv6_host = $${slap-network-information:global-ipv6}
 user = postgres
 port = 5432
 dbname = db
@@ -57,7 +57,6 @@ bin = $${directories:bin}
 [postgres-promise]
 recipe = slapos.cookbook:check_port_listening
 path = $${directories:promises}/postgres
-#hostname = $${postgres-instance:ipv6_host}
 hostname = $${slap-network-information:global-ipv6}
 port = $${postgres-instance:port}
 
