@@ -72,21 +72,26 @@ class Recipe(GenericBaseRecipe):
     """
 
     def install(self):
-        apps_config_xml = self.create_apps_config_xml()
-        core_config_xml = self.create_core_config_xml()
-
         self.update_phpini(php_ini_path=os.path.join(self.options['php_ini_dir'], 'php.ini'))
 
         self.load_initial_db()
 
+        ret = []
+
+        apps_config_xml = self.create_apps_config_xml()
+        if apps_config_xml:
+            ret.append(apps_config_xml)
+
+        core_config_xml = self.create_core_config_xml()
+        if core_config_xml:
+            ret.append(core_config_xml)
+
         # confirm that everything is done, the app will run without further setup
         lck_path = self.installed_lock()
+        ret.append(lck_path)
 
-        return [
-                apps_config_xml,
-                core_config_xml,
-                lck_path,
-                ]
+        return ret
+
 
 
     def create_apps_config_xml(self):
