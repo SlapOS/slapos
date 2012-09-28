@@ -31,12 +31,10 @@
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
 from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
-from Products.ERP5Security.ERP5UserManager import SUPER_USER
 from OFS.Traversable import NotFound
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type.Tool.BaseTool import BaseTool
-from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from Products.ERP5Type import Permissions
 from Products.ERP5Type.Cache import CachingMethod
 from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
@@ -148,9 +146,6 @@ class SlapTool(BaseTool):
       .getCachePluginList()[0]
 
   def _getCacheComputerInformation(self, computer_id, user, full):
-    user_document = self.getPortalObject().portal_catalog.getResultValue(
-      reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
-    user_type = user_document.getPortalType()
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
     slap_computer = Computer(computer_id)
     parent_uid = self._getComputerUidByReference(computer_id)
@@ -596,7 +591,7 @@ class SlapTool(BaseTool):
     except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
       LOG('SlapTool::_validateXML', INFO, 
         'Failed to parse this XML reports : %s\n%s' % \
-          (to_be_validated, _formatXMLError(e)))
+          (to_be_validated, e))
       return False
 
     if xmlschema.validate(document):
@@ -625,7 +620,6 @@ class SlapTool(BaseTool):
   def _getSlapPartitionByPackingList(self, computer_partition_document):
     computer = computer_partition_document
     portal = self.getPortalObject()
-    portal_preferences = portal.portal_preferences
     while computer.getPortalType() != 'Computer':
       computer = computer.getParentValue()
     computer_id = computer.getReference()
