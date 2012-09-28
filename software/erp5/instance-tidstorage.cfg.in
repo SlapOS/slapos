@@ -263,6 +263,7 @@ cloudooo-url = {{ slapparameter_dict['cloudooo-url'] }}
 smtp-url = ${slap-parameter:smtp-url}
 bt5 = ${slap-parameter:bt5}
 bt5-repository-url = ${slap-parameter:bt5-repository-url}
+certificate-authority-path = ${erp5-certificate-authority:ca-dir}
 
 #############################
 # ZEO

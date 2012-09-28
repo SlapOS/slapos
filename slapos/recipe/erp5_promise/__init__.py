@@ -34,12 +34,15 @@ class Recipe(GenericBaseRecipe):
   """
 
   def install(self):
-
     promise_parser = ConfigParser.RawConfigParser()
 
     promise_parser.add_section('portal_templates')
     promise_parser.set('portal_templates', 'repository', self.options['bt5-repository-url'])
     promise_parser.set('portal_templates', 'expected_bt5', self.options['bt5'])
+
+    promise_parser.add_section('portal_certificate_authority')
+    promise_parser.set('portal_certificate_authority', 'certificate_authority_path',
+                                           self.options['certificate-authority-path'])
 
     promise_parser.add_section('external_service')
     promise_parser.set('external_service', 'cloudooo_url', self.options['cloudooo-url'])
