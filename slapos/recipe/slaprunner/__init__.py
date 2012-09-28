@@ -39,6 +39,7 @@ class Recipe(GenericBaseRecipe):
     self.instance_directory = options['instance-directory'].strip()
     self.partition_amount = options['partition-amount'].strip()
     self.cloud9_url = options['cloud9-url'].strip()
+    self.log_file = os.path.join(options['log_dir'].strip(), 'slaprunner.log')
     # Set slaprunner access URL
     options['access-url'] = 'http://[%s]:%s' % (self.ipv6, self.runner_port)
 
@@ -83,7 +84,8 @@ class Recipe(GenericBaseRecipe):
             self.options['git-binary']) + ':' + os.environ['PATH'],
         GIT_SSH=self.options['ssh_client']
     )
-    launch_args = [self.options['slaprunner'].strip(), config_file]
+    launch_args = [self.options['slaprunner'].strip(), config_file,
+                   '--logfile', self.log_file]
     if self.optionIsTrue('debug', default=False):
       launch_args.append('--debug')
 
