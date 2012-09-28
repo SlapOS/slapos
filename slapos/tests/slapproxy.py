@@ -288,6 +288,26 @@ class TestRequest (MasterMixin, unittest.TestCase):
       self.request('http://sr//', None, 'Maria', 'slappart2').__dict__,
       self.request('http://sr//', None, 'Maria', 'slappart2').__dict__)
 
+  def test_two_same_request_from_one_partition_different_parameters (self):
+    """
+    Request will return same partition for two equal requests
+    """
+    self.add_free_partition(2)
+    wanted_domain1 = 'fou.org'
+    wanted_domain2 = 'carzy.org'
+    request1 = self.request('http://sr//', None, 'Maria', 'slappart2',
+                            partition_parameter_kw = {'domain':wanted_domain1})
+    request2 = self.request('http://sr1//', 'Papa', 'Maria', 'slappart2',
+                            partition_parameter_kw = {'domain':wanted_domain2})
+    request1_dict = request1.__dict__
+    request2_dict = request2.__dict__
+    for key in request1_dict:
+      if not key in ("_partition_id","_computer_id"):
+        if request1_dict[key] is not None and request2_dict[key] is not None:
+          self.assertNotEqual(request1_dict[key],request2_dict[key])
+      else:
+        self.assertEqual(request1_dict[key],request2_dict[key])
+
   def test_two_different_request_from_two_partition (self):
     """
     Two request from different partitions

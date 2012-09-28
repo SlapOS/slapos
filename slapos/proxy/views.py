@@ -288,14 +288,8 @@ def request_not_shared():
   instance_xml = dict2xml(partition_parameter_kw)
   args = []
   a = args.append
-  q = 'SELECT * FROM %s WHERE software_release=?'
-  a(software_release)
-  if software_type:
-    q += ' AND software_type=?'
-    a(software_type)
-  if partition_reference:
-    q += ' AND partition_reference=?'
-    a(partition_reference)
+  q = 'SELECT * FROM %s WHERE partition_reference=?'
+  a(partition_reference)
   if partition_id:
     q += ' AND requested_by=?'
     a(partition_id)
