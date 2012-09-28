@@ -1190,7 +1190,7 @@ class SlapTool(BaseTool):
       software_release_response = SoftwareRelease(
           software_release=software_installation.getUrlString(),
           computer_guid=computer_reference)
-      if software_installation.getSlapState() == 'request_destroy':
+      if software_installation.getSlapState() == 'destroy_requested':
         software_release_response._requested_state = 'destroyed'
       else:
         software_release_response._requested_state = 'available'
