@@ -79,7 +79,8 @@ class Recipe(GenericBaseRecipe):
     path_list.append(config_file)
 
     environment = dict(
-        PATH=os.path.dirname(self.options['git-binary']) + ':' + os.environ['PATH'],
+        PATH=os.path.dirname(
+            self.options['git-binary']) + ':' + os.environ['PATH'],
         GIT_SSH=self.options['ssh_client']
     )
     launch_args = [self.options['slaprunner'].strip(), config_file]
@@ -145,7 +146,8 @@ class Test(GenericBaseRecipe):
     path_list.append(config_file)
 
     environment = dict(
-        PATH=os.path.dirname(self.options['git-binary']) + ':' + os.environ['PATH'],
+        PATH=os.path.dirname(
+            self.options['git-binary']) + ':' + os.environ['PATH'],
         GIT_SSH=self.options['ssh_client'],
         CONFIG_FILE_PATH=config_file
     )
