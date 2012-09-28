@@ -23,6 +23,7 @@
             <value>
               <tuple>
                 <string>report_error</string>
+                <string>request_destroy</string>
               </tuple>
             </value>
         </item>
