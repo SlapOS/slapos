@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.30.1 (2012-09-20)
+0.30.1 (2012-09-28)
 -------------------
 
  * Add safety checks before calling SlapOS Master if mandatory instance
@@ -18,6 +18,8 @@ Changes
    [Cedric de Saint Martin]
  * Add support for "upload to binary cache" URL blacklist [Cedric de Saint
    Martin]
+ * Request on proxy are identified by requester and name (commit
+   0c739c3) [Cedric Le Ninivin]
 
 0.30 (2012-09-19)
 -----------------
