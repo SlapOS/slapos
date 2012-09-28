@@ -78,7 +78,7 @@ class TestVifibComputerModelSecurity(TestVifibSlapWebServiceMixin):
   def test_ComputerModelModuleLocalRoles(self):
     module = self.portal.computer_model_module
     self.assertSecurityGroup(module,
-        ['R-MEMBER', 'R-SHADOW', 'zope'], False)
+        ['R-MEMBER', 'zope'], False)
     self.assertRoles(module, 'R-MEMBER', ['Author', 'Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
 
@@ -95,7 +95,7 @@ class TestVifibComputerModelSecurity(TestVifibSlapWebServiceMixin):
     Model = module.newContent(portal_type="Computer Model")
 
     self.assertSecurityGroup(Model,
-      ['ERP5TypeTestCase', 'G-COMPANY', 'R-SHADOW'], False)
+      ['ERP5TypeTestCase', 'G-COMPANY'], False)
     self.assertRoles(Model, 'ERP5TypeTestCase', ['Owner'])
     self.assertRoles(Model, 'G-COMPANY', ['Assignor'])
 

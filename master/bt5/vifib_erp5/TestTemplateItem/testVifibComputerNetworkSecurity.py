@@ -77,7 +77,8 @@ class TestVifibComputerNetworkSecurity(TestVifibSlapWebServiceMixin):
 
   def test_ComputerNetworkModuleLocalRoles(self):
     module = self.portal.computer_network_module
-    self.assertSecurityGroup(module, ['R-MEMBER', 'ERP5TypeTestCase'], False)
+    self.assertSecurityGroup(module, ['R-MEMBER', 'R-SHADOW',
+        'ERP5TypeTestCase'], False)
     self.assertRoles(module, 'R-MEMBER', ['Author', 'Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
 
@@ -93,7 +94,8 @@ class TestVifibComputerNetworkSecurity(TestVifibSlapWebServiceMixin):
     module = self.portal.computer_network_module
     network = module.newContent(portal_type="Computer Network")
 
-    self.assertSecurityGroup(network, ['ERP5TypeTestCase', 'G-COMPANY'], False)
+    self.assertSecurityGroup(network, ['ERP5TypeTestCase', 'G-COMPANY',
+        'R-SHADOW'], False)
     self.assertRoles(network, 'ERP5TypeTestCase', ['Owner'])
     self.assertRoles(network, 'G-COMPANY', ['Assignor'])
 
