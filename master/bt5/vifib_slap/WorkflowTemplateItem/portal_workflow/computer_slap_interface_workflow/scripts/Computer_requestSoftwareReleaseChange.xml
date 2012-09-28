@@ -87,8 +87,7 @@ if len(software_installation_list) > 1:\n
   raise NotImplementedError("Too many Software Installation %s found %s" % (software_release_url, [x.path for x in software_installation_list]))\n
 elif len(software_installation_list) == 1:\n
   software_installation = software_installation_list[0].getObject()\n
-  if (software_installation.getSlapState() == "destroy_requested") or \\\n
-     (software_installation.getUrlString() != software_release_url) or \\\n
+  if (software_installation.getUrlString() != software_release_url) or \\\n
      (software_installation.getValidationState() != "validated") or \\\n
      (software_installation.getAggregate() != computer.getRelativeUrl()):\n
     raise NotImplementedError("The system was not able to get the expected Software Installation")\n
