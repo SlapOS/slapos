@@ -1,3 +1,5 @@
+{% if software_type == slap_software_type -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 [buildout]
 parts =
   publish-kumofs-connection-information
@@ -16,26 +18,41 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [publish-kumofs-connection-information]
-recipe = slapos.cookbook:publishurl
+recipe = slapos.cookbook:publish.serialised
+{% if use_ipv6 -%}
+url = memcached://[${kumofs-instance:ip}]:${kumofs-instance:gateway-port}/
+{% else -%}
 url = memcached://${kumofs-instance:ip}:${kumofs-instance:gateway-port}/
+{% endif -%}
 
 [kumofs-instance]
 recipe = slapos.cookbook:generic.kumofs
 
 # Network options
+{% if use_ipv6 -%}
+ip = ${slap-network-information:global-ipv6}
+address-family = inet6
+{% else -%}
 ip = ${slap-network-information:local-ipv4}
-manager-port = 13101
-server-port = 13201
-server-listen-port = 13202
-gateway-port = 13301
+address-family = inet4
+{% endif -%}
+{% set tcpv4_port = slapparameter_dict['tcpv4-port'] -%}
+manager-port = {{ tcpv4_port }}
+server-port = {{ tcpv4_port + 1 }}
+server-listen-port = {{ tcpv4_port + 2 }}
+gateway-port = {{ tcpv4_port + 3 }}
+# Paths: Data
+{% set ram_storage_size = slapparameter_dict.get('ram-storage-size') -%}
+{% if ram_storage_size -%}
+data-path = *#capsiz={{ ram_storage_size }}m
+{% else -%}
+data-directory = ${directory:kumofs-data}
+{% endif -%}
 
 # Paths: Running wrappers
 gateway-wrapper = ${basedirectory:services}/kumofs_gateway
 manager-wrapper = ${basedirectory:services}/kumofs_manager
 server-wrapper = ${basedirectory:services}/kumofs_server
-
-# Paths: Data
-data-directory = ${directory:kumofs-data}
 
 # Paths: Logs
 kumo-gateway-log = ${basedirectory:log}/kumo-gateway.log
@@ -43,26 +60,25 @@ kumo-manager-log = ${basedirectory:log}/kumo-manager.log
 kumo-server-log = ${basedirectory:log}/kumo-server.log
 
 # Binary information
-kumo-gateway-binary = {{ kumo_location }}/bin/kumo-gateway
-kumo-manager-binary = {{ kumo_location }}/bin/kumo-manager
-kumo-server-binary = {{ kumo_location }}/bin/kumo-server
-shell-path = {{ dash_location }}/bin/dash
+kumo-gateway-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-gateway
+kumo-manager-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-manager
+kumo-server-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-server
+shell-path = {{ parameter_dict['dash-location'] }}/bin/dash
 
 [logrotate-entry-kumofs]
 <= logrotate
 recipe = slapos.cookbook:logrotate.d
 name = kumofs
-log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log}
-  ${kumofs-instance:kumo-server-log}
+log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log} ${kumofs-instance:kumo-server-log}
 
 # rest of parts are candidates for some generic stuff
 
 [logrotate]
 recipe = slapos.cookbook:logrotate
 # Binaries
-logrotate-binary = {{ logrotate_location }}/usr/sbin/logrotate
-gzip-binary = {{ gzip_location }}/bin/gzip
-gunzip-binary = {{ gzip_location }}/bin/gunzip
+logrotate-binary = {{ parameter_dict['logrotate-location'] }}/usr/sbin/logrotate
+gzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gzip
+gunzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gunzip
 # Directories
 wrapper = ${rootdirectory:bin}/logrotate
 conf = ${rootdirectory:etc}/logrotate.conf
@@ -96,7 +112,7 @@ bin = ${buildout:directory}/bin
 
 [cron]
 recipe = slapos.cookbook:cron
-dcrond-binary = {{ dcron_location }}/sbin/crond
+dcrond-binary = {{ parameter_dict['dcron-location'] }}/sbin/crond
 cron-entries = ${directory:cron-entries}
 crontabs = ${directory:crontabs}
 cronstamps = ${directory:cronstamps}
@@ -140,3 +156,4 @@ port = ${kumofs-instance:gateway-port}
 <= promise-template
 path = ${basedirectory:promise}/kumofs-manager
 port = ${kumofs-instance:manager-port}
+{% endif %}

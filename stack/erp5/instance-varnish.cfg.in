@@ -18,7 +18,7 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [publish-varnish-connection-information]
-recipe = slapos.cookbook:publishurl
+recipe = slapos.cookbook:publish.serialised
 url = http://${varnish-instance:ip}:${varnish-instance:server-port}/
 
 [varnish-instance]
