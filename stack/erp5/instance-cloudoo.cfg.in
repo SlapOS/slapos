@@ -1,19 +1,27 @@
 {% if software_type == slap_software_type -%}
 {% set json = json_module.loads(parameter_dict.get('cloudooo-json', '{}')) -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 [buildout]
 parts =
   publish-cloudooo-connection-information
   cloudooo-instance
   promise
   promise-openoffice
+{% if use_ipv6 -%}
+  promise-tunnel
+{% endif -%}
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [publish-cloudooo-connection-information]
-recipe = slapos.cookbook:publishurl
+recipe = slapos.cookbook:publish.serialised
+{% if use_ipv6 -%}
+url = cloudooo://[${ipv6toipv4:ipv6}]:${ipv6toipv4:ipv6-port}/
+{% else -%}
 url = cloudooo://${cloudooo-instance:ip}:${cloudooo-instance:port}/
+{% endif -%}
 
 [cloudooo-instance]
 recipe = slapos.cookbook:generic.cloudooo
@@ -61,6 +69,25 @@ path = ${directory:promise}/openoffice
 hostname = ${cloudooo-instance:ip}
 port = ${cloudooo-instance:openoffice-port}
 
+{% if use_ipv6 -%}
+[promise-tunnel]
+recipe = slapos.cookbook:check_port_listening
+path = ${directory:promise}/tunnel
+hostname = ${ipv6toipv4:ipv6}
+port = ${ipv6toipv4:ipv6-port}
+
+[ipv6toipv4]
+recipe = slapos.cookbook:ipv6toipv4
+runner-path = ${directory:service}/${:base-name}
+6tunnel-path = {{ parameter_dict['6tunnel'] }}/bin/6tunnel
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+ipv4 = ${cloudooo-instance:ip}
+ipv6 = {{ (ipv6_set | list)[0] }}
+ipv6-port = ${cloudooo-instance:port}
+ipv4-port = ${cloudooo-instance:port}
+base-name = cloudooo-tunnel
+
+{% endif -%}
 # rest of parts are candidates for some generic stuff
 [directory]
 recipe = slapos.cookbook:mkdirectory
