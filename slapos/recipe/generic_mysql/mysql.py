@@ -50,8 +50,9 @@ def updateMysql(args):
     with open(script_filename) as script_file:
       conf['mysql_script'] = script_file.read()
   while True:
-    mysql_upgrade_list = [conf['mysql_upgrade_binary'], '--no-defaults', '--user=root']
+    mysql_upgrade_list = [conf['mysql_upgrade_binary'], '--user=root']
     if 'socket' in conf:
+      mysql_upgrade_list.insert(1, '--no-defaults')
       mysql_upgrade_list.append('--socket=' + conf['socket'])
     mysql_upgrade = subprocess.Popen(mysql_upgrade_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = mysql_upgrade.communicate()[0]
@@ -64,8 +65,9 @@ def updateMysql(args):
         print "MySQL database upgraded with result:\n%s" % result
       else:
         print "No need to upgrade MySQL database"
-      mysql_list = [conf['mysql_binary'].strip(), '--no-defaults', '-B', '--user=root']
+      mysql_list = [conf['mysql_binary'].strip(), '-B', '--user=root']
       if 'socket' in conf:
+        mysql_list.insert(1, '--no-defaults')
         mysql_list.append('--socket=' + conf['socket'])
       mysql = subprocess.Popen(mysql_list, stdin=subprocess.PIPE,
           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

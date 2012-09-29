@@ -1,21 +1,9 @@
 {% if slap_software_type == software_type -%}
-#############################
-#
-# Request erp5 production environnment
-#
-#############################
-[buildout]
-
-parts =
-  request-tidstorage
-  basedirectory
-
-eggs-directory = {{ eggs_directory }}
-develop-eggs-directory = {{ develop_eggs_directory }}
-offline = true
-
+{% set has_frontend = slapparameter_dict.get('frontend-software-url', '') != '' -%}
+{% set port_base = 2000 -%}
+{% set site_id = slapparameter_dict.get('site-id', 'erp5') -%}
 [request-common]
-recipe = slapos.cookbook:request
+recipe = slapos.cookbook:request.serialised
 software-url = ${slap-connection:software-release-url}
 sla = computer_guid
 return = url
@@ -24,39 +12,54 @@ key-file = ${slap-connection:key-file}
 cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
+config =
+  use-ipv6
+  ${:extra-config}
+extra-config =
+config-use-ipv6 = {{ dumps(slapparameter_dict.get('use-ipv6', False)) }}
 
 [request-mariadb]
 <=request-common
 name = MariaDB DataBase
 software-type = mariadb
-sla-computer_guid = ${slap-parameter:mariadb-computer-guid}
+sla-computer_guid = {{ slapparameter_dict.get('mariadb-computer-guid', computer_id) }}
+{% set config_list = [] -%}
+{% for option in ('test-database-amount', 'mariadb-binlogs', 'database-list', 'innodb-buffer-size', 'innodb-log-file-size', 'innodb-log-buffer-size', 'mariadb-relaxed-writes') -%}
+{%   if option in slapparameter_dict -%}
+{%     do config_list.append(option) -%}
+config-{{ option }} = {{ dumps(slapparameter_dict[option]) }}
+{%   endif -%}
+{% endfor -%}
+extra-config = {{ config_list | join(' ') }}
 
 [request-cloudooo]
 <=request-common
 name = Cloudooo
-config = cloudooo-json
-config-cloudooo-json = ${slap-parameter:cloudooo-json}
+extra-config = cloudooo-json
+config-cloudooo-json = {{ slapparameter_dict.get('cloudooo-json', '') }}
 software-type = cloudooo
-sla-computer_guid = ${slap-parameter:cloudooo-computer-guid}
+sla-computer_guid = {{ slapparameter_dict.get('cloudooo-computer-guid', computer_id) }}
 
 [request-memcached]
 <=request-common
-name = Memcached
-software-type = memcached
-sla-computer_guid = ${slap-parameter:memcached-computer-guid}
+name = KumoFS-ram
+software-type = kumofs
+sla-computer_guid = {{ slapparameter_dict.get('memcached-computer-guid', computer_id) }}
+extra-config =
+  ram-storage-size
+config-ram-storage-size = 64m
 
 [request-kumofs]
 <=request-common
 name = KumoFS
 software-type = kumofs
-sla-computer_guid = ${slap-parameter:kumofs-computer-guid}
+sla-computer_guid = {{ slapparameter_dict.get('kumofs-computer-guid', computer_id) }}
 
-[request-tidstorage]
+[request-zope-base]
 <=request-common
-name = TidStorage
-return = url-login
-config =
-  json
+return =
+  zope-address-list
+extra-config =
   mysql-url
   memcached-url
   cloudooo-url
@@ -64,45 +67,147 @@ config =
   smtp-url
   bt5
   bt5-repository-url
-config-json = ${slap-parameter:json}
+  zodb-dict
+  zodb-storage-type
+  tidstorage-ip
+  tidstorage-port
+  instance-count
+  thread-amount
+  timerserver-interval
+  timezone
+  site-id
+  longrequest-logger-interval
+  longrequest-logger-timeout
+  port-base
 config-mysql-url = ${request-mariadb:connection-url}
 config-memcached-url = ${request-memcached:connection-url}
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-kumofs-url = ${request-kumofs:connection-url}
-config-bt5 = ${slap-parameter:bt5}
-config-bt5-repository-url = ${slap-parameter:bt5-repository-url}
-config-smtp-url = ${slap-parameter:smtp-url}
-software-type = tidstorage
-sla-computer_guid = ${slap-parameter:tidstorage-computer-guid}
+config-bt5 = {{ slapparameter_dict.get('bt5', 'erp5_full_text_myisam_catalog erp5_configurator_standard erp5_configurator_maxma_demo erp5_configurator_ung erp5_configurator_run_my_doc') }}
+config-bt5-repository-url = {{ slapparameter_dict.get('bt5-repository-url', local_bt5_repository) }}
+config-smtp-url = {{ slapparameter_dict.get('smtp-url', 'smtp://localhost:25/') }}
+config-zodb-dict = ${request-zodb:connection-zodb-dict}
+config-zodb-storage-type = ${request-zodb:connection-zodb-storage-type}
+config-tidstorage-ip = ${request-zodb:connection-tidstorage-ip}
+config-tidstorage-port = ${request-zodb:connection-tidstorage-port}
+config-timezone = {{ slapparameter_dict.get('timezone', 'Europe/Paris') }}
+config-site-id = {{ site_id }}
+software-type = cluster-zope
 
-[request-varnish]
-<=request-common
-name = Varnish
-config = tidstorage-url
-config-tidstorage-url = ${request-tidstorage:connection-url-login}
-config-web-checker-mail-address = ${slap-parameter:web-checker-mail-address}
-config-web-checker-smtp-host = ${slap-parameter:web-checker-smtp-host}
-software-type = varnish
-sla-computer_guid = ${slap-parameter:varnish-computer-guid}
+[request-zodb]
+< = request-common
+name = zodb
+return =
+  zodb-storage-type
+  zodb-dict
+  tidstorage-ip
+  tidstorage-port
+extra-config =
+  zodb-dict
+  tidstorage-dict
+config-zodb-dict = {{ dumps(slapparameter_dict.get('zodb-dict', {'root': {}})) }}
+config-tidstorage-dict = {{ dumps(slapparameter_dict.get('tidstorage-dict')) }}
+software-type = zodb-{{ slapparameter_dict.get('zodb-software-type', 'zeo') }}
+sla-computer_guid = {{ slapparameter_dict.get('zodb-computer-guid', computer_id) }}
 
-[slap-parameter]
-# Default value if no computer_guid is specified for each type
-mariadb-computer-guid = ${slap-connection:computer-id}
-cloudooo-computer-guid = ${slap-connection:computer-id}
-memcached-computer-guid = ${slap-connection:computer-id}
-kumofs-computer-guid = ${slap-connection:computer-id}
-tidstorage-computer-guid = ${slap-connection:computer-id}
-varnish-computer-guid = ${slap-connection:computer-id}
-cloudooo-json =
-bt5 = erp5_full_text_myisam_catalog
-  erp5_configurator_standard
-  erp5_configurator_maxma_demo
-  erp5_configurator_ung
-  erp5_configurator_run_my_doc
-bt5-repository-url = {{ local_bt5_repository }}
-smtp-url = smtp://localhost:25/
+{% set zope_family_dict = {} -%}
+{% for custom_name, zope_parameter_dict in slapparameter_dict.get('zope-partition-dict', {'1': {}}).items() -%}
+{%   set base_name = 'zope-' ~ custom_name -%}
+{%   set name = 'request-' ~ base_name -%}
+{%   do zope_family_dict.setdefault(zope_parameter_dict.get('family', 'default'), []).append(name) -%}
+[{{ name }}]
+< = request-zope-base
+name = {{ base_name }}
+config-instance-count = {{ dumps(zope_parameter_dict.get('instance-count', 1)) }}
+config-thread-amount = {{ dumps(zope_parameter_dict.get('thread-amount', 1)) }}
+config-timerserver-interval = {{ dumps(zope_parameter_dict.get('timerserver-interval', 5)) }}
+config-longrequest-logger-interval = {{ dumps(zope_parameter_dict.get('longrequest-logger-interval', -1)) }}
+config-longrequest-logger-timeout = {{ dumps(zope_parameter_dict.get('longrequest-logger-timeout', 1)) }}
+config-port-base = {{ dumps(zope_parameter_dict.get('port-base', port_base)) }}
+sla-computer_guid = {{ zope_parameter_dict.get('computer-guid', computer_id) }}
+{% endfor -%}
 
-[basedirectory]
-recipe = slapos.cookbook:mkdirectory
-etc = ${buildout:directory}/etc/run
+{# We need to concatenate lists that we cannot read as lists, so this gets hairy. -#}
+{% set zope_address_list_id_dict = {} -%}
+{% set zope_family_parameter_dict = {} -%}
+{% set publish_dict = {} -%}
+{% for family_name, zope_section_id_list in zope_family_dict.items() -%}
+{%   for zope_section_id in zope_section_id_list -%}
+{%     set parameter_name = 'zope-family-entry-' ~ zope_section_id -%}
+{%     do zope_address_list_id_dict.__setitem__(zope_section_id, parameter_name) -%}
+{%     do zope_family_parameter_dict.setdefault(family_name, []).append(parameter_name) -%}
+{%   endfor -%}
+{%   if has_frontend -%}
+{%     set frontend_name = 'frontend-' ~ family_name -%}
+{%     set publishable = frontend_name ~ ':connection-site_url' -%}
+[{{ frontend_name }}]
+< = request-frontend-base
+name = {{ frontend_name }}
+config-url = {{ backend_url }}
+{%   else -%}
+{%     set publishable = 'request-balancer:connection-' ~ family_name -%}
+{%   endif -%}
+{%   do publish_dict.__setitem__(family_name, publishable) -%}
+{% endfor -%}
+
+[request-balancer]
+< = request-common
+name = balancer
+software-type = balancer
+sla-computer_guid = {{ slapparameter_dict.get('balancer-computer-guid', computer_id) }}
+extra-config =
+  haproxy-maxconn
+  haproxy-server-check-path
+  apache-access-control-string
+  apache-ssl-authentication
+  apache-backend-path
+  ca
+  zope-family-dict
+  {{ zope_address_list_id_dict.values() | join(' ') }}
+return =
+  {{ zope_family_dict.keys() | join(' ') }}
+config-zope-family-dict = {{ dumps(zope_family_parameter_dict) }}
+{% for zope_section_id, name in zope_address_list_id_dict.items() -%}
+config-{{ name }} = {{ ' ${' ~ zope_section_id ~ ':connection-zope-address-list}' }}
+{% endfor -%}
+# XXX: should those really be same for all families ?
+config-haproxy-maxconn = {{ slapparameter_dict.get('haproxy-maxconn', 1) }}
+config-haproxy-server-check-path = {{ slapparameter_dict.get('haproxy-server-check-path', '/') % {'site-id': site_id} }}
+config-apache-access-control-string = {{ slapparameter_dict.get('apache-access-control-string', 'all') }}
+config-apache-ssl-authentication = {{ slapparameter_dict.get('apache-ssl-authentication', '0') }}
+config-apache-backend-path = {{ slapparameter_dict.get('apache-backend-path', '/') % {'site-id': site_id} }}
+config-ca = {{ dumps(slapparameter_dict.get('ca', {})) }}
+
+[request-frontend-base]
+{% if has_frontend -%}
+< = request-common
+software-url = {{ slapparameter_dict['frontend-software-url'] }}
+software-type = {{ slapparameter_dict.get('frontend-software-type', 'RootSoftwareInstance') }}
+sla = instance_guid
+sla-instance_guid = {{ slapparameter_dict['frontend-instance-guid'] }}
+slave = true
+{% set config_dict = {
+  'type': 'zope',
+} -%}
+{%   if slapparameter_dict.get('frontend-domain') -%}
+{%     do config_dict.__setitem__('custom_domain', slapparameter_dict['frontend-domain']) -%}
+{%   endif -%}
+extra-config = url {{ config_dict.keys() | join(' ') }}
+{%   for name, value in config_dict.items() -%}
+config-{{ name }} = {{ value }}
+{%   endfor -%}
+return = site_url
+{% endif -%}
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+{% for family_name, publishable in publish_dict.items() -%}
+{{   family_name }} = {{ '${' ~ publishable ~ '}' }}
+{% endfor -%}
+
+[buildout]
+parts = publish
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
 {% endif %}

@@ -1,0 +1,294 @@
+{% if slap_software_type == software_type -%}
+{% set use_ipv6 = parameter_dict.get('use-ipv6', False) -%}
+{% set next_port = slapparameter_dict['port-base'] -%}
+{% set site_id = slapparameter_dict['site-id'] -%}
+{% set storage_type = slapparameter_dict['zodb-storage-type'] -%}
+{% set part_list = [] -%}
+{% set publish_list = [] -%}
+{% set zodb_dict = slapparameter_dict['zodb-dict'] -%}
+{% set longrequest_logger_base_path = buildout_directory ~ '/var/log/longrequest_logger_' -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{#
+XXX: This template only supports exactly one IPv4 and one IPv6 per
+partition. No more (undefined result), no less (IndexError).
+-#}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+instance = ${:srv}/erp5shared
+instance-constraint = ${:instance}/Constraint
+instance-document = ${:instance}/Document
+instance-etc = ${:instance}/etc
+instance-etc-package-include = ${:instance}/etc/package-include
+instance-extensions = ${:instance}/Extensions
+instance-import = ${:instance}/import
+instance-lib = ${:instance}/lib
+instance-products = ${:instance}/Products
+instance-propertysheet = ${:instance}/PropertySheet
+instance-tests = ${:instance}/tests
+log = ${:var}/log
+run = ${:var}/run
+services = ${:etc}/run
+srv = ${buildout:directory}/srv
+tmp = ${buildout:directory}/tmp
+var = ${buildout:directory}/var
+promises = ${:etc}/promise
+
+[binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary =
+  {{ parameter_dict['coreutils'] }}/bin/basename
+  {{ parameter_dict['coreutils'] }}/bin/cat
+  {{ parameter_dict['coreutils'] }}/bin/cp
+  {{ parameter_dict['coreutils'] }}/bin/ls
+  {{ parameter_dict['coreutils'] }}/bin/tr
+  {{ parameter_dict['coreutils'] }}/bin/uname
+  {{ parameter_dict['git'] }}/bin/git
+  {{ parameter_dict['graphviz'] }}/bin/dot
+  {{ parameter_dict['grep'] }}/bin/grep
+  {{ parameter_dict['imagemagick'] }}/bin/convert
+  {{ parameter_dict['imagemagick'] }}/bin/identify
+  {{ parameter_dict['sed'] }}/bin/sed
+  {{ parameter_dict['tesseract'] }}/bin/tesseract
+  {{ parameter_dict['w3m'] }}/bin/w3m
+  {{ parameter_dict['openssl'] }}/bin/openssl
+  {{ parameter_dict['poppler'] }}/bin/pdfinfo
+  {{ parameter_dict['poppler'] }}/bin/pdftotext
+  {{ parameter_dict['poppler'] }}/bin/pdftohtml
+  {{ parameter_dict['dmtx-utils'] }}/bin/dmtxwrite
+
+[certificate-authority-common]
+requests-directory = ${directory:requests}
+ca-dir = ${directory:ca-dir}
+ca-private = ${directory:private}
+ca-certs = ${directory:certs}
+ca-newcerts = ${directory:newcerts}
+ca-crl = ${directory:crl}
+
+[certificate-authority]
+< = certificate-authority-common
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ parameter_dict['openssl'] }}/bin/openssl
+wrapper = ${directory:services}/ca
+
+{% if use_ipv6 -%}
+{%   set ipv6 = (ipv6_set | list)[0] -%}
+[zeo-tunnel-base]
+recipe = slapos.cookbook:ipv4toipv6
+runner-path = ${directory:services}/${:base-name}
+6tunnel-path = {{ parameter_dict['6tunnel'] }}/bin/6tunnel
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+ipv4 = {{ ipv4 }}
+
+{%   if storage_type == 'zeoclient' -%}
+{#     ZEO needs tunelling for IPv6 (...until next version becomes current in Zope) -#}
+{%     set zeo_tunneling_dict = {} -%}
+{%     for _, _, storage_dict in zodb_dict.values() -%}
+{%       set storage_server = storage_dict['server'] -%}
+{%       if storage_server not in zeo_tunneling_dict -%}
+{%         set current_port = next_port + (zeo_tunneling_dict | length) -%}
+{%         do zeo_tunneling_dict.__setitem__(storage_server, current_port) -%}
+[{{ section('zeo-tunnel-' ~ current_port) }}]
+< = zeo-tunnel-base
+base-name = {{ 'zeo-tunnel-' ~ current_port }}
+ipv4-port = {{ current_port }}
+ipv6-port = {{ storage_server.split(']:')[1] }}
+ipv6 = {{ storage_server.split(']:')[0][1:] }}
+{%       endif -%}
+{%       do storage_dict.__setitem__('server', '' ~ ipv4 ~ ':' ~ zeo_tunneling_dict[storage_server]) -%}
+{%     endfor -%}
+{%     set next_port = next_port + (zeo_tunneling_dict | length) -%}
+{%   endif -%}
+{%   if slapparameter_dict.get('tidstorage-ip') -%}
+[tidstorage-tunnel]
+< = zeo-tunnel-base
+base-name = {{ 'tidstorage-tunnel' }}
+ipv4-port = {{ next_port }}
+ipv6 = {{ slapparameter_dict.get('tidstorage-ip') }}
+ipv6-port = {{ slapparameter_dict.get('tidstorage-port') }}
+{%     do slapparameter_dict.__setitem__('tidstorage-ip', ipv4) -%}
+{%     do slapparameter_dict.__setitem__('tidstorage-port', next_port) -%}
+{%     set next_port = next_port + 1 -%}
+
+[{{ section("promise-tidstorage-tunnel") }}]
+recipe = slapos.cookbook:check_port_listening
+hostname = ${tidstorage-tunnel:ipv4}
+port = ${tidstorage-tunnel:ipv4-port}
+path = ${directory:promises}/tidstorage
+{%   endif -%}
+
+[ipv6toipv4-base]
+recipe = slapos.cookbook:ipv6toipv4
+runner-path = ${directory:services}/${:base-name}
+6tunnel-path = {{ parameter_dict['6tunnel'] }}/bin/6tunnel
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+ipv4 = {{ ipv4 }}
+ipv6 = {{ ipv6 }}
+{% endif -%}
+
+{% if slapparameter_dict.get('tidstorage-ip') -%}
+[tidstorage]
+ipv4 = {{ slapparameter_dict['tidstorage-ip'] }}
+ipv4-port = {{ slapparameter_dict['tidstorage-port'] }}
+{% else -%}
+[tidstorage]
+ipv4 =
+ipv4-port =
+{% endif -%}
+
+[zope-base]
+recipe = slapos.cookbook:generic.zope.zeo.client
+user = zope
+ip = {{ ipv4 }}
+timezone = {{ slapparameter_dict['timezone'] }}
+tidstorage-ip = ${tidstorage:ipv4}
+tidstorage-port = ${tidstorage:ipv4-port}
+instance-etc = ${directory:instance-etc}
+bt5-repository = ${directory:var}/bt5_repository
+tmp-path = ${directory:tmp}
+bin-path = ${directory:bin}
+site-zcml = ${:instance-etc}/site.zcml
+inituser = ${directory:instance}/inituser
+runzope-binary = {{ bin_directory }}/runzope
+bt5-repository-list =
+
+[deadlock-debugger-password]
+recipe = slapos.cookbook:pwgen.stable
+
+[zope-conf-parameter-base]
+ip = {{ ipv4 }}
+site-id = {{ site_id }}
+{% set zodb_list = [] -%}
+{% for key, (mount_point, cache_size, storage_dict) in zodb_dict.items() -%}
+{%   do zodb_list.append([key, mount_point, cache_size, storage_type, storage_dict]) -%}
+{% endfor -%}
+zodb-list = {{ dumps(zodb_list) }}
+
+[zope-conf-base]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['zope-conf-template'] }}
+extra-context =
+context =
+  key instance directory:instance
+  key instance_products directory:instance-products
+  raw deadlock_path /manage_debug_threads
+  key deadlock_debugger_password deadlock-debugger-password:password
+  key tidstorage_ip tidstorage:ipv4
+  key tidstorage_port tidstorage:ipv4-port
+  key promise_path erp5-promise:promise-path
+  ${:extra-context}
+
+[logrotate-entry-base]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+
+{% macro zope(
+  name,
+  port,
+  thread_amount,
+  timerserver_interval,
+  longrequest_logger_timeout,
+  longrequest_logger_interval
+) -%}
+{% set conf_name = name ~ '-conf' -%}
+{% set conf_parameter_name = conf_name ~ '-param' -%}
+{% set zope_tunnel_section_name = name ~ '-ipv6toipv4' -%}
+{% set zope_tunnel_base_name = zope_tunnel_section_name -%}
+[{{ conf_parameter_name }}]
+< = zope-conf-parameter-base
+pid-file = ${directory:run}/{{ name }}.pid
+lock-file = ${directory:run}/{{ name }}.lock
+port = {{ port }}
+thread-amount = {{ thread_amount }}
+timerserver-interval = {{ dumps(timerserver_interval) }}
+event-log = ${directory:log}/{{ name }}-event.log
+z2-log = ${directory:log}/{{ name }}-Z2.log
+
+[{{ conf_name }}]
+< = zope-conf-base
+rendered = ${directory:etc}/{{ name }}.conf
+extra-context =
+  section parameter_dict {{ conf_parameter_name }}
+
+[{{ name }}]
+< = zope-base
+{% if longrequest_logger_interval < 0 -%}
+longrequest-logger-file =
+longrequest-logger-timeout =
+longrequest-logger-interval =
+{% else -%}
+longrequest-logger-file = {{ longrequest_logger_base_path ~ name ~ ".log" }}
+longrequest-logger-timeout = {{ dumps(longrequest_logger_timeout) }}
+longrequest-logger-interval = {{ dumps(longrequest_logger_interval) }}
+{% endif -%}
+wrapper = ${directory:services}/{{ name }}
+configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
+port = {{ '${' ~ conf_parameter_name ~ ':port}' }}
+
+[{{ section("promise-" ~ name) }}]
+recipe = slapos.cookbook:check_port_listening
+hostname = {{ '${' ~ name ~ ':ip}' }}
+port = {{ '${' ~ name ~ ':port}' }}
+path = ${directory:promises}/{{ name }}
+
+{% if use_ipv6 -%}
+[{{ zope_tunnel_section_name }}]
+< = ipv6toipv4-base
+base-name = {{ zope_tunnel_base_name }}
+ipv6-port = {{ port }}
+ipv4-port = {{ port }}
+{%   do publish_list.append("[" ~ ipv6 ~ "]:" ~ port) -%}
+
+[{{ section("promise-tunnel-" ~ name) }}]
+recipe = slapos.cookbook:check_port_listening
+hostname = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6}' }}
+port = {{ '${' ~ zope_tunnel_section_name ~ ':ipv6-port}' }}
+path = ${directory:promises}/{{ zope_tunnel_base_name }}
+{% else -%}
+{%   do publish_list.append(ipv4 ~ ":" ~ port) -%}
+{% endif -%}
+
+[{{ section('logrotate-entry-' ~ name) }}]
+< = logrotate-entry-base
+name = {{ name }}
+log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }} {{ '${' ~ name ~ ':longrequest-logger-file}' }}
+post = {{ bin_directory }}/killpidfromfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} SIGUSR2
+{% endmacro -%}
+
+{% for i in range(slapparameter_dict.get('instance-count', 1)) -%}
+{{   zope("zope-" ~ i, next_port, slapparameter_dict['thread-amount'], slapparameter_dict['timerserver-interval'], slapparameter_dict['longrequest-logger-timeout'], slapparameter_dict['longrequest-logger-interval']) }}
+{%   set next_port = next_port + 1 -%}
+{% endfor -%}
+
+[publish-zope]
+recipe = slapos.cookbook:publish.serialised
+zope-address-list = {{ dumps(publish_list) }}
+
+[erp5-promise]
+recipe = slapos.cookbook:erp5.promise
+promise-path = ${directory:etc}/erp5promise.cfg
+kumofs-url = {{ slapparameter_dict['kumofs-url'] }}
+memcached-url = {{ slapparameter_dict['memcached-url'] }}
+cloudooo-url = {{ slapparameter_dict['cloudooo-url'] }}
+smtp-url = {{ slapparameter_dict['smtp-url'] }}
+bt5 = {{ slapparameter_dict['bt5'] }}
+bt5-repository-url = {{ slapparameter_dict['bt5-repository-url'] }}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+extends =
+  {{ parameter_dict['instance-logrotate-cfg'] }}
+parts +=
+  binary-link
+  erp5-promise
+  {{ part_list | join('\n  ') }}
+  publish-zope
+{% endif %}
