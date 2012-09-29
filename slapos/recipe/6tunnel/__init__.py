@@ -45,7 +45,7 @@ class Recipe(GenericBaseRecipe):
             'ipv4': self.options['ipv4'],
             'ipv4_port': self.options['ipv4-port'],
             'shell_path': self.options['shell-path'],
-            '6tunnel_path': self.options['tunnel6-path'],
+            '6tunnel_path': self.options['6tunnel-path'],
           },
         ),
       )
