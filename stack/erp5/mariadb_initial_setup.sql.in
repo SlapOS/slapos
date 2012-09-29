@@ -1,0 +1,16 @@
+USE mysql;
+DROP FUNCTION IF EXISTS last_insert_grn_id;
+{% set mroonga = parameter_dict.get('mroonga', 'ha_mroonga.so') -%}
+{% if mroonga %}CREATE FUNCTION last_insert_grn_id RETURNS INTEGER SONAME '{{ mroonga }}';{% endif %}
+DROP FUNCTION IF EXISTS sphinx_snippets;
+#CREATE FUNCTION sphinx_snippets RETURNS STRING SONAME 'ha_sphinx.so';
+
+{% macro database(name, user, password) -%}
+CREATE DATABASE IF NOT EXISTS {{ name }};
+GRANT ALL PRIVILEGES ON {{ name }}.* TO {{ user }}@'%' IDENTIFIED BY '{{ password }}';
+GRANT ALL PRIVILEGES ON {{ name }}.* TO {{ user }}@'localhost' IDENTIFIED BY '{{ password }}';
+{% endmacro -%}
+
+{% for entry in parameter_dict['database-list'] -%}
+{{   database(entry['name'], entry['user'], entry['password']) }}
+{% endfor -%}

@@ -1,13 +1,22 @@
+{% if software_type == slap_software_type -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{% set database_list = slapparameter_dict.get('database-list', [{'name': 'erp5', 'user': 'user', 'password': 'insecure'}]) -%}
+{% for database_count in range(slapparameter_dict.get('test-database-amount', 0)) -%}
+{%   do database_list.append({'name': 'erp5_test_' ~ database_count, 'user': 'testuser_' ~ database_count, 'password': 'testpassword' ~ database_count}) -%}
+{% endfor -%}
+{% set binlog_parameter_dict = slapparameter_dict.get('mariadb-binlogs', {'expire-days': 0}) -%}
+{% set binlog_expire_days = slapparameter_dict.get('expire-days', 7) %}
 [buildout]
 parts =
   publish-mariadb-url
-  mariadb-instance
   logrotate
   logrotate-entry-mariadb
   cron
   cron-entry-logrotate
   cron-entry-mariadb-backup
   binary-link
+  update-mysql
+  mysqld
   promise
 
 eggs-directory = {{ eggs_directory }}
@@ -15,126 +24,127 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [publish-mariadb-url]
-recipe = slapos.cookbook:publishurl
-url = mysql://${mariadb-instance:user}:${mariadb-instance:password}@${mariadb-instance:ip}:${mariadb-instance:port}/${mariadb-instance:database}
+recipe = slapos.cookbook:publish.serialised
+{% if use_ipv6 -%}
+{%   set address = "[${my-cnf-parameters:ip}]" -%}
+{% else -%}
+{%   set address = "${my-cnf-parameters:ip}" -%}
+{% endif -%}
+{# TODO: support any number of databases -#}
+{% set database = database_list[0] %}
+url = mysql://{{ database['user'] }}:{{ database['password'] }}@{{ address }}:${my-cnf-parameters:port}/{{ database['name'] }}
 
 [cron-entry-mariadb-backup]
 <= cron
 recipe = slapos.cookbook:cron.d
 name = mariadb-backup
-frequency = 0 0 * * *
-command = ${mariadb-instance:backup-script}
+frequency = 0 22 * * *
+{# When binlogs are enabled:
+# flush-logs: used so no manipulation on binlogs is needed to restore from
+#   full + binlogs. The first binlog after a dump starts from dump snapshot and
+#   can be fully restored.
+# master-data: use value "2" as we are not in a replication case
+#}
+command = "${binary-wrap-mysqldump:wrapper-path}" -u root --all-databases {% if binlog_expire_days %}--flush-logs --master-data=2 {% endif %}| gzip > "${directory:mariadb-backup-full}/$(date "+%Y%m%d%H%M%S").sql.gz"
+# TODO: expire full backups
+
+[my-cnf-parameters]
+{% if use_ipv6 -%}
+ip = {{ (ipv6_set | list)[0] }}
+{% else -%}
+ip = {{ (ipv4_set | list)[0] }}
+{% endif -%}
+port = 45678
+socket = ${directory:run}/mariadb.sock
+data-directory = ${directory:mariadb-data}
+pid-file = ${directory:run}/mariadb.pid
+error-log = ${directory:log}/mariadb_error.log
+slow-query-log = ${directory:log}/mariadb_slowquery.log
+innodb-buffer-size = {{ slapparameter_dict.get('innodb-buffer-size', '') }}
+innodb-log-file-size = {{ slapparameter_dict.get('innodb-log-file-size', '') }}
+innodb-log-buffer-size = {{ slapparameter_dict.get('innodb-log-buffer-size', '') }}
+relaxed_writes = {{ dumps(slapparameter_dict.get('mariadb-relaxed-writes', 0)) }}
+{% if binlog_expire_days -%}
+binlog-path = ${directory:mariadb-backup-incremental}/binlog
+# XXX: binlog rotation happens along with other log's rotation
+binlog-expire-days = {{ binlog_expire_days }}
+{% endif -%}
+
+[my-cnf]
+recipe = slapos.recipe.template:jinja2
+rendered = ${directory:etc}/mariadb.cnf
+template = {{ parameter_dict['template-my-cnf'] }}
+context = section parameter_dict my-cnf-parameters
+
+[init-script-parameters]
+database-list = {{ dumps(database_list) }}
+
+[init-script]
+recipe = slapos.recipe.template:jinja2
+# XXX: is there a better location ?
+rendered = ${directory:etc}/mariadb_initial_setup.sql
+template = {{ parameter_dict['template-mariadb-initial-setup'] }}
+context = section parameter_dict init-script-parameters
+
+[update-mysql]
+recipe = slapos.cookbook:generic.mysql.wrap_update_mysql
+output = ${directory:services}/mariadb_update
+binary = ${binary-wrap-mysql_upgrade:wrapper-path}
+mysql = ${binary-wrap-mysql:wrapper-path}
+init-script = ${init-script:rendered}
+
+[mysqld]
+recipe = slapos.cookbook:generic.mysql.wrap_mysqld
+output = ${directory:services}/mariadb
+binary = {{ parameter_dict['mariadb-location'] }}/bin/mysqld
+configuration-file = ${my-cnf:rendered}
+data-directory = ${my-cnf-parameters:data-directory}
+mysql-install-binary = {{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db
+mysql-base-directory = {{ parameter_dict['mariadb-location'] }}
 
 [mariadb-instance]
-recipe = slapos.cookbook:generic.mysql
-
 # Options
 user = user
-parallel-test-database-amount = ${slap-parameter:test-database-amount}
-port = 45678
-ip = ${slap-network-information:local-ipv4}
+parallel-test-database-amount = {{ slapparameter_dict.get('test-database-amount', 100) }}
 database = erp5
 test-user = erp5_test
 test-database = erp5_test
 mysql-test-database-base = testdb
 mysql-test-user-base = testuser
 
-# Paths
-wrapper = ${basedirectory:services}/mariadb
-update-wrapper = ${basedirectory:services}/mariadb_update
-backup-script = ${rootdirectory:bin}/innobackupex-controller
-full-backup-directory = ${directory:mariadb-backup-full}
-incremental-backup-directory = ${directory:mariadb-backup-incremental}
-data-directory = ${directory:mariadb-data}
-pid-file = ${basedirectory:run}/mariadb.pid
-socket = ${basedirectory:run}/mariadb.sock
-error-log = ${basedirectory:log}/mariadb_error.log
-slow-query-log = ${basedirectory:log}/mariadb_slowquery.log
-conf-file = ${rootdirectory:etc}/mariadb.cnf
-bin-directory = ${rootdirectory:bin}
-innobackupex-incremental = ${rootdirectory:bin}/innobackupex-incremental
-innobackupex-full = ${rootdirectory:bin}/innobackupex-full
-
-# Binary information
-innobackupex-binary = {{ xtrabackup_location }}/bin/innobackupex
-mysql-base-directory = {{ mariadb_location }}
-mysql-binary = {{ mariadb_location }}/bin/mysql
-mysql-install-binary = {{ mariadb_location }}/scripts/mysql_install_db
-mysql-upgrade-binary = {{ mariadb_location }}/bin/mysql_upgrade
-mysqld-binary = {{ mariadb_location }}/bin/mysqld
-pt-align-binary = {{ perl_siteprefix }}/bin/pt-align
-pt-archiver-binary = {{ perl_siteprefix }}/bin/pt-archiver
-pt-collect-binary = {{ perl_siteprefix }}/bin/pt-collect
-pt-config-diff-binary = {{ perl_siteprefix }}/bin/pt-config-diff
-pt-deadlock-logger-binary = {{ perl_siteprefix }}/bin/pt-deadlock-logger
-pt-diskstats-binary = {{ perl_siteprefix }}/bin/pt-diskstats
-pt-duplicate-key-checker-binary = {{ perl_siteprefix }}/bin/pt-duplicate-key-checker
-pt-fifo-split-binary = {{ perl_siteprefix }}/bin/pt-fifo-split
-pt-find-binary = {{ perl_siteprefix }}/bin/pt-find
-pt-fingerprint-binary = {{ perl_siteprefix }}/bin/pt-fingerprint
-pt-fk-error-logger-binary = {{ perl_siteprefix }}/bin/pt-fk-error-logger
-pt-heartbeat-binary = {{ perl_siteprefix }}/bin/pt-heartbeat
-pt-index-usage-binary = {{ perl_siteprefix }}/bin/pt-index-usage
-pt-ioprofile-binary = {{ perl_siteprefix }}/bin/pt-ioprofile
-pt-kill-binary = {{ perl_siteprefix }}/bin/pt-kill
-pt-log-player-binary = {{ perl_siteprefix }}/bin/pt-log-player
-pt-mext-binary = {{ perl_siteprefix }}/bin/pt-mext
-pt-mysql-summary-binary = {{ perl_siteprefix }}/bin/pt-mysql-summary
-pt-online-schema-change-binary = {{ perl_siteprefix }}/bin/pt-online-schema-change
-pt-pmp-binary = {{ perl_siteprefix }}/bin/pt-pmp
-pt-query-advisor-binary = {{ perl_siteprefix }}/bin/pt-query-advisor
-pt-query-digest-binary = {{ perl_siteprefix }}/bin/pt-query-digest
-pt-show-grants-binary = {{ perl_siteprefix }}/bin/pt-show-grants
-pt-sift-binary = {{ perl_siteprefix }}/bin/pt-sift
-pt-slave-delay-binary = {{ perl_siteprefix }}/bin/pt-slave-delay
-pt-slave-find-binary = {{ perl_siteprefix }}/bin/pt-slave-find
-pt-slave-restart-binary = {{ perl_siteprefix }}/bin/pt-slave-restart
-pt-stalk-binary = {{ perl_siteprefix }}/bin/pt-stalk
-pt-summary-binary = {{ perl_siteprefix }}/bin/pt-summary
-pt-table-checksum-binary = {{ perl_siteprefix }}/bin/pt-table-checksum
-pt-table-sync-binary = {{ perl_siteprefix }}/bin/pt-table-sync
-pt-table-usage-binary = {{ perl_siteprefix }}/bin/pt-table-usage
-pt-tcp-model-binary = {{ perl_siteprefix }}/bin/pt-tcp-model
-pt-trend-binary = {{ perl_siteprefix }}/bin/pt-trend
-pt-upgrade-binary = {{ perl_siteprefix }}/bin/pt-upgrade
-pt-variable-advisor-binary = {{ perl_siteprefix }}/bin/pt-variable-advisor
-pt-visual-explain-binary = {{ perl_siteprefix }}/bin/pt-visual-explain
-xtrabackup-binary = {{ xtrabackup_location }}/bin/xtrabackup_51
-perl-binary = {{ perl_location }}/bin/perl
-
 [logrotate]
 recipe = slapos.cookbook:logrotate
 # Binaries
-logrotate-binary = {{ logrotate_location }}/usr/sbin/logrotate
-gzip-binary = {{ gzip_location }}/bin/gzip
-gunzip-binary = {{ gzip_location }}/bin/gunzip
+logrotate-binary = {{ parameter_dict['logrotate-location'] }}/usr/sbin/logrotate
+gzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gzip
+gunzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gunzip
 # Directories
-wrapper = ${rootdirectory:bin}/logrotate
-conf = ${rootdirectory:etc}/logrotate.conf
+wrapper = ${directory:bin}/logrotate
+conf = ${directory:etc}/logrotate.conf
 logrotate-entries = ${directory:logrotate-entries}
 backup = ${directory:logrotate-backup}
-state-file = ${rootdirectory:srv}/logrotate.status
+state-file = ${directory:srv}/logrotate.status
 
 [logrotate-entry-mariadb]
 <= logrotate
 recipe = slapos.cookbook:logrotate.d
 name = mariadb
-log = ${mariadb-instance:error-log} ${mariadb-instance:slow-query-log}
-post = ${mariadb-instance:mysql-binary} --no-defaults -B --socket=${mariadb-instance:socket} -e "FLUSH LOGS"
+log = ${my-cnf-parameters:error-log} ${my-cnf-parameters:slow-query-log}
+post = "${binary-wrap-mysql:wrapper-path}" --no-defaults -B -u root -e "FLUSH LOGS"
 
 [cron]
 recipe = slapos.cookbook:cron
-dcrond-binary = {{ dcron_location }}/sbin/crond
+dcrond-binary = {{ parameter_dict['dcron-location'] }}/sbin/crond
 cron-entries = ${directory:cron-entries}
 crontabs = ${directory:crontabs}
 cronstamps = ${directory:cronstamps}
 catcher = ${cron-simplelogger:wrapper}
-binary = ${basedirectory:services}/crond
+binary = ${directory:services}/crond
 
 [cron-simplelogger]
 recipe = slapos.cookbook:simplelogger
-wrapper = ${rootdirectory:bin}/cron_simplelogger
-log = ${basedirectory:log}/cron.log
+wrapper = ${directory:bin}/cron_simplelogger
+log = ${directory:log}/cron.log
 
 [cron-entry-logrotate]
 <= cron
@@ -145,51 +155,61 @@ command = ${logrotate:wrapper}
 
 [binary-link]
 recipe = slapos.cookbook:symbolic.link
-target-directory = ${rootdirectory:bin}
+target-directory = ${directory:bin}
 link-binary =
-  {{ coreutils_location }}/bin/basename
-  {{ coreutils_location }}/bin/cat
-  {{ coreutils_location }}/bin/cp
-  {{ coreutils_location }}/bin/ls
-  {{ coreutils_location }}/bin/tr
-  {{ coreutils_location }}/bin/uname
-  {{ gettext_location }}/lib/gettext/hostname
-  {{ grep_location }}/bin/grep
-  {{ sed_location }}/bin/sed
-  {{ mariadb_location }}/bin/mysql
+  {{ parameter_dict['coreutils-location'] }}/bin/basename
+  {{ parameter_dict['coreutils-location'] }}/bin/cat
+  {{ parameter_dict['coreutils-location'] }}/bin/cp
+  {{ parameter_dict['coreutils-location'] }}/bin/ls
+  {{ parameter_dict['coreutils-location'] }}/bin/tr
+  {{ parameter_dict['coreutils-location'] }}/bin/uname
+  {{ parameter_dict['gettext-location'] }}/lib/gettext/hostname
+  {{ parameter_dict['grep-location'] }}/bin/grep
+  {{ parameter_dict['sed-location'] }}/bin/sed
 
-[rootdirectory]
-recipe = slapos.cookbook:mkdirectory
-etc = ${buildout:directory}/etc
-var = ${buildout:directory}/var
-srv = ${buildout:directory}/srv
-bin = ${buildout:directory}/bin
+[binary-wrap-base]
+recipe = slapos.cookbook:wrapper
+# Note: --defaults-file must be the first argument, otherwise wrapped binary
+# will reject it.
+command-line = "{{ parameter_dict['mariadb-location'] }}/bin/${:command}" --defaults-file="${my-cnf:rendered}"
+wrapper-path = ${directory:bin}/${:command}
+parameters-extra = true
 
-[basedirectory]
-recipe = slapos.cookbook:mkdirectory
-log = ${rootdirectory:var}/log
-services = ${rootdirectory:etc}/run
-promise = ${rootdirectory:etc}/promise
-run = ${rootdirectory:var}/run
-backup = ${rootdirectory:srv}/backup
+[binary-wrap-mysql]
+< = binary-wrap-base
+command = mysql
+
+[binary-wrap-mysqldump]
+< = binary-wrap-base
+command = mysqldump
+
+[binary-wap-mysql_upgrade]
+< = binary-wrap-base
+command-line = mysql_upgrade
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-cron-entries = ${rootdirectory:etc}/cron.d
-crontabs = ${rootdirectory:etc}/crontabs
-cronstamps = ${rootdirectory:etc}/cronstamps
-ca-dir = ${rootdirectory:srv}/ssl
-mariadb-backup-full = ${basedirectory:backup}/mariadb-full
-mariadb-backup-incremental = ${basedirectory:backup}/mariadb-incremental
-mariadb-data = ${rootdirectory:srv}/mariadb
-logrotate-backup = ${basedirectory:backup}/logrotate
-logrotate-entries = ${rootdirectory:etc}/logrotate.d
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+services = ${:etc}/run
+promise = ${:etc}/promise
+cron-entries = ${:etc}/cron.d
+crontabs = ${:etc}/crontabs
+cronstamps = ${:etc}/cronstamps
+logrotate-entries = ${:etc}/logrotate.d
+srv = ${buildout:directory}/srv
+backup = ${:srv}/backup
+mariadb-backup-full = ${:backup}/mariadb-full
+mariadb-backup-incremental = ${:backup}/mariadb-incremental
+logrotate-backup = ${:backup}/logrotate
+mariadb-data = ${:srv}/mariadb
+var = ${buildout:directory}/var
+log = ${:var}/log
+run = ${:var}/run
 
 [promise]
 recipe = slapos.cookbook:check_port_listening
-path = ${basedirectory:promise}/mariadb
-hostname = ${mariadb-instance:ip}
-port = ${mariadb-instance:port}
-
-[slap-parameter]
-test-database-amount = 100
+path = ${directory:promise}/mariadb
+hostname = ${my-cnf-parameters:ip}
+port = ${my-cnf-parameters:port}
+{% endif %}
