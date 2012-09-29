@@ -1,0 +1,159 @@
+{% if software_type == slap_software_type -%}
+{% set part_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+{#
+XXX: This template only supports exactly one IPv4 and (if ipv6 is used) one IPv6
+per partition. No more (undefined result), no less (IndexError).
+-#}
+# TODO: insert varnish between apache & haproxy.
+# And think of a way to specify which urls goe through varnish, which go
+# directly to haproxy. (maybe just passing literal configuration file chunk)
+{% set ipv4 = (ipv4_set | list)[0] -%}
+
+{% if use_ipv6 -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
+[zope-tunnel-base]
+recipe = slapos.cookbook:ipv4toipv6
+runner-path = ${directory:services}/${:base-name}
+6tunnel-path = {{ parameter_dict['6tunnel'] }}/bin/6tunnel
+shell-path = {{ parameter_dict['dash'] }}/bin/dash
+ipv4 = {{ ipv4 }}
+
+{% endif -%}
+{% set haproxy_dict = {} -%}
+{% set apache_dict = {} -%}
+{% set next_port = 9000 -%}
+{% for family_name, parameter_id_list in slapparameter_dict['zope-family-dict'].items() -%}
+{%   set zope_family_address_list = [] -%}
+{%   for parameter_id in parameter_id_list -%}
+{%     set zope_address_list = slapparameter_dict[parameter_id] -%}
+{%     for zope_address in zope_address_list -%}
+{%       if use_ipv6 -%}
+[{{ section('zope-tunnel-' ~ next_port) }}]
+< = zope-tunnel-base
+base-name = {{ 'zeo-tunnel-' ~ next_port }}
+ipv4-port = {{ next_port }}
+ipv6-port = {{ zope_address.split(']:')[1] }}
+ipv6 = {{ zope_address.split(']:')[0][1:] }}
+{%         set zope_effective_address = ipv4 ~ ":" ~ next_port -%}
+{%         set next_port = next_port + 1 -%}
+{%       else -%}
+{%         set zope_effective_address = zope_address -%}
+{%       endif -%}
+{%       do zope_family_address_list.append(zope_effective_address) -%}
+{%     endfor -%}
+{%   endfor -%}
+{%   set haproxy_port = next_port -%}
+{%   set next_port = next_port + 1 -%}
+{%   do haproxy_dict.__setitem__(family_name, (haproxy_port, zope_family_address_list)) -%}
+{%   do apache_dict.__setitem__(family_name, (next_port, 'http://' ~ ipv4 ~ ':' ~ haproxy_port)) -%}
+{%   set next_port = next_port + 1 -%}
+{% endfor -%}
+
+[haproxy]
+recipe = slapos.cookbook:haproxy
+conf-path = ${directory:etc}/haproxy.cfg
+ip = {{ ipv4 }}
+maxconn = {{ slapparameter_dict['haproxy-maxconn'] }}
+server-check-path = {{ slapparameter_dict['haproxy-server-check-path'] }}
+wrapper-path = ${directory:services}/haproxy
+ctl-path = ${directory:bin}/haproxy-ctl
+socket-path = ${directory:run}/haproxy.sock
+binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+backend-dict = {{ dumps(haproxy_dict) }}
+
+[apache]
+recipe = slapos.cookbook:apache.zope.backend
+backend-list = {{ dumps(apache_dict.values()) }}
+ip = {% if use_ipv6 %}{{ ipv6 }}{% else %}{{ ipv4 }}{% endif %}
+wrapper = ${directory:bin}/apache
+scheme = https
+key-file = ${directory:apache-conf}/apache.key
+cert-file = ${directory:apache-conf}/apache.crt
+configuration-file = ${directory:apache-conf}/apache.conf
+access-control-string = {{ slapparameter_dict['apache-access-control-string'] }}
+pid-file = ${directory:run}/apache.pid
+lock-file = ${directory:run}/apache.lock
+ssl-session-cache = $${directory:log}/apache-ssl-session-cache
+error-log = ${directory:log}/apache-error.log
+access-log = ${directory:log}/apache-access.log
+apache-binary = {{ parameter_dict['apache'] }}/bin/httpd
+ssl-authentication = {{ slapparameter_dict['apache-ssl-authentication'] }}
+backend-path = {{ slapparameter_dict['apache-backend-path'] }}
+# Note: Without certificate-authority main certificate have to be hardcoded
+ssl-authentication-certificate = ${certificate-authority:ca-dir}/cacert.pem
+ssl-authentication-crl = ${certificate-authority:ca-crl}
+
+[publish]
+recipe = slapos.cookbook:publish.serialised
+{% for family_name, (apache_port, _) in apache_dict.items() -%}
+{%   if use_ipv6 -%}
+{{     family_name }} = ${apache:scheme}://[${apache:ip}]:{{ apache_port }}
+{%   else -%}
+{{     family_name }} = ${apache:scheme}://${apache:ip}:{{ apache_port }}
+{%   endif -%}
+{% endfor -%}
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ parameter_dict['openssl'] }}/bin/openssl
+ca-dir = ${directory:ca-dir}
+requests-directory = ${directory:requests}
+wrapper = ${directory:services}/ca
+ca-private = ${directory:private}
+ca-certs = ${directory:certs}
+ca-newcerts = ${directory:newcerts}
+ca-crl = ${directory:crl}
+{% set ca = slapparameter_dict['ca'] -%}
+country-code = {{ ca.get('country-code', 'ZZ') }}
+email = {{ ca.get('email', 'nobody@example.com') }}
+state = {{ ca.get('state', 'Dummy State') }}
+city = {{ ca.get('city', 'Dummy City') }}
+company = {{ ca.get('company', 'Dummy Company') }}
+
+[ca-apache]
+< = certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${apache:key-file}
+cert-file = ${apache:cert-file}
+executable = ${apache:wrapper}
+wrapper = ${directory:services}/apache
+
+[logrotate-apache]
+recipe = slapos.cookbook:logrotate.d
+logrotate-entries = ${logrotate:logrotate-entries}
+backup = ${logrotate:backup}
+name = apache
+log = ${apache:error-log} ${apache:access-log}
+post = {{ parameter_dict['bin-directory'] }}/killpidfromfile ${apache:pid-file} SIGUSR1
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+apache-conf = ${:etc}/apache
+bin = ${buildout:directory}/bin
+etc = ${buildout:directory}/etc
+services = ${:etc}/run
+var = ${buildout:directory}/var
+run = ${:var}/run
+log = ${:var}/log
+ca-dir = ${buildout:directory}/srv/ssl
+requests = ${:ca-dir}/requests
+private = ${:ca-dir}/private
+certs = ${:ca-dir}/certs
+newcerts = ${:ca-dir}/newcerts
+crl = ${:ca-dir}/crl
+
+[buildout]
+extends = {{ parameter_dict['instance-logrotate-cfg'] }}
+parts +=
+  publish
+  logrotate-apache
+  haproxy
+  ca-apache
+  {{ part_list | join('\n  ') }}
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+{% endif %}
