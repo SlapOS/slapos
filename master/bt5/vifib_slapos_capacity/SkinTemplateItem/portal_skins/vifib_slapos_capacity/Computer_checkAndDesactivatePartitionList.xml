@@ -135,7 +135,7 @@ if can_allocate:\n
     new_value = \'open\'\n
 else:\n
   if computer.getCapacityScope() == \'open\':\n
-    new_value = \'closed\'\n
+    new_value = \'close\'\n
 \n
 if new_value is not None:\n
   computer.edit(capacity_scope=new_value)\n
