@@ -119,7 +119,13 @@ class Recipe(GenericBaseRecipe):
                     lc_numeric = 'en_US.UTF-8'
                     lc_time = 'en_US.UTF-8'
                     default_text_search_config = 'pg_catalog.english'
-                    """ % self.fetch_host(self.options)))
+
+                    unix_socket_directory = '%s'
+                    unix_socket_permissions = 0700
+                    """ % (
+                        self.fetch_host(self.options),
+                        pgdata,
+                        )))
 
 
         with open(os.path.join(pgdata, 'pg_hba.conf'), 'wb') as cfg:
@@ -128,7 +134,7 @@ class Recipe(GenericBaseRecipe):
             cfg.write(textwrap.dedent("""\
                     # TYPE  DATABASE        USER            ADDRESS                 METHOD
 
-                    # "local" is for Unix domain socket connections only
+                    # "local" is for Unix domain socket connections only (check unix_socket_permissions!)
                     local   all             all                                     ident
                     host    all             all             127.0.0.1/32            md5
                     host    all             all             ::1/128                 md5
