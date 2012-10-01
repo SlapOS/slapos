@@ -27,6 +27,8 @@
 ##############################################################################
 
 import argparse
+import ConfigParser
+import os
 import sys
 from slapos.bang import main as bang
 from slapos.console import run as console
@@ -43,10 +45,51 @@ class EntryPointNotImplementedError(NotImplementedError):
   def __init__(self, *args, **kw_args):
     NotImplementedError.__init__(self, *args, **kw_args)
 
+def checkSlaposCfg ():
+  """
+  Check if a slapos configuration file was given as a argument.
+  If a slapos configuration file is given it return True else False
+  """
+  for element in sys.argv:
+    if '.cfg' in element:
+      if os.path.exists(element):
+        configuration = ConfigParser.SafeConfigParser()
+        configuration.read(element)
+        if configuration.has_section('slapos'):
+          return True
+  return False
+
+def checkOption(option):
+  """
+  Check if a given option is already in call line
+  Add it and its values if missing
+  """
+  option = option.split()
+  key = option[0]
+  for element in sys.argv:
+    if key in element:
+      return True
+  sys.argv.append(key)
+  if len(option) > 1 :
+    sys.argv = sys.argv + option[1:]
+  return True
+
+def call(fun, config=False, option=[]):
+  """
+  Add missing options to argv
+  Add config if asked and it is missing
+  Call function fun
+  """
+  for element in option:
+    checkOption(element)
+  if config:
+    if not checkSlaposCfg():
+      sys.argv.append(config)
+  fun()
+
 def showUsage():
   # We are out of option. We have to admit it: no other option than error.
   # XXX Real error message
-  
   sys.exit(1)
 
 def dispatch(command, is_node):
@@ -54,19 +97,27 @@ def dispatch(command, is_node):
   Here we could use introspection to get rid of the big "if" statements,
   but we want to control every input.
   """
+  # XXX console_config =
   if is_node:
+    config = '/etc/opt/slapos/slapos.cfg'
     if command in 'register':
-      register()
+      call(register)
     elif command == 'software':
-      software()
+      call(software, config=config,
+           option=['--logfile /opt/slapos/slapgrid-sr.log',
+                   '--pidfile /opt/slapos/slapgrid-sr.pid'])
     elif command == 'instance':
-      instance()
+      call(instance, config=config,
+           option=['--logfile /opt/slapos/slapgrid-cp.log',
+                   '--pidfile /opt/slapos/slapgrid-cp.pid'])
     elif command == 'report':
-      report()
+      call(report, config=config,
+           option=['--logfile /opt/slapos/slapgrid-ur.log'])
     elif command == 'bang':
-      bang()
+      call(bang, config=True)
     elif command == 'format':
-      format()
+      call(format, config=config,
+           option=['--log_file /opt/slapos/slapformat.log'])
     elif command in ['start', 'stop', 'status', 'tail']:
       supervisord()
       supervisorctl()
@@ -105,12 +156,12 @@ def main():
     is_node = False
 
   namespace = parser.parse_args()
-
   # Set sys.argv for the sub-entry point that we will call
   command_line = [namespace.command]
   command_line.extend(namespace.argument_list)
   sys.argv = command_line
 
+  dispatch(namespace.command,is_node)
   # If configuration file is not given: define it arbitrarily
   # If client commands: use ~/.slapos.cfg
   # If node commands: use /etc/opt/slapos/slapos.cfg
