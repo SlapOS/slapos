@@ -129,9 +129,9 @@ for base_category in computer_base_category_list:\n
       query_kw["%s_uid" % base_category] = category.getUid()\n
 \n
 query_kw["capacity_scope_uid"] = context.getPortalObject().portal_categories.capacity_scope.open.getUid()\n
-if not explicit_location:\n
-  # Only allocation on public computer\n
-  query_kw["allocation_scope_uid"] = context.getPortalObject().portal_categories.allocation_scope.open.public.getUid()\n
+# if not explicit_location:\n
+#   # Only allocation on public computer\n
+#   query_kw["allocation_scope_uid"] = context.getPortalObject().portal_categories.allocation_scope.open.public.getUid()\n
 \n
 if filter_kw.keys():\n
   # XXX Drop all unexpected keys\n
