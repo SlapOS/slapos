@@ -87,11 +87,11 @@
                     <key> <string>hidden</string> </key>
                     <value>
                       <list>
-                        <string>listbox_software_release</string>
-                        <string>listbox_parent_state</string>
                         <string>listbox_image</string>
+                        <string>listbox_title</string>
                         <string>listbox_installation_state</string>
                         <string>listbox_usage</string>
+                        <string>listbox_version</string>
                       </list>
                     </value>
                 </item>
@@ -101,8 +101,11 @@
                       <list>
                         <string>my_title</string>
                         <string>my_reference</string>
+                        <string>your_monitoring_status</string>
+                        <string>your_monitoring_status_js</string>
                         <string>your_system_message</string>
                         <string>your_allocation_scope_update</string>
+                        <string>your_category_update</string>
                         <string>listbox</string>
                       </list>
                     </value>

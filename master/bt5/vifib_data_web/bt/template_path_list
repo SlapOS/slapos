@@ -8,6 +8,12 @@ portal_caches/facebook_server_auth_token_cache_factory/persistent_cache_plugin
 portal_caches/google_server_auth_token_cache_factory
 portal_caches/google_server_auth_token_cache_factory/persistent_cache_plugin
 web_page_module/vifib*
+web_page_module/vifib_payzen_cancel
+web_page_module/vifib_payzen_error
+web_page_module/vifib_payzen_referral
+web_page_module/vifib_payzen_refused
+web_page_module/vifib_payzen_return
+web_page_module/vifib_payzen_success
 web_site_module/cash
 web_site_module/cash/**
 web_site_module/erpypi

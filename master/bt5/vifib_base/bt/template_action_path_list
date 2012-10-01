@@ -6,6 +6,8 @@ Slave Instance | jump_to_software_instance
 Slave Instance | unfiltered_tracking_list
 Slave Instance | view
 Slave Instance | web_view
+Software Installation Module | view
+Software Installation | view
 Software Instance Module | view
 Software Instance | jump_to_software_instance
 Software Instance | unfiltered_tracking_list

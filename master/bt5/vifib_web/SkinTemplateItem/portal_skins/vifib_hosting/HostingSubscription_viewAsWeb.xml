@@ -92,6 +92,7 @@
                       <list>
                         <string>listbox_status</string>
                         <string>listbox_image</string>
+                        <string>listbox_monitoring_status</string>
                       </list>
                     </value>
                 </item>
@@ -109,6 +110,7 @@
                         <string>my_start_button</string>
                         <string>my_stop_button</string>
                         <string>your_connection_listbox</string>
+                        <string>your_monitoring_status</string>
                       </list>
                     </value>
                 </item>

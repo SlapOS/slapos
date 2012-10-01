@@ -46,10 +46,11 @@ class SlapMixin(unittest.TestCase):
     else:
       self.server_url = self._server_url
     print 'Testing against SLAP server %r' % self.server_url
+    self.slap = slapos.slap.slap()
+    self.partition_id = 'PARTITION_01'
 
   def tearDown(self):
-    if self._server_url is None:
-      self._unpatchHttplib()
+    self._unpatchHttplib()
 
   def _patchHttplib(self):
     """Overrides httplib"""
@@ -87,8 +88,10 @@ class TestSlap(SlapMixin):
     """
     slap_instance = slapos.slap.slap()
     slap_instance.initializeConnection(self.server_url)
-    self.assertTrue(slapos.slap.SlapDocument._connection_helper.host in self.server_url)
-    self.assertTrue(slapos.slap.SlapDocument._connection_helper.path in self.server_url)
+    self.assertTrue(
+        slap_instance._connection_helper.host in self.server_url)
+    self.assertTrue(
+        slap_instance._connection_helper.path in self.server_url)
 
   def test_slap_initialisation_wrong_url(self):
     """
@@ -160,14 +163,25 @@ class TestSlap(SlapMixin):
     Asserts that calling slap.registerComputerPartition on known computer
     returns ComputerPartition object
     """
-    self.computer_guid = self._getTestComputerId()
-    self.slap = slapos.slap.slap()
+    computer_guid = self._getTestComputerId()
+    partition_id = self.partition_id
     self.slap.initializeConnection(self.server_url)
-    self.partition_id = 'PARTITION_01'
-    self.slap.registerComputer(self.computer_guid)
+    self.slap.registerComputer(computer_guid)
 
-    partition = self.slap.registerComputerPartition(self.computer_guid,
-                                                    self.partition_id)
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'registerComputerPartition' and \
+         parsed_qs['computer_reference'][0] == computer_guid and \
+         parsed_qs['computer_partition_reference'][0] == partition_id:
+        partition = slapos.slap.ComputerPartition(
+            computer_guid, partition_id)
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(partition))
+      else:
+        return (404, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
+    partition = self.slap.registerComputerPartition(computer_guid, partition_id)
     self.assertTrue(isinstance(partition, slapos.slap.ComputerPartition))
 
   def test_registerComputerPartition_existing_partition_id_known_computer_guid(self):
@@ -176,23 +190,100 @@ class TestSlap(SlapMixin):
     returns ComputerPartition object
     """
     self.test_registerComputerPartition_new_partition_id_known_computer_guid()
-    partition = self.slap.registerComputerPartition(self.computer_guid,
+    partition = self.slap.registerComputerPartition(self._getTestComputerId(),
         self.partition_id)
     self.assertTrue(isinstance(partition, slapos.slap.ComputerPartition))
 
   def test_registerComputerPartition_unknown_computer_guid(self):
     """
     Asserts that calling slap.registerComputerPartition on unknown
-    computer raises (not defined yet) exception
+    computer raises NotFoundError exception
     """
     computer_guid = self._getTestComputerId()
-    self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
-
     partition_id = 'PARTITION_01'
 
-    self.assertRaises(UndefinedYetException,
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'registerComputerPartition' and \
+         parsed_qs['computer_reference'][0] == computer_guid and \
+         parsed_qs['computer_partition_reference'][0] == partition_id:
+        partition = slapos.slap.ComputerPartition(
+            computer_guid, partition_id)
+        return (404, {}, '')
+      else:
+        return (0, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(slapos.slap.NotFoundError,
         self.slap.registerComputerPartition, computer_guid, partition_id)
+
+  def test_getFullComputerInformation_empty_computer_guid(self):
+    """
+    Asserts that calling getFullComputerInformation with empty computer_id
+    raises early, before calling master.
+    """
+    self.slap.initializeConnection(self.server_url)
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        self.slap._connection_helper.getFullComputerInformation, None)
+
+  def test_registerComputerPartition_empty_computer_guid(self):
+    """
+    Asserts that calling registerComputerPartition with empty computer_id
+    raises early, before calling master.
+    """
+    self.slap.initializeConnection(self.server_url)
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        self.slap.registerComputerPartition, None, 'PARTITION_01')
+
+  def test_registerComputerPartition_empty_computer_partition_id(self):
+    """
+    Asserts that calling registerComputerPartition with empty
+    computer_partition_id raises early, before calling master.
+    """
+    self.slap.initializeConnection(self.server_url)
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        self.slap.registerComputerPartition,
+        self._getTestComputerId(), None)
+
+  def test_registerComputerPartition_empty_computer_guid_empty_computer_partition_id(self):
+    """
+    Asserts that calling registerComputerPartition with empty
+    computer_partition_id raises early, before calling master.
+    """
+    self.slap.initializeConnection(self.server_url)
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        self.slap.registerComputerPartition,
+        None, None)
 
 class TestComputer(SlapMixin):
   """
@@ -204,11 +295,66 @@ class TestComputer(SlapMixin):
     Asserts that calling Computer.getComputerPartitionList without Computer
     Partitions returns empty list
     """
-    self.computer_guid = self._getTestComputerId()
-    self.slap = slapos.slap.slap()
+    computer_guid = self._getTestComputerId()
+    slap = self.slap
+    slap.initializeConnection(self.server_url)
+
+    partition_id = 'PARTITION_01'
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'registerComputerPartition' and \
+         'computer_reference' in parsed_qs and \
+         'computer_partition_reference' in parsed_qs:
+        slap_partition = slapos.slap.ComputerPartition(
+          parsed_qs['computer_reference'][0],
+          parsed_qs['computer_partition_reference'][0])
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_partition))
+      elif parsed_url.path == 'getFullComputerInformation' and \
+         'computer_id' in parsed_qs:
+        slap_computer = slapos.slap.Computer(parsed_qs['computer_id'][0])
+        slap_computer._software_release_list = []
+        slap_computer._computer_partition_list = []
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(slap_computer))
+      elif parsed_url.path == 'requestComputerPartition':
+        return (408, {}, '')
+      else:
+        return (404, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
+    computer = self.slap.registerComputer(computer_guid)
+    self.assertEqual(computer.getComputerPartitionList(), [])
+
+  def _test_computer_empty_computer_guid(self, computer_method):
+    """
+    Helper method checking if calling Computer method with empty id raises
+    early.
+    """
     self.slap.initializeConnection(self.server_url)
-    self.computer = self.slap.registerComputer(self.computer_guid)
-    self.assertEqual(self.computer.getComputerPartitionList(), [])
+
+    def server_response(self_httpconnection, path, method, body, header):
+      # Shouldn't even be called
+      self.assertFalse(True)
+    httplib.HTTPConnection._callback = server_response
+
+    computer = self.slap.registerComputer(None)
+    self.assertRaises(
+        slapos.slap.NotFoundError,
+        getattr(computer, computer_method))
+
+  def test_computer_getComputerPartitionList_empty_computer_guid(self):
+    """
+    Asserts that calling getComputerPartitionList with empty
+    computer_guid raises early, before calling master.
+    """
+    self._test_computer_empty_computer_guid('getComputerPartitionList')
+
+  def test_computer_getSoftwareReleaseList_empty_computer_guid(self):
+    """
+    Asserts that calling getSoftwareReleaseList with empty
+    computer_guid raises early, before calling master.
+    """
+    self._test_computer_empty_computer_guid('getSoftwareReleaseList')
 
   def test_computer_getComputerPartitionList_only_partition(self):
     """
@@ -224,11 +370,14 @@ class TestComputer(SlapMixin):
         partition_id)
     self.assertEqual(self.computer.getComputerPartitionList(), [])
 
+  @unittest.skip("Not implemented")
   def test_computer_reportUsage_non_valid_xml_raises(self):
     """
     Asserts that calling Computer.reportUsage with non DTD
     (not defined yet) XML raises (not defined yet) exception
     """
+
+
     self.computer_guid = self._getTestComputerId()
     self.slap = slapos.slap.slap()
     self.slap.initializeConnection(self.server_url)
@@ -239,6 +388,7 @@ class TestComputer(SlapMixin):
     self.assertRaises(UndefinedYetException, self.computer.reportUsage,
         non_dtd_xml)
 
+  @unittest.skip("Not implemented")
   def test_computer_reportUsage_valid_xml_invalid_partition_raises(self):
     """
     Asserts that calling Computer.reportUsage with DTD (not defined
@@ -380,7 +530,8 @@ class TestComputerPartition(SlapMixin):
     self.assertTrue(isinstance(requested_partition,
         slapos.slap.ComputerPartition))
     # as request method does not raise, accessing data raises
-    self.assertRaises(slapos.slap.ResourceNotReady, requested_partition.getId)
+    self.assertRaises(slapos.slap.ResourceNotReady,
+                      requested_partition.getId)
 
   def test_request_fullfilled_work(self):
     partition_id = 'PARTITION_01'
@@ -433,14 +584,28 @@ class TestComputerPartition(SlapMixin):
     Helper method to automate assertions of failing states on new Computer
     Partition
     """
-    self.computer_guid = self._getTestComputerId()
+    computer_guid = self._getTestComputerId()
     partition_id = 'PARTITION_01'
-    self.slap = slapos.slap.slap()
-    self.slap.initializeConnection(self.server_url)
+    slap = self.slap
+    slap.initializeConnection(self.server_url)
+
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'registerComputerPartition' and \
+         parsed_qs['computer_reference'][0] == computer_guid and \
+         parsed_qs['computer_partition_reference'][0] == partition_id:
+        partition = slapos.slap.ComputerPartition(
+            computer_guid, partition_id)
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(partition))
+      else:
+        return (404, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
     computer_partition = self.slap.registerComputerPartition(
-        self.computer_guid, partition_id)
+        computer_guid, partition_id)
     method = getattr(computer_partition, state)
-    self.assertRaises(UndefinedYetException, method)
+    self.assertRaises(slapos.slap.NotFoundError, method)
 
   def test_available_new_ComputerPartition_raises(self):
     """
@@ -474,12 +639,35 @@ class TestComputerPartition(SlapMixin):
     """
     Asserts that calling ComputerPartition.error on new partition works
     """
-    self.computer_guid = self._getTestComputerId()
+    computer_guid = self._getTestComputerId()
     partition_id = 'PARTITION_01'
-    self.slap = slapos.slap.slap()
-    self.slap.initializeConnection(self.server_url)
-    computer_partition = self.slap.registerComputerPartition(
-        self.computer_guid, partition_id)
+    slap = self.slap
+    slap.initializeConnection(self.server_url)
+
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(parsed_url.query)
+      if parsed_url.path == 'registerComputerPartition' and \
+         parsed_qs['computer_reference'][0] == computer_guid and \
+         parsed_qs['computer_partition_reference'][0] == partition_id:
+        partition = slapos.slap.ComputerPartition(
+            computer_guid, partition_id)
+        return (200, {}, xml_marshaller.xml_marshaller.dumps(partition))
+      elif parsed_url.path == 'softwareInstanceError':
+        parsed_qs_body = urlparse.parse_qs(body)
+        # XXX: why do we have computer_id and not computer_reference?
+        # XXX: why do we have computer_partition_id and not
+        # computer_partition_reference?
+        if parsed_qs_body['computer_id'][0] == computer_guid and \
+           parsed_qs_body['computer_partition_id'][0] == partition_id and \
+           parsed_qs_body['error_log'][0] == 'some error':
+          return (200, {}, '')
+
+      return (404, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
+    computer_partition = slap.registerComputerPartition(
+        computer_guid, partition_id)
     # XXX: Interface does not define return value
     computer_partition.error('some error')
 
@@ -499,32 +687,44 @@ class TestSoftwareRelease(SlapMixin):
     software_release = self.slap.registerSoftwareRelease(
         self.software_release_uri)
     method = getattr(software_release, state)
-    self.assertRaises(UndefinedYetException, method)
+    self.assertRaises(NameError, method)
 
   def test_available_new_SoftwareRelease_raises(self):
     """
     Asserts that calling SoftwareRelease.available on new software release
-    raises (not defined yet) exception
+    raises NameError exception
     """
     self._test_new_software_release_state('available')
 
   def test_building_new_SoftwareRelease_raises(self):
     """
     Asserts that calling SoftwareRelease.building on new software release
-    raises (not defined yet) exception
+    raises NameError exception
     """
     self._test_new_software_release_state('building')
 
   def test_error_new_SoftwareRelease_works(self):
     """
-    Asserts that calling SoftwareRelease.error on new software release works
+    Asserts that calling SoftwareRelease.error on software release works
     """
-    self.software_release_uri = 'http://server/' + self._getTestComputerId()
-    self.slap = slapos.slap.slap()
-    self.slap.initializeConnection(self.server_url)
-    software_release = self.slap.registerSoftwareRelease(
-        self.software_release_uri)
-    # XXX: Interface does not define return value
+    computer_guid = self._getTestComputerId()
+    software_release_uri = 'http://server/' + self._getTestComputerId()
+    slap = self.slap
+    slap.initializeConnection(self.server_url)
+
+    def server_response(self, path, method, body, header):
+      parsed_url = urlparse.urlparse(path.lstrip('/'))
+      parsed_qs = urlparse.parse_qs(body)
+      if parsed_url.path == 'softwareReleaseError' and \
+         parsed_qs['computer_id'][0] == computer_guid and \
+         parsed_qs['url'][0] == software_release_uri and \
+         parsed_qs['error_log'][0] == 'some error':
+        return (200, {}, '')
+      return (404, {}, '')
+    httplib.HTTPConnection._callback = server_response
+
+    software_release = self.slap.registerSoftwareRelease(software_release_uri)
+    software_release._computer_guid = computer_guid
     software_release.error('some error')
 
 class TestOpenOrder(SlapMixin):
@@ -576,7 +776,6 @@ class TestOpenOrder(SlapMixin):
     requested_partition_id = 'PARTITION_01'
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
-      parsed_qs = urlparse.parse_qs(parsed_url.query)
       from slapos.slap.slap import SoftwareInstance
       slap_partition = SoftwareInstance(
         slap_computer_id=computer_guid,

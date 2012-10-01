@@ -55,6 +55,7 @@
 return (\'km_css/km_listbox.css\', \n
         \'vifib_style/listbox.css\',\n
         \'vifib_style/vifib.css\',\n
+        \'vifib_style/zocial.css\',\n
         \'vifib_hosting_style/hosting-design.css\',)\n
 </string> </value>
         </item>

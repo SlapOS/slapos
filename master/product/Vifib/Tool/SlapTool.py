@@ -31,15 +31,15 @@
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
 from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
-from Products.ERP5Security.ERP5UserManager import SUPER_USER
 from OFS.Traversable import NotFound
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type.Tool.BaseTool import BaseTool
-from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from Products.ERP5Type import Permissions
 from Products.ERP5Type.Cache import CachingMethod
+from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
 from lxml import etree
+import time
 try:
   from slapos.slap.slap import Computer
   from slapos.slap.slap import ComputerPartition as SlapComputerPartition
@@ -66,6 +66,9 @@ import xml_marshaller
 import StringIO
 import pkg_resources
 from Products.Vifib.Conduit import VifibConduit
+import json
+from DateTime import DateTime
+from App.Common import rfc1123_date
 class SoftwareInstanceNotReady(Exception):
   pass
 
@@ -132,6 +135,87 @@ class SlapTool(BaseTool):
   # Public GET methods
   ####################################################
 
+  def _isTestRun(self):
+    if self.getPortalObject().MailHost.__class__.__name__ == 'DummyMailHost':
+      return True
+    return False
+
+  def _getCachePlugin(self):
+    return self.getPortalObject().portal_caches\
+      .getRamCacheRoot().get('computer_information_cache_factory')\
+      .getCachePluginList()[0]
+
+  def _getCacheComputerInformation(self, computer_id, user, full):
+    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+    slap_computer = Computer(computer_id)
+    parent_uid = self._getComputerUidByReference(computer_id)
+
+    slap_computer._computer_partition_list = []
+    slap_computer._software_release_list = \
+       self._getSoftwareReleaseValueListForComputer(computer_id, full=full)
+    for computer_partition in self.getPortalObject().portal_catalog(
+                    parent_uid=parent_uid,
+                    validation_state="validated",
+                    portal_type="Computer Partition"):
+      slap_computer._computer_partition_list.append(
+          self._getSlapPartitionByPackingList(computer_partition.getObject()))
+    return xml_marshaller.xml_marshaller.dumps(slap_computer)
+
+  def _fillComputerInformationCache(self, computer_id, user, full):
+    self._getCachePlugin().set(user, DEFAULT_CACHE_SCOPE,
+      dict (
+        time=time.time(),
+        data=self._getCacheComputerInformation(computer_id, user, full),
+      ),
+      cache_duration=self.getPortalObject().portal_caches\
+          .getRamCacheRoot().get('computer_information_cache_factory'\
+            ).cache_duration
+      )
+
+  def _activateFillComputerInformationCache(self, computer_id, user, full):
+    tag = 'computer_information_cache_fill_%s' % user
+    if self.getPortalObject().portal_activities.countMessageWithTag(tag) == 0:
+      self.activate(activity='SQLQueue', tag=tag)._fillComputerInformationCache(
+        computer_id, user, full)
+
+  def _getComputerInformation(self, computer_id, user, full):
+    user_document = self.getPortalObject().portal_catalog.getResultValue(
+      reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
+    user_type = user_document.getPortalType()
+    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+    slap_computer = Computer(computer_id)
+    parent_uid = self._getComputerUidByReference(computer_id)
+
+    slap_computer._computer_partition_list = []
+    if user_type in ('Computer', 'Person'):
+      if not self._isTestRun():
+        cache_plugin = self._getCachePlugin()
+        try:
+          entry = cache_plugin.get(user, DEFAULT_CACHE_SCOPE)
+        except KeyError:
+          entry = None
+        if entry is not None and type(entry.getValue()) == type({}):
+          result = entry.getValue()['data']
+          if time.time() - entry.getValue()['time'] > 60 * 1:
+            # entry was stored 1 minutes ago, ask for recalculation
+            self._activateFillComputerInformationCache(computer_id, user, full)
+          return result
+        else:
+          self._activateFillComputerInformationCache(computer_id, user, full)
+          self.REQUEST.response.setStatus(503)
+          return self.REQUEST.response
+      else:
+        return self._getCacheComputerInformation(computer_id, user, full)
+    else:
+      slap_computer._software_release_list = []
+    for computer_partition in self.getPortalObject().portal_catalog(
+                    parent_uid=parent_uid,
+                    validation_state="validated",
+                    portal_type="Computer Partition"):
+      slap_computer._computer_partition_list.append(
+          self._getSlapPartitionByPackingList(computer_partition.getObject()))
+    return xml_marshaller.xml_marshaller.dumps(slap_computer)
+
   security.declareProtected(Permissions.AccessContentsInformation,
     'getComputerInformation')
   def getComputerInformation(self, computer_id):
@@ -141,34 +225,15 @@ class SlapTool(BaseTool):
 
     Reuses slap library for easy marshalling.
     """
-
-    def _getComputerInformation(computer_id, user):
-      user_document = self.getPortalObject().portal_catalog.getResultValue(
-        reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
-      user_type = user_document.getPortalType()
-      self.REQUEST.response.setHeader('Content-Type', 'text/xml')
-      slap_computer = Computer(computer_id)
-      parent_uid = self._getComputerUidByReference(computer_id)
-
-      slap_computer._computer_partition_list = []
-      if user_type == 'Computer':
-        slap_computer._software_release_list = \
-           self._getSoftwareReleaseValueListForComputer(computer_id)
-      else:
-        slap_computer._software_release_list = []
-
-      for computer_partition in self.getPortalObject().portal_catalog(
-                      parent_uid=parent_uid,
-                      validation_state="validated",
-                      portal_type="Computer Partition"):
-        slap_computer._computer_partition_list.append(
-            self._getSlapPartitionByPackingList(computer_partition.getObject()))
-      return xml_marshaller.xml_marshaller.dumps(slap_computer)
-
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
-    return CachingMethod(_getComputerInformation,
+    self._logAccess(user, user, '#access %s' % computer_id)
+    if not self._isTestRun():
+      return CachingMethod(self._getComputerInformation,
                          id='_getComputerInformation',
-                         cache_factory='slap_cache_factory')(computer_id, user)
+                         cache_factory='slap_cache_factory')(
+                            computer_id, user, False)
+    else:
+      return self._getComputerInformation(computer_id, user, False)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getFullComputerInformation')
@@ -179,31 +244,15 @@ class SlapTool(BaseTool):
 
     Reuses slap library for easy marshalling.
     """
-    def _getFullComputerInformation(computer_id, user):
-      user_document = self.getPortalObject().portal_catalog.getResultValue(
-        reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
-      user_type = user_document.getPortalType()
-      self.REQUEST.response.setHeader('Content-Type', 'text/xml')
-      slap_computer = Computer(computer_id)
-      parent_uid = self._getComputerUidByReference(computer_id)
-  
-      slap_computer._computer_partition_list = []
-      if user_type == 'Computer':
-        slap_computer._software_release_list = \
-           self._getSoftwareReleaseValueListForComputer(computer_id, full=True)
-      else:
-        slap_computer._software_release_list = []
-      for computer_partition in self.getPortalObject().portal_catalog(
-                      parent_uid=parent_uid,
-                      validation_state="validated",
-                      portal_type="Computer Partition"):
-        slap_computer._computer_partition_list.append(
-            self._getSlapPartitionByPackingList(computer_partition.getObject()))
-      return xml_marshaller.xml_marshaller.dumps(slap_computer)
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
-    return CachingMethod(_getFullComputerInformation,
+    self._logAccess(user, user, '#access %s' % computer_id)
+    if not self._isTestRun():
+      return CachingMethod(self._getComputerInformation,
                          id='_getFullComputerInformation',
-                         cache_factory='slap_cache_factory')(computer_id, user)
+                         cache_factory='slap_cache_factory')(
+                            computer_id, user, True)
+    else:
+      return self._getComputerInformation(computer_id, user, True)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getComputerPartitionCertificate')
@@ -276,6 +325,9 @@ class SlapTool(BaseTool):
     """
     Add an error for a software Release workflow
     """
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(user, computer_id, '#error while installing %s' % url)
     return self._softwareReleaseError(url, computer_id, error_log)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -511,6 +563,20 @@ class SlapTool(BaseTool):
   # Internal methods
   ####################################################
 
+  def _getMemcachedDict(self):
+    return self.getPortalObject().portal_memcached.getMemcachedDict(
+      key_prefix='slap_tool',
+      plugin_path='portal_memcached/default_memcached_plugin')
+
+  def _logAccess(self, user_reference, context_reference, text):
+    memcached_dict = self._getMemcachedDict()
+    value = json.dumps({
+      'user': '%s' % user_reference,
+      'created_at': '%s' % rfc1123_date(DateTime()),
+      'text': '%s' % text,
+    })
+    memcached_dict[context_reference] = value
+
   def _validateXML(self, to_be_validated, xsd_model):
     """Will validate the xml file"""
     #We parse the XSD model
@@ -525,7 +591,7 @@ class SlapTool(BaseTool):
     except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
       LOG('SlapTool::_validateXML', INFO, 
         'Failed to parse this XML reports : %s\n%s' % \
-          (to_be_validated, _formatXMLError(e)))
+          (to_be_validated, e))
       return False
 
     if xmlschema.validate(document):
@@ -554,7 +620,6 @@ class SlapTool(BaseTool):
   def _getSlapPartitionByPackingList(self, computer_partition_document):
     computer = computer_partition_document
     portal = self.getPortalObject()
-    portal_preferences = portal.portal_preferences
     while computer.getPortalType() != 'Computer':
       computer = computer.getParentValue()
     computer_id = computer.getReference()
@@ -620,14 +685,7 @@ class SlapTool(BaseTool):
     Request Software Release installation
     """
     computer_document = self._getComputerDocument(computer_id)
-    if state == 'available':
-      computer_document.requestSoftwareReleaseInstallation(
-        software_release_url=url)
-    elif state == 'destroyed':
-      computer_document.requestSoftwareReleaseCleanup(
-        software_release_url=url)
-    else:
-      raise ValueError('State %s is not supported' % state)
+    computer_document.requestSoftwareRelease(software_release_url=url, state=state)
 
   @convertToREST
   def _buildingSoftwareRelease(self, url, computer_id):
@@ -635,8 +693,16 @@ class SlapTool(BaseTool):
     Reports that Software Release is being build
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.startSoftwareReleaseInstallation(
-      software_release_url=url)
+    software_installation = self._getSoftwareInstallationForComputer(url,
+      computer_document)
+    delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
+      if line.getResource() == portal.portal_preferences.\
+                                 getPreferredSoftwareSetupResource():
+        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
+          delivery.start(comment='Software Release building report.')
 
   @convertToREST
   def _availableSoftwareRelease(self, url, computer_id):
@@ -644,7 +710,19 @@ class SlapTool(BaseTool):
     Reports that Software Release is available
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.stopSoftwareReleaseInstallation(software_release_url=url)
+    software_installation = self._getSoftwareInstallationForComputer(url,
+      computer_document)
+    delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
+    if delivery is not None:
+      portal = self.getPortalObject()
+      line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
+      if line.getResource() == portal.portal_preferences.\
+                                 getPreferredSoftwareSetupResource():
+        comment = 'Software Release available report.'
+        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
+          delivery.start(comment=comment)
+        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
+          delivery.stop(comment=comment)
 
   @convertToREST
   def _destroyedSoftwareRelease(self, url, computer_id):
@@ -652,7 +730,24 @@ class SlapTool(BaseTool):
     Reports that Software Release is available
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.cleanupSoftwareReleaseInstallation(software_release_url=url)
+    software_installation = self._getSoftwareInstallationForComputer(url,
+      computer_document)
+    delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
+    comment = 'Software Release destroyed report.'
+    portal = self.getPortalObject()
+    if delivery is not None:
+      line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
+      if line.getResource() == portal.portal_preferences.\
+                                 getPreferredSoftwareCleanupResource():
+        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
+          delivery.start(comment=comment)
+        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
+          delivery.stop(comment=comment)
+        if portal.portal_workflow.isTransitionPossible(delivery, 'deliver'):
+          delivery.deliver(comment=comment)
+    if portal.portal_workflow.isTransitionPossible(software_installation,
+        'invalidate'):
+      software_installation.invalidate(comment=comment)
 
   @convertToREST
   def _softwareReleaseError(self, url, computer_id, error_log):
@@ -660,9 +755,9 @@ class SlapTool(BaseTool):
     Add an error for a software Release workflow
     """
     computer_document = self._getComputerDocument(computer_id)
-    computer_document.reportSoftwareReleaseInstallationError(
-                                     comment=error_log,
-                                     software_release_url=url)
+    software_installation = self._getSoftwareInstallationForComputer(url,
+      computer_document)
+    software_installation.reportError(comment=error_log)
 
   @convertToREST
   def _buildingComputerPartition(self, computer_id, computer_partition_id):
@@ -704,9 +799,14 @@ class SlapTool(BaseTool):
     """
     Add an error for the software Instance Workflow
     """
-    return self._getSoftwareInstanceForComputerPartition(
+    instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id).reportComputerPartitionError(
+        computer_partition_id)
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(user, instance.getReference(), 
+                    '#error while instanciating')
+    return instance.reportComputerPartitionError(
                                      comment=error_log)
 
   @convertToREST
@@ -972,6 +1072,27 @@ class SlapTool(BaseTool):
       return service_document
     raise Unauthorized
 
+  def _getSoftwareInstallationForComputer(self, url, computer_document):
+    software_installation_list = self.getPortalObject().portal_catalog(
+      portal_type='Software Installation',
+      default_aggregate_uid=computer_document.getUid(),
+      validation_state='validated',
+      limit=2,
+      url_string={'query': url, 'key': 'ExactMatch'},
+    )
+
+    l = len(software_installation_list)
+    if l == 1:
+      return software_installation_list[0].getObject()
+    elif l == 0:
+      raise NotFound('No software release %r found on computer %r' % (url,
+        computer_document.getReference()))
+    else:
+      raise ValueError('Wrong list of software releases on %r: %s' % (
+        computer_document.getReference(), ', '.join([q.getRelativeUrl() for q \
+          in software_installation_list])
+      ))
+
   def _getSoftwareInstanceForComputerPartition(self, computer_id,
       computer_partition_id, slave_reference=None):
     computer_partition_document = self._getComputerPartitionDocument(
@@ -1054,22 +1175,19 @@ class SlapTool(BaseTool):
     """Returns list of Software Releases documentsfor computer"""
     computer_document = self._getComputerDocument(computer_reference)
     portal = self.getPortalObject()
-
-    state_list = []
-    state_list.extend(portal.getPortalReservedInventoryStateList())
-    state_list.extend(portal.getPortalTransitInventoryStateList())
-    if full:
-      state_list.extend(portal.getPortalCurrentInventoryStateList())
-
     software_release_list = []
-    for software_release_url_string in computer_document\
-      .Computer_getSoftwareReleaseUrlStringList(state_list):
+    for software_installation in portal.portal_catalog(
+      portal_type='Software Installation',
+      default_aggregate_uid=computer_document.getUid(),
+      validation_state='validated',
+      ):
       software_release_response = SoftwareRelease(
-          software_release=software_release_url_string,
+          software_release=software_installation.getUrlString(),
           computer_guid=computer_reference)
-      software_release_response._requested_state = \
-        computer_document.Computer_getSoftwareReleaseRequestedState(
-          software_release_url_string)
+      if software_installation.getSlapState() == 'destroy_requested':
+        software_release_response._requested_state = 'destroyed'
+      else:
+        software_release_response._requested_state = 'available'
       software_release_list.append(software_release_response)
     return software_release_list
 

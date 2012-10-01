@@ -68,6 +68,7 @@ MANDATORY_PARAMETER_LIST = [
     'software_root',
 ]
 
+COMPUTER_PARTITION_DESTROYED_STATE = 'destroyed'
 
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Parses arguments either from command line, from method parameters or from
@@ -107,15 +108,21 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="Enables console output and live output from subcommands.")
   parser.add_argument("-v", "--verbose", action="store_true", default=False,
       help="Be verbose.")
+  parser.add_argument("--maximum-periodicity", type=int, default=None,
+      help="Periodicity at which buildout should be run in instance.")
   parser.add_argument("--promise-timeout", type=int, default=3,
       help="Promise timeout in seconds.")
   parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
       help="SlapOS configuration file.")
+  parser.add_argument("--maximal_delay", help="The maximal delay value in seconds. " \
+                    "A negative value leads start immediately.")
   parser.add_argument("--now", action="store_true", default=False,
       help="Launch slapgrid without delay.")
   parser.add_argument("--develop", action="store_true", default=False,
-      help="Launch slapgrid in develop mode. In develop mode, slapgrid "
-           "will process all Softare Releases and/or Computer Partitions.")
+      help="Deprecated, same as --all.")
+  parser.add_argument("--all", action="store_true", default=False,
+      help="Launch slapgrid to process all Softare Releases"
+           "and/or Computer Partitions.")
   parser.add_argument("--only_sr",
       help="Force the update of a single software release (use url hash),"
            "event if is already installed. This option will make all others "
@@ -162,6 +169,12 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   for mandatory_parameter in MANDATORY_PARAMETER_LIST:
     if not mandatory_parameter in option_dict:
       missing_mandatory_parameter_list.append(mandatory_parameter)
+
+  if option_dict.get('all') is True:
+    option_dict['develop'] = True
+
+  if option_dict.get('maximum_periodicity') is not None:
+    option_dict['force_periodicity'] = True
 
   repository_required = False
   if 'key_file' in option_dict:
@@ -225,10 +238,18 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   else:
     signature_certificate_list = None
 
-  # Parse cache / binary options
-  option_dict["binary-cache-url-blacklist"] = [
-      url.strip() for url in option_dict.get("binary-cache-url-blacklist", ""
-          ).split('\n') if url]
+  # Parse cache / binary cache options
+  # Backward compatibility about "binary-cache-url-blacklist" deprecated option
+  if option_dict.get("binary-cache-url-blacklist") and not \
+      option_dict.get("download-from-binary-cache-url-blacklist"):
+    option_dict["download-from-binary-cache-url-blacklist"] = \
+        option_dict["binary-cache-url-blacklist"]
+  option_dict["download-from-binary-cache-url-blacklist"] = [
+      url.strip() for url in option_dict.get(
+          "download-from-binary-cache-url-blacklist", "").split('\n') if url]
+  option_dict["upload-to-binary-cache-url-blacklist"] = [
+      url.strip() for url in option_dict.get(
+          "upload-to-binary-cache-url-blacklist", "").split('\n') if url]
 
   # Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
   # SlapOS Nodes configured with cron.
@@ -239,7 +260,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   if maximal_delay > 0:
     duration = int(maximal_delay * random())
     logging.info("Sleeping for %s seconds. To disable this feature, " \
-                    "check maximal_delay parameter in manual." % duration)
+                    "check --now parameter in slapgrid help." % duration)
     time.sleep(duration)
 
   # Return new Slapgrid instance and options
@@ -260,8 +281,10 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
               option_dict.get('download-binary-cache-url', None),
             upload_binary_cache_url=\
               option_dict.get('upload-binary-cache-url', None),
-            binary_cache_url_blacklist=\
-                option_dict.get('binary-cache-url-blacklist', []),
+            download_from_binary_cache_url_blacklist=\
+                option_dict.get('download-from-binary-cache-url-blacklist', []),
+            upload_to_binary_cache_url_blacklist=\
+                option_dict.get('upload-to-binary-cache-url-blacklist', []),
             upload_cache_url=option_dict.get('upload-cache-url', None),
             download_binary_dir_url=\
               option_dict.get('download-binary-dir-url', None),
@@ -278,6 +301,8 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             develop=option_dict.get('develop', False),
             software_release_filter_list=option_dict.get('only_sr', None),
             computer_partition_filter_list=option_dict.get('only_cp', None),
+            force_periodicity = option_dict.get('force_periodicity', False),
+            maximum_periodicity = option_dict.get('maximum_periodicity', 86400),
             ),
           option_dict])
 
@@ -346,13 +371,16 @@ class Slapgrid(object):
                supervisord_socket,
                supervisord_configuration_path,
                buildout,
+               force_periodicity=False,
+               maximum_periodicity=86400,
                key_file=None,
                cert_file=None,
                signature_private_key_file=None,
                signature_certificate_list=None,
                download_binary_cache_url=None,
                upload_binary_cache_url=None,
-               binary_cache_url_blacklist=None,
+               download_from_binary_cache_url_blacklist=None,
+               upload_to_binary_cache_url_blacklist=None,
                upload_cache_url=None,
                download_binary_dir_url=None,
                upload_binary_dir_url=None,
@@ -367,7 +395,8 @@ class Slapgrid(object):
                shadir_key_file=None,
                develop=False,
                software_release_filter_list=None,
-               computer_partition_filter_list=None):
+               computer_partition_filter_list=None,
+               ):
     """Makes easy initialisation of class parameters"""
     # Parses arguments
     self.software_root = os.path.abspath(software_root)
@@ -384,7 +413,10 @@ class Slapgrid(object):
     self.signature_certificate_list = signature_certificate_list
     self.download_binary_cache_url = download_binary_cache_url
     self.upload_binary_cache_url = upload_binary_cache_url
-    self.binary_cache_url_blacklist = binary_cache_url_blacklist
+    self.download_from_binary_cache_url_blacklist = \
+        download_from_binary_cache_url_blacklist
+    self.upload_to_binary_cache_url_blacklist = \
+        upload_to_binary_cache_url_blacklist
     self.upload_cache_url = upload_cache_url
     self.download_binary_dir_url = download_binary_dir_url
     self.upload_binary_dir_url = upload_binary_dir_url
@@ -412,11 +444,24 @@ class Slapgrid(object):
       self.software_release_filter_list = \
           software_release_filter_list.split(",")
     else:
-      self.software_release_filter_list= []
+      self.software_release_filter_list = []
     self.computer_partition_filter_list = []
     if computer_partition_filter_list is not None:
       self.computer_partition_filter_list = \
           computer_partition_filter_list.split(",")
+    self.maximum_periodicity = maximum_periodicity
+    self.force_periodicity = force_periodicity
+    # XXX hardcoded watchdog_path
+    self.watchdog_path = '/opt/slapos/bin/watchdog'
+
+  def getWatchdogLine(self):
+    invocation_list = [self.watchdog_path]
+    invocation_list.append("--master-url '%s' " % self.master_url)
+    if self.key_file is not None and self.cert_file is not None:
+      invocation_list.append("--cert-file %s" % self.cert_file)
+      invocation_list.append("--key-file %s" % self.key_file)
+    invocation_list.append("--computer-id '%s'" % self.computer_id)
+    return ' '.join(invocation_list)
 
   def checkEnvironmentAndCreateStructure(self):
     """Checks for software_root and instance_root existence, then creates
@@ -452,6 +497,7 @@ class Slapgrid(object):
             supervisord_pidfile=os.path.abspath(os.path.join(
               self.instance_root, 'var', 'run', 'supervisord.pid')),
             supervisord_logfile_backups='10',
+            watchdog_command = self.getWatchdogLine(),
           ))
     except (WrongPermissionError, PathDoesNotExistError) as error:
       raise error
@@ -484,7 +530,10 @@ class Slapgrid(object):
             signature_certificate_list=self.signature_certificate_list,
             download_binary_cache_url=self.download_binary_cache_url,
             upload_binary_cache_url=self.upload_binary_cache_url,
-            binary_cache_url_blacklist=self.binary_cache_url_blacklist,
+            download_from_binary_cache_url_blacklist=\
+                self.download_from_binary_cache_url_blacklist,
+            upload_to_binary_cache_url_blacklist=\
+                self.upload_to_binary_cache_url_blacklist,
             upload_cache_url=self.upload_cache_url,
             download_binary_dir_url=self.download_binary_dir_url,
             upload_binary_dir_url=self.upload_binary_dir_url,
@@ -533,6 +582,7 @@ class Slapgrid(object):
             pass
     logger.info("Finished software releases...")
     return clean_run
+
 
   def _launchSupervisord(self):
     launchSupervisord(self.supervisord_socket,
@@ -590,101 +640,164 @@ class Slapgrid(object):
     if not promise_present:
       self.logger.info("No promise.")
 
-
-  def processComputerPartitionList(self):
-    """Will start supervisord and process each Computer Partition.
+  def processComputerPartition(self, computer_partition):
+    """
+    Process a Computer Partition, depending on its state
     """
     logger = logging.getLogger('ComputerPartitionProcessing')
-    logger.info("Processing computer partitions...")
+
+    computer_partition_id = computer_partition.getId()
+
+    logger.info('Processing Computer Partition %s...' % computer_partition_id)
+
+    # Sanity checks before processing
+    # Those values should not be None or empty string or any falsy value
+    if not computer_partition_id:
+      raise ValueError('Computer Partition id is empty.')
+
+    # Check if we defined explicit list of partitions to process.
+    # If so, if current partition not in this list, skip.
+    if len(self.computer_partition_filter_list) > 0 and \
+         (computer_partition_id not in self.computer_partition_filter_list):
+      return
+
+    instance_path = os.path.join(self.instance_root, computer_partition_id)
+
+    # Try to get partition timestamp (last modification date)
+    timestamp_path = os.path.join(instance_path, '.timestamp')
+    parameter_dict = computer_partition.getInstanceParameterDict()
+    if 'timestamp' in parameter_dict:
+      timestamp = parameter_dict['timestamp']
+    else:
+      timestamp = None
+
+    try:
+      software_url = computer_partition.getSoftwareRelease().getURI()
+    except NotFoundError:
+      # Problem with instance: SR URI not set.
+      # Try to process it anyway, it may need to be deleted.
+      software_url = None
+    try:
+      software_path = os.path.join(self.software_root,
+          getSoftwareUrlHash(software_url))
+    except TypeError:
+      # Problem with instance: SR URI not set.
+      # Try to process it anyway, it may need to be deleted.
+      software_path = None
+
+    if software_path:
+      # Get periodicity from periodicity file if not forced
+      periodicity = self.maximum_periodicity
+      if not self.force_periodicity:
+        periodicity_path = os.path.join(software_path,'periodicity')
+        if os.path.exists(periodicity_path):
+          try:
+            periodicity = int(open(periodicity_path).read())
+          except ValueError:
+            os.remove(periodicity_path)
+            exception = traceback.format_exc()
+            logger.error(exception)
+
+    # Check if timestamp from server is more recent than local one.
+    # If not: it's not worth processing this partition (nothing has
+    # changed).
+    if computer_partition_id not in self.computer_partition_filter_list and \
+        (not self.develop) and os.path.exists(timestamp_path):
+      old_timestamp = open(timestamp_path).read()
+      last_runtime = int(os.path.getmtime(timestamp_path))
+      if timestamp:
+        try:
+          if int(timestamp) <= int(old_timestamp):
+            if int(time.time()) <= (
+                last_runtime + periodicity) :
+              return
+        except ValueError:
+          os.remove(timestamp_path)
+          exception = traceback.format_exc()
+          logger.error(exception)
+
+    local_partition = Partition(
+      software_path=software_path,
+      instance_path=instance_path,
+      supervisord_partition_configuration_path=os.path.join(
+        self.supervisord_configuration_directory, '%s.conf' %
+        computer_partition_id),
+      supervisord_socket=self.supervisord_socket,
+      computer_partition=computer_partition,
+      computer_id=self.computer_id,
+      partition_id=computer_partition_id,
+      server_url=self.master_url,
+      software_release_url=software_url,
+      certificate_repository_path=self.certificate_repository_path,
+      console=self.console, buildout=self.buildout)
+
+    computer_partition_state = computer_partition.getState()
+    if computer_partition_state == "started":
+      local_partition.install()
+      computer_partition.available()
+      local_partition.start()
+      self._checkPromises(computer_partition)
+      computer_partition.started()
+    elif computer_partition_state == "stopped":
+      local_partition.install()
+      computer_partition.available()
+      local_partition.stop()
+      computer_partition.stopped()
+    elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
+      local_partition.stop()
+      try:
+        computer_partition.stopped()
+      except (SystemExit, KeyboardInterrupt):
+        exception = traceback.format_exc()
+        computer_partition.error(exception)
+        raise
+      except Exception:
+        pass
+    else:
+      error_string = "Computer Partition %r has unsupported state: %s" % \
+        (computer_partition_id, computer_partition_state)
+      computer_partition.error(error_string)
+      raise NotImplementedError(error_string)
+
+    # If partition has been successfully processed, write timestamp
+    if timestamp:
+      timestamp_path = os.path.join(instance_path, '.timestamp')
+      open(timestamp_path, 'w').write(timestamp)
+
+  def processComputerPartitionList(self):
+    """
+    Will start supervisord and process each Computer Partition.
+    """
+    logger = logging.getLogger('ComputerPartitionProcessing')
+    logger.info('Processing computer partitions...')
     # Prepares environment
     self.checkEnvironmentAndCreateStructure()
     self._launchSupervisord()
     # Process Computer Partitions
     clean_run = True
     for computer_partition in self.getComputerPartitionList():
-      computer_partition_id = computer_partition.getId()
-
-      # Check if we defined explicit list of partitions to process.
-      # If so, if current partition not in this list, skip.
-      if len(self.computer_partition_filter_list) > 0 and \
-           (computer_partition_id not in self.computer_partition_filter_list):
-        continue
-
-      instance_path = os.path.join(self.instance_root, computer_partition_id)
-
-      # Try to get partition timestamp (last modification date)
-      timestamp_path = os.path.join(instance_path, '.timestamp')
-      parameter_dict = computer_partition.getInstanceParameterDict()
-      if 'timestamp' in parameter_dict:
-        timestamp = parameter_dict['timestamp']
-      else:
-        timestamp = None
-
-      # Check if timestamp from server is more recent than local one.
-      # If not: it's not worth processing this partition (nothing has changed).
-      if computer_partition_id not in self.computer_partition_filter_list and \
-          (not self.develop) and os.path.exists(timestamp_path):
-        old_timestamp = open(timestamp_path).read()
-        if timestamp:
-          try:
-            if int(timestamp) <= int(old_timestamp):
-              continue
-          except ValueError:
-            os.remove(timestamp_path)
-            exception = traceback.format_exc()
-            logger.error(exception)
+      # Nothing should raise outside of the current loop iteration, so that
+      # even if something is terribly wrong while processing an instance, it
+      # won't prevent processing other ones.
       try:
-        software_url = computer_partition.getSoftwareRelease().getURI()
-      except NotFoundError:
-        software_url = None
-      software_path = os.path.join(self.software_root,
-            getSoftwareUrlHash(software_url))
-      local_partition = Partition(
-        software_path=software_path,
-        instance_path=instance_path,
-        supervisord_partition_configuration_path=os.path.join(
-          self.supervisord_configuration_directory, '%s.conf' %
-          computer_partition_id),
-        supervisord_socket=self.supervisord_socket,
-        computer_partition=computer_partition,
-        computer_id=self.computer_id,
-        partition_id=computer_partition_id,
-        server_url=self.master_url,
-        software_release_url=software_url,
-        certificate_repository_path=self.certificate_repository_path,
-        console=self.console, buildout=self.buildout)
-      try:
+        computer_partition_path = os.path.join(self.instance_root,
+            computer_partition.getId())
+        if not os.path.exists(computer_partition_path):
+          raise NotFoundError('Partition directory %s does not exist.' %
+              computer_partition_path)
+        # Check state of partition. If it is in "destroyed" state, check if it
+        # partition is actually installed in the Computer or if it is "free"
+        # partition
+        # XXX-Cedric: Temporary AND ugly solution to check if an instance
+        # is in the partition. Dangerous because not 100% sure it is empty
         computer_partition_state = computer_partition.getState()
-        if computer_partition_state == "started":
-          local_partition.install()
-          computer_partition.available()
-          local_partition.start()
-          self._checkPromises(computer_partition)
-          computer_partition.started()
-        elif computer_partition_state == "stopped":
-          local_partition.install()
-          computer_partition.available()
-          local_partition.stop()
-          computer_partition.stopped()
-        elif computer_partition_state == "destroyed":
-          local_partition.stop()
-          try:
-            computer_partition.stopped()
-          except (SystemExit, KeyboardInterrupt):
-            exception = traceback.format_exc()
-            computer_partition.error(exception)
-            raise
-          except Exception:
-            pass
-        else:
-          error_string = "Computer Partition %r has unsupported state: %s" % \
-            (computer_partition_id, computer_partition_state)
-          computer_partition.error(error_string)
-          raise NotImplementedError(error_string)
-        # If partition has been successfully processed, write timestamp
-        if timestamp:
-          timestamp_path = os.path.join(instance_path, '.timestamp')
-          open(timestamp_path, 'w').write(timestamp)
+        if computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE and \
+           os.listdir(computer_partition_path) == []:
+          continue
+
+        # Process the partition itself
+        self.processComputerPartition(computer_partition)
+
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         computer_partition.error(exception)
@@ -701,9 +814,9 @@ class Slapgrid(object):
           logger.error('Problem during reporting error, continuing:\n' +
             exception)
 
-
     logger.info("Finished computer partitions...")
     return clean_run
+
 
   def validateXML(self, to_be_validated, xsd_model):
     """Validates a given xml file"""
@@ -968,13 +1081,10 @@ class Slapgrid(object):
         report_usage_issue_cp_list.append(computer_partition_id)
 
     for computer_partition in computer_partition_list:
-      computer_partition_id = computer_partition.getId()
-      try:
-        software_url = computer_partition.getSoftwareRelease().getURI()
-      except NotFoundError:
-        software_url = None
-      if computer_partition.getState() == "destroyed":
+      if computer_partition.getState() == COMPUTER_PARTITION_DESTROYED_STATE:
         try:
+          computer_partition_id = computer_partition.getId()
+          software_url = computer_partition.getSoftwareRelease().getURI()
           software_path = os.path.join(self.software_root,
                 getSoftwareUrlHash(software_url))
           local_partition = Partition(

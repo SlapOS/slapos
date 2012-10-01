@@ -6,6 +6,12 @@
   <item>aggregate</item>
   <item>specialise</item>
  </portal_type>
+ <portal_type id="Software Installation">
+  <item>aggregate</item>
+ </portal_type>
+ <portal_type id="Software Installation Module">
+  <item>business_application</item>
+ </portal_type>
  <portal_type id="Software Instance">
   <item>aggregate</item>
   <item>specialise</item>

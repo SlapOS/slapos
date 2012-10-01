@@ -117,7 +117,7 @@ def getCleanEnvironment(home_path='/tmp'):
   changed_env['HOME'] = env['HOME'] = home_path
   for k in sorted(changed_env.iterkeys()):
     logger.debug('Overriden %s = %r' % (k,changed_env[k]))
-  logger.debug('Removed from environement: %s' % ', '.join(sorted(removed_env)))
+  logger.debug('Removed from environment: %s' % ', '.join(sorted(removed_env)))
   return env
 
 
@@ -216,7 +216,7 @@ def dropPrivileges(uid, gid):
     pass
   else:
     raise ValueError('%s it was possible to go back to uid = %r and gid = '
-        '%r which is fatal.' % message_pre, current_uid, current_gid)
+        '%r which is fatal.' % (message_pre, current_uid, current_gid))
   logger.info('Succesfully dropped privileges to uid=%r gid=%r' % (uid, gid))
 
 
@@ -360,4 +360,4 @@ def createPrivateDirectory(path):
   if permission not in ('0700'):
     raise WrongPermissionError('Wrong permissions in %s ' \
                                         ': is %s, should be 0700'
-                                        % path, permission)
+                                        % (path, permission))

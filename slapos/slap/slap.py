@@ -96,11 +96,23 @@ class SoftwareRelease(SlapDocument):
   def __getinitargs__(self):
     return (self._software_release, self._computer_guid, )
 
+  def getComputerId(self):
+    if not self._computer_guid:
+      raise NameError('computer_guid has not been defined.')
+    else:
+      return self._computer_guid
+
+  def getURI(self):
+    if not self._software_release:
+      raise NameError('software_release has not been defined.')
+    else:
+      return self._software_release
+
   def error(self, error_log):
     # Does not follow interface
     self._connection_helper.POST('/softwareReleaseError', {
-      'url': self._software_release,
-      'computer_id' : self._computer_guid,
+      'url': self.getURI(),
+      'computer_id' : self.getComputerId(),
       'error_log': error_log})
 
   def getURI(self):
@@ -108,18 +120,18 @@ class SoftwareRelease(SlapDocument):
 
   def available(self):
     self._connection_helper.POST('/availableSoftwareRelease', {
-      'url': self._software_release,
-      'computer_id': self._computer_guid})
+      'url': self.getURI(),
+      'computer_id': self.getComputerId()})
 
   def building(self):
     self._connection_helper.POST('/buildingSoftwareRelease', {
-      'url': self._software_release,
-      'computer_id': self._computer_guid})
+      'url': self.getURI(),
+      'computer_id': self.getComputerId()})
 
   def destroyed(self):
     self._connection_helper.POST('/destroyedSoftwareRelease', {
-      'url': self._software_release,
-      'computer_id': self._computer_guid})
+      'url': self.getURI(),
+      'computer_id': self.getComputerId()})
 
   def getState(self):
     return getattr(self, '_requested_state', 'available')
@@ -140,10 +152,10 @@ class SoftwareInstance(SlapDocument):
 """Exposed exceptions"""
 # XXX Why do we need to expose exceptions?
 class ResourceNotReady(Exception):
-  pass
+  zope.interface.implements(interface.IResourceNotReady)
 
 class ServerError(Exception):
-  pass
+  zope.interface.implements(interface.IServerError)
 
 class NotFoundError(Exception):
   zope.interface.implements(interface.INotFoundError)
@@ -215,12 +227,7 @@ def _syncComputerInformation(func):
   def decorated(self, *args, **kw):
     if getattr(self, '_synced', 0):
       return func(self, *args, **kw)
-    # XXX: This is a ugly way to keep backward compatibility,
-    # We should stablise slap library soon.
-    try:
-      computer = self._connection_helper.getFullComputerInformation(self._computer_id)
-    except NotFoundError:
-      computer = self._connection_helper.getComputerInformation(self._computer_id)
+    computer = self._connection_helper.getFullComputerInformation(self._computer_id)
     for key, value in computer.__dict__.items():
       if isinstance(value, unicode):
         # convert unicode to utf-8
@@ -260,7 +267,7 @@ class Computer(SlapDocument):
   def getComputerPartitionList(self):
     for computer_partition in self._computer_partition_list:
       computer_partition._connection_helper = self._connection_helper
-    return [x for x in self._computer_partition_list if x._need_modification]
+    return [x for x in self._computer_partition_list ]
 
   def reportUsage(self, computer_usage):
     if computer_usage == "":
@@ -288,10 +295,7 @@ def _syncComputerPartitionInformation(func):
       return func(self, *args, **kw)
     # XXX: This is a ugly way to keep backward compatibility,
     # We should stablise slap library soon.
-    try:
-      computer = self._connection_helper.getFullComputerInformation(self._computer_id)
-    except NotFoundError:
-      computer = self._connection_helper.getComputerInformation(self._computer_id)
+    computer = self._connection_helper.getFullComputerInformation(self._computer_id)
     found_computer_partition = None
     for computer_partition in computer._computer_partition_list:
       if computer_partition.getId() == self.getId():
@@ -352,11 +356,6 @@ class ComputerPartition(SlapDocument):
   def __getinitargs__(self):
     return (self._computer_id, self._partition_id, )
 
-  # XXX: As request is decorated with _syncComputerPartitionInformation it
-  #      will raise ResourceNotReady really early -- just after requesting,
-  #      and not when try to access to real partition is required.
-  #      To have later raising (like in case of calling methods), the way how
-  #      Computer Partition data are fetch from server shall be delayed
   @_syncComputerPartitionInformation
   def request(self, software_release, software_type, partition_reference,
               shared=False, partition_parameter_kw=None, filter_kw=None,
@@ -414,47 +413,47 @@ class ComputerPartition(SlapDocument):
   def building(self):
     self._connection_helper.POST('/buildingComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id})
+      'computer_partition_id': self.getId()})
 
   def available(self):
     self._connection_helper.POST('/availableComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id})
+      'computer_partition_id': self.getId()})
 
   def destroyed(self):
     self._connection_helper.POST('/destroyedComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       })
 
   def started(self):
     self._connection_helper.POST('/startedComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       })
 
   def stopped(self):
     self._connection_helper.POST('/stoppedComputerPartition', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       })
 
   def error(self, error_log):
     self._connection_helper.POST('/softwareInstanceError', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       'error_log': error_log})
 
   def bang(self, message):
     self._connection_helper.POST('/softwareInstanceBang', {
       'computer_id': self._computer_id,
-      'computer_partition_id': self._partition_id,
+      'computer_partition_id': self.getId(),
       'message': message})
 
   def rename(self, new_name, slave_reference=None):
     post_dict = dict(
       computer_id=self._computer_id,
-      computer_partition_id=self._partition_id,
+      computer_partition_id=self.getId(),
       new_name=new_name,
     )
     if slave_reference is not None:
@@ -462,6 +461,8 @@ class ComputerPartition(SlapDocument):
     self._connection_helper.POST('/softwareInstanceRename', post_dict)
 
   def getId(self):
+    if not self._partition_id:
+      raise ResourceNotReady()
     return self._partition_id
 
   @_syncComputerPartitionInformation
@@ -481,7 +482,7 @@ class ComputerPartition(SlapDocument):
     """
     Returns the software release associate to the computer partition.
     """
-    if self._software_release_document is None:
+    if not getattr(self, '_software_release_document', None):
       raise NotFoundError("No software release information for partition %s" %
           self.getId())
     else:
@@ -521,21 +522,6 @@ class ComputerPartition(SlapDocument):
         'computer_partition_id=%s' % (self._computer_id, self._partition_id))
     return xml_marshaller.loads(self._connection_helper.response.read())
 
-# def lazyMethod(func):
-#   """
-#   Return a function which stores a computed value in an instance
-#   at the first call.
-#   """
-#   key = '_cache_' + str(id(func))
-#   def decorated(self, *args, **kw):
-#     try:
-#       return getattr(self, key)
-#     except AttributeError:
-#       result = func(self, *args, **kw)
-#       setattr(self, key, result)
-#       return result
-#   return decorated
-
 class ConnectionHelper:
   error_message_timeout = "\nThe connection timed out. Please try again later."
   error_message_connect_fail = "Couldn't connect to the server. Please " \
@@ -559,7 +545,21 @@ class ConnectionHelper:
     return xml_marshaller.loads(self.response.read())
 
   def getFullComputerInformation(self, computer_id):
-    self.GET('/getFullComputerInformation?computer_id=%s' % computer_id)
+    """
+    Retrieve from SlapOS Master Computer instance containing all needed
+    informations (Software Releases, Computer Partitions, ...).
+    """
+    method = '/getFullComputerInformation?computer_id=%s' % computer_id
+    if not computer_id:
+      # XXX-Cedric: should raise something smarter than "NotFound".
+      raise NotFoundError(method)
+    try:
+      self.GET(method)
+    except NotFoundError:
+      # XXX: This is a ugly way to keep backward compatibility,
+      # We should stablise slap library soon.
+      self.GET('/getComputerInformation?computer_id=%s' % computer_id)
+
     return xml_marshaller.loads(self.response.read())
 
   def connect(self):
@@ -661,6 +661,7 @@ class slap:
     self._connection_helper = ConnectionHelper(connection_wrapper,
           netloc, path, key_file, cert_file, master_ca_file, timeout)
 
+  # XXX-Cedric: this method is never used and thus should be removed.
   def registerSoftwareRelease(self, software_release):
     """
     Registers connected representation of software release and
@@ -682,6 +683,10 @@ class slap:
     Registers connected representation of computer partition and
     returns Computer Partition class object
     """
+    if not computer_guid or not partition_id:
+      # XXX-Cedric: should raise something smarter than NotFound
+      raise NotFoundError
+
     self._connection_helper.GET('/registerComputerPartition?' \
         'computer_reference=%s&computer_partition_reference=%s' % (
           computer_guid, partition_id))

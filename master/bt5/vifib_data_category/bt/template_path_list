@@ -2,6 +2,7 @@ portal_categories/activity/**
 portal_categories/allocation_scope/**
 portal_categories/base_amount/**
 portal_categories/business_application/**
+portal_categories/capacity_scope/**
 portal_categories/classification/collaborative
 portal_categories/classification/collaborative/**
 portal_categories/classification/personal

@@ -99,7 +99,7 @@ a img{border : 0 none;cursor : pointer;}\n
 #vifib_logo{position:absolute;top:2px;left:50%;margin-left:-150px;width:300px;\n
   height:150px;background: url(<tal:block tal:replace="images_path"/>vifib_logo.png) no-repeat top left}\n
 \n
-#login_menu{width:750px;margin:120px auto 0px auto;padding-right:20px;text-align:right;\n
+#login_menu{width:900px;margin:120px auto 0px auto;padding-right:20px;text-align:right;\n
 \tcolor:#bae2e9;height:36px;-moz-border-radius:10px}\n
 #login_menu li{display:inline;padding:23px;line-height:44px;\n
 \tfont-size:16px;font-weight:bold;background:url(<tal:block tal:replace="images_path"/>login_bg.png) repeat-x center left}\n
@@ -108,7 +108,7 @@ a img{border : 0 none;cursor : pointer;}\n
 \n
 #menu li a, #login_menu li a {color:#BAE2E9;text-decoration:none;}\n
 \n
-#menu{width:750px;margin:0px auto 0px auto;text-align:center;\n
+#menu{width:900px;margin:0px auto 0px auto;text-align:center;\n
 \tcolor:#bae2e9;height:44px;background:url(<tal:block tal:replace="images_path"/>menu_bg.png) repeat-x top left;\n
 \t-moz-border-radius:10px}\n
 #menu ul{list-style:none}\n
@@ -122,7 +122,7 @@ a img{border : 0 none;cursor : pointer;}\n
 \n
 /* Global container */\n
 #content{text-align:left;position:relative;\n
-  left:50%;margin-left:-375px;font-size:1.2em;width:750px;min-height:400px;\n
+  left:50%;margin-left:-450px;font-size:1.2em;width:900px;min-height:400px;\n
   background-color:#f3fdff;-moz-border-radius:10px}\n
 #content_padding{padding:20px}\n
 \n
@@ -192,6 +192,10 @@ background:url(<tal:block tal:replace="images_path"/>user.png) no-repeat scroll 
 /**********************/\n
 /*      Footer       */\n
 /**********************/\n
+\n
+.hidden_label > label {\n
+  display:none;\n
+}\n
 \n
 #footer{position:relative;width:100%;line-height:120px;height:120px;\n
 \tcolor:#e1fbff;font-size:15px;background:url(<tal:block tal:replace="images_path"/>foot.png) repeat-x center center}\n

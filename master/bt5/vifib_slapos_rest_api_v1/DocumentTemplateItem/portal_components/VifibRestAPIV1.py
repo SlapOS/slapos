@@ -107,6 +107,52 @@ def supportModifiedSince(document_url_id):
 def encode_utf8(s):
   return s.encode('utf-8')
 
+def requireParameter(json_dict, optional_key_list=None):
+  if optional_key_list is None:
+    optional_key_list = []
+  def outer(fn):
+    def wrapperRequireJson(self, *args, **kwargs):
+
+      self.jbody = {}
+
+      error_dict = {}
+      for key, type_ in json_dict.iteritems():
+        if key not in self.REQUEST:
+          if key not in optional_key_list:
+            error_dict[key] = 'Missing.'
+        else:
+          value = self.REQUEST[key]
+          method = None
+          if type(type_) in (tuple, list):
+            type_, method = type_
+          if type_ == unicode:
+            value = '"%s"' % value
+          try:
+            value = json.loads(value)
+          except Exception:
+            error_dict[key] = 'Malformed value.'
+          else:
+            if not isinstance(value, type_):
+              error_dict[key] = '%s is not %s.' % (type(value
+                ).__name__, type_.__name__)
+            if method is None:
+              self.jbody[key] = value
+            else:
+              try:
+                self.jbody[key] = method(value)
+              except Exception:
+                error_dict[key] = 'Malformed value.'
+
+      if error_dict:
+        self.REQUEST.response.setStatus(400)
+        self.REQUEST.response.setBody(jsonify(error_dict))
+        return self.REQUEST.response
+      return fn(self, *args, **kwargs)
+    wrapperRequireJson.__doc__ = fn.__doc__
+    return wrapperRequireJson
+
+  return outer
+
 def requireJson(json_dict, optional_key_list=None):
   if optional_key_list is None:
     optional_key_list = []
@@ -343,6 +389,50 @@ class InstancePublisher(GenericPublisher):
     self.REQUEST.response.setBody(jsonify({'status':'processing'}))
     return self.REQUEST.response
 
+  @requireParameter(dict(
+    slave=bool,
+    software_release=(unicode, encode_utf8),
+    software_type=(unicode, encode_utf8),
+    sla=dict,
+  ))
+  def __allocable(self):
+    try:
+      user = self.restrictedTraverse(self.user_url)
+      user_portal_type = user.getPortalType()
+      if user_portal_type == 'Person':
+        pass
+      elif user_portal_type == 'Software Instance':
+        hosting_subscription = user.getSpecialiseValue(
+          portal_type="Hosting Subscription")
+        user = hosting_subscription.getDestinationSectionValue(
+          portal_type="Person")
+      else:
+        raise NotImplementedError, "Can not get Person document"
+      open_order = self.portal_catalog.getResultValue(
+        portal_type='Open Sale Order',
+        default_destination_decision_uid=user.getUid(),
+        validation_state='validated')
+      result = open_order.OpenSaleOrder_findPartition(
+        self.jbody['software_release'],
+        self.jbody['software_type'],
+        ('Software Instance', 'Slave Instance')[int(self.jbody['slave'])],
+        self.jbody['sla'],
+        test_mode=True)
+    except Exception:
+      transaction.abort()
+      LOG('VifibRestApiV1', ERROR,
+        'Problem with person.allocable:', error=True)
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(jsonify({'error':
+        'There is system issue, please try again later.'}))
+      return self.REQUEST.response
+
+    self.REQUEST.response.setStatus(200)
+    self.REQUEST.response.setHeader('Cache-Control', 
+                                    'no-cache, no-store')
+    self.REQUEST.response.setBody(jsonify({'result': result}))
+    return self.REQUEST.response
+
   @extractDocument(['Software Instance', 'Slave Instance'])
   @supportModifiedSince('document_url')
   def __instance_info(self):
@@ -424,7 +514,10 @@ class InstancePublisher(GenericPublisher):
         self.__request()
     elif self.REQUEST['REQUEST_METHOD'] == 'GET':
       if self.REQUEST['traverse_subpath']:
-        self.__instance_info()
+        if self.REQUEST['traverse_subpath'][-1] == 'request':
+          self.__allocable()
+        else:
+          self.__instance_info()
       else:
         self.__instance_list()
 
@@ -491,6 +584,74 @@ class ComputerPublisher(GenericPublisher):
     self.REQUEST.response.setStatus(204)
     return self.REQUEST.response
 
+class StatusPublisher(GenericPublisher):
+
+  @responseSupport()
+  def __call__(self):
+    """Log GET support"""
+    if self.REQUEST['REQUEST_METHOD'] == 'POST':
+      self.REQUEST.response.setStatus(404)
+      return self.REQUEST.response
+    elif self.REQUEST['REQUEST_METHOD'] == 'GET':
+      if self.REQUEST['traverse_subpath']:
+        self.__status_info()
+      else:
+        self.__status_list()
+
+  def __status_list(self):
+    kw = dict(
+      portal_type=('Computer', 'Software Instance'),
+    )
+    d = {"list": []}
+    a = d['list'].append
+    for si in self.getPortalObject().portal_catalog(**kw):
+      a('/'.join([self.getAPIRoot(), 'status', si.getRelativeUrl()]))
+    try:
+      d['list'][0]
+    except IndexError:
+      # no results, so nothing to return
+      self.REQUEST.response.setStatus(204)
+    else:
+      self.REQUEST.response.setStatus(200)
+      self.REQUEST.response.setHeader('Cache-Control', 
+                                      'max-age=300, private')
+      self.REQUEST.response.setBody(jsonify(d))
+    return self.REQUEST.response
+
+  # XXX Use a decated document to keep the history
+  @extractDocument(['Computer', 'Software Instance'])
+#   @supportModifiedSince('document_url')
+  def __status_info(self):
+    certificate = False
+    document = self.restrictedTraverse(self.document_url)
+    try:
+      memcached_dict = self.getPortalObject().portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+      try:
+        d = memcached_dict[document.getReference()]
+      except KeyError:
+        d = {
+          "user": "SlapOS Master",
+          'created_at': '%s' % rfc1123_date(DateTime()),
+          "text": "#error no data found for %s" % document.getReference()
+        }
+      else:
+        d = json.loads(d)
+    except Exception:
+      LOG('VifibRestApiV1', ERROR,
+        'Problem while trying to generate status information:', error=True)
+      self.REQUEST.response.setStatus(500)
+      self.REQUEST.response.setBody(jsonify({'error':
+        'There is system issue, please try again later.'}))
+    else:
+      d['@document'] = self.document_url
+      self.REQUEST.response.setStatus(200)
+      self.REQUEST.response.setHeader('Cache-Control', 
+                                      'max-age=300, private')
+      self.REQUEST.response.setBody(jsonify(d))
+    return self.REQUEST.response
+
 class VifibRestAPIV1(Implicit):
   security = ClassSecurityInfo()
   security.declareObjectProtected(Permissions.AccessContentsInformation)
@@ -511,6 +672,12 @@ class VifibRestAPIV1(Implicit):
   def computer(self):
     """Computer publisher"""
     return ComputerPublisher().__of__(self)
+
+  security.declarePublic('log')
+  @ComputedAttribute
+  def status(self):
+    """Status publisher"""
+    return StatusPublisher().__of__(self)
 
   @responseSupport(True)
   def OPTIONS(self, *args, **kwargs):

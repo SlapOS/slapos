@@ -86,7 +86,9 @@
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>listbox_monitoring_status</string>
+                      </list>
                     </value>
                 </item>
                 <item>
@@ -98,6 +100,7 @@
                         <string>new_server_button</string>
                         <string>listbox</string>
                         <string>last_event_listbox</string>
+                        <string>your_monitoring_status</string>
                       </list>
                     </value>
                 </item>

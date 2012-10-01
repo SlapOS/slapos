@@ -50,8 +50,47 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>state_change[\'object\'].Delivery_fixMultipleRootAppliedRule()\n
-</string> </value>
+            <value> <string encoding="cdata"><![CDATA[
+
+"""Tries to fix issue with many applied rules associated to delivery"""\n
+delivery = state_change[\'object\']\n
+\n
+if delivery.getPortalType() not in delivery.getPortalDeliveryTypeList():\n
+  raise TypeError(\'%s is not a delivery\' % delivery.getPath())\n
+\n
+portal = delivery.getPortalObject()\n
+\n
+kw = dict(\n
+  portal_type=\'Applied Rule\',\n
+  default_causality_uid=delivery.getUid()\n
+)\n
+\n
+root_applied_rule_count = portal.portal_catalog.countResults(**kw)[0][0]\n
+\n
+if delivery.getPortalType() == \'Sale Packing List\' \\\n
+  and delivery.getCausalityValue(portal_type=\'Sale Order\') is not None:\n
+  limit = 0\n
+  always_remove = True\n
+else:\n
+  limit = 1\n
+  always_remove = False\n
+\n
+if root_applied_rule_count <= limit:\n
+  # nothing to do\n
+  return\n
+\n
+delete_candidate_id_list = []\n
+\n
+rule_list = [q for q in portal.portal_catalog(**kw)]\n
+rule_list = rule_list[limit:]\n
+for root_applied_rule in rule_list:\n
+  if always_remove or len(root_applied_rule.contentValues()) == 0:\n
+    delete_candidate_id_list.append(root_applied_rule.getId())\n
+\n
+portal.portal_simulation.deleteContent(delete_candidate_id_list)\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>

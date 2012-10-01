@@ -1,6 +1,81 @@
 Changes
 =======
 
+0.30.1 (2012-09-28)
+-------------------
+
+ * Add safety checks before calling SlapOS Master if mandatory instance
+   members of SLAP classes are not properly set. Will result in less calls to
+	 SlapOS Master in dirty cases. (commits 5097e87c9763, 5fad6316a0f6d,
+   f2cd014ea8aa) [Cedric de Saint Martin]
+ * Add "periodicty" functionnality support for instances: if an instance has
+   not been processed by slapgrid after defined time, process it. (commits
+   7609fc7a3d, 56e1c7bfbd) [Cedric Le Ninivin]
+ * slapproxy: Various improvements in slave support (commits 96c6b78b67,
+   bcac5a397d, fbb680f53b)[Cedric Le Ninivin]
+ * slapgrid: bulletproof slapgrid-cp: in case one instance is bad, still
+   processes all other ones. (commits bac94cdb56, 77bc6c75b3d, bd68b88cc3)
+   [Cedric de Saint Martin]
+ * Add support for "upload to binary cache" URL blacklist [Cedric de Saint
+   Martin]
+ * Request on proxy are identified by requester and name (commit
+   0c739c3) [Cedric Le Ninivin]
+
+0.30 (2012-09-19)
+-----------------
+
+ * Add initial "slave instances" support in slapproxy. [Cedric Le Ninivin]
+ * slapgrid-ur fix: check for partition informations only if we have to
+   destroy it. [Cedric de Saint Martin]
+
+0.29 (2012-09-18)
+-----------------
+
+ * buildout: Migrate slap_connection magic instance profile part to
+   slap-connection, and use variables names separated with '-'. [Cedric de
+	 Saint Martin]
+ * slapgrid: Add support for instance.cfg instance profiles [Cedric de Saint
+   Martin]
+ * slapgrid-ur: much less calls to master. [Cedric de Saint Martin]
+
+0.28.9 (2012-09-18)
+-------------------
+
+ * slapgrid: Don't process not updated partitions (regression introduced in
+   0.28.7). [Cedric de Saint Martin]
+
+0.28.8 (2012-09-18)
+-------------------
+
+ * slapgrid: Don't process free partitions (regression introduced in 0.28.7).
+   [Cedric de Saint Martin]
+
+0.28.7 (2012-09-14)
+-------------------
+
+ * slapgrid: --maximal_delay reappeared to be used in special cases. [Cedric
+   de Saint Martin]
+
+0.28.6 (2012-09-10)
+-------------------
+
+ * register now use slapos.cfg.example from master. [Cédric Le Ninivin]
+
+0.28.5 (2012-08-23)
+-------------------
+
+ * Updated slapos.cfg for register [Cédric Le Ninivin]
+
+0.28.4 (2012-08-22)
+-------------------
+
+ * Fixed egg building.
+
+0.28.3 (2012-08-22)
+-------------------
+
+ * Avoid artificial tap creation on system check. [Łukasz Nowak]
+
 0.28.2 (2012-08-17)
 -------------------
 

@@ -35,10 +35,22 @@ class IException(Interface):
   Classes which implement IException are used to report errors.
   """
 
+class IServerError(IException):
+  """
+  Classes which implement IServerError are used to report unexpected error
+  from the slap server.
+  """
+
 class INotFoundError(IException):
   """
   Classes which implement INotFoundError are used to report missing
   informations on the slap server.
+  """
+
+class IResourceNotReady(IException):
+  """
+  Classes which implement IResourceNotReady are used to report resource not
+  ready on the slap server.
   """
 
 class IUnauthorized(IException):
@@ -120,6 +132,12 @@ class ISoftwareRelease(IBuildoutController):
   def getURI():
     """
     Returns a string representing the uri of the software release.
+    """
+
+  def getComputerId():
+    """
+    Returns a string representing the identifier of the computer where the SR
+    is installed.
     """
 
   def getState():

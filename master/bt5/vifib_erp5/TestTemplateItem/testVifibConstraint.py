@@ -144,39 +144,6 @@ class TestVifibEmailConstraint(testVifibMixin):
 
     self.assertFalse(consistency_message in getMessageList(email))
 
-  def test_url_string_unique(self):
-    url_string = rndstr()
-    url_string_2 = rndstr()
-    email = self.portal.person_module.newContent(portal_type='Person'
-      ).newContent(portal_type='Email', url_string=url_string)
-    email_2 = self.portal.person_module.newContent(portal_type='Person'
-      ).newContent(portal_type='Email', url_string=url_string)
-    consistency_message = 'Email must be unique'
-
-    self.stepTic()
-    self.assertTrue(consistency_message in getMessageList(email))
-    self.assertTrue(consistency_message in getMessageList(email_2))
-
-    email_2.setUrlString(url_string_2)
-    self.stepTic()
-    self.assertFalse(consistency_message in getMessageList(email))
-    self.assertFalse(consistency_message in getMessageList(email_2))
-
-  def test_url_string_does_not_conflict_with_credential(self):
-    url_string = rndstr()
-
-    person_email = self.portal.person_module.newContent(portal_type='Person'
-      ).newContent(portal_type='Email', url_string=url_string)
-
-    credential_email = self.portal.credential_update_module.newContent(
-      portal_type='Credential Update').newContent(portal_type='Email',
-      url_string=url_string)
-
-    self.stepTic()
-
-    self.assertFalse('Email must be unique' in getMessageList(person_email))
-    self.assertFalse('Email must be unique' in getMessageList(credential_email))
-
 class TestVifibInternalPackingListConstraint(testVifibMixin):
   def getTitle(self):
     return "Vifib Internal Packing List Constraint checks"
@@ -409,6 +376,25 @@ class TestVifibPurchasePackingListLineConstraint(testVifibMixin):
     computer.validate()
     self.assertFalse(consistency_message_state in getMessageList(line))
 
+  def test_aggregate_software_installation(self):
+    consistency_message_existence = 'There should be exactly one Software '\
+      'Installation present in Items'
+
+    line = self.portal.purchase_packing_list_module.newContent(
+      portal_type='Purchase Packing List').newContent(
+        portal_type='Purchase Packing List Line',
+        resource=self.portal.portal_preferences\
+          .getPreferredSoftwareSetupResource())
+
+    self.assertTrue(consistency_message_existence in getMessageList(line))
+
+    software_installation = self.portal.software_installation_module.newContent(
+      portal_type='Software Installation')
+
+    line.setAggregate(software_installation.getRelativeUrl())
+
+    self.assertFalse(consistency_message_existence in getMessageList(line))
+
   def test_aggregate_software_release(self):
     consistency_message_existence = 'There should be exactly one Software '\
       'Release present in Items'
@@ -470,87 +456,6 @@ class TestVifibPurchasePackingListLineConstraint(testVifibMixin):
     self.assertFalse(consistency_message in getMessageList(line))
 
 class TestVifibSoftwareReleaseConstraint(testVifibMixin):
-  def test_aggregate(self):
-    consistency_message_existence = 'One Software Product must be defined'
-    consistency_message_state = 'Software Product must be validated'
-
-    software_release = self.portal.software_release_module.newContent(
-      portal_type='Software Release')
-    software_release.publish()
-
-    self.assertTrue(consistency_message_existence in getMessageList(
-      software_release))
-
-    software_product = self.portal.software_product_module.newContent(
-      portal_type='Software Product')
-
-    software_release.setAggregate(software_product.getRelativeUrl())
-
-    self.assertFalse(consistency_message_existence in getMessageList(
-      software_release))
-
-    software_product_2 = self.portal.software_product_module.newContent(
-      portal_type='Software Product')
-
-    software_release.setAggregateList([software_product.getRelativeUrl(),
-      software_product_2.getRelativeUrl()])
-
-    self.assertTrue(consistency_message_existence in getMessageList(
-      software_release))
-
-    software_release.setAggregate(software_product.getRelativeUrl())
-
-    self.assertTrue(consistency_message_state in getMessageList(
-      software_release))
-
-    software_product.validate()
-
-    self.assertFalse(consistency_message_state in getMessageList(
-      software_release))
-
-  def test_contributor(self):
-    consistency_message_existence = 'One Contributor must be defined'
-    consistency_message_state = 'Contributor must be validated'
-
-    software_release = self.portal.software_release_module.newContent(
-      portal_type='Software Release')
-
-    self.assertTrue(consistency_message_existence in getMessageList(
-      software_release))
-
-    person = self.portal.person_module.newContent(
-      portal_type='Person')
-
-    #XXX: Conflict: contributor is category and dublin core property
-    #software_release.setContributor(person.getRelativeUrl())
-    software_release.setContributorValue(person)
-
-    self.assertFalse(consistency_message_existence in getMessageList(
-      software_release))
-
-    person_2 = self.portal.person_module.newContent(
-      portal_type='Person')
-
-    #XXX: Conflict: contributor is category and dublin core property
-    #software_release.setContributorList([person.getRelativeUrl(),
-    #  person_2.getRelativeUrl()])
-    software_release.setContributorValueList([person, person_2])
-
-    self.assertTrue(consistency_message_existence in getMessageList(
-      software_release))
-
-    #XXX: Conflict: contributor is category and dublin core property
-    #software_release.setContributor(person.getRelativeUrl())
-    software_release.setContributorValue(person)
-
-    self.assertTrue(consistency_message_state in getMessageList(
-      software_release))
-
-    person.validate()
-
-    self.assertFalse(consistency_message_state in getMessageList(
-      software_release))
-
   def test_reference(self):
     consistency_message = 'Reference must be defined'
 

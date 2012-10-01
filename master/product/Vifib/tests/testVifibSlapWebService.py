@@ -76,7 +76,7 @@ def fakeSlapAuth():
 
 def unfakeSlapAuth():
   from httplib import HTTPConnection
-  if getattr(HTTPConnection, '_original_request', None) is None:
+  if getattr(HTTPConnection, '_original_request', None) is not None:
     HTTPConnection.request = HTTPConnection._original_request
     delattr(HTTPConnection, '_original_request')
 
@@ -111,13 +111,19 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   assertUserCanAccessDocument =\
       AssertPermissionMethod(Permissions.AccessContentsInformation)
 
-  def afterSetUp(self):
+  def fakeSlapAuth(self):
     fakeSlapAuth()
+
+  def unfakeSlapAuth(self):
+    unfakeSlapAuth()
+
+  def afterSetUp(self):
+    self.fakeSlapAuth()
     testVifibMixin.afterSetUp(self)
     self.server_url = self.portal.portal_slap.absolute_url()
 
   def beforeTearDown(self):
-    unfakeSlapAuth()
+    self.unfakeSlapAuth()
     super(testVifibMixin, self).beforeTearDown()
 
   def _loginAsUser(self, username):
@@ -308,10 +314,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
        partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
        filter_kw=sequence.get('requested_filter_dict', {}),
        state=sequence.get('requested_state'))
-    sequence.edit(
-        requested_slap_computer_partition=requested_slap_computer_partition,
-        requested_computer_partition_reference=\
-            requested_slap_computer_partition.getId())
+    try:
+      requested_slap_computer_partition.getId()
+    except slap.ResourceNotReady:
+      pass
+    else:
+      sequence.edit(
+          requested_slap_computer_partition=requested_slap_computer_partition,
+          requested_computer_partition_reference=\
+              requested_slap_computer_partition.getId())
 
   def stepSetCurrentComputerPartitionFromRequestedComputerPartition(self, sequence):
     sequence['computer_partition_reference'] = \
@@ -723,8 +734,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_release_uid'])
 
-    computer.requestSoftwareReleaseInstallation(
-        software_release_url=software_release.getUrlString())
+    computer.requestSoftwareRelease(
+        software_release_url=software_release.getUrlString(), state='available')
 
   def _createComputer(self):
     # Mimics WebSection_registerNewComputer
@@ -924,15 +935,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         sequence['computer_partition_reference'])
     computer_partition.building()
 
-  def stepPayRegistrationPayment(self, sequence, **kw):
+  def stepPayPayment(self, sequence, **kw):
     """
     """
     payment = self.portal.portal_catalog.getResultValue(
         portal_type="Payment Transaction",
-        simulation_state="planned")
-    payment.setStartDate(DateTime())
-    payment.confirm()
-    payment.start()
+        simulation_state="started")
     payment.stop()
 
   ########################################
@@ -1503,6 +1511,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CleanTic \
       CallVifibUpdateDeliveryCausalityStateAlarm \
       CleanTic \
+      CallVifibPayzenUpdateConfirmedPaymentAlarm \
+      CleanTic \
       Logout'
 
   create_new_user_instance_sequence_string = '\
@@ -1515,7 +1525,13 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       \
       LoginDefaultUser \
       CallConfirmOrderedSaleOrderAlarm \
-      Tic \
+      CleanTic \
+      CallVifibExpandConfirmedSaleOrderAlarm \
+      CleanTic \
+      CallVifibTriggerBuildAlarm \
+      CleanTic \
+      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
       SetSelectedComputerPartition \
       SelectCurrentlyUsedSalePackingListUid \
       Logout \
@@ -1984,10 +2000,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     # tic as request is done on slap level library
     self.stepTic()
 
-    sequence.edit(
-        requested_slap_computer_partition=requested_slap_computer_partition,
-        requested_computer_partition_reference=\
-            requested_slap_computer_partition.getId())
+    try:
+      requested_slap_computer_partition.getId()
+    except slap.ResourceNotReady:
+      pass
+    else:
+      sequence.edit(
+          requested_slap_computer_partition=requested_slap_computer_partition,
+          requested_computer_partition_reference=\
+              requested_slap_computer_partition.getId())
 
   def stepRequestSlaveInstanceFromComputerPartitionNotFoundError(self, sequence, **kw):
     software_release_uri = sequence['software_release_uri']
@@ -2053,10 +2074,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     requested_slap_computer_partition = slap_computer_partition.request(**kw)
     self.stepTic()
 
-    sequence.edit(
-        requested_slap_computer_partition=requested_slap_computer_partition,
-        requested_computer_partition_reference=\
-            requested_slap_computer_partition.getId())
+    try:
+      requested_slap_computer_partition.getId()
+    except slap.ResourceNotReady:
+      pass
+    else:
+      sequence.edit(
+          requested_slap_computer_partition=requested_slap_computer_partition,
+          requested_computer_partition_reference=\
+              requested_slap_computer_partition.getId())
 
   def _stepSetSoftwareInstanceChildren(self, sequence, source_reference):
     software_instance_uid = sequence['root_software_instance_uid']
@@ -4628,7 +4654,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Tic
       CallAcceptSubmittedCredentialsAlarm
       Tic
-      PayRegistrationPayment
+      PayPayment
       Tic
       Logout
 

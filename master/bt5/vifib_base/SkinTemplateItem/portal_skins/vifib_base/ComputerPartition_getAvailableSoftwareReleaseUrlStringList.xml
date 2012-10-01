@@ -56,7 +56,7 @@ portal_preferences = portal.portal_preferences\n
 \n
 if slap_state == \'free\':\n
   computer = context.getParentValue()\n
-  return computer.Computer_getSoftwareReleaseUrlStringList([\'stopped\'])\n
+  return computer.Computer_getSoftwareReleaseUrlStringList()\n
 \n
 elif slap_state == \'busy\':\n
 \n

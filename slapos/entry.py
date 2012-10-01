@@ -76,7 +76,7 @@ def checkOption(option):
 
 def call(fun, config=False, option=[]):
   """
-  Add missing options to argv
+  Add missing options to sys.argv
   Add config if asked and it is missing
   Call function fun
   """
@@ -96,6 +96,7 @@ def dispatch(command, is_node):
   """ Dispatch to correct SlapOS module.
   Here we could use introspection to get rid of the big "if" statements,
   but we want to control every input.
+  Here we give default option and configuration file if they are needed
   """
   # XXX console_config =
   if is_node:

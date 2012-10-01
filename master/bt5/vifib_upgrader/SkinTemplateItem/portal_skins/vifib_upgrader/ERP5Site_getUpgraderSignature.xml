@@ -55,6 +55,10 @@
   specification of an upgrader.\n
 """\n
 \n
+script.log(\'Do it manually\')\n
+return {}\n
+\n
+\n
 BEFORE_TRIGGERED_BT5_SCRIPT_ID_DICT = {\n
 }\n
 \n

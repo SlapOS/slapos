@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>installation = state_change[\'object\']\n
+portal = installation.getPortalObject()\n
+isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
+\n
+# Get latest workflow transition\n
+state = installation.getSlapState()\n
+started = "start_requested"\n
+destroyed = "destroy_requested"\n
+assert state in [started, destroyed]\n
+# Get all needed services\n
+setup_service_relative_url = portal.portal_preferences.getPreferredSoftwareSetupResource()\n
+setup_service = portal.restrictedTraverse(setup_service_relative_url)\n
+cleanup_service_relative_url = portal.portal_preferences.getPreferredSoftwareCleanupResource()\n
+cleanup_service = portal.restrictedTraverse(cleanup_service_relative_url)\n
+\n
+# Get current delivery\n
+delivery = installation.getCausalityValue(portal_type=["Purchase Packing List"])\n
+if delivery is None:\n
+  delivery = context.Installation_createPurchasePackingList(state_change, setup_service_relative_url)\n
+\n
+delivery_line = delivery.contentValues(portal_type=["Purchase Packing List Line"])[0]\n
+resource = delivery_line.getResource()\n
+\n
+if state == destroyed:\n
+  comment = \'Software Release request destruction.\'\n
+  if resource == setup_service_relative_url:\n
+    if isTransitionPossible(delivery, \'confirm\'):\n
+      delivery.confirm(comment=comment)\n
+    if isTransitionPossible(delivery, \'start\'):\n
+      delivery.start(comment=comment)\n
+    if isTransitionPossible(delivery, \'stop\'):\n
+      delivery.stop(comment=comment)\n
+    if isTransitionPossible(delivery, \'deliver\'):\n
+      delivery.deliver(comment=comment)\n
+    delivery = context.Installation_createPurchasePackingList(state_change, cleanup_service_relative_url)\n
+  if isTransitionPossible(delivery, \'confirm\'):\n
+    delivery.confirm(comment=comment)\n
+elif state == started:\n
+  if resource == setup_service_relative_url:\n
+    if isTransitionPossible(delivery, \'confirm\'):\n
+      delivery.confirm(comment=comment)\n
+  else:\n
+    # nothing to do in case if cleanup was\n
+    pass\n
+\n
+if installation.getCausality(portal_type=\'Purchase Packing List\') != delivery.getRelativeUrl():\n
+  installation.setCausality(delivery.getRelativeUrl())\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>state_change</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Installation_changePromiseState</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

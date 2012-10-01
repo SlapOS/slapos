@@ -95,6 +95,9 @@ def assignComputerPartition(order):\n
 \n
 sale_order = context.getParentValue()\n
 if sale_order.getSimulationState() == \'ordered\':\n
+  if not context.SaleOrderLine_tryToAssociateSoftwareRelease():\n
+    # support changing software release for not instantiated orders\n
+    markHistory(sale_order, \'Software Release not associated.\')\n
   try:\n
     software_instance, computer_partition = assignComputerPartition(sale_order)\n
   except ValueError:\n

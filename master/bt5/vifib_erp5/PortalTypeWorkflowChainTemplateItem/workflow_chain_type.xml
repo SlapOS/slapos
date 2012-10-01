@@ -4,6 +4,14 @@
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Computer Model</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Computer Network</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Hosting Subscription</type>
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>
@@ -65,6 +73,10 @@
  </chain>
  <chain>
   <type>Slave Instance</type>
+  <workflow>local_permission_vifib_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Software Installation</type>
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>
  <chain>

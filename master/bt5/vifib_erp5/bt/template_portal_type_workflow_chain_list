@@ -1,3 +1,5 @@
+Computer Model | local_permission_vifib_interaction_workflow
+Computer Network | local_permission_vifib_interaction_workflow
 Computer | local_permission_vifib_interaction_workflow
 Hosting Subscription | local_permission_vifib_interaction_workflow
 Internal Packing List | local_permission_vifib_interaction_workflow
@@ -15,4 +17,5 @@ Sale Packing List | local_permission_vifib_interaction_workflow
 Sale Trade Condition Module | init_vifib_interaction_workflow
 Sale Trade Condition | local_permission_vifib_interaction_workflow
 Slave Instance | local_permission_vifib_interaction_workflow
+Software Installation | local_permission_vifib_interaction_workflow
 Software Instance | local_permission_vifib_interaction_workflow

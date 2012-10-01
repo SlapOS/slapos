@@ -225,6 +225,39 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
     self.assertEquals(1,
                       requested_slap_computer_partition._need_modification)
 
+  def stepPersonRequestSlapSoftwareInstanceWithAnotherSoftwareRelease(
+                                                    self, sequence, **kw):
+    software_release = sequence['another_software_release_uri']
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    open_order = self.slap.registerOpenOrder()
+    open_order.request(
+       software_release=software_release,
+       software_type=sequence.get('requested_software_type', 'software_type'),
+       partition_reference=sequence['requested_reference'],
+       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+       filter_kw=sequence.get('requested_filter_dict', {}))
+
+  def stepCheckPersonRequestSlapSoftwareInstanceWithAnotherSoftwareRelease(
+                                                    self, sequence, **kw):
+    software_release = sequence['another_software_release_uri']
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    open_order = self.slap.registerOpenOrder()
+    requested_slap_computer_partition = open_order.request(
+       software_release=software_release,
+       software_type=sequence.get('requested_software_type', 'software_type'),
+       partition_reference=sequence['requested_reference'],
+       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+       filter_kw=sequence.get('requested_filter_dict', {}))
+
+    self.assertEquals(sequence.get('requested_computer_partition_reference'),
+                      requested_slap_computer_partition.getId())
+    self.assertEquals(software_release,
+      requested_slap_computer_partition.getSoftwareRelease().getURI())
+    self.assertEquals(1,
+                      requested_slap_computer_partition._need_modification)
+
   def test_OpenOrder_request_changeSoftwareType(self):
     """
     Check that requesting the same instance with a different software type
@@ -262,6 +295,69 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       PersonRequestSlapSoftwareInstanceWithAnotherSoftwareType
       Tic
       CheckPersonRequestSlapSoftwareInstanceWithAnotherSoftwareType
+      Tic
+      SlapLogout
+
+      LoginERP5TypeTestCase
+      CheckSiteConsistency
+      Logout
+    """
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def stepStoreAnotherSoftwareRelease(self, sequence, **kw):
+    sequence['another_software_release_uri'] = sequence['software_release_uri']
+
+  def test_OpenOrder_request_changeSoftwareRelease(self):
+    """
+    Check that requesting the same instance with a different software release
+    does not create a new instance
+    """
+    self.computer_partition_amount = 1
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_published_software_release + \
+      self.prepare_formated_computer + """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      StoreAnotherSoftwareRelease
+      """ + self.prepare_published_software_release + \
+      """
+      LoginTestVifibAdmin
+      RequestSoftwareInstallation
+      Tic
+      Logout
+
+      SlapLoginCurrentComputer
+      ComputerSoftwareReleaseAvailable
+      Tic
+      SlapLogout
+
+      SetRandomRequestedReference
+      SlapLoginTestVifibCustomer
+      SetFirstSoftwareType
+      PersonRequestSlapSoftwareInstancePrepare
+      Tic
+      SlapLogout
+
+      LoginDefaultUser
+      CallConfirmOrderedSaleOrderAlarm
+      Tic
+      Logout
+
+      SlapLoginTestVifibCustomer
+      PersonRequestSlapSoftwareInstance
+      Tic
+      PersonRequestSlapSoftwareInstanceWithAnotherSoftwareRelease
+      Tic
+      CheckPersonRequestSlapSoftwareInstanceWithAnotherSoftwareRelease
       Tic
       SlapLogout
 

@@ -95,8 +95,23 @@
                         <string>my_url_string</string>
                         <string>your_image_url</string>
                         <string>your_service_title</string>
+                        <string>your_ad</string>
                         <string>your_instance_xml</string>
                         <string>your_description</string>
+                        <string>your_computer_guid</string>
+                        <string>your_network_guid</string>
+                        <string>your_group</string>
+                        <string>your_cpu_core</string>
+                        <string>your_cpu_frequency</string>
+                        <string>your_cpu_type</string>
+                        <string>your_local_area_network_type</string>
+                        <string>your_memory_size</string>
+                        <string>your_memory_type</string>
+                        <string>your_storage_capacity</string>
+                        <string>your_storage_interface</string>
+                        <string>your_storage_redundancy</string>
+                        <string>your_monitoring_status</string>
+                        <string>your_monitoring_status_js</string>
                       </list>
                     </value>
                 </item>

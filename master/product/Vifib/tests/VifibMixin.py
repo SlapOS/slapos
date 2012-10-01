@@ -119,6 +119,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data_payzen',
       'vifib_data_simulation',
       'vifib_agent',
+      'vifib_slapos_capacity',
       'vifib_erp5',
       'vifib_test',
       'vifib_slapos_rest_api_v1_test',
@@ -145,6 +146,14 @@ class testVifibMixin(ERP5TypeTestCase):
 
   def isLiveTest(self):
     return 'ERP5TypeLiveTestCase' in [q.__name__ for q in self.__class__.mro()]
+
+  def setupPayZenInterface(self):
+    payzen = self.portal.portal_secure_payments.vifib_payzen
+    # avoid resetting prepared site
+    if payzen.getServiceUsername() is None:
+      payzen.setServiceUsername('12345')
+    if payzen.getServicePassword() == '':
+      payzen.setServicePassword('09876')
 
   def setupPortalCertificateAuthority(self):
     """Sets up portal_certificate_authority"""
@@ -182,6 +191,19 @@ class testVifibMixin(ERP5TypeTestCase):
         setattr(self, 'stepCall' + convertToUpperCase(alarm.getId()) \
           + 'Alarm', makeCallAlarm(alarm))
 
+  def setUpMemcached(self):
+    from Products.ERP5Type.tests.ERP5TypeTestCase import\
+           _getVolatileMemcachedServerDict, _getPersistentMemcachedServerDict
+    memcached_tool = self.getPortal().portal_memcached
+    # setup default volatile distributed memcached
+    connection_dict = _getVolatileMemcachedServerDict()
+    url_string = '%(hostname)s:%(port)s' % connection_dict
+    memcached_tool.default_memcached_plugin.setUrlString(url_string)
+    # setup default persistent distributed memcached
+    connection_dict = _getPersistentMemcachedServerDict()
+    url_string = '%(hostname)s:%(port)s' % connection_dict
+    memcached_tool.persistent_memcached_plugin.setUrlString(url_string)
+
   def afterSetUp(self, quiet=1, run=run_all_test):
     """
     Create ERP5 user.
@@ -196,6 +218,8 @@ class testVifibMixin(ERP5TypeTestCase):
     finally:
       setSecurityManager(sm)
     self.setupPortalCertificateAuthority()
+    self.setupPayZenInterface()
+    self.setUpMemcached()
     import random
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
     self.portal.portal_caches._p_changed = 1
@@ -298,14 +322,10 @@ class testVifibMixin(ERP5TypeTestCase):
 
     self.clearCache()
 
-    # Change module ID generator
-    for module_id in portal.objectIds(spec=('ERP5 Folder',)) + \
-          ["portal_simulation", "portal_activities"]:
-      module = portal.restrictedTraverse(module_id)
-      module.setIdGenerator('_generatePerDayId')
-
     self.logMessage("Bootstrap Vifib Without Security...")
     self.login()
+    # Change module ID generator
+    self.portal.portal_alarms.vifib_promise_module_id_generator.solve()
     # setup Vifib PAS
     self.portal.portal_alarms.vifib_promise_pas.solve()
     self.prepareTestUsers()
@@ -394,9 +414,7 @@ class testVifibMixin(ERP5TypeTestCase):
       try:
         for alarm in self.portal.portal_alarms.contentValues():
           if alarm.isEnabled() and (alarm.getId() not in \
-              ('vifib_check_consistency',
-              'register_planned_payment_transaction_payzen',
-              'payzen_update_confirmed_payment_transaction')):
+              ('vifib_check_consistency',)):
             alarm.activeSense()
       finally:
         setSecurityManager(sm)

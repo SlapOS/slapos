@@ -472,7 +472,7 @@ class User(object):
     try:
       pwd.getpwnam(self.name)
     except KeyError:
-      user_parameter_list.append('--system')
+      user_parameter_list.append('-r')
       callAndRead(['useradd'] + user_parameter_list)
     else:
       callAndRead(['usermod'] + user_parameter_list)
@@ -1040,8 +1040,10 @@ class Config(object):
   def checkRequiredBinary(binary_list):
     missing_binary_list = []
     for b in binary_list:
+      if type(b) != type([]):
+        b = [b]
       try:
-        callAndRead([b])
+        callAndRead(b)
       except ValueError:
         pass
       except OSError:
@@ -1126,7 +1128,7 @@ class Config(object):
       if self.alter_user:
         self.checkRequiredBinary(['groupadd', 'useradd', 'usermod'])
       if self.create_tap:
-        self.checkRequiredBinary(['tunctl'])
+        self.checkRequiredBinary([['tunctl', '-d']])
       if self.alter_network:
         self.checkRequiredBinary(['ip'])
     # Required, even for dry run

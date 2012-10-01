@@ -32,7 +32,7 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
     instance_setup_delivery = self.portal.portal_catalog.getResultValue(
       portal_type='Sale Packing List Line',
       default_aggregate_uid=sequence['software_instance_uid'],
-      resource=self.portal.portal_preferences\
+      resource_relative_url=self.portal.portal_preferences\
         .getPreferredInstanceSetupResource()).getParentValue()
 
     self.assertEqual('delivered', instance_setup_delivery.getSimulationState())

@@ -4,4 +4,8 @@ testVifibModuleSecurity
 testVifibUserAdmin
 testVifibUserCustomer
 testVifibUserDeveloper
+testVifibComputerNetworkSecurity
+testVifibComputerModelSecurity
 testVifibConstraint
+testVifibPayZen
+testVifibComputerWithComputerModel

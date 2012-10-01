@@ -1,8 +1,7 @@
 from setuptools import setup, find_packages
 import glob
 import os
-
-version = '0.28.2'
+version = '0.30.1-dev'
 name = 'slapos.core'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -42,6 +41,7 @@ setup(name=name,
       'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
                                # XML
       'zope.interface', # slap library implementes interfaces
+      'zc.buildout',
         ] + additional_install_requires,
       zip_safe=False, # proxy depends on Flask, which has issues with
                       # accessing templates
@@ -52,6 +52,7 @@ setup(name=name,
           # Deprecated entry points
           'slapconsole = slapos.console:run',
           'slapos-request = slapos.console:request',
+          'slapos-watchdog = slapos.grid.watchdog:main',
           'slapformat = slapos.format:main',
           'slapgrid = slapos.grid.slapgrid:run',
           'slapgrid-sr = slapos.grid.slapgrid:runSoftwareRelease',

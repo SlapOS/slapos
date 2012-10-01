@@ -99,10 +99,6 @@
                     <value>
                       <list>
                         <string>my_description</string>
-                        <string>your_service_title</string>
-                        <string>your_instance_xml</string>
-                        <string>your_computer</string>
-                        <string>your_shared</string>
                       </list>
                     </value>
                 </item>

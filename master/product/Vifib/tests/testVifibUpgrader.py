@@ -31,7 +31,6 @@ from VifibMixin import testVifibMixin
 import transaction
 import unittest
 
-
 class TestVifibUpgrader(testVifibMixin):
   """ Checks that Vifib Upgrader is callable. """
   def test_simple_call(self):

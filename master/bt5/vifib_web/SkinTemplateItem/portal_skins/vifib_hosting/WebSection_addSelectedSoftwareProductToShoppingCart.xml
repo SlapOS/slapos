@@ -57,31 +57,9 @@ if len(uids) != 1:\n
   return context.Base_redirect(dialog_id,\n
                         keep_items={\'portal_status_message\':context.Base_translateString("Please select one service.")})\n
 \n
-if not service_title:\n
-  return context.Base_redirect(dialog_id,\n
-                        keep_items={\'portal_status_message\':context.Base_translateString("You have to provide Service Title.")})\n
-\n
-cleanup_resource = portal.portal_preferences.getPreferredInstanceCleanupResource()\n
-software_instance_list = []\n
-hosting_subscription = portal.portal_catalog.getResultValue(\n
-  portal_type=\'Hosting Subscription\',\n
-  validation_state="validated",\n
-  select_expression=\'title\',\n
-  title={\'query\': service_title, \'key\': \'ExactMatch\'}\n
-  )\n
-\n
-if hosting_subscription is not None:\n
-  return context.Base_redirect(dialog_id,\n
-                        keep_items={\'portal_status_message\':context.Base_translateString(\n
-                          "You already have service named ${service_title}. Please choose different unique name.", mapping={\'service_title\': service_title})})\n
-\n
 session = context.WebSection_getVifibSession()\n
 params = portal.portal_selections.getSelectionParamsFor(\'vifib_session_id\')\n
 params["instance_software_product_uid"] = uids[0]\n
-params["service_title"] = service_title\n
-params["instance_xml"] = instance_xml\n
-params["shared"] = shared\n
-params["computer"] = computer\n
 portal.portal_selections.setSelectionParamsFor(\'vifib_session_id\', params)\n
 \n
 if kw.has_key(\'came_from\'):\n
@@ -93,7 +71,7 @@ context.WebSection_viewNextStep()\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>dialog_id, service_title, instance_xml, computer=\'\', uids=[], shared=0, quantity=1, reset_shopping_cart=True, **kw</string> </value>
+            <value> <string>dialog_id, uids=[], quantity=1, reset_shopping_cart=True, **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

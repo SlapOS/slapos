@@ -1512,23 +1512,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         portal_type="Slave Instance").getUid()
     sequence.edit(software_instance_uid=slave_instance_uid)
 
-  def stepRequestComputerPartitionWithAnotherSoftwareType(self, sequence, **kw):
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    slap_computer_partition = self.slap.registerComputerPartition(
-        sequence['computer_reference'],
-        sequence['computer_partition_reference'])
-    kw = dict(software_release=sequence['software_release_uri'],
-      software_type="SecondSoftwareType",
-      partition_reference=sequence.get('requested_reference',
-        'requested_reference'),
-      partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
-      filter_kw=sequence.get('requested_filter_dict', {}),
-      state=sequence.get('instance_state'))
-
-    slap_computer_partition.request(**kw)
-
-  def stepCheckRequestComputerPartitionWithAnotherSoftwareType(
+  def stepCheckRequestComputerPartitionWithAnotherSoftwareRelease(
                                      self, sequence, **kw):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
@@ -1536,7 +1520,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         sequence['computer_reference'],
         sequence['computer_partition_reference'])
     kw = dict(software_release=sequence['software_release_uri'],
-      software_type="SecondSoftwareType",
+      software_type=sequence.get('requested_software_type', 'software_type'),
       partition_reference=sequence.get('requested_reference',
         'requested_reference'),
       partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
@@ -1547,8 +1531,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
 
     self.assertEquals(sequence.get('requested_computer_partition_reference'),
                       requested_slap_computer_partition.getId())
-    self.assertEquals("SecondSoftwareType",
-                      requested_slap_computer_partition.getInstanceParameterDict()['slap_software_type'])
+    self.assertEquals(sequence['software_release_uri'],
+      requested_slap_computer_partition.getSoftwareRelease().getURI())
     self.assertEquals(1,
                       requested_slap_computer_partition._need_modification)
 
@@ -1582,6 +1566,54 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       Logout \
       CheckRequestComputerPartitionWithAnotherSoftwareType \
+      Tic \
+      SlapLogout \
+      LoginERP5TypeTestCase \
+      CheckSiteConsistency \
+      Logout \
+    '
+    sequence_list.addSequenceString(sequence_string)
+    sequence_list.play(self)
+
+  def test_ComputerPartition_request_changeSoftwareRelease(self):
+    """
+    Check that requesting the same instance with a different software release
+    does not create a new instance
+    """
+    self.computer_partition_amount = 3
+    sequence_list = SequenceList()
+    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
+      SelectRequestedReference \
+      SelectEmptyRequestedParameterDict \
+      \
+      SlapLoginCurrentSoftwareInstance \
+      RequestComputerPartition \
+      Tic \
+      LoginDefaultUser \
+      CallConfirmOrderedSaleOrderAlarm \
+      Tic \
+      Logout \
+      RequestComputerPartition \
+      Tic ' + self.prepare_published_software_release + '\
+      LoginTestVifibAdmin \
+      RequestSoftwareInstallation \
+      Tic \
+      Logout \
+      \
+      SlapLoginCurrentComputer \
+      ComputerSoftwareReleaseAvailable \
+      Tic \
+      SlapLogout \
+      \
+      RequestComputerPartition \
+      Tic \
+      RequestComputerPartition \
+      Tic \
+      LoginDefaultUser \
+      CallConfirmOrderedSaleOrderAlarm \
+      Tic \
+      Logout \
+      CheckRequestComputerPartitionWithAnotherSoftwareRelease \
       Tic \
       SlapLogout \
       LoginERP5TypeTestCase \

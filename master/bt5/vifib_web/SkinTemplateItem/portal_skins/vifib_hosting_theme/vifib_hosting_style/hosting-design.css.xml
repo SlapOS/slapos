@@ -110,6 +110,15 @@ padding-left:100px;\n
 background:url(<tal:block tal:replace="img_folder"/>help_active.png) no-repeat scroll left center transparent;\n
 padding-left:100px;\n
 }\n
+.monitoring h1 {\n
+background:url(<tal:block tal:replace="img_folder"/>monitoring_active.png) no-repeat scroll left center transparent;\n
+padding-left:100px;\n
+}\n
+\n
+.my_networks h1 {\n
+background:url(<tal:block tal:replace="img_folder"/>my_networks_active.png) no-repeat scroll left center transparent;\n
+padding-left:100px;\n
+}\n
 \n
 #shopping_cart_renderer .listbox tr:nth-child(2n) {\n
 background:none repeat scroll 0 0 #FFFFFF;\n
@@ -171,6 +180,50 @@ background-color:#D2E7F4;\n
 .service-listbox thead {display:none;}\n
 .service-listbox .listbox-table-select-cell{display:none;}\n
 .service-listbox tr, .service-listbox td {position:relative; width:175px;float:left;background:none!important}\n
+\n
+ul#vifib_monitoring {\n
+  display: inline;\n
+  list-style-type: none;\n
+  margin: 0;\n
+  padding: 0;\n
+}\n
+\n
+ul#vifib_monitoring li {\n
+  display: inline-block;\n
+  margin: 0;\n
+  padding: 0;\n
+  outline: black solid 1px;\n
+  height: 2em;\n
+  width: 2em;\n
+}\n
+\n
+a.check_monitoring {\n
+  background-color: grey;\n
+  display: block;\n
+  height: 2em;\n
+  width: 2em;\n
+}\n
+\n
+a.monitoring_ok {\n
+  background-color: green;\n
+  display: block;\n
+  height: 2em;\n
+  width: 2em;\n
+}\n
+\n
+a.monitoring_error {\n
+  background-color: red;\n
+  display: block;\n
+  height: 2em;\n
+  width: 2em;\n
+}\n
+\n
+a.monitoring_failed {\n
+  background-color: orange;\n
+  display: block;\n
+  height: 2em;\n
+  width: 2em;\n
+}\n
 </tal:block>
 
 ]]></unicode> </value>

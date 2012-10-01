@@ -160,7 +160,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       None,
       payment.getSpecialise())
     self.assertEquals(
-      'planned',
+      'started',
       payment.getSimulationState())
     self.assertAlmostEquals(
       0, payment.getTotalPrice(), 3)
@@ -777,7 +777,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       None,
       payment.getSpecialise())
     self.assertEquals(
-      'planned',
+      'started',
       payment.getSimulationState())
     self.assertAlmostEquals(
       0, payment.getTotalPrice(), 3)
@@ -983,6 +983,49 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     self.assertEquals('account_module/bank', sale_line.getSource())
     self.assertEquals('account_module/bank', sale_line.getDestination())
 
+  def stepStoreCurrentToPostAccountingWorkflowCount(self, sequence,
+    **kw):
+    # there shall be no divergency
+    count = 0
+    current_skin = self.app.REQUEST.get('portal_skin', 'View')
+    try:
+      # Note: Worklists are cached, so in order to have next correct result
+      # clear cache
+      self.clearCache()
+      self.changeSkin('RSS')
+      for q in self.portal.ERP5Site_getWorklistObjectList():
+        if q.title.startswith("Accounting Transactions to Post"):
+          count = q.count
+          break
+    finally:
+      self.changeSkin(current_skin)
+    sequence['to_post_transaction_count'] = count
+
+  def stepCheckCurrentToPostAccountingWorkflowCount(self, sequence,
+    **kw):
+    # there shall be no divergency
+    count = 0
+    current_skin = self.app.REQUEST.get('portal_skin', 'View')
+    try:
+      # Note: Worklists are cached, so in order to have next correct result
+      # clear cache
+      self.clearCache()
+      self.changeSkin('RSS')
+      for q in self.portal.ERP5Site_getWorklistObjectList():
+        if q.title.startswith("Accounting Transactions to Post"):
+          count = q.count
+          break
+    finally:
+      self.changeSkin(current_skin)
+
+    self.assertEqual(count, sequence[
+      'to_post_transaction_count'])
+
+  def stepDecreaseCurrentToPostAccountingWorkflowCount(self,
+    sequence, **kw):
+    sequence['to_post_transaction_count'] = sequence[
+      'to_post_transaction_count'] - 1
+
   def test_default_use_case(self):
     """Test full default use case.
 
@@ -998,12 +1041,19 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
     sequence_string = \
       self.prepare_installed_software_release_sequence_string + \
       self.register_new_user_sequence_string + '\
+        LoginTestVifibAdmin \
+        StoreCurrentToPostAccountingWorkflowCount \
+        Logout \
         LoginWebUser \
         CheckRegistrationAccounting \
-        PayRegistrationPayment \
+        PayPayment \
         Tic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
+        Logout \
+        LoginTestVifibAdmin \
+        DecreaseCurrentToPostAccountingWorkflowCount \
+        CheckCurrentToPostAccountingWorkflowCount \
         Logout \
         LoginWebUser \
         CheckPaidRegistrationAccounting \
@@ -1102,15 +1152,25 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm\
         CleanTic \
+        CallVifibPayzenUpdateConfirmedPaymentAlarm \
+        CleanTic \
+        \
+        LoginTestVifibAdmin \
+        StoreCurrentToPostAccountingWorkflowCount \
+        Logout \
         \
         LoginWebUser \
         CheckWaitingInvoice \
         Tic \
-        PayRegistrationPayment \
+        PayPayment \
         Tic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CheckPaidInvoice \
+        LoginTestVifibAdmin \
+        DecreaseCurrentToPostAccountingWorkflowCount \
+        CheckCurrentToPostAccountingWorkflowCount \
+        Logout \
         LoginERP5TypeTestCase \
         CheckSiteConsistency \
         Logout \
@@ -1306,7 +1366,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
       self.register_new_user_sequence_string + '\
         LoginWebUser \
         CheckRegistrationAccounting \
-        PayRegistrationPayment \
+        PayPayment \
         Tic \
         Logout \
         LoginWebUser \
@@ -1449,9 +1509,13 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibTriggerBuildAlarm \
         CleanTic \
+        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        CallVifibPayzenUpdateConfirmedPaymentAlarm \
+        CleanTic \
         \
         LoginWebUser \
-        PayRegistrationPayment \
+        PayPayment \
         Tic \
         CheckComplexInvoice \
         LoginERP5TypeTestCase \

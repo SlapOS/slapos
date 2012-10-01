@@ -15,7 +15,11 @@ Cash Register
 Component
 Component Module
 Computer
+Computer Model
+Computer Model Module
 Computer Module
+Computer Network
+Computer Network Module
 Computer Partition
 Contribution Tool
 Credential Update Module
@@ -84,6 +88,8 @@ Service Module
 Short Message
 Site Message
 Slave Instance
+Software Installation
+Software Installation Module
 Software Instance
 Software Instance Module
 Software Product

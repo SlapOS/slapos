@@ -51,6 +51,7 @@
                        logout_form_id python:current_web_site.getLayoutProperty(\'layout_logout_form_id\',\'WebSite_logout\');\n
                        login_form_id python:current_web_site.getLayoutProperty(\'layout_login_form_id\',\'login_form\')">\n
 \n
+<div id="acknowledgement_zone"></div>\n
 <a tal:attributes="href current_web_site_url"><div id="vifib_logo"></div></a>\n
 \n
 <div id="login_menu">\n
@@ -79,15 +80,14 @@
 \n
 <div id="menu">\n
   <ul>\n
-    <li><a href="http://www.vifib.org">Vifib Internet</a></li>\n
-    <li><a href="http://www.vifib.net">Vifib Hosting</a></li>\n
-    <li><a href="http://www.vifib.com">Vifib Cash</a></li>\n
+    <li><a href="http://community.slapos.org/wiki">Documentation</a></li>\n
+    <li><a href="http://community.slapos.org/download">Download</a></li>\n
+    <li><a href="http://community.slapos.org/forum">Forum</a></li>\n
     <li>&nbsp;</li>\n
   </ul>\n
 </div>\n
 \n
-</tal:block>\n
-
+</tal:block>
 
 ]]></unicode> </value>
         </item>
