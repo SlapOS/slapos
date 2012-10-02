@@ -27,9 +27,9 @@
 #
 ##############################################################################
 
+import argparse
 import slapos.slap.slap
 from slapos.slap import ResourceNotReady
-
 import sys
 import os
 from optparse import OptionParser, Option
@@ -69,16 +69,49 @@ class Parser(OptionParser):
 
     return options, args
 
-class RequestParser(Parser):
-  def check_args(self):
-    """
-    Check arguments
-    """
-    (options, args) = Parser.check_args(self)
-    if len(args) < 3:
-      self.error("Incorrect number of arguments")
 
-    return options, args
+def argToDict(element):
+  """
+  convert a table of string 'key=value' to dict
+  """
+  if element is not None:
+    element_dict = dict([arg.split('=') for arg in element])
+  return element_dict
+
+def check_request_args():
+  """
+  Parser for request
+  """
+  parser = argparse.ArgumentParser()
+  parser.add_argument("configuration_file",
+                      nargs=1,
+                      help="SlapOS configuration file.")
+  parser.add_argument("reference",
+                      help="Your instance reference")
+  parser.add_argument("software_url",
+                      help="Your software url")
+  parser.add_argument("--node",
+                      nargs = '*',
+                      help = "Node request option "
+                      "'option1=value1 option2=value2'")
+  parser.add_argument("--type",
+                      type = str,
+                      help = "Define software type to be requested")
+  parser.add_argument("--slave",
+                      action = "store_true", default=False,
+                      help = "Ask for a slave instance")
+  parser.add_argument("--configuration",
+                      nargs = '*',
+                      help = "Give your configuration "
+                      "'option1=value1 option2=value2'")
+  args = parser.parse_args()
+  # Convert to dict
+  if args.configuration is not None:
+    args.configuration = argToDict(args.configuration)
+  if args.node is not None:
+    args.node = argToDict(args.node)
+  return args
+
 
 class Config:
   def setConfig(self, option_dict, configuration_file_path):
@@ -103,12 +136,18 @@ class Config:
           setattr(self, key, configuration_dict[key])
     configuration_dict = dict(configuration_parser.items('slapos'))
     master_url = configuration_dict.get('master_url', None)
+    # Backward compatibility, if no key and certificate given in option
+    # take one from slapos configuration
+    if not getattr(self, 'key_file', None) and \
+          not getattr(self, 'cert_file', None):
+      self.key_file = configuration_dict.get('key_file')
+      self.cert_file = configuration_dict.get('cert_file')
     if not master_url:
       raise ValueError("No option 'master_url'")
     elif master_url.startswith('https') and \
-         not getattr(self, 'key_file', None) and \
-         not getattr(self, 'cert_file', None):
-      raise ValueError("No option 'key_file' and/or 'cert_file'")
+         self.key_file is None and \
+         self.cert_file is None:
+        raise ValueError("No option 'key_file' and/or 'cert_file'")
     else:
       setattr(self, 'master_url', master_url)
 
@@ -138,9 +177,9 @@ def init(config):
   # *args, **kwargs, but without the bad parts, in order to be generic?
   def shorthandRequest(software_release, partition_reference,
       partition_parameter_kw=None, software_type=None, filter_kw=None,
-      state=None):
+      state=None, shared = False):
     return slap.registerOpenOrder().request(software_release, partition_reference,
-      partition_parameter_kw, software_type, filter_kw, state)
+      partition_parameter_kw, software_type, filter_kw, state, shared)
   def shorthandSupply(software_release, computer_guid=None, state='available'):
     return slap.registerSupply().supply(software_release, computer_guid, state)
   local['request'] = shorthandRequest
@@ -150,27 +189,26 @@ def init(config):
 
 def request():
   """Ran when invoking slapos-request"""
-  # Parse arguments
-  usage = """usage: %s [options] CONFIGURATION_FILE SOFTWARE_INSTANCE INSTANCE_REFERENCE
+  # Parse arguments and inititate needed parameters
+  usage = """usage: %s [options] CONFIGURATION_FILE INSTANCE_REFERENCE SOFTWARE_INSTANCE
 slapos-request allows you to request slapos instances.""" % sys.argv[0]
   config = Config()
-  options, arguments = RequestParser(usage=usage).check_args()
-  config.setConfig(options, arguments[0])
-
+  options = check_request_args()
+  config.setConfig(options, options.configuration_file)
   local = init(config)
-
   # Request instance
-  # XXX-Cedric : support things like :
-  # --instance-type std --configuration-size 23 --computer-region europe/france
-  # XXX-Cedric : add support for xml_parameter
-  software_url = arguments[1]
-  partition_reference = arguments[2]
-  print("Requesting %s..." % software_url)
-  if software_url in local:
-    software_url = local[software_url]
+  print("Requesting %s..." % config.software_url)
+  if config.software_url in local:
+    config.software_url = local[config.software_url]
   try:
-    partition = local['slap'].registerOpenOrder().request(software_url,
-        partition_reference)
+    partition = local['slap'].registerOpenOrder().request(
+      software_release = config.software_url,
+      partition_reference = config.reference,
+      partition_parameter_kw = config.configuration,
+      software_type = config.type,
+      filter_kw = config.node,
+      shared = config.slave
+      )
     print("Instance requested.\nState is : %s.\nYou can "
         "rerun to get up-to-date informations." % (
         partition.getState()))
