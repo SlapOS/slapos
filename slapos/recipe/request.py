@@ -179,3 +179,5 @@ class RequestOptional(Recipe):
           'check status of this instance.' % (self.failed, status)
       self.logger.warning(error_message)
     return []
+
+  update = install
