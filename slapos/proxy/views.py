@@ -380,8 +380,8 @@ def request_slave():
     a(software_type)
   partition = execute_db('partition', q, args, one=True)
   if partition is None:
-    app.logger.warning('No partition corresponding to slave request: %s') % \
-        args
+    app.logger.warning('No partition corresponding to slave request: %s' % \
+        args)
     abort(408)
 
   # We set slave dictionnary as described in docstring
