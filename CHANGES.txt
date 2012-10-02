@@ -1,6 +1,16 @@
 Changes
 =======
 
+0.68 (2012-10-02)
+-----------------
+
+  * request.py: Remove useless calls to master, fix "update" method. [Cedric
+    de Saint Martin]
+  * Add webrunner test recipe. [Alain Takoudjou]
+  * Add logfile for slaprunner. [Cedric de Saint Martin]
+  * Fix check_url_available promise (syntax + checks + IPv6 support). [Cedric
+    de Saint Martin]
+
 0.67 (2012-09-26)
 -----------------
 
