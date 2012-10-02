@@ -314,13 +314,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
        partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
        filter_kw=sequence.get('requested_filter_dict', {}),
        state=sequence.get('requested_state'))
+    sequence.edit(
+        requested_slap_computer_partition=requested_slap_computer_partition)
     try:
       requested_slap_computer_partition.getId()
     except slap.ResourceNotReady:
-      pass
+      sequence.edit(
+          requested_computer_partition_reference=None)
     else:
       sequence.edit(
-          requested_slap_computer_partition=requested_slap_computer_partition,
           requested_computer_partition_reference=\
               requested_slap_computer_partition.getId())
 
@@ -2000,13 +2002,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     # tic as request is done on slap level library
     self.stepTic()
 
+    sequence.edit(
+        requested_slap_computer_partition=requested_slap_computer_partition)
     try:
       requested_slap_computer_partition.getId()
     except slap.ResourceNotReady:
-      pass
+      sequence.edit(
+          requested_computer_partition_reference=None)
     else:
       sequence.edit(
-          requested_slap_computer_partition=requested_slap_computer_partition,
           requested_computer_partition_reference=\
               requested_slap_computer_partition.getId())
 
@@ -2074,13 +2078,15 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     requested_slap_computer_partition = slap_computer_partition.request(**kw)
     self.stepTic()
 
+    sequence.edit(
+        requested_slap_computer_partition=requested_slap_computer_partition)
     try:
       requested_slap_computer_partition.getId()
     except slap.ResourceNotReady:
-      pass
+      sequence.edit(
+          requested_computer_partition_reference=None)
     else:
       sequence.edit(
-          requested_slap_computer_partition=requested_slap_computer_partition,
           requested_computer_partition_reference=\
               requested_slap_computer_partition.getId())
 
