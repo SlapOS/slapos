@@ -84,7 +84,7 @@ def call(fun, config=False, option=[]):
     checkOption(element)
   if config:
     if not checkSlaposCfg():
-      sys.argv.append(config)
+      sys.argv = [sys.argv[0]] + [config] + sys.argv[1:]
   fun()
 
 def showUsage():
@@ -125,7 +125,8 @@ def dispatch(command, is_node):
     else:
       supervisord()
   elif command == 'request':
-    request()
+    config = '~/.slapos/slapos.cfg'
+    call(request, config=config)
   elif command == 'supply':
     raise EntryPointNotImplementedError(command)
   elif command == 'start':
