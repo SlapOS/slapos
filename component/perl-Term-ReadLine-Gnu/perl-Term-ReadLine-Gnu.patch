@@ -1,0 +1,156 @@
+--- Makefile.PL.orig	2012-09-26 16:40:42.922821617 +0200
++++ Makefile.PL	2012-10-02 02:51:26.400659861 +0200
+@@ -22,7 +22,22 @@
+ use Config;
+ use Getopt::Long;
+ use 5.007; use 5.7.0;		# use version 1.09 for older Perl
+-my ($defs, $libs, $lddflags, $RLLIB, $RLINC);
++my ($defs, $lddflags, %config);
++
++{
++    $config{LIBS} = '';
++    $config{INC}  = '';
++
++    my $i = 0;
++    while ($i <= $#ARGV) {
++        my ($key, $val) = split(/=/, $ARGV[$i], 2);
++        $config{$key} = $val;       
++        if ($key eq 'LIBS' || $key eq 'INC') {
++            delete $ARGV[$i];
++        }
++        $i++;
++    }
++}
+ 
+ # exit 0 before creating the Makefile to be CPAN Testers friendly
+ # see http://wiki.cpantester.org/wiki/CPANAuthorNotes
+@@ -36,20 +51,23 @@
+ $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
+ 
+ # Parse command line to specify paths for the GNU Readline Library
++# (if they have not already been included within LIBS or INC)
+ {
+     my ($prefix, $libdir, $incdir);
+     GetOptions("prefix=s" => \$prefix,
+ 	       "libdir=s" => \$libdir,
+ 	       "includedir=s" => \$incdir);
+-    $RLLIB = defined $libdir
++    my $RLLIB = defined $libdir
+ 	? "-L$libdir" : (defined $prefix ? "-L$prefix/lib" : '');
+-    $RLINC = defined $incdir
++    my $RLINC = defined $incdir
+ 	? "-I$incdir" : (defined $prefix ? "-I$prefix/include" : '');
++    $config{LIBS} .= " $RLLIB";
++    $config{INC}  .= " $RLINC";
+ }
+ 
+ if ($Config{osname} eq 'os2') {
+     # Check ftp://ftp.math.ohio-state.edu/pub/users/ilya/os2/
+-    $libs = '-lreadline_import';
++    $config{LIBS} .= ' -lreadline_import';
+     $defs .= ' -DOS2_USEDLL';
+     $lddflags = '';
+ } else {
+@@ -60,18 +78,27 @@
+     # Old Cygwin may require setting false (0).
+     my $PREFER_CURSES = $Config{osname} eq 'aix' || $Config{osname} eq 'hpux'
+ 			|| $Config{osname} eq 'cygwin';
+-    my $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
+-	|| &search_lib('-lncurses')
+-	    || &search_lib('-lcurses');
++    my @lib_dirs = ();
++    # Turn -L<path> parameters into a list of <path>s
++    {
++        foreach my $libopt (split(' ',$config{LIBS})) {
++            if ($libopt =~ m#^-L(.*)$#) {
++                push @lib_dirs, $1;
++            }
++        }
++    }
++    my $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap', \@lib_dirs))
++	|| &search_lib('-lncurses', \@lib_dirs)
++	    || &search_lib('-lcurses', \@lib_dirs);
+ 
+     unless ($TERMCAP_LIB) {
+ 	warn "Could not find neither libtermcap.a, libncurses.a, or libcurses.\n";
+ 	exit $err;
+     } 
+  
+-    $libs = "-lreadline $TERMCAP_LIB";
++    $config{LIBS} .= " -lreadline $TERMCAP_LIB";
+     # Latest Perl in FreeBSD does not need this hack. (Dec.2002)
+-    $libs .= ' -lcrypt' if ($Config{osname} =~ /freebsd/i);
++    $config{LIBS} .= ' -lcrypt' if ($Config{osname} =~ /freebsd/i);
+     $lddflags = '';
+     # If you are using old Cygwin, enable the following line.
+     #$lddflags = ($Config{osname} =~ /cygwin/i) ? '-static' : '';
+@@ -80,7 +107,7 @@
+ # Check version of  GNU Readline Library (for version 4.2 and before)
+ {
+     my ($rlmajorver, $rlminorver) =
+-	check_readline_version($RLINC, $RLLIB, $defs, $lddflags, $libs);
++	check_readline_version($defs, $lddflags, \%config);
+ 
+     if ($rlmajorver < 4 || $rlmajorver == 4 && $rlminorver <= 2) {
+ 	$defs .= " -DRL_READLINE_VERSION=" .
+@@ -95,15 +122,15 @@
+     (
+      NAME	  => 'Term::ReadLine::Gnu',
+      VERSION_FROM => 'Gnu.pm',
+-     LIBS	  => [ "$RLLIB $libs" ],
+-     LDDLFLAGS	  => "$RLLIB $Config{lddlflags}",
++     LIBS	  => $config{LIBS},
++     LDDLFLAGS	  => $Config{lddlflags},
+      dynamic_lib  => { OTHERLDFLAGS => $lddflags },
+      DEFINE	  => $defs,
+      ($Config{osname} eq 'os2' ?
+       (
+        IMPORTS	  => { xfree => 'emxlibcm.401' }, # Yuck!
+       ) : () ),
+-     INC	  => $RLINC,
++     INC	  => $config{INC},
+      dist	  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
+      clean	  => { FILES => "rlver.c rlver$Config{_exe}" },
+ );
+@@ -122,20 +149,20 @@
+ exit(0);
+ 
+ ########################################################################
+-# Search a library '$lib' in $Config{libpth} directories, and return
++# Search a library '$lib' in the given directories (listref), and return
+ # $lib if exist or undef unless exist.
+ 
+ # ExtUtils::Liblist::ext() do similar job as this subroutine, but it
+ # warns unnecessary messages.
+ sub search_lib {
+-    my ($lib) = @_;
++    my ($lib, $lib_dirs) = @_;
+     unless ($lib =~ /^-l/) {
+ 	warn "search_lib: illegal arguments, \`$lib\'.\n";
+ 	return undef;
+     }
+     my $libbase = 'lib' . substr($lib, 2) . $Config{lib_ext};
+     my $libbase_so = 'lib' . substr($lib, 2) . "." . $Config{so};
+-    foreach (split(' ', $Config{libpth})) {
++    foreach (split(' ', $Config{libpth}), @$lib_dirs) {
+ 	if (-f $_ . '/' . $libbase) {
+ #	    print "$_/$libbase\n";
+ 	    print "Found \`$_/$libbase\'.\n";
+@@ -158,7 +185,7 @@
+ #	RL_VERSION_MINOR
+ # Someday we don't need this subroutine..
+ sub check_readline_version {
+-    my ($RLINC, $RLLIB, $defs, $lddflags, $libs) = @_;
++    my ($defs, $lddflags, $config) = @_;
+     my $frlver = 'rlver.c';
+ 
+     # make temp file
+@@ -172,7 +199,7 @@
+     close(F);
+ 
+     # compile it
+-    my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $frlver -o rlver $RLLIB $lddflags $Config{ldflags} $libs";
++    my $comp_cmd = "$Config{cc} $config->{INC} $Config{ccflags} $defs $frlver -o rlver $lddflags $Config{ldflags} $config->{LIBS}";
+     print $comp_cmd, "\n";
+     system($comp_cmd);
+     if ($?) {
