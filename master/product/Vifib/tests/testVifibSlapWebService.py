@@ -2443,7 +2443,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         uid=computer_uid)[0].getObject()
     computer_partition_amount = len([x for x in \
       erp5_computer.contentValues(portal_type="Computer Partition") \
-      if x.getSlapState() == "busy"])
+      ])
 
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
