@@ -78,8 +78,9 @@ class TestVifibComputerNetworkSecurity(TestVifibSlapWebServiceMixin):
   def test_ComputerNetworkModuleLocalRoles(self):
     module = self.portal.computer_network_module
     self.assertSecurityGroup(module, ['R-MEMBER', 'R-SHADOW',
-        'ERP5TypeTestCase'], False)
+        'zope'], False)
     self.assertRoles(module, 'R-MEMBER', ['Author', 'Auditor'])
+    self.assertRoles(module, 'R-SHADOW', ['Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
 
   def test_ComputerNetworkModulePermissions(self):
@@ -98,12 +99,13 @@ class TestVifibComputerNetworkSecurity(TestVifibSlapWebServiceMixin):
         'R-SHADOW'], False)
     self.assertRoles(network, 'ERP5TypeTestCase', ['Owner'])
     self.assertRoles(network, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(network, 'R-SHADOW', ['Auditor'])
 
     # Setting source administration give person the assignee role
     person = self.createMemberUser()
     network.edit(source_administration_value=person)
     self.assertSecurityGroup(network,
-        ['ERP5TypeTestCase', 'G-COMPANY', person.getReference()], False)
+        ['ERP5TypeTestCase', 'G-COMPANY', 'R-SHADOW', person.getReference()], False)
     self.assertRoles(network, person.getReference(), ['Assignee'])
 
   def test_ComputerNetworkPermission(self):
