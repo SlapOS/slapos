@@ -140,9 +140,12 @@ class Recipe(object):
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        status = self.instance.getState()
+        if self.instance.getComputerId() is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
       except (slapmodule.NotFoundError, slapmodule.ServerError):
-        status = 'not ready yet, please try again'
+        status = 'not ready yet'
       except AttributeError:
         status = 'unknown'
       error_message = 'Connection parameter %s not found. '\
@@ -163,7 +166,10 @@ class RequestOptional(Recipe):
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        status = self.instance.getState()
+        if self.instance.getComputerId() is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
       except (slapmodule.NotFoundError, slapmodule.ServerError):
         status = 'not ready yet'
       except AttributeError:
@@ -173,3 +179,5 @@ class RequestOptional(Recipe):
           'check status of this instance.' % (self.failed, status)
       self.logger.warning(error_message)
     return []
+
+  update = install
