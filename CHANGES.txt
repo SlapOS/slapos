@@ -1,9 +1,16 @@
 Changes
 =======
 
+0.31.2 (2012-10-02)
+-------------------
+
+ * Update slapproxy behavior: when instance already exist, only update
+   partition_parameter_kw. (commit 317d5c8e0aee) [Cedric de Saint Martin]
+
 0.31.1 (2012-10-02)
 -------------------
- * Fixed Watchdog call in slapgrid [Cédric Le Ninivin]
+
+ * Fixed Watchdog call in slapgrid. [Cédric Le Ninivin]
 
 0.31 (2012-10-02)
 -------------------
