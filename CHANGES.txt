@@ -1,6 +1,10 @@
 Changes
 =======
 
+0.31.1 (2012-10-02)
+-------------------
+ * Fixed Watchdog call in slapgrid [Cédric Le Ninivin]
+
 0.31 (2012-10-02)
 -------------------
 

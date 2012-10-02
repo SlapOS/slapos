@@ -452,7 +452,7 @@ class Slapgrid(object):
     self.maximum_periodicity = maximum_periodicity
     self.force_periodicity = force_periodicity
     # XXX hardcoded watchdog_path
-    self.watchdog_path = '/opt/slapos/bin/watchdog'
+    self.watchdog_path = '/opt/slapos/bin/slapos-watchdog'
 
   def getWatchdogLine(self):
     invocation_list = [self.watchdog_path]
