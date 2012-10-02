@@ -294,25 +294,31 @@ def request_not_shared():
     q += ' AND requested_by=?'
     a(partition_id)
   partition = execute_db('partition', q, args, one=True)
+
+  args = []
+  a = args.append
+  q = 'UPDATE %s SET slap_state="busy"'
+
+  # If partition doesn't exist: create it and insert parameters
   if partition is None:
     partition = execute_db('partition',
         'SELECT * FROM %s WHERE slap_state="free"', (), one=True)
     if partition is None:
       app.logger.warning('No more free computer partition')
       abort(408)
-  args = []
-  a = args.append
-  q = 'UPDATE %s SET software_release=?, slap_state="busy"'
-  a(software_release)
-  if software_type:
-    q += ' ,software_type=?'
-    a(software_type)
-  if partition_reference:
-    q += ' ,partition_reference=?'
-    a(partition_reference)
-  if partition_id:
-    q += ' ,requested_by=?'
-    a(partition_id)
+    q += ' ,software_release=?'
+    a(software_release)
+    if software_type:
+      q += ' ,software_type=?'
+      a(software_type)
+    if partition_reference:
+      q += ' ,partition_reference=?'
+      a(partition_reference)
+    if partition_id:
+      q += ' ,requested_by=?'
+      a(partition_id)
+
+  # Else: only update partition_parameter_kw
   if instance_xml:
     q += ' ,xml=?'
     a(instance_xml)
