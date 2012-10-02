@@ -34,8 +34,6 @@ from zc.buildout import UserError
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 
-# TODO: read ipv6 host without calling loads()
-
 
 class Recipe(GenericBaseRecipe):
     """\
@@ -56,12 +54,9 @@ class Recipe(GenericBaseRecipe):
         Returns a string represtation of ipv6_host.
         May receive a regular string, a set or a string serialized by buildout.
         """
-        from zc.buildout import buildout
         ipv6_host = options['ipv6_host']
 
-        if ipv6_host.startswith(buildout.SERIALISED_VALUE_MAGIC):
-            return buildout.loads(ipv6_host).pop()
-        elif isinstance(ipv6_host, set):
+        if isinstance(ipv6_host, set):
             return ipv6_host.pop()
         else:
             return ipv6_host
