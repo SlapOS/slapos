@@ -87,7 +87,7 @@ class TestVifibWebSite(testVifibMixin):
     self.assertEquals(HTTP_OK, response.getStatus())
     self.assertEquals('text/html; charset=utf-8',
                       response.getHeader('content-type'))
-    self.assertTrue("Enjoy Personal Cloud&nbsp;Computing" in response.getBody())
+    self.assertTrue("Enjoy Decentralized Cloud&nbsp;Computing" in response.getBody())
 
   def test_05_checkFreeFiberAccess(self):
     """
