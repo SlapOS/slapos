@@ -288,25 +288,42 @@ class TestRequest (MasterMixin, unittest.TestCase):
       self.request('http://sr//', None, 'Maria', 'slappart2').__dict__,
       self.request('http://sr//', None, 'Maria', 'slappart2').__dict__)
 
-  def test_two_same_request_from_one_partition_different_parameters (self):
+  def test_two_requests_with_different_parameters_but_same_reference (self):
     """
-    Request will return same partition for two equal requests
+    Request will return same partition for two different requests but will
+    only update parameters
     """
     self.add_free_partition(2)
     wanted_domain1 = 'fou.org'
     wanted_domain2 = 'carzy.org'
+
     request1 = self.request('http://sr//', None, 'Maria', 'slappart2',
                             partition_parameter_kw = {'domain':wanted_domain1})
+    request1_dict = request1.__dict__
+    requested_result1 = self.getPartitionInformation(
+      request1_dict['_partition_id'])
     request2 = self.request('http://sr1//', 'Papa', 'Maria', 'slappart2',
                             partition_parameter_kw = {'domain':wanted_domain2})
-    request1_dict = request1.__dict__
     request2_dict = request2.__dict__
+    requested_result2 = self.getPartitionInformation(
+      request2_dict['_partition_id'])
+    # Test we received same partition
     for key in request1_dict:
-      if not key in ("_partition_id","_computer_id"):
-        if request1_dict[key] is not None and request2_dict[key] is not None:
-          self.assertNotEqual(request1_dict[key],request2_dict[key])
-      else:
-        self.assertEqual(request1_dict[key],request2_dict[key])
+      self.assertEqual(request1_dict[key],request2_dict[key])
+    # Test that only parameters changed
+    for key in requested_result2.__dict__ :
+      if not key in ('_parameter_dict',
+                     '_software_release_document'):
+        self.assertEqual(requested_result2.__dict__[key],
+                         requested_result1.__dict__[key])
+      elif key in ('_software_release_document'):
+        self.assertEqual(requested_result2.__dict__[key].__dict__,
+                         requested_result1.__dict__[key].__dict__)
+    #Test parameters where set correctly
+    self.assertEqual(wanted_domain1,
+                     requested_result1._parameter_dict['domain'])
+    self.assertEqual(wanted_domain2,
+                     requested_result2._parameter_dict['domain'])
 
   def test_two_different_request_from_two_partition (self):
     """
