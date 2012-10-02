@@ -119,15 +119,15 @@ if can_allocate:\n
       comment = \'Computer capacity limit exceded\'\n
       break\n
 \n
-if can_allocate:\n
-  result_list = portal.portal_catalog.portal_catalog(\n
-    parent_uid=computer.getUid(),\n
-    portal_type=\'Computer Partition\',\n
-    free_for_request=1,\n
-    limit=1)\n
-  if len(result_list) == 0:\n
-    can_allocate = False\n
-    comment = \'No free partition left\'\n
+# if can_allocate:\n
+#   result_list = portal.portal_catalog.portal_catalog(\n
+#     parent_uid=computer.getUid(),\n
+#     portal_type=\'Computer Partition\',\n
+#     free_for_request=1,\n
+#     limit=1)\n
+#   if len(result_list) == 0:\n
+#     can_allocate = False\n
+#     comment = \'No free partition left\'\n
 \n
 new_value = None\n
 if can_allocate:\n
