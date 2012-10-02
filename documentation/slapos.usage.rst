@@ -36,7 +36,7 @@ Those commands are used by clients (as human beings or programs) to manage their
 slapos request
 ~~~~~~~~~~~~~~
 Usage:
-  slapos request <reference> [software_alias | software-url] [--node id=<computer guid>,region=<region>,network-type=<newtork> | location/to/node.json] [--configuration foo=value1,bar=value2 | location/to/configuration.json ] [--type type] [--slave]
+  slapos request [slapos_configuration] <reference> <software_alias | software-url> [--node id=<computer guid>,region=<region>,network-type=<newtork> | location/to/node.json] [--configuration foo=value1,bar=value2 | location/to/configuration.json ] [--type type] [--slave]
 
 Request an instance and get status and parameters of instance.
 
