@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.68.1 (2012-10-03)
+-------------------
+
+  * slaprunner: fix "logfile" parameter to "log_file"
+
 0.68 (2012-10-02)
 -----------------
 
