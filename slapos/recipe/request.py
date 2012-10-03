@@ -141,7 +141,7 @@ class Recipe(object):
 
   def _getReturnParameterDict(self, instance, return_parameter_list):
     result = {}
-    for param in return_parameters:
+    for param in return_parameter_list:
       try:
         result[param] = str(instance.getConnectionParameter(param))
       except slapmodule.NotFoundError:
