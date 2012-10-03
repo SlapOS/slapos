@@ -20,13 +20,6 @@ class TestVifibSlapSupply(TestVifibSlapWebServiceMixin):
   # Supply.supply
   ########################################
 
-  def stepSupplyComputerSoftwareReleaseAvailable(self, sequence, **kw):
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    supply = self.slap.registerSupply()
-    supply.supply(sequence['software_release_uri'],
-      sequence['computer_reference'], 'available')
-
   def stepSupplyComputerSoftwareReleaseAvailableRaisesNotImplementedError(self,
     sequence, **kw):
     # slap not used to raise on server side
@@ -35,13 +28,6 @@ class TestVifibSlapSupply(TestVifibSlapWebServiceMixin):
     self.assertRaises(NotImplementedError,
       computer.requestSoftwareRelease,
       software_release_url=sequence['software_release_uri'], state='available')
-
-  def stepSupplyComputerSoftwareReleaseDestroyed(self, sequence, **kw):
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    supply = self.slap.registerSupply()
-    supply.supply(sequence['software_release_uri'],
-      sequence['computer_reference'], 'destroyed')
 
   def stepSupplyComputerSoftwareReleaseDestroyedRaisesNotImplementedError(self,
     sequence, **kw):

@@ -88,8 +88,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   computer_partition_portal_type = "Computer Partition"
   computer_portal_type = "Computer"
   hosting_subscription_portal_type = "Hosting Subscription"
-  purchase_packing_list_line_portal_type = "Purchase Packing List Line"
-  purchase_packing_list_portal_type = "Purchase Packing List"
   sale_packing_list_line_portal_type = "Sale Packing List Line"
   sale_order_line_portal_type = "Sale Order Line"
   sale_packing_list_portal_type = "Sale Packing List"
@@ -1044,68 +1042,19 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SlapLogout
   """
 
-  prepare_software_release_confirmed_packing_list = """
+  prepare_supply_software_release = """
       LoginDefaultUser
-      CreatePurchasePackingList
+      SupplyComputerSoftwareReleaseAvailable
       Tic
-      CreatePurchasePackingListLine
-      Tic
-      SetPurchasePackingListLineSetupResource
-      SetPurchasePackingListLineAggregate
-      ConfirmPurchasePackingList
-      StartBuildingPurchasePackingList
-      Tic
-      CheckConfirmedPurchasePackingList
-      Logout
-  """
-
-  prepare_software_release_cleanup_confirmed_packing_list = """
-      LoginDefaultUser
-      CreatePurchasePackingList
-      Tic
-      CreatePurchasePackingListLine
-      Tic
-      SetPurchasePackingListLineCleanupResource
-      SetPurchasePackingListLineAggregate
-      ConfirmPurchasePackingList
-      StartBuildingPurchasePackingList
-      Tic
-      CheckConfirmedPurchasePackingList
       Logout
   """
 
   prepare_software_release_purchase_packing_list = \
       prepare_published_software_release + prepare_formated_computer + \
-      prepare_software_release_confirmed_packing_list + '\
+      prepare_supply_software_release + '\
         LoginDefaultUser \
         CheckSoftwareReleaseUnavailableForRequest \
         Logout'
-
-  prepare_software_release_cleanup_purchase_packing_list = \
-      prepare_published_software_release + prepare_formated_computer + \
-      prepare_software_release_cleanup_confirmed_packing_list + '\
-        LoginDefaultUser \
-        CheckSoftwareReleaseUnavailableForRequest \
-        Logout'
-
-  prepare_software_release_purchase_packing_list_accounting_resource = \
-      prepare_published_software_release + prepare_formated_computer + """
-      LoginDefaultUser
-      CreateAccountingService
-      CreatePurchasePackingList
-      Tic
-      CreatePurchasePackingListLine
-      Tic
-      SetPurchasePackingListLineAccountingResource
-      SetPurchasePackingListLineAggregate
-      ConfirmPurchasePackingList
-      StartBuildingPurchasePackingList
-      Tic
-      Logout
-      LoginDefaultUser
-      CheckSoftwareReleaseUnavailableForRequest
-      Logout
-  """
 
   prepare_installed_software_release_sequence_string = \
       prepare_published_software_release + \
@@ -1353,36 +1302,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout
       """
 
-  computer_with_software_release = """
-      CustomerRegisterNewComputer
-      Tic
-      SetComputerCoordinatesFromComputerTitle
-      ComputerSetAllocationScopeOpenPublic
-      Tic
-      CreatePurchasePackingList
-      Tic
-      CreatePurchasePackingListLine
-      Tic
-      SelectNewSoftwareReleaseUri
-      CreateSoftwareRelease
-      Tic \
-      SubmitSoftwareRelease \
-      Tic \
-      CreateSoftwareProduct \
-      Tic \
-      ValidateSoftwareProduct \
-      Tic \
-      SetSoftwareProductToSoftwareRelease \
-      PublishByActionSoftwareRelease \
-      Tic
-      SetPurchasePackingListLineSetupResource
-      SetPurchasePackingListLineAggregate
-      ConfirmPurchasePackingList
-      StopPurchasePackingList
-      StartBuildingPurchasePackingList
-      Tic
-  """
-
   requesting_computer_partition_with_software_instance = """
       SelectNewComputerPartitionReference
       CreateComputerPartition
@@ -1414,42 +1333,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       SelectCurrentComputerPartitionAsSlaveOwner
   """
-
-  prepare_two_purchase_packing_list = \
-                  prepare_software_release_purchase_packing_list + '\
-                  LoginDefaultUser \
-                  SetCurrentPurchasePackingListAsA \
-                  StartPurchasePackingList \
-                  StopPurchasePackingList \
-                  Tic \
-                  Logout \
-                  SlapLoginCurrentComputer \
-                  CheckSuccessComputerGetSoftwareReleaseListCall \
-                  SlapLogout ' + \
-                  prepare_software_release_confirmed_packing_list + '\
-                  LoginDefaultUser \
-                  SetCurrentPurchasePackingListAsB \
-                  CheckStoppedPurchasePackingListA \
-                  CheckConfirmedPurchasePackingListB \
-                  Logout'
-
-  prepare_two_cleanup_purchase_packing_list = \
-                  prepare_software_release_cleanup_purchase_packing_list + '\
-                  LoginDefaultUser \
-                  SetCurrentPurchasePackingListAsA \
-                  StartPurchasePackingList \
-                  StopPurchasePackingList \
-                  Tic \
-                  Logout \
-                  SlapLoginCurrentComputer \
-                  CheckEmptyComputerGetSoftwareReleaseListCall \
-                  SlapLogout ' + \
-                  prepare_software_release_cleanup_confirmed_packing_list + '\
-                  LoginDefaultUser \
-                  SetCurrentPurchasePackingListAsB \
-                  CheckStoppedPurchasePackingListA \
-                  CheckConfirmedPurchasePackingListB \
-                  Logout'
 
   prepare_another_computer_sequence_string = """
     StoreComputerReference
@@ -1542,6 +1425,20 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   ########################################
   # Steps
   ########################################
+
+  def stepSupplyComputerSoftwareReleaseAvailable(self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    supply = self.slap.registerSupply()
+    supply.supply(sequence['software_release_uri'],
+      sequence['computer_reference'], 'available')
+
+  def stepSupplyComputerSoftwareReleaseDestroyed(self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    supply = self.slap.registerSupply()
+    supply.supply(sequence['software_release_uri'],
+      sequence['computer_reference'], 'destroyed')
 
   def stepResetSequenceSoftwareInstanceState(self, sequence, **kw):
     sequence['software_instance_state'] = ''
@@ -2540,96 +2437,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.assertTrue(isinstance(computer.getSoftwareReleaseList()[0],
                                slap.SoftwareRelease))
 
-  def stepStartBuildingPurchasePackingList(self, sequence, **kw):
-    delivery = self.portal.portal_catalog.getResultValue(
-      uid=sequence['purchase_packing_list_uid'])
-    delivery.startBuilding()
-
-  def stepCreatePurchasePackingList(self, sequence, **kw):
-    """
-    Create an purchase packing list document.
-    """
-    module = self.portal.getDefaultModule(
-        portal_type=self.purchase_packing_list_portal_type)
-    order = module.newContent(
-        portal_type=self.purchase_packing_list_portal_type,
-        start_date=DateTime(),
-        specialise='sale_trade_condition_module/vifib_trade_condition',
-        source='organisation_module/vifib_internet',
-        source_section='organisation_module/vifib_internet',
-        source_decision='organisation_module/vifib_internet',
-        # XXX Hardcoded values
-        destination='person_module/test_vifib_customer',
-        destination_section='person_module/test_vifib_customer',
-        destination_decision='person_module/test_vifib_customer',
-        price_currency='currency_module/EUR',
-        )
-    self.markManualCreation(order)
-    sequence.edit(purchase_packing_list_uid=order.getUid())
-
-  def stepCreatePurchasePackingListLine(self, sequence, **kw):
-    """
-    Create an purchase packing list line document.
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    line = order.newContent(
-        portal_type=self.purchase_packing_list_line_portal_type,
-        quantity=1)
-    self.markManualCreation(line)
-    sequence.edit(purchase_packing_list_line_uid=line.getUid())
-
-  def stepSetPurchasePackingListLineAggregate(self, sequence, **kw):
-    """
-    Associate a computer and a software release to the purchase packing list line.
-    """
-    line = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_line_uid"])
-    line.edit(
-        aggregate_uid_list=[sequence["computer_uid"],
-                            sequence["software_release_uid"]]
-        )
-
-  def stepConfirmPurchasePackingList(self, sequence, **kw):
-    """
-    Confirm the purchase packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'confirm_action')
-
-  def stepStartPurchasePackingList(self, sequence, **kw):
-    """
-    Start the purchase packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'start_action')
-
-  def stepStopPurchasePackingList(self, sequence, **kw):
-    """
-    Stop the purchase packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'stop_action')
-
-  def stepDeliverPurchasePackingList(self, sequence, **kw):
-    """
-    Deliver the purchase packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'deliver_action')
-
-  def stepCancelPurchasePackingList(self, sequence, **kw):
-    """
-    Cancel the purchase packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'cancel_action')
-
   def stepCheckNotFoundSoftwareReleaseBuildingAfterRegisterCall(self,
       sequence, **kw):
     """
@@ -2654,22 +2461,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release = computer.getSoftwareReleaseList()[0]
 
     software_release.building()
-
-  def stepCheckConfirmedPurchasePackingList(self, sequence, **kw):
-    """
-    Check that the purchase packing list is confirmed.
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    self.assertEquals("confirmed", packing_list.getSimulationState())
-
-  def stepCheckStartedPurchasePackingList(self, sequence, **kw):
-    """
-    Check that the purchase packing list is started.
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    self.assertEquals("started", packing_list.getSimulationState())
 
   def stepCheckNotFoundSoftwareReleaseBuildingCall(self, sequence, **kw):
     computer_guid = sequence["computer_reference"]
@@ -2834,22 +2625,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     self.assertRaises(slap.Unauthorized, software_release.available)
 
-  def stepCheckStoppedPurchasePackingList(self, sequence, **kw):
-    """
-    Check that the purchase packing list is started.
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    self.assertEquals("stopped", packing_list.getSimulationState())
-
-  def stepCheckDeliveredPurchasePackingList(self, sequence, **kw):
-    """
-    Check that the purchase packing list is started.
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    self.assertEquals("delivered", packing_list.getSimulationState())
-
   def stepCheckNotFoundSoftwareReleaseErrorAfterRegisterCall(self, sequence,
       **kw):
     """
@@ -2874,30 +2649,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release = computer.getSoftwareReleaseList()[0]
 
     software_release.error("ErrorLog")
-
-  def stepCheckCancelledPurchasePackingList(self, sequence, **kw):
-    """
-    Check that the purchase packing list is cancelled
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    self.assertEquals("cancelled", packing_list.getSimulationState())
-
-  def stepCheckPurchasePackingListErrorText(self, sequence, **kw):
-    """
-    Check that the purchase packing list is cancelled
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    self.assertFalse(packing_list.getComment('').endswith("ErrorLog"))
-
-  def stepCheckPurchasePackingListNoErrorText(self, sequence, **kw):
-    """
-    Check that the purchase packing list is cancelled
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_uid"])
-    self.assertFalse(packing_list.getComment('').endswith("ErrorLog"))
 
   def stepCheckUnauthorizedSoftwareReleaseBuildingCall(self, sequence, **kw):
     """
@@ -3043,17 +2794,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         uid=sequence["sale_packing_list_line_uid"])
     service_uid = sequence['service_uid']
     line.edit(resource_uid=service_uid)
-
-  def stepSetPurchasePackingListLineAccountingResource(self, sequence, **kw):
-    """
-    Associate an accounting service to the purchase packing list line.
-    """
-    line = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_line_uid"])
-    service_uid = sequence['service_uid']
-    line.edit(
-        quantity=1,
-        resource_uid=service_uid)
 
   def stepSetSalePackingListLineAggregate(self, sequence, **kw):
     """
@@ -3720,56 +3460,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
           movement.portal_preferences.getPreferredInstanceHostingResource():
         movement.edit(start_date=hosting_date)
 
-  def stepSetPurchasePackingListLineSetupResource(self, sequence, **kw):
-    """
-    Associate the setup service to the purchase packing list line.
-    """
-    line = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_line_uid"])
-    line.edit(
-        quantity=1,
-        resource=self.portal.portal_preferences.\
-            getPreferredSoftwareSetupResource())
-
-  def stepSetPurchasePackingListLineCleanupResource(self, sequence, **kw):
-    """
-    Associate the setup service to the purchase packing list line.
-    """
-    line = self.portal.portal_catalog.getResultValue(
-        uid=sequence["purchase_packing_list_line_uid"])
-    line.edit(
-        quantity=1,
-        resource=self.portal.portal_preferences.\
-            getPreferredSoftwareCleanupResource())
-
-  def stepSetAccountingBeforeSetupStartDate(self, sequence, **kw):
-    """
-    Set date on Purchase Packing List Line
-    """
-    computer_partition_uid = sequence["computer_uid"]
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=computer_partition_uid)
-    hosting_date = DateTime() - 1
-    service_uid = sequence['service_uid']
-    for movement in computer_partition.getAggregateRelatedValueList(
-        portal_type=self.purchase_packing_list_line_portal_type):
-      if movement.getResourceUid() == service_uid:
-        movement.edit(start_date=hosting_date)
-
-  def stepSetAccountingAfterSetupStartDate(self, sequence, **kw):
-    """
-    Set date on Purchase Packing List Line
-    """
-    computer_partition_uid = sequence["computer_uid"]
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=computer_partition_uid)
-    hosting_date = DateTime() + 1
-    service_uid = sequence['service_uid']
-    for movement in computer_partition.getAggregateRelatedValueList(
-        portal_type=self.sale_packing_list_line_portal_type):
-      if movement.getResourceUid() == service_uid:
-        movement.edit(start_date=hosting_date)
-
   def _checkComputerPartitionAndRelatedSoftwareInstance(self,
       computer_partition):
     sale_packing_list_line_list = computer_partition\
@@ -3929,70 +3619,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sequence.edit(
       software_instance_uid=sequence['requester_software_instance_uid']
     )
-
-  def stepSetCurrentPurchasePackingListAsA(self, sequence):
-    sequence.edit(purchase_packing_list_a_uid=sequence[
-      'purchase_packing_list_uid'])
-
-  def stepSetCurrentPurchasePackingListAsB(self, sequence):
-    sequence.edit(purchase_packing_list_b_uid=sequence[
-      'purchase_packing_list_uid'])
-
-  def stepStepPurchasePackingListBStartDateAfterPurchasePackingListA(self,
-      sequence):
-    a = self.portal.portal_catalog.getResultValue(uid=sequence[
-      'purchase_packing_list_a_uid'])
-    b = self.portal.portal_catalog.getResultValue(uid=sequence[
-      'purchase_packing_list_b_uid'])
-    b.setStartDate(a.getStartDate() + 2)
-
-  def stepStepPurchasePackingListBStartDateBeforePurchasePackingListA(self,
-      sequence):
-    a = self.portal.portal_catalog.getResultValue(uid=sequence[
-      'purchase_packing_list_a_uid'])
-    b = self.portal.portal_catalog.getResultValue(uid=sequence[
-      'purchase_packing_list_b_uid'])
-    b.setStartDate(a.getStartDate() - 2)
-
-  def stepCheckStartedPurchasePackingListA(self, sequence):
-    self.assertEqual('started',
-        self.portal.portal_catalog.getResultValue(uid=sequence[
-          'purchase_packing_list_a_uid']).getSimulationState())
-
-  def stepCheckStoppedPurchasePackingListA(self, sequence):
-    self.assertEqual('stopped',
-        self.portal.portal_catalog.getResultValue(uid=sequence[
-          'purchase_packing_list_a_uid']).getSimulationState())
-
-  def stepCheckCancelledPurchasePackingListA(self, sequence):
-    self.assertEqual('cancelled',
-        self.portal.portal_catalog.getResultValue(uid=sequence[
-          'purchase_packing_list_a_uid']).getSimulationState())
-
-  def stepCheckConfirmedPurchasePackingListB(self, sequence):
-    self.assertEqual('confirmed',
-        self.portal.portal_catalog.getResultValue(uid=sequence[
-          'purchase_packing_list_b_uid']).getSimulationState())
-
-  def stepCheckStartedPurchasePackingListB(self, sequence):
-    self.assertEqual('started',
-        self.portal.portal_catalog.getResultValue(uid=sequence[
-          'purchase_packing_list_b_uid']).getSimulationState())
-
-  def stepCheckStoppedPurchasePackingListB(self, sequence):
-    self.assertEqual('stopped',
-        self.portal.portal_catalog.getResultValue(uid=sequence[
-          'purchase_packing_list_b_uid']).getSimulationState())
-
-  def stepCheckDeliveredPurchasePackingListA(self, sequence):
-    self.assertEqual('delivered',
-        self.portal.portal_catalog.getResultValue(uid=sequence[
-          'purchase_packing_list_a_uid']).getSimulationState())
-
-  def stepCheckDeliveredPurchasePackingListB(self, sequence):
-    self.assertEqual('delivered',
-        self.portal.portal_catalog.getResultValue(uid=sequence[
-          'purchase_packing_list_b_uid']).getSimulationState())
 
   def stepCheckSlaveInstanceSecurityWithDifferentCustomer(self, sequence):
     software_instance_uid = sequence["software_instance_uid"]
