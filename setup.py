@@ -51,7 +51,6 @@ setup(name=name,
           'slapos = slapos.entry:main',
           # Deprecated entry points
           'slapconsole = slapos.console:run',
-          'slapos-request = slapos.console:request',
           'slapos-watchdog = slapos.grid.watchdog:main',
           'slapformat = slapos.format:main',
           'slapgrid = slapos.grid.slapgrid:run',
