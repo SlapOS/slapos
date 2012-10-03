@@ -55,10 +55,6 @@
   specification of an upgrader.\n
 """\n
 \n
-script.log(\'Do it manually\')\n
-return {}\n
-\n
-\n
 BEFORE_TRIGGERED_BT5_SCRIPT_ID_DICT = {\n
 }\n
 \n
@@ -105,17 +101,25 @@ REQUIRED_BT5_ID_LIST = (\n
   \'erp5_project\',\n
   \'erp5_credential_oauth2\',\n
 # vifib\n
+  \'vifib_mysql_innodb_catalog\',\n
   \'vifib_base\',\n
+  \'vifib_core\',\n
+  \'vifib_data_category\',\n
+  \'vifib_data_payzen\',\n
+  \'vifib_data_web\',\n
   \'vifib_slapos_core\',\n
   \'vifib_web\',\n
   \'vifib_slap\',\n
   \'vifib_agent\',\n
   \'vifib_slapos_accounting\',\n
-  \'vifib_erp5\',\n
   \'vifib_web_ui_test\',\n
+  \'vifib_slapos_core\',\n
+  \'vifib_slapos_accounting\',\n
+  \'vifib_slapos_capacity\',\n
   \'vifib_slapos_rest_api_tool_portal_type\',\n
   \'vifib_slapos_rest_api\',\n
   \'vifib_slapos_rest_api_v1\',\n
+  \'vifib_erp5\',\n
   \'vifib_data\',\n
   \'vifib_data_web\',\n
   \'vifib_data_simulation\',\n
@@ -125,30 +129,7 @@ REINSTALLABLE_BT5_ID_LIST = ()\n
 \n
 # items to keep even if marked by BT5 to \'Remove\'\n
 KEEP_ORIGINAL_DICT = {\n
-#  \'vifib_base\': (\n
-#    \'software_instance_module\',\n
-#    \'portal_types/Slave Instance\',\n
-#    \'portal_types/Software Instance\',\n
-#    \'portal_types/Software Instance Module\',\n
-#    \'allowed_content_types/Software Instance Module\',\n
-#    \'base_category_list/Slave Instance\',\n
-#    \'base_category_list/Software Instance\',\n
-#    \'base_category_list/Software Instance Module\',\n
-#    \'property_sheet_list/Slave Instance\',\n
-#    \'property_sheet_list/Software Instance\',\n
-#    \'property_sheet_list/Item\',\n
-#    \'portal_workflow/software_instance_slap_interface_workflow\',\n
-#  ),\n
-#  \'vifib_open_trade\': (\n
-#    \'hosting_subscription_module\',\n
-#    \'portal_types/Hosting Subscription\',\n
-#    \'portal_types/Hosting Subscription Module\',\n
-#    \'property_sheet_list/Hosting Subscription\',\n
-#    \'allowed_content_types/Hosting Subscription Module\',\n
-#    \'base_category_list/Hosting Subscription\',\n
-#    \'base_category_list/Hosting Subscription Module\',\n
-#    \'portal_type_workflow_chain/Hosting Subscription\',\n
-#  ),\n
+  \'vifib_data_payzen\': ( \'portal_secure_payments\', ) # portal_secure_payments was moved from Path to Tool, just do not remove it\n
 }\n
 \n
 # Items which need validation at upgrade time\n
@@ -178,7 +159,7 @@ signature_dict = {\n
  , \'validation_dict\': VALIDATION_DICT\n
  , \'integrity_verification_script_id_list\': INTEGRITY_VERIFICATION_SCRIPT_ID_LIST\n
  , \'alarm_tool_configuration_list\' : ALARM_TOOL_CONFIGURATION_LIST\n
- , \'workflow_chain_dict\': WORKFLOW_CHAIN_DICT\n
+ # , \'workflow_chain_dict\': WORKFLOW_CHAIN_DICT\n
  # , \'finalize_upgrade_script_list\': FINALIZE_ALARM_SCRIPT\n
 }\n
 \n
