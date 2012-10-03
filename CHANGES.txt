@@ -1,6 +1,32 @@
 Changes
 =======
 
+0.68.1 (2012-10-03)
+-------------------
+
+  * slaprunner: fix "logfile" parameter to "log_file"
+
+0.68 (2012-10-02)
+-----------------
+
+  * request.py: Remove useless calls to master, fix "update" method. [Cedric
+    de Saint Martin]
+  * Add webrunner test recipe. [Alain Takoudjou]
+  * Add logfile for slaprunner. [Cedric de Saint Martin]
+  * Fix check_url_available promise (syntax + checks + IPv6 support). [Cedric
+    de Saint Martin]
+
+0.67 (2012-09-26)
+-----------------
+
+  * Add check_page_content promise generator. [Cedric Le Ninivin]
+  * Fix check_url_available recipe. [Cedric de Saint Martin]
+  * Set up timezone database in mariab's mysql table so that we can use
+    timezone conversion function. [Kazuhiko Shiozaki]
+  * Add many resiliency-based recipes [Timothée Lacroix]
+  * Fix and unify request and requestoptional recipes [Cedric de Saint Martin]
+  * Fix Dropbear. [Antoine Catton]
+
 0.66 (2012-09-10)
 -----------------
 
