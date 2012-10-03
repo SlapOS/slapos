@@ -41,6 +41,9 @@ from slapos.grid.svcbackend import supervisord
 from slapos.grid.svcbackend import supervisorctl
 from slapos.register.register import main as register
 
+GLOBAL_SLAPOS_CONFIGURATION = '/etc/opt/slapos/slapos.cfg'
+USER_SLAPOS_CONFIGURATION = '~/.slapos/slapos.cfg'
+
 class EntryPointNotImplementedError(NotImplementedError):
   def __init__(self, *args, **kw_args):
     NotImplementedError.__init__(self, *args, **kw_args)
@@ -50,6 +53,9 @@ def checkSlaposCfg ():
   Check if a slapos configuration file was given as a argument.
   If a slapos configuration file is given it return True else False
   """
+  # XXX-Cedric: dangerous but quick way to achieve way to not provide
+  # configuration file for each command without changing underlying code.
+  # It the long term, it should be done in a better way (no guessing).
   for element in sys.argv:
     if '.cfg' in element:
       if os.path.exists(element):
@@ -86,47 +92,39 @@ def call(fun, config=False, option=[]):
     if not checkSlaposCfg():
       sys.argv = [sys.argv[0]] + [config] + sys.argv[1:]
   fun()
+  sys.exit(0)
 
-def showUsage():
-  # We are out of option. We have to admit it: no other option than error.
-  # XXX Real error message
-  sys.exit(1)
-
-def dispatch(command, is_node):
+def dispatch(command, is_node_command):
   """ Dispatch to correct SlapOS module.
   Here we could use introspection to get rid of the big "if" statements,
   but we want to control every input.
-  Here we give default option and configuration file if they are needed
+  Here we give default option and configuration file if they are needed, i.e
+  If configuration file is not given: define it arbitrarily, and so on.
   """
-  # XXX console_config =
-  if is_node:
-    config = '/etc/opt/slapos/slapos.cfg'
-    if command in 'register':
+  if is_node_command:
+    if command == 'register':
       call(register)
     elif command == 'software':
-      call(software, config=config,
-           option=['--logfile /opt/slapos/slapgrid-sr.log',
-                   '--pidfile /opt/slapos/slapgrid-sr.pid'])
+      call(software, config=GLOBAL_SLAPOS_CONFIGURATION,
+           option=['--pidfile /opt/slapos/slapgrid-sr.pid', '-c'])
     elif command == 'instance':
-      call(instance, config=config,
-           option=['--logfile /opt/slapos/slapgrid-cp.log',
-                   '--pidfile /opt/slapos/slapgrid-cp.pid'])
+      call(instance, config=GLOBAL_SLAPOS_CONFIGURATION,
+           option=['--pidfile /opt/slapos/slapgrid-cp.pid', '-c'])
     elif command == 'report':
-      call(report, config=config,
-           option=['--logfile /opt/slapos/slapgrid-ur.log'])
+      call(report, config=GLOBAL_SLAPOS_CONFIGURATION,
+           option=['--pidfile /opt/slapos/slapgrid-ur.pid', '-c'])
     elif command == 'bang':
       call(bang, config=True)
     elif command == 'format':
-      call(format, config=config,
+      call(format, config=GLOBAL_SLAPOS_CONFIGURATION,
            option=['--log_file /opt/slapos/slapformat.log'])
     elif command in ['start', 'stop', 'status', 'tail']:
       supervisord()
       supervisorctl()
     else:
-      supervisord()
+      return False
   elif command == 'request':
-    config = '~/.slapos/slapos.cfg'
-    call(request, config=config)
+    call(request, config=USER_SLAPOS_CONFIGURATION)
   elif command == 'supply':
     raise EntryPointNotImplementedError(command)
   elif command == 'start':
@@ -143,16 +141,17 @@ def main():
   Main entry point of SlapOS Node. Used to dispatch commands to python
   module responsible of the operation.
   """
-  description = "XXX TODO"
+  # XXX-Cedric: add "description" for parser.
   # Parse arguments
-  parser = argparse.ArgumentParser(description=description)
+  parser = argparse.ArgumentParser()
   parser.add_argument('command')
+  # XXX-Cedric: "slapos node" should display "supervisorctl status".
+  # Currently it does nothing
   parser.add_argument('argument_list', nargs=argparse.REMAINDER)
 
   # If "node" arg is the first: we strip it and set a switch
-  # XXX do it with argparse
   if len(sys.argv) > 1 and sys.argv[1] == "node":
-    sys.argv=sys.argv[1:]
+    sys.argv = sys.argv[1:]
     is_node = True
   else:
     is_node = False
@@ -163,14 +162,9 @@ def main():
   command_line.extend(namespace.argument_list)
   sys.argv = command_line
 
-  dispatch(namespace.command,is_node)
-  # If configuration file is not given: define it arbitrarily
-  # If client commands: use ~/.slapos.cfg
-  # If node commands: use /etc/opt/slapos/slapos.cfg
-  # XXX TODO
   try:
     if not dispatch(namespace.command, is_node):
       parser.print_help()
+      sys.exit(1)
   except EntryPointNotImplementedError, exception:
-    # XXX more graceful
-    print 'Not implemented: %s' % exception
+    print 'Not yet implemented: %s. Please use old-style commands.' % exception
