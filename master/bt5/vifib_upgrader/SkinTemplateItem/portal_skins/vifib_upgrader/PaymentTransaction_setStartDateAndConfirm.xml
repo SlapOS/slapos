@@ -50,20 +50,23 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().portal_catalog.searchAndActivate(method_id=\'PaymentTransaction_setStartDateAndConfirm\',\n
-  method_kw={\'comment\': \'Migrated payment to confirmed state, as this is expected one.\'},\n
-  portal_type=\'Payment Transaction\', simulation_state=\'planned\')\n
+            <value> <string>import DateTime\n
+assert context.getPortalType() == \'Payment Transaction\'\n
+assert context.getSimulationState() == \'planned\'\n
 \n
-return \'ok\'\n
+start_date = context.getStartDate()\n
+if start_date is None:\n
+  start_date = context.setStartDate(DateTime.DateTime())\n
+  context.confirm(comment=comment)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>comment</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Site_confirmPlannedPayment</string> </value>
+            <value> <string>PaymentTransaction_setStartDateAndConfirm</string> </value>
         </item>
       </dictionary>
     </pickle>
