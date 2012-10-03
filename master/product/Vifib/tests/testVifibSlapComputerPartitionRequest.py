@@ -1633,6 +1633,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       CallConfirmOrderedSaleOrderAlarm \
       Tic \
       Logout \
+      SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic ' + self.prepare_published_software_release + '\
       LoginTestVifibAdmin \
@@ -1645,6 +1646,7 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       Tic \
       SlapLogout \
       \
+      SlapLoginCurrentSoftwareInstance \
       RequestComputerPartition \
       Tic \
       RequestComputerPartition \
