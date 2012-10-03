@@ -173,15 +173,10 @@ def init(config):
   # Create global variable too see available aliases
   local['software_list'] = software_list
   # Create global shortcut functions to request instance and software
-  # XXX-Cedric : can we change given parameters to something like
-  # *args, **kwargs, but without the bad parts, in order to be generic?
-  def shorthandRequest(software_release, partition_reference,
-      partition_parameter_kw=None, software_type=None, filter_kw=None,
-      state=None, shared = False):
-    return slap.registerOpenOrder().request(software_release, partition_reference,
-      partition_parameter_kw, software_type, filter_kw, state, shared)
-  def shorthandSupply(software_release, computer_guid=None, state='available'):
-    return slap.registerSupply().supply(software_release, computer_guid, state)
+  def shorthandRequest(*args, **kwargs):
+    return slap.registerOpenOrder().request(*args, **kwargs)
+  def shorthandSupply(*args, **kwargs):
+    return slap.registerSupply().supply(*args, **kwargs)
   local['request'] = shorthandRequest
   local['supply'] = shorthandSupply
 
