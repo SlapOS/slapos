@@ -57,7 +57,8 @@ assert context.getSimulationState() == \'planned\'\n
 start_date = context.getStartDate()\n
 if start_date is None:\n
   start_date = context.setStartDate(DateTime.DateTime())\n
-  context.confirm(comment=comment)\n
+\n
+context.confirm(comment=comment)\n
 </string> </value>
         </item>
         <item>
