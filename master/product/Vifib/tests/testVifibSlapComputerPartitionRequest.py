@@ -1512,6 +1512,46 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
         portal_type="Slave Instance").getUid()
     sequence.edit(software_instance_uid=slave_instance_uid)
 
+  def stepRequestComputerPartitionWithAnotherSoftwareType(self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    slap_computer_partition = self.slap.registerComputerPartition(
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+    kw = dict(software_release=sequence['software_release_uri'],
+      software_type="SecondSoftwareType",
+      partition_reference=sequence.get('requested_reference',
+        'requested_reference'),
+      partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
+
+    slap_computer_partition.request(**kw)
+
+  def stepCheckRequestComputerPartitionWithAnotherSoftwareType(
+                                     self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+    slap_computer_partition = self.slap.registerComputerPartition(
+        sequence['computer_reference'],
+        sequence['computer_partition_reference'])
+    kw = dict(software_release=sequence['software_release_uri'],
+      software_type="SecondSoftwareType",
+      partition_reference=sequence.get('requested_reference',
+        'requested_reference'),
+      partition_parameter_kw=sequence.get('requested_parameter_dict', {}),
+      filter_kw=sequence.get('requested_filter_dict', {}),
+      state=sequence.get('instance_state'))
+
+    requested_slap_computer_partition = slap_computer_partition.request(**kw)
+
+    self.assertEquals(sequence.get('requested_computer_partition_reference'),
+                      requested_slap_computer_partition.getId())
+    self.assertEquals("SecondSoftwareType",
+                      requested_slap_computer_partition.getInstanceParameterDict()['slap_software_type'])
+    self.assertEquals(1,
+                      requested_slap_computer_partition._need_modification)
+
   def stepCheckRequestComputerPartitionWithAnotherSoftwareRelease(
                                      self, sequence, **kw):
     self.slap = slap.slap()
