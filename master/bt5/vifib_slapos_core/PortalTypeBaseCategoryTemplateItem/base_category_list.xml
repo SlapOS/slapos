@@ -8,7 +8,7 @@
  </portal_type>
  <portal_type id="Software Installation">
   <item>aggregate</item>
-  <item>source_section</item>
+  <item>destination_section</item>
  </portal_type>
  <portal_type id="Software Installation Module">
   <item>business_application</item>

@@ -57,7 +57,7 @@
             <value>
               <list>
                 <string>_setAggregate.*</string>
-                <string>_setSourceSection.*</string>
+                <string>_setDestinationSection.*</string>
               </list>
             </value>
         </item>
