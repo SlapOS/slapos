@@ -1464,7 +1464,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     SlapLoginCurrentComputer
     FormatComputer
     Tic
-    SlapLogout""" + prepare_software_release_confirmed_packing_list + """
+    SlapLogout
 
     LoginTestVifibAdmin
     RequestSoftwareInstallation
