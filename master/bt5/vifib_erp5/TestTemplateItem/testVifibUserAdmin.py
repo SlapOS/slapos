@@ -209,6 +209,8 @@ class TestVifibUserAdmin(testVifibMixin):
       destination_decision_value=person_value,
       price_currency='currency_module/EUR',
       portal_type='Purchase Packing List')
+    # Commit the transaction in order to have access to the object
+    transaction.commit()
     # Access service
     service_module_id = self.portal.getDefaultModuleId(portal_type='Service')
     service_module = self.portal.restrictedTraverse(service_module_id)
