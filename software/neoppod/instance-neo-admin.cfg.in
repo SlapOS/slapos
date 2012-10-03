@@ -1,0 +1,44 @@
+[buildout]
+parts =
+  neo-admin-run-wrapper
+  neo-admin-promise
+
+eggs-directory = {{eggs_directory}}
+develop-eggs-directory = {{develop_eggs_directory}}
+offline = true
+
+[neo-admin]
+recipe = slapos.cookbook:neoppod.admin
+binary = {{bin_directory}}/neoadmin
+wrapper = ${directory:bin}/neoadmin
+logfile = ${directory:log}/neoadmin.log
+ip = ${publish:ip}
+port = ${publish:port}
+cluster = ${slap-parameter:cluster}
+masters = ${slap-parameter:masters}
+verbose = ${slap-parameter:verbose}
+
+[publish]
+recipe = slapos.cookbook:publish
+# TODO: make port a partition parameter
+# TODO: stop using slap-network-information
+ip = [${slap-network-information:global-ipv6}]
+port = 10002
+admin = ${:ip}:${:port}
+
+[neo-admin-run-wrapper]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:run}
+link-binary = ${neo-admin:wrapper}
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+run = ${buildout:directory}/etc/run
+log = ${buildout:directory}/var/log
+bin = ${buildout:directory}/bin
+
+[neo-admin-promise]
+recipe = slapos.cookbook:check_port_listening
+hostname = ${neo-admin:ip}
+port = ${neo-admin:port}
+path = ${directory:promises}/neo-admin-promise

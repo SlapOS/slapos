@@ -1,0 +1,42 @@
+{% set admin_software_type = 'neo-admin' -%}
+{% set mysql_storage_software_type = 'neo-storage-mysql' -%}
+[buildout]
+parts = switch-softwaretype
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[slap-connection]
+computer-id = ${slap_connection:computer_id}
+partition-id = ${slap_connection:partition_id}
+server-url = ${slap_connection:server_url}
+software-release-url = ${slap_connection:software_release_url}
+key-file = ${slap_connection:key_file}
+cert-file = ${slap_connection:cert_file}
+
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[neo-cluster]
+recipe = slapos.recipe.template:jinja2
+template = {{ cluster }}
+rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/cluster.cfg
+extensions = jinja2.ext.do
+context =
+    key eggs_directory buildout:eggs-directory
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key slap_software_type slap-configuration:slap-software-type
+    key slapparameter_dict slap-configuration:configuration
+    raw admin_software_type {{ admin_software_type }}
+    raw mysql_storage_software_type {{ mysql_storage_software_type }}
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = ${neo-cluster:rendered}
+{{ admin_software_type }} = {{ neo_admin }}
+{{ mysql_storage_software_type }} = {{ neo_storage_mysql }}
