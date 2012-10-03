@@ -109,7 +109,7 @@ else:\n
 if (state == "available"):\n
   software_installation.requestStart()\n
 elif (state == "destroyed"):\n
-  software_installation.requestDestroy()\n
+  software_installation.requestDestroy(activate_kw={\'tag\': tag})\n
 else:\n
   raise ValueError("state should be available or destroyed, but is %s" % state)\n
 \n
