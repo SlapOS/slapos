@@ -41,28 +41,6 @@ class TestVifibSlapComputerPartitionGetSoftwareRelease(TestVifibSlapWebServiceMi
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_ComputerPartition_getSoftwareRelease_cancelledState(self):
-    """
-    Check that calling ComputerPartition.getSoftwareRelease works in 
-    cancelled state
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-      LoginDefaultUser \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      Logout \
-      SlapLoginCurrentComputer \
-      CheckSuccessComputerPartitionGetSoftwareReleaseCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
   def test_ComputerPartition_getSoftwareRelease_startedState(self):
     """
     Check that calling ComputerPartition.getSoftwareRelease works in 

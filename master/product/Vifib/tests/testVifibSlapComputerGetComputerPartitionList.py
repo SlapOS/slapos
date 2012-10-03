@@ -137,29 +137,6 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
           c.invalidate()
           transaction.commit()
 
-  def test_Computer_getComputerPartitionList_SetupResource_CancelledState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in
-    cancelled state with the setup resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_install_requested_computer_partition_sequence_string + '\
-      LoginDefaultUser \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      CheckComputerPartitionInstanceHostingSalePackingListCancelled \
-      Logout \
-      SlapLoginCurrentComputer \
-      CheckSuccessComputerGetComputerPartitionCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
   def test_Computer_getComputerPartitionList_SetupResource_ConfirmedState(self):
     """
     Check that calling Computer.getComputerPartitionList works in
@@ -195,32 +172,6 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_Computer_getComputerPartitionList_SetupResource_StoppedState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in
-    stopped state with the setup resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_installed_computer_partition_sequence_string + '\
-      LoginDefaultUser \
-      Tic \
-      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      CheckComputerPartitionInstanceHostingSalePackingListCancelled \
-      CheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists \
-      Logout \
-      SlapLoginCurrentComputer \
-      CheckSuccessComputerGetComputerPartitionCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
   def stepDeliverInstanceSetupSalePackingList(self, sequence, **kw):
     delivery = self.portal.portal_catalog.getResultValue(
       default_aggregate_uid=ComplexQuery(
@@ -233,58 +184,6 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
         .getPreferredInstanceSetupResource()
     ).getParentValue()
     self.portal.portal_workflow.doActionFor(delivery, 'deliver_action')
-
-  def test_Computer_getComputerPartitionList_SetupResource_DeliveredState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in
-    delivered state with the setup resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_installed_computer_partition_sequence_string + '\
-      CallVifibUpdateDeliveryCausalityStateAlarm \
-      CleanTic \
-      \
-      LoginDefaultUser \
-      CheckComputerPartitionInstanceSetupSalePackingListDelivered \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      CheckComputerPartitionInstanceHostingSalePackingListCancelled \
-      CheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists \
-      Logout \
-      \
-      SlapLoginCurrentComputer \
-      CheckSuccessComputerGetComputerPartitionCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_Computer_getComputerPartitionList_HostingResource_CancelledState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in
-    cancelled state with the hosting resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_start_requested_computer_partition_sequence_string + '\
-      LoginDefaultUser \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      Logout \
-      \
-      SlapLoginCurrentComputer \
-      CheckSuccessComputerGetComputerPartitionCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
 
   def test_Computer_getComputerPartitionList_HostingResource_ConfirmedState(self):
     """
@@ -467,29 +366,6 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def test_Computer_getComputerPartitionList_CleanupResource_CancelledState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in 
-    cancelled state with the cleanup resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_destroy_requested_computer_partition + '\
-      LoginDefaultUser \
-      SelectCurrentlyUsedSalePackingListUid \
-      CancelSalePackingList \
-      Tic \
-      Logout \
-      \
-      SlapLoginCurrentComputer \
-      CheckDestroyedComputerPartitionGetStateCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
   def test_Computer_getComputerPartitionList_CleanupResource_ConfirmedState(self):
     """
     Check that calling Computer.getComputerPartitionList works in 
@@ -497,54 +373,6 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_destroy_requested_computer_partition + '\
-      SlapLoginCurrentComputer \
-      CheckSuccessComputerGetComputerPartitionCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_Computer_getComputerPartitionList_CleanupResource_StartedState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in 
-    started state with the cleanup resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_destroy_requested_computer_partition + '\
-      LoginDefaultUser \
-      SelectCurrentlyUsedSalePackingListUid \
-      StartSalePackingList \
-      Tic \
-      Logout \
-      \
-      SlapLoginCurrentComputer \
-      CheckSuccessComputerGetComputerPartitionCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_Computer_getComputerPartitionList_CleanupResource_StoppedState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in 
-    stopped state with the cleanup resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = self.prepare_destroy_requested_computer_partition + '\
-      LoginDefaultUser \
-      SelectCurrentlyUsedSalePackingListUid \
-      StartSalePackingList \
-      Tic \
-      StopSalePackingList \
-      Tic \
-      Logout \
-      \
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetComputerPartitionCall \
       SlapLogout \
@@ -564,102 +392,6 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_string = self.prepare_destroyed_computer_partition + '\
       SlapLoginCurrentComputer \
       CheckSuccessComputerGetComputerPartitionCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_Computer_getComputerPartitionList_AccountingResource_CancelledState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in 
-    cancelled state with the accounting resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = \
-        self.prepare_computer_partition_accounting_resource_sequence_string + '\
-      LoginDefaultUser \
-      CancelSalePackingList \
-      Tic \
-      CheckComputerPartitionAccoutingResourceSalePackingListCancelled \
-      Logout \
-      \
-      SlapLoginCurrentComputer \
-      CheckStartedComputerPartitionGetStateCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_Computer_getComputerPartitionList_AccountingResource_ConfirmedState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in 
-    confirmed state with the accounting resource
-    """
-    sequence_list = SequenceList()
-    sequence_string = \
-        self.prepare_computer_partition_accounting_resource_sequence_string + '\
-      SlapLoginCurrentComputer \
-      CheckStartedComputerPartitionGetStateCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_Computer_getComputerPartitionList_AccountingResource_StartedState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in 
-    started state with the accounting resource
-    """
-    sequence_list = SequenceList()
-    sequence_string =  \
-        self.prepare_computer_partition_accounting_resource_started_sequence_string + '\
-      SlapLoginCurrentComputer \
-      CheckStartedComputerPartitionGetStateCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_Computer_getComputerPartitionList_AccountingResource_StoppedState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in 
-    stopped state with the accounting resource
-    """
-    sequence_list = SequenceList()
-    sequence_string =  \
-        self.prepare_computer_partition_accounting_resource_stopped_sequence_string + '\
-      SlapLoginCurrentComputer \
-      CheckStartedComputerPartitionGetStateCall \
-      SlapLogout \
-      LoginERP5TypeTestCase \
-      CheckSiteConsistency \
-      Logout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def test_Computer_getComputerPartitionList_AccountingResource_DeliveredState(self):
-    """
-    Check that calling Computer.getComputerPartitionList works in 
-    delivered state with the accounting resource
-    """
-    sequence_list = SequenceList()
-    sequence_string =  \
-        self.prepare_computer_partition_accounting_resource_delivered_sequence_string + '\
-      SlapLoginCurrentComputer \
-      CheckStartedComputerPartitionGetStateCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \

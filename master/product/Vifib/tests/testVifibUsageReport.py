@@ -103,7 +103,7 @@ class TestVifibUsageReportMixin(TestVifibSlapWebServiceMixin):
 
   prepare_configured_instance = """ \
     InitializeTime""" + \
-    TestVifibSlapWebServiceMixin.prepare_confirmed_cleanup_resource_packing_list
+    TestVifibSlapWebServiceMixin.prepare_destroy_requested_computer_partition
 
   prepare_reported_usage_call = """ \
     SlapLoginCurrentComputer \

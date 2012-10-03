@@ -470,18 +470,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         self.portal.portal_preferences.getPreferredInstanceCleanupResource(),
         sequence)
 
-  def stepCheckComputerPartitionInstanceUpdateSalePackingListConfirmed(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('confirmed',
-        self.portal.portal_preferences.getPreferredInstanceUpdateResource(),
-        sequence)
-
-  def stepCheckComputerPartitionInstanceCleanupSalePackingListCancelled(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('cancelled',
-        self.portal.portal_preferences.getPreferredInstanceCleanupResource(),
-        sequence)
-
   def stepCheckComputerPartitionInstanceCleanupSalePackingListConfirmed(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('confirmed',
@@ -494,22 +482,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         self.portal.portal_preferences.getPreferredInstanceCleanupResource(),
         sequence)
 
-  def stepCheckComputerPartitionInstanceSetupSalePackingListCancelled(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('cancelled',
-        self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
   def stepCheckComputerPartitionInstanceSetupSalePackingListDelivered(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('delivered',
         self.portal.portal_preferences.getPreferredInstanceSetupResource(),
-        sequence)
-
-  def stepCheckComputerPartitionInstanceHostingSalePackingListCancelled(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('cancelled',
-        self.portal.portal_preferences.getPreferredInstanceHostingResource(),
         sequence)
 
   def stepCheckComputerPartitionInstanceHostingSalePackingListConfirmed(self,
@@ -545,34 +521,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepCheckComputerPartitionAccoutingResourceSalePackingListCancelled(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('cancelled',
-        self.portal.portal_catalog.getResultValue(
-          uid=sequence['service_uid']).getRelativeUrl(),
-        sequence)
-
-  def stepCheckComputerPartitionAccoutingResourceSalePackingListConfirmed(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('confirmed',
-        self.portal.portal_catalog.getResultValue(
-          uid=sequence['service_uid']).getRelativeUrl(),
-        sequence)
-
-  def stepCheckComputerPartitionAccoutingResourceSalePackingListStarted(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('started',
-        self.portal.portal_catalog.getResultValue(
-          uid=sequence['service_uid']).getRelativeUrl(),
-        sequence)
-
-  def stepCheckComputerPartitionAccoutingResourceSalePackingListStopped(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('stopped',
-        self.portal.portal_catalog.getResultValue(
-          uid=sequence['service_uid']).getRelativeUrl(),
-        sequence)
-
-  def stepCheckComputerPartitionAccoutingResourceSalePackingListDelivered(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('delivered',
         self.portal.portal_catalog.getResultValue(
           uid=sequence['service_uid']).getRelativeUrl(),
         sequence)
@@ -1128,20 +1076,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout
   """
 
-  prepare_confirmed_cleanup_resource_packing_list = \
-      prepare_installed_computer_partition_sequence_string + """
-      LoginDefaultUser
-      CreateSalePackingList
-      Tic
-      CreateSalePackingListLine
-      Tic
-      SetSalePackingListLineCleanupResource
-      SetSalePackingListLineAggregate
-      StartBuildingSalePackingList
-      ConfirmSalePackingList
-      Tic
-      """
-
   prepare_destroy_requested_computer_partition = \
       prepare_installed_computer_partition_sequence_string + '\
       LoginTestVifibCustomer \
@@ -1213,51 +1147,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout \
   '
 
-  prepare_computer_partition_accounting_resource_sequence_string = \
-      prepare_installed_computer_partition_sequence_string + '\
-      LoginDefaultUser \
-      CreateSalePackingList \
-      CreateAccountingService \
-      Tic \
-      CreateSalePackingListLine \
-      Tic \
-      SetSalePackingListLineAccountingResource \
-      SetSalePackingListLineAggregate \
-      Tic \
-      StartBuildingSalePackingList \
-      ConfirmSalePackingList \
-      Tic \
-      CheckComputerPartitionAccoutingResourceSalePackingListConfirmed \
-      Logout \
-      '
-
-  prepare_computer_partition_accounting_resource_started_sequence_string = \
-      prepare_computer_partition_accounting_resource_sequence_string + '\
-      LoginDefaultUser \
-      StartSalePackingList \
-      Tic \
-      CheckComputerPartitionAccoutingResourceSalePackingListStarted \
-      Logout \
-      '
-
-  prepare_computer_partition_accounting_resource_stopped_sequence_string = \
-      prepare_computer_partition_accounting_resource_started_sequence_string + '\
-      LoginDefaultUser \
-      StopSalePackingList \
-      Tic \
-      CheckComputerPartitionAccoutingResourceSalePackingListStopped \
-      Logout \
-      '
-
-  prepare_computer_partition_accounting_resource_delivered_sequence_string = \
-      prepare_computer_partition_accounting_resource_stopped_sequence_string + '\
-      LoginDefaultUser \
-      DeliverSalePackingList \
-      Tic \
-      CheckComputerPartitionAccoutingResourceSalePackingListDelivered \
-      Logout \
-      '
-
   prepare_children_a_children_b_sequence_string = \
       prepare_install_requested_computer_partition_sequence_string + \
       """
@@ -1301,38 +1190,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       SetChildrenBComputerPartition
       Logout
       """
-
-  requesting_computer_partition_with_software_instance = """
-      SelectNewComputerPartitionReference
-      CreateComputerPartition
-      CreateSalePackingList
-      Tic
-      CreateSalePackingListLine
-      Tic
-      SetSalePackingListLineSetupResource
-      SetSalePackingListLineAggregate
-      ConfirmSalePackingList
-      StartBuildingSalePackingList
-      Tic
-  """
-
-  slave_owner_computer_partition_with_software_instance = """
-      SelectNewComputerPartitionReference
-      CreateComputerPartition
-      SetSoftwareInstanceTitle
-      CreateSalePackingList
-      Tic
-      CreateSalePackingListLine
-      Tic
-      SetSalePackingListLineSetupResource
-      SetSalePackingListLineAggregate
-      ConfirmSalePackingList
-      StartBuildingSalePackingList
-      Tic
-      SetComputerPartitionQuantity
-      Tic
-      SelectCurrentComputerPartitionAsSlaveOwner
-  """
 
   prepare_another_computer_sequence_string = """
     StoreComputerReference
@@ -1482,19 +1339,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
           )
     self.assertEquals(0, len(result_list))
 
-  def stepCreateAccountingService(self, sequence, **kw):
-    """
-    Create an accounting service
-    """
-    module = self.portal.getDefaultModule(
-        portal_type=self.service_portal_type)
-    service = module.newContent(
-        portal_type=self.service_portal_type,
-        title="A custom accounting service")
-    self.markManualCreation(service)
-    service.validate()
-    sequence.edit(service_uid=service.getUid())
-
   def stepCheckDraftComputerState(self, sequence, **kw):
     """
     Check that computer document is draft.
@@ -1551,17 +1395,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def stepSelect0QuantityComputerPartition(self, sequence, **kw):
     sequence.edit(computer_partition_quantity=0)
-
-  def stepSetComputerPartitionQuantity(self, sequence, **kw):
-    """
-    Set Computer Partition quantity, defaults to 1
-    """
-    computer_partition_uid = sequence["computer_partition_uid"]
-    computer_partition = self.portal.portal_catalog.getResultValue(
-        uid=computer_partition_uid)
-    quantity = sequence.get('computer_partition_quantity',
-        1)
-    computer_partition.edit(quantity=quantity)
 
   def stepSelectCurrentComputerPartitionAsSlaveOwner(self, sequence, **kw):
     computer_partition_uid = sequence["computer_partition_uid"]
@@ -2719,95 +2552,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     self.assertRaises(slap.Unauthorized, computer_partition.building)
 
-  def stepCreateSalePackingList(self, sequence, **kw):
-    """
-    Create an sale packing list document.
-    """
-    module = self.portal.getDefaultModule(
-        portal_type=self.sale_packing_list_portal_type)
-    order = module.newContent(
-        portal_type=self.sale_packing_list_portal_type,
-        specialise='sale_trade_condition_module/vifib_trade_condition',
-        source='organisation_module/vifib_internet',
-        source_section='organisation_module/vifib_internet',
-        # XXX Hardcoded values
-        destination='person_module/test_vifib_customer',
-        destination_section='person_module/test_vifib_customer',
-        destination_decision='person_module/test_vifib_customer',
-        price_currency='currency_module/EUR',
-        start_date=DateTime(),
-        )
-    self.markManualCreation(order)
-    sequence.edit(sale_packing_list_uid=order.getUid())
-
-  def stepStartBuildingSalePackingList(self, sequence, **kw):
-    delivery = self.portal.portal_catalog.getResultValue(
-      uid=sequence['sale_packing_list_uid'])
-    delivery.startBuilding()
-
-  def stepCreateSalePackingListLine(self, sequence, **kw):
-    """
-    Create an sale packing list line document.
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    line = order.newContent(
-        portal_type=self.sale_packing_list_line_portal_type,
-        quantity=1,
-        price=1
-        )
-    self.markManualCreation(line)
-    sequence.edit(sale_packing_list_line_uid=line.getUid())
-
-  def stepSetSalePackingListLineSetupResource(self, sequence, **kw):
-    """
-    Associate the setup service to the sale packing list line.
-    """
-    line = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_line_uid"])
-    line.edit(resource=self.portal.portal_preferences\
-        .getPreferredInstanceSetupResource())
-
-  def stepSetSalePackingListLineHostingResource(self, sequence, **kw):
-    """
-    Associate the hosting service to the sale packing list line.
-    """
-    line = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_line_uid"])
-    line.edit(resource=self.portal.portal_preferences\
-        .getPreferredInstanceHostingResource())
-
-  def stepSetSalePackingListLineCleanupResource(self, sequence, **kw):
-    """
-    Associate the cleanup service to the sale packing list line.
-    """
-    line = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_line_uid"])
-    line.edit(resource=self.portal.portal_preferences\
-        .getPreferredInstanceCleanupResource())
-
-  def stepSetSalePackingListLineAccountingResource(self, sequence, **kw):
-    """
-    Associate an accounting service to the sale packing list line.
-    """
-    line = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_line_uid"])
-    service_uid = sequence['service_uid']
-    line.edit(resource_uid=service_uid)
-
-  def stepSetSalePackingListLineAggregate(self, sequence, **kw):
-    """
-    Associate a computer and a software release to the sale packing list line.
-    """
-    line = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_line_uid"])
-    line.edit(
-        aggregate_uid_list=[sequence["computer_partition_uid"],
-                            sequence["hosting_subscription_uid"],
-                            sequence["software_instance_uid"],
-                            sequence["software_release_uid"]]
-        )
-
   def stepCheckNotFoundComputerPartitionBuildingAfterRegisterCall(self, sequence,
       **kw):
     """
@@ -2832,46 +2576,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         uid=sequence["sale_packing_list_uid"])
     self.assertRaises(UnsupportedWorkflowMethod,
         order.portal_workflow.doActionFor, order, 'confirm_action')
-
-  def stepConfirmSalePackingList(self, sequence, **kw):
-    """
-    Confirm the sale packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'confirm_action')
-
-  def stepStartSalePackingList(self, sequence, **kw):
-    """
-    Start the sale packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'start_action')
-
-  def stepStopSalePackingList(self, sequence, **kw):
-    """
-    Stop the sale packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'stop_action')
-
-  def stepDeliverSalePackingList(self, sequence, **kw):
-    """
-    Deliver the sale packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'deliver_action')
-
-  def stepCancelSalePackingList(self, sequence, **kw):
-    """
-    Cancel the sale packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    order.portal_workflow.doActionFor(order, 'cancel_action')
 
   def stepCheckTicAndNotFoundComputerPartitionAvailableCall(self, sequence,
       **kw):
