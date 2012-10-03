@@ -85,7 +85,7 @@ class Recipe(GenericBaseRecipe):
         GIT_SSH=self.options['ssh_client']
     )
     launch_args = [self.options['slaprunner'].strip(), config_file,
-                   '--log_file', self.log_file]
+                   '--logfile', self.log_file]
     if self.optionIsTrue('debug', default=False):
       launch_args.append('--debug')
 
