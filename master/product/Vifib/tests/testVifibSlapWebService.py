@@ -251,9 +251,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       software_release_url=sequence['software_release_uri'],
       free_for_request=1)[0][0]
 
-  def stepCheckSoftwareReleaseAvailableForRequest(self, sequence, **kw):
-    self.assertNotEqual(0, self._getRequestBasedComputerPartitionCount(sequence))
-
   def stepCheckSoftwareReleaseUnavailableForRequest(self, sequence, **kw):
     self.assertEqual(0, self._getRequestBasedComputerPartitionCount(sequence))
 
@@ -266,9 +263,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.getPortal().portal_skins.changeSkin("View")
     request.set('portal_skin', "View")
     return amount
-
-  def stepCheckSoftwareReleaseInPublicTable(self, sequence, **kw):
-    self.assertNotEqual(0, self._getSoftwareReleasePublicTableAmount(sequence))
 
   def stepCheckSoftwareReleaseNotInPublicTable(self, sequence, **kw):
     self.assertEqual(0, self._getSoftwareReleasePublicTableAmount(sequence))
@@ -343,23 +337,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         hosting_subscription_uid=software_instance.getAggregateRelatedValue(
           portal_type='Sale Order Line').getAggregateValue(
             portal_type='Hosting Subscription').getUid())
-
-  def stepSelectSoftwareInstanceFromCurrentSlaveInstance(self, sequence):
-    slave_instance_reference = sequence["software_instance_reference"]
-    slave_instance = self.portal.portal_catalog.getResultValue(
-        portal_type=self.slave_instance_portal_type,
-        reference=slave_instance_reference)
-    computer_partition = slave_instance.getAggregateRelatedValue(
-        portal_type="Sale Packing List Line").getAggregateValue(
-            portal_type="Computer Partition")
-    software_instance = self.portal.portal_catalog.getResultValue(
-        portal_type="Sale Packing List Line",
-        aggregate_uid=computer_partition.getUid(),
-        aggregatep_portal_type=self.software_instance_portal_type,
-        ).getAggregateValue(portal_type=self.software_instance_portal_type)
-    sequence.edit(
-        software_instance_uid=software_instance.getUid(),
-        software_instance_reference=software_instance.getReference())
 
   def stepSetCurrentPersonSlapRequestedSoftwareInstance(self, sequence, **kw):
     software_instance_list = []
@@ -464,12 +441,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepSetSoftwareTitleRandom(self, sequence, **kw):
     sequence['software_title'] = str(random())
 
-  def stepCheckComputerPartitionInstanceCleanupSalePackingListDoesNotExists(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListDoesNotExists(
-        self.portal.portal_preferences.getPreferredInstanceCleanupResource(),
-        sequence)
-
   def stepCheckComputerPartitionInstanceCleanupSalePackingListConfirmed(self,
       sequence, **kw):
     self._checkComputerPartitionSalePackingListState('confirmed',
@@ -516,13 +487,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       sequence, **kw):
     self._checkComputerPartitionNoSalePackingList(
         self.portal.portal_preferences.getPreferredInstanceHostingResource(),
-        sequence)
-
-  def stepCheckComputerPartitionAccoutingResourceSalePackingListCancelled(self,
-      sequence, **kw):
-    self._checkComputerPartitionSalePackingListState('cancelled',
-        self.portal.portal_catalog.getResultValue(
-          uid=sequence['service_uid']).getRelativeUrl(),
         sequence)
 
   def stepPersonRequestSlaveInstance(self, sequence, **kw):
@@ -634,23 +598,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     instance.requestStart(
-        software_release=instance.getRootSoftwareReleaseUrl(),
-        instance_xml=instance.getTextContent(),
-        software_type=instance.getSourceReference(),
-        sla_xml=instance.getSlaXml(),
-        shared=shared,
-        )
-
-  def stepRequestSoftwareInstanceStartRaisesValueError(self, sequence, **kw):
-    instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    if instance.getPortalType() == "Software Instance":
-      shared = False
-    elif instance.getPortalType() == "Slave Instance":
-      shared = True
-    else:
-      raise NotImplementedError
-    self.assertRaises(ValueError, instance.requestDestroy, 
         software_release=instance.getRootSoftwareReleaseUrl(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
@@ -1339,30 +1286,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
           )
     self.assertEquals(0, len(result_list))
 
-  def stepCheckDraftComputerState(self, sequence, **kw):
-    """
-    Check that computer document is draft.
-    """
-    computer_uid = sequence["computer_uid"]
-    computer = self.portal.portal_catalog.getResultValue(uid=computer_uid)
-    self.assertEquals("draft", computer.getValidationState())
-
-  def stepValidateComputer(self, sequence, **kw):
-    """
-    Validate the computer document.
-    """
-    computer_uid = sequence["computer_uid"]
-    computer = self.portal.portal_catalog.getResultValue(uid=computer_uid)
-    computer.validate()
-
-  def stepCheckValidatedComputerState(self, sequence, **kw):
-    """
-    Check that computer document is validated.
-    """
-    computer_uid = sequence["computer_uid"]
-    computer = self.portal.portal_catalog.getResultValue(uid=computer_uid)
-    self.assertEquals("validated", computer.getValidationState())
-
   def stepCheckUnauthorizedSlapGetComputerPartitionListCall(self, sequence,
       **kw):
     computer_guid = sequence.get("computer_reference", str(random()))
@@ -1392,30 +1315,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.slap.initializeConnection(self.server_url, timeout=None)
     self.assertRaises(slap.NotFoundError,
         self.slap.registerComputerPartition, computer_guid, partition_id)
-
-  def stepSelect0QuantityComputerPartition(self, sequence, **kw):
-    sequence.edit(computer_partition_quantity=0)
-
-  def stepSelectCurrentComputerPartitionAsSlaveOwner(self, sequence, **kw):
-    computer_partition_uid = sequence["computer_partition_uid"]
-    self.assertNotEqual(None, computer_partition_uid)
-    sequence.edit(slave_owner_uid=computer_partition_uid)
-
-  def stepCreateComputerPartition(self, sequence, **kw):
-    """
-    Create a computer partition document.
-    """
-    computer_uid = sequence["computer_uid"]
-    partition_reference = sequence["computer_partition_reference"]
-
-    computer = self.portal.portal_catalog.getResultValue(uid=computer_uid)
-    computer_partition = computer.newContent(
-        portal_type=self.computer_partition_portal_type,
-        reference=partition_reference)
-    self.markManualCreation(computer_partition)
-    # Mark newly created computer partition as free by default
-    computer_partition.markFree()
-    sequence.edit(computer_partition_uid=computer_partition.getUid())
 
   def stepCheckSuccessSlapRegisterComputerPartitionCall(self, sequence, **kw):
     """
@@ -1527,17 +1426,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.markManualCreation(software_release)
     sequence.edit(software_release_uid=software_release.getUid())
 
-  def stepCheckUnexistingSoftwareRelease(self, sequence, **kw):
-    """
-    Check that it is not present in the system.
-    """
-    url = sequence["software_release_uri"]
-    result_list = self.portal.portal_catalog(
-          portal_type=self.software_release_portal_type,
-          url_string=url,
-          )
-    self.assertEquals(0, len(result_list))
-
   def stepSetSoftwareProductToSoftwareRelease(self, sequence, **kw):
     """
     Associate software product to software release
@@ -1562,15 +1450,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release.portal_workflow.doActionFor(software_release,
                                                  'submit_action')
 
-  def stepPublishSoftwareRelease(self, sequence, **kw):
-    """
-    Validate the software release document.
-    """
-    software_release_uid = sequence["software_release_uid"]
-    software_release = self.portal.portal_catalog.getResultValue(
-        uid=software_release_uid)
-    software_release.publish()
-
   def stepPublishByActionSoftwareRelease(self, sequence, **kw):
     """
     Validate the software release document.
@@ -1581,39 +1460,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release.portal_workflow.doActionFor(software_release,
                                                  'publish_action')
 
-  def stepCheckDraftSoftwareReleaseState(self, sequence, **kw):
-    """
-    Check that software release is draft.
-    """
-    software_release_uid = sequence["software_release_uid"]
-    software_release = self.portal.portal_catalog.getResultValue(
-        uid=software_release_uid)
-    self.assertEquals("draft", software_release.getValidationState())
-
-  def stepCheckPublishedSoftwareReleaseState(self, sequence, **kw):
-    """
-    Check that software release is validated.
-    """
-    software_release_uid = sequence["software_release_uid"]
-    software_release = self.portal.portal_catalog.getResultValue(
-        uid=software_release_uid)
-    self.assertEquals("published", software_release.getValidationState())
-
-  def stepCheckNotFoundComputerGetComputerPartitionCall(self, sequence, **kw):
-    """
-    Check that Computer.getComputerPartitionList is successfully called.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    self.assertRaises(slap.NotFoundError, computer.getComputerPartitionList)
-
   def stepSelectYetAnotherRequestedReference(self, sequence, **kw):
     sequence.edit(requested_reference='yet_another_requested_reference')
-
-  def stepSelectYetAnotherRequestedSoftwareType(self, sequence, **kw):
-    sequence.edit(requested_software_type='yet_another_requested_software_type')
 
   def stepSelectAnotherRequestedReference(self, sequence, **kw):
     sequence.edit(requested_reference='another_requested_reference')
@@ -1862,144 +1710,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sequence.edit(software_instance_uid=root_software_instance_uid,
                   computer_partition_reference=computer_partition_reference)
 
-  def stepRequestComputerPartitionDifferentReferenceSameTransaction(self,
-      sequence, **kw):
-    software_release_uri = sequence['software_release_uri']
-    computer_guid = sequence["computer_reference"]
-    requested_parameter_dict = sequence['requested_parameter_dict']
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-
-    # Slap Tool have to be used directly to simulate same transaction
-
-    raise NotImplementedError("Do not test slap tool but slap library")
-    children_software_instance = software_instance\
-        .SoftwareInstance_findAlreadyExisting('children_a')
-    slap_tool_response = self.portal.portal_slap.requestComputerPartition(
-        computer_guid, children_software_instance\
-            .SoftwareInstance_getComputerPartition().getReference(),
-            software_release_uri, 'children_a_child',
-            requested_parameter_dict)
-    self.assertEqual(408, slap_tool_response.getStatus())
-
-    children_software_instance = software_instance\
-        .SoftwareInstance_findAlreadyExisting('children_b')
-    slap_tool_response = self.portal.portal_slap.requestComputerPartition(
-        computer_guid, children_software_instance\
-            .SoftwareInstance_getComputerPartition().getReference(),
-            software_release_uri, 'children_b_child',
-            requested_parameter_dict)
-    self.assertEqual(408, slap_tool_response.getStatus())
-
-  def stepRequestComputerPartitionSameReferenceSameTransaction(self, sequence,
-      **kw):
-    raise NotImplementedError('Wrong logic')
-    software_release_uri = sequence['software_release_uri']
-    requested_reference = sequence['requested_reference']
-    computer_guid = sequence["computer_reference"]
-    requested_parameter_dict = sequence['requested_parameter_dict']
-    software_instance_uid = sequence['software_instance_uid']
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    self.slap = slap.slap()
-
-    # Slap Tool have to be used directly to simulate same transaction
-    children_software_instance = \
-      software_instance.portal_catalog.getResultValue(
-          portal_type="Software Instance", source_reference='children_a',
-          root_uid=software_instance_uid)
-    movement = children_software_instance.getAggregateRelatedValue(
-                                    portal_type="Sale Packing List Line")
-    children_partition = movement.getAggregateValue(
-                                    portal_type="Computer Partition")
-    slap_computer_partition = self.slap.registerComputerPartition(
-                                            computer_guid,
-                                            children_partition.getReference())
-    slap_computer_partition.request(
-        software_release=software_release_uri, software_type=requested_reference,
-        partition_reference=requested_reference,
-        partition_parameter_kw=requested_parameter_dict)
-
-    children_software_instance = \
-      software_instance.portal_catalog.getResultValue(
-          portal_type="Software Instance", source_reference='children_b',
-          root_uid=software_instance_uid)
-    movement = children_software_instance.getAggregateRelatedValue(
-                                    portal_type="Sale Packing List Line")
-    children_partition = movement.getAggregateValue(
-                                    portal_type="Computer Partition")
-    slap_computer_partition = self.slap.registerComputerPartition(
-                                            computer_guid,
-                                            children_partition.getReference())
-    slap_computer_partition.request(
-        software_release=software_release_uri,
-        software_type=requested_reference,
-        partition_reference=requested_reference,
-        partition_parameter_kw=requested_parameter_dict)
-
-  def stepRequestSoftwareInstanceStartCheckSerializeIsCalled(self, sequence):
-    # check that on being_requested serialise is being called
-    # code stolen from testERP5Security:test_MultiplePersonReferenceConcurrentTransaction
-    class DummyTestException(Exception):
-      pass
-
-    def verify_serialize_call(self):
-      # it is checking that anything below computer_module raises exception
-      # thanks to this this test do not have to be destructive
-      if self.getPortalType() == "Software Instance":
-        raise DummyTestException
-      else:
-        return self.serialize_call()
-
-    from Products.ERP5Type.Base import Base
-    Base.serialize_call = Base.serialize
-    Base.serialize = verify_serialize_call
-
-    try:
-      self.assertRaises(DummyTestException,
-        self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid']).requestStartComputerPartition)
-    finally:
-      Base.serialize = Base.serialize_call
-
-  def stepRequestSoftwareInstanceDestroyCheckSerializeIsCalled(self, sequence):
-    # check that on being_requested serialise is being called
-    # code stolen from testERP5Security:test_MultiplePersonReferenceConcurrentTransaction
-    class DummyTestException(Exception):
-      pass
-
-    def verify_serialize_call(self):
-      # it is checking that anything below computer_module raises exception
-      # thanks to this this test do not have to be destructive
-      if self.getPortalType() == "Software Instance":
-        raise DummyTestException
-      else:
-        return self.serialize_call()
-
-    from Products.ERP5Type.Base import Base
-    Base.serialize_call = Base.serialize
-    Base.serialize = verify_serialize_call
-
-    instance = self.portal.portal_catalog.getResultValue(
-        uid=sequence['software_instance_uid'])
-    if instance.getPortalType() == "Software Instance":
-      shared = False
-    elif instance.getPortalType() == "Slave Instance":
-      shared = True
-    else:
-      raise NotImplementedError
-    try:
-      self.assertRaises(DummyTestException,instance.requestDestroy, 
-        software_release=instance.getRootSoftwareReleaseUrl(),
-        instance_xml=instance.getTextContent(),
-        software_type=instance.getSourceReference(),
-        sla_xml=instance.getSlaXml(),
-        shared=shared,
-        )
-    finally:
-      Base.serialize = Base.serialize_call
-
   def stepConfirmSaleOrderOrderedToCheckSerializeCalledOnSelected(
       self, sequence, **kw):
 
@@ -2222,17 +1932,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     computer = self.slap.registerComputer(computer_guid)
     self.assertRaises(slap.Unauthorized, computer.getSoftwareReleaseList)
 
-  def stepCheckNotFoundComputerGetSoftwareReleaseListCall(self, sequence, **kw):
-    """
-    Check that Computer.getSoftwareReleaseList raise NotFoundError is the
-    computer doesn't exist.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    self.assertRaises(slap.NotFoundError, computer.getSoftwareReleaseList)
-
   def stepCheckEmptyComputerGetSoftwareReleaseListCall(self, sequence, **kw):
     """
     Check that Computer.getSoftwareReleaseList returns an empty list.
@@ -2283,58 +1982,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     self.assertRaises(slap.NotFoundError, software_release.building)
 
-  def stepCheckSuccessSoftwareReleaseBuildingCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.building works.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    software_release.building()
-
-  def stepCheckNotFoundSoftwareReleaseBuildingCall(self, sequence, **kw):
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    software_release = self.slap.registerSoftwareRelease(
-        sequence['software_release_uri'])
-    # Note: Hackish
-    software_release._computer_guid = computer_guid
-    self.assertRaises(slap.NotFoundError, software_release.building)
-
-  def stepCheckTicAndNotFoundSoftwareReleaseBuildingCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.building raises NotFoundError
-    after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    self.tic()
-    transaction.commit()
-
-    self.assertRaises(slap.NotFoundError, software_release.building)
-
-  def stepCheckNotFoundSoftwareReleaseAvailableCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.available raises NotFound
-    after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    software_release = self.slap.registerSoftwareRelease(
-        sequence['software_release_uri'])
-    # Note: Hackish
-    software_release._computer_guid = computer_guid
-    self.assertRaises(slap.NotFoundError, software_release.available)
-
   def stepCheckNotFoundSoftwareReleaseDestroyedCall(self, sequence, **kw):
     computer_guid = sequence["computer_reference"]
     self.slap = slap.slap()
@@ -2344,64 +1991,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     # Note: Hackish
     software_release._computer_guid = computer_guid
     self.assertRaises(slap.NotFoundError, software_release.destroyed)
-
-  def stepCheckTicAndNotFoundSoftwareReleaseAvailableCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.available raises NotFound
-    after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    self.tic()
-    transaction.commit()
-
-    self.assertRaises(slap.NotFoundError, software_release.available)
-
-  def stepCheckSoftwareReleaseErrorCall(self, sequence, **kw):
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    software_release = self.slap.registerSoftwareRelease(
-        sequence['software_release_uri'])
-    # Note: Hackish
-    software_release._computer_guid = computer_guid
-    software_release.error("ErrorLog")
-
-  def stepCheckTicAndSoftwareReleaseErrorCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.error raises NotFound
-    after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    self.tic()
-    transaction.commit()
-
-    software_release.error("ErrorLog")
-
-  def stepCheckTicAndNotFoundSoftwareReleaseErrorCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.error raises NotFound
-    after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    self.tic()
-    transaction.commit()
-
-    self.assertRaises(slap.NotFoundError, software_release.error, "ErrorLog")
 
   def stepCheckNotFoundSoftwareReleaseDestroyedAfterRegisterCall(self, sequence,
       **kw):
@@ -2425,39 +2014,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     self.assertRaises(slap.NotFoundError, software_release.available)
 
-  def stepCheckSuccessSoftwareReleaseAvailableCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.available works.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    software_release.available()
-
-  def stepCheckSuccessSoftwareReleaseDestroyedCall(self, sequence, **kw):
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    software_release.destroyed()
-
-  def stepCheckUnauthorizedSoftwareReleaseAvailableCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.available is Unauthorized
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    self.assertRaises(slap.Unauthorized, software_release.available)
-
   def stepCheckNotFoundSoftwareReleaseErrorAfterRegisterCall(self, sequence,
       **kw):
     """
@@ -2470,87 +2026,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release = self.slap.registerSoftwareRelease(url)
 
     self.assertRaises(slap.NotFoundError, software_release.error, "ErrorLog")
-
-  def stepCheckSuccessSoftwareReleaseErrorCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.error works.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    software_release.error("ErrorLog")
-
-  def stepCheckUnauthorizedSoftwareReleaseBuildingCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.building raises an Unauthorized error
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    self.assertRaises(slap.Unauthorized, software_release.building)
-
-  def stepCheckTicAndSuccessSoftwareReleaseErrorCall(self, sequence, **kw):
-    """
-    Check that calling SoftwareRelease.building is OK
-    after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer = self.slap.registerComputer(computer_guid)
-    software_release = computer.getSoftwareReleaseList()[0]
-
-    self.tic()
-    transaction.commit()
-
-    software_release.error("ErrorLog")
-
-  def stepCheckSuccessComputerPartitionBuildingCall(self, sequence, **kw):
-    """
-    Check that calling ComputerPartition.building works
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    computer_partition.building()
-
-  def stepCheckNotFoundComputerPartitionBuildingCall(self, sequence, **kw):
-    """
-    Check that calling ComputerPartition.building after just registration raises a
-    NotFound
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.assertRaises(slap.NotFoundError, computer_partition.building)
-
-  def stepCheckUnauthorizedComputerPartitionBuildingCall(self, sequence, **kw):
-    """
-    Check that calling ComputerPartition.building after just registration raises a
-    Unauthorized
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.assertRaises(slap.Unauthorized, computer_partition.building)
 
   def stepCheckNotFoundComputerPartitionBuildingAfterRegisterCall(self, sequence,
       **kw):
@@ -2567,51 +2042,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
     self.assertRaises(slap.NotFoundError, computer_partition.building)
 
-  def stepAssertConfirmSalePackingListRaisesUnsupportedWorkflowMethod(self,
-      sequence, **kw):
-    """
-    Confirm the sale packing list
-    """
-    order = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    self.assertRaises(UnsupportedWorkflowMethod,
-        order.portal_workflow.doActionFor, order, 'confirm_action')
-
-  def stepCheckTicAndNotFoundComputerPartitionAvailableCall(self, sequence,
-      **kw):
-    """
-    Check that calling ComputerPartition.building raises a NotFoundError
-    after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.tic()
-    transaction.commit()
-
-    self.assertRaises(slap.NotFoundError, computer_partition.available)
-
-  def stepCheckTicAndNotFoundComputerPartitionBuildingCall(self, sequence, **kw):
-    """
-    Check that calling ComputerPartition.building raises a NotFoundError
-    after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.tic()
-    transaction.commit()
-
-    self.assertRaises(slap.NotFoundError, computer_partition.building)
-
   def stepCheckNotFoundComputerPartitionAvailableAfterRegisterCall(self,
       sequence, **kw):
     """
@@ -2620,32 +2050,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     """
     computer_guid = sequence["computer_reference"]
     partition_id = sequence["computer_partition_reference_list"][0]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.assertRaises(slap.NotFoundError, computer_partition.available)
-
-  def stepCheckUnauthorizedComputerPartitionAvailableCall(self, sequence, **kw):
-    """
-    Check that calling ComputerPartition.available raises an Unauthorized error
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.assertRaises(slap.Unauthorized, computer_partition.available)
-
-  def stepCheckNotFoundComputerPartitionAvailableCall(self, sequence, **kw):
-    """
-    Check that calling ComputerPartition.available raises a NotFoundError
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
     computer_partition = self.slap.registerComputerPartition(
@@ -2678,37 +2082,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         computer_guid, partition_id)
     self.assertRaises(slap.NotFoundError, computer_partition.destroyed)
 
-  def stepCheckSuccessComputerPartitionAvailableCall(self, sequence, **kw):
-    """
-    Check that calling ComputerPartition.available raises an Unauthorized error
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    computer_partition.available()
-
-  def stepCheckTicAndUnauthorizedComputerPartitionAvailableCall(self, sequence,
-      **kw):
-    """
-    Check that calling ComputerPartition.available raises an Unauthorized error
-    after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.tic()
-    transaction.commit()
-
-    self.assertRaises(slap.Unauthorized, computer_partition.available)
-
   def stepCheckNotFoundComputerPartitionErrorAfterRegisterCall(self, sequence,
       **kw):
     """
@@ -2721,18 +2094,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.slap.initializeConnection(self.server_url, timeout=None)
     self.slap.registerComputerPartition(
         computer_guid, partition_id)
-
-  def stepCheckNotFoundComputerPartitionErrorCall(self, sequence, **kw):
-    """
-    Check that calling ComputerPartition.error works.
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-    self.assertRaises(slap.NotFoundError, computer_partition.error, "ErrorLog")
 
   def stepCheckSuccessComputerPartitionErrorCall(self, sequence, **kw):
     """
@@ -2777,62 +2138,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         uid=sequence["sale_packing_list_uid"])
     self.assertFalse(packing_list.getComment('').endswith("ErrorLog"))
 
-  def stepCheckCancelledSalePackingList(self, sequence, **kw):
-    """
-    Check that the sale packing list is cancelled
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    self.assertEquals("cancelled", packing_list.getSimulationState())
-
-  def stepCheckConfirmedSalePackingList(self, sequence, **kw):
-    """
-    Check that the sale packing list is confirmed
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    self.assertEquals("confirmed", packing_list.getSimulationState())
-
-  def stepCheckStartedSalePackingList(self, sequence, **kw):
-    """
-    Check that the sale packing list is started
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    self.assertEquals("started", packing_list.getSimulationState())
-
-  def stepCheckStoppedSalePackingList(self, sequence, **kw):
-    """
-    Check that the sale packing list is stopped
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    self.assertEquals("stopped", packing_list.getSimulationState())
-
-  def stepCheckDeliveredSalePackingList(self, sequence, **kw):
-    """
-    Check that the sale packing list is delivered
-    """
-    packing_list = self.portal.portal_catalog.getResultValue(
-        uid=sequence["sale_packing_list_uid"])
-    self.assertEquals("delivered", packing_list.getSimulationState())
-
-  def stepCheckTicAndSuccessComputerPartitionErrorCall(self, sequence, **kw):
-    """
-    Check that calling ComputerPartition.error works.
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.tic()
-    transaction.commit()
-
-    computer_partition.error("ErrorLog")
-
   def stepCheckNotFoundComputerPartitionGetSoftwareReleaseAfterRegisterCall(
       self, sequence, **kw):
     """
@@ -2864,38 +2169,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release = computer_partition.getSoftwareRelease()
     self.assertTrue(isinstance(software_release, slap.SoftwareRelease))
     self.assertEquals(url, software_release.getURI())
-
-  def stepCheckNotFoundComputerPartitionGetSoftwareReleaseCall(self, sequence,
-      **kw):
-    """
-    Check that calling ComputerPartition.getSoftwareRelease raise NotFoundError
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.assertRaises(slap.NotFoundError, computer_partition.getSoftwareRelease)
-
-  def stepCheckTicAndNotFoundComputerPartitionGetSoftwareReleaseCall(self,
-      sequence, **kw):
-    """
-    Check that calling ComputerPartition.getSoftwareRelease raises an
-    NotFoundError after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.tic()
-    transaction.commit()
-
-    self.assertRaises(slap.NotFoundError, computer_partition.getSoftwareRelease)
 
   def stepCheckSuccessComputerPartitionGetInstanceParameterDictCall(self,
       sequence, **kw):
@@ -2949,26 +2222,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     }
     self.assertSameDict(expected, result)
 
-  def stepSetSoftwareInstanceValidTestParameterXML(self, sequence, **kw):
-    """
-    Set valid XML on the software instance
-    """
-    software_instance_uid = sequence["software_instance_uid"]
-    software_instance = self.portal.portal_catalog.getResultValue(
-        uid=software_instance_uid)
-    test_parameter_id = 'test_parameter_id'
-    test_parameter_value = 'test_parameter_value'
-    software_instance.edit(text_content="""<?xml version="1.0" encoding="utf-8"?>
-<instance>
-
-<parameter id="%s">%s</parameter>
-
-</instance>""" % (test_parameter_id, test_parameter_value))
-    sequence.edit(
-      test_parameter_id=test_parameter_id,
-      test_parameter_value=test_parameter_value
-    )
-
   def stepSetSoftwareInstanceValidXML(self, sequence, **kw):
     """
     Set valid XML on the software instance
@@ -2997,16 +2250,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     requested_slap_computer_partition = sequence['requested_slap_computer_partition']
     self.assertRaises(slap.NotFoundError,
       requested_slap_computer_partition.getInstanceParameterDict)
-
-  def stepCheckRequestedComputerPartitionTestParameter(self, sequence, **kw):
-    requested_slap_computer_partition = sequence['requested_slap_computer_partition']
-    instance_parameter_dict = requested_slap_computer_partition\
-        .getInstanceParameterDict()
-    test_parameter_id = sequence['test_parameter_id']
-    test_parameter_value = sequence['test_parameter_value']
-    self.assertTrue(test_parameter_id in instance_parameter_dict)
-    self.assertEqual(test_parameter_value, instance_parameter_dict[
-      test_parameter_id])
 
   def stepCheckRequestedComputerPartitionRequestedParameter(self, sequence,
       **kw):
@@ -3051,19 +2294,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     }
     self.assertSameDict(expected, result)
 
-  def stepCheckNotFoundComputerPartitionGetStateCall(self, sequence, **kw):
-    """
-    Check that ComputerPartition.getState raises a NotFound error
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.assertRaises(slap.NotFoundError, computer_partition.getState)
-
   def stepCheckStoppedComputerPartitionGetStateCall(self, sequence, **kw):
     """
     Check that ComputerPartition.getState return 'stopped'
@@ -3103,25 +2333,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         computer_guid, partition_id)
 
     self.assertEquals('destroyed', computer_partition.getState())
-
-  def stepCheckTicAndUnauthorizedComputerPartitionGetStateCall(self, sequence,
-      **kw):
-    """
-    Check that calling ComputerPartition.getState raises an
-    Unauthorized error after using tic.
-    """
-    computer_guid = sequence["computer_reference"]
-    partition_id = sequence["computer_partition_reference"]
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    computer_partition = self.slap.registerComputerPartition(
-        computer_guid, partition_id)
-
-    self.tic()
-    transaction.commit()
-
-    self.assertRaises(slap.Unauthorized,
-                      computer_partition.getState)
 
   def stepCheckComputerPartitionIsFree(self, sequence, **kw):
     computer_partition_uid = sequence["computer_partition_uid"]
@@ -3668,9 +2879,6 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   def stepSetDeliveryLineAmountEqualTwo(self, sequence):
     sequence.edit(delivery_line_amount=2)
-
-  def stepSetDeliveryLineAmountEqualThree(self, sequence):
-    sequence.edit(delivery_line_amount=3)
 
   def stepSetDeliveryLineAmountEqualOne(self, sequence):
     sequence.edit(delivery_line_amount=1)

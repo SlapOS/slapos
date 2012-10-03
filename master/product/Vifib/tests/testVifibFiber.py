@@ -110,15 +110,6 @@ class TestVifibFiberSubscription(testVifibSecurityMixin):
     fiber_request = pending_request_list[0]
     sequence.edit(fiber_request_url=fiber_request.getRelativeUrl())
 
-  def stepStartFiberRequest(self,sequence=None,sequence_list=None, **kw):
-    """Start the fiber request present in sequence"""
-
-    fiber_request_url = sequence.get("fiber_request_url")
-    fiber_request = self.getPortal().restrictedTraverse(fiber_request_url)
-
-    self.modifyFiberRequestState("start_action",sequence,fiber_request)
-    self.assertEquals(fiber_request.getValidationState(), 'started') 
-
   def stepConfirmFiberRequest(self,sequence=None,sequence_list=None, **kw):
     """Confirm the fiber request present in sequence"""
     fiber_request_url = sequence.get("fiber_request_url")

@@ -172,19 +172,6 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
-  def stepDeliverInstanceSetupSalePackingList(self, sequence, **kw):
-    delivery = self.portal.portal_catalog.getResultValue(
-      default_aggregate_uid=ComplexQuery(
-         Query(default_aggregate_uid=sequence['computer_partition_uid']),
-         Query(default_aggregate_uid=sequence['software_instance_uid']),
-         operator="AND"),
-      portal_type=self.sale_packing_list_line_portal_type,
-      simulation_state='stopped',
-      resource_relative_url=self.portal.portal_preferences\
-        .getPreferredInstanceSetupResource()
-    ).getParentValue()
-    self.portal.portal_workflow.doActionFor(delivery, 'deliver_action')
-
   def test_Computer_getComputerPartitionList_HostingResource_ConfirmedState(self):
     """
     Check that calling Computer.getComputerPartitionList works in

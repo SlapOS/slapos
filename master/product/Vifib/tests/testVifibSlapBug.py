@@ -135,9 +135,6 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def stepRestoreSoftwareInstanceUidFromBufferA(self, sequence, **kw):
     sequence['software_instance_uid'] = sequence['buffer_a_software_instance_uid']
 
-  def stepRestoreSoftwareInstanceUidFromBufferB(self, sequence, **kw):
-    sequence['software_instance_uid'] = sequence['buffer_b_software_instance_uid']
-
   def stepRestoreComputerUidFromBufferA(self, sequence, **kw):
     sequence['computer_uid'] = sequence['buffer_a_computer_uid']
 
@@ -171,14 +168,8 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def stepRestoreComputerPartitionUidFromBufferA(self, sequence, **kw):
     sequence['computer_partition_uid'] = sequence['buffer_a_computer_partition_uid']
 
-  def stepRestoreComputerPartitionUidFromBufferB(self, sequence, **kw):
-    sequence['computer_partition_uid'] = sequence['buffer_b_computer_partition_uid']
-
   def stepRestoreComputerPartitionReferenceFromBufferA(self, sequence, **kw):
     sequence['computer_partition_reference'] = sequence['buffer_a_computer_partition_reference']
-
-  def stepRestoreComputerPartitionReferenceFromBufferB(self, sequence, **kw):
-    sequence['computer_partition_reference'] = sequence['buffer_b_computer_partition_reference']
 
   def stepCheckHostingSubscriptionMultipleComputerAuditor(self, sequence, **kw):
     hosting_subscription = self.portal.portal_catalog.getResultValue(
