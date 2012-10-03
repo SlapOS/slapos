@@ -1,0 +1,141 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+portal = context.getPortalObject()\n
+software_setup_resource = portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareSetupResource())\n
+software_cleanup_resource = portal.restrictedTraverse(portal.portal_preferences.getPreferredSoftwareCleanupResource())\n
+\n
+assert context.getPortalType() == \'Purchase Packing List\'\n
+assert context.getSimulationState() in (\'confirmed\', \'started\', \'stopped\', \'delivered\')\n
+\n
+line_list = context.contentValues(portal_type=\'Purchase Packing List Line\')\n
+\n
+assert len(line_list) == 1\n
+\n
+line = line_list[0]\n
+\n
+software_release = line.getAggregateValue(portal_type=\'Software Release\')\n
+computer = line.getAggregateValue(portal_type=\'Computer\')\n
+software_installation = line.getAggregateValue(portal_type=\'Software Installation\')\n
+assert software_release is not None\n
+assert computer is not None\n
+\n
+\n
+if software_installation is not None:\n
+  # nothing to do, as already visited\n
+  return None\n
+\n
+def getCurrentDeliveryLine(software_release, computer):\n
+  current_delivery_line = portal.portal_catalog.getResultValue(\n
+    default_resource_uid=[\n
+      software_setup_resource.getUid(),\n
+      software_cleanup_resource.getUid(),\n
+    ],\n
+    default_aggregate_uid=ComplexQuery(\n
+      Query(default_aggregate_uid=software_release.getUid()),\n
+      Query(default_aggregate_uid=computer.getUid()),\n
+      operator="AND",\n
+    ),\n
+    portal_type=\'Purchase Packing List Line\',\n
+    sort_on=((\'movement.start_date\', \'DESC\'),),\n
+    limit=1\n
+  )\n
+\n
+  return current_delivery_line\n
+\n
+current_packing_list_line = getCurrentDeliveryLine(software_release, computer)\n
+current_packing_list = current_packing_list_line.getParentValue()\n
+\n
+current_software_installation = current_packing_list_line.getAggregateValue(portal_type=\'Software Installation\')\n
+\n
+if current_software_installation is None:\n
+  software_installation_reference = "SOFTINSTALL-%s" % portal.portal_ids\\\n
+      .generateNewId(id_group=\'slap_software_installation_reference\', id_generator=\'uid\')\n
+  current_software_installation = portal.software_installation_module.newContent(\n
+    portal_type=\'Software Installation\',\n
+    reference=software_installation_reference,\n
+    aggregate=computer.getRelativeUrl(),\n
+    url_string=software_release.getUrlString(),\n
+    causality=current_packing_list.getRelativeUrl()\n
+  )\n
+  # always validate and start\n
+  current_software_installation.validate()\n
+  current_software_installation.requestStart(comment=\'Migration to Software Installation. Requested creation because of %s\' % current_packing_list.getPath())\n
+  aggregate_list = current_packing_list_line.getAggregateList()\n
+  aggregate_list.append(current_software_installation.getRelativeUrl())\n
+  current_packing_list_line.setAggregateList(aggregate_list)\n
+  current_resource = current_packing_list_line.getResource()\n
+  current_state = current_packing_list.getSimulationState()\n
+  if current_resource == software_cleanup_resource:\n
+    current_software_installation.requestDestroy(\'Requested destruction because of %s\' % current_packing_list.getPath())\n
+    if current_state == \'delivered\':\n
+      current_software_installation.invalidate(comment=\'Reported destruction because of %s\' % current_packing_list.getPath())\n
+  \n
+aggregate_list = line.getAggregateList()\n
+if current_packing_list.getRelativeUrl() != context.getRelativeUrl():\n
+  aggregate_list.append(current_software_installation.getRelativeUrl())\n
+  line.setAggregateList(aggregate_list)\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>PurchasePackingList_assertSoftwareInstallation</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
