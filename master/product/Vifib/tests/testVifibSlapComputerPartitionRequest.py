@@ -919,6 +919,8 @@ class TestVifibSlapComputerPartitionRequest(TestVifibSlapWebServiceMixin):
       CleanTic \
       SlapLogout \
       LoginDefaultUser \
+      CallOrderPlannedSaleOrderAlarm \
+      CleanTic \
       ConfirmSaleOrderOrderedToCheckSerializeCalledOnSelected \
       Logout \
       LoginERP5TypeTestCase \
