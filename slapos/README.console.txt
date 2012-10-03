@@ -5,7 +5,7 @@ The slapconsole tool allows to interact with a SlapOS Master throught the SLAP
 library.
 
 For more information about SlapOS or slapconsole usages, please go to 
-http://www.slapos.org.
+http://community.slapos.org.
 
 The slapconsole tool is only a bare Python console with several global variables
 defined and initialized.
