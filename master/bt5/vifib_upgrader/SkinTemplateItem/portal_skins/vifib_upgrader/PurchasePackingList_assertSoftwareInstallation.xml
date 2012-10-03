@@ -106,7 +106,8 @@ if current_software_installation is None:\n
     reference=software_installation_reference,\n
     aggregate=computer.getRelativeUrl(),\n
     url_string=software_release.getUrlString(),\n
-    causality=current_packing_list.getRelativeUrl()\n
+    causality=current_packing_list.getRelativeUrl(),\n
+    destination_section=current_packing_list.getDestinationSection()\n
   )\n
   # always validate and start\n
   current_software_installation.validate()\n
