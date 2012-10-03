@@ -15,4 +15,9 @@
    <property id='base_category_script'>ERP5Type_acquireSecurityFromOwner</property>
    <multi_property id='base_category'>source</multi_property>
   </role>
+  <role id='Assignee'>
+   <property id='title'>Provider of the Installation</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromSelf</property>
+   <multi_property id='base_category'>source_section</multi_property>
+  </role>
 </type_roles>
