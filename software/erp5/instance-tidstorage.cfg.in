@@ -7,6 +7,7 @@ Note: all port counters are pre-incremented. No idea why base port is skipped.
 {% set zope_dummy_list = [] -%}
 {% set current_apache_port = apache_port_base | int -%}
 {% set current_haproxy_port = haproxy_port_base | int -%}
+{% set current_squid_port = squid_port_base | int -%}
 {% set json = json_module.loads(slapparameter_dict['json']) -%}
 {% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
 {#
@@ -366,6 +367,7 @@ context =
 {% for backend_name, backend_configuration in json['backend'].iteritems() -%}
 {%   set haproxy_backend_list = [] -%}
 {%   set longrequest_logger = backend_configuration.get('longrequest-logger') -%}
+{%   set http_cache = backend_configuration.get('http-cache', False) -%}
 {%   for q in range(1, backend_configuration['zopecount'] + 1) -%}
 {%     set part_name = 'zope-%s-%s' % (backend_name, q) -%}
 {%     if longrequest_logger != None -%}
@@ -389,6 +391,31 @@ context =
 {%   set scheme = backend_configuration.get('scheme', ['https']) -%}
 {%   set current_apache_port = current_apache_port + 2 -%}
 {%   set current_haproxy_port = current_haproxy_port + 1 -%}
+{%   set current_squid_port = current_squid_port + 1 -%}
+
+{%   set apache_rewrite_to = 'haproxy' -%}
+{%     if http_cache -%}
+{%   set apache_rewrite_to = 'squid' -%}
+[{{ 'squid-' ~ backend_name ~ '-directory' }}]
+recipe = slapos.cookbook:mkdirectory
+cache-path = ${directory:var}/squid-{{ backend_name }}
+
+[{{ section('squid-' ~ backend_name) }}]
+recipe = slapos.cookbook:squid
+prepare-path = ${directory:services}/squid-{{ backend_name }}-prepare
+wrapper-path = ${directory:services}/squid-{{ backend_name }}
+binary-path = {{ parameter_dict['squid'] }}/sbin/squid
+conf-path = ${directory:etc}/squid-{{ backend_name }}.cfg
+cache-path = ${squid-{{ backend_name }}-directory:cache-path}
+ip = {{ ipv4 }}
+port = {{ current_squid_port }}
+backend-ip = ${haproxy-{{ backend_name }}:ip}
+backend-port = ${haproxy-{{ backend_name }}:port}
+access-log-path = ${directory:log}/squid-{{ backend_name }}-access.log
+cache-log-path = ${directory:log}/squid-{{ backend_name }}-cache.log
+pid-filename-path = ${directory:run}/squid-{{ backend_name }}.pid
+{%     endif -%}
+
 {%   if 'http' in scheme -%}
 {%     set section_name = 'apache-public-' ~ backend_name -%}
 {%     do publish_url_list.append(
@@ -398,7 +425,7 @@ context =
        }) -%}
 [{{ section(section_name) }}]
 recipe = slapos.cookbook:apache.zope.backend
-backend = http://${haproxy-{{ backend_name }}:ip}:${haproxy-{{ backend_name }}:port}
+backend = http://{{ '${' ~ apache_rewrite_to }}-{{ backend_name }}:ip}:{{ '${' ~ apache_rewrite_to }}-{{ backend_name }}:port}
 ip = {{ ipv6 }}
 port = {{ current_apache_port }}
 scheme = http
@@ -418,6 +445,8 @@ name = apache-public-{{ backend_name }}
 log = ${apache-public-{{ backend_name }}:error-log} ${apache-public-{{ backend_name }}:access-log}
 post = {{ bin_directory }}/killpidfromfile ${apache-public-{{ backend_name }}:pid-file} SIGUSR1
 {%   endif -%}
+
+
 {%   if 'https' in scheme -%}
 {%     set section_name = 'apache-' ~ backend_name -%}
 {%     do publish_url_list.append(
@@ -427,7 +456,7 @@ post = {{ bin_directory }}/killpidfromfile ${apache-public-{{ backend_name }}:pi
        }) -%}
 [{{ section(section_name) }}]
 recipe = slapos.cookbook:apache.zope.backend
-backend = http://${haproxy-{{ backend_name }}:ip}:${haproxy-{{ backend_name }}:port}
+backend = http://{{ '${' ~ apache_rewrite_to }}-{{ backend_name }}:ip}:{{ '${' ~ apache_rewrite_to }}-{{ backend_name }}:port}
 ip = {{ ipv6 }}
 port = {{ current_apache_port - 1 }}
 wrapper = ${directory:bin}/apache-{{ backend_name }}

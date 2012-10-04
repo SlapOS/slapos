@@ -28,6 +28,7 @@ context =
 [dynamic-template-tidstorage-parameters]
 apache = {{ apache_location }}
 haproxy = {{ haproxy_location }}
+squid = {{ squid_location }}
 dcron = {{ dcron_location }}
 logrotate = {{ logrotate_location }}
 gzip = {{ gzip_location }}
@@ -60,6 +61,7 @@ extra-context =
     raw zope_port_base 12000
     raw zeo_port_base 15000
     raw haproxy_port_base 11000
+    raw squid_port_base 16000
     raw apache_port_base 10000
     key ipv4_set slap-parameters:ipv4
     key ipv6_set slap-parameters:ipv6
