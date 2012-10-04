@@ -70,6 +70,9 @@ MANDATORY_PARAMETER_LIST = [
 
 COMPUTER_PARTITION_DESTROYED_STATE = 'destroyed'
 
+# XXX hardcoded watchdog_path
+WATCHDOG_PATH = '/opt/slapos/bin/watchdog'
+
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Parses arguments either from command line, from method parameters or from
      config file. Then returns a new instance of slapgrid.Slapgrid with those
@@ -451,11 +454,9 @@ class Slapgrid(object):
           computer_partition_filter_list.split(",")
     self.maximum_periodicity = maximum_periodicity
     self.force_periodicity = force_periodicity
-    # XXX hardcoded watchdog_path
-    self.watchdog_path = '/opt/slapos/bin/slapos-watchdog'
 
   def getWatchdogLine(self):
-    invocation_list = [self.watchdog_path]
+    invocation_list = [WATCHDOG_PATH]
     invocation_list.append("--master-url '%s' " % self.master_url)
     if self.key_file is not None and self.cert_file is not None:
       invocation_list.append("--cert-file %s" % self.cert_file)
