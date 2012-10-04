@@ -74,6 +74,13 @@ class Recipe(GenericBaseRecipe):
         config_repository_list.set(section_name, 'buildout_section_id',
                                    repository['buildout_section_id'])
       i += 1
+
+    software_path_list = json.loads(self.options['software-path-list'])
+    if software_path_list:
+      CONFIG["software_path_list"] = "[software_list]"
+      CONFIG["software_path_list"] += \
+          "\npath_list = %s" % ",".join(software_path_list)
+
     value = StringIO.StringIO()
     config_repository_list.write(value)
     CONFIG['repository_list'] = value.getvalue()

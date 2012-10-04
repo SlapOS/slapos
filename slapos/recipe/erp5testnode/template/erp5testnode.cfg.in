@@ -26,6 +26,8 @@ zip_binary = %(zip_binary)s
 [environment]
 PATH = %(PATH)s
 
+%(software_path_list)s
+
 %(instance_dict)s
 
 %(repository_list)s
