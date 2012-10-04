@@ -204,24 +204,25 @@ class SlapTool(BaseTool):
 
     slap_computer._computer_partition_list = []
     if user_type in ('Computer', 'Person'):
-      if not self._isTestRun():
-        cache_plugin = self._getCachePlugin()
-        try:
-          entry = cache_plugin.get(user, DEFAULT_CACHE_SCOPE)
-        except KeyError:
-          entry = None
-        if entry is not None and type(entry.getValue()) == type({}):
-          result = entry.getValue()['data']
-          if time.time() - entry.getValue()['time'] > 60 * 1:
-            # entry was stored 1 minutes ago, ask for recalculation
-            self._activateFillComputerInformationCache(computer_id, user, full)
-          return result
-        else:
-          self._activateFillComputerInformationCache(computer_id, user, full)
-          self.REQUEST.response.setStatus(503)
-          return self.REQUEST.response
-      else:
-        return self._getCacheComputerInformation(computer_id, user, full)
+#       if not self._isTestRun():
+#         cache_plugin = self._getCachePlugin()
+#         try:
+#           entry = cache_plugin.get(user, DEFAULT_CACHE_SCOPE)
+#         except KeyError:
+#           entry = None
+#         if entry is not None and type(entry.getValue()) == type({}):
+#           result = entry.getValue()['data']
+#           if time.time() - entry.getValue()['time'] > 60 * 1:
+#             # entry was stored 1 minutes ago, ask for recalculation
+#             self._activateFillComputerInformationCache(computer_id, user, full)
+#           return result
+#         else:
+#           self._activateFillComputerInformationCache(computer_id, user, full)
+#           self.REQUEST.response.setStatus(503)
+#           return self.REQUEST.response
+#       else:
+#         return self._getCacheComputerInformation(computer_id, user, full)
+      return self._getCacheComputerInformation(computer_id, user, full)
     else:
       slap_computer._software_release_list = []
     for computer_partition in self.getPortalObject().portal_catalog(
@@ -243,13 +244,23 @@ class SlapTool(BaseTool):
     """
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
     self._logAccess(user, user, '#access %s' % computer_id)
-    if not self._isTestRun():
-      return CachingMethod(self._getComputerInformation,
-                         id='_getComputerInformation',
-                         cache_factory='slap_cache_factory')(
-                            computer_id, user, False)
-    else:
-      return self._getComputerInformation(computer_id, user, False)
+#     if not self._isTestRun():
+#       result = CachingMethod(self._getComputerInformation,
+#                          id='_getComputerInformation',
+#                          cache_factory='slap_cache_factory')(
+#                             computer_id, user, False)
+#     else:
+#       result = self._getComputerInformation(computer_id, user, False)
+    result = self._getComputerInformation(computer_id, user, False)
+
+    # Keep in cache server for 1 year
+    self.REQUEST.response.setStatus(200)
+    self.REQUEST.response.setHeader('Cache-Control',
+                                    'max-age=60, stale-if-error=31536000')
+    self.REQUEST.response.setHeader('Vary',
+                                    'REMOTE_USER')
+    self.REQUEST.response.setBody(result)
+    return self.REQUEST.response
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getFullComputerInformation')
@@ -262,13 +273,23 @@ class SlapTool(BaseTool):
     """
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
     self._logAccess(user, user, '#access %s' % computer_id)
-    if not self._isTestRun():
-      return CachingMethod(self._getComputerInformation,
-                         id='_getFullComputerInformation',
-                         cache_factory='slap_cache_factory')(
-                            computer_id, user, True)
-    else:
-      return self._getComputerInformation(computer_id, user, True)
+#     if not self._isTestRun():
+#       return CachingMethod(self._getComputerInformation,
+#                          id='_getFullComputerInformation',
+#                          cache_factory='slap_cache_factory')(
+#                             computer_id, user, True)
+#     else:
+#       return self._getComputerInformation(computer_id, user, True)
+    result = self._getComputerInformation(computer_id, user, True)
+
+    # Keep in cache server for 1 year
+    self.REQUEST.response.setStatus(200)
+    self.REQUEST.response.setHeader('Cache-Control',
+                                    'max-age=60, stale-if-error=31536000')
+    self.REQUEST.response.setHeader('Vary',
+                                    'REMOTE_USER')
+    self.REQUEST.response.setBody(result)
+    return self.REQUEST.response
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getComputerPartitionCertificate')
@@ -573,7 +594,16 @@ class SlapTool(BaseTool):
           slave_instance_dict.update(self._instanceXmlToDict(
             slave_instance_dict.pop("xml")))
       slap_partition._parameter_dict.update(parameter_dict)
-    return xml_marshaller.xml_marshaller.dumps(slap_partition)
+    result = xml_marshaller.xml_marshaller.dumps(slap_partition)
+
+    # Keep in cache server for 1 year
+    self.REQUEST.response.setStatus(200)
+    self.REQUEST.response.setHeader('Cache-Control',
+                                    'max-age=60, stale-if-error=31536000')
+    self.REQUEST.response.setHeader('Vary',
+                                    'REMOTE_USER')
+    self.REQUEST.response.setBody(result)
+    return self.REQUEST.response
 
   ####################################################
   # Internal methods
