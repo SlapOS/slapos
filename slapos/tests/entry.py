@@ -127,11 +127,14 @@ class TestCall (BasicMixin, unittest.TestCase):
     options = ["--logfile /opt/slapos/logfile",
                "--pidfile /opt/slapos/pidfile"]
     config = '/etc/opt/slapos/slapos.cfg'
-    entry.call(fun, config=config, option=options)
+    try:
+      entry.call(fun, config=config, option=options)
+    except SystemExit, e:
+      self.assertEqual(e[0], 0)
     self.assertNotEqual(original_sysargv, sys.argv)
     for x in options:
       self.assertTrue(x in " ".join(sys.argv))
-    self.assertEqual(config, sys.argv[len(sys.argv) - 1])
+    self.assertEqual(config, sys.argv[1])
 
   def test_config_and_missing_option_are_added(self):
     """
@@ -149,12 +152,15 @@ class TestCall (BasicMixin, unittest.TestCase):
 
     options = [default_present_option, missing_option]
     config = '/etc/opt/slapos/slapos.cfg'
-    entry.call(fun, config=config, option=options)
+    try:
+      entry.call(fun, config=config, option=options)
+    except SystemExit, e:
+      self.assertEqual(e[0], 0)
     self.assertNotEqual(original_sysargv, sys.argv)
     for x in (missing_option, present_option):
       self.assertTrue(x in " ".join(sys.argv))
     self.assertFalse(default_present_option in " ".join(sys.argv))
-    self.assertEqual(config, sys.argv[len(sys.argv) - 1])
+    self.assertEqual(config, sys.argv[1])
 
   def test_present_config_and_option_are_not_added(self):
     """
@@ -173,5 +179,9 @@ class TestCall (BasicMixin, unittest.TestCase):
 
     options = [default_present_option]
     config = '/etc/opt/slapos/slapos.cfg'
-    entry.call(fun, config=config, option=options)
+    try:
+      entry.call(fun, config=config, option=options)
+    except SystemExit, e:
+      self.assertEqual(e[0], 0)
+
     self.assertEqual(original_sysargv, sys.argv)

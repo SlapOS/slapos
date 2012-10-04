@@ -132,7 +132,7 @@ def dispatch(command, is_node_command):
   elif command == 'stop':
     raise EntryPointNotImplementedError(command)
   elif command == 'console':
-    console()
+    call(console, config=USER_SLAPOS_CONFIGURATION)
   else:
     return False
 
