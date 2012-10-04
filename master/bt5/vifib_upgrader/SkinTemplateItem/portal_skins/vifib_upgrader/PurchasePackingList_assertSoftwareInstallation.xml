@@ -88,9 +88,10 @@ def getCurrentDeliveryLine(software_release, computer):\n
     ),\n
     portal_type=\'Purchase Packing List Line\',\n
     sort_on=((\'movement.start_date\', \'DESC\'),),\n
+    simulation_state=(\'confirmed\', \'started\', \'stopped\', \'delivered\'),\n
     limit=1\n
   )\n
-\n
+  assert current_delivery_line.getParentValue().getSimulationState() in (\'confirmed\', \'started\', \'stopped\', \'delivered\')\n
   return current_delivery_line\n
 \n
 current_packing_list_line = getCurrentDeliveryLine(software_release, computer)\n
