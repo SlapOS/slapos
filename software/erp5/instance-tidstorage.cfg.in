@@ -368,6 +368,7 @@ context =
 {%   set haproxy_backend_list = [] -%}
 {%   set longrequest_logger = backend_configuration.get('longrequest-logger') -%}
 {%   set http_cache = backend_configuration.get('http-cache', False) -%}
+{%   set no_timeout = backend_configuration.get('no-timeout', '') -%}
 {%   for q in range(1, backend_configuration['zopecount'] + 1) -%}
 {%     set part_name = 'zope-%s-%s' % (backend_name, q) -%}
 {%     if longrequest_logger != None -%}
@@ -503,6 +504,7 @@ server-check-path = /{{ site_id }}/getId
 wrapper-path = ${directory:services}/haproxy-{{ backend_name }}
 binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
 backend-list = {{ haproxy_backend_list | join(' ')}}
+no-timeout = {{ no_timeout }}
 {%-  endif %}
 {% endfor -%}
 [{{ section('publish-apache-backend-list') }}]
