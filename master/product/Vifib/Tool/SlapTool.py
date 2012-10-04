@@ -1049,7 +1049,9 @@ class SlapTool(BaseTool):
         hash='_'.join([software_instance_document.getRelativeUrl(), str(kw)]),
         )
       last_data = self._getLastData(key)
-      requested_software_instance = portal.restrictedTraverse(
+      requested_software_instance = None
+      if last_data is not None and type(last_data) == type({}):
+        requested_software_instance = portal.restrictedTraverse(
           last_data.get('request_instance'), None)
       if last_data is None or type(last_data) != type(value) or \
           last_data.get('hash') != value['hash'] or \
@@ -1075,7 +1077,8 @@ class SlapTool(BaseTool):
         hash=str(kw)
       )
       last_data = self._getLastData(key)
-      requested_software_instance = portal.restrictedTraverse(
+      if last_data is not None and type(last_data) == type({}):
+        requested_software_instance = portal.restrictedTraverse(
           last_data.get('request_instance'), None)
       if last_data is None or type(last_data) != type(value) or \
         last_data.get('hash') != value['hash'] or \
