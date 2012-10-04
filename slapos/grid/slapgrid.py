@@ -650,8 +650,6 @@ class Slapgrid(object):
 
     computer_partition_id = computer_partition.getId()
 
-    logger.info('Processing Computer Partition %s...' % computer_partition_id)
-
     # Sanity checks before processing
     # Those values should not be None or empty string or any falsy value
     if not computer_partition_id:
@@ -662,6 +660,8 @@ class Slapgrid(object):
     if len(self.computer_partition_filter_list) > 0 and \
          (computer_partition_id not in self.computer_partition_filter_list):
       return
+
+    logger.info('Processing Computer Partition %s...' % computer_partition_id)
 
     instance_path = os.path.join(self.instance_root, computer_partition_id)
 
