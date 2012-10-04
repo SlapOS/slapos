@@ -1,6 +1,16 @@
 Changes
 =======
 
+0.32 (2012-10-04)
+-----------------
+
+ * Introduce new, simpler "slapos" entry point. See documentation for more
+   informations. Note: some functionnalities of this new entry point don't work
+   yet or is not as simple as it should be. [Cedric de Saint Martin, Cedric Le
+   Ninivin]
+ * Revamped "slapos request" to work like described in documentation. [Cédric
+   Le Ninivin, Cédric de Saint Martin]
+
 0.31.2 (2012-10-02)
 -------------------
 
