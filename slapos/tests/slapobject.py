@@ -83,7 +83,6 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     software = SlapObject.Software(
             url='http://example.com/software.cfg',
             software_root=self.software_root,
-            console=False,
             buildout=self.buildout,
             signature_private_key_file='/signature/private/key_file',
             upload_cache_url='http://example.com/uploadcache',
@@ -121,7 +120,6 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     software = SlapObject.Software(
             url='http://example.com/software.cfg',
             software_root=self.software_root,
-            console=False,
             buildout=self.buildout)
 
     software.install()
