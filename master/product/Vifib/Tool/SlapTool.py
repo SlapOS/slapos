@@ -172,6 +172,22 @@ class SlapTool(BaseTool):
             ).cache_duration
       )
 
+  def _storeLastData(self, key, value):
+    cache_plugin = self.getPortalObject().portal_caches\
+      .getRamCacheRoot().get('last_stored_data_cache_factory')\
+      .getCachePluginList()[0]
+    cache_plugin.set(key, DEFAULT_CACHE_SCOPE, value)
+
+  def _getLastData(self, key):
+    cache_plugin = self.getPortalObject().portal_caches\
+      .getRamCacheRoot().get('last_stored_data_cache_factory')\
+      .getCachePluginList()[0]
+    try:
+      entry = cache_plugin.get(key, DEFAULT_CACHE_SCOPE)
+    except KeyError:
+      entry = None
+    return entry
+
   def _activateFillComputerInformationCache(self, computer_id, user, full):
     tag = 'computer_information_cache_fill_%s' % user
     if self.getPortalObject().portal_activities.countMessageWithTag(tag) == 0:
@@ -926,9 +942,12 @@ class SlapTool(BaseTool):
                        attrib={'id':parameter_id}).text = parameter_value
     connection_xml = etree.tostring(instance, pretty_print=True,
                                   xml_declaration=True, encoding='utf-8')
-    software_instance.edit(
-      connection_xml=connection_xml,
-    )
+    reference = software_instance.getReference()
+    if self._getLastData(reference) != connection_xml:
+      software_instance.edit(
+        connection_xml=connection_xml,
+      )
+      self._storeLastData(reference, connection_xml)
 
   @convertToREST
   def _requestComputerPartition(self, computer_id, computer_partition_id,
@@ -988,26 +1007,56 @@ class SlapTool(BaseTool):
       software_instance_document = self.\
         _getSoftwareInstanceForComputerPartition(computer_id,
         computer_partition_id)
-      software_instance_document.requestInstance(
-              software_release=software_release,
+      kw = dict(software_release=software_release,
               software_type=software_type,
               software_title=partition_reference,
               instance_xml=instance_xml,
               shared=shared,
               sla_xml=sla_xml,
               state=state)
+      key = '_'.join([software_instance_document.getSpecialise(), partition_reference])
+      value = dict(
+        hash='_'.join([software_instance_document.getRelativeUrl(), str(kw)]),
+        )
+      last_data = self._getLastData(key)
+      requested_software_instance = portal.restrictedTraverse(
+          last_data.get('request_instance'), None)
+      if last_data is None or type(last_data) != type(value) or \
+          last_data.get('hash') != value['hash'] or \
+          requested_software_instance is None:
+        software_instance_document.requestInstance(**kw)
+        requested_software_instance = self.REQUEST.get('request_instance')
+        if requested_software_instance is not None:
+          value['request_instance'] = requested_software_instance\
+            .getRelativeUrl()
+          self._storeLastData(key, value)
     else:
       # requested as root, so done by human
       person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
-      person.requestSoftwareInstance(software_release=software_release,
+      kw = dict(software_release=software_release,
               software_type=software_type,
               software_title=partition_reference,
               shared=shared,
               instance_xml=instance_xml,
               sla_xml=sla_xml,
               state=state)
+      key = '_'.join([person.getRelativeUrl(), partition_reference])
+      value = dict(
+        hash=str(kw)
+      )
+      last_data = self._getLastData(key)
+      requested_software_instance = portal.restrictedTraverse(
+          last_data.get('request_instance'), None)
+      if last_data is None or type(last_data) != type(value) or \
+        last_data.get('hash') != value['hash'] or \
+        requested_software_instance is None:
+        person.requestSoftwareInstance(**kw)
+        requested_software_instance = self.REQUEST.get('request_instance')
+        if requested_software_instance is not None:
+          value['request_instance'] = requested_software_instance\
+            .getRelativeUrl()
+          self._storeLastData(key, value)
 
-    requested_software_instance = self.REQUEST.get('request_instance')
     if requested_software_instance is None:
       raise SoftwareInstanceNotReady
     else:
