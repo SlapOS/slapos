@@ -25,6 +25,36 @@
             <value> <string>vifib_request_destruction_selenium_tester_instance</string> </value>
         </item>
         <item>
+            <key> <string>periodicity_hour</string> </key>
+            <value>
+              <tuple>
+                <int>16</int>
+                <int>17</int>
+                <int>18</int>
+                <int>19</int>
+                <int>20</int>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_minute</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_month</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_month_day</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
             <key> <string>periodicity_start_date</string> </key>
             <value>
               <object>
@@ -41,6 +71,12 @@
                   </tuple>
                 </state>
               </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_week</string> </key>
+            <value>
+              <tuple/>
             </value>
         </item>
         <item>
