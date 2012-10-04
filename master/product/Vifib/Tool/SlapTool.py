@@ -36,7 +36,7 @@ from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type.Tool.BaseTool import BaseTool
 from Products.ERP5Type import Permissions
-from Products.ERP5Type.Cache import CachingMethod
+#from Products.ERP5Type.Cache import CachingMethod
 from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
 from lxml import etree
 import time
