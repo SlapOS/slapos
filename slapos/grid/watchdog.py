@@ -29,8 +29,6 @@
 
 import argparse
 import slapos.slap.slap
-import subprocess
-from supervisor import childutils
 import sys
 
 def getWatchdogID():
