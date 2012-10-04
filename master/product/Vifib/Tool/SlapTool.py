@@ -757,7 +757,7 @@ class SlapTool(BaseTool):
     computer_document = self._getComputerDocument(computer_id)
     software_installation = self._getSoftwareInstallationForComputer(url,
       computer_document)
-    software_installation.reportError(comment=error_log)
+    software_installation.reportError()
 
   @convertToREST
   def _buildingComputerPartition(self, computer_id, computer_partition_id):
@@ -806,8 +806,7 @@ class SlapTool(BaseTool):
                                                    .getUserName()
     self._logAccess(user, instance.getReference(), 
                     '#error while instanciating')
-    return instance.reportComputerPartitionError(
-                                     comment=error_log)
+    return instance.reportComputerPartitionError()
 
   @convertToREST
   def _softwareInstanceRename(self, new_name, computer_id,
