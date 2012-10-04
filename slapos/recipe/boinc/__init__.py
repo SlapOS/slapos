@@ -28,6 +28,7 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 import os
 import subprocess
 import pwd
+import signal
 
 class Recipe(GenericBaseRecipe):
   """Deploy a fully operational boinc architecture."""
@@ -66,12 +67,12 @@ class Recipe(GenericBaseRecipe):
     self.pythonbin = options['python-binary'].strip()
 
     #Apache php informations
-    self.wwwdata = options['www-data'].strip()
     self.ipv6 = options['ip'].strip()
     self.port = options['port'].strip()
     self.httpd_conf = options['httpd-conf'].strip()
     self.apachewrapper = options['apache-wrapper'].strip()
     self.htpasswd = options['htpasswd'].strip()
+    self.apachepid = options['pid-file'].strip()
     self.apachebin = options['apache-bin'].strip()
     self.phpini = options['php-ini'].strip()
     self.phpbin = options['php-bin'].strip()
@@ -231,6 +232,15 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(start_wrapper)
 
+    if os.path.exists(self.apachepid):
+      #Reload apache configuration for boinc allias.
+      with open(self.options['pid-file']) as pid_file:
+        pid = int(pid_file.read().strip(), 10)
+      try:
+        os.kill(pid, signal.SIGUSR1) # Graceful restart
+      except OSError:
+        pass
+
     return path_list
 
   update = install
@@ -305,8 +315,6 @@ class App(GenericBaseRecipe):
     path_list.append(deploy_app)
 
     return path_list
-
-  update = install
 
 
 class Client(GenericBaseRecipe):
