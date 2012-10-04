@@ -108,7 +108,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   parser.add_argument("--certificate_repository_path",
       help="Path to directory where downloaded certificates would be stored.")
   parser.add_argument("-c", "--console", action="store_true", default=False,
-      help="Enables console output and live output from subcommands.")
+      help="Deprecated, doesn't do anything.")
   parser.add_argument("-v", "--verbose", action="store_true", default=False,
       help="Be verbose.")
   parser.add_argument("--maximum-periodicity", type=int, default=None,
@@ -158,16 +158,20 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     if argument_value is not None:
       option_dict.update({argument_key: argument_value})
   # Configures logger.
-  logger_format = '%(asctime)s %(name)-18s: %(levelname)-8s %(message)s'
   if option_dict['verbose']:
     level = logging.DEBUG
   else:
     level = logging.INFO
+  logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
+                      level=level,
+                      datefmt='%Y-%m-%dT%H:%M:%S')
   if option_dict.get('logfile'):
-    logging.basicConfig(filename=option_dict['logfile'],
-      format=logger_format, level=level)
-  if option_dict['console']:
-    logging.basicConfig(level=level)
+    console = logging.FileHandler(option_dict['logfile'])
+    console.setLevel(level)
+    console.setFormatter(logging.Formatter(
+        '%(asctime)s %(name)-18s: %(levelname)-8s %(message)s'))
+    logging.getLogger('').addHandler(console)
+
   missing_mandatory_parameter_list = []
   for mandatory_parameter in MANDATORY_PARAMETER_LIST:
     if not mandatory_parameter in option_dict:
@@ -294,7 +298,6 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             upload_binary_dir_url=\
               option_dict.get('upload-binary-dir-url', None),
             upload_dir_url=option_dict.get('upload-dir-url', None),
-            console=option_dict['console'],
             buildout=option_dict.get('buildout'),
             promise_timeout=option_dict['promise_timeout'],
             shacache_cert_file=option_dict.get('shacache-cert-file', None),
@@ -390,7 +393,6 @@ class Slapgrid(object):
                upload_dir_url=None,
                master_ca_file=None,
                certificate_repository_path=None,
-               console=False,
                promise_timeout=3,
                shacache_cert_file=None,
                shacache_key_file=None,
@@ -439,7 +441,6 @@ class Slapgrid(object):
     self.instance_etc_directory = os.path.join(self.instance_root, 'etc')
     self.supervisord_configuration_directory = \
         os.path.join(self.instance_etc_directory, 'supervisord.conf.d')
-    self.console = console
     self.buildout = buildout
     self.promise_timeout = promise_timeout
     self.develop = develop
@@ -526,7 +527,7 @@ class Slapgrid(object):
         software_path = os.path.join(self.software_root, url_hash)
         software = Software(url=software_release_uri,
             software_root=self.software_root,
-            console=self.console, buildout=self.buildout,
+            buildout=self.buildout,
             signature_private_key_file=self.signature_private_key_file,
             signature_certificate_list=self.signature_certificate_list,
             download_binary_cache_url=self.download_binary_cache_url,
@@ -730,7 +731,7 @@ class Slapgrid(object):
       server_url=self.master_url,
       software_release_url=software_url,
       certificate_repository_path=self.certificate_repository_path,
-      console=self.console, buildout=self.buildout)
+      buildout=self.buildout)
 
     computer_partition_state = computer_partition.getState()
     if computer_partition_state == "started":
@@ -972,24 +973,17 @@ class Slapgrid(object):
           #stat sys call to get statistics informations
           uid = stat_info.st_uid
           gid = stat_info.st_gid
-          kw = dict()
-          if not self.console:
-            kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+          kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
           process_handler = SlapPopen(invocation_list,
             preexec_fn=lambda: dropPrivileges(uid, gid),
             cwd=os.path.join(instance_path, 'etc', 'report'),
             env=None, **kw)
-          result = process_handler.communicate()[0]
-          if self.console:
-            result = 'Please consult messages above'
           if process_handler.returncode is None:
             process_handler.kill()
           if process_handler.returncode != 0:
             clean_run = False
-            failed_script_list.append("Script %r failed with %s." % (script,
-                result))
-            logger.warning("Failed to run %r, the result was. \n%s" %
-              (invocation_list, result))
+            failed_script_list.append("Script %r failed." % script)
+            logger.warning("Failed to run %r" % invocation_list)
           if len(failed_script_list):
             computer_partition.error('\n'.join(failed_script_list))
       # Whatever happens, don't stop processing other instances
@@ -1102,7 +1096,7 @@ class Slapgrid(object):
             server_url=self.master_url,
             software_release_url=software_url,
             certificate_repository_path=self.certificate_repository_path,
-            console=self.console, buildout=self.buildout
+            buildout=self.buildout,
             )
           local_partition.stop()
           try:

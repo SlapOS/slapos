@@ -90,13 +90,24 @@ class AlreadyRunning(Exception):
 
 
 class SlapPopen(subprocess.Popen):
-  """Almost normal subprocess with gridish features"""
+  """
+  Almost normal subprocess with greedish features and logging.
+  """
   def __init__(self, *args, **kwargs):
     kwargs.update(stdin=subprocess.PIPE)
     subprocess.Popen.__init__(self, *args, **kwargs)
     self.stdin.flush()
     self.stdin.close()
     self.stdin = None
+
+    logger = logging.getLogger('SlapProcessManager')
+    while True:
+      line = self.stdout.readline()
+      if line == '' and self.poll() != None:
+        break
+      if line[-1:] == '\n':
+        line = line[:-1]
+      logger.info(line)
 
 
 def getSoftwareUrlHash(url):
@@ -171,6 +182,8 @@ def dropPrivileges(uid, gid):
   Does nothing in case if uid and gid are not 0
   """
   logger = logging.getLogger('dropPrivileges')
+  # XXX-Cedric: remove format / just do a print, otherwise formatting is done
+  # twice
   current_uid, current_gid = os.getuid(), os.getgid()
   if uid == 0 or gid == 0:
     raise OSError('Dropping privileges to uid = %r or ' \
@@ -217,11 +230,11 @@ def dropPrivileges(uid, gid):
   else:
     raise ValueError('%s it was possible to go back to uid = %r and gid = '
         '%r which is fatal.' % (message_pre, current_uid, current_gid))
-  logger.info('Succesfully dropped privileges to uid=%r gid=%r' % (uid, gid))
+  logger.debug('Succesfully dropped privileges to uid=%r gid=%r' % (uid, gid))
 
 
 def bootstrapBuildout(path, buildout=None,
-    additional_buildout_parametr_list=None, console=False):
+    additional_buildout_parametr_list=None):
   if additional_buildout_parametr_list is None:
     additional_buildout_parametr_list = []
   logger = logging.getLogger('BuildoutManager')
@@ -258,20 +271,14 @@ def bootstrapBuildout(path, buildout=None,
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))
     logger.debug('Invoking: %r in directory %r' % (' '.join(invocation_list),
       path))
-    if not console:
-      kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
             preexec_fn=lambda: dropPrivileges(uid, gid),
             cwd=path, **kw)
-    result = process_handler.communicate()[0]
-    if console:
-      result = 'Please consult messages above'
+
     if process_handler.returncode is None or process_handler.returncode != 0:
-      message = 'Failed to run buildout profile in directory %r:\n%s\n' % (
-          path, result)
+      message = 'Failed to run buildout profile in directory %r.\n' % (path)
       raise BuildoutFailedError(message)
-    else:
-      logger.debug('Successful run:\n%s' % result)
   except OSError as error:
     raise BuildoutFailedError(error)
   finally:
@@ -280,7 +287,7 @@ def bootstrapBuildout(path, buildout=None,
 
 
 def launchBuildout(path, buildout_binary,
-                   additional_buildout_parametr_list=None, console=False):
+                   additional_buildout_parametr_list=None):
   """ Launches buildout."""
   logger = logging.getLogger('BuildoutManager')
   if additional_buildout_parametr_list is None:
@@ -306,21 +313,13 @@ def launchBuildout(path, buildout_binary,
     logger.debug('Set umask from %03o to %03o' % (umask, SAFE_UMASK))
     logger.debug('Invoking: %r in directory %r' % (' '.join(invocation_list),
       path))
-    kw = dict()
-    if not console:
-      kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process_handler = SlapPopen(invocation_list,
             preexec_fn=lambda: dropPrivileges(uid, gid), cwd=path,
             env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
-    result = process_handler.communicate()[0]
-    if console:
-      result = 'Please consult messages above'
     if process_handler.returncode is None or process_handler.returncode != 0:
-      message = 'Failed to run buildout profile in directory %r:\n%s\n' % (
-          path, result)
+      message = 'Failed to run buildout profile in directory %r\n' % (path)
       raise BuildoutFailedError(message)
-    else:
-      logger.debug('Successful run:\n%s' % result)
   except OSError as error:
     raise BuildoutFailedError(error)
   finally:

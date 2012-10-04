@@ -50,7 +50,7 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 
 class Software(object):
   """This class is responsible of installing a software release"""
-  def __init__(self, url, software_root, console, buildout,
+  def __init__(self, url, software_root, buildout,
       signature_private_key_file=None, signature_certificate_list=None,
       upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
       shacache_key_file=None, shadir_cert_file=None, shadir_key_file=None,
@@ -67,7 +67,6 @@ class Software(object):
                                       self.software_url_hash)
     self.buildout = buildout
     self.logger = logging.getLogger('BuildoutManager')
-    self.console = console
     self.signature_private_key_file = signature_private_key_file
     self.signature_certificate_list = signature_certificate_list
     self.upload_cache_url = upload_cache_url
@@ -185,12 +184,10 @@ class Software(object):
 
       buildout_parameter_list.extend(['-c', self.url])
       utils.bootstrapBuildout(self.software_path, self.buildout,
-          additional_buildout_parametr_list=buildout_parameter_list,
-          console=self.console)
+          additional_buildout_parametr_list=buildout_parameter_list)
       utils.launchBuildout(self.software_path,
                      os.path.join(self.software_path, 'bin', 'buildout'),
-                     additional_buildout_parametr_list=buildout_parameter_list,
-                     console=self.console)
+                     additional_buildout_parametr_list=buildout_parameter_list)
     finally:
       shutil.rmtree(extends_cache)
 
@@ -231,7 +228,6 @@ class Partition(object):
                software_release_url,
                buildout,
                certificate_repository_path=None,
-               console=False
                ):
     """Initialisation of class parameters"""
     self.buildout = buildout
@@ -248,7 +244,6 @@ class Partition(object):
     self.partition_id = partition_id
     self.server_url = server_url
     self.software_release_url = software_release_url
-    self.console = console
 
     self.key_file = ''
     self.cert_file = ''
@@ -378,18 +373,12 @@ class Partition(object):
       invocation_list.append(bootstrap_file)
       self.logger.debug('Invoking %r in %r' % (' '.join(invocation_list),
         self.instance_path))
-      kw = dict()
-      if not self.console:
-        kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+      kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
       process_handler = utils.SlapPopen(invocation_list,
         preexec_fn=lambda: utils.dropPrivileges(uid, gid), cwd=self.instance_path,
         env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
-      result_std = process_handler.communicate()[0]
-      if self.console:
-        result_std = 'Please consult messages above.'
       if process_handler.returncode is None or process_handler.returncode != 0:
-        message = 'Failed to bootstrap buildout in %r:\n%s\n' % (
-            self.instance_path, result_std)
+        message = 'Failed to bootstrap buildout in %r.' % (self.instance_path)
         raise BuildoutFailedError(message)
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
 
@@ -397,11 +386,10 @@ class Partition(object):
       # use own buildout generation
       utils.bootstrapBuildout(self.instance_path, self.buildout,
         ['buildout:bin-directory=%s'% os.path.join(self.instance_path,
-        'sbin')], console=self.console)
+        'sbin')])
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
     # Launches buildout
-    utils.launchBuildout(self.instance_path,
-                   buildout_binary, console=self.console)
+    utils.launchBuildout(self.instance_path, buildout_binary)
     # Generates supervisord configuration file from template
     self.logger.info("Generating supervisord config file from template...")
     # check if CP/etc/run exists and it is a directory
@@ -484,17 +472,13 @@ class Partition(object):
       gid = stat_info.st_gid
       self.logger.debug('Invoking %r' % destroy_executable_location)
       kw = dict()
-      if not self.console:
-        kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+      kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
       process_handler = utils.SlapPopen([destroy_executable_location],
         preexec_fn=lambda: utils.dropPrivileges(uid, gid), cwd=self.instance_path,
         env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
-      result_std = process_handler.communicate()[0]
-      if self.console:
-        result_std = 'Please consult messages above'
       if process_handler.returncode is None or process_handler.returncode != 0:
-        message = 'Failed to destroy Computer Partition in %r:\n%s\n' % (
-            self.instance_path, result_std)
+        message = 'Failed to destroy Computer Partition in %r.' % \
+            self.instance_path
         raise subprocess.CalledProcessError(message)
     # Manually cleans what remains
     try:
