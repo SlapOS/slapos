@@ -205,11 +205,10 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
       filter_kw = config.node,
       shared = config.slave
       )
-    print("Instance requested.\nState is : %s.\nYou can "
-        "rerun to get up-to-date informations." % (
-        partition.getState()))
-    print("Connection parameters of instance are:\n%s" % pprint.pprint(
-        partition.getConnectionParameterDict()))
+    print "Instance requested.\nState is : %s." % partition.getState()
+    print "Connection parameters of instance are:"
+    pprint.pprint(partition.getConnectionParameterDict())
+    print "You can rerun command to get up-to-date informations."
   except ResourceNotReady:
     print("Instance requested. Master is provisionning it. Please rerun in a "
         "couple of minutes to get connection informations")
