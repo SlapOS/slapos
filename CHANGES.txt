@@ -10,6 +10,8 @@ Changes
    Ninivin]
  * Revamped "slapos request" to work like described in documentation. [Cédric
    Le Ninivin, Cédric de Saint Martin]
+ * Rewrote slapgrid logger to always log into stdout. (commits a4d277c881,
+   5440626dea)[Cédric de Saint Martin]
 
 0.31.2 (2012-10-02)
 -------------------
