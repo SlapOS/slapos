@@ -90,7 +90,7 @@ if state == destroyed:\n
 elif state == started:\n
   if resource == setup_service_relative_url:\n
     if isTransitionPossible(delivery, \'confirm\'):\n
-      delivery.confirm(comment=comment)\n
+      delivery.confirm(comment=\'Software Release request installation.\')\n
   else:\n
     # nothing to do in case if cleanup was\n
     pass\n
