@@ -1,0 +1,36 @@
+global
+  maxconn 4096
+
+defaults
+  log global
+  mode  http
+  option  httplog
+  option  dontlognull
+  retries 1
+  option redispatch
+  maxconn 2000
+  # Do not accept connection longer than 30s
+  timeout server 30s
+  # Do not wait in queue for a zope to become available.
+  timeout queue 0s
+  # The connection should be immediate on the same partition,
+  timeout connect 1s
+  # As requested in haproxy doc, make this "at least equal to timeout server".
+  timeout client 30s
+  # Use "option forceclose" to not preserve client & server persistent connections
+  # while handling every incoming request individually, dispatching them one after
+  # another to servers, in HTTP close mode. This is really needed when haproxy
+  # is configured with maxconn to 1, without this options browser are unable
+  # to render a page
+  option forceclose
+
+listen %(name)s %(ip)s:%(port)s
+  cookie  SERVERID insert
+  balance roundrobin
+
+%(server_text)s
+
+  option httpchk GET %(server_check_path)s
+
+  stats uri /haproxy
+  stats realm Global\ statistics

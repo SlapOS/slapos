@@ -67,8 +67,15 @@ class Recipe(GenericBaseRecipe):
     #      is not an issue if you have more than (maxqueue * node_quantity) requests
     #      because haproxy will handle a top-level queue
 
-    snippet_filename = self.getTemplateFilename(
-                                    'haproxy-server-snippet.cfg.in')
+    if self.options.get('no-timeout', ''):
+      snippet_filename = self.getTemplateFilename(
+                                      'haproxy-no-timeout-server-snippet.cfg.in')
+      template_filename = self.getTemplateFilename('haproxy-no-timeout.cfg.in')
+    else:
+      snippet_filename = self.getTemplateFilename(
+                                      'haproxy-server-snippet.cfg.in')
+      template_filename = self.getTemplateFilename('haproxy.cfg.in')
+
     # Prepare all filestorages
     server_snippet = ""
     i = 0
@@ -87,7 +94,6 @@ class Recipe(GenericBaseRecipe):
         port=self.options['port'],
         server_text=server_snippet,
         server_check_path=self.options['server-check-path'],)
-    template_filename = self.getTemplateFilename('haproxy.cfg.in')
     configuration_path = self.createFile(
         self.options['conf-path'],
         self.substituteTemplate(template_filename, config))
