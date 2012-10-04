@@ -28,12 +28,13 @@
 ##############################################################################
 
 import argparse
-import slapos.slap.slap
-from slapos.slap import ResourceNotReady
-import sys
-import os
-from optparse import OptionParser, Option
 import ConfigParser
+import pprint
+from optparse import OptionParser, Option
+import os
+from slapos.slap import ResourceNotReady
+import slapos.slap.slap
+import sys
 
 class Parser(OptionParser):
   """
@@ -207,10 +208,11 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
     print("Instance requested.\nState is : %s.\nYou can "
         "rerun to get up-to-date informations." % (
         partition.getState()))
-    # XXX-Cedric : provide a way for user to fetch parameter, url, object, etc
+    print("Connection parameters of instance are:\n%s" % pprint.pprint(
+        partition.getConnectionParameterDict()))
   except ResourceNotReady:
     print("Instance requested. Master is provisionning it. Please rerun in a "
-    "couple of minutes to get connection informations")
+        "couple of minutes to get connection informations")
     exit(2)
 
 def run():
