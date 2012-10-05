@@ -106,21 +106,17 @@ def dispatch(command, is_node_command):
       call(register)
     elif command == 'software':
       call(software, config=GLOBAL_SLAPOS_CONFIGURATION,
-           option=['--pidfile /opt/slapos/slapgrid-sr.pid',
-                   '--logfile /opt/slapos/slapgrid-sr.log'])
+           option=['--pidfile /opt/slapos/slapgrid-sr.pid'])
     elif command == 'instance':
       call(instance, config=GLOBAL_SLAPOS_CONFIGURATION,
-           option=['--pidfile /opt/slapos/slapgrid-cp.pid',
-                   '--logfile /opt/slapos/slapgrid-cp.log'])
+           option=['--pidfile /opt/slapos/slapgrid-cp.pid'])
     elif command == 'report':
       call(report, config=GLOBAL_SLAPOS_CONFIGURATION,
-           option=['--pidfile /opt/slapos/slapgrid-ur.pid',
-                   '--logfile /opt/slapos/slapgrid-ur.log'])
+           option=['--pidfile /opt/slapos/slapgrid-ur.pid'])
     elif command == 'bang':
       call(bang, config=True)
     elif command == 'format':
-      call(format, config=GLOBAL_SLAPOS_CONFIGURATION,
-           option=['--log_file /opt/slapos/slapformat.log'])
+      call(format, config=GLOBAL_SLAPOS_CONFIGURATION])
     elif command in ['start', 'stop', 'status', 'tail']:
       supervisord()
       supervisorctl()
