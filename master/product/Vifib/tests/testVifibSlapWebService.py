@@ -1969,7 +1969,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.assertTrue(isinstance(computer.getSoftwareReleaseList()[0],
                                slap.SoftwareRelease))
 
-  def stepCheckNotFoundSoftwareReleaseBuildingAfterRegisterCall(self,
+  def stepCheckNameErrorSoftwareReleaseBuildingAfterRegisterCall(self,
       sequence, **kw):
     """
     Check that calling SoftwareRelease.building after just registration raises a
@@ -1980,7 +1980,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.slap.initializeConnection(self.server_url, timeout=None)
     software_release = self.slap.registerSoftwareRelease(url)
 
-    self.assertRaises(slap.NotFoundError, software_release.building)
+    self.assertRaises(NameError, software_release.building)
 
   def stepCheckNotFoundSoftwareReleaseDestroyedCall(self, sequence, **kw):
     computer_guid = sequence["computer_reference"]
@@ -1992,16 +1992,16 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_release._computer_guid = computer_guid
     self.assertRaises(slap.NotFoundError, software_release.destroyed)
 
-  def stepCheckNotFoundSoftwareReleaseDestroyedAfterRegisterCall(self, sequence,
+  def stepCheckNameErrorSoftwareReleaseDestroyedAfterRegisterCall(self, sequence,
       **kw):
     url = sequence["software_release_uri"]
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
     software_release = self.slap.registerSoftwareRelease(url)
 
-    self.assertRaises(slap.NotFoundError, software_release.destroyed)
+    self.assertRaises(NameError, software_release.destroyed)
 
-  def stepCheckNotFoundSoftwareReleaseAvailableAfterRegisterCall(self, sequence,
+  def stepCheckNameErrorSoftwareReleaseAvailableAfterRegisterCall(self, sequence,
       **kw):
     """
     Check that calling SoftwareRelease.available after just registration raises a
@@ -2012,9 +2012,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.slap.initializeConnection(self.server_url, timeout=None)
     software_release = self.slap.registerSoftwareRelease(url)
 
-    self.assertRaises(slap.NotFoundError, software_release.available)
+    self.assertRaises(NameError, software_release.available)
 
-  def stepCheckNotFoundSoftwareReleaseErrorAfterRegisterCall(self, sequence,
+  def stepCheckNameErrorSoftwareReleaseErrorAfterRegisterCall(self, sequence,
       **kw):
     """
     Check that calling SoftwareRelease.error after just registration raises a
@@ -2025,7 +2025,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.slap.initializeConnection(self.server_url, timeout=None)
     software_release = self.slap.registerSoftwareRelease(url)
 
-    self.assertRaises(slap.NotFoundError, software_release.error, "ErrorLog")
+    self.assertRaises(NameError, software_release.error, "ErrorLog")
 
   def stepCheckNotFoundComputerPartitionBuildingAfterRegisterCall(self, sequence,
       **kw):

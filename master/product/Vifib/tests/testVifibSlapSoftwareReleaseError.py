@@ -16,7 +16,7 @@ class TestVifibSlapSoftwareReleaseError(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_formated_computer + '\
       SlapLoginCurrentComputer \
       SelectNewSoftwareReleaseUri \
-      CheckNotFoundSoftwareReleaseErrorAfterRegisterCall \
+      CheckNameErrorSoftwareReleaseErrorAfterRegisterCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \

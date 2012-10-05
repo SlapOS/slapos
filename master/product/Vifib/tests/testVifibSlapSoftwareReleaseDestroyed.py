@@ -12,7 +12,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_formated_computer + '\
       SlapLoginCurrentComputer \
       SelectNewSoftwareReleaseUri \
-      CheckNotFoundSoftwareReleaseDestroyedAfterRegisterCall \
+      CheckNameErrorSoftwareReleaseDestroyedAfterRegisterCall \
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
