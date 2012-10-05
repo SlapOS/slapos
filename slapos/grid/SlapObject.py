@@ -379,7 +379,8 @@ class Partition(object):
         env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to bootstrap buildout in %r.' % (self.instance_path)
-        raise BuildoutFailedError(message)
+        self.logger.error(message)
+        raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
       buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
 
     if not os.path.exists(buildout_binary):
@@ -479,7 +480,8 @@ class Partition(object):
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to destroy Computer Partition in %r.' % \
             self.instance_path
-        raise subprocess.CalledProcessError(message)
+        self.logger.error(message)
+        raise subprocess.CalledProcessError(message, process_handler.output)
     # Manually cleans what remains
     try:
       for f in [self.key_file, self.cert_file]:
