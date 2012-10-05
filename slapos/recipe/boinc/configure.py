@@ -85,7 +85,6 @@ def services(args):
   env = os.environ
   env['PATH'] = args['environment']['PATH']
   env['PYTHONPATH'] = args['environment']['PYTHONPATH']
-  env['PYTHON'] = args['environment']['PYTHON']
   p_xadd = subprocess.Popen([args['xadd']], stdout=subprocess.PIPE,
           stderr=subprocess.STDOUT, env=env)
   result = p_xadd.communicate()[0]
@@ -200,7 +199,6 @@ def deployApp(args):
   env = os.environ
   env['PATH'] = args['environment']['PATH']
   env['PYTHONPATH'] = args['environment']['PYTHONPATH']
-  env['PYTHON'] = args['environment']['PYTHON']
   p_xadd = subprocess.Popen([os.path.join(args['installroot'], 'bin/xadd')],
           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
   result = p_xadd.communicate()[0]

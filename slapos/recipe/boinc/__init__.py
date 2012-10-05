@@ -54,26 +54,19 @@ class Recipe(GenericBaseRecipe):
     self.project = options['project'].strip()
     self.fullname = options['fullname'].strip()
     self.copyright = options['copyright'].strip()
-    self.project_config = options['project-config'].strip()
     self.installroot = options['installroot'].strip()
     self.boinc_egg = os.path.join(self.package, 'lib/python2.7/site-packages')
     self.developegg = options['develop-egg'].strip()
     self.wrapperdir = options['wrapper-dir'].strip()
     self.passwd = options['passwd'].strip()
-    self.boinc_httpd_conf = options['boinc-httpd-conf'].strip()
     #Get binary path
     self.svn = options['svn-binary'].strip()
     self.perl = options['perl-binary'].strip()
-    self.pythonbin = options['python-binary'].strip()
 
     #Apache php informations
     self.ipv6 = options['ip'].strip()
     self.port = options['port'].strip()
-    self.httpd_conf = options['httpd-conf'].strip()
-    self.apachewrapper = options['apache-wrapper'].strip()
     self.htpasswd = options['htpasswd'].strip()
-    self.apachepid = options['pid-file'].strip()
-    self.apachebin = options['apache-bin'].strip()
     self.phpini = options['php-ini'].strip()
     self.phpbin = options['php-bin'].strip()
     self.wrapperphp = options['php-wrapper'].strip()
@@ -109,16 +102,6 @@ class Recipe(GenericBaseRecipe):
     url_base = "http://["+self.ipv6+"]:"+self.port
     slapuser = self.options['user']
 
-    #generate project config file
-    configuration = dict(mypassword=self.password,
-                    dbname=self.database, hosturl=url_base,
-                    boincproject=niceprojectname, installroot=self.installroot,
-                    project=self.project)
-    config_file = self.createFile(self.project_config,
-        self.substituteTemplate(self.getTemplateFilename('project.conf.in'),
-        configuration))
-    path_list.append(config_file)
-
     #Define environment variable here
     python_path = self.boinc_egg + ":" + os.environ['PYTHONPATH']
     for f in os.listdir(self.developegg):
@@ -129,29 +112,7 @@ class Recipe(GenericBaseRecipe):
     environment = dict(
         PATH=self.svn + ':' + bin_dir + ':' + self.perl + ':' + os.environ['PATH'],
         PYTHONPATH=python_path,
-        PYTHON=self.pythonbin
     )
-
-    #Regenerate Apache wrapper with current conf and environment variables
-    if os.path.exists(self.apachewrapper):
-      os.unlink(self.apachewrapper)
-    boinc_httpd = self.createFile(os.path.join(self.home, 'etc/httpd_boinc.conf'),
-        self.substituteTemplate(self.getTemplateFilename('apache.part.in'),
-        dict(project=self.project, niceprojectname=niceprojectname,
-            installroot=self.installroot)))
-    path_list.append(boinc_httpd)
-    httpd_configuration = open(self.boinc_httpd_conf, 'w')
-    httpd_configuration.write(open(self.httpd_conf, 'r').read())
-    httpd_configuration.write(open(boinc_httpd, 'r').read())
-    httpd_configuration.close()
-
-    apache_args = [self.apachebin, '-f', self.boinc_httpd_conf,
-         '-DFOREGROUND']
-    apache_wrapper = self.createPythonScript(self.apachewrapper,
-        'slapos.recipe.librecipe.execute.executee',
-        (apache_args, environment)
-    )
-    path_list.append(apache_wrapper)
 
     #Generate wrapper for php
     php_wrapper = self.createPythonScript(self.wrapperphp,
@@ -232,15 +193,6 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(start_wrapper)
 
-    if os.path.exists(self.apachepid):
-      #Reload apache configuration for boinc allias.
-      with open(self.options['pid-file']) as pid_file:
-        pid = int(pid_file.read().strip(), 10)
-      try:
-        os.kill(pid, signal.SIGUSR1) # Graceful restart
-      except OSError:
-        pass
-
     return path_list
 
   update = install
@@ -262,7 +214,6 @@ class App(GenericBaseRecipe):
     home = self.options['home'].strip()
     perl = self.options['perl-binary'].strip()
     svn = self.options['svn-binary'].strip()
-    pythonbin = self.options['python-binary'].strip()
     for f in os.listdir(developegg):
       dir = os.path.join(developegg, f)
       if os.path.isdir(dir):
@@ -271,7 +222,6 @@ class App(GenericBaseRecipe):
     environment = dict(
         PATH=svn + ':' + bin_dir + ':' + perl + ':' + os.environ['PATH'],
         PYTHONPATH=python_path,
-        PYTHON=pythonbin
     )
 
     #generate project.xml and config.xml script updater
