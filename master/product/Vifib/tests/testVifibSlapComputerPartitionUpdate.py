@@ -484,7 +484,8 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       sla_xml="",
       shared=False,
       state="started")
-    sequence.edit(root_software_instance_title=self.root_software_instance_title)
+    sequence.edit(root_software_instance_title=self.root_software_instance_title,
+      hosting_subscription_uid=self.REQUEST['request_hosting_subscription'].getUid())
 
   def stepPersonRequestSoftwareInstanceNoTicRaisesDataError(self, sequence, **kw):
     person = self.portal.ERP5Site_getAuthenticatedMemberPersonValue()
@@ -500,6 +501,27 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       state="started")
     self.assertRaises(DataError, self.commit)
     transaction.abort()
+
+  def stepCheckUpdateNotCreatedSiteConsistency(self, sequence, **kw):
+    self.portal.portal_alarms.vifib_check_consistency.activeSense()
+    transaction.commit()
+    self.tic()
+    consistency_error_list = self.portal.portal_alarms.vifib_check_consistency\
+        .Alarm_getConsistencyCheckReportLineList()
+    self.assertEqual(1, len(consistency_error_list))
+    consistency_error = consistency_error_list[0]
+    order_line = self.portal.portal_catalog.getResultValue(
+      uid=sequence['hosting_subscription_uid']).getAggregateRelatedValue(
+        portal_type='Sale Order Line')
+    self.assertEqual(consistency_error.getObject().getPath(),
+      order_line.getPath())
+    self.assertEqual(
+      consistency_error.mapping,
+      {'max_arity': 1, 'portal_type': 'Software Release', 'min_arity': 1,
+        'current_arity': 0, 'base_category': ['aggregate']}
+    )
+    self.assertTrue(self.portal.portal_alarms.vifib_check_consistency.sense())
+    self.checkDivergency()
 
   def test_update_not_created_person_request_in_progress(self):
     self.root_software_instance_title = self.id() + str(random())
@@ -530,7 +552,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       # ...it does not exists yet
 
       LoginERP5TypeTestCase
-      CheckSiteConsistency
+      CheckUpdateNotCreatedSiteConsistency
       Logout
       """
     sequence_list.addSequenceString(sequence_string)
