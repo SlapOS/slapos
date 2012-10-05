@@ -32,6 +32,7 @@ import os
 import shutil
 import signal
 import slapos.slap.slap
+import slapos.grid.utils
 from slapos.grid.watchdog import Watchdog, getWatchdogID
 import socket
 import sys
@@ -111,12 +112,20 @@ class BasicMixin:
     self.buildout = None
     self.grid = slapgrid.Slapgrid(self.software_root, self.instance_root,
       self.master_url, self.computer_id, self.supervisord_socket,
-      self.supervisord_configuration_path, self.usage_report_periodicity,
+      self.supervisord_configuration_path,
       self.buildout, develop=develop)
+    # monkey patch buildout bootstrap
+    def dummy(*args, **kw):
+      pass
+    slapos.grid.utils.bootstrapBuildout = dummy
 
   def launchSlapgrid(self,develop=False):
     self.setSlapgrid(develop=develop)
     return self.grid.processComputerPartitionList()
+
+  def launchSlapgridSoftware(self,develop=False):
+    self.setSlapgrid(develop=develop)
+    return self.grid.processSoftwareReleaseList()
 
   def tearDown(self):
     # XXX: Hardcoded pid, as it is not configurable in slapos
@@ -246,6 +255,9 @@ class ComputerForTest:
     for instance in self.instance_list:
       slap_computer._computer_partition_list.append(
         instance.getInstance(computer_id))
+    for software in self.software_list:
+      slap_computer._software_release_list.append(
+        software.getSoftware(computer_id))
     return slap_computer
 
   def setServerResponse(self):
@@ -290,8 +302,22 @@ class ComputerForTest:
                                  if 'dropPrivileges' not in line])
           instance.error = True
           return (200, {}, '')
-        else:
-          return (404, {}, '')
+
+      elif method == 'POST' and 'url' in parsed_qs:
+        # XXX hardcoded to first sofwtare release!
+        software = self.software_list[0]
+        software.sequence.append(parsed_url.path)
+        if parsed_url.path == 'buildingSoftwareRelease':
+          return (200, {}, '')
+        if parsed_url.path == 'softwareReleaseError':
+          software.error_log = '\n'.join([line for line \
+                                   in parsed_qs['error_log'][0].splitlines()
+                                 if 'dropPrivileges' not in line])
+          software.error = True
+          return (200, {}, '')
+
+      else:
+        return (500, {}, '')
     return server_response
 
 
@@ -361,19 +387,29 @@ class SoftwareForTest:
     self.software_hash = \
         slapos.grid.utils.getSoftwareUrlHash(self.name)
     self.srdir = os.path.join(self.software_root, self.software_hash)
+    self.requested_state = 'available'
     os.mkdir(self.srdir)
     self.setTemplateCfg()
     self.srbindir = os.path.join(self.srdir, 'bin')
     os.mkdir(self.srbindir)
     self.setBuildout()
 
-  def setTemplateCfg (self,template = """[buildout]"""):
+  def getSoftware (self, computer_id):
+    """
+    Will return current requested state of software
+    """
+    software = slapos.slap.SoftwareRelease(self.name, computer_id)
+    software._requested_state = self.requested_state
+    return software
+
+
+  def setTemplateCfg (self,template="""[buildout]"""):
     """
     Set template.cfg
     """
     open(os.path.join(self.srdir, 'template.cfg'), 'w').write(template)
 
-  def setBuildout (self,buildout = """#!/bin/sh
+  def setBuildout (self, buildout="""#!/bin/sh
 touch worked"""):
     """
     Set a buildout exec in bin
@@ -1038,6 +1074,24 @@ return 42""")
     self.assertEqual(instance1.sequence,
                      ['availableComputerPartition', 'stoppedComputerPartition'])
 
+  def test_one_partition_buildout_fail_is_correctly_logged(self):
+    """
+    1. We set up an instance using a corrupted buildout
+    2. It will fail, make sure that whole log is sent to master
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root, 1, 1)
+    instance = computer.instance_list[0]
+
+    line1 = "Nerdy kitten: Can I has a process crash?"
+    line2 = "Cedric: Sure, here it is."
+    instance.software.setBuildout("""#!/bin/sh
+echo %s; echo %s; exit 42""" % (line1, line2))
+    self.launchSlapgrid()
+    self.assertEqual(instance.sequence, ['softwareInstanceError'])
+    # We don't care of actual formatting, we just want to have full log
+    self.assertTrue(line1 in instance.error_log)
+    self.assertTrue(line2 in instance.error_log)
+    self.assertTrue("Failed to run buildout" in instance.error_log)
 
 class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
   """
@@ -1178,6 +1232,30 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertSortedListEqual(os.listdir(self.software_root),
                                [instance.software.software_hash])
     self.assertEqual(computer.sequence, ['getFullComputerInformation'])
+
+
+
+
+class TestSlapgridSoftwareRelease(MasterMixin, unittest.TestCase):
+  def test_one_software_buildout_fail_is_correctly_logged(self):
+    """
+    1. We set up a software using a corrupted buildout
+    2. It will fail, make sure that whole log is sent to master
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root, 1, 1)
+    software = computer.software_list[0]
+
+    line1 = "Nerdy kitten: Can I has a process crash?"
+    line2 = "Cedric: Sure, here it is."
+    software.setBuildout("""#!/bin/sh
+echo %s; echo %s; exit 42""" % (line1, line2))
+    self.launchSlapgridSoftware()
+    self.assertEqual(software.sequence,
+                     ['buildingSoftwareRelease', 'softwareReleaseError'])
+    # We don't care of actual formatting, we just want to have full log
+    self.assertTrue(line1 in software.error_log)
+    self.assertTrue(line2 in software.error_log)
+    self.assertTrue("Failed to run buildout" in software.error_log)
 
 class SlapgridInitialization(unittest.TestCase):
   """
