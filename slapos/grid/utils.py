@@ -92,6 +92,8 @@ class AlreadyRunning(Exception):
 class SlapPopen(subprocess.Popen):
   """
   Almost normal subprocess with greedish features and logging.
+  Each line is logged "live", and self.output is a string containing the whole
+  log.
   """
   def __init__(self, *args, **kwargs):
     kwargs.update(stdin=subprocess.PIPE)
@@ -101,14 +103,16 @@ class SlapPopen(subprocess.Popen):
     self.stdin = None
 
     logger = logging.getLogger('SlapProcessManager')
+    # XXX-Cedric: this algorithm looks overkill for simple logging.
+    self.output = ''
     while True:
       line = self.stdout.readline()
       if line == '' and self.poll() != None:
         break
+      self.output = self.output + line
       if line[-1:] == '\n':
         line = line[:-1]
       logger.info(line)
-
 
 def getSoftwareUrlHash(url):
   return md5(url).hexdigest()
@@ -275,10 +279,10 @@ def bootstrapBuildout(path, buildout=None,
     process_handler = SlapPopen(invocation_list,
             preexec_fn=lambda: dropPrivileges(uid, gid),
             cwd=path, **kw)
-
     if process_handler.returncode is None or process_handler.returncode != 0:
-      message = 'Failed to run buildout profile in directory %r.\n' % (path)
-      raise BuildoutFailedError(message)
+      message = 'Failed to run buildout profile in directory %r' % (path)
+      logger.error(message)
+      raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
   except OSError as error:
     raise BuildoutFailedError(error)
   finally:
@@ -318,8 +322,9 @@ def launchBuildout(path, buildout_binary,
             preexec_fn=lambda: dropPrivileges(uid, gid), cwd=path,
             env=getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
     if process_handler.returncode is None or process_handler.returncode != 0:
-      message = 'Failed to run buildout profile in directory %r\n' % (path)
-      raise BuildoutFailedError(message)
+      message = 'Failed to run buildout profile in directory %r' % (path)
+      logger.error(message)
+      raise BuildoutFailedError('%s:\n%s\n' % (message, process_handler.output))
   except OSError as error:
     raise BuildoutFailedError(error)
   finally:

@@ -29,6 +29,7 @@
 
 import argparse
 import ConfigParser
+from exception import BuildoutFailedError
 from hashlib import md5
 from lxml import etree
 import logging
@@ -562,10 +563,25 @@ class Slapgrid(object):
             logger.info('Destroying %r...' % software_release_uri)
             software.destroy()
             logger.info('Destroyed %r.' % software_release_uri)
+      # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         software_release.error(exception)
         raise
+
+      # Buildout failed: send log but don't print it to output (already done)
+      except BuildoutFailedError, exception:
+        clean_run = False
+        try:
+          software_release.error(exception)
+        except (SystemExit, KeyboardInterrupt):
+          raise
+        except Exception:
+          exception = traceback.format_exc()
+          logger.error('Problem during reporting error, continuing:\n' +
+            exception)
+
+      # For everything else: log it, send it, continue.
       except Exception:
         exception = traceback.format_exc()
         logger.error(exception)
@@ -800,10 +816,25 @@ class Slapgrid(object):
         # Process the partition itself
         self.processComputerPartition(computer_partition)
 
+      # Send log before exiting
       except (SystemExit, KeyboardInterrupt):
         exception = traceback.format_exc()
         computer_partition.error(exception)
         raise
+
+      # Buildout failed: send log but don't print it to output (already done)
+      except BuildoutFailedError, exception:
+        clean_run = False
+        try:
+          computer_partition.error(exception)
+        except (SystemExit, KeyboardInterrupt):
+          raise
+        except Exception:
+          exception = traceback.format_exc()
+          logger.error('Problem during reporting error, continuing:\n' +
+            exception)
+
+      # For everything else: log it, send it, continue.
       except Exception as exception:
         clean_run = False
         logger.error(traceback.format_exc())
