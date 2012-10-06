@@ -36,6 +36,7 @@ CustomLog "%(access_log)s" common
 
   use Apache2::Request;
   use Date::Calc ();
+  use Image::Magick;
 
   sub test_handler {
     my ($r) = @_;
@@ -53,6 +54,11 @@ CustomLog "%(access_log)s" common
       my $apreq = new Apache2::Request($r);
       my $hello = $apreq->param('hello');
       $r->print("Testing Apache2::Request: The parameter 'hello' is '$hello'\n");
+    }
+    {
+      my $im = new Image::Magick;
+      $r->print("Testing Image::Magick: PerlMagick success: "
+                . Image::Magick->Success . "\n");
     }
     return Apache2::Const::OK;
   }
