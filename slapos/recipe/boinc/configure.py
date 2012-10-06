@@ -73,23 +73,15 @@ def services(args):
   topath = os.path.join(args['installroot'], 'html/ops/.htpasswd')
   print "Generating .htpasswd file... File=%s" % topath
   passwd = open(args['passwd'], 'r').read()
-  p_htpasswd = subprocess.Popen([args['htpasswd'], '-b', '-c', topath,
-        args['username'], passwd],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-  result = p_htpasswd.communicate()[0]
-  if p_htpasswd.returncode is None or p_htpasswd.returncode != 0:
-    print "Failed to create file %s.\nThe error was: %s" % (topath, result)
+  htpwd_args = [args['htpasswd'], '-b', '-c', topath, args['username'], passwd]
+  if not startProcess(htpwd_args):
     return
 
   print "Running xadd script..."
   env = os.environ
   env['PATH'] = args['environment']['PATH']
   env['PYTHONPATH'] = args['environment']['PYTHONPATH']
-  p_xadd = subprocess.Popen([args['xadd']], stdout=subprocess.PIPE,
-          stderr=subprocess.STDOUT, env=env)
-  result = p_xadd.communicate()[0]
-  if p_xadd.returncode is None or p_xadd.returncode != 0:
-    print "Failed to execute bin/xadd.\nThe error was: %s" % result
+  if not startProcess([args['xadd']], env):
     return
   print "Update files and directories permissions..."
   upload = os.path.join(args['installroot'], 'upload')
@@ -115,12 +107,8 @@ def services(args):
 
   #Execute php create_forum.php...
   print "Boinc Forum: Execute php create_forum.php..."
-  p_forum = subprocess.Popen(["php", forum_file], stdout=subprocess.PIPE,
-      stderr=subprocess.STDOUT, env=env, cwd=os.path.join(args['installroot'],
-      'html/ops'))
-  result = p_forum.communicate()[0]
-  if p_forum.returncode is None or p_forum.returncode != 0:
-    print "Failed to execute bin/xadd.\nThe error was: %s" % result
+  cwd = os.path.join(args['installroot'], 'html/ops')
+  if not startProcess(["php", forum_file], env, cwd):
     return
 
   status = open(args['service_status'], "w")
@@ -140,15 +128,18 @@ def restart_boinc(args):
   else:
     checkMysql(args)
   print "Restart Boinc..."
+  os.environ['PATH'] = args['PATH']
   binstart = os.path.join(args['installroot'], 'bin/start')
   binstop = os.path.join(args['installroot'], 'bin/stop')
+#  startProcess([binstart], env)
+#  startProcess([binstop], env)
   os.system(binstop)
   os.system(binstart)
   print "Done."
 
 def deployApp(args):
   print "Cheking if needed to install %s..." % args['appname']
-  if os.path.exists(os.path.join(args['installroot'], "."+args['appname'])):
+  if os.path.exists(os.path.join(args['installroot'], "." + args['appname'])):
     print args['appname'] + " is already installed in this Boinc instance... skipped"
     return
   #Sleep until file .start_service exist (Mark the end of boinc configuration)
@@ -169,6 +160,8 @@ def deployApp(args):
   base_app = os.path.join(args['installroot'], 'apps', args['appname'])
   base_app_version = os.path.join(base_app, args['version'])
   args['templates'] = os.path.join(args['installroot'], 'templates')
+  t_result = os.path.join(args['templates'], args['appname']+'_result')
+  t_wu = os.path.join(args['templates'], args['appname']+'_wu')
   if not os.path.exists(base_app):
     os.mkdir(base_app)
   if os.path.exists(base_app_version):
@@ -177,11 +170,15 @@ def deployApp(args):
   os.mkdir(args['application'])
   if not os.path.exists(args['templates']):
     os.mkdir(args['templates'])
-  shutil.copy(args['t_result'], os.path.join(args['templates'],
-          args['appname']+'_result'))
-  shutil.copy(args['t_wu'], os.path.join(args['templates'],
-          args['appname']+'_wu'))
-  os.symlink(args['t_input'], args['inputfile'])
+  else:
+    if os.path.exists(t_result):
+      os.unlink(t_result)
+    if os.path.exists(t_result):
+      os.unlink(t_wu)
+  shutil.copy(args['t_result'], t_result)
+  shutil.copy(args['t_wu'], t_wu)
+  if not os.path.exists(args['inputfile']):
+    os.symlink(args['t_input'], args['inputfile'])
   shutil.copy(args['binary'], os.path.join(args['application'],
         args['binary_name']))
 
@@ -190,20 +187,13 @@ def deployApp(args):
   project_xml = os.path.join(args['installroot'], 'project.xml')
   config_xml = os.path.join(args['installroot'], 'config.xml')
   sed_args = [args['bash'], args['appname'], args['installroot']]
-  sed = subprocess.Popen(sed_args, stderr=subprocess.STDOUT,
-              stdout=subprocess.PIPE)
-  result = sed.communicate()[0]
-  print result
+  startProcess(sed_args)
 
   print "Running xadd script..."
   env = os.environ
   env['PATH'] = args['environment']['PATH']
   env['PYTHONPATH'] = args['environment']['PYTHONPATH']
-  p_xadd = subprocess.Popen([os.path.join(args['installroot'], 'bin/xadd')],
-          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
-  result = p_xadd.communicate()[0]
-  if p_xadd.returncode is None or p_xadd.returncode != 0:
-    print "Failed to execute bin/xadd.\nThe error was: %s" % result
+  if not startProcess([os.path.join(args['installroot'], 'bin/xadd')], env):
     return
 
   print "Sign the application binary..."
@@ -237,6 +227,7 @@ def deployApp(args):
   print "Restart Boinc..."
   binstart = os.path.join(args['installroot'], 'bin/start')
   binstop = os.path.join(args['installroot'], 'bin/stop')
+  sys.environ = env
   os.system(binstop)
   os.system(binstart)
 
@@ -255,9 +246,16 @@ def create_wu(args, env):
   for i in range(count):
     print "Creating project wroker %s..." % str(i+1)
     launch_args[4] = args['wu_name']+str(i+1)
-    process = subprocess.Popen(launch_args, stdout=subprocess.PIPE,
+    startProcess(launch_args, env, args['installroot'])
+
+def startProcess(launch_args, env=None, cwd=None):
+  process = subprocess.Popen(launch_args, stdout=subprocess.PIPE,
               stderr=subprocess.STDOUT, env=env,
-              cwd=args['installroot'])
-    process.communicate()[0]
+              cwd=cwd)
+  result = process.communicate()[0]
+  if process.returncode is None or process.returncode != 0:
+    print "Failed to execute executable.\nThe error was: %s" % result
+    return False
+  return True
 
     

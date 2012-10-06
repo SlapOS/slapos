@@ -62,6 +62,7 @@ class Recipe(GenericBaseRecipe):
     #Get binary path
     self.svn = options['svn-binary'].strip()
     self.perl = options['perl-binary'].strip()
+    self.pythonbin = options['python-binary'].strip()
 
     #Apache php informations
     self.ipv6 = options['ip'].strip()
@@ -69,7 +70,6 @@ class Recipe(GenericBaseRecipe):
     self.htpasswd = options['htpasswd'].strip()
     self.phpini = options['php-ini'].strip()
     self.phpbin = options['php-bin'].strip()
-    self.wrapperphp = options['php-wrapper'].strip()
 
     #get Mysql parameters
     self.username = options['mysql-username'].strip()
@@ -103,7 +103,10 @@ class Recipe(GenericBaseRecipe):
     slapuser = self.options['user']
 
     #Define environment variable here
+    python = os.path.join(self.home, 'bin/python')
     python_path = self.boinc_egg + ":" + os.environ['PYTHONPATH']
+    if not os.path.exists(python):
+      os.symlink(self.pythonbin, python)
     for f in os.listdir(self.developegg):
       dir = os.path.join(self.developegg, f)
       if os.path.isdir(dir):
@@ -115,13 +118,14 @@ class Recipe(GenericBaseRecipe):
     )
 
     #Generate wrapper for php
-    php_wrapper = self.createPythonScript(self.wrapperphp,
+    wrapperphp = os.path.join(self.home, 'bin/php')
+    php_wrapper = self.createPythonScript(wrapperphp,
         'slapos.recipe.librecipe.execute.executee',
         ([self.phpbin, '-c', self.phpini], os.environ)
     )
     path_list.append(php_wrapper)
 
-    #Generate python script for MySQL database marker (starting)
+    #Generate python script for MySQL database test (starting)
     file_status = os.path.join(self.home, '.boinc_config')
     if os.path.exists(file_status):
       os.unlink(file_status)
@@ -185,7 +189,7 @@ class Recipe(GenericBaseRecipe):
         installroot=self.installroot, drop_install=drop_install,
         mysql_port=self.mysqlport, mysql_host=self.mysqlhost,
         mysql_user=self.username, mysql_password=self.password,
-        database=self.database, python_path=python_path)
+        database=self.database, PATH=environment['PATH'])
     start_wrapper = self.createPythonScript(os.path.join(self.wrapperdir,
         'start_boinc'),
         '%s.configure.restart_boinc' % __name__,
