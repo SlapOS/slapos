@@ -1,0 +1,22 @@
+diff -r c0f4c1b8b448 -r 9ee4fec6ee34 lib/MiogaConf.pm
+--- a/lib/MiogaConf.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/MiogaConf.pm	Sat Oct 06 16:17:31 2012 +0200
+@@ -811,6 +811,10 @@
+ 	my @missing;
+ 	my @missing_clib;
+ 
++	# Some modules rewrite $ENV{PATH} without hesitation when "require"d,      
++	# we need to put the old one back in place.                                
++	my $oldpath = $ENV{PATH}; 
++
+ 	foreach my $dep (@{$self->{CONFIG}->{dependencies}->[0]->{dep}}) {
+ 		my $version;
+ 		if(exists $dep->{version}) {
+@@ -833,6 +837,7 @@
+ 		}
+ 	}
+ 	
++	$ENV{PATH} = $oldpath;
+ 
+ 	foreach my $dep (@{$self->{CONFIG}->{dependencies}->[0]->{clib}}) {
+ 		my $version;
