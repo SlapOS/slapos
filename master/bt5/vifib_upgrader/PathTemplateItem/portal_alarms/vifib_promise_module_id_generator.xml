@@ -93,7 +93,7 @@
         </item>
         <item>
             <key> <string>solve_method_id</string> </key>
-            <value> <string>Alarm_fixPromiseVifibPAS</string> </value>
+            <value> <string>Alarm_fixPromiseVifibModuleIdGenerator</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
