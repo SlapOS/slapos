@@ -32,10 +32,6 @@
   <workflow>slap_interaction_workflow</workflow>
  </chain>
  <chain>
-  <type>Purchase Packing List Line</type>
-  <workflow>slap_interaction_workflow</workflow>
- </chain>
- <chain>
   <type>Sale Invoice Transaction</type>
   <workflow>slap_interaction_workflow</workflow>
  </chain>
