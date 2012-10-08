@@ -20,6 +20,8 @@ runner_port = %(runner_port)s
 ipv4_address = %(ipv4_address)s
 ipv6_address = %(ipv6_address)s
 etc_dir = %(etc_dir)s
+run_dir = %(run_dir)s
+log_dir = %(log_dir)s
 
 [slapproxy]
 host = %(proxy_host)s
