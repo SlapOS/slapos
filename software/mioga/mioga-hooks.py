@@ -50,9 +50,9 @@ def pre_configure_hook(options, bo, env):
 
 
 
-def post_make_hook(options, buildout):
-  # location = options['location']
-  # print "Mioga - postmakehook"
-  # print "We are currently in", os.getcwd()
-  # shutil.move("var", location)
-  return None
+# def post_make_hook(options, buildout):
+#   location = options['location']
+#   print "Mioga - postmakehook"
+#   print "We are currently in", os.getcwd()
+#   shutil.move("var", location)
+#   return None
