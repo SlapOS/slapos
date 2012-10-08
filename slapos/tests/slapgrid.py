@@ -494,13 +494,13 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
       'var'])
     self.assertSortedListEqual(os.listdir(partition.partition_path),
                                ['.0_wrapper.log','worked', 'buildout.cfg', 'etc'])
-    tries = 10
+    tries = 50
     wrapper_log = os.path.join(partition.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.software_root),
       [partition.software.software_hash])
@@ -539,12 +539,12 @@ chmod 755 etc/run/wrapper
     self.assertSortedListEqual(os.listdir(instance.partition_path), ['.0_wrapper.log',
       'worked', 'buildout.cfg', 'etc'])
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    tries = 10
+    tries = 50
     while tries > 0:
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     os.path.getsize(wrapper_log)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.software_root),
@@ -562,14 +562,14 @@ chmod 755 etc/run/wrapper
     self.assertSortedListEqual(
       os.listdir(instance.partition_path),
       ['.0_wrapper.log', '.0_wrapper.log.1', 'worked', 'buildout.cfg', 'etc'])
-    tries = 10
+    tries = 50
     expected_text = 'Signal handler called with signal 15'
     while tries > 0:
       tries -= 1
       found = expected_text in open(wrapper_log, 'r').read()
       if found:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertTrue(found)
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -606,13 +606,13 @@ chmod 755 etc/run/wrapper
       'worked', 'etc', 'buildout.cfg'])
     self.assertSortedListEqual(os.listdir(self.software_root),
       [instance.software.software_hash])
-    tries = 10
+    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
@@ -680,20 +680,20 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       'var'])
     self.assertSortedListEqual(os.listdir(partition.partition_path),
                                ['.0_daemon.log','worked', 'buildout.cfg', 'etc'])
-    tries = 10
+    tries = 50
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(daemon_log) > 0:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertTrue('Failing' in open(daemon_log, 'r').read())
     tries = 25
     while tries > 0:
       tries -= 1
       if os.path.exists(watchdog_banged):
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertTrue(os.path.exists(watchdog_banged))
     self.assertTrue('daemon' in open(watchdog_banged,'r').read())
 
@@ -737,20 +737,20 @@ touch worked
       'var'])
     self.assertSortedListEqual(os.listdir(partition.partition_path),
                                ['.0_daemon.log','worked', 'buildout.cfg', 'etc'])
-    tries = 10
+    tries = 50
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(daemon_log) > 0:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertTrue('Failing' in open(daemon_log, 'r').read())
     tries = 25
     while tries > 0:
       tries -= 1
       if os.path.exists(watchdog_banged):
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertFalse(os.path.exists(watchdog_banged))
 
 
@@ -1111,13 +1111,13 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       'var'])
     self.assertSortedListEqual(os.listdir(instance.partition_path), ['.0_wrapper.log',
       'worked', 'buildout.cfg', 'etc'])
-    tries = 10
+    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.software_root),
       [instance.software.software_hash])
@@ -1138,7 +1138,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertSortedListEqual(os.listdir(self.software_root),
                                [instance.software.software_hash])
     # Assert supervisor stopped process
-    tries = 10
+    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     exists = False
     while tries > 0:
@@ -1146,7 +1146,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       if os.path.exists(wrapper_log):
         exists = True
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertFalse(exists)
 
     self.assertEqual(computer.sequence,
@@ -1174,7 +1174,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.software_root),
       [instance.software.software_hash])
@@ -1192,13 +1192,13 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertSortedListEqual(
       os.listdir(instance.partition_path),
       ['.0_wrapper.log', 'worked', 'buildout.cfg', 'etc'])
-    tries = 10
+    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertTrue('Working' in open(wrapper_log, 'r').read())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
@@ -1210,7 +1210,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       tries -= 1
       if os.path.getsize(wrapper_log) > 0:
         break
-      time.sleep(0.2)
+      time.sleep(0.1)
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation'])
     self.assertEqual('started',instance.state)
@@ -1522,7 +1522,7 @@ exit 127""" % {'worked_file': worked_file})
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
     instance.requested_state = 'started'
-    self.fake_waiting_time = 0.2
+    self.fake_waiting_time = 0.1
     worked_file = os.path.join(instance.partition_path, 'succeed_worked')
     succeed = ("""#!/usr/bin/env sh
 touch "%(worked_file)s"
@@ -1565,7 +1565,7 @@ exit 127""" % {'worked_file': worked_file})
     instance = computer.instance_list[0]
 
     instance.requested_state = 'started'
-    self.fake_waiting_time = 0.2
+    self.fake_waiting_time = 0.1
 
     promise_path = os.path.join(instance.partition_path, 'etc', 'promise')
     os.makedirs(promise_path)
@@ -1588,7 +1588,7 @@ exit 0""" % {'worked_file': worked_file})
     instance = computer.instance_list[0]
     instance.requested_state = 'started'
 
-    self.fake_waiting_time = 0.2
+    self.fake_waiting_time = 0.1
 
     for i in range (0,2):
       worked_file = os.path.join(instance.partition_path, 'succeed_%s_worked' % i)
@@ -1608,7 +1608,7 @@ exit 0""" % {'worked_file': worked_file})
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
     instance.requested_state = 'started'
-    self.fake_waiting_time = 0.2
+    self.fake_waiting_time = 0.1
 
     for i in range(2):
       worked_file = os.path.join(instance.partition_path, 'promise_worked_%d' % i)
@@ -1631,7 +1631,7 @@ fi""" % {'worked_file': worked_file, 'lockfile': lockfile})
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
     instance.requested_state = 'started'
-    self.fake_waiting_time = 0.2
+    self.fake_waiting_time = 0.1
     for i in range(2):
       worked_file = os.path.join(instance.partition_path, 'promise_worked_%d' % i)
       lockfile = os.path.join(instance.partition_path, 'lock')
