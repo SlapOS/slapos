@@ -1,6 +1,18 @@
-diff -r c0f4c1b8b448 -r 9ee4fec6ee34 lib/MiogaConf.pm
+diff -r c0f4c1b8b448 Makefile.PL
+--- a/Makefile.PL	Sat Oct 06 16:15:43 2012 +0200
++++ b/Makefile.PL	Mon Oct 08 14:47:20 2012 +0200
+@@ -115,7 +115,7 @@
+ # ----------------------------------------------------------------------------
+ sub MY::processPL {
+ return '
+-# Not realy in the good section, but at a good place:
++# Not really in the good section, but at a good place:
+ # between "all" and next "tardist"
+ 
+ include config.mk
+diff -r c0f4c1b8b448 lib/MiogaConf.pm
 --- a/lib/MiogaConf.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/MiogaConf.pm	Sat Oct 06 16:17:31 2012 +0200
++++ b/lib/MiogaConf.pm	Mon Oct 08 14:47:20 2012 +0200
 @@ -811,6 +811,10 @@
  	my @missing;
  	my @missing_clib;
