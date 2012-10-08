@@ -634,15 +634,18 @@ class Slapgrid(object):
         promise = os.path.basename(command[0])
         self.logger.info("Checking promise %r.", promise)
 
-        kw = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        kw = dict(stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE)
 
-        process_handler = SlapPopen(command,
+        process_handler = subprocess.Popen(command,
           preexec_fn=lambda: dropPrivileges(uid, gid),
           cwd=cwd,
           env={}, **kw)
+        process_handler.stdin.flush()
+        process_handler.stdin.close()
+        process_handler.stdin = None
 
         time.sleep(self.promise_timeout)
-
 
         if process_handler.poll() is None:
           process_handler.terminate()
