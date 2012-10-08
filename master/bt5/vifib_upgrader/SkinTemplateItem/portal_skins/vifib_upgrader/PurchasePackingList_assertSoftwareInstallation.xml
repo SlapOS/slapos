@@ -118,8 +118,8 @@ if current_software_installation is None:\n
   current_packing_list_line.setAggregateList(aggregate_list)\n
   current_resource = current_packing_list_line.getResource()\n
   current_state = current_packing_list.getSimulationState()\n
-  if current_resource == software_cleanup_resource:\n
-    current_software_installation.requestDestroy(\'Requested destruction because of %s\' % current_packing_list.getPath())\n
+  if current_resource == software_cleanup_resource.getRelativeUrl():\n
+    current_software_installation.requestDestroy(comment=\'Requested destruction because of %s\' % current_packing_list.getPath())\n
     if current_state == \'delivered\':\n
       current_software_installation.invalidate(comment=\'Reported destruction because of %s\' % current_packing_list.getPath())\n
   \n
