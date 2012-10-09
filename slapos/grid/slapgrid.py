@@ -939,6 +939,10 @@ class Slapgrid(object):
   def agregateAndSendUsage(self):
     """Will agregate usage from each Computer Partition.
     """
+    # Prepares environment
+    self.checkEnvironmentAndCreateStructure()
+    self._launchSupervisord()
+
     slap_computer_usage = self.slap.registerComputer(self.computer_id)
     computer_partition_usage_list = []
     logger = logging.getLogger('UsageReporting')
@@ -1113,9 +1117,13 @@ class Slapgrid(object):
       if computer_partition.getState() == COMPUTER_PARTITION_DESTROYED_STATE:
         try:
           computer_partition_id = computer_partition.getId()
-          software_url = computer_partition.getSoftwareRelease().getURI()
-          software_path = os.path.join(self.software_root,
+          try:
+            software_url = computer_partition.getSoftwareRelease().getURI()
+            software_path = os.path.join(self.software_root,
                 getSoftwareUrlHash(software_url))
+          except (NotFoundError, TypeError):
+            software_url = None
+            software_path = None
           local_partition = Partition(
             software_path=software_path,
             instance_path=os.path.join(self.instance_root,
