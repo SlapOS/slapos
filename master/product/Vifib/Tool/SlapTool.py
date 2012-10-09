@@ -36,7 +36,6 @@ from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type.Tool.BaseTool import BaseTool
 from Products.ERP5Type import Permissions
-from Products.ERP5Type.Cache import CachingMethod
 from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
 from lxml import etree
 import time
@@ -246,13 +245,7 @@ class SlapTool(BaseTool):
     """
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
     self._logAccess(user, user, '#access %s' % computer_id)
-    if not self._isTestRun():
-      result = CachingMethod(self._getComputerInformation,
-                         id='_getComputerInformation',
-                         cache_factory='slap_cache_factory')(
-                            computer_id, user, False)
-    else:
-      result = self._getComputerInformation(computer_id, user, False)
+    result = self._getComputerInformation(computer_id, user, False)
 
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
@@ -275,13 +268,7 @@ class SlapTool(BaseTool):
     """
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
     self._logAccess(user, user, '#access %s' % computer_id)
-    if not self._isTestRun():
-      return CachingMethod(self._getComputerInformation,
-                         id='_getFullComputerInformation',
-                         cache_factory='slap_cache_factory')(
-                            computer_id, user, True)
-    else:
-      return self._getComputerInformation(computer_id, user, True)
+    result = self._getComputerInformation(computer_id, user, True)
 
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
