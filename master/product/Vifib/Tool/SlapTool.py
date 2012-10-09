@@ -257,12 +257,13 @@ class SlapTool(BaseTool):
 #       result = self._getComputerInformation(computer_id, user, False)
     result = self._getComputerInformation(computer_id, user, False)
 
-    # Keep in cache server for 1 year
+    # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
     self.REQUEST.response.setHeader('Cache-Control',
-                                    'max-age=60, stale-if-error=31536000')
+                                    'public, max-age=60, stale-if-error=604800')
     self.REQUEST.response.setHeader('Vary',
                                     'REMOTE_USER')
+    self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
     self.REQUEST.response.setBody(result)
     return self.REQUEST.response
 
@@ -286,12 +287,13 @@ class SlapTool(BaseTool):
 #       return self._getComputerInformation(computer_id, user, True)
     result = self._getComputerInformation(computer_id, user, True)
 
-    # Keep in cache server for 1 year
+    # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
     self.REQUEST.response.setHeader('Cache-Control',
-                                    'max-age=60, stale-if-error=31536000')
+                                    'public, max-age=60, stale-if-error=604800')
     self.REQUEST.response.setHeader('Vary',
                                     'REMOTE_USER')
+    self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
     self.REQUEST.response.setBody(result)
     return self.REQUEST.response
 
@@ -600,12 +602,13 @@ class SlapTool(BaseTool):
       slap_partition._parameter_dict.update(parameter_dict)
     result = xml_marshaller.xml_marshaller.dumps(slap_partition)
 
-    # Keep in cache server for 1 year
+    # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
     self.REQUEST.response.setHeader('Cache-Control',
-                                    'max-age=60, stale-if-error=31536000')
+                                    'public, max-age=60, stale-if-error=604800')
     self.REQUEST.response.setHeader('Vary',
                                     'REMOTE_USER')
+    self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
     self.REQUEST.response.setBody(result)
     return self.REQUEST.response
 
