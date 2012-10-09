@@ -1058,10 +1058,10 @@ return 42""")
 
   def test_one_partition_lacking_path_does_not_disturb_others(self):
     """
-    1. We set up two instance but remove path of one
+    1. We set up two instances but remove path of one
     2. One will fail but the other one will be processed correctly
     """
-    computer = ComputerForTest(self.software_root,self.instance_root,2,2)
+    computer = ComputerForTest(self.software_root,self.instance_root, 2, 2)
     instance0 = computer.instance_list[0]
     instance1 = computer.instance_list[1]
     instance1.software = computer.software_list[1]
@@ -1160,7 +1160,6 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     """
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
-    instance.requested_state = 'started'
 
     instance.software.name = None
 
@@ -1186,19 +1185,15 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertFalse(exists)
 
     self.assertEqual(computer.sequence,
-                     ['getFullComputerInformation',
-                      'stoppedComputerPartition',
-                      'destroyedComputerPartition'])
-    self.assertEqual(instance.state,'destroyed')
+                     ['getFullComputerInformation'])
 
-  def test_slapgrid_destroys_instance_to_be_destroyed_without_sr(self):
+  def test_slapgrid_ignore_destroyed_instance_without_sr(self):
     """
     Test than an instance in "destroyed" state but without SR at all
-    is correctly destroyed
+    is correctly ignored
     """
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
-    instance.requested_state = 'started'
 
     instance.software = None
 
@@ -1222,10 +1217,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
     self.assertFalse(exists)
 
     self.assertEqual(computer.sequence,
-                     ['getFullComputerInformation',
-                      'stoppedComputerPartition',
-                      'destroyedComputerPartition'])
-    self.assertEqual(instance.state,'destroyed')
+                     ['getFullComputerInformation'])
 
   def test_slapgrid_not_destroy_bad_instance(self):
     """
