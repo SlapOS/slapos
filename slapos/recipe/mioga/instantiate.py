@@ -28,6 +28,7 @@
 import os
 import pprint
 import re
+import stat
 import subprocess
 
 from slapos.recipe.librecipe import GenericBaseRecipe
@@ -62,35 +63,39 @@ class Recipe(GenericBaseRecipe):
     fm.modify('dbi_passwd', self.options['db_password'])
     fm.modify('db_host', self.options['db_host'])
     fm.modify('db_port', self.options['db_port'])
-    # TODO: Mioga must be able to use an external Postgres server! IPv6 address!
+    # db_name, dbi_login are standard
     fm.save()
-    os.remove("config.mk") # otherwise we don't see the values in the Makefiles
+    if os.path.isfile("config.mk"):
+      os.remove("config.mk") # otherwise we don't see the values in the Makefiles
 
     environ = os.environ
-    environ['PATH'] = self.options['mioga_add_to_path'] + ':' + environ['PATH']
+    environ['PATH'] = ':'.join([self.options['perl_bin'],           # priority!
+                                self.options['mioga_add_to_path'],
+                                self.options['postgres_bin'],
+                                environ['PATH'] ])
+    
+    # Write the Postgres password file
+    pgpassfilepath = os.path.join(self.options['instance_root'], '.pgpass')
+    pgpassfile = open(pgpassfilepath, 'w')
+    pgpassfile.write(':'.join([re.sub(r':', r'\:', self.options['db_host']),
+                               self.options['db_port'],
+                               '*', # could be self.options['db_dbname'] or 'postgres'
+                               self.options['db_username'],
+                               self.options['db_password'] ]) + "\n")
+    pgpassfile.close()
+    os.chmod(pgpassfilepath, stat.S_IRUSR | stat.S_IWUSR)
+    environ['PGPASSFILE'] = pgpassfilepath
+    
     # environ = self.options['mioga_compile_env']
     print pprint.pformat(environ)
 
     # We must call "make installall" in the SAME environment that
     # "perl Makefile.PL" left!
 
-    cmd = subprocess.Popen(self.options['perl_binary'] + ' Makefile.PL'
+    cmd = subprocess.Popen(self.options['perl_bin'] + '/perl Makefile.PL'
                            + ' && make installall',
                            env=environ, shell=True)
     cmd.communicate()
-    
-    # cmd_configure = subprocess.Popen([ self.options['perl_binary'],
-    #                                    'Makefile.PL' ],
-    #                                  env=environ)
-    # cmd_configure.communicate()
-
-    # if cmd_configure.returncode == 0:
-    #   # TODO: no "make" on SlapOS ?
-    #   cmd_make = subprocess.Popen(['make', 'installall'],
-    #                               env=environ)
-    #   cmd_make.communicate()
-    # else:
-    #   print "Mioga instantiate.py::install: Configure failed."
 
     os.chdir(former_directory)
     print "Mioga instantiate.py::install finished!"
