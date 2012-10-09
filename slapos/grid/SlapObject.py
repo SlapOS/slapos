@@ -458,10 +458,6 @@ class Partition(object):
     """
     self.logger.info("Destroying Computer Partition %s..." \
         % self.computer_partition.getId())
-    # Gets actual buildout binary
-    buildout_binary = os.path.join(self.instance_path, 'sbin', 'buildout')
-    if not os.path.exists(buildout_binary):
-      buildout_binary = os.path.join(self.software_path, 'bin', 'buildout')
     # Launches "destroy" binary if exists
     destroy_executable_location = os.path.join(self.instance_path, 'sbin',
         'destroy')
