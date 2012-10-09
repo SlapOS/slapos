@@ -369,7 +369,7 @@ class SlapTool(BaseTool):
     user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
                                                    .getUserName()
     self._logAccess(user, computer_id, '#error while installing %s' % url)
-    return self._softwareReleaseError(url, computer_id, error_log)
+    #return self._softwareReleaseError(url, computer_id, error_log)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'buildingComputerPartition')
@@ -856,7 +856,7 @@ class SlapTool(BaseTool):
                                                    .getUserName()
     self._logAccess(user, instance.getReference(), 
                     '#error while instanciating')
-    return instance.reportComputerPartitionError()
+    #return instance.reportComputerPartitionError()
 
   @convertToREST
   def _softwareInstanceRename(self, new_name, computer_id,
