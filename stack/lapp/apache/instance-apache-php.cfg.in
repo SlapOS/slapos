@@ -14,6 +14,7 @@ parts =
   frontend-promise
   content-promise
   publish-connection-informations
+  maarch-instance
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -64,8 +65,8 @@ crl = $${directory:ca-dir}/crl/
 recipe = slapos.cookbook:stunnel
 client = true
 stunnel-binary = ${stunnel:location}/bin/stunnel
-remote-host = $${mariadb-urlparse:host}
-remote-port = $${mariadb-urlparse:port}
+remote-host = $${postgres-urlparse:host}
+remote-port = $${postgres-urlparse:port}
 local-host = $${slap-network-information:local-ipv4}
 local-port = 33060
 log-file = $${basedirectory:log}/stunnel.log
@@ -98,20 +99,20 @@ key-file = $${stunnel:key-file}
 cert-file = $${stunnel:cert-file}
 
 
-# Request MariaDB instance and parse its URL
-[request-mariadb]
+# Request Postgres instance and parse its URL
+[request-postgres]
 <= slap-connection
 recipe = slapos.cookbook:request
-name = MariaDB
+name = Postgres
 software-url = $${slap-connection:software-release-url}
-software-type = mariadb
+software-type = postgres
 return = url
 sla = computer_guid
-sla-computer_guid = ${slap-connection:computer-id}
+sla-computer_guid = $${slap-connection:computer-id}
 
-[mariadb-urlparse]
+[postgres-urlparse]
 recipe = slapos.cookbook:urlparse
-url = $${request-mariadb:connection-url}
+url = $${request-postgres:connection-url}
 
 
 # Deploy Apache + PHP application
@@ -136,9 +137,9 @@ wrapper = $${basedirectory:services}/apache
 
 httpd-binary = ${apache:location}/bin/httpd
 
-mysql-username = $${mariadb-urlparse:username}
-mysql-password = $${mariadb-urlparse:password}
-mysql-database = $${mariadb-urlparse:path}
+mysql-username = $${postgres-urlparse:username}
+mysql-password = $${postgres-urlparse:password}
+mysql-database = $${postgres-urlparse:path}
 mysql-host = $${stunnel:local-host}
 mysql-port = $${stunnel:local-port}
 
@@ -274,3 +275,16 @@ logbox-ip =
 logbox-port =
 logbox-user =
 logbox-passwd =
+
+[maarch-instance]
+recipe = slapos.cookbook:maarch.configuration
+htdocs = $${apache-php:htdocs}
+db_host = $${postgres-urlparse:host}
+db_port = $${postgres-urlparse:port}
+db_dbname = $${postgres-urlparse:path}
+db_username = $${postgres-urlparse:username}
+db_password = $${postgres-urlparse:password}
+language = en
+php_ini_dir = $${directory:php-ini-dir}
+root_docservers = $${buildout:directory}/srv/docservers
+

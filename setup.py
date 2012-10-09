@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.67-dev'
+version = '0.68.2-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -36,10 +36,12 @@ setup(name=name,
         'xml_marshaller', # need to communication with slapgrid
         'zc.buildout', # plays with buildout
         'zc.recipe.egg', # for scripts generation
+        'pytz', # for timezone database
         ],
       zip_safe=True,
       entry_points={
         'zc.buildout': [
+          'addresiliency = slapos.recipe.addresiliency:Recipe',
           'agent = slapos.recipe.agent:Recipe',
           'apache.frontend = slapos.recipe.apache_frontend:Recipe',
 	  'apacheperl = slapos.recipe.apacheperl:Recipe', 
@@ -60,6 +62,7 @@ setup(name=name,
           'dropbear.add_authorized_key = slapos.recipe.dropbear:AddAuthorizedKey',
           'dropbear.client = slapos.recipe.dropbear:Client',
           'dropbear = slapos.recipe.dropbear:Recipe',
+          'dumpmdb = slapos.recipe.dumpmdb:Recipe',
           'duplicity = slapos.recipe.duplicity:Recipe',
           'egg_test = slapos.recipe.erp5_test:EggTestRecipe',
           'equeue = slapos.recipe.equeue:Recipe',
@@ -83,6 +86,7 @@ setup(name=name,
           'gitinit = slapos.recipe.gitinit:Recipe',
           'haproxy = slapos.recipe.haproxy:Recipe',
           'helloworld = slapos.recipe.helloworld:Recipe',
+          'importmdb = slapos.recipe.importmdb:Recipe',
           'java = slapos.recipe.java:Recipe',
           'kumofs = slapos.recipe.kumofs:Recipe',
           'kvm.frontend = slapos.recipe.kvm_frontend:Recipe',
@@ -108,12 +112,14 @@ setup(name=name,
           'novnc = slapos.recipe.novnc:Recipe',
           'onetimeupload = slapos.recipe.onetimeupload:Recipe',
           'pbs = slapos.recipe.pbs:Recipe',
+          'postgres = slapos.recipe.postgres:Recipe',
+          'maarch.configuration = slapos.recipe.maarch.configuration:Recipe',
           'proactive = slapos.recipe.proactive:Recipe',
           'publish = slapos.recipe.publish:Recipe',
           'publishurl = slapos.recipe.publishurl:Recipe',
           'pwgen = slapos.recipe.pwgen:Recipe',
           'pwgen.stable = slapos.recipe.pwgen:StablePasswordGeneratorRecipe',
-          'requestoptional = slapos.recipe.requestoptional:Recipe',
+          'requestoptional = slapos.recipe.request:RequestOptional',
           'request = slapos.recipe.request:Recipe',
           'seleniumrunner = slapos.recipe.seleniumrunner:Recipe',
           'sheepdogtestbed = slapos.recipe.sheepdogtestbed:SheepDogTestBed',
@@ -127,6 +133,7 @@ setup(name=name,
           'slapmonitor = slapos.recipe.slapmonitor:Recipe',
           'slapreport = slapos.recipe.slapreport:Recipe',
           'slaprunner = slapos.recipe.slaprunner:Recipe',
+          'slaprunner.test = slapos.recipe.slaprunner:Test',
           'softwaretype = slapos.recipe.softwaretype:Recipe',
           'sphinx= slapos.recipe.sphinx:Recipe',
           'sshkeys_authority.request = slapos.recipe.sshkeys_authority:Request',

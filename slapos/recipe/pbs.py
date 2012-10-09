@@ -213,6 +213,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         for slave in slaves:
           path_list.extend(self.add_slave(slave, known_hosts))
 
+
     else:
       command = [self.options['rdiffbackup-binary']]
       self.logger.info("Server mode")

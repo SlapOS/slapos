@@ -27,6 +27,9 @@
 import logging
 
 from slapos import slap as slapmodule
+import slapos.recipe.librecipe.generic as librecipe
+
+DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
 class Recipe(object):
   """
@@ -97,17 +100,15 @@ class Recipe(object):
     request = slap.registerComputerPartition(
       options['computer-id'], options['partition-id']).request
 
-    isSlave = options.get('slave', '').lower() in ['y', 'yes', 'true', '1']
-
     return_parameters = []
     if 'return' in options:
       return_parameters = [str(parameter).strip()
-        for parameter in options['return'].split()]
+                          for parameter in options['return'].split()]
     else:
       self.logger.debug("No parameter to return to main instance."
         "Be careful about that...")
 
-    software_type = options.get('software-type', 'RootInstanceSoftware')
+    software_type = options.get('software-type', DEFAULT_SOFTWARE_TYPE)
 
     filter_kw = {}
     if 'sla' in options:
@@ -120,6 +121,8 @@ class Recipe(object):
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
 
+    isSlave = options.get('slave', '').lower() in \
+        librecipe.GenericBaseRecipe.TRUE_VALUES
     self.instance = instance = request(software_url, software_type,
       name, partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=isSlave)
@@ -128,7 +131,7 @@ class Recipe(object):
       try:
         options['connection-%s' % param] = str(
           instance.getConnectionParameter(param))
-      except slapmodule.NotFoundError:
+      except (slapmodule.NotFoundError, slapmodule.ServerError):
         options['connection-%s' % param] = ''
         if self.failed is None:
           self.failed = param
@@ -137,9 +140,12 @@ class Recipe(object):
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        status = self.instance.getState()
-      except slapmodule.NotFoundError:
-        status = 'not ready yet, please try again'
+        if self.instance.getComputerId() is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
+      except (slapmodule.NotFoundError, slapmodule.ServerError):
+        status = 'not ready yet'
       except AttributeError:
         status = 'unknown'
       error_message = 'Connection parameter %s not found. '\
@@ -147,6 +153,31 @@ class Recipe(object):
           'check status of this instance.' % (self.failed, status)
       self.logger.error(error_message)
       raise KeyError(error_message)
+    return []
+
+  update = install
+
+class RequestOptional(Recipe):
+  """
+  Request a SlapOS instance. Won't fail if instance is not ready.
+  Same as slapos.cookbook:request, but won't raise in case of problem.
+  """
+  def install(self):
+    if self.failed is not None:
+      # Check instance status to know if instance has been deployed
+      try:
+        if self.instance.getComputerId() is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
+      except (slapmodule.NotFoundError, slapmodule.ServerError):
+        status = 'not ready yet'
+      except AttributeError:
+        status = 'unknown'
+      error_message = 'Connection parameter %s not found. '\
+          'Requested instance is currently %s. If this error persists, '\
+          'check status of this instance.' % (self.failed, status)
+      self.logger.warning(error_message)
     return []
 
   update = install
