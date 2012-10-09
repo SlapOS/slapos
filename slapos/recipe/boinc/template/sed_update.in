@@ -10,5 +10,6 @@ sed -i.old -e "/<\/boinc>/i\<app>\n<name>$1</name>\n<user_friendly_name>$1</user
 
 sed -i.old -e "/<\/daemons>/i\<daemon>\n<cmd>\nsample_bitwise_validator -d 3 -app $1\n</cmd>\n</daemon>" $2/config.xml
 sed -i.old -e "/<\/daemons>/i\<daemon>\n<cmd>\nsample_assimilator -d 3 -app $1\n</cmd>\n</daemon>" $2/config.xml
+sed -i.old -e "/<\/config>/i\<uldl_pid>%(uldl_pid)s</uldl_pid>" $2/config.xml
 
 fi
