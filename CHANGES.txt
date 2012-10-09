@@ -6,6 +6,8 @@ Changes
 
  * slapgrid: Make sure error logs are sent to SlapOS master. Finish
    implementation began in 0.32. [Cedric de Saint Martin]
+ * slapgrid: Fix Usage Report in case of not empty partition with no SR.
+   [Cedric de Saint Martin]
 
 0.32 (2012-10-04)
 -----------------
