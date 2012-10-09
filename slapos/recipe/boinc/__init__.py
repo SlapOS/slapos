@@ -185,11 +185,15 @@ class Recipe(GenericBaseRecipe):
 
     #Generate Boinc start project wrapper
     start_args = [os.path.join(self.installroot, 'bin/start')]
+    start_boinc = os.path.join(self.home, '.start_boinc')
+    if os.path.exists(start_boinc):
+      os.unlink(start_boinc)
     boinc_parameter = dict(service_status=service_status,
         installroot=self.installroot, drop_install=drop_install,
         mysql_port=self.mysqlport, mysql_host=self.mysqlhost,
         mysql_user=self.username, mysql_password=self.password,
-        database=self.database, PATH=environment['PATH'])
+        database=self.database, PATH=environment['PATH'],
+        python_path=python_path, start_boinc=start_boinc)
     start_wrapper = self.createPythonScript(os.path.join(self.wrapperdir,
         'start_boinc'),
         '%s.configure.restart_boinc' % __name__,
@@ -208,7 +212,10 @@ class App(GenericBaseRecipe):
 
 
   def install(self):
-
+    if self.options['app-name'].strip() == '' or \
+              self.options['version'].strip() == '':
+      #don't deploy empty application...skipped
+      return []
     path_list = []
     package = self.options['boinc'].strip()
     #Define environment variable here
@@ -232,12 +239,13 @@ class App(GenericBaseRecipe):
     bash = os.path.join(home, 'bin', 'update_config.sh')
     sh_script = self.createFile(bash,
         self.substituteTemplate(self.getTemplateFilename('sed_update.in'),
-        dict(dash=self.options['dash'].strip()))
+        dict(dash=self.options['dash'].strip(),
+              uldl_pid=self.options['apache-pid'].strip()))
     )
     path_list.append(sh_script)
     os.chmod(bash , 0700)
 
-    service_status = os.path.join(home, '.start_service')
+    start_boinc = os.path.join(home, '.start_boinc')
     installroot = self.options['installroot'].strip()
     version = self.options['version'].strip()
     platform = self.options['platform'].strip()
@@ -253,9 +261,8 @@ class App(GenericBaseRecipe):
             appname=appname, binary_name=bin_name,
             version=version, platform=platform,
             application=application, environment=environment,
-            service_status=service_status,
-            wu_name=self.options['wu-name'].strip(),
-            wu_number=self.options['wu-number'].strip(),
+            start_boinc=start_boinc,
+            wu_number=int(self.options['wu-number'].strip()),
             t_result=self.options['template-result'].strip(),
             t_wu=self.options['template-wu'].strip(),
             t_input=self.options['input-file'].strip(),
@@ -270,6 +277,7 @@ class App(GenericBaseRecipe):
 
     return path_list
 
+  update = install
 
 class Client(GenericBaseRecipe):
   """Deploy a fully fonctionnal boinc client connected to a boinc server instance"""

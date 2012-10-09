@@ -131,32 +131,41 @@ def restart_boinc(args):
   os.environ['PATH'] = args['PATH']
   binstart = os.path.join(args['installroot'], 'bin/start')
   binstop = os.path.join(args['installroot'], 'bin/stop')
-#  startProcess([binstart], env)
-#  startProcess([binstop], env)
   os.system(binstop)
   os.system(binstart)
+  status = open(args['start_boinc'], "w")
+  status.write("started")
+  status.close()
   print "Done."
 
 def deployApp(args):
+  """Fully deploy or redeploy or update a BOINC application using existing BOINC instance"""
   print "Cheking if needed to install %s..." % args['appname']
-  if os.path.exists(os.path.join(args['installroot'], "." + args['appname'])):
-    print args['appname'] + " is already installed in this Boinc instance... skipped"
-    return
-  #Sleep until file .start_service exist (Mark the end of boinc configuration)
+  token = os.path.join(args['installroot'], "." + args['appname'] + args['version'])
+  dropapp = False
+  if os.path.exists(token):
+    args['previous_wu'] = int(open(token, 'r').read().strip())
+    if args['previous_wu'] >= args['wu_number']:
+      print args['appname'] + " version " + args['version'] + " is already installed in this Boinc instance... skipped"
+      return
+    else:
+      print args['appname'] + " Work units will be updated from %s to %s" % (
+                args['previous_wu'], args['wu_number'])
+  else:
+    args['previous_wu'] = 0
+    dropapp = True
+  #Sleep until file .start_boinc exist (File indicate that BOINC has been started)
   while True:
-    print "Search for file %s..." % args['service_status']
-    if not os.path.exists(args['service_status']):
+    print "Search for file %s..." % args['start_boinc']
+    if not os.path.exists(args['start_boinc']):
       print "File not found... sleep for 3 secondes"
       time.sleep(3)
     else:
       break
 
-  print "sleeps for 30 seconds while waiting for the end of the execution of boinc_start"
-  time.sleep(30)
-
   print "setup directories..."
   args['inputfile'] = os.path.join(args['installroot'], 'download',
-                        args['appname']+'_input')
+                        args['appname'] + '_input')
   base_app = os.path.join(args['installroot'], 'apps', args['appname'])
   base_app_version = os.path.join(base_app, args['version'])
   args['templates'] = os.path.join(args['installroot'], 'templates')
@@ -164,30 +173,45 @@ def deployApp(args):
   t_wu = os.path.join(args['templates'], args['appname']+'_wu')
   if not os.path.exists(base_app):
     os.mkdir(base_app)
-  if os.path.exists(base_app_version):
-    shutil.rmtree(base_app_version)
-  os.mkdir(base_app_version)
-  os.mkdir(args['application'])
-  if not os.path.exists(args['templates']):
-    os.mkdir(args['templates'])
-  else:
-    if os.path.exists(t_result):
-      os.unlink(t_result)
-    if os.path.exists(t_result):
-      os.unlink(t_wu)
-  shutil.copy(args['t_result'], t_result)
-  shutil.copy(args['t_wu'], t_wu)
-  if not os.path.exists(args['inputfile']):
-    os.symlink(args['t_input'], args['inputfile'])
-  shutil.copy(args['binary'], os.path.join(args['application'],
-        args['binary_name']))
+  if dropapp:
+    if os.path.exists(base_app_version):
+      shutil.rmtree(base_app_version)
+    os.mkdir(base_app_version)
+    os.mkdir(args['application'])
+    if not os.path.exists(args['templates']):
+      os.mkdir(args['templates'])
+    else:
+      if os.path.exists(t_result):
+        os.unlink(t_result)
+      if os.path.exists(t_result):
+        os.unlink(t_wu)
+    shutil.copy(args['t_result'], t_result)
+    shutil.copy(args['t_wu'], t_wu)
+    if not os.path.exists(args['inputfile']):
+      os.symlink(args['t_input'], args['inputfile'])
+    shutil.copy(args['binary'], os.path.join(args['application'],
+          args['binary_name']))
 
-  print "Adding '" + args['appname'] + "' to project.xml..."
-  print "Adding deamon for application to config.xml..."
-  project_xml = os.path.join(args['installroot'], 'project.xml')
-  config_xml = os.path.join(args['installroot'], 'config.xml')
-  sed_args = [args['bash'], args['appname'], args['installroot']]
-  startProcess(sed_args)
+    print "Adding '" + args['appname'] + "' to project.xml..."
+    print "Adding deamon for application to config.xml..."
+    project_xml = os.path.join(args['installroot'], 'project.xml')
+    config_xml = os.path.join(args['installroot'], 'config.xml')
+    sed_args = [args['bash'], args['appname'], args['installroot']]
+    startProcess(sed_args)
+
+    print "Sign the application binary..."
+    sign = os.path.join(args['installroot'], 'bin/sign_executable')
+    privateKeyFile = os.path.join(args['installroot'], 'keys/code_sign_private')
+    output = open(os.path.join(args['application'], args['binary_name']+'.sig'), 'w')
+    p_sign = subprocess.Popen([sign, os.path.join(args['application'],
+            args['binary_name']), privateKeyFile], stdout=output,
+            stderr=subprocess.STDOUT)
+    result = p_sign.communicate()[0]
+    if p_sign.returncode is None or p_sign.returncode != 0:
+      print "Failed to execute bin/sign_executable.\nThe error was: %s" % result
+      return
+    output.close()
+  #END if drop-app HERE
 
   print "Running xadd script..."
   env = os.environ
@@ -195,19 +219,6 @@ def deployApp(args):
   env['PYTHONPATH'] = args['environment']['PYTHONPATH']
   if not startProcess([os.path.join(args['installroot'], 'bin/xadd')], env):
     return
-
-  print "Sign the application binary..."
-  sign = os.path.join(args['installroot'], 'bin/sign_executable')
-  privateKeyFile = os.path.join(args['installroot'], 'keys/code_sign_private')
-  output = open(os.path.join(args['application'], args['binary_name']+'.sig'), 'w')
-  p_sign = subprocess.Popen([sign, os.path.join(args['application'],
-          args['binary_name']), privateKeyFile], stdout=output,
-          stderr=subprocess.STDOUT)
-  result = p_sign.communicate()[0]
-  if p_sign.returncode is None or p_sign.returncode != 0:
-    print "Failed to execute bin/sign_executable.\nThe error was: %s" % result
-    return
-  output.close()
 
   print "Running script bin/update_versions..."
   updt_version = os.path.join(args['installroot'], 'bin/update_versions')
@@ -232,20 +243,21 @@ def deployApp(args):
   os.system(binstart)
 
   print "Boinc Application deployment is done... writing end signal file..."
-  sfile = open(os.path.join(args['installroot'], "."+args['appname']), 'w')
-  sfile.write("done")
+  sfile = open(token, 'w')
+  sfile.write(str(args['wu_number']))
   sfile.close()
 
 def create_wu(args, env):
-  count = int(args['wu_number'])
+  t_result = "templates/" + args['appname'] + '_result'
+  t_wu = "templates/" + args['appname'] + '_wu'
+  wu_name = 'wu_' + args['appname'] + args['version']
   launch_args = [os.path.join(args['installroot'], 'bin/create_work'),
-        '--appname', args['appname'], '--wu_name', args['wu_name'],
-        '--wu_template', "templates/"+args['appname'] + '_wu',
-        '--result_template', "templates/"+args['appname'] + '_result',
+        '--appname', args['appname'], '--wu_name', wu_name,
+        '--wu_template', t_wu, '--result_template', t_result,
         args['appname']+'_input']
-  for i in range(count):
+  for i in range(args['previous_wu'], args['wu_number']):
     print "Creating project wroker %s..." % str(i+1)
-    launch_args[4] = args['wu_name']+str(i+1)
+    launch_args[4] = wu_name + str(i+1)
     startProcess(launch_args, env, args['installroot'])
 
 def startProcess(launch_args, env=None, cwd=None):
