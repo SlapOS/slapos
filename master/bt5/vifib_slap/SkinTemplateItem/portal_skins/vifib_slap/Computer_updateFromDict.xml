@@ -89,9 +89,9 @@ for c in context.contentValues(portal_type="Computer Partition"):\n
   existing_partition_dict[c.getReference()] = c\n
 \n
 # update computer data\n
-context.edit(\n
-  quantity = len(computer_dict[\'partition_list\']),\n
-)\n
+quantity = len(computer_dict[\'partition_list\'])\n
+if context.getQuantity() != quantity:\n
+  context.edit(quantity=quantity)\n
 \n
 compareAndUpdateAddressList(context, [{\'addr\': computer_dict[\'address\'], \'netmask\': computer_dict[\'netmask\']}])\n
 expected_partition_dict = {}\n
@@ -108,7 +108,8 @@ for send_partition in computer_dict[\'partition_list\']:\n
 \n
   if partition.getValidationState() == "invalidated":\n
     partition.validate(comment="Reactivated by slapformat")\n
-  partition.edit(reference=send_partition[\'reference\'])\n
+  if partition.getReference() != send_partition[\'reference\']:\n
+    partition.edit(reference=send_partition[\'reference\'])\n
   network_interface = send_partition[\'tap\'][\'name\']\n
   compareAndUpdateAddressList(partition, send_partition[\'address_list\'], {\'network_interface\': network_interface})\n
 \n
