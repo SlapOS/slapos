@@ -37,7 +37,7 @@ class Recipe(GenericBaseRecipe):
     #get current slapuser name
     stat_info = os.stat(options['home'].strip())
     options['user'] = pwd.getpwuid(stat_info.st_uid)[0]
-    url_base = "http://["+options['ip']+"]:"+options['port']
+    url_base = options['url-base']
     project = options['project'].strip()
     root = options['installroot'].strip()
     options['home_page'] = url_base + "/" + project
@@ -65,8 +65,7 @@ class Recipe(GenericBaseRecipe):
     self.pythonbin = options['python-binary'].strip()
 
     #Apache php informations
-    self.ipv6 = options['ip'].strip()
-    self.port = options['port'].strip()
+    self.url_base =options['url-base'].strip()
     self.htpasswd = options['htpasswd'].strip()
     self.phpini = options['php-ini'].strip()
     self.phpbin = options['php-bin'].strip()
@@ -99,7 +98,6 @@ class Recipe(GenericBaseRecipe):
     path_list = []
     make_project = os.path.join(self.package, 'bin/make_project')
     niceprojectname = self.project + "@Home"
-    url_base = "http://["+self.ipv6+"]:"+self.port
     slapuser = self.options['user']
 
     #Define environment variable here
@@ -141,7 +139,7 @@ class Recipe(GenericBaseRecipe):
 
     # Generate make project wrapper file
     readme_file = os.path.join(self.installroot, self.project+'.readme')
-    launch_args = [make_project, '--url_base', url_base, "--db_name",
+    launch_args = [make_project, '--url_base', self.url_base, "--db_name",
               self.database, "--db_user", self.username, "--db_passwd",
               self.password, "--project_root", self.installroot, "--db_host",
               self.mysqlhost, "--user_name", slapuser, "--srcdir",
