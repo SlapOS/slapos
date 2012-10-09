@@ -253,7 +253,6 @@ class SlapTool(BaseTool):
                             computer_id, user, False)
     else:
       result = self._getComputerInformation(computer_id, user, False)
-#     result = self._getComputerInformation(computer_id, user, False)
 
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
@@ -283,7 +282,6 @@ class SlapTool(BaseTool):
                             computer_id, user, True)
     else:
       return self._getComputerInformation(computer_id, user, True)
-#     result = self._getComputerInformation(computer_id, user, True)
 
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
