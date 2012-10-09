@@ -80,13 +80,14 @@ if "computer_guid" in filter_kw:\n
 if "instance_guid" in filter_kw:\n
   explicit_location = True\n
   portal = context.getPortalObject()\n
-  instance = portal.portal_catalog.getResultValue(portal_type="Software Instance", reference=filter_kw.pop("instance_guid"))\n
+  instance_guid = filter_kw.pop("instance_guid")\n
+  instance = portal.portal_catalog.getResultValue(portal_type="Software Instance", reference=instance_guid)\n
   if instance is None:\n
     # XXX Other user do not have access to the instance document...\n
-    if filter_kw["instance_guid"] == "SOFTINST-9238":\n
+    if instance_guid == "SOFTINST-9238":\n
       # XXX Let\'s be nice with Cedric and Vincent\n
       query_kw["uid"] = "2225067"\n
-    elif filter_kw["instance_guid"] == "SOFTINST-11031":\n
+    elif instance_guid == "SOFTINST-11031":\n
       # XXX Let\'s be nice with KVM frontend\n
       query_kw["uid"] = "2874296"\n
     else:\n
