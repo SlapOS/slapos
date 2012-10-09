@@ -786,21 +786,13 @@ class Slapgrid(object):
       timestamp_path = os.path.join(instance_path, '.timestamp')
       open(timestamp_path, 'w').write(timestamp)
 
-  def processComputerPartitionList(self):
+  def FilterComputerPartitionList(self, computer_partition_list):
     """
-    Will start supervisord and process each Computer Partition.
+    Try to filter valid partitions to be processed from free partitions.
     """
     logger = logging.getLogger('ComputerPartitionProcessing')
-    logger.info('Processing computer partitions...')
-    # Prepares environment
-    self.checkEnvironmentAndCreateStructure()
-    self._launchSupervisord()
-    # Process Computer Partitions
-    clean_run = True
-    for computer_partition in self.getComputerPartitionList():
-      # Nothing should raise outside of the current loop iteration, so that
-      # even if something is terribly wrong while processing an instance, it
-      # won't prevent processing other ones.
+    filtered_computer_partition_list = []
+    for computer_partition in computer_partition_list:
       try:
         computer_partition_path = os.path.join(self.instance_root,
             computer_partition.getId())
@@ -817,6 +809,75 @@ class Slapgrid(object):
            os.listdir(computer_partition_path) == []:
           continue
 
+        # If partition has no SR: skip it.
+        try:
+          software_url = computer_partition.getSoftwareRelease().getURI()
+          software_path = os.path.join(self.software_root,
+              getSoftwareUrlHash(software_url))
+        except (NotFoundError, TypeError):
+          # This is surely free partition. Check it...
+          if os.listdir(computer_partition_path) == []:
+            continue
+
+        # Everything seems fine
+        filtered_computer_partition_list.append(computer_partition)
+
+      # XXX-Cedric: factor all this error handling
+
+      # Send log before exiting
+      except (SystemExit, KeyboardInterrupt):
+        exception = traceback.format_exc()
+        computer_partition.error(exception)
+        raise
+
+      # Buildout failed: send log but don't print it to output (already done)
+      except BuildoutFailedError, exception:
+        clean_run = False
+        try:
+          computer_partition.error(exception)
+        except (SystemExit, KeyboardInterrupt):
+          raise
+        except Exception:
+          exception = traceback.format_exc()
+          logger.error('Problem during reporting error, continuing:\n' +
+            exception)
+
+      # For everything else: log it, send it, continue.
+      except Exception as exception:
+        clean_run = False
+        logger.error(traceback.format_exc())
+        try:
+          computer_partition.error(exception)
+        except (SystemExit, KeyboardInterrupt):
+          raise
+        except Exception:
+          exception = traceback.format_exc()
+          logger.error('Problem during reporting error, continuing:\n' +
+            exception)
+
+    return filtered_computer_partition_list
+
+  def processComputerPartitionList(self):
+    """
+    Will start supervisord and process each Computer Partition.
+    """
+    logger = logging.getLogger('ComputerPartitionProcessing')
+    logger.info('Processing computer partitions...')
+    # Prepares environment
+    self.checkEnvironmentAndCreateStructure()
+    self._launchSupervisord()
+    # Process Computer Partitions
+    clean_run = True
+
+    # Filter all dummy / empty partitions
+    computer_partition_list = self.FilterComputerPartitionList(
+        self.getComputerPartitionList())
+
+    for computer_partition in computer_partition_list:
+      # Nothing should raise outside of the current loop iteration, so that
+      # even if something is terribly wrong while processing an instance, it
+      # won't prevent processing other ones.
+      try:
         # Process the partition itself
         self.processComputerPartition(computer_partition)
 
@@ -973,12 +1034,13 @@ class Slapgrid(object):
           '../../../../slapos/slap/doc/partition_consumption.xsd')
 
     clean_run = True
-    #We loop on the different computer partitions
-    computer_partition_list = slap_computer_usage.getComputerPartitionList()
+    # Loop on the different computer partitions
+    computer_partition_list = self.FilterComputerPartitionList(
+       slap_computer_usage.getComputerPartitionList())
     for computer_partition in computer_partition_list:
       try:
         computer_partition_id = computer_partition.getId()
-        
+
         #We want execute all the script in the report folder
         instance_path = os.path.join(self.instance_root,
             computer_partition.getId())
@@ -1119,9 +1181,9 @@ class Slapgrid(object):
         try:
           computer_partition_id = computer_partition.getId()
           try:
-            software_url = computer_partition.getSoftwareRelease().getURI()
-            software_path = os.path.join(self.software_root,
-                getSoftwareUrlHash(software_url))
+             software_url = computer_partition.getSoftwareRelease().getURI()
+             software_path = os.path.join(self.software_root,
+                 getSoftwareUrlHash(software_url))
           except (NotFoundError, TypeError):
             software_url = None
             software_path = None
