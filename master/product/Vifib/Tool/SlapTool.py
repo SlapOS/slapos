@@ -216,9 +216,7 @@ class SlapTool(BaseTool):
           entry = None
         if entry is not None and type(entry.getValue()) == type({}):
           result = entry.getValue()['data']
-          if time.time() - entry.getValue()['time'] > 60 * 1:
-            # entry was stored 1 minutes ago, ask for recalculation
-            self._activateFillComputerInformationCache(computer_id, user, full)
+          self._activateFillComputerInformationCache(computer_id, user, full)
           return result
         else:
           self._activateFillComputerInformationCache(computer_id, user, full)
