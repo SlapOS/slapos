@@ -176,7 +176,9 @@ class SlapTool(BaseTool):
     cache_plugin = self.getPortalObject().portal_caches\
       .getRamCacheRoot().get('last_stored_data_cache_factory')\
       .getCachePluginList()[0]
-    cache_plugin.set(key, DEFAULT_CACHE_SCOPE, value)
+    cache_plugin.set(key, DEFAULT_CACHE_SCOPE, value,
+      cache_duration=self.getPortalObject().portal_caches\
+      .getRamCacheRoot().get('last_stored_data_cache_factory').cache_duration)
 
   def _getLastData(self, key):
     cache_plugin = self.getPortalObject().portal_caches\
@@ -186,6 +188,8 @@ class SlapTool(BaseTool):
       entry = cache_plugin.get(key, DEFAULT_CACHE_SCOPE)
     except KeyError:
       entry = None
+    else:
+      entry = entry.getValue()
     return entry
 
   def _activateFillComputerInformationCache(self, computer_id, user, full):
