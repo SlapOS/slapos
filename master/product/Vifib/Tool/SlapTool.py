@@ -223,7 +223,6 @@ class SlapTool(BaseTool):
           return self.REQUEST.response
       else:
         return self._getCacheComputerInformation(computer_id, user, full)
-#       return self._getCacheComputerInformation(computer_id, user, full)
     else:
       slap_computer._software_release_list = []
     for computer_partition in self.getPortalObject().portal_catalog(
