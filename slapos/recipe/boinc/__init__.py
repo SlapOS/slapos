@@ -81,7 +81,7 @@ class Recipe(GenericBaseRecipe):
     config_file = os.path.join(self.home, '.config')
     current = [self.fullname, self.copyright,
         self.password, self.mysqlhost, self.installroot,
-        self.project, self.passwd, url_base]
+        self.project, self.passwd, self.url_base]
     previous = []
     result = False
     if os.path.exists(config_file):
