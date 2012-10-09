@@ -37,6 +37,7 @@ from Products.ERP5Type.Globals import InitializeClass
 from Products.ERP5Type.Tool.BaseTool import BaseTool
 from Products.ERP5Type import Permissions
 from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
+from Products.ERP5Type.Cache import CachingMethod
 from lxml import etree
 import time
 try:
@@ -1111,15 +1112,21 @@ class SlapTool(BaseTool):
     else:
       return l[0].getObject()
 
-  def _getComputerDocument(self, computer_reference):
-    """
-    Get the validated computer with this reference.
-    """
+  def _getNonCachedComputerDocument(self, computer_reference):
     return self._getDocument(
         portal_type='Computer',
         # XXX Hardcoded validation state
         validation_state="validated",
-        reference=computer_reference)
+        reference=computer_reference).getRelativeUrl()
+
+  def _getComputerDocument(self, computer_reference):
+    """
+    Get the validated computer with this reference.
+    """
+    result = CachingMethod(self._getNonCachedComputerDocument,
+        id='_getComputerDocument',
+        cache_factory='slap_cache_factory')(computer_reference)
+    return self.getPortalObject().restrictedTraverse(result)
 
   @UnrestrictedMethod
   def _getComputerUidByReference(self, computer_reference):
