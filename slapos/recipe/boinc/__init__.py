@@ -79,9 +79,9 @@ class Recipe(GenericBaseRecipe):
 
   def haschanges(self):
     config_file = os.path.join(self.home, '.config')
-    current = [self.fullname, self.copyright, self.port,
+    current = [self.fullname, self.copyright,
         self.password, self.mysqlhost, self.installroot,
-        self.project, self.passwd, self.ipv6]
+        self.project, self.passwd, url_base]
     previous = []
     result = False
     if os.path.exists(config_file):
