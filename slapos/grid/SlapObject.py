@@ -38,6 +38,7 @@ from supervisor import xmlrpc
 import xmlrpclib
 import pwd
 import utils
+from slapos.slap.slap import NotFoundError
 from svcbackend import getSupervisorRPC
 from exception import BuildoutFailedError, WrongPermissionError, \
     PathDoesNotExistError
@@ -259,7 +260,11 @@ class Partition(object):
         not os.path.exists(self.cert_file):
       self.logger.info('Certificate and key not found, downloading to %r and '
           '%r' % (self.cert_file, self.key_file))
-      partition_certificate = self.computer_partition.getCertificate()
+      try:
+        partition_certificate = self.computer_partition.getCertificate()
+      except NotFoundError:
+        raise NotFoundError('Partition %s is not known from SlapOS Master.' % \
+            self.partition_id)
       open(self.key_file, 'w').write(partition_certificate['key'])
       open(self.cert_file, 'w').write(partition_certificate['certificate'])
     for f in [self.key_file, self.cert_file]:
