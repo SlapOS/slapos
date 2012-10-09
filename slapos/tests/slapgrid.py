@@ -1153,6 +1153,80 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                       'destroyedComputerPartition'])
     self.assertEqual(instance.state,'destroyed')
 
+  def test_slapgrid_destroys_instance_to_be_destroyed_without_sr_uri(self):
+    """
+    Test than an instance in "destroyed" state but without SR informations
+    is correctly destroyed
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
+
+    instance.software.name = None
+
+    computer.sequence = []
+    instance.requested_state = 'destroyed'
+    self.assertTrue(self.grid.agregateAndSendUsage())
+    # Assert partition directory is empty
+    self.assertSortedListEqual(os.listdir(self.instance_root),
+                               ['0', 'etc', 'var'])
+    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
+    self.assertSortedListEqual(os.listdir(self.software_root),
+                               [instance.software.software_hash])
+    # Assert supervisor stopped process
+    tries = 50
+    wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
+    exists = False
+    while tries > 0:
+      tries -= 1
+      if os.path.exists(wrapper_log):
+        exists = True
+        break
+      time.sleep(0.1)
+    self.assertFalse(exists)
+
+    self.assertEqual(computer.sequence,
+                     ['getFullComputerInformation',
+                      'stoppedComputerPartition',
+                      'destroyedComputerPartition'])
+    self.assertEqual(instance.state,'destroyed')
+
+  def test_slapgrid_destroys_instance_to_be_destroyed_without_sr(self):
+    """
+    Test than an instance in "destroyed" state but without SR at all
+    is correctly destroyed
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    instance.requested_state = 'started'
+
+    instance.software = None
+
+    computer.sequence = []
+    instance.requested_state = 'destroyed'
+    self.assertTrue(self.grid.agregateAndSendUsage())
+    # Assert partition directory is empty
+    self.assertSortedListEqual(os.listdir(self.instance_root),
+                               ['0', 'etc', 'var'])
+    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
+    # Assert supervisor stopped process
+    tries = 50
+    wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
+    exists = False
+    while tries > 0:
+      tries -= 1
+      if os.path.exists(wrapper_log):
+        exists = True
+        break
+      time.sleep(0.1)
+    self.assertFalse(exists)
+
+    self.assertEqual(computer.sequence,
+                     ['getFullComputerInformation',
+                      'stoppedComputerPartition',
+                      'destroyedComputerPartition'])
+    self.assertEqual(instance.state,'destroyed')
+
   def test_slapgrid_not_destroy_bad_instance(self):
     """
     Checks that slapgrid-ur don't destroy instance not to be destroyed.
