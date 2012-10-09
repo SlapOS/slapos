@@ -84,7 +84,7 @@ echo "touch launched
 if [ -f ./crashed ]; then
 while :; do echo "Working\\nWorking\\n" ; sleep 0.1; done
 else
-touch ./crashed; echo "Failing\\nFailing\\n"; sleep 1; return 111;
+touch ./crashed; echo "Failing\\nFailing\\n"; sleep 1; exit 111;
 fi" >> etc/service/daemon &&
 chmod 755 etc/service/daemon &&
 touch worked
@@ -650,6 +650,19 @@ chmod 755 etc/run/wrapper
 
 class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
 
+  def setUp(self):
+    MasterMixin.setUp(self)
+    # Prepare watchdog
+    self.watchdog_banged = os.path.join(self._tempdir, 'watchdog_banged')
+    watchdog_path = os.path.join(self._tempdir, 'watchdog')
+    open(watchdog_path, 'w').write(
+      WATCHDOG_TEMPLATE % dict(python_path=sys.executable,
+                               sys_path=sys.path,
+                               watchdog_banged=self.watchdog_banged))
+    os.chmod(watchdog_path, 0755)
+    self.grid.watchdog_path = watchdog_path
+    slapos.grid.slapgrid.WATCHDOG_PATH = watchdog_path
+
   def test_one_failing_daemon_in_service_will_bang_with_watchdog(self):
     """
     Check that a failing service watched by watchdog trigger bang
@@ -666,15 +679,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     partition = computer.instance_list[0]
     partition.requested_state = 'started'
     partition.software.setBuildout(DAEMON_CONTENT)
-    # Prepare watchdog
-    watchdog_path = os.path.join(self._tempdir, 'watchdog')
-    watchdog_banged = os.path.join(self._tempdir, 'watchdog_banged')
-    open(watchdog_path, 'w').write(
-      WATCHDOG_TEMPLATE % dict(python_path=sys.executable,
-                               sys_path=sys.path,
-                               watchdog_banged=watchdog_banged))
-    os.chmod(watchdog_path, 0755)
-    self.grid.watchdog_path = watchdog_path
+
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
@@ -692,11 +697,11 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     tries = 25
     while tries > 0:
       tries -= 1
-      if os.path.exists(watchdog_banged):
+      if os.path.exists(self.watchdog_banged):
         break
       time.sleep(0.1)
-    self.assertTrue(os.path.exists(watchdog_banged))
-    self.assertTrue('daemon' in open(watchdog_banged, 'r').read())
+    self.assertTrue(os.path.exists(self.watchdog_banged))
+    self.assertTrue('daemon' in open(self.watchdog_banged, 'r').read())
 
   RUN_CONTENT = """#!/bin/sh
 mkdir -p etc/run &&
@@ -724,15 +729,7 @@ touch worked
     partition = computer.instance_list[0]
     partition.requested_state = 'started'
     partition.software.setBuildout(self.RUN_CONTENT)
-    # Prepare watchdog
-    watchdog_path = os.path.join(self._tempdir,'watchdog')
-    watchdog_banged = os.path.join(self._tempdir,'watchdog_banged')
-    open(watchdog_path,'w').write(
-      WATCHDOG_TEMPLATE % dict(python_path=sys.executable,
-                               sys_path=sys.path,
-                               watchdog_banged=watchdog_banged))
-    os.chmod(watchdog_path,0755)
-    self.grid.watchdog_path = watchdog_path
+
     self.assertTrue(self.grid.processComputerPartitionList())
     self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
       'var'])
@@ -746,13 +743,13 @@ touch worked
         break
       time.sleep(0.1)
     self.assertTrue('Failing' in open(daemon_log, 'r').read())
-    tries = 25
+    tries = 50
     while tries > 0:
       tries -= 1
-      if os.path.exists(watchdog_banged):
+      if os.path.exists(self.watchdog_banged):
         break
       time.sleep(0.1)
-    self.assertFalse(os.path.exists(watchdog_banged))
+    self.assertFalse(os.path.exists(self.watchdog_banged))
 
 
   def test_watched_by_watchdog_bang(self):
