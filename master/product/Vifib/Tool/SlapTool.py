@@ -162,7 +162,8 @@ class SlapTool(BaseTool):
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   def _fillComputerInformationCache(self, computer_id, user, full):
-    self._getCachePlugin().set(user, DEFAULT_CACHE_SCOPE,
+    key = '%s_%s_%s' % (full, computer_id, user)
+    self._getCachePlugin().set(key, DEFAULT_CACHE_SCOPE,
       dict (
         time=time.time(),
         data=self._getCacheComputerInformation(computer_id, user, full),
@@ -193,7 +194,7 @@ class SlapTool(BaseTool):
     return entry
 
   def _activateFillComputerInformationCache(self, computer_id, user, full):
-    tag = 'computer_information_cache_fill_%s' % user
+    tag = 'computer_information_cache_fill_%s_%s_%s' % (computer_id, user, full)
     if self.getPortalObject().portal_activities.countMessageWithTag(tag) == 0:
       self.activate(activity='SQLQueue', tag=tag)._fillComputerInformationCache(
         computer_id, user, full)
@@ -211,7 +212,8 @@ class SlapTool(BaseTool):
       if not self._isTestRun():
         cache_plugin = self._getCachePlugin()
         try:
-          entry = cache_plugin.get(user, DEFAULT_CACHE_SCOPE)
+          key = '%s_%s_%s' (full, computer_id, user)
+          entry = cache_plugin.get(key, DEFAULT_CACHE_SCOPE)
         except KeyError:
           entry = None
         if entry is not None and type(entry.getValue()) == type({}):
