@@ -9,6 +9,7 @@ Person | person_slap_interface_workflow
 Person | slap_interaction_workflow
 Purchase Packing List | slap_interaction_workflow
 Sale Invoice Transaction | slap_interaction_workflow
+Sale Order | slap_interaction_workflow
 Sale Packing List Line | slap_interaction_workflow
 Sale Packing List | slap_interaction_workflow
 Slave Instance | slap_interaction_workflow
