@@ -224,6 +224,7 @@ class SlapTool(BaseTool):
           return self.REQUEST.response
       else:
         return self._getCacheComputerInformation(computer_id, user, full)
+#      return self._getCacheComputerInformation(computer_id, user, full)
     else:
       slap_computer._software_release_list = []
     for computer_partition in self.getPortalObject().portal_catalog.unrestrictedSearchResults(
@@ -250,7 +251,7 @@ class SlapTool(BaseTool):
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
     self.REQUEST.response.setHeader('Cache-Control',
-                                    'public, max-age=60, stale-if-error=604800')
+                                    'public, max-age=1, stale-if-error=604800')
     self.REQUEST.response.setHeader('Vary',
                                     'REMOTE_USER')
     self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
@@ -273,7 +274,7 @@ class SlapTool(BaseTool):
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
     self.REQUEST.response.setHeader('Cache-Control',
-                                    'public, max-age=60, stale-if-error=604800')
+                                    'public, max-age=1, stale-if-error=604800')
     self.REQUEST.response.setHeader('Vary',
                                     'REMOTE_USER')
     self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
@@ -588,7 +589,7 @@ class SlapTool(BaseTool):
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
     self.REQUEST.response.setHeader('Cache-Control',
-                                    'public, max-age=60, stale-if-error=604800')
+                                    'public, max-age=1, stale-if-error=604800')
     self.REQUEST.response.setHeader('Vary',
                                     'REMOTE_USER')
     self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
