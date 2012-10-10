@@ -30,6 +30,7 @@ import sys
 import subprocess
 import time
 import shutil
+import re
 
 def checkMysql(args):
   sys.path += args['python_path'].split(':')
@@ -45,15 +46,22 @@ def checkMysql(args):
       conn.close()
       print "Successfully connect to MySQL database... "
       if args.has_key('file_status'):
-        file = open(args['file_status'], 'w')
-        file.write("starting")
-        file.close()
+        writeFile(args['file_status'], "starting")
       break
     except Exception, ex:
       print "The result is: \n" + ex.message
       print "Could not connect to MySQL database... sleep for 2 secondes"
       time.sleep(2)
 
+def checkFile(file, stime):
+  """Loop until 'file' is created (exist)"""
+  while True:
+    print "Search for file %s..." % file
+    if not os.path.exists(file):
+      print "File not found... sleep for %s secondes" % stime
+      time.sleep(stime)
+    else:
+      break
 
 def services(args):
   """This function configure a new installed boinc project instance"""
@@ -62,13 +70,7 @@ def services(args):
     print "Not need to install Boinc-server...skipped"
     return
   #Sleep until file 'boinc_project'.readme exist
-  while True:
-    print "Search for file %s..." % args['readme']
-    if not os.path.exists(args['readme']):
-      print "File not found... sleep for 3 secondes"
-      time.sleep(3)
-    else:
-      break
+  checkFile(args['readme'], 3)
 
   topath = os.path.join(args['installroot'], 'html/ops/.htpasswd')
   print "Generating .htpasswd file... File=%s" % topath
@@ -111,20 +113,12 @@ def services(args):
   if not startProcess(["php", forum_file], env, cwd):
     return
 
-  status = open(args['service_status'], "w")
-  status.write("started")
-  status.close()
+  writeFile(args['service_status'], "started")
 
 def restart_boinc(args):
   """Stop (if currently is running state) and start all Boinc service"""
   if args['drop_install']:
-    while True:
-      print "Search for file %s..." % args['service_status']
-      if not os.path.exists(args['service_status']):
-        print "File not found... sleep for 3 secondes"
-        time.sleep(3)
-      else:
-        break
+    checkFile(args['service_status'], 3)
   else:
     checkMysql(args)
   print "Restart Boinc..."
@@ -133,9 +127,7 @@ def restart_boinc(args):
   binstop = os.path.join(args['installroot'], 'bin/stop')
   os.system(binstop)
   os.system(binstart)
-  status = open(args['start_boinc'], "w")
-  status.write("started")
-  status.close()
+  writeFile(args['start_boinc'], "started")
   print "Done."
 
 def deployApp(args):
@@ -155,13 +147,7 @@ def deployApp(args):
     args['previous_wu'] = 0
     dropapp = True
   #Sleep until file .start_boinc exist (File indicate that BOINC has been started)
-  while True:
-    print "Search for file %s..." % args['start_boinc']
-    if not os.path.exists(args['start_boinc']):
-      print "File not found... sleep for 3 secondes"
-      time.sleep(3)
-    else:
-      break
+  checkFile(args['start_boinc'], 3)
 
   print "setup directories..."
   args['inputfile'] = os.path.join(args['installroot'], 'download',
@@ -243,9 +229,7 @@ def deployApp(args):
   os.system(binstart)
 
   print "Boinc Application deployment is done... writing end signal file..."
-  sfile = open(token, 'w')
-  sfile.write(str(args['wu_number']))
-  sfile.close()
+  writeFile(token, str(args['wu_number']))
 
 def create_wu(args, env):
   t_result = "templates/" + args['appname'] + '_result'
@@ -253,14 +237,15 @@ def create_wu(args, env):
   launch_args = [os.path.join(args['installroot'], 'bin/create_work'),
         '--appname', args['appname'], '--wu_name', '',
         '--wu_template', t_wu, '--result_template', t_result,
+        '--min_quorum', '1',  '--target_nresults', '1',
         args['appname']+'_input']
   for i in range(args['previous_wu'], args['wu_number']):
     print "Creating project wroker %s..." % str(i+1)
     launch_args[4] = args['appname'] + str(i+1) + args['version'] + '_nodelete'
     startProcess(launch_args, env, args['installroot'])
 
-def startProcess(launch_args, env=None, cwd=None):
-  process = subprocess.Popen(launch_args, stdout=subprocess.PIPE,
+def startProcess(launch_args, env=None, cwd=None, stdout=subprocess.PIPE):
+  process = subprocess.Popen(launch_args, stdout=stdout,
               stderr=subprocess.STDOUT, env=env,
               cwd=cwd)
   result = process.communicate()[0]
@@ -269,4 +254,24 @@ def startProcess(launch_args, env=None, cwd=None):
     return False
   return True
 
-    
+def runCmd(args):
+  """Wait for Boinc Client started and run boinc cmd"""
+  client_config = os.path.join(args['installdir'], 'client_state.xml')
+  checkFile(client_config, 5)
+  time.sleep(10)
+  #Scan client state xml to find client ipv4 adress
+  host = result = re.search("<ip_addr>([\w\d\.:]+)</ip_addr>",
+                open(client_config, 'r').read()).group(1)
+  args['base_cmd'][2] = host + ':' + args['base_cmd'][2]
+  print "Run boinccmd with host at %s " % args['base_cmd'][2]
+  project_args = args['base_cmd'] + ['--project_attach', args['project_url'],
+                      args['key']]
+  startProcess(project_args, cwd=args['installdir'])
+  if args['cc_cmd'] != '':
+    #Load or reload cc_config file
+    startProcess(args['base_cmd'] + [args['cc_cmd']], cwd=args['installdir'])
+
+def writeFile(file, content):
+  f = open(file, 'w')
+  f.write(content)
+  f.close()

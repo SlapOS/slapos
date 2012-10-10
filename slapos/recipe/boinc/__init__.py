@@ -238,7 +238,8 @@ class App(GenericBaseRecipe):
     sh_script = self.createFile(bash,
         self.substituteTemplate(self.getTemplateFilename('sed_update.in'),
         dict(dash=self.options['dash'].strip(),
-              uldl_pid=self.options['apache-pid'].strip()))
+              uldl_pid=self.options['apache-pid'].strip(),
+              user=self.options['user']))
     )
     path_list.append(sh_script)
     os.chmod(bash , 0700)
@@ -280,21 +281,49 @@ class App(GenericBaseRecipe):
 class Client(GenericBaseRecipe):
   """Deploy a fully fonctionnal boinc client connected to a boinc server instance"""
 
+  def __init__(self, buildout, name, options):
+    #get current uig to create a unique rpc-port for this client
+    stat_info = os.stat(options['install-dir'].strip())
+    options['rpc-port'] = pwd.getpwuid(stat_info.st_uid)[2] + 5000
+
+    return GenericBaseRecipe.__init__(self, buildout, name, options)
+
   def install(self):
     path_list = []
     boincbin = self.options['boinc-bin'].strip()
+    cmdbin = self.options['cmd-bin'].strip()
     installdir = self.options['install-dir'].strip()
     url = self.options['server-url'].strip()
     key = self.options['key'].strip()
     boinc_wrapper = self.options['client-wrapper'].strip()
+    cmd_wrapper = self.options['cmd-wrapper'].strip()
+    remote_host = os.path.join(installdir, 'remote_hosts.cfg')
+    open(remote_host, 'w').write(self.options['ip'].strip())
 
-    #Generate wrapper for boinc_client
-    client_wrapper = self.createPythonScript(boinc_wrapper,
-        'slapos.recipe.librecipe.execute.execute',
-        ([boincbin, '--dir', installdir, '--attach_project', url, key])
+    #Generate wrapper for boinc cmd
+    base_cmd = [cmdbin, '--host', str(self.options['rpc-port']),
+                      '--passwd', self.options['passwd'].strip()]
+    cc_cmd = ''
+    if self.options['cconfig'].strip() != '':
+      config_dest = os.path.join(installdir, 'cc_config.xml')
+      file = open(config_dest, 'w')
+      file.write(open(self.options['cconfig'].strip(), 'r').read())
+      file.close()
+      cc_cmd = '--read_cc_config'
+    cmd = self.createPythonScript(cmd_wrapper,
+        '%s.configure.runCmd' % __name__,
+        dict(base_cmd=base_cmd, cc_cmd=cc_cmd, installdir=installdir,
+        project_url=url, key=key)
     )
-    path_list.append(client_wrapper)
-    return path_list
+    path_list.append(cmd)
 
-  update = install
-  
+    #Generate BOINC client wrapper
+    boinc = self.createPythonScript(boinc_wrapper,
+            'slapos.recipe.librecipe.execute.execute',
+            [boincbin, '--allow_multiple_clients', '--gui_rpc_port',
+              str(self.options['rpc-port']), '--allow_remote_gui_rpc',
+              '--dir', installdir, '--redirectio', '--check_all_logins']
+    )
+    path_list.append(boinc)
+
+    return path_list
