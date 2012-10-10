@@ -200,6 +200,7 @@ link-binary =
   {{ sed_location }}/bin/sed
   {{ tesseract_location }}/bin/tesseract
   {{ w3m_location }}/bin/w3m
+  {{ openssl_location }}/bin/openssl
   {{ poppler_location }}/bin/pdfinfo
   {{ poppler_location }}/bin/pdfseparate
   {{ poppler_location }}/bin/pdftotext
