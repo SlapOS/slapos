@@ -166,8 +166,6 @@ class testVifibMixin(ERP5TypeTestCase):
         'ERP5 Certificate Authority Tool', None)
     self.portal.portal_certificate_authority.certificate_authority_path = \
         os.environ['TEST_CA_PATH']
-    self.portal.portal_certificate_authority.openssl_binary = os.environ[
-        'OPENSSL_BINARY']
     transaction.commit()
     # reset test CA to have it always count from 0
     open(os.path.join(os.environ['TEST_CA_PATH'], 'serial'), 'w').write('01')
