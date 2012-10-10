@@ -193,7 +193,7 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
   config.setConfig(options, options.configuration_file)
   local = init(config)
   # Request instance
-  print("Requesting %s..." % config.software_url)
+  print("Requesting %s..." % config.reference)
   if config.software_url in local:
     config.software_url = local[config.software_url]
   try:
