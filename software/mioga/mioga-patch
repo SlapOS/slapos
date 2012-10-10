@@ -1,6 +1,6 @@
 diff -r c0f4c1b8b448 Makefile.PL
 --- a/Makefile.PL	Sat Oct 06 16:15:43 2012 +0200
-+++ b/Makefile.PL	Wed Oct 10 01:19:50 2012 +0200
++++ b/Makefile.PL	Wed Oct 10 01:52:02 2012 +0200
 @@ -115,7 +115,7 @@
  # ----------------------------------------------------------------------------
  sub MY::processPL {
@@ -24,7 +24,7 @@ diff -r c0f4c1b8b448 Makefile.PL
              fi \
 diff -r c0f4c1b8b448 conf/Config.xml
 --- a/conf/Config.xml	Sat Oct 06 16:15:43 2012 +0200
-+++ b/conf/Config.xml	Wed Oct 10 01:19:50 2012 +0200
++++ b/conf/Config.xml	Wed Oct 10 01:52:02 2012 +0200
 @@ -37,6 +37,12 @@
                 xpath="/authentication"/>
      
@@ -38,9 +38,33 @@ diff -r c0f4c1b8b448 conf/Config.xml
        <parameter name="db_name" question=" Name of Mioga database ?" 
                   type="text" default="mioga2"
                   xpath="/database/DBname"/>              
+diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
+--- a/lib/Mioga2/Database.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/Database.pm	Wed Oct 10 01:52:02 2012 +0200
+@@ -61,7 +61,7 @@
+ 	my $self = { };
+ 	bless($self, $class);
+ 
+-	for my $attr (qw/DBIlogin DBIpasswd DBIdriver DBname/) {
++	for my $attr (qw/DBhost DBport DBIlogin DBIpasswd DBIdriver DBname/) {
+ 		if (!defined ($attributes{$attr})) {
+ 			throw Mioga2::Exception::DB ("[Mioga2::Database::new]", "Cannot connect to database: " . $DBI::errstr);
+ 		}
+@@ -72,8 +72,10 @@
+ 	my $dbiPassword = $self->{database}->{DBIpasswd};
+ 	my $dbDriver = $self->{database}->{DBIdriver};
+ 	my $dbName = $self->{database}->{DBname};
++    my $dbHost = $self->{database}->{DBhost};
++    my $dbPort = $self->{database}->{DBport};
+ 
+-	my $datasource = "dbi:$dbDriver:dbname=$dbName";
++	my $datasource = "dbi:$dbDriver:dbname=$dbName;host=$dbHost;port=$dbPort";
+ 
+ 	$self->{dbh} = DBI->connect($datasource, $dbiUser, $dbiPassword);
+ 
 diff -r c0f4c1b8b448 lib/MiogaConf.pm
 --- a/lib/MiogaConf.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/MiogaConf.pm	Wed Oct 10 01:19:50 2012 +0200
++++ b/lib/MiogaConf.pm	Wed Oct 10 01:52:02 2012 +0200
 @@ -811,6 +811,10 @@
  	my @missing;
  	my @missing_clib;
@@ -62,7 +86,7 @@ diff -r c0f4c1b8b448 lib/MiogaConf.pm
  		my $version;
 diff -r c0f4c1b8b448 sql/Makefile
 --- a/sql/Makefile	Sat Oct 06 16:15:43 2012 +0200
-+++ b/sql/Makefile	Wed Oct 10 01:19:50 2012 +0200
++++ b/sql/Makefile	Wed Oct 10 01:52:02 2012 +0200
 @@ -18,9 +18,9 @@
  	if [ $(INIT_SQL) = 'yes' ] ; \
  	then \
@@ -76,3 +100,28 @@ diff -r c0f4c1b8b448 sql/Makefile
  		perl -w -I../lib initdb.pl ; \
  	elif [ $(INIT_SQL) != 'noupdate' ]; then \
  		echo "Update database"; \
+diff -r c0f4c1b8b448 sql/schema_base.sql
+--- a/sql/schema_base.sql	Sat Oct 06 16:15:43 2012 +0200
++++ b/sql/schema_base.sql	Wed Oct 10 01:52:02 2012 +0200
+@@ -429,10 +429,6 @@
+     END;
+ ' LANGUAGE 'plpgsql';
+ 
+-CREATE TRIGGER m_group_base_default_profile_id_check
+-     BEFORE DELETE ON m_profile FOR EACH ROW
+-     EXECUTE PROCEDURE check_group_base_default_profile_id ();
+-
+ 
+ CREATE OR REPLACE FUNCTION check_group_base_mioga_id () RETURNS trigger AS '
+     DECLARE
+@@ -839,6 +835,10 @@
+ );
+ create unique index m_profile_ident_group_index on m_profile (ident, group_id);
+ 
++CREATE TRIGGER m_group_base_default_profile_id_check
++     BEFORE DELETE ON m_profile FOR EACH ROW
++     EXECUTE PROCEDURE check_group_base_default_profile_id ();
++
+ 
+ --
+ -- Add referencial integrity on default_profile_id in m_group_base
