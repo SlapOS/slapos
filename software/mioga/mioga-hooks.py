@@ -1,5 +1,5 @@
 
-# import fnmatch
+import fnmatch
 import grp
 import os
 import pprint
@@ -47,6 +47,19 @@ def pre_configure_hook(options, bo, env):
   fm.save()
 
   # TODO: mail settings are certainly wrong, what is the domain name?
+
+  # Correct shebangs to the right Perl
+  for root, dirnames, filenames in os.walk('.'):
+    for filename in fnmatch.filter(filenames, '*.pl'):
+      with open(os.path.join(root, filename), "r+") as f:
+        lines = f.readlines()
+        (lines[0], count) = re.subn(r'^#!/usr/bin/perl',
+                                    '#!' + options['perl-binary'],
+                                    lines[0], 1)
+        if count > 0:
+          f.seek(0)
+          f.writelines(lines)
+          print "Corrected interpreter for script "+filename
 
 
 

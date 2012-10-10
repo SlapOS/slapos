@@ -60,6 +60,8 @@ class Recipe(GenericBaseRecipe):
     fm.modify('maildir', os.path.join(vardir, 'spool', 'mioga', 'maildir'))
     fm.modify('maildirerror', os.path.join(vardir, 'spool', 'mioga', 'error'))
     fm.modify('mailfifo', os.path.join(vardir, 'spool', 'mioga', 'fifo'))
+    fm.modify('notifierfifo', os.path.join(vardir, 'spool', 'mioga', 'notifier'))
+    fm.modify('searchenginefifo', os.path.join(vardir, 'spool', 'mioga', 'searchengine'))
     fm.modify('dbi_passwd', self.options['db_password'])
     fm.modify('db_host', self.options['db_host'])
     fm.modify('db_port', self.options['db_port'])
