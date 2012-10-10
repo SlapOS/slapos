@@ -250,14 +250,13 @@ def deployApp(args):
 def create_wu(args, env):
   t_result = "templates/" + args['appname'] + '_result'
   t_wu = "templates/" + args['appname'] + '_wu'
-  wu_name = 'wu_' + args['appname'] + args['version']
   launch_args = [os.path.join(args['installroot'], 'bin/create_work'),
-        '--appname', args['appname'], '--wu_name', wu_name,
+        '--appname', args['appname'], '--wu_name', '',
         '--wu_template', t_wu, '--result_template', t_result,
         args['appname']+'_input']
   for i in range(args['previous_wu'], args['wu_number']):
     print "Creating project wroker %s..." % str(i+1)
-    launch_args[4] = wu_name + str(i+1)
+    launch_args[4] = args['appname'] + str(i+1) + args['version'] + '_nodelete'
     startProcess(launch_args, env, args['installroot'])
 
 def startProcess(launch_args, env=None, cwd=None):
