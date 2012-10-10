@@ -8,7 +8,7 @@ PHPINIDir ${:php_ini_dir}
 ServerAdmin someone@email
 DefaultType text/plain
 TypesConfig conf/mime.types
-ScriptSock = ${:cgid_sock}
+ScriptSock ${:cgid_sock}
 AddType application/x-compress .Z
 AddType application/x-gzip .gz .tgz
 AddType application/x-httpd-php .php .phtml .php5 .php4
