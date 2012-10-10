@@ -21,15 +21,15 @@
         <item>
             <key> <string>activate_script_name</string> </key>
             <value>
-              <tuple/>
+              <list>
+                <string>HostingSubscription_triggerAlarm</string>
+              </list>
             </value>
         </item>
         <item>
             <key> <string>after_script_name</string> </key>
             <value>
-              <list>
-                <string>HostingSubscription_triggerAlarm</string>
-              </list>
+              <tuple/>
             </value>
         </item>
         <item>
