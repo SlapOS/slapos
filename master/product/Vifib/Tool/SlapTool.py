@@ -212,7 +212,7 @@ class SlapTool(BaseTool):
       if not self._isTestRun():
         cache_plugin = self._getCachePlugin()
         try:
-          key = '%s_%s_%s' (full, computer_id, user)
+          key = '%s_%s_%s' % (full, computer_id, user)
           entry = cache_plugin.get(key, DEFAULT_CACHE_SCOPE)
         except KeyError:
           entry = None
