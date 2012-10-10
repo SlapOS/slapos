@@ -1,4 +1,4 @@
-refresh_pattern .   0 20% 4320 max-stale=604800
+refresh_pattern .   0 20%% 4320 max-stale=604800
 
 # Dissallow cachemgr access
 http_access deny manager
