@@ -153,7 +153,7 @@ class SlapTool(BaseTool):
     slap_computer._computer_partition_list = []
     slap_computer._software_release_list = \
        self._getSoftwareReleaseValueListForComputer(computer_id, full=full)
-    for computer_partition in self.getPortalObject().portal_catalog(
+    for computer_partition in self.getPortalObject().portal_catalog.unrestrictedSearchResults(
                     parent_uid=parent_uid,
                     validation_state="validated",
                     portal_type="Computer Partition"):
@@ -199,7 +199,7 @@ class SlapTool(BaseTool):
         computer_id, user, full)
 
   def _getComputerInformation(self, computer_id, user, full):
-    user_document = self.getPortalObject().portal_catalog.getResultValue(
+    user_document = self.getPortalObject().portal_catalog.unrestrictedGetResultValue(
       reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
     user_type = user_document.getPortalType()
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
@@ -226,7 +226,7 @@ class SlapTool(BaseTool):
         return self._getCacheComputerInformation(computer_id, user, full)
     else:
       slap_computer._software_release_list = []
-    for computer_partition in self.getPortalObject().portal_catalog(
+    for computer_partition in self.getPortalObject().portal_catalog.unrestrictedSearchResults(
                     parent_uid=parent_uid,
                     validation_state="validated",
                     portal_type="Computer Partition"):
@@ -537,7 +537,7 @@ class SlapTool(BaseTool):
     software_instance = None
 
     if computer_partition_document.getSlapState() == 'busy':
-      software_instance_list = portal.portal_catalog(
+      software_instance_list = portal.portal_catalog.unrestrictedSearchResults(
           portal_type="Software Instance",
           default_aggregate_uid=computer_partition_document.getUid(),
           validation_state="validated",
@@ -669,7 +669,7 @@ class SlapTool(BaseTool):
     software_instance = None
 
     if computer_partition_document.getSlapState() == 'busy':
-      software_instance_list = portal.portal_catalog(
+      software_instance_list = portal.portal_catalog.unrestrictedSearchResults(
           portal_type="Software Instance",
           default_aggregate_uid=computer_partition_document.getUid(),
           validation_state="validated",
@@ -1106,7 +1106,7 @@ class SlapTool(BaseTool):
   def _getDocument(self, **kwargs):
     # No need to get all results if an error is raised when at least 2 objects
     # are found
-    l = self.getPortalObject().portal_catalog(limit=2, **kwargs)
+    l = self.getPortalObject().portal_catalog.unrestrictedSearchResults(limit=2, **kwargs)
     if len(l) != 1:
       raise NotFound, "No document found with parameters: %s" % kwargs
     else:
@@ -1150,7 +1150,7 @@ class SlapTool(BaseTool):
     raise Unauthorized
 
   def _getSoftwareInstallationForComputer(self, url, computer_document):
-    software_installation_list = self.getPortalObject().portal_catalog(
+    software_installation_list = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
       portal_type='Software Installation',
       default_aggregate_uid=computer_document.getUid(),
       validation_state='validated',
@@ -1191,7 +1191,7 @@ class SlapTool(BaseTool):
       else:
         query_kw['reference'] = slave_reference
 
-      software_instance = self.getPortalObject().portal_catalog.getResultValue(**query_kw)
+      software_instance = self.getPortalObject().portal_catalog.unrestrictedGetResultValue(**query_kw)
       if software_instance is None:
         raise NotFound, "No software instance found for: %s - %s" % (
           computer_id, computer_partition_id)
@@ -1215,7 +1215,7 @@ class SlapTool(BaseTool):
     slave_instance_list = []
     if (software_instance.getPortalType() == "Software Instance"):
       append = slave_instance_list.append
-      slave_instance_sql_list = portal.portal_catalog(
+      slave_instance_sql_list = portal.portal_catalog.unrestrictedSearchResults(
         default_aggregate_uid=computer_partition.getUid(),
         portal_type='Slave Instance',
         validation_state="validated",
@@ -1253,7 +1253,7 @@ class SlapTool(BaseTool):
     computer_document = self._getComputerDocument(computer_reference)
     portal = self.getPortalObject()
     software_release_list = []
-    for software_installation in portal.portal_catalog(
+    for software_installation in portal.portal_catalog.unrestrictedSearchResults(
       portal_type='Software Installation',
       default_aggregate_uid=computer_document.getUid(),
       validation_state='validated',
