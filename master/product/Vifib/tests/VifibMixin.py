@@ -96,6 +96,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_payzen_secure_payment',
       'erp5_ui_test_core',
       'erp5_ui_test',
+      'vifib_configurator',
       'vifib_slapos_core',
       'vifib_slapos_core_test',
       'vifib_slapos_rest_api_tool_portal_type',
@@ -283,26 +284,6 @@ class testVifibMixin(ERP5TypeTestCase):
     self.portal.portal_workflow.doActionFor(document, 'edit_action',
       comment='Manually created by test.')
 
-  def prepareVifibAccountingPeriod(self):
-    vifib = self.portal.organisation_module['vifib_internet']
-    year = DateTime().year()
-    start_date = '%s/01/01' % year
-    stop_date = '%s/12/31' % (year + 1)
-    accounting_period = self.portal.portal_catalog.getResultValue(
-      portal_type='Accounting Period',
-      parent_uid=vifib.getUid(),
-      simulation_state='started',
-      **{
-        'delivery.start_date': start_date,
-        'delivery.stop_date': stop_date
-      }
-    )
-    if accounting_period is None:
-      accounting_period = vifib.newContent(portal_type='Accounting Period',
-        start_date=start_date, stop_date=stop_date)
-      self.markManualCreation(accounting_period)
-      accounting_period.start()
-
   def bootstrapSite(self):
     """
     Manager has to create an administrator user first.
@@ -322,12 +303,10 @@ class testVifibMixin(ERP5TypeTestCase):
 
     self.logMessage("Bootstrap Vifib Without Security...")
     self.login()
-    # Change module ID generator
-    self.portal.portal_alarms.vifib_promise_module_id_generator.solve()
-    # setup Vifib PAS
-    self.portal.portal_alarms.vifib_promise_pas.solve()
+    # Invoke Post-configurator script, this invokes all 
+    # alarms related to configuration.
+    self.portal.BusinessConfiguration_invokePromiseAlarmList()
     self.prepareTestUsers()
-    self.prepareVifibAccountingPeriod()
     transaction.commit()
     self.tic()
     self.logout()
