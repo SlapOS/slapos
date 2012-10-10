@@ -1,6 +1,6 @@
 diff -r c0f4c1b8b448 Makefile.PL
 --- a/Makefile.PL	Sat Oct 06 16:15:43 2012 +0200
-+++ b/Makefile.PL	Wed Oct 10 01:52:02 2012 +0200
++++ b/Makefile.PL	Wed Oct 10 23:27:10 2012 +0200
 @@ -115,7 +115,7 @@
  # ----------------------------------------------------------------------------
  sub MY::processPL {
@@ -24,7 +24,7 @@ diff -r c0f4c1b8b448 Makefile.PL
              fi \
 diff -r c0f4c1b8b448 conf/Config.xml
 --- a/conf/Config.xml	Sat Oct 06 16:15:43 2012 +0200
-+++ b/conf/Config.xml	Wed Oct 10 01:52:02 2012 +0200
++++ b/conf/Config.xml	Wed Oct 10 23:27:10 2012 +0200
 @@ -37,6 +37,12 @@
                 xpath="/authentication"/>
      
@@ -40,7 +40,7 @@ diff -r c0f4c1b8b448 conf/Config.xml
                   xpath="/database/DBname"/>              
 diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
 --- a/lib/Mioga2/Database.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Database.pm	Wed Oct 10 01:52:02 2012 +0200
++++ b/lib/Mioga2/Database.pm	Wed Oct 10 23:27:10 2012 +0200
 @@ -61,7 +61,7 @@
  	my $self = { };
  	bless($self, $class);
@@ -62,9 +62,23 @@ diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
  
  	$self->{dbh} = DBI->connect($datasource, $dbiUser, $dbiPassword);
  
+diff -r c0f4c1b8b448 lib/Mioga2/InstanceList.pm
+--- a/lib/Mioga2/InstanceList.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/InstanceList.pm	Wed Oct 10 23:27:10 2012 +0200
+@@ -423,7 +423,9 @@
+ 		$conf->RunHooks($self->{config}->{miogaconf});
+ 
+ 		# Run crawl.sh to initialize search engine database
+-		my $crawlcmd = $self->{config}->{miogaconf}->GetMiogaPrefix () . "/bin/mioga2_index.pl --conf=" . $self->{config}->GetMiogaConfPath () . ' ' . $self->Get ('ident');
++		my $crawlcmd = $self->{config}->{miogaconf}->GetMiogaPrefix () . "/bin/mioga2_index.pl --conf=" . $self->{config}->GetMiogaConfPath () 
++            . ' --search_conf=' . $self->{config}->{miogaconf}->GetInstallDir()."/conf/search_conf.xml"
++            . ' '. $self->Get ('ident');
+ 		system ("$crawlcmd");
+ 	}
+ 	elsif (scalar (keys (%{$self->{update}}))) {
 diff -r c0f4c1b8b448 lib/MiogaConf.pm
 --- a/lib/MiogaConf.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/MiogaConf.pm	Wed Oct 10 01:52:02 2012 +0200
++++ b/lib/MiogaConf.pm	Wed Oct 10 23:27:10 2012 +0200
 @@ -811,6 +811,10 @@
  	my @missing;
  	my @missing_clib;
@@ -86,7 +100,7 @@ diff -r c0f4c1b8b448 lib/MiogaConf.pm
  		my $version;
 diff -r c0f4c1b8b448 sql/Makefile
 --- a/sql/Makefile	Sat Oct 06 16:15:43 2012 +0200
-+++ b/sql/Makefile	Wed Oct 10 01:52:02 2012 +0200
++++ b/sql/Makefile	Wed Oct 10 23:27:10 2012 +0200
 @@ -18,9 +18,9 @@
  	if [ $(INIT_SQL) = 'yes' ] ; \
  	then \
@@ -102,7 +116,7 @@ diff -r c0f4c1b8b448 sql/Makefile
  		echo "Update database"; \
 diff -r c0f4c1b8b448 sql/schema_base.sql
 --- a/sql/schema_base.sql	Sat Oct 06 16:15:43 2012 +0200
-+++ b/sql/schema_base.sql	Wed Oct 10 01:52:02 2012 +0200
++++ b/sql/schema_base.sql	Wed Oct 10 23:27:10 2012 +0200
 @@ -429,10 +429,6 @@
      END;
  ' LANGUAGE 'plpgsql';
