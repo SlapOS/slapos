@@ -30,6 +30,8 @@
 
 from AccessControl import ClassSecurityInfo
 from AccessControl import Unauthorized
+from AccessControl.Permissions import access_contents_information
+from AccessControl import getSecurityManager
 from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
 from OFS.Traversable import NotFound
 from Products.DCWorkflow.DCWorkflow import ValidationFailed
@@ -100,6 +102,13 @@ def convertToREST(function):
   wrapper.__doc__ = function.__doc__
   return wrapper
 
+def _assertACI(document):
+  if getSecurityManager().checkPermission(access_contents_information,
+      document):
+    return document
+  raise Unauthorized
+
+
 _MARKER = []
 
 class SlapTool(BaseTool):
@@ -158,7 +167,7 @@ class SlapTool(BaseTool):
                     validation_state="validated",
                     portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
-          self._getSlapPartitionByPackingList(computer_partition.getObject()))
+          self._getSlapPartitionByPackingList(_assertACI(computer_partition.getObject())))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   def _fillComputerInformationCache(self, computer_id, user, full):
@@ -200,8 +209,8 @@ class SlapTool(BaseTool):
         computer_id, user, full)
 
   def _getComputerInformation(self, computer_id, user, full):
-    user_document = self.getPortalObject().portal_catalog.unrestrictedGetResultValue(
-      reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
+    user_document = _assertACI(self.getPortalObject().portal_catalog.unrestrictedGetResultValue(
+      reference=user, portal_type=['Person', 'Computer', 'Software Instance']))
     user_type = user_document.getPortalType()
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
     slap_computer = Computer(computer_id)
@@ -234,7 +243,7 @@ class SlapTool(BaseTool):
                     validation_state="validated",
                     portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
-          self._getSlapPartitionByPackingList(computer_partition.getObject()))
+          self._getSlapPartitionByPackingList(_assertACI(computer_partition.getObject())))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -548,7 +557,7 @@ class SlapTool(BaseTool):
           )
       software_instance_count = len(software_instance_list)
       if software_instance_count == 1:
-        software_instance = software_instance_list[0].getObject()
+        software_instance = _assertACI(software_instance_list[0].getObject())
       elif software_instance_count > 1:
         # XXX do not prevent the system to work if one partition is broken
         raise NotImplementedError, "Too many instances %s linked to %s" % \
@@ -680,7 +689,7 @@ class SlapTool(BaseTool):
           )
       software_instance_count = len(software_instance_list)
       if software_instance_count == 1:
-        software_instance = software_instance_list[0].getObject()
+        software_instance = _assertACI(software_instance_list[0].getObject())
       elif software_instance_count > 1:
         # XXX do not prevent the system to work if one partition is broken
         raise NotImplementedError, "Too many instances %s linked to %s" % \
@@ -1113,7 +1122,7 @@ class SlapTool(BaseTool):
     if len(l) != 1:
       raise NotFound, "No document found with parameters: %s" % kwargs
     else:
-      return l[0].getObject()
+      return _assertACI(l[0].getObject())
 
   def _getNonCachedComputerDocument(self, computer_reference):
     return self._getDocument(
@@ -1163,7 +1172,7 @@ class SlapTool(BaseTool):
 
     l = len(software_installation_list)
     if l == 1:
-      return software_installation_list[0].getObject()
+      return _assertACI(software_installation_list[0].getObject())
     elif l == 0:
       raise NotFound('No software release %r found on computer %r' % (url,
         computer_document.getReference()))
@@ -1194,7 +1203,7 @@ class SlapTool(BaseTool):
       else:
         query_kw['reference'] = slave_reference
 
-      software_instance = self.getPortalObject().portal_catalog.unrestrictedGetResultValue(**query_kw)
+      software_instance = _assertACI(self.getPortalObject().portal_catalog.unrestrictedGetResultValue(**query_kw))
       if software_instance is None:
         raise NotFound, "No software instance found for: %s - %s" % (
           computer_id, computer_partition_id)
@@ -1224,7 +1233,7 @@ class SlapTool(BaseTool):
         validation_state="validated",
       )
       for slave_instance in slave_instance_sql_list:
-        slave_instance = slave_instance.getObject()
+        slave_instance = _assertACI(slave_instance.getObject())
         # XXX Use catalog to filter more efficiently
         if slave_instance.getSlapState() == "start_requested":
           append({
@@ -1261,6 +1270,7 @@ class SlapTool(BaseTool):
       default_aggregate_uid=computer_document.getUid(),
       validation_state='validated',
       ):
+      software_installation = _assertACI(software_installation.getObject())
       software_release_response = SoftwareRelease(
           software_release=software_installation.getUrlString(),
           computer_guid=computer_reference)
