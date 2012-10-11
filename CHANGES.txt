@@ -8,6 +8,13 @@ Changes
    implementation began in 0.32. [Cedric de Saint Martin]
  * slapgrid: Fix Usage Report in case of not empty partition with no SR.
    [Cedric de Saint Martin]
+ * slapgrid: Remove default delay, now that SlapOS Master is Fast as Light
+   (tm). (commit 03a85d6b8) [Cedric de Saint Martin]
+ * Fix watchdog entry point name, introduced in v0.31. (commit a8651ba12)
+   [Cedric de Saint Martin]
+ * Better filter of instances, won't process false positives anymore
+   (hopefully). (commit ce0a73b41) [Cedric de Saint Martin]
+ * Various output improvements. [Cedric de Saint Martin]
 
 0.32 (2012-10-04)
 -----------------
