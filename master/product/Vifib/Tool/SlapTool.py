@@ -886,6 +886,11 @@ class SlapTool(BaseTool):
     software_instance = self._getSoftwareInstanceForComputerPartition(
       computer_id, computer_partition_id,
       slave_reference)
+    hosting = software_instance.getSpecialise()
+    for name in [software_instance.getTitle(), new_name]:
+      # reset request cache
+      key = '_'.join([hosting, name])
+      self._storeLastData(key, {})
     return software_instance.rename(new_name=new_name,
       comment="Rename %s into %s" % (software_instance.title, new_name))
 
