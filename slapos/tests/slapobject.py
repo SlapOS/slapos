@@ -27,6 +27,7 @@
 
 from slapos.grid import SlapObject
 from slapos.grid import utils
+from slapos.grid import networkcache
 from slapos.tests.slapgrid import BasicMixin
 import os
 import unittest
@@ -42,8 +43,13 @@ class FakeCallAndRead:
     self.external_command_list.extend(additional_buildout_parametr_list)
 
 FakeCallAndRead = FakeCallAndRead()
+
+# Backup modules
+original_install_from_buildout = SlapObject.Software._install_from_buildout
+original_upload_network_cached = networkcache.upload_network_cached
 originalBootstrapBuildout = utils.bootstrapBuildout
 originalLaunchBuildout = utils.launchBuildout
+originalUploadSoftwareRelease = SlapObject.Software.uploadSoftwareRelease
 
 class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
   """
@@ -74,6 +80,9 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     # Un-monkey patch utils module
     utils.bootstrapBuildout = originalBootstrapBuildout
     utils.launchBuildout = originalLaunchBuildout
+    SlapObject.Software._install_from_buildout = original_install_from_buildout
+    networkcache.upload_network_cached = original_upload_network_cached
+    SlapObject.Software.uploadSoftwareRelease = originalUploadSoftwareRelease
 
   # Test methods
   def test_software_install_with_networkcache(self):
@@ -133,3 +142,67 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
                     in command_list)
     self.assertFalse('networkcache:upload-dir-url=%s' % self.upload_dir_url
                     in command_list)
+
+  # XXX-Cedric: do the same with upload
+  def test_software_install_networkcache_upload_blacklist(self):
+    """
+      Check if the networkcache upload blacklist parameters are propagated.
+    """
+    def fakeBuildout(*args, **kw):
+      pass
+    SlapObject.Software._install_from_buildout = fakeBuildout
+    def fake_upload_network_cached(*args, **kw):
+      self.assertFalse(True)
+    networkcache.upload_network_cached = fake_upload_network_cached
+
+    upload_to_binary_cache_url_blacklist = ["http://example.com"]
+
+    software = SlapObject.Software(
+            url='http://example.com/software.cfg',
+            software_root=self.software_root,
+            buildout=self.buildout,
+            signature_private_key_file='/signature/private/key_file',
+            upload_cache_url='http://example.com/uploadcache',
+            upload_dir_url='http://example.com/uploaddir',
+            shacache_cert_file=self.shacache_cert_file,
+            shacache_key_file=self.shacache_key_file,
+            shadir_cert_file=self.shadir_cert_file,
+            shadir_key_file=self.shadir_key_file,
+            upload_to_binary_cache_url_blacklist=\
+                upload_to_binary_cache_url_blacklist,
+    )
+    software.install()
+
+  def test_software_install_networkcache_upload_blacklist(self):
+    """
+      Check if the networkcache upload blacklist parameters only prevent
+      blacklisted Software Release to be uploaded.
+    """
+    def fakeBuildout(*args, **kw):
+      pass
+    SlapObject.Software._install_from_buildout = fakeBuildout
+    def fakeUploadSoftwareRelease(*args, **kw):
+      self.uploaded = True
+    SlapObject.Software.uploadSoftwareRelease = fakeUploadSoftwareRelease
+
+
+    upload_to_binary_cache_url_blacklist = ["http://anotherexample.com"]
+
+    software = SlapObject.Software(
+            url='http://example.com/software.cfg',
+            software_root=self.software_root,
+            buildout=self.buildout,
+            signature_private_key_file='/signature/private/key_file',
+            upload_cache_url='http://example.com/uploadcache',
+            upload_dir_url='http://example.com/uploaddir',
+            upload_binary_cache_url='http://example.com/uploadcache',
+            upload_binary_dir_url='http://example.com/uploaddir',
+            shacache_cert_file=self.shacache_cert_file,
+            shacache_key_file=self.shacache_key_file,
+            shadir_cert_file=self.shadir_cert_file,
+            shadir_key_file=self.shadir_key_file,
+            upload_to_binary_cache_url_blacklist=\
+                upload_to_binary_cache_url_blacklist,
+    )
+    software.install()
+    self.assertTrue(getattr(self, 'uploaded', False))
