@@ -90,58 +90,41 @@ class Software(object):
     Installs from buildout otherwise.
     """
     self.logger.info("Installing software release %s..." % self.url)
-    tarname = self.software_url_hash
     cache_dir = tempfile.mkdtemp()
-    tarpath = os.path.join(cache_dir, tarname)
-    # Check if we can download from cache
-    if (not os.path.exists(self.software_path)) \
-        and download_network_cached(
-            self.download_binary_cache_url,
-            self.download_binary_dir_url,
-            self.url, self.software_root,
-            self.software_url_hash,
-            tarpath, self.logger,
-            self.signature_certificate_list,
-            self.download_from_binary_cache_url_blacklist):
-      tar = tarfile.open(tarpath)
-      try:
-        self.logger.info("Extracting archive of cached software release...")
-        tar.extractall(path=self.software_root)
-      finally:
-        tar.close()
-    else:
-      self._install_from_buildout()
-
-      # Upload to binary cache if possible
-      blacklisted = False
-      for url in self.upload_to_binary_cache_url_blacklist:
-        if self.url.startswith(url):
-          blacklisted = True
-          self.logger.debug("Can't download from binary cache: "
-              "Software Release URL is blacklisted.")
-      if (self.software_root and self.url and self.software_url_hash \
-                             and self.upload_binary_cache_url \
-                             and self.upload_binary_dir_url \
-                             and not blacklisted):
-        self.logger.info("Creating archive of software release...")
-        tar = tarfile.open(tarpath, "w:gz")
+    try:
+      tarpath = os.path.join(cache_dir, self.software_url_hash)
+      # Check if we can download from cache
+      if (not os.path.exists(self.software_path)) \
+          and download_network_cached(
+              self.download_binary_cache_url,
+              self.download_binary_dir_url,
+              self.url, self.software_root,
+              self.software_url_hash,
+              tarpath, self.logger,
+              self.signature_certificate_list,
+              self.download_from_binary_cache_url_blacklist):
+        tar = tarfile.open(tarpath)
         try:
-          tar.add(self.software_path, arcname=self.software_url_hash)
+          self.logger.info("Extracting archive of cached software release...")
+          tar.extractall(path=self.software_root)
         finally:
           tar.close()
-        self.logger.info("Trying to upload archive of software release...")
-        upload_network_cached(
-            self.software_root,
-            self.url, self.software_url_hash,
-            self.upload_binary_cache_url,
-            self.upload_binary_dir_url,
-            tarpath, self.logger,
-            self.signature_private_key_file,
-            self.shacache_cert_file,
-            self.shacache_key_file,
-            self.shadir_cert_file,
-            self.shadir_key_file)
-    shutil.rmtree(cache_dir)
+      else:
+        self._install_from_buildout()
+        # Upload to binary cache if possible
+        blacklisted = False
+        for url in self.upload_to_binary_cache_url_blacklist:
+          if self.url.startswith(url):
+            blacklisted = True
+            self.logger.debug("Can't upload from binary cache: "
+                "Software Release URL is blacklisted.")
+        if (self.software_root and self.url and self.software_url_hash \
+                               and self.upload_binary_cache_url \
+                               and self.upload_binary_dir_url \
+                               and not blacklisted):
+          self.uploadSoftwareRelease(tarpath)
+    finally:
+      shutil.rmtree(cache_dir)
 
   def _install_from_buildout(self):
     """ Fetches buildout configuration from the server, run buildout with
@@ -191,6 +174,29 @@ class Software(object):
                      additional_buildout_parametr_list=buildout_parameter_list)
     finally:
       shutil.rmtree(extends_cache)
+
+  def uploadSoftwareRelease(self, tarpath):
+    """
+    Try to tar and upload an installed Software Release.
+    """
+    self.logger.info("Creating archive of software release...")
+    tar = tarfile.open(tarpath, "w:gz")
+    try:
+      tar.add(self.software_path, arcname=self.software_url_hash)
+    finally:
+      tar.close()
+    self.logger.info("Trying to upload archive of software release...")
+    upload_network_cached(
+        self.software_root,
+        self.url, self.software_url_hash,
+        self.upload_binary_cache_url,
+        self.upload_binary_dir_url,
+        tarpath, self.logger,
+        self.signature_private_key_file,
+        self.shacache_cert_file,
+        self.shacache_key_file,
+        self.shadir_cert_file,
+        self.shadir_key_file)
 
   def destroy(self):
     """Removes software release."""
