@@ -1154,7 +1154,9 @@ class SlapTool(BaseTool):
 
   @UnrestrictedMethod
   def _getComputerUidByReference(self, computer_reference):
-    return self._getComputerDocument(computer_reference).getUid()
+    return self.getPortalObject().portal_catalog.unrestrictedSearchResults(
+      portal_type='Computer', reference=computer_reference,
+      validation_state="validated")[0].UID
 
   def _getComputerPartitionDocument(self, computer_reference,
                                     computer_partition_reference):
