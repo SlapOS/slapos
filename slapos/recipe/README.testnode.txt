@@ -1,4 +1,0 @@
-testnode
-========
-
-Generic testnode.
