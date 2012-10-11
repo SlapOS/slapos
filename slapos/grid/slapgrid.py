@@ -732,6 +732,7 @@ class Slapgrid(object):
           if int(timestamp) <= int(old_timestamp):
             if int(time.time()) <= (
                 last_runtime + periodicity) :
+              self.logger.info('Partition already up-to-date, skipping.')
               return
         except ValueError:
           os.remove(timestamp_path)
