@@ -107,8 +107,7 @@ def _assertACI(document):
   if sm.checkPermission(access_contents_information,
       document):
     return document
-  LOG('_assertACI', INFO, 'User %r has no access to %r' % (sm.getUser(), document))
-  raise Unauthorized
+  raise ValueError('User %r has no access to %r' % (sm.getUser(), document))
 
 
 _MARKER = []
