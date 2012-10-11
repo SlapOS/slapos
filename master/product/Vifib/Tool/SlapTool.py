@@ -178,15 +178,21 @@ class SlapTool(BaseTool):
 
   def _fillComputerInformationCache(self, computer_id, user, full):
     key = '%s_%s_%s' % (full, computer_id, user)
-    self._getCachePlugin().set(key, DEFAULT_CACHE_SCOPE,
-      dict (
-        time=time.time(),
-        data=self._getCacheComputerInformation(computer_id, user, full),
-      ),
-      cache_duration=self.getPortalObject().portal_caches\
-          .getRamCacheRoot().get('computer_information_cache_factory'\
-            ).cache_duration
-      )
+    try:
+      self._getCachePlugin().set(key, DEFAULT_CACHE_SCOPE,
+        dict (
+          time=time.time(),
+          data=self._getCacheComputerInformation(computer_id, user, full),
+        ),
+        cache_duration=self.getPortalObject().portal_caches\
+            .getRamCacheRoot().get('computer_information_cache_factory'\
+              ).cache_duration
+        )
+    except Unauthorized:
+      # XXX: Hack. Race condition of not ready setup delivery which provides
+      # security information shall not make this method fail, as it will be
+      # called later anyway
+      pass
 
   def _storeLastData(self, key, value):
     cache_plugin = self.getPortalObject().portal_caches\
