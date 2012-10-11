@@ -305,7 +305,17 @@ class SlapTool(BaseTool):
       key=software_instance.getSslKey(),
       certificate=software_instance.getSslCertificate()
     )
-    return xml_marshaller.xml_marshaller.dumps(certificate_dict)
+    result = xml_marshaller.xml_marshaller.dumps(certificate_dict)
+    # Cache with revalidation
+    self.REQUEST.response.setStatus(200)
+    self.REQUEST.response.setHeader('Cache-Control',
+                                    'public, max-age=0, must-revalidate')
+    self.REQUEST.response.setHeader('Vary',
+                                    'REMOTE_USER')
+    self.REQUEST.response.setHeader('Last-Modified',
+                                    rfc1123_date(software_instance.getModificationDate()))
+    self.REQUEST.response.setBody(result)
+    return self.REQUEST.response
 
   ####################################################
   # Public POST methods
