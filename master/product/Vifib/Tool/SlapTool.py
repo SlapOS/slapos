@@ -96,6 +96,11 @@ def convertToREST(function):
         ' real error:',
           error=True)
       raise ValidationFailed
+    except Unauthorized:
+      LOG('SlapTool', INFO, 'Converting Unauthorized to Unauthorized,'\
+        ' real error:',
+          error=True)
+      raise Unauthorized
 
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
     return '%s' % retval
@@ -107,7 +112,7 @@ def _assertACI(document):
   if sm.checkPermission(access_contents_information,
       document):
     return document
-  raise ValueError('User %r has no access to %r' % (sm.getUser(), document))
+  raise Unauthorized('User %r has no access to %r' % (sm.getUser(), document))
 
 
 _MARKER = []
