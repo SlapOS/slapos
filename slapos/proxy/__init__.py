@@ -119,7 +119,7 @@ def run(config):
   from views import app
   app.config['computer_id'] = config.computer_id
   app.config['DATABASE_URI'] = config.database_uri
-  app.run(host=config.host, port=int(config.port), debug=True)
+  app.run(host=config.host, port=int(config.port))
 
 def main():
   "Run default configuration."
