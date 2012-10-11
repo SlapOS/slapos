@@ -209,6 +209,10 @@ class SlapTool(BaseTool):
       self.activate(activity='SQLQueue', tag=tag)._fillComputerInformationCache(
         computer_id, user, full)
 
+  @UnrestrictedMethod
+  def _getPartitionForSoftwareInstance(self, software_instance):
+    return software_instance.getAggregateValue(portal_type='Computer Partition')
+
   def _getComputerInformation(self, computer_id, user, full):
     user_document = _assertACI(self.getPortalObject().portal_catalog.unrestrictedGetResultValue(
       reference=user, portal_type=['Person', 'Computer', 'Software Instance']))
@@ -239,10 +243,14 @@ class SlapTool(BaseTool):
 #      return self._getCacheComputerInformation(computer_id, user, full)
     else:
       slap_computer._software_release_list = []
-    for computer_partition in self.getPortalObject().portal_catalog.unrestrictedSearchResults(
+    if user_type == 'Software Instance':
+      computer_partition_list = [self._getPartitionForSoftwareInstance(user_document)]
+    else:
+      computer_partition_list = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
                     parent_uid=parent_uid,
                     validation_state="validated",
-                    portal_type="Computer Partition"):
+                    portal_type="Computer Partition")
+    for computer_partition in computer_partition_list:
       slap_computer._computer_partition_list.append(
           self._getSlapPartitionByPackingList(_assertACI(computer_partition.getObject())))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
