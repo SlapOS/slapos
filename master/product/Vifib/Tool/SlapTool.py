@@ -103,9 +103,11 @@ def convertToREST(function):
   return wrapper
 
 def _assertACI(document):
-  if getSecurityManager().checkPermission(access_contents_information,
+  sm = getSecurityManager()
+  if sm.checkPermission(access_contents_information,
       document):
     return document
+  LOG('_assertACI', INFO, 'User %r has no access to %r' % (sm.getUser(), document))
   raise Unauthorized
 
 
