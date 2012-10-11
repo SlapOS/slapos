@@ -29,6 +29,7 @@ import os
 import pprint
 import re
 import shutil
+import signal
 import stat
 import subprocess
 
@@ -46,6 +47,12 @@ class Recipe(GenericBaseRecipe):
       os.remove(filepath)
 
   def install(self):
+    self.instantiate(True)
+
+  def update(self):
+    self.instantiate(False)
+
+  def instantiate(self, isNewInstall):
     print "This is the Mioga recipe"
     print "Looking for compile folder:"
     print self.options['mioga_compile_dir']
@@ -106,8 +113,80 @@ class Recipe(GenericBaseRecipe):
                            env=environ, shell=True)
     cmd.communicate()
 
+    # Apache configuration!
+    # Take the files that Mioga has prepared, and wrap some standard configuration around it.
+    # TODO: can't we squeeze this somehow into the generic apacheperl recipe?
+    apache_config_mioga = '''
+LoadModule alias_module modules/mod_alias.so
+LoadModule apreq_module modules/mod_apreq2.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule dav_module modules/mod_dav.so
+LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule perl_module modules/mod_perl.so
+
+# Basic server configuration
+# TODO: how to listen to standard port 80 when we are not root?
+PidFile REPL_PID
+Listen [REPL_IPV6HOST]:REPL_IPV6PORT
+# Listen [REPL_IPV6]:443 # what about mod_ssl and all that stuff?
+# ServerAdmin someone@email
+
+# Log configuration
+ErrorLog REPL_ERRORLOG
+LogLevel debug
+CustomLog REPL_ACCESSLOG common
+DocumentRoot REPL_DOCROOT
+'''
+    apache_config_mioga = (apache_config_mioga
+     .replace('REPL_PID', self.options['pid_file'])
+     .replace('REPL_IPV6HOST', self.options['public_ipv6'])
+     .replace('REPL_IPV6PORT', self.options['public_ipv6_port'])
+     .replace('REPL_ERRORLOG', self.options['error_log'])
+     .replace('REPL_ACCESSLOG', self.options['access_log'])
+     .replace('REPL_DOCROOT', self.options['htdocs']) )
+
+    mioga_prepared_apache_config_dir = os.path.join(mioga_base, 'conf', 'apache')
+    for filepath in os.listdir(mioga_prepared_apache_config_dir):
+      apache_config_mioga += ("# Read in from "+filepath+"\n" + 
+        open(os.path.join(mioga_prepared_apache_config_dir, filepath)).read() + "\n" )
+    # Internal DAV only accepts its own IPv6 address
+    # TODO: check with what sender address we really arrive at the DAV locations.
+    apache_config_mioga = re.sub(
+      'Allow from localhost', 
+      '# Allow from localhost',
+      apache_config_mioga)
+    
+    path_list = []
+    open(self.options['httpd_conf'], 'w').write(apache_config_mioga)
+    # TODO: if that all works fine, put it into a proper template
+    # httpd_conf = self.createFile(self.options['httpd_conf'],
+    #   self.substituteTemplate(self.getTemplateFilename('apache.in'),
+    #                           apache_config)
+    # )
+    path_list.append(os.path.abspath(self.options['httpd_conf']))
+
+    wrapper = self.createPythonScript(self.options['wrapper'],
+        'slapos.recipe.librecipe.execute.execute',
+        [self.options['httpd_binary'], '-f', self.options['httpd_conf'],
+         '-DFOREGROUND']
+    )
+    path_list.append(wrapper)
+
+    if os.path.exists(self.options['pid_file']):
+      # Reload apache configuration
+      with open(self.options['pid_file']) as pid_file:
+        pid = int(pid_file.read().strip(), 10)
+      try:
+        os.kill(pid, signal.SIGUSR1) # Graceful restart
+      except OSError:
+        pass
+
     os.chdir(former_directory)
     print "Mioga instantiate.py::install finished!"
+    return path_list
+
 
 
 # Copied verbatim from mioga-hooks.py - how to reuse code?
