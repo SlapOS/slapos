@@ -147,6 +147,7 @@ class SlapTool(BaseTool):
 
   def _getCacheComputerInformation(self, computer_id, user, full):
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+    restrictedTraverse = self.getPortalObject().restrictedTraverse
     slap_computer = Computer(computer_id)
     parent_uid = self._getComputerUidByReference(computer_id)
 
@@ -158,7 +159,8 @@ class SlapTool(BaseTool):
                     validation_state="validated",
                     portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
-          self._getSlapPartitionByPackingList(computer_partition.getObject()))
+          self._getSlapPartitionByPackingList(
+            restrictedTraverse(computer_partition.PATH)))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   def _fillComputerInformationCache(self, computer_id, user, full):
@@ -200,8 +202,11 @@ class SlapTool(BaseTool):
         computer_id, user, full)
 
   def _getComputerInformation(self, computer_id, user, full):
-    user_document = self.getPortalObject().portal_catalog.unrestrictedGetResultValue(
-      reference=user, portal_type=['Person', 'Computer', 'Software Instance'])
+    restrictedTraverse = self.getPortalObject().restrictedTraverse
+    user_document = self.getPortalObject().portal_catalog\
+      .unrestrictedSearchResults(reference=user,
+      portal_type=['Person', 'Computer', 'Software Instance'])[0].PATH
+    user_document = restrictedTraverse(user_document)
     user_type = user_document.getPortalType()
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
     slap_computer = Computer(computer_id)
@@ -234,7 +239,7 @@ class SlapTool(BaseTool):
                     validation_state="validated",
                     portal_type="Computer Partition"):
       slap_computer._computer_partition_list.append(
-          self._getSlapPartitionByPackingList(computer_partition.getObject()))
+          self._getSlapPartitionByPackingList(restrictedTraverse(computer_partition.PATH)))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -546,6 +551,8 @@ class SlapTool(BaseTool):
           validation_state="validated",
           limit=2,
           )
+      software_instance_list = [portal.restrictedTraverse(x.PATH) for x \
+          in software_instance_list]
       software_instance_count = len(software_instance_list)
       if software_instance_count == 1:
         software_instance = software_instance_list[0].getObject()
@@ -678,6 +685,8 @@ class SlapTool(BaseTool):
           validation_state="validated",
           limit=2,
           )
+      software_instance_list = [portal.restrictedTraverse(x.PATH) for x \
+          in software_instance_list]
       software_instance_count = len(software_instance_list)
       if software_instance_count == 1:
         software_instance = software_instance_list[0].getObject()
@@ -1109,11 +1118,13 @@ class SlapTool(BaseTool):
   def _getDocument(self, **kwargs):
     # No need to get all results if an error is raised when at least 2 objects
     # are found
-    l = self.getPortalObject().portal_catalog.unrestrictedSearchResults(limit=2, **kwargs)
+    portal = self.getPortalObject()
+    l = portal.portal_catalog.unrestrictedSearchResults(limit=2, **kwargs)
+    l = [portal.restrictedTraverse(x.PATH) for x in l]
     if len(l) != 1:
       raise NotFound, "No document found with parameters: %s" % kwargs
     else:
-      return l[0].getObject()
+      return l[0]
 
   def _getNonCachedComputerDocument(self, computer_reference):
     return self._getDocument(
@@ -1160,10 +1171,11 @@ class SlapTool(BaseTool):
       limit=2,
       url_string={'query': url, 'key': 'ExactMatch'},
     )
-
+    software_installation_list = [self.getPortalObject()\
+        .restrictedTraverse(x.PATH) for x in software_installation_list]
     l = len(software_installation_list)
     if l == 1:
-      return software_installation_list[0].getObject()
+      return software_installation_list[0]
     elif l == 0:
       raise NotFound('No software release %r found on computer %r' % (url,
         computer_document.getReference()))
@@ -1194,12 +1206,14 @@ class SlapTool(BaseTool):
       else:
         query_kw['reference'] = slave_reference
 
-      software_instance = self.getPortalObject().portal_catalog.unrestrictedGetResultValue(**query_kw)
-      if software_instance is None:
+      software_instance = [self.getPortalObject().restrictedTraverse(x.PATH) \
+        for x in self.getPortalObject().portal_catalog\
+          .unrestrictedSearchResults(**query_kw)]
+      if len(software_instance) == 0 is None:
         raise NotFound, "No software instance found for: %s - %s" % (
           computer_id, computer_partition_id)
       else:
-        return software_instance
+        return software_instance[0]
 
   @UnrestrictedMethod
   def _getSoftwareInstanceAsParameterDict(self, software_instance):
@@ -1224,7 +1238,7 @@ class SlapTool(BaseTool):
         validation_state="validated",
       )
       for slave_instance in slave_instance_sql_list:
-        slave_instance = slave_instance.getObject()
+        slave_instance = portal.restrictedTraverse(slave_instance.PATH)
         # XXX Use catalog to filter more efficiently
         if slave_instance.getSlapState() == "start_requested":
           append({
@@ -1261,6 +1275,7 @@ class SlapTool(BaseTool):
       default_aggregate_uid=computer_document.getUid(),
       validation_state='validated',
       ):
+      software_installation = portal.restrictedTraverse(software_installation.PATH)
       software_release_response = SoftwareRelease(
           software_release=software_installation.getUrlString(),
           computer_guid=computer_reference)
