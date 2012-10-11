@@ -28,6 +28,7 @@
 import os
 import pprint
 import re
+import shutil
 import stat
 import subprocess
 
@@ -39,6 +40,10 @@ class Recipe(GenericBaseRecipe):
 
   - call "make install-all"
   """
+
+  def removeIfExisting(self, filepath):
+    if os.path.isfile(filepath):
+      os.remove(filepath)
 
   def install(self):
     print "This is the Mioga recipe"
@@ -67,8 +72,10 @@ class Recipe(GenericBaseRecipe):
     fm.modify('db_port', self.options['db_port'])
     # db_name, dbi_login are standard
     fm.save()
-    if os.path.isfile("config.mk"):
-      os.remove("config.mk") # otherwise we don't see the values in the Makefiles
+    # Ensure no old data is kept
+    self.removeIfExisting('config.mk')
+    if os.path.isdir('web/conf/apache'):
+      shutil.rmtree('web/conf/apache')
 
     environ = os.environ
     environ['PATH'] = ':'.join([self.options['perl_bin'],           # priority!
