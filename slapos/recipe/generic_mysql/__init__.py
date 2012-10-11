@@ -69,7 +69,7 @@ class Recipe(GenericBaseRecipe):
     mysql_script_list = []
 
     # user defined functions
-    mroonga = options.get('mroonga', 'ha_mroonga.so')
+    mroonga = self.options.get('mroonga', 'ha_mroonga.so')
     if mroonga:
       last_insert_grn_id = "CREATE FUNCTION last_insert_grn_id RETURNS " \
         "INTEGER SONAME '" + mroonga + "';"
