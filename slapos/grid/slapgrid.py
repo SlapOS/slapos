@@ -262,9 +262,10 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   # Sleep for a random time to avoid SlapOS Master being DDOSed by an army of
   # SlapOS Nodes configured with cron.
   if option_dict["now"]:
+    # XXX-Cedric: deprecate "--now"
     maximal_delay = 0
   else:
-    maximal_delay = int(option_dict.get("maximal_delay", "300"))
+    maximal_delay = int(option_dict.get("maximal_delay", "0"))
   if maximal_delay > 0:
     duration = int(maximal_delay * random())
     logging.info("Sleeping for %s seconds. To disable this feature, " \
