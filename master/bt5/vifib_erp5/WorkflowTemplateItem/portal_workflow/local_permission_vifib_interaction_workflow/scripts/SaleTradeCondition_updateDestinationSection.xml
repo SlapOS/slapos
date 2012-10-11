@@ -58,9 +58,7 @@ person_list = []\n
 \n
 for subject in subject_list:\n
   if subject:\n
-    result_list = portal.portal_catalog(limit=2, validation_state="validated", portal_type="Person", default_email_text=subject)\n
-    if len(result_list) == 1:\n
-      person_list.append(result_list[0].getObject())\n
+    person_list.extend([x.getObject() for x in portal.portal_catalog(validation_state="validated", portal_type="Person", default_email_text=subject)])\n
 \n
 sale_trade_condition.edit(destination_section_value_list=person_list)\n
 </string> </value>
