@@ -72,7 +72,7 @@ MANDATORY_PARAMETER_LIST = [
 COMPUTER_PARTITION_DESTROYED_STATE = 'destroyed'
 
 # XXX hardcoded watchdog_path
-WATCHDOG_PATH = '/opt/slapos/bin/watchdog'
+WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
 
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Parses arguments either from command line, from method parameters or from
