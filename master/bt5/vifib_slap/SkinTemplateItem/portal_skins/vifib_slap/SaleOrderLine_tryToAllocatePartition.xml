@@ -57,8 +57,8 @@ from zExceptions import Unauthorized\n
 def markHistory(document, comment):\n
   portal_workflow = document.portal_workflow\n
   last_workflow_item = portal_workflow.getInfoFor(ob=document, \n
-                                          name=\'history\', wf_id=\'edit_workflow\')[-1]\n
-  if last_workflow_item[\'comment\'] != comment:\n
+                                          name=\'comment\', wf_id=\'edit_workflow\')\n
+  if last_workflow_item != comment:\n
     portal_workflow.doActionFor(document, action=\'edit_action\', comment=comment)\n
 \n
 def assignComputerPartition(order):\n
