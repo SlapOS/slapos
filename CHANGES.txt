@@ -1,20 +1,24 @@
 Changes
 =======
 
-0.32.1 (Unreleased)
+0.32.2 (2012-10-11)
+-------------------
+
+ * slapgrid: Remove default delay, now that SlapOS Master is Fast as Light
+   (tm). (commit 03a85d6b8) [Cedric de Saint Martin]
+ * Fix watchdog entry point name, introduced in v0.31. (commit a8651ba12)
+   [Cedric de Saint Martin]
+ * slapgrid: Better filter of instances, won't process false positives anymore
+   (hopefully). (commit ce0a73b41) [Cedric de Saint Martin]
+ * Various output improvements. [Cedric de Saint Martin]
+
+0.32.1 (2012-10-09)
 -------------------
 
  * slapgrid: Make sure error logs are sent to SlapOS master. Finish
    implementation began in 0.32. [Cedric de Saint Martin]
  * slapgrid: Fix Usage Report in case of not empty partition with no SR.
    [Cedric de Saint Martin]
- * slapgrid: Remove default delay, now that SlapOS Master is Fast as Light
-   (tm). (commit 03a85d6b8) [Cedric de Saint Martin]
- * Fix watchdog entry point name, introduced in v0.31. (commit a8651ba12)
-   [Cedric de Saint Martin]
- * Better filter of instances, won't process false positives anymore
-   (hopefully). (commit ce0a73b41) [Cedric de Saint Martin]
- * Various output improvements. [Cedric de Saint Martin]
 
 0.32 (2012-10-04)
 -----------------
@@ -46,7 +50,7 @@ Changes
    in supervisord. (commits 16b2e8b8, 1dade5cd7) [Cédric Le Ninivin]
  * Add safety checks before calling SlapOS Master if mandatory instance
    members of SLAP classes are not properly set. Will result in less calls to
-	 SlapOS Master in dirty cases. (commits 5097e87c9763, 5fad6316a0f6d,
+   SlapOS Master in dirty cases. (commits 5097e87c9763, 5fad6316a0f6d,
    f2cd014ea8aa) [Cedric de Saint Martin]
  * Add "periodicty" functionnality support for instances: if an instance has
    not been processed by slapgrid after defined time, process it. (commits
@@ -73,7 +77,7 @@ Changes
 
  * buildout: Migrate slap_connection magic instance profile part to
    slap-connection, and use variables names separated with '-'. [Cedric de
-	 Saint Martin]
+   Saint Martin]
  * slapgrid: Add support for instance.cfg instance profiles [Cedric de Saint
    Martin]
  * slapgrid-ur: much less calls to master. [Cedric de Saint Martin]
