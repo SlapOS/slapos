@@ -64,12 +64,12 @@ can_allocate = True\n
 comment = \'\'\n
 \n
 # First and simple way to see if computer is dead\n
-modification_date = portal.portal_workflow.getInfoFor(computer, \'time\', wf_id=\'edit_workflow\')\n
-if (DateTime() - modification_date) > 1:\n
-  # Computer didn\'t talk to vifib for 1 days, do not consider it as a trustable public server for now\n
-  # slapformat is supposed to run at least once per day\n
-  can_allocate = False\n
-  comment = "Computer didn\'t contact the server for more than one day"\n
+# modification_date = portal.portal_workflow.getInfoFor(computer, \'time\', wf_id=\'edit_workflow\')\n
+# if (DateTime() - modification_date) > 1:\n
+#   # Computer didn\'t talk to vifib for 1 days, do not consider it as a trustable public server for now\n
+#   # slapformat is supposed to run at least once per day\n
+#   can_allocate = False\n
+#   comment = "Computer didn\'t contact the server for more than one day"\n
 \n
 if can_allocate:\n
   # Check if computer has error reported\n
