@@ -686,7 +686,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
     self.assertSortedListEqual(
         os.listdir(partition.partition_path),
         ['.0_daemon.log','worked', 'buildout.cfg', 'etc'])
-    tries = 50
+    tries = 200
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     while tries > 0:
       tries -= 1
@@ -694,7 +694,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
         break
       time.sleep(0.1)
     self.assertTrue('Failing' in open(daemon_log, 'r').read())
-    tries = 25
+    tries = 200
     while tries > 0:
       tries -= 1
       if os.path.exists(self.watchdog_banged):
@@ -735,7 +735,7 @@ touch worked
       'var'])
     self.assertSortedListEqual(os.listdir(partition.partition_path),
                                ['.0_daemon.log','worked', 'buildout.cfg', 'etc'])
-    tries = 50
+    tries = 200
     daemon_log = os.path.join(partition.partition_path, '.0_daemon.log')
     while tries > 0:
       tries -= 1
@@ -743,7 +743,7 @@ touch worked
         break
       time.sleep(0.1)
     self.assertTrue('Failing' in open(daemon_log, 'r').read())
-    tries = 50
+    tries = 200
     while tries > 0:
       tries -= 1
       if os.path.exists(self.watchdog_banged):
@@ -1232,7 +1232,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                                ['0', 'etc', 'var'])
     self.assertSortedListEqual(os.listdir(instance.partition_path),
                                ['.0_wrapper.log', 'worked', 'buildout.cfg', 'etc'])
-    tries = 20
+    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
@@ -1268,7 +1268,7 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       'var'])
     self.assertSortedListEqual(os.listdir(instance.partition_path),
                                ['.0_wrapper.log', 'worked', 'buildout.cfg', 'etc'])
-    tries = 20
+    tries = 50
     wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
     while tries > 0:
       tries -= 1
