@@ -47,9 +47,11 @@ class Recipe(GenericBaseRecipe):
       os.remove(filepath)
 
   def install(self):
+    print "This is a FRESH INSTALLATION."
     self.instantiate(True)
 
   def update(self):
+    print "This is an update."
     self.instantiate(False)
 
   def instantiate(self, isNewInstall):
@@ -66,6 +68,7 @@ class Recipe(GenericBaseRecipe):
     vardir = self.options['var_directory']
     mioga_base = os.path.join(vardir, 'lib', 'Mioga2')
     fm = FileModifier('conf/Config.xml')
+    fm.modify('init_sql', 'yes' if isNewInstall else 'no')
     fm.modify('install_dir', mioga_base)
     fm.modify('tmp_dir', os.path.join(mioga_base, 'tmp'))
     fm.modify('search_tmp_dir', os.path.join(mioga_base, 'mioga_search'))
