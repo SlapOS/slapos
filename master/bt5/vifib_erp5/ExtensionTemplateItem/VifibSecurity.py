@@ -72,6 +72,10 @@ def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
   # micro security: can caller access software instance?
   software_instance = self.restrictedTraverse(relative_url)
   sm = getSecurityManager()
+  if (software_instance.getPortalType() == "Slave Instance") and \
+    (software_instance.getReference() == reference):
+    # XXX There is no account for Slave Instance
+    reference = SUPER_USER
   newSecurityManager(None, self.getPortalObject().acl_users.getUserById(
     reference))
   try:
