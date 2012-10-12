@@ -221,9 +221,6 @@ class SlapTool(BaseTool):
         computer_id, user, full)
 
   @UnrestrictedMethod
-  def _getPartitionForSoftwareInstance(self, software_instance):
-    return software_instance.getAggregateValue(portal_type='Computer Partition')
-
   def _getComputerInformation(self, computer_id, user, full):
     user_document = _assertACI(self.getPortalObject().portal_catalog.unrestrictedGetResultValue(
       reference=user, portal_type=['Person', 'Computer', 'Software Instance']))
@@ -255,7 +252,12 @@ class SlapTool(BaseTool):
     else:
       slap_computer._software_release_list = []
     if user_type == 'Software Instance':
-      computer_partition_list = [self._getPartitionForSoftwareInstance(user_document)]
+      computer = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
+        portal_type='Computer', reference=computer_id,
+        validation_state="validated")[0].getObject()
+      computer_partition_list = computer.contentValues(
+        portal_type="Computer Partition",
+        checked_permission="View")
     else:
       computer_partition_list = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
                     parent_uid=parent_uid,
