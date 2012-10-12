@@ -77,6 +77,8 @@ class Recipe(GenericBaseRecipe):
     fm.modify('dbi_passwd', self.options['db_password'])
     fm.modify('db_host', self.options['db_host'])
     fm.modify('db_port', self.options['db_port'])
+    fm.modify('dav_host', self.options['private_ipv4'])
+    fm.modify('dav_port', self.options['public_ipv6_port'])
     # db_name, dbi_login are standard
     fm.save()
     # Ensure no old data is kept
@@ -119,9 +121,16 @@ class Recipe(GenericBaseRecipe):
     apache_config_mioga = '''
 LoadModule alias_module modules/mod_alias.so
 LoadModule apreq_module modules/mod_apreq2.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authz_default_module modules/mod_authz_default.so
 LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule authz_user_module modules/mod_authz_user.so
 LoadModule dav_module modules/mod_dav.so
 LoadModule dav_fs_module modules/mod_dav_fs.so
+LoadModule dav_lock_module modules/mod_dav_lock.so
+LoadModule deflate_module modules/mod_deflate.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule env_module modules/mod_env.so
 LoadModule headers_module modules/mod_headers.so
 LoadModule log_config_module modules/mod_log_config.so
 LoadModule perl_module modules/mod_perl.so
@@ -130,22 +139,30 @@ LoadModule perl_module modules/mod_perl.so
 # TODO: how to listen to standard port 80 when we are not root?
 PidFile REPL_PID
 Listen [REPL_IPV6HOST]:REPL_IPV6PORT
+Listen REPL_IPV4HOST:REPL_IPV6PORT
 # Listen [REPL_IPV6]:443 # what about mod_ssl and all that stuff?
 # ServerAdmin someone@email
 
 # Log configuration
 ErrorLog REPL_ERRORLOG
 LogLevel debug
+LogFormat "%h %{REMOTE_USER}i %l %u %t \\"%r\\" %>s %b \\"%{Referer}i\\" \\"%{User-Agent}i\\"" combined
+LogFormat "%h %{REMOTE_USER}i %l %u %t \\"%r\\" %>s %b" common
 CustomLog REPL_ACCESSLOG common
 DocumentRoot REPL_DOCROOT
+DirectoryIndex index.html
+DavLockDB REPL_DAVLOCK
 '''
     apache_config_mioga = (apache_config_mioga
      .replace('REPL_PID', self.options['pid_file'])
      .replace('REPL_IPV6HOST', self.options['public_ipv6'])
+     .replace('REPL_IPV4HOST', self.options['private_ipv4'])
      .replace('REPL_IPV6PORT', self.options['public_ipv6_port'])
      .replace('REPL_ERRORLOG', self.options['error_log'])
      .replace('REPL_ACCESSLOG', self.options['access_log'])
-     .replace('REPL_DOCROOT', self.options['htdocs']) )
+     .replace('REPL_DOCROOT', self.options['htdocs'])
+     .replace('REPL_STATIC', os.path.join(mioga_base, 'static')) 
+     .replace('REPL_DAVLOCK', self.options['dav_locks']) )
 
     mioga_prepared_apache_config_dir = os.path.join(mioga_base, 'conf', 'apache')
     for filepath in os.listdir(mioga_prepared_apache_config_dir):
@@ -155,7 +172,7 @@ DocumentRoot REPL_DOCROOT
     # TODO: check with what sender address we really arrive at the DAV locations.
     apache_config_mioga = re.sub(
       'Allow from localhost', 
-      '# Allow from localhost',
+      "Allow from "+self.options['private_ipv4']+"\n\tAllow from "+self.options['public_ipv6'],
       apache_config_mioga)
     
     path_list = []

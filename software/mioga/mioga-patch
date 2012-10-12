@@ -1,6 +1,6 @@
 diff -r c0f4c1b8b448 Makefile.PL
 --- a/Makefile.PL	Sat Oct 06 16:15:43 2012 +0200
-+++ b/Makefile.PL	Wed Oct 10 23:27:10 2012 +0200
++++ b/Makefile.PL	Fri Oct 12 10:28:17 2012 +0200
 @@ -115,7 +115,7 @@
  # ----------------------------------------------------------------------------
  sub MY::processPL {
@@ -24,7 +24,7 @@ diff -r c0f4c1b8b448 Makefile.PL
              fi \
 diff -r c0f4c1b8b448 conf/Config.xml
 --- a/conf/Config.xml	Sat Oct 06 16:15:43 2012 +0200
-+++ b/conf/Config.xml	Wed Oct 10 23:27:10 2012 +0200
++++ b/conf/Config.xml	Fri Oct 12 10:28:17 2012 +0200
 @@ -37,6 +37,12 @@
                 xpath="/authentication"/>
      
@@ -38,9 +38,131 @@ diff -r c0f4c1b8b448 conf/Config.xml
        <parameter name="db_name" question=" Name of Mioga database ?" 
                   type="text" default="mioga2"
                   xpath="/database/DBname"/>              
+diff -r c0f4c1b8b448 lib/Mioga2/Authen.pm
+--- a/lib/Mioga2/Authen.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/Authen.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -87,7 +87,7 @@
+ use Mioga2::GroupList;
+ use Mioga2::InstanceList;
+ 
+-my $debug = 0;
++my $debug = 5;
+ 
+ # ============================================================================
+ 
+@@ -131,11 +131,16 @@
+ 	if($args ne '') {
+ 		$real_uri .= "?$args";
+ 	}
++    print STDERR "VHH DEBUG: t_uri = $t_uri , real_uri = $real_uri\n";
+ 
+ 	try {
+ 		$miogaconf = new Mioga2::MiogaConf($config_file);
++        print STDERR "VHH DEBUG: after miogaconf\n";
+ 		$uri_obj    = new Mioga2::URI($miogaconf, uri => $real_uri);
++        print STDERR "VHH DEBUG: after uri_obj\n";
++        print STDERR "VHH DEBUG: mioga-ident: ".$uri_obj->GetMiogaIdent()."\n";
+ 		$config = new Mioga2::Config($miogaconf, $uri_obj->GetMiogaIdent());
++        print STDERR "VHH DEBUG: after config\n";
+ 	}
+ 	catch Mioga2::Exception::Simple with {
+ 		my $err = shift;
+diff -r c0f4c1b8b448 lib/Mioga2/Authz.pm
+--- a/lib/Mioga2/Authz.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/Authz.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -118,7 +118,7 @@
+ use Mioga2::tools::string_utils;
+ use Mioga2::Constants;
+ 
+-my $debug = 0;
++my $debug = 5;
+ my $timer = 0;
+ 
+ # ============================================================================
+diff -r c0f4c1b8b448 lib/Mioga2/Classes/URI.pm
+--- a/lib/Mioga2/Classes/URI.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/Classes/URI.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -75,15 +75,11 @@
+   
+   # convert uri to UTF-8
+   my $uri     = uri_unescape($options{uri});
+-  
+-  # attempt to see if uri is utf8 to avoid detection
+-  my $conv    = Text::Iconv->new('utf8', 'utf8');
+-  my $tmp_uri = $conv->convert($uri);
+-  
+-  unless ($tmp_uri) {
++    
++  unless (Encode::is_utf8($uri) or eval { decode( 'utf8', $uri, Encode::FB_CROAK | Encode::LEAVE_SRC) }) {
+     my $charset = detect($uri) || 'iso-8859-15'; # defaults to latin9
+     warn "charset = '$charset' for uri = '$uri'" if $debug;
+-    $conv = Text::Iconv->new($charset, "utf8");
++    my $conv = Text::Iconv->new($charset, "utf8");
+     $uri  = $conv->convert($uri);
+     warn "==> converted uri = '$uri'" if $debug;
+   }
+@@ -211,4 +207,4 @@
+ 
+ # ============================================================================
+ 1;
+-__END__
+\ No newline at end of file
++__END__
+diff -r c0f4c1b8b448 lib/Mioga2/DAVFS.pm
+--- a/lib/Mioga2/DAVFS.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/DAVFS.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -144,7 +144,7 @@
+ use XML::LibXML ();
+ use Mioga2::Constants;
+ 
+-my $debug = 0;
++my $debug = 5;
+ 
+ my $MULTI_STATUS	= 207;	# code DAV for the Multi-status response
+ 
+@@ -749,13 +749,17 @@
+ 	my $host = $self->{host};
+ 	my $port = $self->{port};
+ 
++    my $hostport = $host;
++    $hostport = '['.$hostport.']' if $host =~ /:.*:/;
++    $hostport .= ':'.$port;
++
+ 	my $dav_uri   = $config->GetDAVBasePath;
+ 	my $mioga_uri = $config->GetBasePath;
+ 
+ 	my $orig_uri = Mioga2::Classes::URI->new( uri => $callbacks->{uri}->() );
+ 	my $uri      = $orig_uri->as_string;
+ 	$uri =~ s/^$mioga_uri/$dav_uri/;
+-	$uri = Mioga2::Classes::URI->new( uri => "$protocol://$host:$port$uri" )
++	$uri = Mioga2::Classes::URI->new( uri => "$protocol://$hostport$uri" )
+ 	  ->as_string;
+ 	print STDERR "[Mioga2::DAVFS::make_request] uri = $uri\n" if $debug;
+ 
+@@ -767,7 +771,7 @@
+ 
+ 		# process headers
+ 		if ( $header =~ /^destination/i && $value !~ $dav_uri ) {
+-			$value =~ s!(//)[^/]+$mioga_uri!$1$host$dav_uri!;
++			$value =~ s!(//)[^/]+$mioga_uri!$1$hostport$dav_uri!; # was only $host before!
+ 			$value = Mioga2::Classes::URI->new( uri => $value )->as_string;
+ 			$value = $self->escapeSpecialChars($value);
+ 		}
+diff -r c0f4c1b8b448 lib/Mioga2/DAVProxy.pm
+--- a/lib/Mioga2/DAVProxy.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/DAVProxy.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -47,7 +47,7 @@
+ use Mioga2::MiogaConf;
+ 
+ 
+-my $debug = 0;
++my $debug = 5;
+ 
+ # ============================================================================
+ 
 diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
 --- a/lib/Mioga2/Database.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Database.pm	Wed Oct 10 23:27:10 2012 +0200
++++ b/lib/Mioga2/Database.pm	Fri Oct 12 10:28:17 2012 +0200
 @@ -61,7 +61,7 @@
  	my $self = { };
  	bless($self, $class);
@@ -62,9 +184,21 @@ diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
  
  	$self->{dbh} = DBI->connect($datasource, $dbiUser, $dbiPassword);
  
+diff -r c0f4c1b8b448 lib/Mioga2/Dispatch.pm
+--- a/lib/Mioga2/Dispatch.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/Dispatch.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -96,7 +96,7 @@
+ 
+ use Mioga2::Apache;
+ 
+-my $debug = 0;
++my $debug = 5;
+ my $timer = 0;
+ 
+ $Error::Debug = 1;
 diff -r c0f4c1b8b448 lib/Mioga2/InstanceList.pm
 --- a/lib/Mioga2/InstanceList.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/InstanceList.pm	Wed Oct 10 23:27:10 2012 +0200
++++ b/lib/Mioga2/InstanceList.pm	Fri Oct 12 10:28:17 2012 +0200
 @@ -423,7 +423,9 @@
  		$conf->RunHooks($self->{config}->{miogaconf});
  
@@ -76,9 +210,134 @@ diff -r c0f4c1b8b448 lib/Mioga2/InstanceList.pm
  		system ("$crawlcmd");
  	}
  	elsif (scalar (keys (%{$self->{update}}))) {
+diff -r c0f4c1b8b448 lib/Mioga2/Magellan.pm
+--- a/lib/Mioga2/Magellan.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/Magellan.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -70,7 +70,7 @@
+ require Mioga2::Magellan::Database;
+ require Mioga2::Magellan::Properties;
+ 
+-my $debug = 0;
++my $debug = 5;
+ 
+ # ============================================================================
+ # CheckUserAccessOnMethod ($context, $user, $group, $method_ident)
+@@ -327,10 +327,13 @@
+ 			$mygroup = $group;
+ 		}
+ 
++        my $host = $config->GetMiogaConf()->GetDAVHost();
++        $host = "[${host}]" if $host =~ /:.*?:/;
++
+         my $resources = Mioga2::Magellan::DAV::GetCollection(
+             $context,
+             $context->GetSessionToken,
+-            $config->GetMiogaConf ()->GetDAVProtocol () . "://" . $config->GetMiogaConf ()->GetDAVHost () . ":" . $config->GetMiogaConf ()->GetDAVPort (), $node
++            $config->GetMiogaConf ()->GetDAVProtocol () . "://" . $host . ":" . $config->GetMiogaConf ()->GetDAVPort (), $node
+         );
+ 
+ 		$inconsistent = pop (@$resources);
+diff -r c0f4c1b8b448 lib/Mioga2/Magellan/DAV.pm
+--- a/lib/Mioga2/Magellan/DAV.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/Magellan/DAV.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -52,7 +52,7 @@
+ use Mioga2::XML::Simple;
+ use Mioga2::Constants;
+ 
+-my $debug = 0;
++my $debug = 5;
+ 
+ my $MULTI_STATUS	= 207;	# code DAV for the Multi-status response
+ my $CREATED		= 201;	# code DAV for the created mkcol response
+@@ -79,9 +79,11 @@
+ 	my $user_agent;
+ 	my $request;
+ 	
++	print STDERR "VHH DEBUG: ExecuteRequest original URL: $url\n";
+ 	# Escape URL for request
+ 	$url = st_URIEscape($url);
+-
++	print STDERR "VHH DEBUG: ExecuteRequest request  URL: $url\n";
++	
+ 	$user_agent = new LWP::UserAgent(keep_alive => 0);
+ 	$request = new HTTP::Request($method, $url);
+ 
+@@ -106,7 +108,7 @@
+ 	}
+ 
+ 	if ($response->code >= 500) {
+-		warn "Mioga2::Magellan::ExecuteRequest Failed: " . $response->content;
++		warn "Mioga2::Magellan::DAV::ExecuteRequest Failed: " . $response->content;
+ 	}
+ 
+ 	return  $response;
+diff -r c0f4c1b8b448 lib/Mioga2/Router.pm
+--- a/lib/Mioga2/Router.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/Router.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -45,7 +45,7 @@
+ use Apache2::RequestUtil;
+ use Data::Dumper;
+ 
+-my $debug = 0;
++my $debug = 5;
+ 
+ #-------------------------------------------------------------------------------
+ # If the URI contains a single member, it can be:
+diff -r c0f4c1b8b448 lib/Mioga2/URI.pm
+--- a/lib/Mioga2/URI.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/URI.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -812,7 +812,7 @@
+ 	my ($self) = @_;
+ 
+ 	my $uri = $self->{uri};
+-
++    print STDERR "VHH DEBUG: original URI is $uri\n";
+ 	my $base_uri = $self->{miogaconf}->GetBasePath();
+ 
+ 	# Check base URI
+@@ -820,8 +820,10 @@
+ 		throw Mioga2::Exception::Simple("Mioga2::URI::CheckURI", 
+         __x("URI does not begin with {pattern}.", pattern => $base_uri));
+ 	}
++    print STDERR "VHH DEBUG: cutting away base URI: ${base_uri}\n";
+ 
+ 	$uri =~ s/^$base_uri([$|\/])//;
++    print STDERR "VHH DEBUG: now matching ident on ${uri}\n";
+ 
+ 	# Retrieve Mioga Ident
+ 	my ($mioga_ident) = split(/[\/\?]/, $uri);
+diff -r c0f4c1b8b448 lib/Mioga2/tools/string_utils.pm
+--- a/lib/Mioga2/tools/string_utils.pm	Sat Oct 06 16:15:43 2012 +0200
++++ b/lib/Mioga2/tools/string_utils.pm	Fri Oct 12 10:28:17 2012 +0200
+@@ -46,6 +46,7 @@
+ use Mioga2::XML::Simple;
+ use Exporter;
+ use Text::Iconv;
++use Encode;
+ use Encode::Detect::Detector;
+ use Data::Dumper;
+ use HTML::TokeParser::Simple;
+@@ -715,14 +716,13 @@
+ sub st_CheckUTF8 {
+     my ($str) = @_;
+     
+-    my $conv    = Text::Iconv->new('utf8', 'utf8');
+-    my $tmp_str = $conv->convert($str);
+-    unless ($tmp_str) {
++    unless (Encode::is_utf8($str) or eval { decode( 'utf8', $str, Encode::FB_CROAK | Encode::LEAVE_SRC) }) {
+         my $charset = detect($str) || 'iso-8859-15'; # defaults to latin9
+-        $conv = Text::Iconv->new($charset, "utf8");
++        my $conv = Text::Iconv->new($charset, "utf8");
+         $str  = $conv->convert($str);
+ 		utf8::decode ($str);
+     }
++
+     return ($str);
+ }	# ----------  end of subroutine st_CheckUTF8  ----------
+ 
 diff -r c0f4c1b8b448 lib/MiogaConf.pm
 --- a/lib/MiogaConf.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/MiogaConf.pm	Wed Oct 10 23:27:10 2012 +0200
++++ b/lib/MiogaConf.pm	Fri Oct 12 10:28:17 2012 +0200
 @@ -811,6 +811,10 @@
  	my @missing;
  	my @missing_clib;
@@ -100,7 +359,7 @@ diff -r c0f4c1b8b448 lib/MiogaConf.pm
  		my $version;
 diff -r c0f4c1b8b448 sql/Makefile
 --- a/sql/Makefile	Sat Oct 06 16:15:43 2012 +0200
-+++ b/sql/Makefile	Wed Oct 10 23:27:10 2012 +0200
++++ b/sql/Makefile	Fri Oct 12 10:28:17 2012 +0200
 @@ -18,9 +18,9 @@
  	if [ $(INIT_SQL) = 'yes' ] ; \
  	then \
@@ -116,7 +375,7 @@ diff -r c0f4c1b8b448 sql/Makefile
  		echo "Update database"; \
 diff -r c0f4c1b8b448 sql/schema_base.sql
 --- a/sql/schema_base.sql	Sat Oct 06 16:15:43 2012 +0200
-+++ b/sql/schema_base.sql	Wed Oct 10 23:27:10 2012 +0200
++++ b/sql/schema_base.sql	Fri Oct 12 10:28:17 2012 +0200
 @@ -429,10 +429,6 @@
      END;
  ' LANGUAGE 'plpgsql';
