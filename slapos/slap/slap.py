@@ -302,7 +302,7 @@ def _syncComputerPartitionInformation(func):
         found_computer_partition = computer_partition
         break
     if found_computer_partition is None:
-      raise NotFoundError("No software release information for partition %s" %
+      raise NotFoundError("No information for partition %s" %
           self.getId())
     else:
       for key, value in found_computer_partition.__dict__.items():
