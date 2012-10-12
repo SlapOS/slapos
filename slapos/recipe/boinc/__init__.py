@@ -29,6 +29,7 @@ import os
 import subprocess
 import pwd
 import signal
+import zc.buildout
 
 class Recipe(GenericBaseRecipe):
   """Deploy a fully operational boinc architecture."""
@@ -208,11 +209,51 @@ class App(GenericBaseRecipe):
   """This recipe allow to deploy an scientific applications using boinc
   Note that recipe use depend on boinc-server parameter"""
 
+  def downloadFiles(self):
+    """This is used to download app files if necessary and update options values"""
+    for key in ('template-result', 'template-wu', 'input-file', 'binary'):
+      option = self.options[key].strip()
+      if option and (option.startswith('http') or option.startswith('ftp')):
+        #download the specified file
+        cache = os.path.join(self.options['home'].strip(), 'temp')
+        downloader = zc.buildout.download.Download(self.buildout['buildout'],
+                        hash_name=True, cache=cache)
+        path, _ = downloader(option, md5sum=None)
+        mode = 0600
+        if key == 'binary':
+          mode = 0700
+        os.chmod(path, mode)
+        self.options[key] = path
+
+  def checkOptions(self):
+    """Check if parameter send is valid to install or update application"""
+    if not self.options['app-name'].strip() or \
+              not self.options['version'].strip():
+      return False
+    self.appname = self.options['app-name'].strip()
+    self.version = self.options['version'].strip()
+    #for non exist application, check if parameter is complete
+    appdir = os.path.join(self.options['installroot'].strip(), 'apps',
+                    self.options['app-name'].strip(),
+                    self.options['version'].strip())
+    if not os.path.exists(appdir):
+      if not self.options['template-result'].strip() or not self.options['binary'].strip() \
+          or not self.options['input-file'].strip() or not self.options['template-wu'].strip() \
+          or not self.options['wu-number'].strip() or not self.options['platform'].strip():
+        print "Invalid argement values...operation cancelled"
+        return False
+    #write application to install
+    toInstall = open(os.path.join(self.options['home'].strip(),
+                            '.install_' + self.appname + self.version), 'w')
+    toInstall.write('install or update')
+    toInstall.close()
+    return True
 
   def install(self):
-    if self.options['app-name'].strip() == '' or \
-              self.options['version'].strip() == '':
-      #don't deploy empty application...skipped
+    self.appname = ''
+    self.version = ''
+    if not self.checkOptions():
+      #don't deploy empty or invalid application...skipped
       return []
     path_list = []
     package = self.options['boinc'].strip()
@@ -221,6 +262,7 @@ class App(GenericBaseRecipe):
     developegg = self.options['develop-egg'].strip()
     python_path = boinc_egg + ":" + os.environ['PYTHONPATH']
     home = self.options['home'].strip()
+    user = pwd.getpwuid(os.stat(home).st_uid)[0]
     perl = self.options['perl-binary'].strip()
     svn = self.options['svn-binary'].strip()
     for f in os.listdir(developegg):
@@ -239,26 +281,26 @@ class App(GenericBaseRecipe):
         self.substituteTemplate(self.getTemplateFilename('sed_update.in'),
         dict(dash=self.options['dash'].strip(),
               uldl_pid=self.options['apache-pid'].strip(),
-              user=self.options['user']))
+              user=user))
     )
     path_list.append(sh_script)
     os.chmod(bash , 0700)
 
+    #If useful, download necessary files and update options path
+    self.downloadFiles()
     start_boinc = os.path.join(home, '.start_boinc')
     installroot = self.options['installroot'].strip()
-    version = self.options['version'].strip()
     platform = self.options['platform'].strip()
     apps_dir = os.path.join(installroot, 'apps')
-    appname = self.options['app-name'].strip()
-    bin_name = appname +"_"+ version +"_"+ \
+    bin_name = self.appname +"_"+ self.version +"_"+ \
         platform +  self.options['extension'].strip()
-    application = os.path.join(apps_dir, appname, version, platform)
+    application = os.path.join(apps_dir, self.appname, self.version, platform)
     wrapperdir = self.options['wrapper-dir'].strip()
     project = self.options['project'].strip()
 
     parameter = dict(installroot=installroot, project=project,
-            appname=appname, binary_name=bin_name,
-            version=version, platform=platform,
+            appname=self.appname, binary_name=bin_name,
+            version=self.version, platform=platform,
             application=application, environment=environment,
             start_boinc=start_boinc,
             wu_number=int(self.options['wu-number'].strip()),
@@ -266,10 +308,10 @@ class App(GenericBaseRecipe):
             t_wu=self.options['template-wu'].strip(),
             t_input=self.options['input-file'].strip(),
             binary=self.options['binary'].strip(),
-            bash=bash,
+            bash=bash, home_dir=home,
     )
     deploy_app = self.createPythonScript(
-      os.path.join(wrapperdir, appname),
+      os.path.join(wrapperdir, self.appname),
       '%s.configure.deployApp' % __name__, parameter
     )
     path_list.append(deploy_app)

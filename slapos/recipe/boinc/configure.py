@@ -53,6 +53,7 @@ def checkMysql(args):
       print "Could not connect to MySQL database... sleep for 2 secondes"
       time.sleep(2)
 
+
 def checkFile(file, stime):
   """Loop until 'file' is created (exist)"""
   while True:
@@ -62,6 +63,7 @@ def checkFile(file, stime):
       time.sleep(stime)
     else:
       break
+
 
 def services(args):
   """This function configure a new installed boinc project instance"""
@@ -115,6 +117,7 @@ def services(args):
 
   writeFile(args['service_status'], "started")
 
+
 def restart_boinc(args):
   """Stop (if currently is running state) and start all Boinc service"""
   if args['drop_install']:
@@ -130,54 +133,68 @@ def restart_boinc(args):
   writeFile(args['start_boinc'], "started")
   print "Done."
 
+
 def deployApp(args):
   """Fully deploy or redeploy or update a BOINC application using existing BOINC instance"""
   print "Cheking if needed to install %s..." % args['appname']
+  install_request_file = os.path.join(args['home_dir'],
+                  '.install_' + args['appname'] + args['version'])
+  if not os.path.exists(install_request_file):
+    print "No install or update request for %s version %s..." % (
+                args['appname'], args['version'])
+    return
+  os.unlink(install_request_file)
   token = os.path.join(args['installroot'], "." + args['appname'] + args['version'])
-  dropapp = False
+  newInstall = False
   if os.path.exists(token):
     args['previous_wu'] = int(open(token, 'r').read().strip())
-    if args['previous_wu'] >= args['wu_number']:
-      print args['appname'] + " version " + args['version'] + " is already installed in this Boinc instance... skipped"
-      return
-    else:
+    if args['previous_wu'] < args['wu_number']:
       print args['appname'] + " Work units will be updated from %s to %s" % (
                 args['previous_wu'], args['wu_number'])
   else:
     args['previous_wu'] = 0
-    dropapp = True
+    newInstall = True
   #Sleep until file .start_boinc exist (File indicate that BOINC has been started)
   checkFile(args['start_boinc'], 3)
 
   print "setup directories..."
   args['inputfile'] = os.path.join(args['installroot'], 'download',
-                        args['appname'] + '_input')
+                        args['appname'] + args['version'] + '_input')
   base_app = os.path.join(args['installroot'], 'apps', args['appname'])
   base_app_version = os.path.join(base_app, args['version'])
   args['templates'] = os.path.join(args['installroot'], 'templates')
-  t_result = os.path.join(args['templates'], args['appname']+'_result')
-  t_wu = os.path.join(args['templates'], args['appname']+'_wu')
+  t_result = os.path.join(args['templates'],
+                          args['appname'] + args['version'] + '_result')
+  t_wu = os.path.join(args['templates'],
+                          args['appname'] + args['version'] + '_wu')
+  binary = os.path.join(args['application'], args['binary_name'])
   if not os.path.exists(base_app):
     os.mkdir(base_app)
-  if dropapp:
+  if newInstall:
     if os.path.exists(base_app_version):
       shutil.rmtree(base_app_version)
     os.mkdir(base_app_version)
     os.mkdir(args['application'])
-    if not os.path.exists(args['templates']):
-      os.mkdir(args['templates'])
-    else:
-      if os.path.exists(t_result):
-        os.unlink(t_result)
-      if os.path.exists(t_result):
-        os.unlink(t_wu)
+  if not os.path.exists(args['templates']):
+    os.mkdir(args['templates'])
+  if args['t_result']:
+    if os.path.exists(t_result):
+      os.unlink(t_result)
     shutil.copy(args['t_result'], t_result)
+  if args['t_wu']:
+    if os.path.exists(t_wu):
+      os.unlink(t_wu)
     shutil.copy(args['t_wu'], t_wu)
-    if not os.path.exists(args['inputfile']):
-      os.symlink(args['t_input'], args['inputfile'])
-    shutil.copy(args['binary'], os.path.join(args['application'],
-          args['binary_name']))
+  if args['t_input']:
+    if os.path.exists(args['inputfile']):
+      os.unlink(args['inputfile'])
+    os.symlink(args['t_input'], args['inputfile'])
+  if args['binary'] and args['platform']:
+    if os.path.exists(binary):
+      os.unlink(binary)
+    shutil.copy(args['binary'], binary)
 
+  if newInstall:
     print "Adding '" + args['appname'] + "' to project.xml..."
     print "Adding deamon for application to config.xml..."
     project_xml = os.path.join(args['installroot'], 'project.xml')
@@ -185,19 +202,18 @@ def deployApp(args):
     sed_args = [args['bash'], args['appname'], args['installroot']]
     startProcess(sed_args)
 
+  if args['binary'] and args['platform']:
     print "Sign the application binary..."
     sign = os.path.join(args['installroot'], 'bin/sign_executable')
     privateKeyFile = os.path.join(args['installroot'], 'keys/code_sign_private')
-    output = open(os.path.join(args['application'], args['binary_name']+'.sig'), 'w')
-    p_sign = subprocess.Popen([sign, os.path.join(args['application'],
-            args['binary_name']), privateKeyFile], stdout=output,
+    output = open(binary + '.sig', 'w')
+    p_sign = subprocess.Popen([sign, binary, privateKeyFile], stdout=output,
             stderr=subprocess.STDOUT)
     result = p_sign.communicate()[0]
     if p_sign.returncode is None or p_sign.returncode != 0:
       print "Failed to execute bin/sign_executable.\nThe error was: %s" % result
       return
     output.close()
-  #END if drop-app HERE
 
   print "Running xadd script..."
   env = os.environ
@@ -231,18 +247,20 @@ def deployApp(args):
   print "Boinc Application deployment is done... writing end signal file..."
   writeFile(token, str(args['wu_number']))
 
+
 def create_wu(args, env):
-  t_result = "templates/" + args['appname'] + '_result'
-  t_wu = "templates/" + args['appname'] + '_wu'
+  t_result = "templates/" + args['appname'] + args['version'] + '_result'
+  t_wu = "templates/" + args['appname'] + args['version'] + '_wu'
   launch_args = [os.path.join(args['installroot'], 'bin/create_work'),
         '--appname', args['appname'], '--wu_name', '',
         '--wu_template', t_wu, '--result_template', t_result,
         '--min_quorum', '1',  '--target_nresults', '1',
-        args['appname']+'_input']
+        args['appname'] + args['version'] + '_input']
   for i in range(args['previous_wu'], args['wu_number']):
     print "Creating project wroker %s..." % str(i+1)
     launch_args[4] = args['appname'] + str(i+1) + args['version'] + '_nodelete'
     startProcess(launch_args, env, args['installroot'])
+
 
 def startProcess(launch_args, env=None, cwd=None, stdout=subprocess.PIPE):
   process = subprocess.Popen(launch_args, stdout=stdout,
@@ -254,13 +272,14 @@ def startProcess(launch_args, env=None, cwd=None, stdout=subprocess.PIPE):
     return False
   return True
 
+
 def runCmd(args):
   """Wait for Boinc Client started and run boinc cmd"""
   client_config = os.path.join(args['installdir'], 'client_state.xml')
   checkFile(client_config, 5)
   time.sleep(10)
   #Scan client state xml to find client ipv4 adress
-  host = result = re.search("<ip_addr>([\w\d\.:]+)</ip_addr>",
+  host = re.search("<ip_addr>([\w\d\.:]+)</ip_addr>",
                 open(client_config, 'r').read()).group(1)
   args['base_cmd'][2] = host + ':' + args['base_cmd'][2]
   print "Run boinccmd with host at %s " % args['base_cmd'][2]
@@ -270,6 +289,7 @@ def runCmd(args):
   if args['cc_cmd'] != '':
     #Load or reload cc_config file
     startProcess(args['base_cmd'] + [args['cc_cmd']], cwd=args['installdir'])
+
 
 def writeFile(file, content):
   f = open(file, 'w')
