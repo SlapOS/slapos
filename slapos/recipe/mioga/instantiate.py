@@ -77,7 +77,7 @@ class Recipe(GenericBaseRecipe):
     fm.modify('dbi_passwd', self.options['db_password'])
     fm.modify('db_host', self.options['db_host'])
     fm.modify('db_port', self.options['db_port'])
-    fm.modify('dav_host', self.options['private_ipv4'])
+    fm.modify('dav_host', self.options['public_ipv6'])
     fm.modify('dav_port', self.options['public_ipv6_port'])
     # db_name, dbi_login are standard
     fm.save()

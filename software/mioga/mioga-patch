@@ -1,6 +1,6 @@
 diff -r c0f4c1b8b448 Makefile.PL
 --- a/Makefile.PL	Sat Oct 06 16:15:43 2012 +0200
-+++ b/Makefile.PL	Fri Oct 12 10:28:17 2012 +0200
++++ b/Makefile.PL	Fri Oct 12 14:02:33 2012 +0200
 @@ -115,7 +115,7 @@
  # ----------------------------------------------------------------------------
  sub MY::processPL {
@@ -24,7 +24,7 @@ diff -r c0f4c1b8b448 Makefile.PL
              fi \
 diff -r c0f4c1b8b448 conf/Config.xml
 --- a/conf/Config.xml	Sat Oct 06 16:15:43 2012 +0200
-+++ b/conf/Config.xml	Fri Oct 12 10:28:17 2012 +0200
++++ b/conf/Config.xml	Fri Oct 12 14:02:33 2012 +0200
 @@ -37,6 +37,12 @@
                 xpath="/authentication"/>
      
@@ -40,7 +40,7 @@ diff -r c0f4c1b8b448 conf/Config.xml
                   xpath="/database/DBname"/>              
 diff -r c0f4c1b8b448 lib/Mioga2/Authen.pm
 --- a/lib/Mioga2/Authen.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Authen.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/Authen.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -87,7 +87,7 @@
  use Mioga2::GroupList;
  use Mioga2::InstanceList;
@@ -69,7 +69,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Authen.pm
  		my $err = shift;
 diff -r c0f4c1b8b448 lib/Mioga2/Authz.pm
 --- a/lib/Mioga2/Authz.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Authz.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/Authz.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -118,7 +118,7 @@
  use Mioga2::tools::string_utils;
  use Mioga2::Constants;
@@ -81,7 +81,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Authz.pm
  # ============================================================================
 diff -r c0f4c1b8b448 lib/Mioga2/Classes/URI.pm
 --- a/lib/Mioga2/Classes/URI.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Classes/URI.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/Classes/URI.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -75,15 +75,11 @@
    
    # convert uri to UTF-8
@@ -92,12 +92,13 @@ diff -r c0f4c1b8b448 lib/Mioga2/Classes/URI.pm
 -  my $tmp_uri = $conv->convert($uri);
 -  
 -  unless ($tmp_uri) {
+-    my $charset = detect($uri) || 'iso-8859-15'; # defaults to latin9
 +    
 +  unless (Encode::is_utf8($uri) or eval { decode( 'utf8', $uri, Encode::FB_CROAK | Encode::LEAVE_SRC) }) {
-     my $charset = detect($uri) || 'iso-8859-15'; # defaults to latin9
++    my $charset = detect($uri) || 'ISO-8859-15'; # defaults to latin9
      warn "charset = '$charset' for uri = '$uri'" if $debug;
 -    $conv = Text::Iconv->new($charset, "utf8");
-+    my $conv = Text::Iconv->new($charset, "utf8");
++    my $conv = Text::Iconv->new($charset, "UTF-8");
      $uri  = $conv->convert($uri);
      warn "==> converted uri = '$uri'" if $debug;
    }
@@ -110,7 +111,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Classes/URI.pm
 +__END__
 diff -r c0f4c1b8b448 lib/Mioga2/DAVFS.pm
 --- a/lib/Mioga2/DAVFS.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/DAVFS.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/DAVFS.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -144,7 +144,7 @@
  use XML::LibXML ();
  use Mioga2::Constants;
@@ -150,7 +151,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/DAVFS.pm
  		}
 diff -r c0f4c1b8b448 lib/Mioga2/DAVProxy.pm
 --- a/lib/Mioga2/DAVProxy.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/DAVProxy.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/DAVProxy.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -47,7 +47,7 @@
  use Mioga2::MiogaConf;
  
@@ -162,7 +163,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/DAVProxy.pm
  
 diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
 --- a/lib/Mioga2/Database.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Database.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/Database.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -61,7 +61,7 @@
  	my $self = { };
  	bless($self, $class);
@@ -186,7 +187,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
  
 diff -r c0f4c1b8b448 lib/Mioga2/Dispatch.pm
 --- a/lib/Mioga2/Dispatch.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Dispatch.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/Dispatch.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -96,7 +96,7 @@
  
  use Mioga2::Apache;
@@ -198,7 +199,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Dispatch.pm
  $Error::Debug = 1;
 diff -r c0f4c1b8b448 lib/Mioga2/InstanceList.pm
 --- a/lib/Mioga2/InstanceList.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/InstanceList.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/InstanceList.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -423,7 +423,9 @@
  		$conf->RunHooks($self->{config}->{miogaconf});
  
@@ -212,7 +213,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/InstanceList.pm
  	elsif (scalar (keys (%{$self->{update}}))) {
 diff -r c0f4c1b8b448 lib/Mioga2/Magellan.pm
 --- a/lib/Mioga2/Magellan.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Magellan.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/Magellan.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -70,7 +70,7 @@
  require Mioga2::Magellan::Database;
  require Mioga2::Magellan::Properties;
@@ -239,7 +240,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Magellan.pm
  		$inconsistent = pop (@$resources);
 diff -r c0f4c1b8b448 lib/Mioga2/Magellan/DAV.pm
 --- a/lib/Mioga2/Magellan/DAV.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Magellan/DAV.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/Magellan/DAV.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -52,7 +52,7 @@
  use Mioga2::XML::Simple;
  use Mioga2::Constants;
@@ -273,7 +274,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Magellan/DAV.pm
  	return  $response;
 diff -r c0f4c1b8b448 lib/Mioga2/Router.pm
 --- a/lib/Mioga2/Router.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Router.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/Router.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -45,7 +45,7 @@
  use Apache2::RequestUtil;
  use Data::Dumper;
@@ -285,7 +286,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Router.pm
  # If the URI contains a single member, it can be:
 diff -r c0f4c1b8b448 lib/Mioga2/URI.pm
 --- a/lib/Mioga2/URI.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/URI.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/URI.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -812,7 +812,7 @@
  	my ($self) = @_;
  
@@ -308,7 +309,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/URI.pm
  	my ($mioga_ident) = split(/[\/\?]/, $uri);
 diff -r c0f4c1b8b448 lib/Mioga2/tools/string_utils.pm
 --- a/lib/Mioga2/tools/string_utils.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/tools/string_utils.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/Mioga2/tools/string_utils.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -46,6 +46,7 @@
  use Mioga2::XML::Simple;
  use Exporter;
@@ -324,10 +325,11 @@ diff -r c0f4c1b8b448 lib/Mioga2/tools/string_utils.pm
 -    my $conv    = Text::Iconv->new('utf8', 'utf8');
 -    my $tmp_str = $conv->convert($str);
 -    unless ($tmp_str) {
-+    unless (Encode::is_utf8($str) or eval { decode( 'utf8', $str, Encode::FB_CROAK | Encode::LEAVE_SRC) }) {
-         my $charset = detect($str) || 'iso-8859-15'; # defaults to latin9
+-        my $charset = detect($str) || 'iso-8859-15'; # defaults to latin9
 -        $conv = Text::Iconv->new($charset, "utf8");
-+        my $conv = Text::Iconv->new($charset, "utf8");
++    unless (Encode::is_utf8($str) or eval { decode( 'utf8', $str, Encode::FB_CROAK | Encode::LEAVE_SRC) }) {
++        my $charset = detect($str) || 'ISO-8859-15'; # defaults to latin9
++        my $conv = Text::Iconv->new($charset, "UTF-8");
          $str  = $conv->convert($str);
  		utf8::decode ($str);
      }
@@ -337,7 +339,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/tools/string_utils.pm
  
 diff -r c0f4c1b8b448 lib/MiogaConf.pm
 --- a/lib/MiogaConf.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/MiogaConf.pm	Fri Oct 12 10:28:17 2012 +0200
++++ b/lib/MiogaConf.pm	Fri Oct 12 14:02:33 2012 +0200
 @@ -811,6 +811,10 @@
  	my @missing;
  	my @missing_clib;
@@ -359,7 +361,7 @@ diff -r c0f4c1b8b448 lib/MiogaConf.pm
  		my $version;
 diff -r c0f4c1b8b448 sql/Makefile
 --- a/sql/Makefile	Sat Oct 06 16:15:43 2012 +0200
-+++ b/sql/Makefile	Fri Oct 12 10:28:17 2012 +0200
++++ b/sql/Makefile	Fri Oct 12 14:02:33 2012 +0200
 @@ -18,9 +18,9 @@
  	if [ $(INIT_SQL) = 'yes' ] ; \
  	then \
@@ -375,7 +377,7 @@ diff -r c0f4c1b8b448 sql/Makefile
  		echo "Update database"; \
 diff -r c0f4c1b8b448 sql/schema_base.sql
 --- a/sql/schema_base.sql	Sat Oct 06 16:15:43 2012 +0200
-+++ b/sql/schema_base.sql	Fri Oct 12 10:28:17 2012 +0200
++++ b/sql/schema_base.sql	Fri Oct 12 14:02:33 2012 +0200
 @@ -429,10 +429,6 @@
      END;
  ' LANGUAGE 'plpgsql';
@@ -398,3 +400,14 @@ diff -r c0f4c1b8b448 sql/schema_base.sql
  
  --
  -- Add referencial integrity on default_profile_id in m_group_base
+diff -r c0f4c1b8b448 web/conf/startup.pl
+--- a/web/conf/startup.pl	Sat Oct 06 16:15:43 2012 +0200
++++ b/web/conf/startup.pl	Fri Oct 12 14:02:33 2012 +0200
+@@ -29,6 +29,7 @@
+ use MIME::Parser ();
+ use MIME::QuotedPrint ();
+ use MiogaConf ();
++use Net::INET6Glue::INET_is_INET6;
+ use Net::LDAP ();
+ use Parse::Yapp::Driver ();
+ use Storable ();
