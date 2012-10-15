@@ -16,7 +16,7 @@ How it works
 
 The SLAP main server which is in charge of service coordination receives from participating servers the number of computer paritions which are available, the type of resource which a party is ready provide, and request from parties for resources which are needed.
 
-Each participating server is identified by a unique ID and runs a slap-server daemon. This dameon collects from the main server the installation tasks and does the installation of resources, then notifies the main server of completion whenever a resource is configured, installed and available.
+Each participating server is identified by a unique ID and runs a slap-server daemon. This daemon collects from the main server the installation tasks and does the installation of resources, then notifies the main server of completion whenever a resource is configured, installed and available.
 
 The data structure on the main server is the following:
 

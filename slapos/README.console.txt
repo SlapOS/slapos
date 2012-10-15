@@ -98,5 +98,5 @@ Examples
   >>> # Fetch existing instance status
   >>> request(kvm, "myuniquekvm").getState()
 
-  >>> # Fetch instance informations on already launched instance
+  >>> # Fetch instance information on already launched instance
   >>> request(kvm, "myuniquekvm").getConnectionParameter("url")
