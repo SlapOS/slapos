@@ -417,6 +417,13 @@ backend-port = ${haproxy-{{ backend_name }}:port}
 access-log-path = ${directory:log}/squid-{{ backend_name }}-access.log
 cache-log-path = ${directory:log}/squid-{{ backend_name }}-cache.log
 pid-filename-path = ${directory:run}/squid-{{ backend_name }}.pid
+
+[{{ section('logrotate-entry-squid-' ~ backend_name) }}]
+< = logrotate-base
+recipe = slapos.cookbook:logrotate.d
+name = squid-{{ backend_name }}
+log = ${squid-{{ backend_name }}:access-log-path} ${squid-{{ backend_name}}:cache-log-path}
+post = {{ parameter_dict['squid'] }}/sbin/squid -k rotate
 {%     endif -%}
 
 {%   if 'http' in scheme -%}
