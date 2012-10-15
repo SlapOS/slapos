@@ -56,6 +56,8 @@ proxy role since it may be called by owner in draft state.\n
 """\n
 portal_type_list = ["Hosting Subscription", "Computer Partition", "Software Instance", "Slave Instance"]\n
 for movement in state_change[\'object\'].getMovementList():\n
+  if movement.getResource() != movement.getPortalObject().portal_preferences.getPreferredInstanceSetupResource():\n
+    continue\n
   tag = "softinssec_%s" % movement.getUid()\n
   movement.activate(activity=\'SQLQueue\', tag=tag, after_path_and_method_id=(movement.getPath(),\n
       (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))).getId()\n
