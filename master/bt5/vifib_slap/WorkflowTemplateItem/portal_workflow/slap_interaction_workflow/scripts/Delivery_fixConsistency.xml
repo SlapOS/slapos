@@ -75,6 +75,10 @@ else:\n
   limit = 1\n
   always_remove = False\n
 \n
+if delivery.getPortalType() == \'Purchase Packing List\':\n
+  limit = 0\n
+  always_remove = True\n
+\n
 if root_applied_rule_count <= limit:\n
   # nothing to do\n
   return\n
