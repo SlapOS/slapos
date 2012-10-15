@@ -103,7 +103,7 @@ class BaseSlapRecipe:
       self.computer_id = slap_connection['computer-id']
       self.computer_partition_id = slap_connection['partition-id']
       self.server_url = slap_connection['server-url']
-      self.software_release_url = slap_connection['software_release-url']
+      self.software_release_url = slap_connection['software-release-url']
       self.key_file = slap_connection.get('key-file')
       self.cert_file = slap_connection.get('cert-file')
 
