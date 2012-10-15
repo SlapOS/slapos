@@ -54,7 +54,10 @@
 if delivery.getCausalityState() not in (\'building\', \'calculating\'):\n
   return\n
 \n
-if context.getPortalObject().portal_activities.countMessage(path=delivery.getPath()) == 0:\n
+portal_activities = context.getPortalObject().portal_activities\n
+path = delivery.getPath()\n
+if context.getPortalObject().portal_activities.countMessage(path=path) == 0 \\\n
+  and portal_activities.countMessageWithTag(\'%s_solve\' % path) == 0:\n
   delivery.updateCausalityState()\n
 </string> </value>
         </item>
