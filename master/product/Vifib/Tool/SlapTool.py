@@ -220,7 +220,6 @@ class SlapTool(BaseTool):
       self.activate(activity='SQLQueue', tag=tag)._fillComputerInformationCache(
         computer_id, user, full)
 
-  @UnrestrictedMethod
   def _getComputerInformation(self, computer_id, user, full):
     user_document = _assertACI(self.getPortalObject().portal_catalog.unrestrictedGetResultValue(
       reference=user, portal_type=['Person', 'Computer', 'Software Instance']))
