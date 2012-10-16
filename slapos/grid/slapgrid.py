@@ -908,6 +908,7 @@ class Slapgrid(object):
       except Slapgrid.PromiseError as exception:
         clean_run_promise = False
         try:
+          logger.error(exception)
           computer_partition.error(exception)
         except (SystemExit, KeyboardInterrupt):
           raise
