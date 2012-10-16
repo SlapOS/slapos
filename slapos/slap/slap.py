@@ -286,6 +286,12 @@ class Computer(SlapDocument):
       'computer_id': self._computer_id,
       'message': message})
 
+  def getCertificateDict(self):
+    return {
+      'key': getattr(self, '_key', None),
+      'certificate': getattr(self, '_certificate', None)
+    }
+
 def _syncComputerPartitionInformation(func):
   """
   Synchronize computer partition object with server information
@@ -677,6 +683,17 @@ class slap:
     """
     self._connection_helper.POST('/requestComputer',
       {'computer_title': computer_title})
+    xml = self._connection_helper.response.read()
+    computer = xml_marshaller.loads(xml)
+    return computer
+
+  def revokeComputerCertificate(self, computer_id):
+    self._connection_helper.POST('/revokeComputerCertificate', {
+      'computer_id': computer_id})
+
+  def getComputerCertificate(self, computer_id):
+    self._connection_helper.POST('/getComputerCertificate', {
+      'computer_id': computer_id})
     xml = self._connection_helper.response.read()
     computer = xml_marshaller.loads(xml)
     return computer
