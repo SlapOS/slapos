@@ -23,6 +23,7 @@
             <value>
               <tuple>
                 <string>draft</string>
+                <string>request_computer</string>
                 <string>request_software_instance</string>
               </tuple>
             </value>

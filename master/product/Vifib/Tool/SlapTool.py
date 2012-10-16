@@ -364,6 +364,24 @@ class SlapTool(BaseTool):
     """
     return self._supplySupply(url, computer_id, state)
 
+  @convertToREST
+  def _requestComputer(self, computer_title):
+    portal = self.getPortalObject()
+    person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
+    person.requestComputer(computer_title=computer_title)
+    computer = Computer(self.REQUEST.get('computer_reference'))
+    computer._certificate = self.REQUEST.get('computer_certificate')
+    computer._key = self.REQUEST.get('computer_key')
+    return xml_marshaller.xml_marshaller.dumps(computer)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'requestComputer')
+  def requestComputer(self, computer_title):
+    """
+    Request Computer
+    """
+    return self._requestComputer(computer_title)
+
   security.declareProtected(Permissions.AccessContentsInformation,
     'buildingSoftwareRelease')
   def buildingSoftwareRelease(self, url, computer_id):
