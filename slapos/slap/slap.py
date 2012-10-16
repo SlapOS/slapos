@@ -671,6 +671,16 @@ class slap:
       connection_helper=self._connection_helper,
     )
 
+  def requestComputer(self, computer_title):
+    """
+    Requests a computer.
+    """
+    self._connection_helper.POST('/requestComputer',
+      {'computer_title': computer_title})
+    xml = self._connection_helper.response.read()
+    computer = xml_marshaller.loads(xml)
+    return computer
+
   def registerComputer(self, computer_guid):
     """
     Registers connected representation of computer and
