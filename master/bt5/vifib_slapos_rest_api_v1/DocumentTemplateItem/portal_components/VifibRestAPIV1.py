@@ -601,6 +601,7 @@ class StatusPublisher(GenericPublisher):
   def __status_list(self):
     kw = dict(
       portal_type=('Computer', 'Software Instance'),
+      validation_state="validated",
     )
     d = {"list": []}
     a = d['list'].append
