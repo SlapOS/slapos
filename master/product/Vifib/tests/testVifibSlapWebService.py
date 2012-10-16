@@ -956,10 +956,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   """
 
   prepare_supply_software_release = """
-      LoginDefaultUser
+      SlapLoginDefaultUser
       SupplyComputerSoftwareReleaseAvailable
       Tic
-      Logout
+      SlapLogout
   """
 
   prepare_software_release_purchase_packing_list = \
