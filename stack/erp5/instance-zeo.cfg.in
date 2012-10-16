@@ -62,11 +62,11 @@ ipv6 = {{ ipv6 }}
          cache_size,
          client_dict,
        ]) -%}
-{%     if tidstorage_dict -%}
+{%     if tidstorage_dict is not None -%}
 {%       do known_tid_storage_identifier_dict.__setitem__(
            (known_tid_storage_identifier_host, export_id), (
              storage_dict['path'],
-             tidstorage_dict.get(export_id, '%(backup)s/' ~ export_id) % {'backup': zodb_backup_path},
+             tidstorage_dict.get('zodb-dict', {}).get(export_id, '%(backup)s/' ~ export_id) % {'backup': zodb_backup_path},
              mount_point,
            ),
          ) -%}
@@ -109,7 +109,7 @@ path = ${directory:promises}/zeo-tunnel-{{ storage_family }}
 {%   set next_port = next_port + 1 -%}
 {% endfor -%}
 
-{% if tidstorage_dict -%}
+{% if tidstorage_dict is not None -%}
 [tidstorage]
 recipe = slapos.cookbook:tidstorage
 known-tid-storage-identifier-dict = {{ dumps(known_tid_storage_identifier_dict) }}

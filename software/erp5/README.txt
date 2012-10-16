@@ -99,20 +99,23 @@ value (dict)
 'tidstorage-dict' (dict, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Backup parameters for tidstorage-related backup scripts.
-No backups are done if not provided.
+TIDStorage is not deployed if not provided.
 key (str)
   Possible keys and associated value types:
-  'zodb-dict' (dict, mandatory)
+  'zodb-dict' (dict, optional)
     key (str)
       (same as zodb-dict)
     value (str, optional)
       Path to store backups of this zodb into. Occurrences of '%(backup)s' are
       replaced with the path to partition's srv/backup/zodb directory.
+    Defaults to {}.
     If an item is missing compared to zodb-dict, value defaults to
     '%(backup)s/' + key.
   'timestamp-path' (str, optional)
     Path to backup timestamp file.
-    Defaults to 
+    Occurrences of '%(backup)s' are replaced with the path to partition's
+    srv/backup/tidstorage directory.
+    Defaults to '%(backup)s/repozo_tidstorage_timestamp.log'.
 
 'zope-partition-dict' (dict, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
