@@ -31,9 +31,10 @@ import subprocess
 import time
 import shutil
 import re
+import filecmp
 
 def checkMysql(args):
-  sys.path += args['python_path'].split(':')
+  sys.path += args['environment']['PYTHONPATH'].split(':')
   import MySQLdb
   #Sleep until mysql server becomes available
   while True:
@@ -65,6 +66,61 @@ def checkFile(file, stime):
       break
 
 
+def restart_boinc(args):
+  """Stop (if currently is running state) and start all Boinc service"""
+  if args['drop_install']:
+    checkFile(args['service_status'], 3)
+  else:
+    checkMysql(args)
+  print "Restart Boinc..."
+  env = os.environ
+  env['PATH'] = args['environment']['PATH']
+  env['PYTHONPATH'] = args['environment']['PYTHONPATH']
+  binstart = os.path.join(args['installroot'], 'bin/start')
+  binstop = os.path.join(args['installroot'], 'bin/stop')
+  os.system(binstop)
+  os.system(binstart)
+  writeFile(args['start_boinc'], "started")
+  print "Done."
+
+
+def check_installRequest(args):
+  print "Cheking if needed to install %s..." % args['appname']
+  install_request_file = os.path.join(args['home_dir'],
+                  '.install_' + args['appname'] + args['version'])
+  if not os.path.exists(install_request_file):
+    print "No install or update request for %s version %s..." % (
+                args['appname'], args['version'])
+    return False
+  os.unlink(install_request_file)
+  return True
+
+def copy_file(source, dest):
+  """"Copy file with source to dest with auto replace
+      return True if file has been copied and dest ha been replaced
+  """
+  result = False
+  if source and os.path.exists(source):
+    if os.path.exists(dest):
+      if filecmp.cmp(dest, source):
+        return False
+      os.unlink(dest)
+    result = True
+    shutil.copy(source, dest)
+  return result
+
+
+def startProcess(launch_args, env=None, cwd=None, stdout=subprocess.PIPE):
+  process = subprocess.Popen(launch_args, stdout=stdout,
+              stderr=subprocess.STDOUT, env=env,
+              cwd=cwd)
+  result = process.communicate()[0]
+  if process.returncode is None or process.returncode != 0:
+    print "Failed to execute executable.\nThe error was: %s" % result
+    return False
+  return True
+
+
 def services(args):
   """This function configure a new installed boinc project instance"""
   print "Checking if needed to install or reinstall Boinc-server..."
@@ -81,11 +137,11 @@ def services(args):
   if not startProcess(htpwd_args):
     return
 
-  print "Running xadd script..."
+  print "execute script xadd..."
   env = os.environ
   env['PATH'] = args['environment']['PATH']
   env['PYTHONPATH'] = args['environment']['PYTHONPATH']
-  if not startProcess([args['xadd']], env):
+  if not startProcess([os.path.join(args['installroot'], 'bin/xadd')], env):
     return
   print "Update files and directories permissions..."
   upload = os.path.join(args['installroot'], 'upload')
@@ -103,11 +159,8 @@ def services(args):
   os.system("chmod -R o+r " + inc)
   os.system("chmod o+x " + languages)
   os.system("chmod o+x " + compiled)
-  os.system("sed -i '/remove the die/d' %s" % forum_file)
-  subprocess.Popen(["sed -i 's#REPLACE WITH PROJECT NAME#%s#' %s" % (args['fullname'],
-      project_inc)], shell=True, stdout=subprocess.PIPE).communicate()[0]
-  subprocess.Popen(["sed -i 's#REPLACE WITH COPYRIGHT HOLDER#%s#' %s" % (args['copyright'],
-      project_inc)], shell=True, stdout=subprocess.PIPE).communicate()[0]
+  sed_args = [args['sedconfig']]
+  startProcess(sed_args)
 
   #Execute php create_forum.php...
   print "Boinc Forum: Execute php create_forum.php..."
@@ -118,32 +171,10 @@ def services(args):
   writeFile(args['service_status'], "started")
 
 
-def restart_boinc(args):
-  """Stop (if currently is running state) and start all Boinc service"""
-  if args['drop_install']:
-    checkFile(args['service_status'], 3)
-  else:
-    checkMysql(args)
-  print "Restart Boinc..."
-  os.environ['PATH'] = args['PATH']
-  binstart = os.path.join(args['installroot'], 'bin/start')
-  binstop = os.path.join(args['installroot'], 'bin/stop')
-  os.system(binstop)
-  os.system(binstart)
-  writeFile(args['start_boinc'], "started")
-  print "Done."
-
-
 def deployApp(args):
   """Fully deploy or redeploy or update a BOINC application using existing BOINC instance"""
-  print "Cheking if needed to install %s..." % args['appname']
-  install_request_file = os.path.join(args['home_dir'],
-                  '.install_' + args['appname'] + args['version'])
-  if not os.path.exists(install_request_file):
-    print "No install or update request for %s version %s..." % (
-                args['appname'], args['version'])
+  if not check_installRequest(args):
     return
-  os.unlink(install_request_file)
   token = os.path.join(args['installroot'], "." + args['appname'] + args['version'])
   newInstall = False
   if os.path.exists(token):
@@ -156,18 +187,23 @@ def deployApp(args):
     newInstall = True
   #Sleep until file .start_boinc exist (File indicate that BOINC has been started)
   checkFile(args['start_boinc'], 3)
+  env = os.environ
+  env['PATH'] = args['environment']['PATH']
+  env['PYTHONPATH'] = args['environment']['PYTHONPATH']
 
   print "setup directories..."
+  numversion = args['version'].replace('.', '')
   args['inputfile'] = os.path.join(args['installroot'], 'download',
-                        args['appname'] + args['version'] + '_input')
+                        args['appname'] + numversion + '_input')
   base_app = os.path.join(args['installroot'], 'apps', args['appname'])
   base_app_version = os.path.join(base_app, args['version'])
   args['templates'] = os.path.join(args['installroot'], 'templates')
   t_result = os.path.join(args['templates'],
-                          args['appname'] + args['version'] + '_result')
+                          args['appname'] + numversion + '_result')
   t_wu = os.path.join(args['templates'],
-                          args['appname'] + args['version'] + '_wu')
+                          args['appname'] + numversion + '_wu')
   binary = os.path.join(args['application'], args['binary_name'])
+  signBin = False
   if not os.path.exists(base_app):
     os.mkdir(base_app)
   if newInstall:
@@ -177,32 +213,24 @@ def deployApp(args):
     os.mkdir(args['application'])
   if not os.path.exists(args['templates']):
     os.mkdir(args['templates'])
-  if args['t_result']:
-    if os.path.exists(t_result):
-      os.unlink(t_result)
-    shutil.copy(args['t_result'], t_result)
-  if args['t_wu']:
-    if os.path.exists(t_wu):
-      os.unlink(t_wu)
-    shutil.copy(args['t_wu'], t_wu)
+  copy_file(args['t_result'], t_result)
+  copy_file(args['t_wu'], t_wu)
+  signBin = copy_file(args['binary'], binary)
   if args['t_input']:
     if os.path.exists(args['inputfile']):
       os.unlink(args['inputfile'])
     os.symlink(args['t_input'], args['inputfile'])
-  if args['binary'] and args['platform']:
-    if os.path.exists(binary):
-      os.unlink(binary)
-    shutil.copy(args['binary'], binary)
 
-  if newInstall:
+  project_xml = os.path.join(args['installroot'], 'project.xml')
+  findapp = re.search("<name>(%s)</name>" % args['appname'],
+                open(project_xml, 'r').read())
+  if not findapp:
     print "Adding '" + args['appname'] + "' to project.xml..."
     print "Adding deamon for application to config.xml..."
-    project_xml = os.path.join(args['installroot'], 'project.xml')
-    config_xml = os.path.join(args['installroot'], 'config.xml')
     sed_args = [args['bash'], args['appname'], args['installroot']]
     startProcess(sed_args)
 
-  if args['binary'] and args['platform']:
+  if signBin:
     print "Sign the application binary..."
     sign = os.path.join(args['installroot'], 'bin/sign_executable')
     privateKeyFile = os.path.join(args['installroot'], 'keys/code_sign_private')
@@ -215,13 +243,10 @@ def deployApp(args):
       return
     output.close()
 
-  print "Running xadd script..."
-  env = os.environ
-  env['PATH'] = args['environment']['PATH']
-  env['PYTHONPATH'] = args['environment']['PYTHONPATH']
+  print "execute script xadd..."
+
   if not startProcess([os.path.join(args['installroot'], 'bin/xadd')], env):
     return
-
   print "Running script bin/update_versions..."
   updt_version = os.path.join(args['installroot'], 'bin/update_versions')
   p_version = subprocess.Popen([updt_version], stdout=subprocess.PIPE,
@@ -240,7 +265,6 @@ def deployApp(args):
   print "Restart Boinc..."
   binstart = os.path.join(args['installroot'], 'bin/start')
   binstop = os.path.join(args['installroot'], 'bin/stop')
-  sys.environ = env
   os.system(binstop)
   os.system(binstart)
 
@@ -249,28 +273,19 @@ def deployApp(args):
 
 
 def create_wu(args, env):
-  t_result = "templates/" + args['appname'] + args['version'] + '_result'
-  t_wu = "templates/" + args['appname'] + args['version'] + '_wu'
+  """Create or update number of work unit for an existing boinc application"""
+  numversion = args['version'].replace('.', '')
+  t_result = "templates/" + args['appname'] + numversion + '_result'
+  t_wu = "templates/" + args['appname'] + numversion + '_wu'
   launch_args = [os.path.join(args['installroot'], 'bin/create_work'),
         '--appname', args['appname'], '--wu_name', '',
         '--wu_template', t_wu, '--result_template', t_result,
         '--min_quorum', '1',  '--target_nresults', '1',
-        args['appname'] + args['version'] + '_input']
+        args['appname'] + numversion + '_input']
   for i in range(args['previous_wu'], args['wu_number']):
     print "Creating project wroker %s..." % str(i+1)
-    launch_args[4] = args['appname'] + str(i+1) + args['version'] + '_nodelete'
+    launch_args[4] = args['appname'] + str(i+1) + numversion + '_nodelete'
     startProcess(launch_args, env, args['installroot'])
-
-
-def startProcess(launch_args, env=None, cwd=None, stdout=subprocess.PIPE):
-  process = subprocess.Popen(launch_args, stdout=stdout,
-              stderr=subprocess.STDOUT, env=env,
-              cwd=cwd)
-  result = process.communicate()[0]
-  if process.returncode is None or process.returncode != 0:
-    print "Failed to execute executable.\nThe error was: %s" % result
-    return False
-  return True
 
 
 def runCmd(args):

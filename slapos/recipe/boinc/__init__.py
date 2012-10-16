@@ -103,7 +103,7 @@ class Recipe(GenericBaseRecipe):
 
     #Define environment variable here
     python = os.path.join(self.home, 'bin/python')
-    python_path = self.boinc_egg + ":" + os.environ['PYTHONPATH']
+    python_path = self.boinc_egg
     if not os.path.exists(python):
       os.symlink(self.pythonbin, python)
     for f in os.listdir(self.developegg):
@@ -112,8 +112,8 @@ class Recipe(GenericBaseRecipe):
         python_path += ":" + dir
     bin_dir = os.path.join(self.home, 'bin')
     environment = dict(
-        PATH=self.svn + ':' + bin_dir + ':' + self.perl + ':' + os.environ['PATH'],
-        PYTHONPATH=python_path,
+        PATH=os.pathsep.join([self.svn, bin_dir, self.perl, os.environ['PATH']]),
+        PYTHONPATH=os.pathsep.join([python_path, os.environ['PYTHONPATH']]),
     )
 
     #Generate wrapper for php
@@ -134,7 +134,7 @@ class Recipe(GenericBaseRecipe):
       dict(mysql_port=self.mysqlport, mysql_host=self.mysqlhost,
           mysql_user=self.username, mysql_password=self.password,
           database=self.database,
-          file_status=file_status, python_path=python_path
+          file_status=file_status, environment=environment
       )
     )
 
@@ -160,6 +160,18 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(install_wrapper)
 
+    #generate sh script for project configuration
+    bash = os.path.join(self.home, 'bin', 'project_config.sh')
+    sh_script = self.createFile(bash,
+        self.substituteTemplate(self.getTemplateFilename('project_config.in'),
+        dict(dash=self.options['dash'].strip(),
+              uldl_pid=self.options['apache-pid'].strip(),
+              user=slapuser, fullname=self.fullname,
+              copyright=self.copyright, installroot=self.installroot))
+    )
+    path_list.append(sh_script)
+    os.chmod(bash , 0700)
+
     #After make_project run configure_script to perform and restart apache php services
     service_status = os.path.join(self.home, '.start_service')
     parameter = dict(
@@ -171,10 +183,8 @@ class Recipe(GenericBaseRecipe):
         xadd=os.path.join(self.installroot, 'bin/xadd'),
         environment=environment,
         service_status=service_status,
-        project=niceprojectname,
-        fullname=self.fullname,
-        copyright=self.copyright,
-        drop_install=drop_install
+        drop_install=drop_install,
+        sedconfig=bash
     )
     start_service = self.createPythonScript(
       os.path.join(self.wrapperdir, 'config_project'),
@@ -191,8 +201,8 @@ class Recipe(GenericBaseRecipe):
         installroot=self.installroot, drop_install=drop_install,
         mysql_port=self.mysqlport, mysql_host=self.mysqlhost,
         mysql_user=self.username, mysql_password=self.password,
-        database=self.database, PATH=environment['PATH'],
-        python_path=python_path, start_boinc=start_boinc)
+        database=self.database, environment=environment,
+        start_boinc=start_boinc)
     start_wrapper = self.createPythonScript(os.path.join(self.wrapperdir,
         'start_boinc'),
         '%s.configure.restart_boinc' % __name__,
@@ -211,14 +221,14 @@ class App(GenericBaseRecipe):
 
   def downloadFiles(self):
     """This is used to download app files if necessary and update options values"""
-    for key in ('template-result', 'template-wu', 'input-file', 'binary'):
-      option = self.options[key].strip()
-      if option and (option.startswith('http') or option.startswith('ftp')):
+    for key in ('input-file', 'template-result', 'template-wu', 'binary'):
+      param = self.options[key].strip()
+      if param and (param.startswith('http') or param.startswith('ftp')):
         #download the specified file
-        cache = os.path.join(self.options['home'].strip(), 'temp')
+        cache = os.path.join(self.options['home'].strip(), 'tmp')
         downloader = zc.buildout.download.Download(self.buildout['buildout'],
                         hash_name=True, cache=cache)
-        path, _ = downloader(option, md5sum=None)
+        path, _ = downloader(param, md5sum=None)
         mode = 0600
         if key == 'binary':
           mode = 0700
@@ -243,8 +253,9 @@ class App(GenericBaseRecipe):
         print "Invalid argement values...operation cancelled"
         return False
     #write application to install
-    toInstall = open(os.path.join(self.options['home'].strip(),
-                            '.install_' + self.appname + self.version), 'w')
+    request_file = os.path.join(self.options['home'].strip(),
+                        '.install_' + self.appname + self.version)
+    toInstall = open(request_file, 'w')
     toInstall.write('install or update')
     toInstall.close()
     return True
@@ -258,9 +269,8 @@ class App(GenericBaseRecipe):
     path_list = []
     package = self.options['boinc'].strip()
     #Define environment variable here
-    boinc_egg = os.path.join(package, 'lib/python2.7/site-packages')
     developegg = self.options['develop-egg'].strip()
-    python_path = boinc_egg + ":" + os.environ['PYTHONPATH']
+    python_path = os.path.join(package, 'lib/python2.7/site-packages')
     home = self.options['home'].strip()
     user = pwd.getpwuid(os.stat(home).st_uid)[0]
     perl = self.options['perl-binary'].strip()
@@ -271,17 +281,15 @@ class App(GenericBaseRecipe):
         python_path += ":" + dir
     bin_dir = os.path.join(home, 'bin')
     environment = dict(
-        PATH=svn + ':' + bin_dir + ':' + perl + ':' + os.environ['PATH'],
-        PYTHONPATH=python_path,
+        PATH=os.pathsep.join([svn, bin_dir, perl, os.environ['PATH']]),
+        PYTHONPATH=os.pathsep.join([python_path, os.environ['PYTHONPATH']]),
     )
 
     #generate project.xml and config.xml script updater
     bash = os.path.join(home, 'bin', 'update_config.sh')
     sh_script = self.createFile(bash,
         self.substituteTemplate(self.getTemplateFilename('sed_update.in'),
-        dict(dash=self.options['dash'].strip(),
-              uldl_pid=self.options['apache-pid'].strip(),
-              user=user))
+        dict(dash=self.options['dash'].strip()))
     )
     path_list.append(sh_script)
     os.chmod(bash , 0700)
@@ -311,7 +319,7 @@ class App(GenericBaseRecipe):
             bash=bash, home_dir=home,
     )
     deploy_app = self.createPythonScript(
-      os.path.join(wrapperdir, self.appname),
+      os.path.join(wrapperdir, 'boinc_app'),
       '%s.configure.deployApp' % __name__, parameter
     )
     path_list.append(deploy_app)
