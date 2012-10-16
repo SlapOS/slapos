@@ -71,6 +71,12 @@ MANDATORY_PARAMETER_LIST = [
 
 COMPUTER_PARTITION_DESTROYED_STATE = 'destroyed'
 
+# Global variables about return state of slapgrid
+SLAPGRID_SUCCESS = 0
+SLAPGRID_FAIL = 1
+SLAPGRID_PROMISE_FAIL = 2
+
+
 # XXX hardcoded watchdog_path
 WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
 
@@ -316,23 +322,29 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
 
 
 def realRun(argument_tuple, method_list):
-  clean_run = True
   slapgrid_object, option_dict = \
       parseArgumentTupleAndReturnSlapgridObject(*argument_tuple)
   pidfile = option_dict.get('pidfile')
   if pidfile:
     setRunning(pidfile)
   try:
+    failed = False
+    failed_promise = False
     for method in method_list:
-      if not getattr(slapgrid_object, method)():
-        clean_run = False
+      # Quite complicated way to figure out if everything went fine
+      return_value = getattr(slapgrid_object, method)()
+      if return_value == SLAPGRID_FAIL:
+        failed = True
+      if return_value == SLAPGRID_PROMISE_FAIL:
+        failed_promise = True
   finally:
     if pidfile:
       setFinished(pidfile)
-  if clean_run:
-    sys.exit(0)
-  else:
-    sys.exit(1)
+  if failed:
+    sys.exit(SLAPGRID_FAIL)
+  if failed_promise:
+    sys.exit(SLAPGRID_PROMISE_FAIL)
+  sys.exit(SLAPGRID_SUCCESS)
 
 
 def run(*argument_tuple):
@@ -520,6 +532,7 @@ class Slapgrid(object):
     self.checkEnvironmentAndCreateStructure()
     logger = logging.getLogger('SoftwareReleases')
     logger.info("Processing software releases...")
+    # Boolean to know if every instance has correctly been deployed
     clean_run = True
     for software_release in self.computer.getSoftwareReleaseList():
       state = software_release.getState()
@@ -600,7 +613,11 @@ class Slapgrid(object):
           except NotFoundError:
             pass
     logger.info("Finished software releases...")
-    return clean_run
+
+    # Return success value
+    if not clean_run:
+      return SLAPGRID_FAIL
+    return SLAPGRID_SUCCESS
 
 
   def _launchSupervisord(self):
@@ -812,9 +829,8 @@ class Slapgrid(object):
 
         # If partition has no SR: skip it.
         try:
-          software_url = computer_partition.getSoftwareRelease().getURI()
-          software_path = os.path.join(self.software_root,
-              getSoftwareUrlHash(software_url))
+          os.path.join(self.software_root, getSoftwareUrlHash(
+              computer_partition.getSoftwareRelease().getURI()))
         except (NotFoundError, TypeError):
           # This is surely free partition. Check it...
           if os.listdir(computer_partition_path) == []:
@@ -833,7 +849,6 @@ class Slapgrid(object):
 
       # Buildout failed: send log but don't print it to output (already done)
       except BuildoutFailedError, exception:
-        clean_run = False
         try:
           computer_partition.error(exception)
         except (SystemExit, KeyboardInterrupt):
@@ -845,7 +860,6 @@ class Slapgrid(object):
 
       # For everything else: log it, send it, continue.
       except Exception as exception:
-        clean_run = False
         logger.error(traceback.format_exc())
         try:
           computer_partition.error(exception)
@@ -867,8 +881,11 @@ class Slapgrid(object):
     # Prepares environment
     self.checkEnvironmentAndCreateStructure()
     self._launchSupervisord()
-    # Process Computer Partitions
+
+    # Boolean to know if every instance has correctly been deployed
     clean_run = True
+    # Boolean to know if every promises correctly passed
+    clean_run_promise = True
 
     # Filter all dummy / empty partitions
     computer_partition_list = self.FilterComputerPartitionList(
@@ -887,6 +904,18 @@ class Slapgrid(object):
         exception = traceback.format_exc()
         computer_partition.error(exception)
         raise
+
+      except Slapgrid.PromiseError as exception:
+        clean_run_promise = False
+        try:
+          logger.error(exception)
+          computer_partition.error(exception)
+        except (SystemExit, KeyboardInterrupt):
+          raise
+        except Exception:
+          exception = traceback.format_exc()
+          logger.error('Problem during reporting error, continuing:\n' +
+            exception)
 
       # Buildout failed: send log but don't print it to output (already done)
       except BuildoutFailedError, exception:
@@ -914,7 +943,13 @@ class Slapgrid(object):
             exception)
 
     logger.info("Finished computer partitions...")
-    return clean_run
+
+    # Return success value
+    if not clean_run:
+      return SLAPGRID_FAIL
+    if not clean_run_promise:
+      return SLAPGRID_PROMISE_FAIL
+    return SLAPGRID_SUCCESS
 
 
   def validateXML(self, to_be_validated, xsd_model):
@@ -1239,4 +1274,8 @@ class Slapgrid(object):
                   (computer_partition.getId(), server_error.args[0]))
 
     logger.info("Finished usage reports...")
-    return clean_run
+
+    # Return success value
+    if not clean_run:
+      return SLAPGRID_FAIL
+    return SLAPGRID_SUCCESS
