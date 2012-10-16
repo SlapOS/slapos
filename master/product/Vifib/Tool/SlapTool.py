@@ -577,6 +577,30 @@ class SlapTool(BaseTool):
     return """Content properly posted.
               WARNING : this method is deprecated. Please use useComputer."""
 
+  @convertToREST
+  def _getComputerCertificate(self, computer_id):
+    self._getComputerDocument(computer_id).getCertificate()
+    computer = Computer(computer_id)
+    computer._certificate = self.REQUEST.get('computer_certificate')
+    computer._key = self.REQUEST.get('computer_key')
+    return xml_marshaller.xml_marshaller.dumps(computer)
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getComputerCertificate')
+  def getComputerCertificate(self, computer_id):
+    """Fetches new computer certificate"""
+    return self._getComputerCertificate(computer_id)
+
+  @convertToREST
+  def _revokeComputerCertificate(self, computer_id):
+    self._getComputerDocument(computer_id).revokeCertificate()
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'revokeComputerCertificate')
+  def revokeComputerCertificate(self, computer_id):
+    """Revokes existing computer certificate"""
+    return self._revokeComputerCertificate(computer_id)
+
   security.declareProtected(Permissions.AccessContentsInformation,
     'registerComputerPartition')
   def registerComputerPartition(self, computer_reference,
