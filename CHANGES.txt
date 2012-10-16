@@ -1,6 +1,18 @@
 Changes
 =======
 
+0.32.3 (2012-10-15)
+-------------------
+
+ * slapgrid: Adopt new return value strategy (0=OK, 1=failed, 2=promise failed)
+   (commit 5d4e1522). [Cedric de Saint Martin]
+ * slaplib: add requestComputer (commits 6cbe82e0, aafb86eb). [Łukasz Nowak]
+ * slapgrid: Add stopasgroup and killasgroup to supervisor (commit 36e0ccc0).
+   [Cedric de Saint Martin]
+ * slapproxy: don't start in debug mode by default (commit e32259c8).
+   [Cédric Le Ninivin
+ * SlapObject: ALWAYS remove tmpdir (commit a652a610). [Cedric de Saint Martin]
+
 0.32.2 (2012-10-11)
 -------------------
 
