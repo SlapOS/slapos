@@ -829,9 +829,8 @@ class Slapgrid(object):
 
         # If partition has no SR: skip it.
         try:
-          software_url = computer_partition.getSoftwareRelease().getURI()
-          software_path = os.path.join(self.software_root,
-              getSoftwareUrlHash(software_url))
+          os.path.join(self.software_root, getSoftwareUrlHash(
+              computer_partition.getSoftwareRelease().getURI()))
         except (NotFoundError, TypeError):
           # This is surely free partition. Check it...
           if os.listdir(computer_partition_path) == []:
