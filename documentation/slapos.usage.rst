@@ -5,10 +5,10 @@ SlapOS command line usage
 
 Note:
 -----
- * Default configuration file of "Node" commands (slapos node, slapos supervisor) is:
+ * Default configuration file of "Node" commands if not explicitly defined (slapos node, slapos supervisor) is:
     /etc/opt/slapos/slapos.cfg
 
- * Default configuration file of "Client" commands (slapos request, slapos supply, ...) is:
+ * Default configuration file of "Client" commands if not explicitly defined (slapos request, slapos supply, ...) is:
     ~/.slapos/slapos.cfg
 
  * Default log file for Node commands is /var/log/[slapos-node-software.log | slapos-node-instance.log | slapos-node-report.log]. This one requires working log in slapgrid, currently log/console is a total mess.
@@ -97,6 +97,7 @@ SlapOS Node commands
 --------------------
 
 This kind of commands are used to control the current SlapOS Node. Those commands are only useful for administrators of Nodes.
+# XXX: add an environment variable for configuration file.
 
 slapos node
 ~~~~~~~~~~~
@@ -162,23 +163,81 @@ XXX-Cedric : To be implemented
 
 slapos node software
 ~~~~~~~~~~~~~~~~~~~~
+Usage:
+******
+::
+
+  slapos node software [--logfile LOGFILE] [--verbose | -v] [--only_sr URL]  [--all] [CONFIGURATION_FILE]
+
 Run software installation/deletion.
 
 Temporary note: equivalent of old slapgrid-sr.
+# XXX: only_sr should be named ??? (process-only ?)
+# XXX: add a "-vv", very verbose, option.
+
+Parameters:
+***********
+--logfile LOGFILE              If specified, will log as well output in the file located at FILE.
+--only_sr URL                  Only process one specific Software Release that has been supplied on this Computer. If not supplied: do nothing.
+--all                          Process all Software Releases, even already installed.
+--verbose, -v                  Be more verbose.
+
+Return values:
+**************
+(Among other standard Python return values)
+0        Everything went fine
+1        At least one software hasn't correctly been installed.
 
 
 slapos node instance
 ~~~~~~~~~~~~~~~~~~~~
-Run instance deployment
+Usage:
+******
+::
+
+  slapos node instance [--logfile LOGFILE] [--verbose | -v] [--only_cp PARTITION]  [--all] [CONFIGURATION_FILE]
 
 Temporary note: equivalent of old slapgrid-cp.
+
+Run instances deployment.
+
+Parameters:
+***********
+--logfile LOGFILE              If specified, will log as well output in the file located at FILE.
+--only_cp PARTITION            Only process one specific Computer Partition, if possible.
+--all                          Force processing all Computer Partitions.
+--verbose, -v                 Be more verbose.
+
+Return values:
+**************
+(Among other standard Python return values)
+0        Everything went fine
+1        At least one instance hasn't correctly been processed.
+2        At least one promise has failed.
 
 
 slapos node report
 ~~~~~~~~~~~~~~~~~~
+Usage:
+******
+::
+
+  slapos node report [--logfile LOGFILE] [--verbose | -v] [CONFIGURATION_FILE]
+
 Run instance reports and garbage collection.
 
-Temporary note: equivalent of old slapgrid-cp.
+Temporary note: equivalent of old slapgrid-ur.
+
+Parameters:
+***********
+--logfile LOGFILE              If specified, will log as well output in the file located at FILE.
+--verbose, -v                 Be more verbose.
+
+Return values:
+**************
+(Among other standard Python return values)
+0        Everything went fine
+1        At least one instance hasn't correctly been processed.
 
 
 slapos node <start|stop|tail|status>
