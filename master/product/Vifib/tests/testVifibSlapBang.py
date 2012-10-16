@@ -465,9 +465,11 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
     sequence_string = self.prepare_published_software_release + \
       """
       # prepare first computer
-      LoginTestVifibCustomer
+      SlapLoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
+      SlapLogout
+      LoginTestVifibCustomer
       SetComputerCoordinatesFromComputerTitle
       StoreComputerCoordinatesAsC1
       ComputerSetAllocationScopeOpenPersonal
@@ -488,9 +490,11 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       # prepare second computer
-      LoginTestVifibCustomer
+      SlapLoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
+      SlapLogout
+      LoginTestVifibCustomer
       SetComputerCoordinatesFromComputerTitle
       StoreComputerCoordinatesAsC0
       ComputerSetAllocationScopeOpenPersonal

@@ -25,20 +25,7 @@ class TestVifibSlapComputerPartitionConnection(TestVifibSlapWebServiceMixin):
       SetSoftwareProductToSoftwareRelease
       PublishByActionSoftwareRelease
       Logout
-
-      LoginTestVifibAdmin
-      CustomerRegisterNewComputer
-      Tic
-      SetComputerCoordinatesFromComputerTitle
-      ComputerSetAllocationScopeOpenPublic
-      Tic
-      Logout
-
-      SlapLoginCurrentComputer
-      FormatComputer
-      Tic
-      SlapLogout
-
+      """ + self.prepare_formated_computer + """
       LoginTestVifibAdmin
       RequestSoftwareInstallation
       Tic

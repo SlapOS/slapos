@@ -14,9 +14,11 @@ class TestVifibSlapRegisterSoftwareRelease(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.prepare_computer + '\
-      LoginTestVifibAdmin \
+      SlapLoginTestVifibAdmin \
       CustomerRegisterNewComputer \
       Tic \
+      SlapLogout \
+      LoginTestVifibAdmin \
       SetComputerCoordinatesFromComputerTitle \
       ComputerSetAllocationScopeOpenPublic \
       Tic \

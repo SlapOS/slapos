@@ -75,7 +75,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string = self.stabilise_accounting + """
-      LoginTestVifibCustomer
+      SlapLoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
       Logout
@@ -170,7 +170,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 3
     sequence_list = SequenceList()
     sequence_string =  self.stabilise_accounting + """
-      LoginTestVifibCustomer
+      SlapLoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
       Logout
@@ -273,7 +273,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string =  self.stabilise_accounting + """
-      LoginTestVifibCustomer
+      SlapLoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
       Logout
@@ -345,7 +345,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     to anybody"""
     sequence_list = SequenceList()
     sequence_string =  self.stabilise_accounting + """
-      LoginTestVifibCustomer
+      SlapLoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
       Logout
@@ -395,7 +395,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     """Check that computer's allocation scope is not set it is unavailable"""
     sequence_list = SequenceList()
     sequence_string =  self.stabilise_accounting + """
-      LoginTestVifibCustomer
+      SlapLoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
       Logout
@@ -442,7 +442,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     sequence_list.play(self)
 
   prepare_open_public_computer = TestVifibSlapWebServiceMixin.stabilise_accounting + """
-      LoginTestVifibCustomer
+      SlapLoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
       Logout
@@ -766,7 +766,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
     self.computer_partition_amount = 2
     sequence_list = SequenceList()
     sequence_string = self.stabilise_accounting + """
-      LoginTestVifibCustomer
+      SlapLoginTestVifibCustomer
       CustomerRegisterNewComputer
       Tic
       Logout

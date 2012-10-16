@@ -14,9 +14,11 @@ class TestVifibSlapComputerPartitionError(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = '\
-      LoginTestVifibAdmin \
+      SlapLoginTestVifibAdmin \
       CustomerRegisterNewComputer \
       Tic \
+      SlapLogout \
+      LoginTestVifibAdmin \
       SetComputerCoordinatesFromComputerTitle \
       ComputerSetAllocationScopeOpenPublic \
       Tic \

@@ -60,9 +60,11 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.stabilise_accounting + '\
-      LoginTestVifibAdmin \
+      SlapLoginTestVifibAdmin \
       CustomerRegisterNewComputer \
       Tic \
+      SlapLogout \
+      SlapLoginTestVifibAdmin \
       SetComputerCoordinatesFromComputerTitle \
       ComputerSetAllocationScopeOpenPublic \
       Tic \
@@ -84,17 +86,21 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
     """
     sequence_list = SequenceList()
     sequence_string = self.stabilise_accounting + '\
-      LoginTestVifibAdmin \
+      SlapLoginTestVifibAdmin \
       CustomerRegisterNewComputer \
       Tic \
+      SlapLogout \
+      LoginTestVifibAdmin \
       SetComputerCoordinatesFromComputerTitle \
       ComputerSetAllocationScopeOpenPublic \
       Tic \
       Logout \
       \
-      LoginTestVifibAdmin \
+      SlapLoginTestVifibAdmin \
       CustomerRegisterNewComputer \
       Tic \
+      SlapLogout \
+      LoginTestVifibAdmin \
       SetComputerCoordinatesFromComputerTitle \
       ComputerSetAllocationScopeOpenPublic \
       Tic \

@@ -667,14 +667,10 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     )
 
   def stepCustomerRegisterNewComputer(self, sequence, **kw):
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
     sequence['computer_title'] = str(random())
-    request = self.app.REQUEST
-    self.getPortal().portal_skins.changeSkin("Hosting")
-    request.set('portal_skin', "Hosting")
-    self.portal.web_site_module.hosting.WebSection_registerNewComputer(
-      title=sequence['computer_title'])
-    self.getPortal().portal_skins.changeSkin("View")
-    request.set('portal_skin', "View")
+    self.slap.requestComputer(sequence['computer_title'])
 
   def stepSetComputerCoordinatesFromComputerTitle(self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
@@ -920,9 +916,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   """
 
   prepare_computer = stabilise_accounting + """
-      LoginTestVifibAdmin
+      SlapLoginTestVifibAdmin
       CustomerRegisterNewComputer
       CleanTic
+      SlapLogout
+      LoginTestVifibAdmin
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPublic
       CleanTic
@@ -1140,9 +1138,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   prepare_another_computer_sequence_string = """
     StoreComputerReference
-    LoginTestVifibAdmin
+    SlapLoginTestVifibAdmin
     CustomerRegisterNewComputer
     Tic
+    SlapLogout
+    LoginTestVifibAdmin
     SetComputerCoordinatesFromComputerTitle
     ComputerSetAllocationScopeOpenPublic
     Tic

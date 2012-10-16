@@ -213,9 +213,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       # Create first computer
-      LoginTestVifibAdmin
+      SlapLoginTestVifibAdmin
       CustomerRegisterNewComputer
       Tic
+      SlapLogout
+      LoginTestVifibAdmin
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPublic
       Tic
@@ -311,9 +313,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       # Now prepare second computer
 
-      LoginTestVifibAdmin
+      SlapLoginTestVifibAdmin
       CustomerRegisterNewComputer
       Tic
+      SlapLogout
+      LoginTestVifibAdmin
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPublic
       Tic
@@ -534,9 +538,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       # Create first computer
-      LoginTestVifibAdmin
+      SlapLoginTestVifibAdmin
       CustomerRegisterNewComputer
       Tic
+      SlapLogout
+      LoginTestVifibAdmin
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPublic
       Tic
@@ -653,9 +659,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       # Create the computer
-      LoginTestVifibAdmin
+      SlapLoginTestVifibAdmin
       CustomerRegisterNewComputer
       Tic
+      SlapLogout
+      LoginTestVifibAdmin
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPublic
       Tic
@@ -818,9 +826,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       # Create the computer
-      LoginTestVifibAdmin
+      SlapLoginTestVifibAdmin
       CustomerRegisterNewComputer
       Tic
+      SlapLogout
+      LoginTestVifibAdmin
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPublic
       Tic
@@ -990,9 +1000,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       # Create the computer
-      LoginTestVifibAdmin
+      SlapLoginTestVifibAdmin
       CustomerRegisterNewComputer
       Tic
+      SlapLogout
+      LoginTestVifibAdmin
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPublic
       Tic
@@ -1540,9 +1552,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       """ + self.stabilise_accounting + """
 
-      LoginWebUser
+      SlapLoginWebUser
       CustomerRegisterNewComputer
       Tic
+      SlapLogout
+      LoginWebUser
       SetComputerCoordinatesFromComputerTitle
       ComputerSetAllocationScopeOpenPersonal
       Logout
