@@ -252,18 +252,26 @@ XXX: should not require serialising json by hand as parameter value
 'bt5' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~
 XXX: what is this ?
+Defaults to 'erp5_full_text_myisam_catalog \
+erp5_configurator_standard \
+erp5_configurator_maxma_demo \
+erp5_configurator_ung \
+erp5_configurator_run_my_doc'.
 
 'bt5-repository-url' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 XXX: what is this ?
+Defaults to SR's buildout['local-bt5-repository']['list'].
 
 'smtp-url' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 XXX: what is this ?
+Defaults to 'smtp://localhost:25/'.
 
 'timezone' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 Timezone to put processes in (default timezone for DateTime instances).
+Defaults to 'Europe/Paris'.
 
 'frontend-software-url' (str, optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
