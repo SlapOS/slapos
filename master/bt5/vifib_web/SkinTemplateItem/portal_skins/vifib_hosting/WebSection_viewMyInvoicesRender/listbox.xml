@@ -164,7 +164,7 @@
                       <list>
                         <tuple>
                           <string>reference</string>
-                          <string></string>
+                          <string>SaleInvoiceTransaction_getDefaultPrintUrl</string>
                         </tuple>
                         <tuple>
                           <string>total_price</string>
