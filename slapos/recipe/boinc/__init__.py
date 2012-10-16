@@ -333,7 +333,7 @@ class Client(GenericBaseRecipe):
 
   def __init__(self, buildout, name, options):
     #get current uig to create a unique rpc-port for this client
-    stat_info = os.stat(options['install-dir'].strip())
+    stat_info = os.stat(options['home'].strip())
     options['rpc-port'] = pwd.getpwuid(stat_info.st_uid)[2] + 5000
 
     return GenericBaseRecipe.__init__(self, buildout, name, options)
