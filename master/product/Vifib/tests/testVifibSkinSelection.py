@@ -1096,6 +1096,7 @@ zpt_generic
 custom
 vifib_upgrader
 vifib_upgrader_20120423
+vifib_upgrader_201210
 vifib_upgrader_before_201208
 vifib_upgrader_before_201209
 vifib_agent
