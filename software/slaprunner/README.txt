@@ -1,5 +1,5 @@
-kvm
-===
+slaprunner
+==========
 
 Introduction
 ------------
