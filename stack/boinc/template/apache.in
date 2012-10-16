@@ -6,7 +6,6 @@ PidFile "${:pid_file}"
 Listen ${:ip}:${:port}
 PHPINIDir ${:php_ini_dir}
 ServerAdmin someone@email
-DefaultType text/plain
 TypesConfig conf/mime.types
 ScriptSock ${:cgid_sock}
 AddType application/x-compress .Z
@@ -58,7 +57,6 @@ LoadModule alias_module modules/mod_alias.so
 LoadModule auth_basic_module modules/mod_auth_basic.so
 LoadModule authz_user_module modules/mod_authz_user.so
 LoadModule authn_file_module modules/mod_authn_file.so
-LoadModule ssl_module modules/mod_ssl.so
 LoadModule authn_core_module modules/mod_authn_core.so
 LoadModule cgid_module modules/mod_cgid.so
 
