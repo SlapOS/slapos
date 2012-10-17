@@ -951,7 +951,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   """
 
   prepare_supply_software_release = """
-      SlapLoginDefaultUser
+      SlapLoginTestVifibAdmin
       SupplyComputerSoftwareReleaseAvailable
       Tic
       SlapLogout
