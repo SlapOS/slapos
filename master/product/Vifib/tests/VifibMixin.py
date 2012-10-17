@@ -85,7 +85,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_rss_style',
       'erp5_ooo_import',
       'erp5_simplified_invoicing',
-      'erp5_legacy_tax_system',
       'erp5_commerce',
       'erp5_project',
       'erp5_xhtml_jquery_style',

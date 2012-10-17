@@ -135,7 +135,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
@@ -238,7 +237,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
@@ -341,7 +339,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
@@ -438,7 +435,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_ods_style
 erp5_accounting_l10n_fr
 erp5_upgrader
@@ -534,7 +530,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_odt_style
 erp5_accounting_l10n_fr
 erp5_upgrader
@@ -632,7 +627,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
@@ -731,7 +725,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
@@ -830,7 +823,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
@@ -926,7 +918,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
@@ -1021,7 +1012,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
@@ -1118,7 +1108,6 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
-erp5_legacy_tax_system
 erp5_accounting_l10n_fr
 erp5_upgrader
 erp5_access_tab
