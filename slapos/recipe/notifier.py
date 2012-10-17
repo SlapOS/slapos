@@ -66,8 +66,11 @@ class Notify(GenericBaseRecipe):
                    '-l', kwargs['log'],
                    '--title', kwargs['title'],
                    '--feed', kwargs['feed_url'],
-                   '--notification-url', kwargs['notification_url'],
-                   executable]
+                   '--notification-url']
+
+    commandline.extend(kwargs['notification_url'].split(' '))
+    commandline.extend(['--executable', executable])
+
     return self.createPythonScript(wrapper,
                                    'slapos.recipe.librecipe.execute.execute',
                                    [str(i) for i in commandline])

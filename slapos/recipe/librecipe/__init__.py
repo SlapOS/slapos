@@ -90,13 +90,22 @@ class BaseSlapRecipe:
     ]
 
     # SLAP related information
-    slap_connection = buildout['slap_connection']
-    self.computer_id = slap_connection['computer_id']
-    self.computer_partition_id = slap_connection['partition_id']
-    self.server_url = slap_connection['server_url']
-    self.software_release_url = slap_connection['software_release_url']
-    self.key_file = slap_connection.get('key_file')
-    self.cert_file = slap_connection.get('cert_file')
+    try:
+      slap_connection = buildout['slap_connection']
+      self.computer_id = slap_connection['computer_id']
+      self.computer_partition_id = slap_connection['partition_id']
+      self.server_url = slap_connection['server_url']
+      self.software_release_url = slap_connection['software_release_url']
+      self.key_file = slap_connection.get('key_file')
+      self.cert_file = slap_connection.get('cert_file')
+    except zc.buildout.buildout.MissingSection:
+      slap_connection = buildout['slap-connection']
+      self.computer_id = slap_connection['computer-id']
+      self.computer_partition_id = slap_connection['partition-id']
+      self.server_url = slap_connection['server-url']
+      self.software_release_url = slap_connection['software-release-url']
+      self.key_file = slap_connection.get('key-file')
+      self.cert_file = slap_connection.get('cert-file')
 
     # setup egg to give possibility to generate scripts
     self.egg = zc.recipe.egg.Egg(buildout, options['recipe'], options)

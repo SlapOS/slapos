@@ -26,7 +26,6 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-        'PyXML', # for full blown python interpreter
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
@@ -139,7 +138,6 @@ setup(name=name,
           'sshkeys_authority = slapos.recipe.sshkeys_authority:Recipe',
           'stunnel = slapos.recipe.stunnel:Recipe',
           'symbolic.link = slapos.recipe.symbolic_link:Recipe',
-          'testnode = slapos.recipe.testnode:Recipe',
           'tidstorage = slapos.recipe.tidstorage:Recipe',
           'urlparse = slapos.recipe._urlparse:Recipe',
           'uuid = slapos.recipe._uuid:Recipe',
