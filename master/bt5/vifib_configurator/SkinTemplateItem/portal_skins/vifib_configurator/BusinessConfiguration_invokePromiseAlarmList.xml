@@ -57,9 +57,16 @@
       configurator level, by providing a list of \n
       alarms to be invoked always.\n
 """\n
+alarm_to_solve_list = [\'promise_certificate_autority_tool\',\n
+                       \'promise_conversion_server\'\n
+                       \'promise_kumofs_server\'\n
+                       \'promise_mailhost_configuration\'\n
+                       \'promise_memcached_server\']\n
 \n
 for alarm in context.portal_alarms.contentValues():\n
-  if alarm.getId().startswith("promise_vifib"):\n
+  alarm_id = alarm.getId()\n
+  if alarm_id.startswith("promise_vifib") or \\\n
+                   alarm_id in alarm_to_solve_list:\n
     alarm.solve()\n
 </string> </value>
         </item>
