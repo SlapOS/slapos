@@ -129,6 +129,7 @@ vifib_software_pdm
 vifib_test
 vifib_web
 vifib_web_ui_test
+vifib_configurator
 erp5_km
 erp5_km_theme
 erp5_knowledge_pad
@@ -146,6 +147,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -190,6 +193,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
@@ -230,6 +234,7 @@ vifib_software_pdm
 vifib_test
 vifib_web
 vifib_web_ui_test
+vifib_configurator
 erp5_free_fiber_request
 erp5_km
 erp5_km_theme
@@ -248,6 +253,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -292,6 +299,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
@@ -333,6 +341,7 @@ vifib_software_pdm
 vifib_test
 vifib_web
 vifib_web_ui_test
+vifib_configurator
 erp5_km
 erp5_km_theme
 erp5_knowledge_pad
@@ -350,6 +359,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -394,6 +405,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
@@ -430,6 +442,7 @@ vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
+vifib_configurator
 erp5_km
 erp5_knowledge_pad
 erp5_simulation
@@ -447,6 +460,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -490,6 +505,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 external_method
 Images
@@ -525,6 +541,7 @@ vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
+vifib_configurator
 erp5_km
 erp5_knowledge_pad
 erp5_simulation
@@ -542,6 +559,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -585,6 +604,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 external_method
 Images
@@ -621,6 +641,7 @@ vifib_software_pdm
 vifib_test
 vifib_web
 vifib_web_ui_test
+vifib_configurator
 erp5_free_fiber_request
 erp5_km
 erp5_knowledge_pad
@@ -638,6 +659,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -683,6 +706,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
@@ -719,6 +743,7 @@ vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
+vifib_configurator
 erp5_km
 erp5_km_theme
 erp5_knowledge_pad
@@ -736,6 +761,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -781,6 +808,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
@@ -817,6 +845,7 @@ vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
+vifib_configurator
 erp5_commerce_multiflex_layout
 erp5_km
 erp5_knowledge_pad
@@ -834,6 +863,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -877,6 +908,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 external_method
 Images
@@ -912,6 +944,7 @@ vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
+vifib_configurator
 erp5_km
 erp5_web_download_theme
 erp5_knowledge_pad
@@ -929,6 +962,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -972,6 +1007,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 erp5_xhtml_style
 external_method
@@ -1006,6 +1042,7 @@ vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
+vifib_configurator
 erp5_rss_style
 erp5_km
 erp5_knowledge_pad
@@ -1023,6 +1060,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -1066,6 +1105,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 external_method
 Images
@@ -1103,6 +1143,7 @@ vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
+vifib_configurator
 erp5_km
 erp5_knowledge_pad
 erp5_simulation
@@ -1119,6 +1160,8 @@ erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
+erp5_configurator
+erp5_configurator_wizard
 erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
@@ -1162,6 +1205,7 @@ erp5_web
 erp5_web_crm
 erp5_web_minimal_theme
 erp5_web_widget_library
+erp5_workflow
 erp5_xhtml_jquery_style
 external_method
 Images
