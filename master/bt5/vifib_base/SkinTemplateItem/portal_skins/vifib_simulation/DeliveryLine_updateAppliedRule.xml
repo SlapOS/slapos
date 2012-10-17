@@ -53,7 +53,7 @@
             <value> <string>delivery = context.getParentValue()\n
 if context.getPortalObject().portal_activities.countMessage(path=delivery.getPath()) == 0:\n
   delivery.serialize()\n
-  delivery.updateSimulation()\n
+  delivery.updateSimulation(expand_root=1)\n
 </string> </value>
         </item>
         <item>
