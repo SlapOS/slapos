@@ -24,7 +24,7 @@
         </item>
         <item>
             <key> <string>after_script_name</string> </key>
-            <value> <string>Computer_getCertificate</string> </value>
+            <value> <string>Computer_generateCertificate</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -38,7 +38,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>get_certificate</string> </value>
+            <value> <string>generate_certificate</string> </value>
         </item>
         <item>
             <key> <string>new_state_id</string> </key>

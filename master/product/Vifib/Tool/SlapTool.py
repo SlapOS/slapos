@@ -398,8 +398,6 @@ class SlapTool(BaseTool):
     person = portal.ERP5Site_getAuthenticatedMemberPersonValue()
     person.requestComputer(computer_title=computer_title)
     computer = Computer(self.REQUEST.get('computer_reference'))
-    computer._certificate = self.REQUEST.get('computer_certificate')
-    computer._key = self.REQUEST.get('computer_key')
     return xml_marshaller.xml_marshaller.dumps(computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
@@ -609,18 +607,19 @@ class SlapTool(BaseTool):
               WARNING : this method is deprecated. Please use useComputer."""
 
   @convertToREST
-  def _getComputerCertificate(self, computer_id):
-    self._getComputerDocument(computer_id).getCertificate()
-    computer = Computer(computer_id)
-    computer._certificate = self.REQUEST.get('computer_certificate')
-    computer._key = self.REQUEST.get('computer_key')
-    return xml_marshaller.xml_marshaller.dumps(computer)
+  def _generateComputerCertificate(self, computer_id):
+    self._getComputerDocument(computer_id).generateCertificate()
+    result = {
+     'certificate': self.REQUEST.get('computer_certificate'),
+     'key': self.REQUEST.get('computer_key')
+     }
+    return xml_marshaller.xml_marshaller.dumps(result)
 
   security.declareProtected(Permissions.AccessContentsInformation,
-    'getComputerCertificate')
-  def getComputerCertificate(self, computer_id):
+    'generateComputerCertificate')
+  def generateComputerCertificate(self, computer_id):
     """Fetches new computer certificate"""
-    return self._getComputerCertificate(computer_id)
+    return self._generateComputerCertificate(computer_id)
 
   @convertToREST
   def _revokeComputerCertificate(self, computer_id):

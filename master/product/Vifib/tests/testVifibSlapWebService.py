@@ -670,7 +670,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
     sequence['computer_title'] = str(random())
-    self.slap.requestComputer(sequence['computer_title'])
+    open_order = self.slap.registerOpenOrder()
+    sequence['requested_computer'] = open_order.requestComputer(
+        sequence['computer_title'])
 
   def stepSetComputerTitle(self, sequence, **kw):
     sequence['computer_title'] = str(random())
@@ -678,19 +680,12 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepRequestComputer(self, sequence, **kw):
     self.slap = slap.slap()
     self.slap.initializeConnection(self.server_url, timeout=None)
-    sequence['requested_computer'] = self.slap.requestComputer(
-      sequence['computer_title'])
+    open_order = self.slap.registerOpenOrder()
+    sequence['requested_computer'] = open_order.requestComputer(
+        sequence['computer_title'])
 
   def stepRevokeComputerCertificate(self, sequence, **kw):
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    self.slap.revokeComputerCertificate(sequence['computer_reference'])
-
-  def stepGetComputerCertificate(self, sequence, **kw):
-    self.slap = slap.slap()
-    self.slap.initializeConnection(self.server_url, timeout=None)
-    sequence['requested_computer'] = self.slap.getComputerCertificate(
-      sequence['computer_reference'])
+    sequence['requested_computer'].revokeCertificate()
 
   def stepSetComputerCoordinatesFromComputerTitle(self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(

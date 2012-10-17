@@ -72,19 +72,16 @@ if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
   raise NotImplementedError(tag)\n
 \n
 computer_portal_type = "Computer"\n
-certificate_dict = {\'certificate\': None, \'key\': None}\n
 computer = portal.portal_catalog.getResultValue(portal_type=computer_portal_type, title=computer_title)\n
 if computer is None:\n
   reference = "COMP-%s" % portal.portal_ids.generateNewId(\n
     id_group=\'slap_computer_reference\',\n
     id_generator=\'uid\')\n
-  certificate_dict = portal.portal_certificate_authority.getNewCertificate(reference)\n
   module = portal.getDefaultModule(portal_type=computer_portal_type)\n
   computer = module.newContent(\n
     portal_type=computer_portal_type,\n
     title=computer_title,\n
     reference=reference,\n
-    destination_reference=certificate_dict["id"],\n
     capacity_scope=\'open\',\n
     activate_kw={\'tag\': tag}\n
   )\n
@@ -94,8 +91,6 @@ if computer is None:\n
 \n
 computer = context.restrictedTraverse(computer.getRelativeUrl())\n
 \n
-context.REQUEST.set("computer_certificate", certificate_dict["certificate"])\n
-context.REQUEST.set("computer_key", certificate_dict["key"])\n
 context.REQUEST.set("computer", computer.getRelativeUrl())\n
 context.REQUEST.set("computer_url", computer.absolute_url())\n
 context.REQUEST.set("computer_reference", computer.getReference())\n

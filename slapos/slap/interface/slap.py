@@ -354,6 +354,24 @@ class IComputer(Interface):
       text -- message log of the status
     """
 
+  def generateCertificate():
+    """
+    Returns a dictionnary containing the new certificate files for 
+    the computer.
+    The dictionnary keys are:
+      key -- key file
+      certificate -- certificate file
+
+    Raise ValueError is another certificate is already valid.
+    """
+
+  def revokeCertificate():
+    """
+    Revoke current computer certificate.
+
+    Raise ValueError is there is not valid certificate.
+    """
+
 class IOpenOrder(IRequester):
   """
   Open Order interface specification
@@ -361,6 +379,15 @@ class IOpenOrder(IRequester):
   Classes which implement Open Order describe which kind of software instances
   is requested by a given client.
   """
+
+  def requestComputer(computer_reference):
+    """
+    Request a computer to slapgrid server.
+
+    Returns a new computer document.
+
+    computer_reference -- local reference of the computer
+    """
 
 class ISupply(Interface):
   """

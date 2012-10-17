@@ -55,6 +55,7 @@ person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 request_kw = dict(computer_title=title)\n
 person.requestComputer(**request_kw)\n
 computer = context.restrictedTraverse(context.REQUEST.get(\'computer\'))\n
+computer.generateCertificate()\n
 message = "Registering Computer"\n
 context.REQUEST.set("portal_status_message", message)\n
 return computer.Computer_viewConnectionInformationAsWeb()\n

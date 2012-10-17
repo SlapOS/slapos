@@ -7,7 +7,8 @@ class TestVifibSlapComputer(TestVifibSlapWebServiceMixin):
   def stepCheckRequestedComputerCertificate(self, sequence, **kw):
     computer = sequence['requested_computer']
     sequence['computer_reference'] = computer._computer_id
-    certificate_dict = computer.getCertificateDict()
+    certificate_dict = computer.generateCertificate()
+    transaction.commit()
     self.assertTrue('certificate' in certificate_dict)
     self.assertTrue('key' in certificate_dict)
     self.assertNotEqual(None, certificate_dict['certificate'])
@@ -29,35 +30,6 @@ class TestVifibSlapComputer(TestVifibSlapWebServiceMixin):
       RequestComputer \
       CleanTic \
       CheckRequestedComputerCertificate \
-      SlapLogout \
-    '
-    sequence_list.addSequenceString(sequence_string)
-    sequence_list.play(self)
-
-  def stepCheckSecondRequestComputer(self, sequence, **kw):
-    computer = sequence['requested_computer']
-    self.assertEqual(computer._computer_id, sequence['computer_reference'])
-    certificate_dict = computer.getCertificateDict()
-    self.assertTrue('certificate' in certificate_dict)
-    self.assertTrue('key' in certificate_dict)
-    self.assertEqual(None, certificate_dict['certificate'])
-    self.assertEqual(None, certificate_dict['key'])
-    computer_document = self.portal.portal_catalog.getResultValue(
-      reference=sequence['computer_reference'], portal_type='Computer')
-    self.assertEqual(sequence['certificate_reference'],
-      computer_document.getDestinationReference())
-
-  def test_request_twice(self):
-    sequence_list = SequenceList()
-    sequence_string = '\
-      SlapLoginTestVifibAdmin \
-      SetComputerTitle \
-      RequestComputer \
-      CleanTic \
-      CheckRequestedComputerCertificate \
-      RequestComputer \
-      CleanTic \
-      CheckSecondRequestComputer \
       SlapLogout \
     '
     sequence_list.addSequenceString(sequence_string)
@@ -134,7 +106,6 @@ class TestVifibSlapComputer(TestVifibSlapWebServiceMixin):
       CheckRequestedComputerCertificate \
       RevokeComputerCertificate \
       CheckComputerNoCertificate \
-      GetComputerCertificate \
       CleanTic \
       CheckRequestedComputerCertificate \
       SlapLogout \
@@ -145,7 +116,7 @@ class TestVifibSlapComputer(TestVifibSlapWebServiceMixin):
   def stepCheckGetComputerCertificateRaisesValueError(self, sequence, **kw):
     computer = self.portal.portal_catalog.getResultValue(
       reference=sequence['computer_reference'], portal_type='Computer')
-    self.assertRaises(ValueError, computer.getCertificate)
+    self.assertRaises(ValueError, computer.generateCertificate)
 
   def test_getCertificateNotRevoked(self):
     sequence_list = SequenceList()

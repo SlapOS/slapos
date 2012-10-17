@@ -70,7 +70,7 @@ context.REQUEST.set("computer_key", certificate_dict["key"])\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_getCertificate</string> </value>
+            <value> <string>Computer_generateCertificate</string> </value>
         </item>
       </dictionary>
     </pickle>

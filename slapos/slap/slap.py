@@ -220,6 +220,17 @@ class OpenOrder(SlapDocument):
         computer_partition._parameter_dict = software_instance._parameter_dict
       return computer_partition
 
+  def requestComputer(self, computer_reference):
+    """
+    Requests a computer.
+    """
+    self._connection_helper.POST('/requestComputer',
+      {'computer_title': computer_reference})
+    xml = self._connection_helper.response.read()
+    computer = xml_marshaller.loads(xml)
+    computer._connection_helper = self._connection_helper
+    return computer
+
 def _syncComputerInformation(func):
   """
   Synchronize computer object with server information
@@ -286,16 +297,20 @@ class Computer(SlapDocument):
       'computer_id': self._computer_id,
       'message': message})
 
-  def getCertificateDict(self):
-    return {
-      'key': getattr(self, '_key', None),
-      'certificate': getattr(self, '_certificate', None)
-    }
-
   def getStatus(self):
     self._connection_helper.GET(
         '/getComputerStatus?computer_id=%s' % self._computer_id)
     return xml_marshaller.loads(self._connection_helper.response.read())
+
+  def revokeCertificate(self):
+    self._connection_helper.POST('/revokeComputerCertificate', {
+      'computer_id': self._computer_id})
+
+  def generateCertificate(self):
+    self._connection_helper.POST('/generateComputerCertificate', {
+      'computer_id': self._computer_id})
+    xml = self._connection_helper.response.read()
+    return xml_marshaller.loads(xml)
 
 def _syncComputerPartitionInformation(func):
   """
@@ -687,27 +702,6 @@ class slap:
     return SoftwareRelease(software_release=software_release,
       connection_helper=self._connection_helper,
     )
-
-  def requestComputer(self, computer_title):
-    """
-    Requests a computer.
-    """
-    self._connection_helper.POST('/requestComputer',
-      {'computer_title': computer_title})
-    xml = self._connection_helper.response.read()
-    computer = xml_marshaller.loads(xml)
-    return computer
-
-  def revokeComputerCertificate(self, computer_id):
-    self._connection_helper.POST('/revokeComputerCertificate', {
-      'computer_id': computer_id})
-
-  def getComputerCertificate(self, computer_id):
-    self._connection_helper.POST('/getComputerCertificate', {
-      'computer_id': computer_id})
-    xml = self._connection_helper.response.read()
-    computer = xml_marshaller.loads(xml)
-    return computer
 
   def registerComputer(self, computer_guid):
     """

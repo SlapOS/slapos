@@ -53,7 +53,7 @@
             <value> <string>computer = context\n
 request = context.REQUEST\n
 try:\n
-  computer.getCertificate()\n
+  computer.generateCertificate()\n
   request.set(\'portal_status_message\', context.Base_translateString(\'Certificate created.\'))\n
 except ValueError:\n
   request.set(\'portal_status_message\', context.Base_translateString(\'Certificate is still active, please revoke existing one.\'))\n
