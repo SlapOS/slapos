@@ -48,7 +48,7 @@ class EntryPointNotImplementedError(NotImplementedError):
   def __init__(self, *args, **kw_args):
     NotImplementedError.__init__(self, *args, **kw_args)
 
-def checkSlaposCfg ():
+def checkSlaposCfg():
   """
   Check if a slapos configuration file was given as a argument.
   If a slapos configuration file is given it return True else False
@@ -80,12 +80,14 @@ def checkOption(option):
     sys.argv = sys.argv + option[1:]
   return True
 
-def call(fun, config=False, option=[]):
+def call(fun, config=False, option=None):
   """
   Add missing options to sys.argv
   Add config if asked and it is missing
   Call function fun
   """
+  if option is None:
+    option = []
   for element in option:
     checkOption(element)
   if config:
