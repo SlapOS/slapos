@@ -292,6 +292,11 @@ class Computer(SlapDocument):
       'certificate': getattr(self, '_certificate', None)
     }
 
+  def getStatus(self):
+    self._connection_helper.GET(
+        '/getComputerStatus?computer_id=%s' % self._computer_id)
+    return xml_marshaller.loads(self._connection_helper.response.read())
+
 def _syncComputerPartitionInformation(func):
   """
   Synchronize computer partition object with server information
@@ -525,6 +530,12 @@ class ComputerPartition(SlapDocument):
   def getCertificate(self):
     self._connection_helper.GET(
         '/getComputerPartitionCertificate?computer_id=%s&'
+        'computer_partition_id=%s' % (self._computer_id, self._partition_id))
+    return xml_marshaller.loads(self._connection_helper.response.read())
+
+  def getStatus(self):
+    self._connection_helper.GET(
+        '/getComputerPartitionStatus?computer_id=%s&'
         'computer_partition_id=%s' % (self._computer_id, self._partition_id))
     return xml_marshaller.loads(self._connection_helper.response.read())
 

@@ -336,6 +336,34 @@ class SlapTool(BaseTool):
     self.REQUEST.response.setBody(result)
     return self.REQUEST.response
 
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getComputerPartitionStatus')
+  def getComputerPartitionStatus(self, computer_id, computer_partition_id):
+    """
+    Get the connection status of the partition
+    """
+    try:
+      instance = self._getSoftwareInstanceForComputerPartition(
+          computer_id,
+          computer_partition_id)
+    except NotFound:
+      return self._getAccessStatus(None)
+    else:
+      return self._getAccessStatus(instance.getReference())
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getComputerStatus')
+  def getComputerStatus(self, computer_id):
+    """
+    Get the connection status of the partition
+    """
+    computer = self.getPortalObject().portal_catalog.unrestrictedSearchResults(
+      portal_type='Computer', reference=computer_id,
+      validation_state="validated")[0].getObject()
+    # Be sure to prevent accessing information to disallowed users
+    computer = _assertACI(computer)
+    return self._getAccessStatus(computer_id)
+
   ####################################################
   # Public POST methods
   ####################################################
@@ -543,6 +571,9 @@ class SlapTool(BaseTool):
     """
     Fire up bung on Computer
     """
+    user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
+                                                   .getUserName()
+    self._logAccess(user, computer_id, '#error bang')
     return self._getComputerDocument(computer_id).reportComputerBang(
                                      comment=message)
 
@@ -669,6 +700,11 @@ class SlapTool(BaseTool):
             slave_instance_dict.pop("xml")))
       slap_partition._parameter_dict.update(parameter_dict)
     result = xml_marshaller.xml_marshaller.dumps(slap_partition)
+
+    user = self.getPortalObject().portal_membership.\
+        getAuthenticatedMember().getUserName()
+    self._logAccess(user, user, '#access %s %s' % (computer_reference,
+                                             computer_partition_reference))
 
     # Keep in cache server for 7 days
     self.REQUEST.response.setStatus(200)
@@ -950,10 +986,46 @@ class SlapTool(BaseTool):
     Fire up bang on Software Instance
     Add an error for the software Instance Workflow
     """
-    return self._getSoftwareInstanceForComputerPartition(
+    software_instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
-        computer_partition_id).bang(bang_tree=True,
-                                    comment=message)
+        computer_partition_id)
+    user = self.getPortalObject().portal_membership.\
+        getAuthenticatedMember().getUserName()
+    self._logAccess(user, software_instance.getReference(),
+                    '#error bang called')
+    return software_instance.bang(bang_tree=True, comment=message)
+
+  def _getAccessStatus(self, context_reference):
+    memcached_dict = self._getMemcachedDict()
+    try:
+      if context_reference is None:
+        raise KeyError
+      else:
+        d = memcached_dict[context_reference]
+    except KeyError:
+      if context_reference is None:
+        d = {
+          "user": "SlapOS Master",
+          'created_at': '%s' % rfc1123_date(DateTime()),
+          "text": "#error no data found"
+        }
+      else:
+        d = {
+          "user": "SlapOS Master",
+          'created_at': '%s' % rfc1123_date(DateTime()),
+          "text": "#error no data found for %s" % context_reference
+        }
+    else:
+      d = json.loads(d)
+    # Keep in cache server for 7 days
+    self.REQUEST.response.setStatus(200)
+    self.REQUEST.response.setHeader('Cache-Control',
+                                    'public, max-age=60, stale-if-error=604800')
+    self.REQUEST.response.setHeader('Vary',
+                                    'REMOTE_USER')
+    self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
+    self.REQUEST.response.setBody(xml_marshaller.xml_marshaller.dumps(d))
+    return self.REQUEST.response
 
   @convertToREST
   def _startedComputerPartition(self, computer_id, computer_partition_id):
