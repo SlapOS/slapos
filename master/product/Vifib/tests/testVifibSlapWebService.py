@@ -251,6 +251,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       software_release_url=sequence['software_release_uri'],
       free_for_request=1)[0][0]
 
+  def stepCheckSoftwareReleaseAvailableForRequest(self, sequence, **kw):
+    self.assertNotEqual(0, self._getRequestBasedComputerPartitionCount(sequence))
+
   def stepCheckSoftwareReleaseUnavailableForRequest(self, sequence, **kw):
     self.assertEqual(0, self._getRequestBasedComputerPartitionCount(sequence))
 
@@ -961,7 +964,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       prepare_published_software_release + prepare_formated_computer + \
       prepare_supply_software_release + '\
         LoginDefaultUser \
-        CheckSoftwareReleaseUnavailableForRequest \
+        CheckSoftwareReleaseAvailableForRequest \
         Logout'
 
   prepare_installed_software_release_sequence_string = \

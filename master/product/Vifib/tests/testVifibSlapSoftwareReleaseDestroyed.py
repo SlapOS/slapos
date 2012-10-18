@@ -28,6 +28,10 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       CheckNotFoundSoftwareReleaseDestroyedCall \
       Tic \
       SlapLogout \
+      SlapLoginTestVifibAdmin \
+      SupplyComputerSoftwareReleaseDestroyed \
+      Tic \
+      SlapLogout \
       LoginERP5TypeTestCase \
       CheckSoftwareReleaseUnavailableForRequest \
       CheckSoftwareReleaseNotInPublicTable \
