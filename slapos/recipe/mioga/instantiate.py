@@ -136,10 +136,10 @@ LoadModule dir_module modules/mod_dir.so
 LoadModule env_module modules/mod_env.so
 LoadModule headers_module modules/mod_headers.so
 LoadModule log_config_module modules/mod_log_config.so
+LoadModule mime_module modules/mod_mime.so
 LoadModule perl_module modules/mod_perl.so
 
 # Basic server configuration
-# TODO: how to listen to standard port 80 when we are not root?
 PidFile REPL_PID
 Listen [REPL_IPV6HOST]:REPL_IPV6PORT
 Listen REPL_IPV4HOST:REPL_IPV6PORT
@@ -171,8 +171,7 @@ DavLockDB REPL_DAVLOCK
     for filepath in os.listdir(mioga_prepared_apache_config_dir):
       apache_config_mioga += ("# Read in from "+filepath+"\n" + 
         open(os.path.join(mioga_prepared_apache_config_dir, filepath)).read() + "\n" )
-    # Internal DAV only accepts its own IPv6 address
-    # TODO: check with what sender address we really arrive at the DAV locations.
+    # Internal DAV only accepts its own addresses
     apache_config_mioga = re.sub(
       'Allow from localhost', 
       "Allow from "+self.options['private_ipv4']+"\n\tAllow from "+self.options['public_ipv6'],
