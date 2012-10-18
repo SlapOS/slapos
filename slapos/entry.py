@@ -156,7 +156,7 @@ def main():
 
   # If "node" arg is the first: we strip it and set a switch
   if len(sys.argv) > 1 and sys.argv[1] == "node":
-    sys.argv = sys.argv[1:]
+    sys.argv.pop(1)
     is_node = True
   else:
     is_node = False
