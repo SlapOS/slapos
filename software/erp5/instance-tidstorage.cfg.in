@@ -115,6 +115,9 @@ var = ${buildout:directory}/var
 zodb = ${:srv}/zodb
 zodb-backup = ${:backup}/zodb
 erp5-ca-dir-backup = ${:backup}/erp5-ca-dir
+test-ca-dir = ${:srv}/test-ca
+test-instance-path = ${:srv}/test-instance
+unit-test-path = ${:test-instance-path}/unit_test
 
 #############################
 # Binary symlinking
@@ -265,6 +268,45 @@ smtp-url = ${slap-parameter:smtp-url}
 bt5 = ${slap-parameter:bt5}
 bt5-repository-url = ${slap-parameter:bt5-repository-url}
 certificate-authority-path = ${erp5-certificate-authority:ca-dir}
+
+############################
+# ERP5 runUnitTest
+############################
+[test-runner]
+recipe = slapos.cookbook:erp5.test
+certificate-authority-path = ${test-certificate-authority:ca-dir}
+mysql-url = {{ slapparameter_dict['mysql-url'] }}
+kumofs-url = {{ slapparameter_dict['kumofs-url'] }}
+memcached-url = {{ slapparameter_dict['memcached-url'] }}
+cloudooo-url = {{ slapparameter_dict['cloudooo-url'] }}
+test-instance-path = ${directory:unit-test-path}
+
+prepend-path = ${buildout:bin-directory}
+run-unit-test = ${buildout:bin-directory}/runUnitTest
+run-test-suite = ${buildout:bin-directory}/runTestSuite
+
+openssl-binary = ${test-certificate-authority:openssl-binary}
+run-unit-test-binary = {{ bin_directory }}/runUnitTest
+run-test-suite-binary = {{ bin_directory }}/runTestSuite
+
+[test-certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ parameter_dict['openssl'] }}/bin/openssl
+ca-dir = ${directory:test-ca-dir}
+requests-directory = ${test-cadirectory:requests}
+wrapper = ${directory:services}/test-ca
+ca-private = ${test-cadirectory:private}
+ca-certs = ${test-cadirectory:certs}
+ca-newcerts = ${test-cadirectory:newcerts}
+ca-crl = ${test-cadirectory:crl}
+
+[test-cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = ${directory:test-ca-dir}/requests
+private = ${directory:test-ca-dir}/private
+certs = ${directory:test-ca-dir}/certs
+newcerts = ${directory:test-ca-dir}/newcerts
+crl = ${directory:test-ca-dir}/crl
 
 #############################
 # ZEO
@@ -578,6 +620,7 @@ parts =
   binary-link
   erp5-promise
   erp5-bootstrap
+  test-runner
   {{ part_list | join('\n  ') }}
 
 eggs-directory = {{ eggs_directory }}
