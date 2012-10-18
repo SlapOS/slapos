@@ -118,7 +118,7 @@ def dispatch(command, is_node_command):
     elif command == 'bang':
       call(bang, config=True)
     elif command == 'format':
-      call(format, config=GLOBAL_SLAPOS_CONFIGURATION)
+      call(format, config=GLOBAL_SLAPOS_CONFIGURATION, option=['-c'])
     elif command in ['start', 'stop', 'status', 'tail']:
       supervisord()
       supervisorctl()
