@@ -53,7 +53,7 @@ class TestVifibSlapComputerPartitionGetStatus(TestVifibSlapWebServiceMixin):
     self.assertEquals(sequence['software_instance_reference'], status['user'])
     self.assertEquals('#access %s %s' % (
       sequence['computer_reference'], 
-      sequence['software_instance_reference']), 
+      sequence['computer_partition_reference']), 
                       status['text'])
 
   def test_ComputerPartition_OK_getStatus(self):
