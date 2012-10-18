@@ -883,11 +883,13 @@ class SlapTool(BaseTool):
   @convertToREST
   def _destroyedSoftwareRelease(self, url, computer_id):
     """
-    Reports that Software Release is available
+    Reports that Software Release is destroyed
     """
     computer_document = self._getComputerDocument(computer_id)
     software_installation = self._getSoftwareInstallationForComputer(url,
       computer_document)
+    if software_installation.getSlapState() != 'destroy_requested':
+      raise NotFound
     delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
     comment = 'Software Release destroyed report.'
     portal = self.getPortalObject()
