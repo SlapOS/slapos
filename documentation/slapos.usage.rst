@@ -6,10 +6,10 @@ SlapOS command line usage
 Note:
 -----
  * Default configuration file of "Node" commands if not explicitly defined (slapos node, slapos supervisor) is:
-    /etc/opt/slapos/slapos.cfg
+    /etc/opt/slapos/slapos.cfg or value of SLAPOS_CONFIGURATION environment variable if exists.
 
  * Default configuration file of "Client" commands if not explicitly defined (slapos request, slapos supply, ...) is:
-    ~/.slapos/slapos.cfg
+    ~/.slapos/slapos.cfg or value of SLAPOS_CLIENT_CONFIGURATION environment variable if exists.
 
  * Default log file for Node commands is /var/log/[slapos-node-software.log | slapos-node-instance.log | slapos-node-report.log]. This one requires working log in slapgrid, currently log/console is a total mess.
 

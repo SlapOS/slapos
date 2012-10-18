@@ -41,8 +41,12 @@ from slapos.grid.svcbackend import supervisord
 from slapos.grid.svcbackend import supervisorctl
 from slapos.register.register import main as register
 
-GLOBAL_SLAPOS_CONFIGURATION = '/etc/opt/slapos/slapos.cfg'
-USER_SLAPOS_CONFIGURATION = '~/.slapos/slapos.cfg'
+GLOBAL_SLAPOS_CONFIGURATION = os.environ.get(
+    'SLAPOS_CONFIGURATION',
+    '/etc/opt/slapos/slapos.cfg')
+USER_SLAPOS_CONFIGURATION = os.environ.get(
+    'SLAPOS_CLIENT_CONFIGURATION',
+    os.environ.get('SLAPOS_CONFIGURATION', '~/.slapos/slapos.cfg'))
 
 class EntryPointNotImplementedError(NotImplementedError):
   def __init__(self, *args, **kw_args):
