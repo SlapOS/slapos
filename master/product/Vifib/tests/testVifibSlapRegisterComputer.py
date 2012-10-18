@@ -64,7 +64,7 @@ class TestVifibSlapRegisterComputer(TestVifibSlapWebServiceMixin):
       CustomerRegisterNewComputer \
       Tic \
       SlapLogout \
-      SlapLoginTestVifibAdmin \
+      LoginTestVifibAdmin \
       SetComputerCoordinatesFromComputerTitle \
       ComputerSetAllocationScopeOpenPublic \
       Tic \
