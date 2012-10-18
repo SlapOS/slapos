@@ -34,7 +34,7 @@ class TestVifibSlapSoftwareReleaseDestroyed(TestVifibSlapWebServiceMixin):
       SlapLogout \
       LoginERP5TypeTestCase \
       CheckSoftwareReleaseUnavailableForRequest \
-      CheckSoftwareReleaseNotInPublicTable \
+      CheckSoftwareReleaseNotInSoftwareCatalog \
       CheckSiteConsistency \
       Logout \
     '

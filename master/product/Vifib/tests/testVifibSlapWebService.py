@@ -257,18 +257,14 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepCheckSoftwareReleaseUnavailableForRequest(self, sequence, **kw):
     self.assertEqual(0, self._getRequestBasedComputerPartitionCount(sequence))
 
-  def _getSoftwareReleasePublicTableAmount(self, sequence, **kw):
-    self.getPortal().portal_skins.changeSkin("Hosting")
-    request = self.app.REQUEST
-    request.set('portal_skin', "Hosting")
-    amount = len(self.portal.Base_getAvailableSoftwareReleaseList(
-      **{'software_release.url': sequence['software_release_uri']}))
-    self.getPortal().portal_skins.changeSkin("View")
-    request.set('portal_skin', "View")
-    return amount
-
-  def stepCheckSoftwareReleaseNotInPublicTable(self, sequence, **kw):
-    self.assertEqual(0, self._getSoftwareReleasePublicTableAmount(sequence))
+  def stepCheckSoftwareReleaseNotInSoftwareCatalog(self, sequence, **kw):
+    software_release = self.portal.portal_catalog.getResultValue(
+      uid=sequence['software_release_uid'])
+    software_product = software_release.getAggregateValue(
+      portal_type='Software Product')
+    # if software release is back referenced from product, it is preferred
+    self.assertFalse(software_product.getRelativeUrl() \
+      in software_product.getAggregateList())
 
   def stepCheckComputerTradeConditionDestinationSectionTestVifibCustomer(
       self, sequence, **kw):
