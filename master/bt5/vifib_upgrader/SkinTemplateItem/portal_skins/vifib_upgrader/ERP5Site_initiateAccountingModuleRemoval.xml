@@ -50,10 +50,13 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>simulation_tool = context.getParentValue()\n
-if simulation_tool.getPortalType() != \'Simulation Tool\':\n
-  raise ValueError(\'%s is not children of Simulation Tool\')\n
-simulation_tool.deleteContent(context.getId())\n
+            <value> <string>context.getPortalObject().portal_catalog.searchAndActivate(\n
+  parent_uid=context.getPortalObject().accounting_module.getUid(),\n
+  method_id=\'AccountingTransaction_delete\',\n
+  activate_kw={\'tag\': \'AccountingTransaction_delete\'}\n
+)\n
+\n
+return \'Deletion initiated.\'\n
 </string> </value>
         </item>
         <item>
@@ -62,7 +65,7 @@ simulation_tool.deleteContent(context.getId())\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>RootAppliedRule_delete</string> </value>
+            <value> <string>ERP5Site_initiateAccountingModuleRemoval</string> </value>
         </item>
       </dictionary>
     </pickle>

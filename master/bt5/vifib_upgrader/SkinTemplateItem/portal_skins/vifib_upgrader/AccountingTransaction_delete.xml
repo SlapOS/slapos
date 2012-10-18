@@ -50,10 +50,11 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().portal_catalog.searchAndActivate(\n
-  parent_uid=context.getPortalObject().accounting_module.getUid(),\n
-  method_id=\'AccountingTransaction_delete\'\n
-)\n
+            <value> <string>accounting_module = context.getParentValue()\n
+\n
+assert accounting_module.getPortalType() == \'Accounting Transaction Module\'\n
+\n
+accounting_module.deleteContent(context.getId())\n
 </string> </value>
         </item>
         <item>
@@ -62,7 +63,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>AccountingModule_initiateDelete</string> </value>
+            <value> <string>AccountingTransaction_delete</string> </value>
         </item>
       </dictionary>
     </pickle>

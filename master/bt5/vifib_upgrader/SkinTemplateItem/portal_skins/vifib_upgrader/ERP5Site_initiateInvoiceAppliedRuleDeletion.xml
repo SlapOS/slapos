@@ -50,10 +50,22 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().portal_catalog.searchAndActivate(\n
-  parent_uid=context.getPortalObject().portal_simulation.getUid(),\n
-  method_id=\'RootAppliedRule_delete\'\n
+            <value> <string>portal = context.getPortalObject()\n
+\n
+rule_uid_list = [\n
+  portal.portal_rules.vifib_invoice_simulation_rule.getUid(),\n
+  portal.portal_rules.vifib_invoice_root_simulation_rule.getUid()\n
+]\n
+\n
+portal.portal_catalog.searchAndActivate(\n
+  portal_type=\'Applied Rule\',\n
+  specialise_uid=rule_uid_list,\n
+  method_id=\'InvoiceAppliedRule_delete\',\n
+  method_kw={\'rule_uid_list\': rule_uid_list},\n
+  activate_kw={\'tag\': \'InvoiceAppliedRule_delete\'}\n
 )\n
+\n
+return \'Invoice Applied Rule deletion initated.\'\n
 </string> </value>
         </item>
         <item>
@@ -62,7 +74,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SimulationTool_initiateDelete</string> </value>
+            <value> <string>ERP5Site_initiateInvoiceAppliedRuleDeletion</string> </value>
         </item>
       </dictionary>
     </pickle>

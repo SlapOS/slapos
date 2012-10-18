@@ -50,19 +50,18 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>accounting_module = context.getParentValue()\n
-if accounting_module.getPortalType() != \'Accounting Transaction Module\':\n
-  raise ValueError(\'%s is not children of Accounting Transaction Module\')\n
-accounting_module.deleteContent(context.getId())\n
+            <value> <string>assert context.getSpecialiseUid() in rule_uid_list\n
+\n
+context.getParentValue().deleteContent(context.getId())\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>rule_uid_list</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>AccountingTransaction_delete</string> </value>
+            <value> <string>InvoiceAppliedRule_delete</string> </value>
         </item>
       </dictionary>
     </pickle>
