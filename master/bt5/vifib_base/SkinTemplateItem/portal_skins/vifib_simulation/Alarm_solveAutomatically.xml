@@ -50,23 +50,27 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>delivery = context\n
-if delivery.getCausalityState() not in (\'building\', \'calculating\'):\n
-  return\n
-path = delivery.getPath()\n
-portal_activities = context.getPortalObject().portal_activities\n
-if portal_activities.countMessage(path=path) == 0 \\\n
-  and portal_activities.countMessageWithTag(\'%s_solve\' % path) == 0:\n
-  delivery.updateCausalityState(solve_automatically=False)\n
+            <value> <string>portal = context.getPortalObject()\n
+activate_kw = {\n
+  \'tag\': tag\n
+}\n
+portal.portal_catalog.searchAndActivate(\n
+  portal_type=portal.getPortalDeliveryTypeList(),\n
+  causality_state=(\'diverged\',),\n
+  activate_kw=activate_kw,\n
+  packet_size=1, # Separate calls to many transactions\n
+  method_id=\'Delivery_solveAutomatically\'\n
+)\n
+context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Delivery_updateCausalityState</string> </value>
+            <value> <string>Alarm_solveAutomatically</string> </value>
         </item>
       </dictionary>
     </pickle>

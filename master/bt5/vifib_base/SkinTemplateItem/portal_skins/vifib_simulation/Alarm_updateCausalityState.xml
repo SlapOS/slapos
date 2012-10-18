@@ -58,7 +58,6 @@ portal.portal_catalog.searchAndActivate(\n
   portal_type=portal.getPortalDeliveryTypeList(),\n
   causality_state=(\'building\', \'calculating\'),\n
   activate_kw=activate_kw,\n
-  packet_size=1, # Separate calls to many transactions\n
   method_id=\'Delivery_updateCausalityState\'\n
 )\n
 context.activate(after_tag=tag).getId()\n
