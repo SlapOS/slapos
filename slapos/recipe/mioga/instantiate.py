@@ -128,6 +128,7 @@ LoadModule auth_basic_module modules/mod_auth_basic.so
 LoadModule authz_default_module modules/mod_authz_default.so
 LoadModule authz_host_module modules/mod_authz_host.so
 LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule autoindex_module modules/mod_autoindex.so
 LoadModule dav_module modules/mod_dav.so
 LoadModule dav_fs_module modules/mod_dav_fs.so
 LoadModule dav_lock_module modules/mod_dav_lock.so
@@ -155,6 +156,8 @@ CustomLog REPL_ACCESSLOG common
 DocumentRoot REPL_DOCROOT
 DirectoryIndex index.html
 DavLockDB REPL_DAVLOCK
+
+Include conf/extra/httpd-autoindex.conf
 '''
     apache_config_mioga = (apache_config_mioga
      .replace('REPL_PID', self.options['pid_file'])
