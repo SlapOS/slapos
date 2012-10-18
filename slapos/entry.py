@@ -124,8 +124,9 @@ def dispatch(command, is_node_command):
     elif command == 'format':
       call(format, config=GLOBAL_SLAPOS_CONFIGURATION, option=['-c'])
     elif command in ['start', 'stop', 'status', 'tail']:
-      supervisord()
-      supervisorctl()
+      # Again, too hackish
+      sys.argv[-2:-2] = [command]
+      call(supervisorctl, config=GLOBAL_SLAPOS_CONFIGURATION)
     else:
       return False
   elif command == 'request':
@@ -146,20 +147,21 @@ def main():
   Main entry point of SlapOS Node. Used to dispatch commands to python
   module responsible of the operation.
   """
+  # If "node" arg is the first: we strip it and set a switch
+  if len(sys.argv) > 1 and sys.argv[1] == "node":
+    sys.argv.pop(1)
+    # Hackish way to show status if no argument is specified
+    if len(sys.argv) is 1:
+      sys.argv.append('status')
+    is_node = True
+  else:
+    is_node = False
+
   # XXX-Cedric: add "description" for parser.
   # Parse arguments
   parser = argparse.ArgumentParser()
   parser.add_argument('command')
-  # XXX-Cedric: "slapos node" should display "supervisorctl status".
-  # Currently it does nothing
   parser.add_argument('argument_list', nargs=argparse.REMAINDER)
-
-  # If "node" arg is the first: we strip it and set a switch
-  if len(sys.argv) > 1 and sys.argv[1] == "node":
-    sys.argv.pop(1)
-    is_node = True
-  else:
-    is_node = False
 
   namespace = parser.parse_args()
   # Set sys.argv for the sub-entry point that we will call
