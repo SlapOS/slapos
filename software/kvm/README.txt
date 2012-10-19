@@ -7,6 +7,8 @@ Introduction
 This software release is used to deploy KVM instances, NBD instances and
 Frontend instances of KVM.
 
+For extensive parameters definition, please look at parameter-input-schema.json.
+
 Examples
 --------
 

@@ -45,15 +45,15 @@ bytes = 4
 recipe = slapos.cookbook:kvm
 vnc-ip = $${slap-network-information:local-ipv4}
 vnc-port = 5901
-nbd-ip = $${slap-parameter:nbd_ip}
-nbd-port = $${slap-parameter:nbd_port}
+nbd-ip = $${slap-parameter:nbd-ip}
+nbd-port = $${slap-parameter:nbd-port}
 tap = $${slap-network-information:network-interface}
 disk-path = $${directory:srv}/virtual.qcow2
-disk-size = 10
+disk-size = $${slap-parameter:disk-size}
 socket-path = $${directory:var}/qmp_socket
 pid-path = $${directory:run}/pid_file
 smp-count = 1
-ram-size = 1024
+ram-size = $${slap-parameter:ram-size}
 mac-address = $${create-mac:mac-address}
 runner-path = $${directory:services}/kvm
 controller-path = $${directory:scripts}/kvm_controller
@@ -145,7 +145,7 @@ sla-instance_guid = $${slap-parameter:frontend-instance-guid}
 
 [publish-kvm-backend-connection-information]
 recipe = slapos.cookbook:publish
-backend_url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1
+backend-url = https://[$${novnc-instance:ip}]:$${novnc-instance:port}/vnc_auto.html?host=[$${novnc-instance:ip}]&port=$${novnc-instance:port}&encrypt=1
 password = $${kvm-instance:passwd}
 
 [publish-kvm-frontend-connection-information]
@@ -164,5 +164,13 @@ curl_path = ${curl:location}/bin/curl
 frontend-instance-guid = SOFTINST-11031
 frontend-software-type = frontend
 frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.92:/software/kvm/software.cfg
-nbd_port = 1024
-nbd_ip = debian.nbd.vifib.net
+
+nbd-port = 1024
+nbd-ip = debian.nbd.vifib.net
+
+# backward compatibility: old style (nbd_port) can still be used.
+nbd_port = $${:nbd-port}
+nbd_ip = $${:nbd-ip}
+
+ram-size = 1024
+disk-size = 10
