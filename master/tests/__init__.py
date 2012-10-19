@@ -25,3 +25,7 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
     'vifib_upgrader',
     'vifib_web',
   ]
+
+class SlapOSCloud(SavedTestSuite, ProjectTestSuite):
+  _saved_test_id = 'Products.Vifib.tests.VifibMixin.testVifibMixin'
+  _bt_list = ['slapos_cloud']
