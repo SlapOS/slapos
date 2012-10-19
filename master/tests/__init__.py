@@ -4,7 +4,7 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
   _product_list = ['Vifib']
   _saved_test_id = 'Products.Vifib.tests.VifibMixin.testVifibMixin'
   _bt_list = [
-    'vifib_slapos_core',
+    'slapos_cloud',
     'vifib_slapos_core_test',
     'vifib_slapos_rest_api',
     'vifib_slapos_rest_api_v1',

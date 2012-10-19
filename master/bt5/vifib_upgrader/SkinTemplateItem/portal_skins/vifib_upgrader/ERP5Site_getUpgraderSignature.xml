@@ -106,13 +106,13 @@ REQUIRED_BT5_ID_LIST = (\n
   \'vifib_data_category\',\n
   \'vifib_data_payzen\',\n
   \'vifib_data_web\',\n
-  \'vifib_slapos_core\',\n
+  \'slapos_cloud\',\n
   \'vifib_web\',\n
   \'vifib_slap\',\n
   \'vifib_agent\',\n
   \'vifib_slapos_accounting\',\n
   \'vifib_web_ui_test\',\n
-  \'vifib_slapos_core\',\n
+  \'slapos_cloud\',\n
   \'vifib_slapos_accounting\',\n
   \'vifib_slapos_capacity\',\n
   \'vifib_slapos_rest_api_tool_portal_type\',\n

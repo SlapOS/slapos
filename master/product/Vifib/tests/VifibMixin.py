@@ -97,7 +97,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_payzen_secure_payment',
       'erp5_ui_test_core',
       'erp5_ui_test',
-      'vifib_slapos_core',
+      'slapos_cloud',
       'vifib_slapos_core_test',
       'vifib_slapos_rest_api_tool_portal_type',
       'vifib_slapos_rest_api',
