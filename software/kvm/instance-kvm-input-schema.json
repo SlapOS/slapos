@@ -7,6 +7,7 @@
       "type": "integer",
       "default": 1024,
       "minimum": 128,
+      "divisibleBy": 128,
       "maximum": 16384
     },
     "disk-size": {
