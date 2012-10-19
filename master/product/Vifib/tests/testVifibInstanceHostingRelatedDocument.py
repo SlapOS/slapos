@@ -576,6 +576,8 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         Tic
         CallVifibUpdateDeliveryCausalityStateAlarm
         CleanTic
+        CallVifibSolveAutomaticallyAlarm
+        CleanTic
 
         # Nothing shall change
         CheckHostingSubscriptionInitialDocumentCoverage

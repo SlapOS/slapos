@@ -1050,6 +1050,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
+        CleanTic \
         Logout \
         LoginTestVifibAdmin \
         DecreaseCurrentToPostAccountingWorkflowCount \
@@ -1069,6 +1071,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm\
         CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
+        CleanTic \
         CallDeliverSubscriptionSalePackingListAlarm \
         CleanTic \
         CallVifibExpandDeliveryLineAlarm \
@@ -1076,6 +1080,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CallVifibTriggerBuildAlarm \
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
         CleanTic \
         \
         LoginWebUser \
@@ -1127,6 +1133,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
+        CleanTic \
         \
         LoginWebUser \
         CheckDestroyOngoingInvoice \
@@ -1144,6 +1152,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
+        CleanTic \
         CallStopConfirmedSaleInvoiceTransactionAlarm \
         CleanTic \
         CallVifibExpandDeliveryLineAlarm \
@@ -1151,6 +1161,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CallVifibTriggerBuildAlarm \
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm\
+        CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
         CleanTic \
         CallVifibPayzenUpdateConfirmedPaymentAlarm \
         CleanTic \
@@ -1165,6 +1177,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         PayPayment \
         Tic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
         CleanTic \
         CheckPaidInvoice \
         LoginTestVifibAdmin \
@@ -1382,6 +1396,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm\
         CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
+        CleanTic \
         CallDeliverSubscriptionSalePackingListAlarm \
         CleanTic \
         CallVifibExpandDeliveryLineAlarm \
@@ -1389,6 +1405,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CallVifibTriggerBuildAlarm \
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
         CleanTic \
         \
         LoginWebUser \
@@ -1503,6 +1521,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
         CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
+        CleanTic \
         CallStopConfirmedSaleInvoiceTransactionAlarm \
         CleanTic \
         CallVifibExpandDeliveryLineAlarm \
@@ -1510,6 +1530,8 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CallVifibTriggerBuildAlarm \
         CleanTic \
         CallVifibUpdateDeliveryCausalityStateAlarm \
+        CleanTic \
+        CallVifibSolveAutomaticallyAlarm \
         CleanTic \
         CallVifibPayzenUpdateConfirmedPaymentAlarm \
         CleanTic \

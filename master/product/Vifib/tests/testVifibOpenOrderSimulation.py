@@ -186,6 +186,8 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
       CleanTic
       CallVifibUpdateDeliveryCausalityStateAlarm
       CleanTic
+      CallVifibSolveAutomaticallyAlarm
+      CleanTic
       CallDeliverSubscriptionSalePackingListAlarm
       CleanTic
       CallVifibExpandDeliveryLineAlarm

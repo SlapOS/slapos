@@ -907,17 +907,23 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   stabilise_accounting = """
       CallVifibUpdateDeliveryCausalityStateAlarm
       CleanTic
-      CallVifibExpandDeliveryLineAlarm
-      CleanTic
-      CallVifibTriggerBuildAlarm
-      CleanTic
-      CallVifibUpdateDeliveryCausalityStateAlarm
+      CallVifibSolveAutomaticallyAlarm
       CleanTic
       CallVifibExpandDeliveryLineAlarm
       CleanTic
       CallVifibTriggerBuildAlarm
       CleanTic
       CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallVifibSolveAutomaticallyAlarm
+      CleanTic
+      CallVifibExpandDeliveryLineAlarm
+      CleanTic
+      CallVifibTriggerBuildAlarm
+      CleanTic
+      CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallVifibSolveAutomaticallyAlarm
       CleanTic
       CallStopConfirmedSaleInvoiceTransactionAlarm
       CleanTic
@@ -926,6 +932,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CallVifibTriggerBuildAlarm
       CleanTic
       CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+      CallVifibSolveAutomaticallyAlarm
       CleanTic
   """
 
@@ -1196,6 +1204,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CleanTic \
       CallVifibUpdateDeliveryCausalityStateAlarm \
       CleanTic \
+      CallVifibSolveAutomaticallyAlarm \
+      CleanTic \
       CallVifibTriggerBuildAlarm \
       CleanTic \
       CallVifibExpandDeliveryLineAlarm \
@@ -1203,6 +1213,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CallVifibTriggerBuildAlarm \
       CleanTic \
       CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
+      CallVifibSolveAutomaticallyAlarm \
       CleanTic \
       CallStopConfirmedSaleInvoiceTransactionAlarm \
       CleanTic \
@@ -1213,6 +1225,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CallVifibExpandDeliveryLineAlarm \
       CleanTic \
       CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
+      CallVifibSolveAutomaticallyAlarm \
       CleanTic \
       CallVifibPayzenUpdateConfirmedPaymentAlarm \
       CleanTic \
@@ -1234,6 +1248,8 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CallVifibTriggerBuildAlarm \
       CleanTic \
       CallVifibUpdateDeliveryCausalityStateAlarm \
+      CleanTic \
+      CallVifibSolveAutomaticallyAlarm \
       CleanTic \
       SetSelectedComputerPartition \
       SelectCurrentlyUsedSalePackingListUid \
@@ -3282,6 +3298,9 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Logout
 
       CallVifibUpdateDeliveryCausalityStateAlarm
+      CleanTic
+
+      CallVifibSolveAutomaticallyAlarm
       CleanTic
 
       LoginERP5TypeTestCase
