@@ -32,7 +32,6 @@ from AccessControl.SecurityManagement import newSecurityManager, \
   getSecurityManager, setSecurityManager
 from Products.ERP5Type.tests.utils import DummyMailHost
 import os
-from DateTime import DateTime
 from Products.ERP5Type.Utils import convertToUpperCase
 
 class testVifibMixin(ERP5TypeTestCase):

@@ -1,7 +1,4 @@
-from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from Products.ERP5Type.tests.Sequence import SequenceList
-from Products.ERP5Type.tests.backportUnittest import skip
-import transaction
 import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 from slapos import slap
