@@ -4,6 +4,7 @@ parts =
   publish
   postgres-instance
   postgres-promise
+  cron
 
 
 # Define egg directories to be the one from Software Release
@@ -23,13 +24,41 @@ key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 
 
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${basedirectory:services}/crond
+
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${rootdirectory:bin}/cron_simplelogger
+log = $${basedirectory:log}/crond.log
+
+
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
-bin = $${buildout:directory}/bin
 etc = $${buildout:directory}/etc
-services = $${rootdirectory:etc}/run/
-promises = $${rootdirectory:etc}/promise/
 var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = $${rootdirectory:var}/log/
+services = $${rootdirectory:etc}/run/
+run = $${rootdirectory:var}/run/
+promises = $${rootdirectory:etc}/promise/
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+cron-entries = $${rootdirectory:etc}/cron.d/
+crontabs = $${rootdirectory:etc}/crontabs/
+cronstamps = $${rootdirectory:etc}/cronstamps/
 
 
 [symlinks]
@@ -49,14 +78,14 @@ port = 5432
 dbname = db
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${rootdirectory:var}/data
-services = $${rootdirectory:services}
+services = $${basedirectory:services}
 bin = $${rootdirectory:bin}
 
 
 # Deploy promises scripts
 [postgres-promise]
 recipe = slapos.cookbook:check_port_listening
-path = $${rootdirectory:promises}/postgres
+path = $${basedirectory:promises}/postgres
 hostname = $${slap-network-information:global-ipv6}
 port = $${postgres-instance:port}
 
