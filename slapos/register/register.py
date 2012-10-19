@@ -130,7 +130,7 @@ def get_login():
   return identification
 
 
-def check_login(identification,master_url_web):
+def check_login(identification, master_url_web):
   """Check if logged correctly on vifib"""
   request = urllib2.Request(master_url_web)
   # Prepare header for basic authentification
@@ -142,7 +142,7 @@ def check_login(identification,master_url_web):
   else : return 0
   
 
-def get_certificates(identification,node_name,master_url_web):
+def get_certificates(identification, node_name, master_url_web):
   """Download certificates on vifib master"""
   register_server_url = '/'.join([master_url_web, ("add-a-server/WebSection_registerNewComputer?dialog_id=WebSection_viewServerInformationDialog&dialog_method=WebSection_registerNewComputer&title={}&object_path=/erp5/web_site_module/hosting/add-a-server&update_method=&cancel_url=https%3A//www.vifib.net/add-a-server/WebSection_viewServerInformationDialog&Base_callDialogMethod=&field_your_title=Essai1&dialog_category=None&form_id=view".format(node_name))])
   request = urllib2.Request(register_server_url)
@@ -157,37 +157,37 @@ def get_certificates(identification,node_name,master_url_web):
 def parse_certificates(source):
   """Parse html gotten from vifib to make certificate and key files"""
   c_start = source.find("Certificate:")
-  c_end = source.find("</textarea>",c_start)
+  c_end = source.find("</textarea>", c_start)
   k_start = source.find("-----BEGIN PRIVATE KEY-----")
-  k_end = source.find("</textarea>",k_start)
-  return [source[c_start:c_end],source[k_start:k_end]]
+  k_end = source.find("</textarea>", k_start)
+  return [source[c_start:c_end], source[k_start:k_end]]
 
 
 def get_computer_name(certificate):
   """Parse certificate to get computer name and return it"""
-  k=certificate.find("COMP-")
-  i=certificate.find("/email",k)
+  k = certificate.find("COMP-")
+  i = certificate.find("/email", k)
   return certificate[k:i]
 
 def save_former_config(config):
   """Save former configuration if found"""
   # Check for config file in /etc/opt/slapos/
-  if os.path.exists('/etc/opt/slapos/slapos.cfg'): 
-    former_slapos_configuration='/etc/opt/slapos'
+  if os.path.exists('/etc/opt/slapos/slapos.cfg'):
+    former_slapos_configuration = '/etc/opt/slapos'
   else : former_slapos_configuration = 0
   if former_slapos_configuration:
     saved_slapos_configuration = former_slapos_configuration + '.old'
     while True:
       if os.path.exists(saved_slapos_configuration):
         print "Slapos configuration detected in %s" % saved_slapos_configuration
-        if saved_slapos_configuration[len(saved_slapos_configuration)-1]!= 'd' :
-          saved_slapos_configuration = saved_slapos_configuration[:len(saved_slapos_configuration)-1] \
-              + str( int(saved_slapos_configuration[len(saved_slapos_configuration)-1])+1 )
+        if saved_slapos_configuration[len(saved_slapos_configuration) - 1] != 'd' :
+          saved_slapos_configuration = saved_slapos_configuration[:len(saved_slapos_configuration) - 1] \
+              + str(int(saved_slapos_configuration[len(saved_slapos_configuration) - 1]) + 1 )
         else :
           saved_slapos_configuration += ".1"
       else: break
-    config.logger.info( "Former slapos configuration detected in %s moving to %s" % (former_slapos_configuration,saved_slapos_configuration))
-    shutil.move(former_slapos_configuration,saved_slapos_configuration)
+    config.logger.info("Former slapos configuration detected in %s moving to %s" % (former_slapos_configuration, saved_slapos_configuration))
+    shutil.move(former_slapos_configuration, saved_slapos_configuration)
 
 def get_slapos_conf_example():
   """
@@ -197,12 +197,11 @@ def get_slapos_conf_example():
   request = urllib2.Request(register_server_url)
   url = urllib2.urlopen(request)  
   page = url.read()
-  info, path = tempfile.mkstemp()
+  _, path = tempfile.mkstemp()
   slapos_cfg_example = open(path,'w')
   slapos_cfg_example.write(page)
   slapos_cfg_example.close()
   return path
-    
 
 
 def slapconfig(config):
@@ -215,13 +214,13 @@ def slapconfig(config):
     config.logger.info ("Creating directory: %s" % slap_configuration_directory)
     if not dry_run:
       os.mkdir(slap_configuration_directory, 0711)
-  
+
   user_certificate_repository_path = os.path.join(slap_configuration_directory,'ssl')
   if not os.path.exists(user_certificate_repository_path):
     config.logger.info ("Creating directory: %s" % user_certificate_repository_path)
     if not dry_run:
       os.mkdir(user_certificate_repository_path, 0711)
- 
+
   key_file = os.path.join(user_certificate_repository_path, 'key') 
   cert_file = os.path.join(user_certificate_repository_path, 'certificate')
   for (src, dst) in [(config.key, key_file), (config.certificate,
@@ -234,17 +233,17 @@ def slapconfig(config):
       os.chmod(dst, 0600)
       os.chown(dst, 0, 0)
 
-  certificate_repository_path = os.path.join(slap_configuration_directory,'ssl','partition_pki')
+  certificate_repository_path = os.path.join(slap_configuration_directory, 'ssl', 'partition_pki')
   if not os.path.exists(certificate_repository_path):
     config.logger.info ("Creating directory: %s" % certificate_repository_path)
     if not dry_run:
       os.mkdir(certificate_repository_path, 0711)
   
   # Put slapos configuration file
-  slap_configuration_file = os.path.join(slap_configuration_directory, 
-                                           'slapos.cfg')
-  config.logger.info ("Creating slap configuration: %s" 
-                      % slap_configuration_file)
+  slap_configuration_file_location = os.path.join(slap_configuration_directory,
+                                                  'slapos.cfg')
+  config.logger.info ("Creating slap configuration: %s"
+                      % slap_configuration_file_location)
 
   # Get example configuration file
   slapos_cfg_example = get_slapos_conf_example()
@@ -257,8 +256,8 @@ def slapconfig(config):
     computer_id=config.computer_id, master_url=config.master_url,
     key_file=key_file, cert_file=cert_file,
     certificate_repository_path=certificate_repository_path)
-  for key in slaposconfig :
-    configuration_example_parser.set('slapos',key,slaposconfig[key])
+  for key in slaposconfig:
+    configuration_example_parser.set('slapos', key, slaposconfig[key])
 
   # prepare slapformat
   slapformatconfig = dict(
@@ -268,17 +267,17 @@ def slapconfig(config):
     create_tap=config.create_tap
     )
   for key in slapformatconfig :
-    configuration_example_parser.set('slapformat',key,slapformatconfig[key])
-  
+    configuration_example_parser.set('slapformat', key, slapformatconfig[key])
+
   if not config.ipv6_interface == '':
-    configuration_example_parser.set('slapformat','ipv6_interface'
-                                     ,config.ipv6_interface)
+    configuration_example_parser.set('slapformat',
+                                     'ipv6_interface',
+                                     config.ipv6_interface)
 
   if not dry_run:
-    file = open(slap_configuration_file,"w")
-    configuration_example_parser.write(file)
-    file.close()
-   
+    slap_configuration_file = open(slap_configuration_file_location, "w")
+    configuration_example_parser.write(slap_configuration_file)
+
   config.logger.info ("SlapOS configuration: DONE")
 
 
@@ -306,51 +305,47 @@ class Config:
     # add ch to logger
     self.logger.addHandler(self.ch)
 
-
-
-  def COMPConfig(self, slapos_configuration,
-                   computer_id,
-                   certificate,
-                   key):
-    self.slapos_configuration= slapos_configuration
-    self.computer_id=computer_id
-    self.certificate=certificate
-    self.key=key
+  def COMPConfig(self, slapos_configuration, computer_id, certificate, key):
+    self.slapos_configuration = slapos_configuration
+    self.computer_id = computer_id
+    self.certificate = certificate
+    self.key = key
 
   def displayUserConfig(self):
-    self.logger.debug ("Computer Name : %s" % self.node_name)
-    self.logger.debug ("Master URL: %s" % self.master_url)
-    self.logger.debug ("Number of partition: %s" % self.partition_number)
-    self.logger.debug ("Interface Name: %s" % self.interface_name)
-    self.logger.debug ("Ipv4 sub network: %s" % self.ipv4_local_network)
-    self.logger.debug ("Ipv6 Interface: %s" %self.ipv6_interface)
+    self.logger.debug("Computer Name: %s" % self.node_name)
+    self.logger.debug("Master URL: %s" % self.master_url)
+    self.logger.debug("Number of partition: %s" % self.partition_number)
+    self.logger.debug("Interface Name: %s" % self.interface_name)
+    self.logger.debug("Ipv4 sub network: %s" % self.ipv4_local_network)
+    self.logger.debug("Ipv6 Interface: %s" %self.ipv6_interface)
 
 def register(config):
   """Register new computer on VIFIB and generate slapos.cfg"""
-  # Get User identification and check them 
+  # Get User identification and check them
   if config.login == None :
     while True :
       print ("Please enter your Vifib login")
       user_id = get_login()
-      if check_login(user_id,config.master_url_web): break
+      if check_login(user_id, config.master_url_web):
+        break
       config.logger.warning ("Wrong login/password")
   else:
     if config.password == None :
       config.password = getpass()
-    user_id = base64.encodestring('%s:%s' % (config.login,config.password))[:-1]
-    if not check_login(user_id,config.master_url_web):
+    user_id = base64.encodestring('%s:%s' % (config.login, config.password))[:-1]
+    if not check_login(user_id, config.master_url_web):
       config.logger.error ("Wrong login/password")
       return 1
 
-  # Get source code of page having certificate and key 
-  certificate_key = get_certificates(user_id,config.node_name,config.master_url_web)
+  # Get source code of page having certificate and key
+  certificate_key = get_certificates(user_id, config.node_name, config.master_url_web)
   # Parse certificate and key and get computer id
   certificate_key = parse_certificates(certificate_key)
   certificate = certificate_key[0]
   key = certificate_key[1]
   COMP = get_computer_name(certificate)  
   # Getting configuration parameters
-  slapos_configuration='/etc/opt/slapos/'
+  slapos_configuration = '/etc/opt/slapos/'
   config.COMPConfig(slapos_configuration=slapos_configuration,
                    computer_id=COMP,
                    certificate = certificate,
@@ -372,11 +367,11 @@ def main():
     config.setConfig(*Parser(usage=usage).check_args())
     return_code = register(config)
   except UsageError, err:
-    print >>sys.stderr, err.msg
-    print >>sys.stderr, "For help use --help"
+    print >> sys.stderr, err.msg
+    print >> sys.stderr, "For help use --help"
     return_code = 16
   except ExecError, err:
-    print >>sys.stderr, err.msg
+    print >> sys.stderr, err.msg
     return_code = 16
   except SystemExit, err:
     # Catch exception raise by optparse
