@@ -420,4 +420,20 @@ class testVifibMixin(ERP5TypeTestCase):
     # tic after activateAlarm
     self.tic()
 
-    self.checkDivergency()
+    try:
+      self.checkDivergency()
+    except AssertionError:
+      # try last time to solve deliveries
+      sm = getSecurityManager()
+      self.login()
+      try:
+        self.portal.portal_alarm.vifib_update_delivery_causality_state.activeSense()
+        transaction.commit()
+        self.tic()
+        self.portal.portal_alarm.vifib_solve_automatically.activeSense()
+        transaction.commit()
+        self.tic()
+      finally:
+        setSecurityManager(sm)
+      self.checkDivergency()
+
