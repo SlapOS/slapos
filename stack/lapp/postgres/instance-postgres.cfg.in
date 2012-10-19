@@ -1,7 +1,6 @@
 [buildout]
 parts =
-  symlinks
-  publish
+  urls
   postgres-instance
   postgres-promise
   cron
@@ -81,6 +80,8 @@ pgdata-directory = $${rootdirectory:var}/data
 services = $${basedirectory:services}
 bin = $${rootdirectory:bin}
 
+dependency-symlinks = $${symlinks:recipe}
+
 
 # Deploy promises scripts
 [postgres-promise]
@@ -90,7 +91,7 @@ hostname = $${slap-network-information:global-ipv6}
 port = $${postgres-instance:port}
 
 
-[publish]
+[urls]
 recipe = slapos.cookbook:publishurl
 url = $${postgres-instance:url}
 
