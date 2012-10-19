@@ -41,6 +41,9 @@ from slapos.grid.svcbackend import supervisord
 from slapos.grid.svcbackend import supervisorctl
 from slapos.register.register import main as register
 
+# Note: this whole file is a hack. We should better try dedicated library
+# like https://github.com/dhellmann/cliff or https://github.com/docopt/docopt.
+
 GLOBAL_SLAPOS_CONFIGURATION = os.environ.get(
     'SLAPOS_CONFIGURATION',
     '/etc/opt/slapos/slapos.cfg')
