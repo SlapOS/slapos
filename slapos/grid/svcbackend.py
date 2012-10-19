@@ -161,6 +161,8 @@ Typical usage:
 def supervisorctl(*argument_tuple):
   option_dict, args = getOptionDict(*argument_tuple)
   import supervisor.supervisorctl
+  launchSupervisord(option_dict['supervisord_socket'],
+      option_dict['supervisord_configuration_path'])
   supervisor.supervisorctl.main(args=['-c',
     option_dict['supervisord_configuration_path']] + args)
 
