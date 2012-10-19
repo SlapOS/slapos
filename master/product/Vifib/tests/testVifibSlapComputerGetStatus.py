@@ -18,7 +18,7 @@ class TestVifibSlapComputerGetStatus(TestVifibSlapWebServiceMixin):
         computer_guid)
 
     status = computer.getStatus()
-    self.assertEquals(sequence["computer_reference"], status['user'])
+    self.assertEquals('SlapOS Master', status['user'])
     self.assertEquals('#error no data found for %s' % \
         sequence["computer_reference"], status['text'])
 
