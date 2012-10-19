@@ -2921,11 +2921,29 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     sequence['software_title'] = sequence['requested_reference']
 
   def stepRenameCurrentSoftwareInstanceDead(self, sequence, **kw):
+    """Renames software instance using external API"""
+
+    # Note: In order to keep step list as it is it hackishly access
+    # needed details required to login through SlapTool
     software_instance = self.portal.portal_catalog.getResultValue(
       uid=sequence['software_instance_uid']
     )
 
-    software_instance.rename(new_name='%sDead' % software_instance.getTitle())
+    # login into slap
+    global REMOTE_USER
+    REMOTE_USER = software_instance.getReference()
+
+    self.slap = slap.slap()
+    self.slap.initializeConnection(self.server_url, timeout=None)
+
+    slap_computer_partition = self.slap.registerComputerPartition(
+        software_instance.getAggregateValue(
+          portal_type='Computer Partition').getParentValue().getReference(),
+        software_instance.getAggregateValue(
+          portal_type='Computer Partition').getReference()
+    )
+
+    slap_computer_partition.rename('%sDead' % software_instance.getTitle())
 
   def stepCheckTreeHasARootSoftwareInstance(self, sequence, **kw):
     hosting_subscription_uid = sequence['hosting_subscription_uid']
