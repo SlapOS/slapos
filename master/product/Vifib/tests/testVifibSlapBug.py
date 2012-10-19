@@ -3,6 +3,7 @@ import unittest
 from testVifibSlapWebService import TestVifibSlapWebServiceMixin
 import random
 import transaction
+from Products.ERP5Type.tests.backportUnittest import skip
 
 class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
   def test_bug_Person_request_more_then_one_instance(self):
@@ -1210,6 +1211,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
     sequence_list.addSequenceString(sequence_string)
     sequence_list.play(self)
 
+  @skip('Unsupported by the cache on slaptool')
   def test_request_new_with_destroyed_reference(self):
     """Prove that having destroyed SI allows to request new one with same
       reference"""
