@@ -165,7 +165,6 @@ def supervisorctl(*argument_tuple):
     option_dict['supervisord_configuration_path']] + args)
 
 def supervisord(*argument_tuple):
-  option_dict, dummy = getOptionDict(*argument_tuple)
-  dummy = dummy
+  option_dict, _ = getOptionDict(*argument_tuple)
   launchSupervisord(option_dict['supervisord_socket'],
       option_dict['supervisord_configuration_path'])
