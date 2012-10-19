@@ -240,12 +240,12 @@ Return values:
 1        At least one instance hasn't correctly been processed.
 
 
-slapos node <start|stop|tail|status>
+slapos node <start|stop|restart|tail|status>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Usage:
-  slapos node <start|stop|tail|status> <instance>:[process]
+  slapos node <start|stop|restart|tail|status> <instance>:[process]
 
-Start/Stop/Show stdout/stderr of instance and/or process.
+Start/Stop/Restart/Show stdout/stderr of instance and/or process.
 
 Examples:
 
@@ -258,6 +258,19 @@ Examples:
  * Show stdout/stderr of mysqld in slappart2:
      slapos node tail slappart2:mysqld
 
+slapos node supervisorctl
+~~~~~~~~~~~~~~~~~~~~~~~~~
+Usage:
+  slapos node supervisorctl
+
+Enter into supervisor console.
+
+slapos node supervisord
+~~~~~~~~~~~~~~~~~~~~~~~
+Usage:
+  slapos node supervisord
+
+Launch, if not already launched, supervisor daemon.
 
 slapos node log
 ~~~~~~~~~~~~~~~
