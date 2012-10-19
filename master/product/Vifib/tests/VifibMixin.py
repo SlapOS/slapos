@@ -427,10 +427,11 @@ class testVifibMixin(ERP5TypeTestCase):
       sm = getSecurityManager()
       self.login()
       try:
-        self.portal.portal_alarm.vifib_update_delivery_causality_state.activeSense()
+        self.portal.portal_alarms.vifib_update_delivery_causality_state\
+          .activeSense()
         transaction.commit()
         self.tic()
-        self.portal.portal_alarm.vifib_solve_automatically.activeSense()
+        self.portal.portal_alarms.vifib_solve_automatically.activeSense()
         transaction.commit()
         self.tic()
       finally:
