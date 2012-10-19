@@ -68,6 +68,20 @@ if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
   # As it is not possible to fetch informations, it is better to raise an error\n
   raise NotImplementedError(tag)\n
 \n
+# Check if it already exists\n
+request_software_instance_list = portal.portal_catalog(\n
+  # Fetch all portal type, as it is not allowed to change it\n
+  portal_type=["Software Instance", "Slave Instance"],\n
+  title={\'query\': software_title, \'key\': \'ExactMatch\'},\n
+  specialise_uid=hosting_subscription.getUid(),\n
+  # Do not fetch destroyed instances\n
+  # XXX slap_state=["start_requested", "stop_requested"],\n
+  validation_state="validated",\n
+  limit=1,\n
+)\n
+if len(request_software_instance_list) == 1:\n
+  raise ValueError, "Too many instances \'%s\' found: %s" % (software_title, [x.path for x in request_software_instance_list])\n
+\n
 # Change the title\n
 instance.edit(title=software_title, activate_kw={\'tag\': tag})\n
 
