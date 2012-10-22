@@ -26,10 +26,27 @@
 #
 ##############################################################################
 
+import random
+import transaction
 import unittest
 import Products.Vifib.tests.VifibMixin
 
 class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
+  def afterSetUp(self):
+    self.setupPortalCertificateAuthority()
+    self.setUpMemcached()
+    self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
+    self.portal.portal_caches._p_changed = 1
+    transaction.commit()
+    self.portal.portal_caches.updateCache()
+    if getattr(self.portal, 'set_up_once_called', 0):
+      return
+    else:
+      self.portal.set_up_once_called = 1
+      self.bootstrapSite()
+      self.portal._p_changed = 1
+      transaction.commit()
+
   def getBusinessTemplateList(self):
     """
     Install the business templates.
