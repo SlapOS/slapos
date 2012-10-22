@@ -115,7 +115,6 @@ vifib_agent
 vifib_base
 vifib_cash
 vifib_core
-vifib_forge_release
 vifib_jauks_theme
 vifib_jauks_widget_library
 vifib_open_trade
@@ -221,7 +220,6 @@ slapos_cloud
 vifib_agent
 vifib_base
 vifib_core
-vifib_forge_release
 vifib_hosting_theme
 vifib_jauks_theme
 vifib_jauks_widget_library
@@ -327,7 +325,6 @@ slapos_cloud
 vifib_agent
 vifib_base
 vifib_core
-vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_promise
@@ -427,7 +424,6 @@ slapos_cloud
 vifib_agent
 vifib_base
 vifib_core
-vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_promise
@@ -527,7 +523,6 @@ slapos_cloud
 vifib_agent
 vifib_base
 vifib_core
-vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_promise
@@ -630,7 +625,6 @@ slapos_cloud
 vifib_agent
 vifib_base
 vifib_core
-vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_promise
@@ -733,7 +727,6 @@ slapos_cloud
 vifib_agent
 vifib_base
 vifib_core
-vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_promise
@@ -833,7 +826,6 @@ slapos_cloud
 vifib_agent
 vifib_base
 vifib_core
-vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_promise
@@ -932,7 +924,6 @@ slapos_cloud
 vifib_agent
 vifib_base
 vifib_core
-vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_promise
@@ -1034,7 +1025,6 @@ slapos_cloud
 vifib_agent
 vifib_base
 vifib_core
-vifib_forge_release
 vifib_open_trade
 vifib_payzen
 vifib_promise

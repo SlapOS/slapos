@@ -20,4 +20,7 @@
  <portal_type id="Software Instance Module">
   <item>business_application</item>
  </portal_type>
+ <portal_type id="Software Release">
+  <item>aggregate</item>
+ </portal_type>
 </base_category_list>
