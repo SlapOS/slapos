@@ -44,6 +44,7 @@ from Products.ERP5Security.ERP5UserManager import SUPER_USER
 from ZODB.POSException import ConflictError
 from Products.ERP5Security.ERP5GroupManager import ConsistencyError, NO_CACHE_MODE
 from Products.ERP5Type.Cache import CachingMethod
+from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from Products.ERP5Security.ERP5UserManager import getValidAssignmentList
 
 # some usefull globals
@@ -82,10 +83,19 @@ def getUserByLogin(portal, login):
     login = login[LOGIN_PREFIX_LENGTH:]
   else:
     return []
+
+  machine_query = Query(portal_type=["Computer", "Software Instance"],
+      validation_state="validated",
+      reference=dict(query=login, key='ExactMatch'))
+  person_query = Query(portal_type=["Person"],
+      reference=dict(query=login, key='ExactMatch'))
   result = portal.portal_catalog.unrestrictedSearchResults(
-      portal_type=LOGGABLE_PORTAL_TYPE_LIST,
-      reference=dict(query=login, key='ExactMatch'),
-      select_expression='reference')
+    query=ComplexQuery(machine_query, person_query, operator="OR"),
+    select_expression='reference')
+  result = [x for x in result if \
+    (x.getPortalType() == 'Person' and x.getValidationState() != 'deleted') or \
+    (x.getPortalType() in ("Computer", "Software Instance") and \
+      x.getValidationState() == 'validated')]
   # XXX: Here, we filter catalog result list ALTHOUGH we did pass
   # parameters to unrestrictedSearchResults to restrict result set.
   # This is done because the following values can match person with
