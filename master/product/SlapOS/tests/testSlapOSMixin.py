@@ -35,6 +35,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
 class TestSlapOSDummy(testSlapOSMixin):
   run_all_test = 1
   def test(self):
+    """Dummy test in order to fire up Business Template testing"""
     self.assertTrue(True)
 
   def getTitle(self):
