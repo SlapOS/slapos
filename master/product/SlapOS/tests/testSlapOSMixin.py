@@ -36,13 +36,13 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     """
     result = [
       'erp5_upgrader',
-      'vifib_upgrader',
+      'vifib_upgrader', # XXX: rebrand
       'erp5_full_text_myisam_catalog',
       'erp5_core_proxy_field_legacy',
       'erp5_base',
       'erp5_workflow',
       'erp5_configurator',
-      'vifib_configurator',
+      'vifib_configurator', # XXX: rebrand
       'erp5_simulation',
       'erp5_administration',
       'erp5_pdm',
@@ -88,30 +88,6 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_ui_test_core',
       'erp5_ui_test',
       'slapos_cloud',
-      'vifib_slapos_rest_api_tool_portal_type',
-      'vifib_slapos_rest_api',
-      'vifib_slapos_rest_api_v1',
-      'vifib_slapos_accounting',
-      'vifib_mysql_innodb_catalog',
-      'vifib_base',
-      'vifib_open_trade',
-      'vifib_slap',
-      'vifib_forge_release',
-      'vifib_software_pdm',
-      'vifib_payzen',
-      'vifib_web',
-      'vifib_web_ui_test',
-      'vifib_l10n_fr',
-      'vifib_data',
-      'vifib_data_category',
-      'vifib_data_web',
-      'vifib_data_payzen',
-      'vifib_data_simulation',
-      'vifib_agent',
-      'vifib_slapos_capacity',
-      'vifib_erp5',
-      'vifib_test',
-      'vifib_slapos_rest_api_v1_test',
     ]
     return result
 
