@@ -673,6 +673,7 @@ class SlapTool(BaseTool):
            computer_partition_document.getRelativeUrl())
 
     if software_instance is not None:
+      slap_partition._instance_guid = software_instance.getReference()
       # trick client side, that data has been synchronised already for given
       # document
       slap_partition._synced = True
@@ -810,6 +811,7 @@ class SlapTool(BaseTool):
            computer_partition_document.getRelativeUrl())
 
     if software_instance is not None:
+      slap_partition._instance_guid = software_instance.getReference()
       state = software_instance.getSlapState()
       if state == "stop_requested":
         slap_partition._requested_state = 'stopped'
