@@ -75,8 +75,10 @@ class Recipe(GenericBaseRecipe):
     fm.modify('maildir', os.path.join(vardir, 'spool', 'mioga', 'maildir'))
     fm.modify('maildirerror', os.path.join(vardir, 'spool', 'mioga', 'error'))
     fm.modify('mailfifo', os.path.join(vardir, 'spool', 'mioga', 'fifo'))
-    fm.modify('notifierfifo', os.path.join(vardir, 'spool', 'mioga', 'notifier'))
-    fm.modify('searchenginefifo', os.path.join(vardir, 'spool', 'mioga', 'searchengine'))
+    notifier_fifo = os.path.join(vardir, 'spool', 'mioga', 'notifier')
+    fm.modify('notifierfifo', notifier_fifo)
+    searchengine_fifo = os.path.join(vardir, 'spool', 'mioga', 'searchengine')
+    fm.modify('searchenginefifo', searchengine_fifo)
     fm.modify('dbi_passwd', self.options['db_password'])
     fm.modify('db_host', self.options['db_host'])
     fm.modify('db_port', self.options['db_port'])
@@ -88,6 +90,7 @@ class Recipe(GenericBaseRecipe):
     self.removeIfExisting('config.mk')
     if os.path.isdir('web/conf/apache'):
       shutil.rmtree('web/conf/apache')
+
 
     environ = os.environ
     environ['PATH'] = ':'.join([self.options['perl_bin'],           # priority!
@@ -189,12 +192,30 @@ Include conf/extra/httpd-autoindex.conf
     # )
     path_list.append(os.path.abspath(self.options['httpd_conf']))
 
-    wrapper = self.createPythonScript(self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.execute',
-        [self.options['httpd_binary'], '-f', self.options['httpd_conf'],
-         '-DFOREGROUND']
+    services_dir = self.options['services_dir']
+
+    httpd_wrapper = self.createPythonScript(
+      os.path.join(services_dir, 'httpd_wrapper'),
+      'slapos.recipe.librecipe.execute.execute',
+      [self.options['httpd_binary'], '-f', self.options['httpd_conf'],
+       '-DFOREGROUND']
     )
-    path_list.append(wrapper)
+    path_list.append(httpd_wrapper)
+
+    for fifo in [notifier_fifo, searchengine_fifo]:
+      if os.path.exists(fifo):
+        if not stat.S_ISFIFO(os.stat(fifo).st_mode):
+          raise Exception("The file "+fifo+" exists but is not a FIFO.")
+      else:
+        os.mkfifo(fifo, 0600)
+
+    notifier_wrapper = self.createPythonScript(
+      os.path.join(services_dir, 'notifier_wrapper'),
+      'slapos.recipe.librecipe.execute.execute',
+      [ os.path.join(self.options['mioga_compile_dir'], 'bin', 'notifier', 'notifier.pl'),
+        os.path.join(mioga_base, 'conf', 'Mioga.conf') ]
+    )
+    path_list.append(notifier_wrapper)
 
     if os.path.exists(self.options['pid_file']):
       # Reload apache configuration
