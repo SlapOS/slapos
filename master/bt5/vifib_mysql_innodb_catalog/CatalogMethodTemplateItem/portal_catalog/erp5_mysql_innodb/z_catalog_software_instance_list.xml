@@ -67,9 +67,11 @@ WHERE\n
 \n
 <dtml-let row_list="[]">\n
   <dtml-in prefix="loop" expr="_.range(_.len(uid))">\n
-    <dtml-call expr="row_list.append([\n
+    <dtml-if expr="getSpecialiseUid[loop_item]">\n
+      <dtml-call expr="row_list.append([\n
                 uid[loop_item],\n
                 getSpecialiseUid[loop_item]])">\n
+    </dtml-if>\n
   </dtml-in>\n
 \n
   <dtml-if "row_list">\n
