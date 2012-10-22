@@ -48,6 +48,7 @@ from Products.ERP5Type.ERP5Type \
   import ERP5TYPE_SECURITY_GROUP_ID_GENERATION_SCRIPT
 from Products.ERP5Type.Cache import CachingMethod
 from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
+from Products.ERP5Security.ERP5UserManager import getValidAssignmentList
 
 #Form for new plugin in ZMI
 manage_addVifibMachineAuthenticationPluginForm = PageTemplateFile(
@@ -148,6 +149,10 @@ class VifibMachineAuthenticationPlugin(BasePlugin):
     user_list = self.getUserByLogin(login)
     if len(user_list) != 1:
       return None
+    user = user_list[0]
+    if user.getPortalType() == 'Person':
+      if len(getValidAssignmentList(user)) == 0:
+        return None
     return (login, login)
 
   def getUserByLogin(self, login):
