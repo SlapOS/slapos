@@ -44,6 +44,7 @@ from Products.ERP5Security.ERP5UserManager import SUPER_USER
 from ZODB.POSException import ConflictError
 from Products.ERP5Security.ERP5GroupManager import ConsistencyError, NO_CACHE_MODE
 from Products.ERP5Type.Cache import CachingMethod
+from Products.ERP5Security.ERP5UserManager import getValidAssignmentList
 
 # some usefull globals
 LOGGABLE_PORTAL_TYPE_LIST = ["Person", "Computer", "Software Instance"]
@@ -130,6 +131,10 @@ class SlapOSShadowAuthenticationPlugin(BasePlugin):
     user_list = self.getUserByLogin(login)
     if len(user_list) != 1:
       return None
+    user = user_list[0]
+    if user.getPortalType() == 'Person':
+      if len(getValidAssignmentList(user)) == 0:
+        return None
     return (login, login)
 
   def getUserByLogin(self, login):
