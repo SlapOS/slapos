@@ -77,8 +77,13 @@ def mergePASDictDifference(portal, d, fixit):\n
 \n
 pas_difference = mergePASDictDifference(portal, promise_dict, fixit)\n
 if len(pas_difference) != 0:\n
-  severity = 1\n
+  if fixit:\n
+    severity = 0\n
+  else:\n
+    severity = 1\n
   summary = "PAS not configured as expected"\n
+  if fixit:\n
+    summary += \' (fixed)\'\n
   detail = "Difference:\\n%s" % (\'\\n\'.join(pas_difference), )\n
 else:\n
   severity = 0\n
