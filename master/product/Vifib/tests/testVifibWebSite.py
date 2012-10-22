@@ -89,26 +89,6 @@ class TestVifibWebSite(testVifibMixin):
                       response.getHeader('content-type'))
     self.assertTrue("Enjoy Decentralized Cloud&nbsp;Computing" in response.getBody())
 
-  def test_05_checkFreeFiberAccess(self):
-    """
-    Test Free Fiber access
-    """
-    module = self.portal.getDefaultModule(self.web_site_portal_type)
-    web_site = getattr(module, 'fiber')
-    #Check web site is present
-    self.assertTrue(web_site is not None, "Website not found")
-
-    # Test anonymous
-    response = self.publish('/%s/%s' % \
-                    (self.portal.getId(), web_site.getRelativeUrl())
-                     )
-
-    self.assertEquals(HTTP_OK, response.getStatus())
-    self.assertEquals('text/html; charset=utf-8',
-                      response.getHeader('content-type'))
-    self.assertTrue("Je veux la fibre gratuite avec ViFiB" in
-        response.getBody())
-
   def test_06_checkERPypiAccess(self):
     """
     Test ERPypi access

@@ -7,7 +7,7 @@ acl_users/vifib_machine_authentication
 acl_users/vifib_shadow
 currency_module/EUR
 document_module/1
-notification_message_module/vifib*
+notification_message_module/vifib_hosting_hosting_request
 service_module/cpu_consumption
 service_module/memory_consumption
 service_module/vifib_instance_cleanup
