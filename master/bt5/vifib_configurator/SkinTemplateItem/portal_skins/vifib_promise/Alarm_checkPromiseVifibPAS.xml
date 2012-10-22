@@ -57,14 +57,17 @@
   \'IAuthenticationPlugin\': [\n
     \'Vifib Machine Authentication Plugin\',\n
     \'Vifib Shadow Authentication Plugin\',\n
+    \'SlapOS Shadow Authentication Plugin\',\n
   ],\n
   \'IGroupsPlugin\': [\n
     \'Vifib Machine Authentication Plugin\',\n
     \'Vifib Shadow Authentication Plugin\',\n
+    \'SlapOS Shadow Authentication Plugin\',\n
   ],\n
   \'IUserEnumerationPlugin\': [\n
     \'Vifib Machine Authentication Plugin\',\n
-    \'Vifib Shadow Authentication Plugin\'\n
+    \'Vifib Shadow Authentication Plugin\',\n
+    \'SlapOS Shadow Authentication Plugin\',\n
   ]\n
 }\n
 context.Alarm_checkPromiseVifibPASBase(promise_dict, tag, fixit=fixit, **kw)\n
