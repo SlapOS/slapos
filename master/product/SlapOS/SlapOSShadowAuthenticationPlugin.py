@@ -83,7 +83,6 @@ def getUserByLogin(portal, login):
     return []
   result = portal.portal_catalog.unrestrictedSearchResults(
       portal_type=LOGGABLE_PORTAL_TYPE_LIST,
-      validation_state="validated",
       reference=dict(query=login, key='ExactMatch'),
       select_expression='reference')
   # XXX: Here, we filter catalog result list ALTHOUGH we did pass
@@ -186,8 +185,7 @@ class SlapOSShadowAuthenticationPlugin(BasePlugin):
         # get the loggable document from its reference - no security check needed
         catalog_result = self.portal_catalog.unrestrictedSearchResults(
             portal_type=self.loggable_portal_type_list,
-            validation_state='validated',
-            reference=user_name)
+            reference=dict(query=user_name, key='ExactMatch'))
         if len(catalog_result) != 1: # we won't proceed with groups
           if len(catalog_result) > 1: # configuration is screwed
             raise ConsistencyError, 'There is more than one of %s whose \
