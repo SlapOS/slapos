@@ -30,7 +30,7 @@ import unittest
 import random
 import transaction
 from AccessControl import getSecurityManager
-from Products.SlapOS.tests.SlapOSMixin import testSlapOSMixin
+from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
 
 class TestSlapOSShadow(testSlapOSMixin):
   def _generateRandomUniqueReference(self, portal_type):
