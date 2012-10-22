@@ -151,6 +151,7 @@ class SlapTool(BaseTool):
   ####################################################
 
   def _isTestRun(self):
+    return False
     if self.getPortalObject().MailHost.__class__.__name__ == 'DummyMailHost':
       return True
     return False
@@ -280,15 +281,17 @@ class SlapTool(BaseTool):
     self._logAccess(user, user, '#access %s' % computer_id)
     result = self._getComputerInformation(computer_id, user, False)
 
-    # Keep in cache server for 7 days
-    self.REQUEST.response.setStatus(200)
-    self.REQUEST.response.setHeader('Cache-Control',
-                                    'public, max-age=1, stale-if-error=604800')
-    self.REQUEST.response.setHeader('Vary',
-                                    'REMOTE_USER')
-    self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
-    self.REQUEST.response.setBody(result)
-    return self.REQUEST.response
+    if self.REQUEST.response.getStatus() == 200:
+      # Keep in cache server for 7 days
+      self.REQUEST.response.setHeader('Cache-Control',
+                                      'public, max-age=1, stale-if-error=604800')
+      self.REQUEST.response.setHeader('Vary',
+                                      'REMOTE_USER')
+      self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
+      self.REQUEST.response.setBody(result)
+      return self.REQUEST.response
+    else:
+      return result
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getFullComputerInformation')
