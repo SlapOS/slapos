@@ -11,7 +11,6 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
     'vifib_slapos_rest_api_tool_portal_type',
     'vifib_slapos_rest_api_v1_test',
     'vifib_base',
-    'vifib_core',
     'vifib_data',
     'vifib_data_category',
     'vifib_data_web',

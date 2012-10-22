@@ -104,7 +104,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_slapos_rest_api_v1',
       'vifib_slapos_accounting',
       'vifib_mysql_innodb_catalog',
-      'vifib_core',
       'vifib_base',
       'vifib_open_trade',
       'vifib_slap',
