@@ -382,6 +382,8 @@ class Recipe(BaseSlapRecipe):
         name + '.lock')
     apache_conf['document_root'] = os.path.join(self.data_root_directory,
         'htdocs')
+    apache_conf['instance_home'] = os.path.join(self.work_directory)
+    apache_conf['httpd_home'] = self.options['httpd_home']
     apache_conf['ip_list'] = ip_list
     apache_conf['port'] = port
     apache_conf['server_admin'] = 'admin@'
