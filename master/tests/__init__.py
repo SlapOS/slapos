@@ -27,5 +27,6 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
   ]
 
 class SlapOSCloud(SavedTestSuite, ProjectTestSuite):
-  _saved_test_id = 'Products.Vifib.tests.VifibMixin.testVifibMixin'
+  _product_list = ['SlapOS']
+  _saved_test_id = 'Products.SlapOS.tests.SlapOSMixin.testSlapOSMixin'
   _bt_list = ['slapos_cloud']
