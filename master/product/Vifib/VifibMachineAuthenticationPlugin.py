@@ -80,6 +80,10 @@ def getUserByLogin(portal, login):
   result = portal.portal_catalog.unrestrictedSearchResults(
     query=ComplexQuery(machine_query, person_query, operator="OR"),
     select_expression='reference')
+  result = [x for x in result if \
+    (x.getPortalType() == 'Person' and x.getValidationState() != 'deleted') or \
+    (x.getPortalType() in ("Computer", "Software Instance") and \
+      x.getValidationState() == 'validated')]
   # XXX: Here, we filter catalog result list ALTHOUGH we did pass
   # parameters to unrestrictedSearchResults to restrict result set.
   # This is done because the following values can match person with
