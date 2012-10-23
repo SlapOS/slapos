@@ -76,9 +76,7 @@
         <item>
             <key> <string>categories</string> </key>
             <value>
-              <tuple>
-                <string>predecessor/software_instance_module/template_software_instance</string>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>
@@ -105,6 +103,30 @@
             <key> <string>language</string> </key>
             <value>
               <none/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_hour</string> </key>
+            <value>
+              <tuple>
+                <int>0</int>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_minute</string> </key>
+            <value>
+              <tuple>
+                <int>0</int>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_month_day</string> </key>
+            <value>
+              <tuple>
+                <int>23</int>
+              </tuple>
             </value>
         </item>
         <item>

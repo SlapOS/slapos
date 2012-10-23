@@ -1,4 +1,6 @@
 acl_users/slapos_shadow
 computer_module/template_computer
+computer_module/template_computer/**
+hosting_subscription_module/template_hosting_subscription
 person_module/template_member
 person_module/template_member/**
