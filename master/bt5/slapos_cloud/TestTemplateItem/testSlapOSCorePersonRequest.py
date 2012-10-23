@@ -1,10 +1,10 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-from Products.Vifib.tests.testVifibSlapWebService import \
-  TestVifibSlapWebServiceMixin
+from Products.SlapOS.tests.testSlapOSMixin import \
+  testSlapOSMixin
 import transaction
 from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
-class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
+class TestSlapOSCorePersonRequest(testSlapOSMixin):
 
   def generateNewId(self):
     return self.getPortalObject().portal_ids.generateNewId(
