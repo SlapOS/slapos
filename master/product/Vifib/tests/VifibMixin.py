@@ -266,7 +266,7 @@ class testVifibMixin(ERP5TypeTestCase):
   def getDefaultSitePreferenceId(self):
     """Default id, usefull method to override
     """
-    return "vifib_default_system_preference"
+    return "slapos_default_system_preference"
 
   def prepareTestUsers(self):
     """
