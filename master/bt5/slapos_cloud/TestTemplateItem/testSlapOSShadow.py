@@ -83,6 +83,7 @@ class TestSlapOSShadow(testSlapOSMixin):
 
 class TestSlapOSShadowPerson(TestSlapOSShadow):
   def test_shadow_Person(self):
+    self.login()
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
     shadow_reference = 'SHADOW-%s' % reference
@@ -103,6 +104,7 @@ class TestSlapOSShadowPerson(TestSlapOSShadow):
       user.getGroups())
 
   def test_shadow_Person_inactive(self):
+    self.login()
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
     shadow_reference = 'SHADOW-%s' % reference
@@ -117,6 +119,7 @@ class TestSlapOSShadowPerson(TestSlapOSShadow):
 
 class TestSlapOSShadowComputer(TestSlapOSShadow):
   def test_shadow_Computer(self):
+    self.login()
     reference = self._generateRandomUniqueReference('Computer')
     shadow_reference = 'SHADOW-%s' % reference
 
@@ -135,6 +138,7 @@ class TestSlapOSShadowComputer(TestSlapOSShadow):
       user.getGroups())
 
   def test_shadow_Computer_inactive(self):
+    self.login()
     reference = self._generateRandomUniqueReference('Computer')
     shadow_reference = 'SHADOW-%s' % reference
 
@@ -148,6 +152,7 @@ class TestSlapOSShadowComputer(TestSlapOSShadow):
 class TestSlapOSShadowSoftwareInstance(TestSlapOSShadow):
   portal_type = 'Software Instance'
   def test_active(self):
+    self.login()
     reference = self._generateRandomUniqueReference(self.portal_type)
     shadow_reference = 'SHADOW-%s' % reference
 
@@ -166,6 +171,7 @@ class TestSlapOSShadowSoftwareInstance(TestSlapOSShadow):
       user.getGroups())
 
   def test_inactive(self):
+    self.login()
     reference = self._generateRandomUniqueReference(self.portal_type)
     shadow_reference = 'SHADOW-%s' % reference
 
