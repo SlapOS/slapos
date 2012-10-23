@@ -53,14 +53,6 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
         portal_type='Software Instance')
     self.tic()
 
-    # XXX: NOT FOR COMMIT
-    hosting_subscription.__ac_local_roles__[self.software_instance.getReference()] = ['Assignor']
-    self.software_instance.__ac_local_roles__[self.software_instance.getReference()] = ['Assignor']
-    transaction.commit()
-    hosting_subscription.recursiveImmediateReindexObject()
-    self.software_instance.recursiveImmediateReindexObject()
-    # XXX: /NOT FOR COMMIT
-
     # Login as new Software Instance
     self.login(self.software_instance.getReference())
 
