@@ -174,7 +174,7 @@ It\'s the lowest priority one; ie. managers can create higher priority preferenc
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_default_site_preference</string> </value>
+            <value> <string>slapos_default_site_preference</string> </value>
         </item>
         <item>
             <key> <string>id_group</string> </key>

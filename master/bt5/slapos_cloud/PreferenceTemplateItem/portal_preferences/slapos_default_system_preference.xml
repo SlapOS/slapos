@@ -75,7 +75,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_default_system_preference</string> </value>
+            <value> <string>slapos_default_system_preference</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
