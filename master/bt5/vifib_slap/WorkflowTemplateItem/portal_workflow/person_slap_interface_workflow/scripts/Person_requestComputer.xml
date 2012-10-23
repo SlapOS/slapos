@@ -72,7 +72,15 @@ if (portal.portal_activities.countMessageWithTag(tag) > 0):\n
   raise NotImplementedError(tag)\n
 \n
 computer_portal_type = "Computer"\n
-computer = portal.portal_catalog.getResultValue(portal_type=computer_portal_type, title=computer_title)\n
+computer_list = portal.portal_catalog.portal_catalog(portal_type=computer_portal_type, title=computer_title, limit=2)\n
+\n
+if len(computer_list) == 2:\n
+  raise NotImplementedError\n
+elif len(computer_list) == 1:\n
+  computer = computer_list[0]\n
+else:\n
+  computer = None\n
+\n
 if computer is None:\n
   reference = "COMP-%s" % portal.portal_ids.generateNewId(\n
     id_group=\'slap_computer_reference\',\n
