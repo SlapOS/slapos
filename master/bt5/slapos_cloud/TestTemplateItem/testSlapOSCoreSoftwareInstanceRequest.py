@@ -148,3 +148,171 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
         requested_instance.getSlaXml())
     self.assertEqual(request_kw['software_type'],
         requested_instance.getSourceReference())
+
+  def test_request_sameTitle(self):
+    # check that correct request does not raise
+    self.assertRaises(ValueError, self.software_instance.requestInstance,
+        **self.request_kw)
+
+  def test_request_shared_True(self):
+    request_kw = self.request_kw.copy()
+    # in order to have unique requested title
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    request_kw['shared'] = True
+
+    # check that correct request does not raise
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+    self.assertNotEqual(None, requested_instance)
+
+    self.assertEqual(request_kw['software_title'],
+        requested_instance.getTitle())
+    self.assertEqual('Slave Instance',
+        requested_instance.getPortalType())
+    self.assertEqual('validated',
+        requested_instance.getValidationState())
+    self.assertEqual('start_requested',
+        requested_instance.getSlapState())
+    self.assertEqual(request_kw['software_release'],
+        requested_instance.getRootSoftwareReleaseUrl())
+    self.assertEqual(request_kw['instance_xml'],
+        requested_instance.getTextContent())
+    self.assertEqual(request_kw['sla_xml'],
+        requested_instance.getSlaXml())
+    self.assertEqual(request_kw['software_type'],
+        requested_instance.getSourceReference())
+
+  def test_request_shared_unsupported(self):
+    request_kw = self.request_kw.copy()
+    # in order to have unique requested title
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    request_kw['shared'] = 'True'
+
+    self.assertRaises(ValueError, self.software_instance.requestInstance,
+        **request_kw)
+
+  def test_request_unindexed(self):
+    request_kw = self.request_kw.copy()
+    # in order to have unique requested title
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+
+    # check that correct request does not raise
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+    self.assertNotEqual(None, requested_instance)
+
+    self.assertEqual(request_kw['software_title'],
+        requested_instance.getTitle())
+    self.assertEqual('Software Instance',
+        requested_instance.getPortalType())
+    self.assertEqual('validated',
+        requested_instance.getValidationState())
+    self.assertEqual('start_requested',
+        requested_instance.getSlapState())
+    self.assertEqual(request_kw['software_release'],
+        requested_instance.getRootSoftwareReleaseUrl())
+    self.assertEqual(request_kw['instance_xml'],
+        requested_instance.getTextContent())
+    self.assertEqual(request_kw['sla_xml'],
+        requested_instance.getSlaXml())
+    self.assertEqual(request_kw['software_type'],
+        requested_instance.getSourceReference())
+
+    transaction.commit()
+
+    self.assertRaises(NotImplementedError, self.software_instance.requestInstance,
+        **request_kw)
+
+  def test_request_double(self):
+    request_kw = self.request_kw.copy()
+    # in order to have unique requested title
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+
+    # check that correct request does not raise
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+    self.assertNotEqual(None, requested_instance)
+
+    self.assertEqual(request_kw['software_title'],
+        requested_instance.getTitle())
+    self.assertEqual('Software Instance',
+        requested_instance.getPortalType())
+    self.assertEqual('validated',
+        requested_instance.getValidationState())
+    self.assertEqual('start_requested',
+        requested_instance.getSlapState())
+    self.assertEqual(request_kw['software_release'],
+        requested_instance.getRootSoftwareReleaseUrl())
+    self.assertEqual(request_kw['instance_xml'],
+        requested_instance.getTextContent())
+    self.assertEqual(request_kw['sla_xml'],
+        requested_instance.getSlaXml())
+    self.assertEqual(request_kw['software_type'],
+        requested_instance.getSourceReference())
+
+    self.tic()
+
+    # check that correct request does not raise
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance2 = self.software_instance.REQUEST.get(
+        'request_instance')
+    self.assertNotEqual(None, requested_instance2)
+    self.assertEqual(requested_instance2.getRelativeUrl(),
+      requested_instance.getRelativeUrl())
+
+    self.assertEqual(request_kw['software_title'],
+        requested_instance2.getTitle())
+    self.assertEqual('Software Instance',
+        requested_instance2.getPortalType())
+    self.assertEqual('validated',
+        requested_instance2.getValidationState())
+    self.assertEqual('start_requested',
+        requested_instance2.getSlapState())
+    self.assertEqual(request_kw['software_release'],
+        requested_instance2.getRootSoftwareReleaseUrl())
+    self.assertEqual(request_kw['instance_xml'],
+        requested_instance2.getTextContent())
+    self.assertEqual(request_kw['sla_xml'],
+        requested_instance2.getSlaXml())
+    self.assertEqual(request_kw['software_type'],
+        requested_instance2.getSourceReference())
+
+  def test_request_duplicated(self):
+    request_kw = self.request_kw.copy()
+    # in order to have unique requested title
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+
+    duplicate = self.software_instance.Base_createCloneDocument(batch_mode=1)
+    duplicate.edit(
+        reference='TESTSI-%s' % self.generateNewId(),
+        title=request_kw['software_title'])
+    duplicate.validate()
+    self.portal.portal_workflow._jumpToStateFor(duplicate, 'start_requested')
+
+    duplicate2 = self.software_instance.Base_createCloneDocument(batch_mode=1)
+    duplicate2.edit(
+        reference='TESTSI-%s' % self.generateNewId(),
+        title=request_kw['software_title'])
+    duplicate2.validate()
+    self.portal.portal_workflow._jumpToStateFor(duplicate2, 'start_requested')
+
+    self.software_instance.getSpecialiseValue(\
+      portal_type='Hosting Subscription').edit(
+        predecessor_list=[
+          duplicate.getRelativeUrl(),
+          duplicate2.getRelativeUrl(),
+          self.software_instance.getRelativeUrl()
+        ]
+      )
+    self.tic()
+
+    # check that correct request does not raise
+    self.assertRaises(ValueError, self.software_instance.requestInstance,
+        **request_kw)
