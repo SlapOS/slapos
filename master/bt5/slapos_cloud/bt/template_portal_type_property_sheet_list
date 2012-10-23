@@ -5,6 +5,7 @@ Slave Instance | SlaveInstanceConstraint
 Slave Instance | SoftwareInstance
 Slave Instance | TextDocument
 Slave Instance | VariationRange
+Software Installation | VariationRange
 Software Instance | Reference
 Software Instance | SoftwareInstance
 Software Instance | SoftwareInstanceConstraint

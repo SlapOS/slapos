@@ -10,6 +10,9 @@
   <item>TextDocument</item>
   <item>VariationRange</item>
  </portal_type>
+ <portal_type id="Software Installation">
+  <item>VariationRange</item>
+ </portal_type>
  <portal_type id="Software Instance">
   <item>Reference</item>
   <item>SoftwareInstance</item>
