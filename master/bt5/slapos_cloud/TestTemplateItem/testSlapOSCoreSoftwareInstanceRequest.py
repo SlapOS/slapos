@@ -25,10 +25,9 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.setupPortalCertificateAuthority()
 
     safe_xml = '<?xml version="1.0" encoding="utf-8"?><instance></instance>'
-    title = self.generateNewSoftwareTitle()
     self.request_kw = dict(
         software_release=self.generateNewSoftwareReleaseUrl(),
-        software_title=title,
+        software_title=self.generateNewSoftwareTitle(),
         software_type=self.generateNewSoftwareType(),
         instance_xml=safe_xml,
         sla_xml=safe_xml,
@@ -39,18 +38,36 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     # prepare part of tree
     hosting_subscription = portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    self.software_instance = portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+
 
     hosting_subscription.edit(
-        title=title,
-        reference="TESTHS-%s" % new_id
+        title=self.request_kw['software_title'],
+        reference="TESTHS-%s" % new_id,
+        root_software_release_url=self.request_kw['software_release'],
+        source_reference=self.request_kw['software_type'],
+        text_content=self.request_kw['instance_xml'],
+        sla_xml=self.request_kw['sla_xml'],
+        root_slave=self.request_kw['shared'],
+        predecessor=self.software_instance.getRelativeUrl()
     )
     hosting_subscription.updateLocalRolesOnSecurityGroups()
     hosting_subscription.validate()
-    hosting_subscription.requestStart(**self.request_kw)
-    hosting_subscription.requestInstance(**self.request_kw)
+    self.portal.portal_workflow._jumpToStateFor(hosting_subscription, 'start_requested')
 
-    self.software_instance = hosting_subscription.getPredecessorValue(
-        portal_type='Software Instance')
+    self.software_instance.edit(
+        title=self.request_kw['software_title'],
+        reference="TESTSI-%s" % new_id,
+        root_software_release_url=self.request_kw['software_release'],
+        source_reference=self.request_kw['software_type'],
+        text_content=self.request_kw['instance_xml'],
+        sla_xml=self.request_kw['sla_xml'],
+        specialise=hosting_subscription.getRelativeUrl()
+    )
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance, 'start_requested')
+    self.software_instance.validate()
+    self.software_instance.updateLocalRolesOnSecurityGroups()
     self.tic()
 
     # Login as new Software Instance
