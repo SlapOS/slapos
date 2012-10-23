@@ -6,15 +6,11 @@ log_directory = %(log_directory)s
 run_directory = %(run_directory)s
 proxy_host = %(proxy_host)s
 proxy_port = %(proxy_port)s
-test_suite_title = %(test_suite_title)s
-test_suite = %(test_suite)s
 node_quantity = %(node_quantity)s
 test_node_title = %(test_node_title)s
-project_title= %(project_title)s
 ipv4_address = %(ipv4_address)s
 ipv6_address = %(ipv6_address)s
 test_suite_master_url = %(test_suite_master_url)s
-bt5_path = %(bt5_path)s
 
 # Binaries
 git_binary = %(git_binary)s

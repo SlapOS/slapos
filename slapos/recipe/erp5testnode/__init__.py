@@ -39,14 +39,6 @@ class Recipe(GenericBaseRecipe):
     CONFIG = {k.replace('-', '_'): v for k, v in options.iteritems()}
     CONFIG['PATH'] = os.environ['PATH']
 
-    if CONFIG['bt5_path']:
-      additional_bt5_repository_id_list = CONFIG['bt5_path'].split(",")
-      CONFIG['bt5_path'] = ''
-      for bt5_repository_id in additional_bt5_repository_id_list:
-        id_path = os.path.join(CONFIG['slapos_directory'], bt5_repository_id)
-        bt_path = os.path.join(id_path, "bt5")
-        CONFIG['bt5_path'] += "%s,%s," % (id_path, bt_path)
-
     if self.options['instance-dict']:
       config_instance_dict = ConfigParser.ConfigParser()
       config_instance_dict.add_section('instance_dict')
@@ -58,32 +50,11 @@ class Recipe(GenericBaseRecipe):
       config_instance_dict.write(value)
       CONFIG['instance_dict'] = value.getvalue()
 
-    vcs_repository_list = json.loads(self.options['vcs-repository-list'])
-    config_repository_list = ConfigParser.ConfigParser()
-    i = 0
-    for repository in vcs_repository_list:
-      section_name = 'vcs_repository_%d' % i
-      config_repository_list.add_section(section_name)
-      config_repository_list.set(section_name, 'url', repository['url'])
-      if 'branch' in repository:
-        config_repository_list.set(section_name, 'branch', repository['branch'])
-      if 'profile_path' in repository:
-        config_repository_list.set(section_name, 'profile_path',
-                                   repository['profile_path'])
-      if 'buildout_section_id' in repository:
-        config_repository_list.set(section_name, 'buildout_section_id',
-                                   repository['buildout_section_id'])
-      i += 1
-
     software_path_list = json.loads(self.options['software-path-list'])
     if software_path_list:
       CONFIG["software_path_list"] = "[software_list]"
       CONFIG["software_path_list"] += \
           "\npath_list = %s" % ",".join(software_path_list)
-
-    value = StringIO.StringIO()
-    config_repository_list.write(value)
-    CONFIG['repository_list'] = value.getvalue()
 
     configuration_file = self.createFile(
       self.options['configuration-file'],
