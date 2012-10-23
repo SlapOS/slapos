@@ -1,4 +1,13 @@
 <base_category_list>
+ <portal_type id="Computer">
+  <item>source_administration</item>
+ </portal_type>
+ <portal_type id="Computer Model">
+  <item>source_administration</item>
+ </portal_type>
+ <portal_type id="Computer Network">
+  <item>source_administration</item>
+ </portal_type>
  <portal_type id="Hosting Subscription Module">
   <item>business_application</item>
  </portal_type>
