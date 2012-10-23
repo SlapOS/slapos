@@ -1,5 +1,3 @@
 acl_users/slapos_shadow
 person_module/template_member
 person_module/template_member/**
-software_release_module/template_software_release
-software_release_module/template_software_release

@@ -19,28 +19,6 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
 
     self.setupPortalCertificateAuthority()
 
-    # Clone software release document
-    software_release = portal.software_release_module.template_software_release.\
-                                 Base_createCloneDocument(batch_mode=1)
-    software_release.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      url_string=self.generateNewSoftwareReleaseUrl(),
-    )
-    software_release.publish()
-    self.software_release = software_release
-
-    new_id = self.generateNewId()
-    software_release = portal.software_release_module.template_software_release.\
-                                 Base_createCloneDocument(batch_mode=1)
-    software_release.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      url_string=self.generateNewSoftwareReleaseUrl(),
-    )
-    software_release.publish()
-    self.software_release2 = software_release
-
     # Clone person document
     person_user = portal.person_module.template_member.\
                                  Base_createCloneDocument(batch_mode=1)
@@ -69,7 +47,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_requiredParameter(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>
@@ -165,7 +143,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_acceptedState(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>
@@ -226,7 +204,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_returnHostingSubscriptionUrl(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>
@@ -253,7 +231,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_createHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>
@@ -278,7 +256,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
       state=state,
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    self.assertEquals(software_release, 
+    self.assertEquals(software_release,
                       hosting_subscription.getRootSoftwareReleaseUrl())
     self.assertEquals(software_title, hosting_subscription.getTitle())
     self.assertEquals(software_type, hosting_subscription.getSourceReference())
@@ -293,7 +271,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_HostingSubscriptionNotReindexed(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>
@@ -329,7 +307,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_updateHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>
@@ -355,7 +333,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
     transaction.commit()
     self.tic()
 
-    software_release2 = self.software_release.getUrlString()
+    software_release2 = self.generateNewSoftwareReleaseUrl()
     software_type2 = "test2"
     instance_xml2 = """<?xml version='1.0' encoding='utf-8'?>
 <instance>
@@ -384,7 +362,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
     self.assertEquals(hosting_subscription_reference,
                       hosting_subscription2.getReference())
 
-    self.assertEquals(software_release2, 
+    self.assertEquals(software_release2,
                       hosting_subscription.getRootSoftwareReleaseUrl())
     self.assertEquals(software_title, hosting_subscription.getTitle())
     self.assertEquals(software_type2, hosting_subscription.getSourceReference())
@@ -397,7 +375,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_duplicatedHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>
@@ -440,7 +418,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_HostingSubscriptionNewTitle(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version='1.0' encoding='utf-8'?>
@@ -465,7 +443,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
 
     transaction.commit()
 
-    software_release2 = self.software_release.getUrlString()
+    software_release2 = self.generateNewSoftwareReleaseUrl()
     software_title2 = "test2"
     software_type2 = "test2"
     instance_xml2 = """<?xml version='1.0' encoding='utf-8'?>
@@ -495,7 +473,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
     self.assertNotEquals(hosting_subscription.getReference(),
                       hosting_subscription2.getReference())
 
-    self.assertEquals(software_release2, 
+    self.assertEquals(software_release2,
                       hosting_subscription2.getRootSoftwareReleaseUrl())
     self.assertEquals(software_title2, hosting_subscription2.getTitle())
     self.assertEquals(software_type2, hosting_subscription2.getSourceReference())
@@ -508,7 +486,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_deletedHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>
@@ -547,7 +525,7 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
   def test_Person_requestSoftwareInstance_noConflictWithDeletedHostingSubscription(self):
     person = self.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()
 
-    software_release = self.software_release.getUrlString()
+    software_release = self.generateNewSoftwareReleaseUrl()
     software_title = "test"
     software_type = "test"
     instance_xml = """<?xml version="1.0" encoding="utf-8"?>
@@ -593,5 +571,5 @@ class TestSlapOSCorePersonRequest(TestVifibSlapWebServiceMixin):
     )
     hosting_subscription2 = person.REQUEST.get('request_hosting_subscription')
     self.assertEquals("start_requested", hosting_subscription2.getSlapState())
-    self.assertNotEquals(hosting_subscription.getRelativeUrl(), 
+    self.assertNotEquals(hosting_subscription.getRelativeUrl(),
                          hosting_subscription2.getRelativeUrl())
