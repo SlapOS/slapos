@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>portal = context.getPortalObject()\n
+shacache = getattr(portal.web_site_module, \'shacache\', None)\n
+shadir = getattr(portal.web_site_module, \'shadir\', None)\n
+\n
+\n
+if shacache is None:\n
+  shacache = portal.web_site_module.newContent(id=\'shacache\', \n
+                                        title="Shacache")\n
+\n
+if shadir is None:\n
+  shadir = portal.web_site_module.newContent(id=\'shadir\',\n
+                                      title="Shadir")\n
+\n
+shacache.setSkinSelectionName("SHACACHE")\n
+shadir.setSkinSelectionName("SHADIR")\n
+\n
+if portal.portal_workflow.isTransitionPossible(shacache, "publish"):\n
+  shacache.publish()\n
+\n
+if portal.portal_workflow.isTransitionPossible(shadir, "publish"):\n
+  shadir.publish()\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>**kw</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Alarm_installShacacheWebSite</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
