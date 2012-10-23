@@ -4,7 +4,6 @@ Accounting Period
 Accounting Transaction
 Accounting Transaction Module
 Acknowledgement
-Assignment
 Balance Transaction
 Bank Account
 Business Process
@@ -14,15 +13,7 @@ Campaign Module
 Cash Register
 Component
 Component Module
-Computer
-Computer Model
-Computer Model Module
-Computer Module
-Computer Network
-Computer Network Module
-Computer Partition
 Contribution Tool
-Credential Update Module
 Credit Card
 Currency
 Currency Module
@@ -33,8 +24,6 @@ Event Module
 Fax Message
 Gadget
 Gadget Tool
-Hosting Subscription
-Hosting Subscription Module
 Image Module
 Integration Site
 Integration Tool
@@ -54,13 +43,9 @@ Notification Message
 Notification Message Module
 Open Sale Order
 Open Sale Order Module
-Organisation
-Organisation Module
 PDF
 Payment Transaction
 Payzen Event
-Person
-Person Module
 Phone Call
 Presentation
 Product
@@ -87,15 +72,8 @@ Service
 Service Module
 Short Message
 Site Message
-Slave Instance
-Software Installation
-Software Installation Module
-Software Instance
-Software Instance Module
 Software Product
 Software Product Module
-Software Release
-Software Release Module
 Spreadsheet
 Support Request
 Support Request Module
