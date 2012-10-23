@@ -25,5 +25,3 @@ PATH = %(PATH)s
 %(software_path_list)s
 
 %(instance_dict)s
-
-%(repository_list)s
