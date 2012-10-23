@@ -18,6 +18,7 @@ campaign_module
 component_module
 currency_module
 currency_module/EUR
+data_set_module
 document_ingestion_module
 document_module
 event_module
