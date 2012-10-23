@@ -11,7 +11,7 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
     'vifib_slapos_rest_api_v1_test',
     'vifib_base',
     'vifib_data',
-    'vifib_data_category',
+    'slapos_category',
     'vifib_data_web',
     'vifib_erp5',
     'vifib_mysql_innodb_catalog',
