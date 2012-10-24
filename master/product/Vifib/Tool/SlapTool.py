@@ -1032,6 +1032,7 @@ class SlapTool(BaseTool):
     self.REQUEST.response.setHeader('Vary',
                                     'REMOTE_USER')
     self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
+    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
     self.REQUEST.response.setBody(xml_marshaller.xml_marshaller.dumps(d))
     return self.REQUEST.response
 
