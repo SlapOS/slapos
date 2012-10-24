@@ -35,8 +35,7 @@ def Item_activateFillComputerInformationCache(state_change):
   try:
     newSecurityManager(None,
       portal.acl_users.getUserById(computer_reference))
-    for full in (True, False):
-      portal.portal_slap._activateFillComputerInformationCache(
-        computer_reference, computer_reference, full)
+    portal.portal_slap._activateFillComputerInformationCache(
+        computer_reference, computer_reference)
   finally:
     setSecurityManager(sm)

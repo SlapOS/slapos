@@ -161,14 +161,14 @@ class SlapTool(BaseTool):
       .getRamCacheRoot().get('computer_information_cache_factory')\
       .getCachePluginList()[0]
 
-  def _getCacheComputerInformation(self, computer_id, user, full):
+  def _getCacheComputerInformation(self, computer_id, user):
     self.REQUEST.response.setHeader('Content-Type', 'text/xml')
     slap_computer = Computer(computer_id)
     parent_uid = self._getComputerUidByReference(computer_id)
 
     slap_computer._computer_partition_list = []
     slap_computer._software_release_list = \
-       self._getSoftwareReleaseValueListForComputer(computer_id, full=full)
+       self._getSoftwareReleaseValueListForComputer(computer_id)
     for computer_partition in self.getPortalObject().portal_catalog.unrestrictedSearchResults(
                     parent_uid=parent_uid,
                     validation_state="validated",
@@ -177,13 +177,13 @@ class SlapTool(BaseTool):
           self._getSlapPartitionByPackingList(_assertACI(computer_partition.getObject())))
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
-  def _fillComputerInformationCache(self, computer_id, user, full):
-    key = '%s_%s_%s' % (full, computer_id, user)
+  def _fillComputerInformationCache(self, computer_id, user):
+    key = '%s_%s' % (computer_id, user)
     try:
       self._getCachePlugin().set(key, DEFAULT_CACHE_SCOPE,
         dict (
           time=time.time(),
-          data=self._getCacheComputerInformation(computer_id, user, full),
+          data=self._getCacheComputerInformation(computer_id, user),
         ),
         cache_duration=self.getPortalObject().portal_caches\
             .getRamCacheRoot().get('computer_information_cache_factory'\
@@ -215,13 +215,13 @@ class SlapTool(BaseTool):
       entry = entry.getValue()
     return entry
 
-  def _activateFillComputerInformationCache(self, computer_id, user, full):
-    tag = 'computer_information_cache_fill_%s_%s_%s' % (computer_id, user, full)
+  def _activateFillComputerInformationCache(self, computer_id, user):
+    tag = 'computer_information_cache_fill_%s_%s' % (computer_id, user)
     if self.getPortalObject().portal_activities.countMessageWithTag(tag) == 0:
       self.activate(activity='SQLQueue', tag=tag)._fillComputerInformationCache(
-        computer_id, user, full)
+        computer_id, user)
 
-  def _getComputerInformation(self, computer_id, user, full):
+  def _getComputerInformation(self, computer_id, user):
     user_document = _assertACI(self.getPortalObject().portal_catalog.unrestrictedGetResultValue(
       reference=user, portal_type=['Person', 'Computer', 'Software Instance']))
     user_type = user_document.getPortalType()
@@ -234,21 +234,21 @@ class SlapTool(BaseTool):
       if not self._isTestRun():
         cache_plugin = self._getCachePlugin()
         try:
-          key = '%s_%s_%s' % (full, computer_id, user)
+          key = '%s_%s' % (computer_id, user)
           entry = cache_plugin.get(key, DEFAULT_CACHE_SCOPE)
         except KeyError:
           entry = None
         if entry is not None and type(entry.getValue()) == type({}):
           result = entry.getValue()['data']
-          self._activateFillComputerInformationCache(computer_id, user, full)
+          self._activateFillComputerInformationCache(computer_id, user)
           return result
         else:
-          self._activateFillComputerInformationCache(computer_id, user, full)
+          self._activateFillComputerInformationCache(computer_id, user)
           self.REQUEST.response.setStatus(503)
           return self.REQUEST.response
       else:
-        return self._getCacheComputerInformation(computer_id, user, full)
-#      return self._getCacheComputerInformation(computer_id, user, full)
+        return self._getCacheComputerInformation(computer_id, user)
+#      return self._getCacheComputerInformation(computer_id, user)
     else:
       slap_computer._software_release_list = []
     if user_type == 'Software Instance':
@@ -269,31 +269,6 @@ class SlapTool(BaseTool):
     return xml_marshaller.xml_marshaller.dumps(slap_computer)
 
   security.declareProtected(Permissions.AccessContentsInformation,
-    'getComputerInformation')
-  def getComputerInformation(self, computer_id):
-    """Returns marshalled XML of all needed information for computer
-
-    Includes Software Releases, which may contain Software Instances.
-
-    Reuses slap library for easy marshalling.
-    """
-    user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
-    self._logAccess(user, user, '#access %s' % computer_id)
-    result = self._getComputerInformation(computer_id, user, False)
-
-    if self.REQUEST.response.getStatus() == 200:
-      # Keep in cache server for 7 days
-      self.REQUEST.response.setHeader('Cache-Control',
-                                      'public, max-age=1, stale-if-error=604800')
-      self.REQUEST.response.setHeader('Vary',
-                                      'REMOTE_USER')
-      self.REQUEST.response.setHeader('Last-Modified', rfc1123_date(DateTime()))
-      self.REQUEST.response.setBody(result)
-      return self.REQUEST.response
-    else:
-      return result
-
-  security.declareProtected(Permissions.AccessContentsInformation,
     'getFullComputerInformation')
   def getFullComputerInformation(self, computer_id):
     """Returns marshalled XML of all needed information for computer
@@ -304,7 +279,7 @@ class SlapTool(BaseTool):
     """
     user = self.getPortalObject().portal_membership.getAuthenticatedMember().getUserName()
     self._logAccess(user, user, '#access %s' % computer_id)
-    result = self._getComputerInformation(computer_id, user, True)
+    result = self._getComputerInformation(computer_id, user)
 
     if self.REQUEST.response.getStatus() == 200:
       # Keep in cache server for 7 days
@@ -340,6 +315,10 @@ class SlapTool(BaseTool):
                                     rfc1123_date(software_instance.getModificationDate()))
     self.REQUEST.response.setBody(result)
     return self.REQUEST.response
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+    'getComputerInformation')
+  getComputerInformation = getFullComputerInformation
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'getComputerPartitionStatus')
@@ -1420,8 +1399,7 @@ class SlapTool(BaseTool):
     }
 
   @UnrestrictedMethod
-  def _getSoftwareReleaseValueListForComputer(self, computer_reference,
-                                              full=False):
+  def _getSoftwareReleaseValueListForComputer(self, computer_reference):
     """Returns list of Software Releases documentsfor computer"""
     computer_document = self._getComputerDocument(computer_reference)
     portal = self.getPortalObject()
