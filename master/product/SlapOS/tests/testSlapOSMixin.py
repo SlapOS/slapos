@@ -33,8 +33,6 @@ import Products.Vifib.tests.VifibMixin
 
 class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
   def afterSetUp(self):
-    self.setupPortalCertificateAuthority()
-    self.setUpMemcached()
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
     self.portal.portal_caches._p_changed = 1
     transaction.commit()

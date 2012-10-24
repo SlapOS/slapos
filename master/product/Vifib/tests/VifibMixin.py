@@ -164,10 +164,6 @@ class testVifibMixin(ERP5TypeTestCase):
 
   def setupPortalCertificateAuthority(self):
     """Sets up portal_certificate_authority"""
-    if self.isLiveTest():
-      # nothing to do in case of being called as live test
-      return
-
     if not self.portal.hasObject('portal_certificate_authority'):
       self.portal.manage_addProduct['ERP5'].manage_addTool(
         'ERP5 Certificate Authority Tool', None)
@@ -222,9 +218,6 @@ class testVifibMixin(ERP5TypeTestCase):
       self.portal.portal_alarms.vifib_check_consistency.newActiveProcess()
     finally:
       setSecurityManager(sm)
-    self.setupPortalCertificateAuthority()
-    self.setupPayZenInterface()
-    self.setUpMemcached()
     import random
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
     self.portal.portal_caches._p_changed = 1
@@ -305,6 +298,9 @@ class testVifibMixin(ERP5TypeTestCase):
     if self.isLiveTest():
       # nothing to do in Live Test
       return
+    self.setupPortalCertificateAuthority()
+    self.setupPayZenInterface()
+    self.setUpMemcached()
     portal = self.getPortal()
     if 'MailHost' in portal.objectIds():
       portal.manage_delObjects(['MailHost'])
