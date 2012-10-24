@@ -162,7 +162,7 @@ class SlapTool(BaseTool):
       .getCachePluginList()[0]
 
   def _getCacheComputerInformation(self, computer_id, user):
-    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+    self.REQUEST.response.setHeader('Content-Type', 'text/xml; charset=utf-8')
     slap_computer = Computer(computer_id)
     parent_uid = self._getComputerUidByReference(computer_id)
 
@@ -225,7 +225,7 @@ class SlapTool(BaseTool):
     user_document = _assertACI(self.getPortalObject().portal_catalog.unrestrictedGetResultValue(
       reference=user, portal_type=['Person', 'Computer', 'Software Instance']))
     user_type = user_document.getPortalType()
-    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+    self.REQUEST.response.setHeader('Content-Type', 'text/xml; charset=utf-8')
     slap_computer = Computer(computer_id)
     parent_uid = self._getComputerUidByReference(computer_id)
 
@@ -297,7 +297,7 @@ class SlapTool(BaseTool):
     'getComputerPartitionCertificate')
   def getComputerPartitionCertificate(self, computer_id, computer_partition_id):
     """Method to fetch certificate"""
-    self.REQUEST.response.setHeader('Content-Type', 'text/xml')
+    self.REQUEST.response.setHeader('Content-Type', 'text/xml; charset=utf-8')
     software_instance = self._getSoftwareInstanceForComputerPartition(
       computer_id, computer_partition_id)
     certificate_dict = dict(
