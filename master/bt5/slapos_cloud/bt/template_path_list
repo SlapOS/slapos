@@ -4,4 +4,5 @@ computer_module/template_computer/**
 hosting_subscription_module/template_hosting_subscription
 person_module/template_member
 person_module/template_member/**
+software_installation_module/template_software_installation
 software_instance_module/template_software_instance
