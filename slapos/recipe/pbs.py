@@ -215,15 +215,14 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
 
     else:
-      command = [self.options['rdiffbackup-binary']]
       self.logger.info("Server mode")
-      command.extend(['--restrict', self.options['path']])
-      command.append('--server')
 
-      wrapper = self.createPythonScript(
-        self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.execute',
-        command)
+      wrapper = self.createWrapper(name=self.options['wrapper'],
+                                   command=self.options['rdiffbackup-binary'],
+                                   parameters=[
+                                       '--restrict', self.options['path'],
+                                       '--server'
+                                       ])
       path_list.append(wrapper)
 
     return path_list
