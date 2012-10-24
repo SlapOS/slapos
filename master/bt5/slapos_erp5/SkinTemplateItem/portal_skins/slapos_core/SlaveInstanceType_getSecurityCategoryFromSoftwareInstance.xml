@@ -50,46 +50,47 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string># XXX For now, this script requires proxy manager\n
+            <value> <string>"""\n
+This script returns a list of dictionaries which represent\n
+the security groups which a person is member of. It extracts\n
+the categories from the current content. It is useful in the\n
+following cases:\n
 \n
-from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery\n
+- calculate a security group based on a given\n
+  category of the current object (ex. group). This\n
+  is used for example in ERP5 DMS to calculate\n
+  document security.\n
+\n
+- assign local roles to a document based on\n
+  the person which the object related to through\n
+  a given base category (ex. destination). This\n
+  is used for example in ERP5 Project to calculate\n
+  Task / Task Report security.\n
+\n
+The parameters are\n
+\n
+  base_category_list -- list of category values we need to retrieve\n
+  user_name          -- string obtained from getSecurityManager().getUser().getId()\n
+  object             -- object which we want to assign roles to\n
+  portal_type        -- portal type of object\n
+\n
+NOTE: for now, this script requires proxy manager\n
+"""\n
+\n
+category_list = []\n
 \n
 if obj is None:\n
   return []\n
 \n
-movement_portal_type = "Sale Packing List Line"\n
-portal = obj.getPortalObject()\n
-\n
-state_list = portal.getPortalCurrentInventoryStateList() + \\\n
-  portal.getPortalReservedInventoryStateList() + \\\n
-  portal.getPortalTransitInventoryStateList()\n
-\n
-movement = portal.portal_catalog.getResultValue(\n
-  portal_type=movement_portal_type,\n
-  aggregate_uid=obj.getUid(),\n
-  simulation_state=state_list,\n
-)\n
-\n
-if movement is None:\n
- return []\n
-\n
-computer_partition = movement.getAggregateValue(portal_type="Computer Partition")\n
-software_release = movement.getAggregateValue(portal_type="Software Release")\n
-\n
-query = ComplexQuery(\n
-  Query(aggregate_relative_url=computer_partition.getRelativeUrl()),\n
-  Query(aggregate_relative_url=software_release.getRelativeUrl()),\n
-  operator="AND",\n
-)\n
-\n
-catalog_result = portal.portal_catalog(portal_type=movement_portal_type,\n
-  simulation_state=state_list,\n
-  aggregate_relative_url=query)\n
-\n
-for item in catalog_result:\n
-  software_instance = item.getAggregateValue(portal_type="Software Instance")\n
+partition = obj.getAggregateValue(portal_type="Computer Partition")\n
+if partition is not None:\n
+  software_instance = partition.getPortalObject().portal_catalog.getResultValue(\n
+    portal_type="Software Instance", validation_state="validated", default_aggregate_uid=partition.getUid())\n
   if software_instance is not None:\n
-    return [{"aggregate": [software_instance.getRelativeUrl()]}]\n
+    for base_category in base_category_list:\n
+      category_list.append({base_category: [software_instance.getRelativeUrl()]})\n
+\n
+return category_list\n
 </string> </value>
         </item>
         <item>
@@ -106,7 +107,7 @@ for item in catalog_result:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Type_getSecurityCategoryFromSoftwareInstance</string> </value>
+            <value> <string>SlaveInstanceType_getSecurityCategoryFromSoftwareInstance</string> </value>
         </item>
       </dictionary>
     </pickle>
