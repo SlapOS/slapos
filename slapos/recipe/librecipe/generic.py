@@ -35,6 +35,8 @@ import urlparse
 import pkg_resources
 import zc.buildout
 
+from slapos.recipe.librecipe import shlex
+
 class GenericBaseRecipe(object):
   """Boilerplate class for all Buildout recipes providing helpful methods like
      creating configuration file, creating wrappers, generating passwords, etc.
@@ -106,6 +108,25 @@ class GenericBaseRecipe(object):
       [(filename, module, function)], self._ws, sys.executable,
       path, arguments=arguments)[0]
     return script
+
+  def createWrapper(self, name, command, parameters):
+    """Creates a very simple (one command) shell script. Takes care of quoting."""
+
+    q = shlex.quote
+    lines = [
+            '#!/bin/sh',
+            shlex.quote(command)
+            ]
+
+    for param in parameters:
+      if len(lines[-1]) < 30:
+        lines[-1] += ' ' + shlex.quote(param)
+      else:
+        lines[-1] += ' \\'
+        lines.append('\t' + shlex.quote(param))
+
+    content = '\n'.join(lines) + '\n'
+    return self.createFile(name, content, 0700)
 
   def createDirectory(self, parent, name, mode=0700):
     path = os.path.join(parent, name)
