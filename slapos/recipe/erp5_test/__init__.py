@@ -47,7 +47,6 @@ class Recipe(GenericBaseRecipe):
     common_dict = dict(
         instance_home=testinstance,
         prepend_path=self.options['prepend-path'],
-        openssl_binary=self.options['openssl-binary'],
         test_ca_path=self.options['certificate-authority-path'],
     )
     common_list = [
