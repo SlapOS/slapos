@@ -3,3 +3,4 @@ testSlapOSCorePersonRequest
 testSlapOSCorePersonRequestComputer
 testSlapOSCoreSoftwareInstanceRequest
 testSlapOSShadow
+testSlapOSSlapTool
