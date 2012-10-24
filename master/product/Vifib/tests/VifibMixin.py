@@ -129,6 +129,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_erp5',
       'vifib_test',
       'vifib_slapos_rest_api_v1_test',
+      'vifib_web_ui_test',
     ]
     return result
 
