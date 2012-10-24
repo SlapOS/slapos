@@ -124,6 +124,8 @@ class testVifibMixin(ERP5TypeTestCase):
       # All business templates above are the dependency
       # tree of vifib_erp5, so if you mofify this list
       # make sure you also update dependency of bt.
+      # You can use portal_templates.resolveBusinessTemplateListDependency(["vifib_erp5"])
+      # in order to check this list.
       'vifib_erp5',
       'vifib_test',
       'vifib_slapos_rest_api_v1_test',
