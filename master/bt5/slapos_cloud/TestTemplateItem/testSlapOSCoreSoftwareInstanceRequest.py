@@ -28,8 +28,6 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 
-    self.setupPortalCertificateAuthority()
-
     self.request_kw = dict(
         software_release=self.generateNewSoftwareReleaseUrl(),
         software_title=self.generateNewSoftwareTitle(),
