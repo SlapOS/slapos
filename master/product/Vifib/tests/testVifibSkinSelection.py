@@ -64,6 +64,8 @@ class TestVifibSkinSelection(testVifibMixin):
           'ODT',
           'Outdated',
           'RSS',
+          'SHACACHE',
+          'SHADIR',
           'View',
         ]
     )
@@ -154,6 +156,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
@@ -260,6 +263,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
@@ -361,6 +365,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
@@ -460,6 +465,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
@@ -559,6 +565,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
@@ -661,6 +668,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
@@ -763,6 +771,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
@@ -862,6 +871,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
@@ -960,6 +970,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
@@ -1060,6 +1071,7 @@ erp5_core_proxy_field_legacy
 erp5_credential
 erp5_credential_oauth2
 erp5_crm
+erp5_data_set
 erp5_dhtml_style
 erp5_discount_resource
 erp5_dms
