@@ -78,7 +78,7 @@ class Recipe(GenericBaseRecipe):
     if not os.path.exists(secret_key_filename):
       secret_key = uuencode(os.urandom(45)).strip()
       # Remove unsafe characters
-      secret_key = secret_key.translate(None, '"\'')
+      secret_key = secret_key.translate(None, '"\'\\')
       with open(secret_key_filename, 'w') as secret_key_file:
         secret_key_file.write(secret_key)
     else:
