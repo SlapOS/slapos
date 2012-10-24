@@ -6,7 +6,7 @@
   </role>
   <role id='Assignee'>
    <property id='title'>Customer of the Instance</property>
-   <property id='base_category_script'>SoftwareType_getSecurityCategoryFromAggregateMovementItemByPerson</property>
+   <property id='base_category_script'>InstanceType_getSecurityCategoryFromUser</property>
    <multi_property id='base_category'>destination_section</multi_property>
   </role>
   <role id='Assignor'>
