@@ -1,14 +1,15 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+    testSlapOSMixin
 import transaction
 from Products.ERP5Type.tests.backportUnittest import expectedFailure
+
 
 class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
 
   def generateNewId(self):
     return self.getPortalObject().portal_ids.generateNewId(
-                                     id_group=('slapos_core_test'))
+        id_group=('slapos_core_test'))
 
   def generateNewSoftwareReleaseUrl(self):
     return 'http://example.org/test%s.cfg' % self.generateNewId()
@@ -41,7 +42,6 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
     self.software_instance = portal.software_instance_module\
         .template_software_instance.Base_createCloneDocument(batch_mode=1)
-
 
     hosting_subscription.edit(
         title=self.request_kw['software_title'],
@@ -90,37 +90,37 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     request_kw = good_request_kw.copy()
     request_kw.pop('software_release')
     self.assertRaises(KeyError, self.software_instance.requestInstance,
-        **request_kw)
+                      **request_kw)
 
     request_kw = good_request_kw.copy()
     request_kw.pop('software_title')
     self.assertRaises(KeyError, self.software_instance.requestInstance,
-        **request_kw)
+                      **request_kw)
 
     request_kw = good_request_kw.copy()
     request_kw.pop('software_type')
     self.assertRaises(KeyError, self.software_instance.requestInstance,
-        **request_kw)
+                      **request_kw)
 
     request_kw = good_request_kw.copy()
     request_kw.pop('instance_xml')
     self.assertRaises(KeyError, self.software_instance.requestInstance,
-        **request_kw)
+                      **request_kw)
 
     request_kw = good_request_kw.copy()
     request_kw.pop('sla_xml')
     self.assertRaises(KeyError, self.software_instance.requestInstance,
-        **request_kw)
+                      **request_kw)
 
     request_kw = good_request_kw.copy()
     request_kw.pop('shared')
     self.assertRaises(KeyError, self.software_instance.requestInstance,
-        **request_kw)
+                      **request_kw)
 
     request_kw = good_request_kw.copy()
     request_kw.pop('state')
     self.assertRaises(KeyError, self.software_instance.requestInstance,
-        **request_kw)
+                      **request_kw)
 
   def test_request_createdInstance(self):
     request_kw = self.request_kw.copy()
@@ -135,26 +135,26 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertNotEqual(None, requested_instance)
 
     self.assertEqual(request_kw['software_title'],
-        requested_instance.getTitle())
+                     requested_instance.getTitle())
     self.assertEqual('Software Instance',
-        requested_instance.getPortalType())
+                     requested_instance.getPortalType())
     self.assertEqual('validated',
-        requested_instance.getValidationState())
+                     requested_instance.getValidationState())
     self.assertEqual('start_requested',
-        requested_instance.getSlapState())
+                     requested_instance.getSlapState())
     self.assertEqual(request_kw['software_release'],
-        requested_instance.getRootSoftwareReleaseUrl())
+                     requested_instance.getRootSoftwareReleaseUrl())
     self.assertEqual(request_kw['instance_xml'],
-        requested_instance.getTextContent())
+                     requested_instance.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
-        requested_instance.getSlaXml())
+                     requested_instance.getSlaXml())
     self.assertEqual(request_kw['software_type'],
-        requested_instance.getSourceReference())
+                     requested_instance.getSourceReference())
 
   def test_request_sameTitle(self):
     # check that correct request does not raise
     self.assertRaises(ValueError, self.software_instance.requestInstance,
-        **self.request_kw)
+                      **self.request_kw)
 
   def test_request_shared_True(self):
     request_kw = self.request_kw.copy()
@@ -170,21 +170,21 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertNotEqual(None, requested_instance)
 
     self.assertEqual(request_kw['software_title'],
-        requested_instance.getTitle())
+                     requested_instance.getTitle())
     self.assertEqual('Slave Instance',
-        requested_instance.getPortalType())
+                     requested_instance.getPortalType())
     self.assertEqual('validated',
-        requested_instance.getValidationState())
+                     requested_instance.getValidationState())
     self.assertEqual('start_requested',
-        requested_instance.getSlapState())
+                     requested_instance.getSlapState())
     self.assertEqual(request_kw['software_release'],
-        requested_instance.getRootSoftwareReleaseUrl())
+                     requested_instance.getRootSoftwareReleaseUrl())
     self.assertEqual(request_kw['instance_xml'],
-        requested_instance.getTextContent())
+                     requested_instance.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
-        requested_instance.getSlaXml())
+                     requested_instance.getSlaXml())
     self.assertEqual(request_kw['software_type'],
-        requested_instance.getSourceReference())
+                     requested_instance.getSourceReference())
 
   def test_request_shared_unsupported(self):
     request_kw = self.request_kw.copy()
@@ -193,7 +193,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     request_kw['shared'] = 'True'
 
     self.assertRaises(ValueError, self.software_instance.requestInstance,
-        **request_kw)
+                      **request_kw)
 
   def test_request_unindexed(self):
     request_kw = self.request_kw.copy()
@@ -305,14 +305,14 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     duplicate2.validate()
     self.portal.portal_workflow._jumpToStateFor(duplicate2, 'start_requested')
 
-    self.software_instance.getSpecialiseValue(\
-      portal_type='Hosting Subscription').edit(
-        predecessor_list=[
-          duplicate.getRelativeUrl(),
-          duplicate2.getRelativeUrl(),
-          self.software_instance.getRelativeUrl()
-        ]
-      )
+    self.software_instance.getSpecialiseValue(
+        portal_type='Hosting Subscription').edit(
+            predecessor_list=[
+                duplicate.getRelativeUrl(),
+                duplicate2.getRelativeUrl(),
+                self.software_instance.getRelativeUrl()
+            ]
+        )
     self.tic()
 
     self.assertRaises(ValueError, self.software_instance.requestInstance,
@@ -355,22 +355,23 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
       requested_instance2.getRelativeUrl())
 
     self.assertSameSet(
-      self.software_instance.getPredecessorList(),
-      [requested_instance.getRelativeUrl(), requested_instance2.getRelativeUrl()])
+        self.software_instance.getPredecessorList(),
+        [requested_instance.getRelativeUrl(),
+        requested_instance2.getRelativeUrl()])
 
   def test_request_tree_change_indexed(self):
     """Checks tree change forced by request
-    
+
     For a tree like:
-    
+
     A
     |
     A
     |\
     B C
-    
+
     When B requests C tree shall change to:
-    
+
     A
     |
     A
@@ -389,8 +390,8 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     C_instance = self.software_instance.REQUEST.get('request_instance')
 
     self.assertSameSet(
-      self.software_instance.getPredecessorList(),
-      [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
+        self.software_instance.getPredecessorList(),
+        [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
 
     self.tic() # in order to recalculate tree
 
@@ -406,15 +407,15 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
 
   def test_request_tree_change_not_indexed(self):
     """Checks tree change forced by request
-    
+
     For a tree like:
-    
+
     A
     |
     A
     |\
     B C
-    
+
     When B requests C tree in next transaction, but before indexation,
     the system shall disallow the operation."""
     request_kw = self.request_kw.copy()
@@ -428,8 +429,8 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     C_instance = self.software_instance.REQUEST.get('request_instance')
 
     self.assertSameSet(
-      self.software_instance.getPredecessorList(),
-      [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
+        self.software_instance.getPredecessorList(),
+        [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
 
     transaction.commit()
 
@@ -439,15 +440,15 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
   @expectedFailure
   def test_request_tree_change_same_transaction(self):
     """Checks tree change forced by request
-    
+
     For a tree like:
-    
+
     A
     |
     A
     |\
     B C
-    
+
     When B requests C tree in the same transaction the system shall
     disallow the operation."""
     request_kw = self.request_kw.copy()
@@ -461,8 +462,8 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     C_instance = self.software_instance.REQUEST.get('request_instance')
 
     self.assertSameSet(
-      self.software_instance.getPredecessorList(),
-      [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
+        self.software_instance.getPredecessorList(),
+        [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
 
     self.assertRaises(NotImplementedError, B_instance.requestInstance,
         **request_kw)
@@ -520,7 +521,6 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
         requested_instance2.getSlaXml())
     self.assertEqual(request_kw['software_type'],
         requested_instance2.getSourceReference())
-
 
     self.tic()
 
