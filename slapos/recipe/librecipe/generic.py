@@ -110,12 +110,15 @@ class GenericBaseRecipe(object):
     return script
 
   def createWrapper(self, name, command, parameters):
-    """Creates a very simple (one command) shell script. Takes care of quoting."""
+    """
+    Creates a very simple (one command) shell script for process replacement.
+    Takes care of quoting.
+    """
 
     q = shlex.quote
     lines = [
             '#!/bin/sh',
-            shlex.quote(command)
+            'exec %s' % shlex.quote(command)
             ]
 
     for param in parameters:
