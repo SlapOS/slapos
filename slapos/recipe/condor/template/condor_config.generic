@@ -46,6 +46,9 @@
 ######################################################################
 ######################################################################
 
+NO_DNS = True
+DEFAULT_DOMAIN_NAME = %(domain_name)s
+ENABLE_IPV6 = TRUE
 ##  What machine is your central manager?
 CONDOR_HOST  = %(condor_host)s
 ##--------------------------------------------------------------------
@@ -57,7 +60,7 @@ RELEASE_DIR    = %(releasedir)s
 ##  Where is the local condor directory for each host?
 ##  This is where the local config file(s), logs and
 ##  spool/execute directories are located
-LOCAL_DIR		= %(localdir)s
+LOCAL_DIR    = %(localdir)s
 #LOCAL_DIR		= $(RELEASE_DIR)/hosts/$(HOSTNAME)
 
 ##  Where is the machine-specific local config file for each host?
@@ -204,7 +207,7 @@ ALLOW_OWNER = $(FULL_HOSTNAME), $(ALLOW_ADMINISTRATOR)
 ##  will be able to view the status of your pool and more easily help
 ##  you install, configure or debug your Condor installation.
 ##  It is important to have this defined.
-ALLOW_READ = %(domain)s
+ALLOW_READ = *
 #ALLOW_READ = *.your.domain, *.cs.wisc.edu
 #DENY_READ = *.bad.subnet, bad-machine.your.domain, 144.77.88.*
 
@@ -322,7 +325,7 @@ ALLOW_READ_STARTD     = $(ALLOW_READ), $(FLOCK_FROM)
 ##--------------------------------------------------------------------
 ##  Do you want to use NFS for file access instead of remote system
 ##  calls?
-USE_NFS		= True
+#USE_NFS		= False
 
 ##  Do you want to use AFS for file access instead of remote system
 ##  calls?

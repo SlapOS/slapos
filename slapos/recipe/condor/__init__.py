@@ -27,9 +27,33 @@
 from slapos.recipe.librecipe import GenericBaseRecipe
 import os
 import subprocess
+import zc.buildout
+import filecmp
+import urlparse
+import shutil
 
 class Recipe(GenericBaseRecipe):
   """Deploy a fully operational condor architecture."""
+
+  def __init__(self, buildout, name, options):
+    self.environ = {}
+    self.role = ''
+    environment_section = options.get('environment-section', '').strip()
+    if environment_section and environment_section in buildout:
+      # Use environment variables from the designated config section.
+      self.environ.update(buildout[environment_section])
+    for variable in options.get('environment', '').splitlines():
+      if variable.strip():
+        try:
+          key, value = variable.split('=', 1)
+          self.environ[key.strip()] = value
+        except ValueError:
+          raise zc.buildout.UserError('Invalid environment variable definition: %s', variable)
+    # Extrapolate the environment variables using values from the current
+    # environment.
+    for key in self.environ:
+      self.environ[key] = self.environ[key] % os.environ
+    return GenericBaseRecipe.__init__(self, buildout, name, options)
 
   def _options(self, options):
     #Path of condor compiled package
@@ -42,58 +66,55 @@ class Recipe(GenericBaseRecipe):
     #Directory to deploy condor
     self.prefix = options['rootdirectory'].strip()
     self.localdir = options['local-dir'].strip()
-    self.config_wrapper = options['config_wrapper'].strip()
+    self.wrapperdir = options['wrapper-dir'].strip()
     self.wrapper_bin = options['bin'].strip()
     self.wrapper_sbin = options['sbin'].strip()
 
     self.diskspace = options['disk-space'].strip()
     self.ipv6 = options['ip'].strip()
     self.condor_host = options['condor_host'].strip()
-    self.domain = options['domain'].strip()
     self.collector = options['collector_name'].strip()
-    self.linkdir = options['linkdir'].strip()
-    self.path = options['path'].strip()
-    if options['machine-role'].strip() == "manager":
-      self.role = "manager,submit"
-    elif options['machine-role'].strip() == "worker":
-      self.role = "submit,execute"
+    self.centralhost = self.options['central-host'].strip()
 
   def install(self):
     path_list = []
     #get UID and GID for current slapuser
     stat_info = os.stat(self.rootdir)
     slapuser = str(stat_info.st_uid)+"."+str(stat_info.st_gid)
+    domain_name = 'slapos%s.com' % stat_info.st_uid
 
     #Configure condor
-    environment = os.environ.copy()
-    environment['PATH'] = os.path.dirname(self.perlbin) + ':' + environment['PATH']
-    environment['LD_LIBRARY_PATH'] = os.path.dirname(self.perlbin) + ':' + os.environ['PATH']
-    environment['HOME'] = self.localdir
-    environment['HOSTNAME'] = self.condor_host
-
     configure_script = os.path.join(self.package, 'condor_configure')
     install_args = [configure_script, '--install='+self.package,
-              '--prefix='+self.prefix, '--overwrite',
-              '--local-dir='+self.localdir, '--type='+self.role]
-    configure = subprocess.Popen(install_args, env=environment,
+              '--prefix='+self.prefix, '--overwrite', '--verbose',
+              '--local-dir='+self.localdir] #--ignore-missing-libs
+    if self.options['machine-role'].strip() == "manager":
+      self.role = "manager,submit"
+    elif self.options['machine-role'].strip() == "worker":
+      if not self.centralhost:
+        raise Exception("ERROR: Cannot deploy condor worker without specify the central manager")
+      self.role = "execute"
+      install_args += ['--central-manager='+self.centralhost,
+                                                        '--type='+self.role]
+    configure = subprocess.Popen(install_args, env=self.environ,
                   stdout=subprocess.PIPE)
-    configure.wait()
+    configure.communicate()[0]
+    if configure.returncode is None or configure.returncode != 0:
+      return path_list
 
     #Generate condor_configure file
     condor_config = os.path.join(self.rootdir, 'etc/condor_config')
     config_local = os.path.join(self.localdir, 'condor_config.local')
     condor_configure = dict(condor_host=self.condor_host, releasedir=self.prefix,
                   localdir=self.localdir, config_local=config_local,
-                  slapuser=slapuser, domain=self.domain, ipv6=self.ipv6,
-                  diskspace=self.diskspace, javabin=self.javabin)
+                  slapuser=slapuser, ipv6=self.ipv6,
+                  diskspace=self.diskspace, javabin=self.javabin,
+                  domain_name=domain_name)
     destination = os.path.join(condor_config)
     config = self.createFile(destination,
       self.substituteTemplate(self.getTemplateFilename('condor_config.generic'),
       condor_configure))
     path_list.append(config)
-
-    #Update condor_configure.local file
-    #config_local_path = os.path.join(self.localdir, 'condor_config.local')
 
     #create condor binary launcher for slapos
     if not os.path.exists(self.wrapper_bin):
@@ -107,7 +128,6 @@ class Recipe(GenericBaseRecipe):
       current_exe = os.path.join(self.prefix, 'bin', binary)
       wrapper = open(wrapper_location, 'w')
       content = """#!%s
-      cd %s
       export LD_LIBRARY_PATH=%s
       export PATH=%s
       export CONDOR_CONFIG=%s
@@ -115,7 +135,8 @@ class Recipe(GenericBaseRecipe):
       export CONDOR_IDS=%s
       export HOME=%s
       export HOSTNAME=%s
-      exec %s $*""" % (self.dash, self.wrapper_bin, self.linkdir, self.path,
+      exec %s $*""" % (self.dash,
+              self.environ['LD_LIBRARY_PATH'], self.environ['PATH'],
               condor_config, self.prefix, slapuser, self.localdir,
               self.condor_host, current_exe)
       wrapper.write(content)
@@ -129,7 +150,6 @@ class Recipe(GenericBaseRecipe):
       current_exe = os.path.join(self.prefix, 'sbin', binary)
       wrapper = open(wrapper_location, 'w')
       content = """#!%s
-      cd %s
       export LD_LIBRARY_PATH=%s
       export PATH=%s
       export CONDOR_CONFIG=%s
@@ -137,11 +157,127 @@ class Recipe(GenericBaseRecipe):
       export CONDOR_IDS=%s
       export HOME=%s
       export HOSTNAME=%s
-      exec %s $*""" % (self.dash, self.wrapper_sbin, self.linkdir, self.path,
+      exec %s $*""" % (self.dash,
+              self.environ['LD_LIBRARY_PATH'], self.environ['PATH'],
               condor_config, self.prefix, slapuser, self.localdir,
               self.condor_host, current_exe)
       wrapper.write(content)
       wrapper.close()
       path_list.append(wrapper_location)
       os.chmod(wrapper_location, 0744)
+    #update environment variable
+    self.environ['CONDOR_CONFIG'] = condor_config
+    self.environ['CONDOR_LOCATION'] = self.prefix
+    self.environ['CONDOR_IDS'] = slapuser
+
+    #generate script for start condor
+    start_condor = os.path.join(self.wrapperdir, 'start_condor')
+    #if self.role == "manager,submit":
+    #  binary = os.path.join(self.wrapper_sbin, 'condor_master')
+    #elif self.role == "execute":
+    #  binary = os.path.join(self.wrapper_bin, 'condor_run')
+    start_bin = os.path.join(self.wrapper_sbin, 'condor_master')
+    restart_bin = os.path.join(self.wrapper_sbin, 'condor_restart')
+    wrapper = self.createPythonScript(start_condor,
+        '%s.configure.condorStart' % __name__,
+        dict(start_bin=start_bin, restart_bin=restart_bin)
+    )
+    path_list.append(wrapper)
+    return path_list
+
+class AppSubmit(GenericBaseRecipe):
+  """Submit a condor job into an existing Condor master instance"""
+
+  def download(self, url, filename=None, md5sum=None):
+    cache = os.path.join(self.options['rootdirectory'].strip(), 'tmp')
+    if not os.path.exists(cache):
+      os.mkdir(cache)
+    downloader = zc.buildout.download.Download(self.buildout['buildout'],
+                    hash_name=True, cache=cache)
+    path, _ = downloader(url, md5sum)
+    if filename:
+      name = os.path.join(cache, filename)
+      os.rename(path, name)
+      return name
+    return path
+
+  def copy_file(self, source, dest):
+    """"Copy file with source to dest with auto replace
+        return True if file has been copied and dest ha been replaced
+    """
+    result = False
+    if source and os.path.exists(source):
+      if os.path.exists(dest):
+        if filecmp.cmp(dest, source):
+          return False
+        os.unlink(dest)
+      result = True
+      shutil.copy(source, dest)
+    return result
+
+  def getFiles(self):
+    """This is used to download app files if necessary and update options values"""
+    self.options['file-number'] = 0
+    if self.options['files']:
+      files_list = self.options['files'].splitlines()
+      files_list = [f for f in files_list if f] #remove empty elements
+      self.options['file-number'] = len(files_list)
+      for i in range(self.options['file-number']):
+        value = files_list[i].strip()
+        pos = str(i)
+        if value and (value.startswith('http') or value.startswith('ftp')):
+          self.options['name_'+pos] = os.path.basename(urlparse.urlparse(value)[2])
+          self.options['file_'+pos] = self.download(value)
+        else:
+          self.options['file_'+pos] = value
+        os.chmod(self.options['file_'+pos], 0600)
+    executable = self.options['executable']
+    if executable and (executable.startswith('http') or executable.startswith('ftp')):
+      self.options['executable'] = self.download(executable,
+                                    self.options['executable-name'].strip())
+    os.chmod(self.options['executable'], 0700)
+    submit_file = self.options['description-file']
+    if submit_file and (submit_file.startswith('http') or submit_file.startswith('ftp')):
+      self.options['description-file'] = self.download(submit_file, 'submit')
+    os.chmod(self.options['description-file'], 0600)
+
+  def install(self):
+    path_list = []
+    #check if curent condor instance is an condor master
+    if self.options['machine-role'].strip() != "manager":
+      print "ERROR: cannot submit a job to a worker condor instance"
+      return []
+    #Setup directory
+    jobdir = self.options['job-dir'].strip()
+    appdir = os.path.join(jobdir, self.options['app-name'].strip())
+    submitfile = os.path.join(appdir, 'submit')
+    appname = self.options['app-name'].strip()
+    if not os.path.exists(jobdir):
+      os.mkdir(jobdir)
+    if not os.path.exists(appdir):
+      os.mkdir(appdir)
+    self.getFiles()
+    self.copy_file(self.options['executable'],
+                  os.path.join(appdir, self.options['executable-name'].strip())
+    )
+    install = self.copy_file(self.options['description-file'], submitfile)
+    sig_install = os.path.join(appdir, '.install')
+    if install:
+      with open(sig_install, 'w') as f:
+        f.write('to_install')
+    for i in range(self.options['file-number']):
+      destination = os.path.join(appdir, self.options['name_'+str(i)])
+      if os.path.exists(destination):
+        os.unlink(destination)
+      os.symlink(self.options['file_'+str(i)], destination)
+    #generate wrapper for submitting job
+    condor_submit = os.path.join(self.options['bin'].strip(), 'condor_submit')
+    parameter = dict(submit=condor_submit, sig_install=sig_install,
+                    submit_file='submit',
+                    appname=appname, appdir=appdir)
+    submit_job = self.createPythonScript(
+      os.path.join(self.options['wrapper-dir'].strip(), appname),
+      '%s.configure.submitJob' % __name__, parameter
+    )
+    path_list.append(submit_job)
     return path_list

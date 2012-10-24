@@ -138,7 +138,7 @@ class Recipe(GenericBaseRecipe):
       with open(self.options['pid-file']) as pid_file:
         pid = int(pid_file.read().strip(), 10)
       try:
-       os.kill(pid, signal.SIGUSR1) # Graceful restart
+        os.kill(pid, signal.SIGHUP) #restart now
       except OSError:
         pass
     return path_list
