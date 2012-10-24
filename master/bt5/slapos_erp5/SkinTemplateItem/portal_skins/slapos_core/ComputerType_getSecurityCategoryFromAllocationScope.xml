@@ -64,38 +64,23 @@ if obj is None:\n
   return []\n
 \n
 portal = obj.getPortalObject()\n
-\n
-sale_supply_line_list = portal.portal_catalog(\n
-  aggregate_relative_url=obj.getRelativeUrl(),\n
-  portal_type="Sale Supply Line",\n
-  validation_state="validated")\n
+computer = obj\n
 \n
 category_list = []\n
-public = 0\n
 \n
-for sale_supply_line in sale_supply_line_list:\n
-  sale_supply_line = sale_supply_line.getObject()\n
-  sale_trade_condition = sale_supply_line.getParentValue()\n
-  if sale_trade_condition.getPortalType() == \'Sale Trade Condition\':\n
+scope = computer.getAllocationScope()\n
+if scope == \'open/public\':\n
+  return {"Auditor": ["R-SHADOW-PERSON"]}\n
+elif scope == \'open/private\':\n
+  person = computer.getSourceAdministrationValue(portal_type="Person")\n
+  if person is not None:\n
+    return {"Auditor": ["SHADOW-%s" % person.getReference()]}\n
+elif scope == \'open/friend\':\n
+  person_list = computer.getDestinationSectionValueList(portal_type="Person")\n
+  if person_list:\n
+    return {"Auditor": ["SHADOW-%s" % x.getReference() for x in person_list]}\n
 \n
-    person_list = sale_supply_line.getDestinationSectionValueList(portal_type="Person")\n
-    if person_list:\n
-      for person in person_list:\n
-        category_list.extend([x.getReference() for x in person.portal_catalog(\n
-            portal_type="Open Sale Order",\n
-            validation_state="validated",\n
-            destination_decision_relative_url=person.getRelativeUrl())])\n
-    else:\n
-      # Global\n
-      public = 1\n
-      break\n
-\n
-if public:\n
-  return {"Auditor": ["R-SHADOW"]}\n
-elif category_list:\n
-  return {"Auditor": ["SHADOW-%s" % x for x in category_list]}\n
-else:\n
-  return []\n
+return category_list\n
 </string> </value>
         </item>
         <item>
@@ -112,7 +97,7 @@ else:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ComputerType_getSecurityCategoryFromSaleTradeCondition</string> </value>
+            <value> <string>ComputerType_getSecurityCategoryFromAllocationScope</string> </value>
         </item>
       </dictionary>
     </pickle>

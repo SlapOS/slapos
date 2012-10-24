@@ -62,31 +62,28 @@ elif allocation_scope.startswith(\'open\'):\n
 else:\n
   capacity_scope = \'close\'\n
 \n
-computer.edit(\n
-  allocation_scope=allocation_scope,\n
-  capacity_scope=capacity_scope,\n
-)\n
+edit_kw = {\n
+  \'allocation_scope\': allocation_scope,\n
+  \'capacity_scope\': capacity_scope,\n
+}\n
 \n
-sale_supply_line = computer.Computer_getRelatedSaleSupplyLine()\n
-sale_trade_condition = sale_supply_line.getParentValue()\n
 self_person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 self_email = self_person.getDefaultEmailCoordinateText()\n
 if allocation_scope == \'open/public\':\n
   # reset friends and update in place\n
-  sale_trade_condition.edit(\n
-    subject_list=[\'\'],\n
-    destination_section=None)\n
+  edit_kw[\'subject_list\'] = [\'\']\n
+  edit_kw[\'destination_section\'] = None\n
 elif allocation_scope == \'open/personal\':\n
   # reset friends to self and update in place\n
-  sale_trade_condition.edit(\n
-    subject_list=[self_email],\n
-    destination_section_value=self_person)\n
+  edit_kw[\'subject_list\'] = [self_email]\n
+  edit_kw[\'destination_section_value\'] = self_person\n
 else:\n
   if self_email not in subject_list:\n
     # add self as friend\n
     subject_list.append(self_email)\n
-  sale_trade_condition.edit(\n
-    subject_list=subject_list)\n
+  edit_kw[\'subject_list\'] = subject_list\n
+\n
+computer.edit(**edit_kw)\n
 \n
 message = context.Base_translateString("Allocation scope updated!")\n
 return computer.Base_redirect(keep_items={\'portal_status_message\': message})\n

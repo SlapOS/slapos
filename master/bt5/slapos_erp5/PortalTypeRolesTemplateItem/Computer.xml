@@ -1,4 +1,10 @@
 <type_roles>
+  <role id='Auditor'>
+   <property id='title'>Allocation scope</property>
+   <property id='condition'>python: here.getAllocationScope('').startswith('open')</property>
+   <property id='base_category_script'>ComputerType_getSecurityCategoryFromAllocationScope</property>
+   <multi_property id='base_category'>aggregate</multi_property>
+  </role>
   <role id='Assignee'>
    <property id='title'>Computer Agent</property>
    <property id='description'>Monovalued role</property>
@@ -9,12 +15,6 @@
    <property id='title'>Group company</property>
    <multi_property id='category'>group/company</multi_property>
    <multi_property id='base_category'>group</multi_property>
-  </role>
-  <role id='Auditor'>
-   <property id='title'>Sale Trade Condition allocation</property>
-   <property id='condition'>python: here.getAllocationScope('').startswith('open')</property>
-   <property id='base_category_script'>ComputerType_getSecurityCategoryFromSaleTradeCondition</property>
-   <multi_property id='base_category'>aggregate</multi_property>
   </role>
   <role id='Assignor'>
    <property id='title'>Self Computer</property>

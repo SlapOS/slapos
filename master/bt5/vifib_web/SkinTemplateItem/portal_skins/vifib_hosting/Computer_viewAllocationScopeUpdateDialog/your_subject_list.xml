@@ -305,7 +305,7 @@
       <dictionary>
         <item>
             <key> <string>_text</string> </key>
-            <value> <string>python: here.Computer_getRelatedSaleSupplyLine().getSubjectList()</string> </value>
+            <value> <string>python: here.getSubjectList()</string> </value>
         </item>
       </dictionary>
     </pickle>
