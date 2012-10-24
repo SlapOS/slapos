@@ -151,7 +151,8 @@ class SlapTool(BaseTool):
   ####################################################
 
   def _isTestRun(self):
-    if self.getPortalObject().MailHost.__class__.__name__ == 'DummyMailHost':
+    if self.getPortalObject().MailHost.__class__.__name__ == 'DummyMailHost' \
+        or self.REQUEST['test_list']:
       return True
     return False
 
