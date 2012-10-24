@@ -30,6 +30,7 @@ import random
 import transaction
 import unittest
 import Products.Vifib.tests.VifibMixin
+from Products.ERP5Type.tests.utils import DummyMailHost
 
 class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
   def afterSetUp(self):
@@ -44,6 +45,32 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       self.bootstrapSite()
       self.portal._p_changed = 1
       transaction.commit()
+
+  def bootstrapSite(self):
+    if self.isLiveTest():
+      # nothing to do in Live Test
+      return
+    self.setupPortalCertificateAuthority()
+    self.setupPayZenInterface()
+    self.setUpMemcached()
+    portal = self.getPortal()
+    if 'MailHost' in portal.objectIds():
+      portal.manage_delObjects(['MailHost'])
+    portal._setObject('MailHost', DummyMailHost('MailHost'))
+
+    portal.email_from_address = 'romain@nexedi.com'
+    portal.email_to_address = 'romain@nexedi.com'
+
+    self.clearCache()
+
+    self.login()
+    # Invoke Post-configurator script, this invokes all 
+    # alarms related to configuration.
+    self.portal.BusinessConfiguration_invokePromiseAlarmList()
+    transaction.commit()
+    self.tic()
+    self.logout()
+    self.loginDefaultUser()
 
   def getBusinessTemplateList(self):
     """
