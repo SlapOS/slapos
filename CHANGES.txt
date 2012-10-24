@@ -1,6 +1,17 @@
 Changes
 =======
 
+(unreleased)
+------------
+
+ * handle multiple notification_url values in notifier recipe [Marco Mariani]
+ * added bin/py interpreter with proper eggs to slaprunner [Marco Mariani]
+ * createWrapper() sh alternative to execute.execute() for simple cases
+   [Marco Mariani]
+ * fixed secret key generation in apachephp config [Marco Mariani]
+ * fixed url/version for stunnel and lxml [Marco Mariani]
+
+
 0.68.1 (2012-10-03)
 -------------------
 
