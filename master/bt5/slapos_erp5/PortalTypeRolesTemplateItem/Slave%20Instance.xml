@@ -1,7 +1,7 @@
 <type_roles>
   <role id='Assignor'>
    <property id='title'>Computer</property>
-   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromAggregateMovementItemByComputerPartition</property>
+   <property id='base_category_script'>getSecurityCategoryFromContentParent</property>
    <multi_property id='base_category'>aggregate</multi_property>
   </role>
   <role id='Assignee'>

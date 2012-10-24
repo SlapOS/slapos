@@ -50,50 +50,43 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-# XXX For now, this script requires proxy manager\n
+            <value> <string>"""\n
+This script returns a list of dictionaries which represent\n
+the security groups which a person is member of. It extracts\n
+the categories from the current content. It is useful in the\n
+following cases:\n
 \n
-# base_category_list : list of category values we need to retrieve\n
-# user_name : string obtained from getSecurityManager().getUser().getUserName() [NuxUserGroup]\n
-#             or from getSecurityManager().getUser().getId() [PluggableAuthService with ERP5GroupManager]\n
-# object : object which we want to assign roles to.\n
-# portal_type : portal type of object\n
+- calculate a security group based on a given\n
+  category of the current object (ex. group). This\n
+  is used for example in ERP5 DMS to calculate\n
+  document security.\n
 \n
-# must always return a list of dicts\n
+- assign local roles to a document based on\n
+  the person which the object related to through\n
+  a given base category (ex. destination). This\n
+  is used for example in ERP5 Project to calculate\n
+  Task / Task Report security.\n
+\n
+The parameters are\n
+\n
+  base_category_list -- list of category values we need to retrieve\n
+  user_name          -- string obtained from getSecurityManager().getUser().getId()\n
+  object             -- object which we want to assign roles to\n
+  portal_type        -- portal type of object\n
+\n
+NOTE: for now, this script requires proxy manager\n
+"""\n
 \n
 category_list = []\n
 \n
-if obj is None:\n
+if object is None:\n
   return []\n
 \n
-item_portal_type = "Computer Partition"\n
-movement_portal_type = "Sale Packing List Line"\n
+for base_category in base_category_list:\n
+  category_list.append({base_category: [x.getParentValue().getRelativeUrl() for x in object.getValueList(base_category)]})\n
 \n
-portal = obj.getPortalObject()\n
-\n
-security_dict = {}\n
-\n
-parent_url_list = []\n
-for movement in portal.portal_catalog(\n
-  portal_type=movement_portal_type,\n
-  aggregate_uid=obj.getUid(),\n
-  default_resource_uid=portal.restrictedTraverse(portal.portal_preferences.getPreferredInstanceSetupResource()).getUid(),\n
-  simulation_state=(\'stopped\', \'delivered\') + portal.getPortalReservedInventoryStateList() + portal.getPortalTransitInventoryStateList(),\n
-  ):\n
-  item = movement.getAggregateValue(portal_type=item_portal_type)\n
-  if item is not None:\n
-    parent_url = item.getParentValue().getRelativeUrl()\n
-    if parent_url not in parent_url_list:\n
-      parent_url_list.append(parent_url)\n
-\n
-if len(parent_url_list) > 0:\n
-  parent_url_list.sort()\n
-  category_list.append({"aggregate": parent_url_list})\n
 return category_list\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -109,7 +102,7 @@ return category_list\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Type_getSecurityCategoryFromAggregateMovementItemByComputerPartition</string> </value>
+            <value> <string>ERP5Type_getSecurityCategoryFromContentParent</string> </value>
         </item>
       </dictionary>
     </pickle>
