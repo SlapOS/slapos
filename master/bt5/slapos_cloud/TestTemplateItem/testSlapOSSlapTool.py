@@ -33,6 +33,7 @@ class TestSlapOSSlapToolComputerAccess(testSlapOSMixin):
       'id="param">%s</parameter></instance>' % self.generateNewId()
 
   def afterSetUp(self):
+    super(TestSlapOSSlapToolComputerAccess, self).afterSetUp()
     self.portal_slap = self.portal.portal_slap
     new_id = self.generateNewId()
 

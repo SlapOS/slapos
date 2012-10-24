@@ -25,6 +25,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
       'id="param">%s</parameter></instance>' % self.generateNewId()
 
   def afterSetUp(self):
+    super(TestSlapOSCoreSoftwareInstanceRequest, self).afterSetUp()
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 
