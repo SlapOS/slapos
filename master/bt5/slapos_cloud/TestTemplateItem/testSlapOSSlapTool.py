@@ -2,7 +2,6 @@
 from Products.SlapOS.tests.testSlapOSMixin import \
     testSlapOSMixin
 import transaction
-from Products.ERP5Type.Base import WorkflowMethod
 
 from DateTime import DateTime
 from App.Common import rfc1123_date
@@ -57,7 +56,6 @@ class TestSlapOSSlapToolComputerAccess(testSlapOSMixin):
     pass
 
   def _makeComplexComputer(self):
-    @WorkflowMethod.disable
     def setupSoftwareInstance(instance, **kw):
       instance.edit(**kw)
 
