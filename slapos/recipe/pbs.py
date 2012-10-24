@@ -134,8 +134,7 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
         'host': parsed_url.hostname,
       }
 
-    command = [self.options['rdiffbackup-binary']]
-    command.extend(['--remote-schema', remote_schema])
+    parameters = ['--remote-schema', remote_schema]
 
     remote_directory = '%(port)s::%(path)s' % {'port': parsed_url.port,
                                                'path': parsed_url.path}
@@ -144,24 +143,23 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
                                            name_hash)
 
     if entry['type'] == 'push':
-      command.extend(['--restore-as-of', 'now'])
-      command.append('--force')
-      command.extend([local_directory, remote_directory])
+      parameters.extend(['--restore-as-of', 'now'])
+      parameters.append('--force')
+      parameters.extend([local_directory, remote_directory])
     else:
-      command.extend([remote_directory, local_directory])
+      parameters.extend([remote_directory, local_directory])
 
     wrapper_basepath = os.path.join(self.options['wrappers-directory'],
                                     url_hash)
 
-    wrapper_path = wrapper_basepath
     if 'notify' in entry:
-      wrapper_path = '%s_raw' % wrapper_basepath
+      wrapper_path = wrapper_basepath + '_raw'
+    else:
+      wrapper_path = wrapper_basepath
 
-    wrapper = self.createPythonScript(
-       wrapper_path,
-      'slapos.recipe.librecipe.execute.execute',
-      [str(i) for i in command]
-    )
+    wrapper = self.createWrapper(name=wrapper_path,
+                                 command=self.options['rdiffbackup-binary'],
+                                 parameters=parameters)
     path_list.append(wrapper)
 
     if 'notify' in entry:
