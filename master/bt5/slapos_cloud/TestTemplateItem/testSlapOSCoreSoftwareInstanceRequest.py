@@ -2,6 +2,7 @@
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 import transaction
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
 
@@ -74,7 +75,8 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.login(self.software_instance.getReference())
 
   def beforeTearDown(self):
-    pass
+    if 'request_instance' in self.software_instance.REQUEST:
+      self.software_instance.REQUEST['request_instance'] = None
 
   def test_request_requiredParameter(self):
     good_request_kw = self.request_kw.copy()
@@ -313,6 +315,238 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
       )
     self.tic()
 
-    # check that correct request does not raise
     self.assertRaises(ValueError, self.software_instance.requestInstance,
         **request_kw)
+
+  def test_request_destroyed_state(self):
+    request_kw = self.request_kw.copy()
+    # in order to have unique requested title
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    request_kw['state'] = 'destroyed'
+
+    # check that correct request does not raise
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    # requesting with destroyed state shall not create new instance
+    self.assertEqual(None, requested_instance)
+
+  def test_request_two_different(self):
+    request_kw = self.request_kw.copy()
+    # in order to have unique requested title
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+
+    # check that correct request does not raise
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance2 = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.assertNotEqual(requested_instance.getRelativeUrl(),
+      requested_instance2.getRelativeUrl())
+
+    self.assertSameSet(
+      self.software_instance.getPredecessorList(),
+      [requested_instance.getRelativeUrl(), requested_instance2.getRelativeUrl()])
+
+  def test_request_tree_change_indexed(self):
+    """Checks tree change forced by request
+    
+    For a tree like:
+    
+    A
+    |
+    A
+    |\
+    B C
+    
+    When B requests C tree shall change to:
+    
+    A
+    |
+    A
+    |
+    B
+    |
+    C"""
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+    B_instance = self.software_instance.REQUEST.get('request_instance')
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+    C_instance = self.software_instance.REQUEST.get('request_instance')
+
+    self.assertSameSet(
+      self.software_instance.getPredecessorList(),
+      [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
+
+    self.tic() # in order to recalculate tree
+
+    B_instance.requestInstance(**request_kw)
+    C1_instance = self.software_instance.REQUEST.get('request_instance')
+
+    self.assertEqual(C_instance.getRelativeUrl(), C1_instance.getRelativeUrl())
+
+    self.assertSameSet(self.software_instance.getPredecessorList(),
+        [B_instance.getRelativeUrl()])
+    self.assertSameSet(B_instance.getPredecessorList(),
+        [C_instance.getRelativeUrl()])
+
+  def test_request_tree_change_not_indexed(self):
+    """Checks tree change forced by request
+    
+    For a tree like:
+    
+    A
+    |
+    A
+    |\
+    B C
+    
+    When B requests C tree in next transaction, but before indexation,
+    the system shall disallow the operation."""
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+    B_instance = self.software_instance.REQUEST.get('request_instance')
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+    C_instance = self.software_instance.REQUEST.get('request_instance')
+
+    self.assertSameSet(
+      self.software_instance.getPredecessorList(),
+      [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
+
+    transaction.commit()
+
+    self.assertRaises(NotImplementedError, B_instance.requestInstance,
+        **request_kw)
+
+  @expectedFailure
+  def test_request_tree_change_same_transaction(self):
+    """Checks tree change forced by request
+    
+    For a tree like:
+    
+    A
+    |
+    A
+    |\
+    B C
+    
+    When B requests C tree in the same transaction the system shall
+    disallow the operation."""
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+    B_instance = self.software_instance.REQUEST.get('request_instance')
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+    C_instance = self.software_instance.REQUEST.get('request_instance')
+
+    self.assertSameSet(
+      self.software_instance.getPredecessorList(),
+      [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
+
+    self.assertRaises(NotImplementedError, B_instance.requestInstance,
+        **request_kw)
+
+  def test_request_started_stopped_destroyed(self):
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+    self.assertNotEqual(None, requested_instance)
+
+    self.assertEqual(request_kw['software_title'],
+        requested_instance.getTitle())
+    self.assertEqual('Software Instance',
+        requested_instance.getPortalType())
+    self.assertEqual('validated',
+        requested_instance.getValidationState())
+    self.assertEqual('start_requested',
+        requested_instance.getSlapState())
+    self.assertEqual(request_kw['software_release'],
+        requested_instance.getRootSoftwareReleaseUrl())
+    self.assertEqual(request_kw['instance_xml'],
+        requested_instance.getTextContent())
+    self.assertEqual(request_kw['sla_xml'],
+        requested_instance.getSlaXml())
+    self.assertEqual(request_kw['software_type'],
+        requested_instance.getSourceReference())
+
+    self.tic()
+
+    request_kw['state'] = 'stopped'
+    self.software_instance.requestInstance(**request_kw)
+    requested_instance2 = self.software_instance.REQUEST.get(
+        'request_instance')
+    self.assertNotEqual(None, requested_instance2)
+    self.assertEqual(requested_instance.getRelativeUrl(),
+        requested_instance2.getRelativeUrl())
+
+    self.assertEqual(request_kw['software_title'],
+        requested_instance2.getTitle())
+    self.assertEqual('Software Instance',
+        requested_instance2.getPortalType())
+    self.assertEqual('validated',
+        requested_instance2.getValidationState())
+    self.assertEqual('stop_requested',
+        requested_instance2.getSlapState())
+    self.assertEqual(request_kw['software_release'],
+        requested_instance2.getRootSoftwareReleaseUrl())
+    self.assertEqual(request_kw['instance_xml'],
+        requested_instance2.getTextContent())
+    self.assertEqual(request_kw['sla_xml'],
+        requested_instance2.getSlaXml())
+    self.assertEqual(request_kw['software_type'],
+        requested_instance2.getSourceReference())
+
+
+    self.tic()
+
+    request_kw['state'] = 'destroyed'
+    self.software_instance.requestInstance(**request_kw)
+    requested_instance3 = self.software_instance.REQUEST.get(
+        'request_instance')
+    self.assertEqual(None, requested_instance3)
+
+    # in case of destruction instance is not returned, so fetch it
+    # directly form document
+    requested_instance3 = self.software_instance.getPredecessorValue(
+        portal_type='Software Instance')
+    self.assertEqual(request_kw['software_title'],
+        requested_instance3.getTitle())
+    self.assertEqual('Software Instance',
+        requested_instance3.getPortalType())
+    self.assertEqual('validated',
+        requested_instance3.getValidationState())
+    self.assertEqual('destroy_requested',
+        requested_instance3.getSlapState())
+    self.assertEqual(request_kw['software_release'],
+        requested_instance3.getRootSoftwareReleaseUrl())
+    self.assertEqual(request_kw['instance_xml'],
+        requested_instance3.getTextContent())
+    self.assertEqual(request_kw['sla_xml'],
+        requested_instance3.getSlaXml())
+    self.assertEqual(request_kw['software_type'],
+        requested_instance3.getSourceReference())
