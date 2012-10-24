@@ -20,19 +20,22 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
   def generateNewSoftwareTitle(self):
     return 'Title%s' % self.generateNewId()
 
+  def generateSafeXml(self):
+    return '<?xml version="1.0" encoding="utf-8"?><instance><parameter '\
+      'id="param">%s</parameter></instance>' % self.generateNewId()
+
   def afterSetUp(self):
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 
     self.setupPortalCertificateAuthority()
 
-    safe_xml = '<?xml version="1.0" encoding="utf-8"?><instance></instance>'
     self.request_kw = dict(
         software_release=self.generateNewSoftwareReleaseUrl(),
         software_title=self.generateNewSoftwareTitle(),
         software_type=self.generateNewSoftwareType(),
-        instance_xml=safe_xml,
-        sla_xml=safe_xml,
+        instance_xml=self.generateSafeXml(),
+        sla_xml=self.generateSafeXml(),
         shared=False,
         state="started"
     )
@@ -75,6 +78,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.login(self.software_instance.getReference())
 
   def beforeTearDown(self):
+    transaction.abort()
     if 'request_instance' in self.software_instance.REQUEST:
       self.software_instance.REQUEST['request_instance'] = None
 
@@ -550,3 +554,290 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
         requested_instance3.getSlaXml())
     self.assertEqual(request_kw['software_type'],
         requested_instance3.getSourceReference())
+
+  def _countBang(self, document):
+    return len([q for q in document.workflow_history[
+        'instance_slap_interface_workflow'] if q['action'] == 'bang'])
+
+  def test_request_started_no_bang(self):
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.tic()
+
+    bang_amount = self._countBang(requested_instance)
+    self.software_instance.requestInstance(**request_kw)
+    requested_instance2 = self.software_instance.REQUEST.get(
+        'request_instance')
+    transaction.commit()
+
+    self.assertEqual(requested_instance.getRelativeUrl(),
+        requested_instance2.getRelativeUrl())
+    self.assertEqual(bang_amount, self._countBang(requested_instance))
+
+  def test_request_stopped_bang(self):
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.tic()
+
+    bang_amount = self._countBang(requested_instance)
+
+    request_kw['state'] = 'stopped'
+    self.software_instance.requestInstance(**request_kw)
+    transaction.commit()
+    requested_instance2 = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.assertEqual(requested_instance.getRelativeUrl(),
+        requested_instance2.getRelativeUrl())
+    self.assertEqual(bang_amount+1, self._countBang(requested_instance))
+
+  def test_request_destroyed_bang(self):
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.tic()
+
+    bang_amount = self._countBang(requested_instance)
+
+    request_kw['state'] = 'destroyed'
+    self.software_instance.requestInstance(**request_kw)
+    transaction.commit()
+    requested_instance2 = self.software_instance.getPredecessorValue(
+        portal_type='Software Instance')
+
+    self.assertEqual(requested_instance.getRelativeUrl(),
+        requested_instance2.getRelativeUrl())
+    self.assertEqual(bang_amount+1, self._countBang(requested_instance))
+
+  def test_request_tree_change_indexed_shared(self):
+    """Checks tree change forced by request
+
+    For a tree like:
+
+    A
+    |
+    A
+    |\
+    B C
+
+    When B requests C tree shall change to:
+
+    A
+    |
+    A
+    |
+    B
+    |
+    C"""
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    request_kw['shared'] = True
+    self.software_instance.requestInstance(**request_kw)
+    B_instance = self.software_instance.REQUEST.get('request_instance')
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+    C_instance = self.software_instance.REQUEST.get('request_instance')
+
+    self.assertSameSet(
+        self.software_instance.getPredecessorList(),
+        [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
+
+    self.tic() # in order to recalculate tree
+
+    B_instance.requestInstance(**request_kw)
+    C1_instance = self.software_instance.REQUEST.get('request_instance')
+
+    self.assertEqual(C_instance.getRelativeUrl(), C1_instance.getRelativeUrl())
+
+    self.assertSameSet(self.software_instance.getPredecessorList(),
+        [B_instance.getRelativeUrl()])
+    self.assertSameSet(B_instance.getPredecessorList(),
+        [C_instance.getRelativeUrl()])
+
+  def test_request_tree_change_not_indexed_shared(self):
+    """Checks tree change forced by request
+
+    For a tree like:
+
+    A
+    |
+    A
+    |\
+    B C
+
+    When B requests C tree in next transaction, but before indexation,
+    the system shall disallow the operation."""
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    request_kw['shared'] = True
+    self.software_instance.requestInstance(**request_kw)
+    B_instance = self.software_instance.REQUEST.get('request_instance')
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+    C_instance = self.software_instance.REQUEST.get('request_instance')
+
+    self.assertSameSet(
+        self.software_instance.getPredecessorList(),
+        [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
+
+    transaction.commit()
+
+    self.assertRaises(NotImplementedError, B_instance.requestInstance,
+        **request_kw)
+
+  @expectedFailure
+  def test_request_tree_change_same_transaction_shared(self):
+    """Checks tree change forced by request
+
+    For a tree like:
+
+    A
+    |
+    A
+    |\
+    B C
+
+    When B requests C tree in the same transaction the system shall
+    disallow the operation."""
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    request_kw['shared'] = True
+    self.software_instance.requestInstance(**request_kw)
+    B_instance = self.software_instance.REQUEST.get('request_instance')
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+    C_instance = self.software_instance.REQUEST.get('request_instance')
+
+    self.assertSameSet(
+        self.software_instance.getPredecessorList(),
+        [B_instance.getRelativeUrl(), C_instance.getRelativeUrl()])
+
+    self.assertRaises(NotImplementedError, B_instance.requestInstance,
+        **request_kw)
+
+  def test_request_software_release_bang(self):
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.tic()
+
+    bang_amount = self._countBang(requested_instance)
+
+    request_kw['software_release'] = self.generateNewSoftwareReleaseUrl()
+    self.software_instance.requestInstance(**request_kw)
+    requested_instance2 = self.software_instance.getPredecessorValue(
+        portal_type='Software Instance')
+
+    transaction.commit()
+
+    self.assertEqual(requested_instance.getRelativeUrl(),
+        requested_instance2.getRelativeUrl())
+    self.assertEqual(request_kw['software_release'],
+        requested_instance2.getRootSoftwareReleaseUrl())
+    self.assertEqual(bang_amount+1, self._countBang(requested_instance))
+
+  def test_request_software_type_bang(self):
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.tic()
+
+    bang_amount = self._countBang(requested_instance)
+
+    request_kw['software_type'] = self.generateNewSoftwareReleaseUrl()
+    self.software_instance.requestInstance(**request_kw)
+    requested_instance2 = self.software_instance.getPredecessorValue(
+        portal_type='Software Instance')
+
+    transaction.commit()
+
+    self.assertEqual(requested_instance.getRelativeUrl(),
+        requested_instance2.getRelativeUrl())
+    self.assertEqual(request_kw['software_type'],
+        requested_instance2.getSourceReference())
+    self.assertEqual(bang_amount+1, self._countBang(requested_instance))
+
+  def test_request_instance_xml_bang(self):
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.tic()
+
+    bang_amount = self._countBang(requested_instance)
+
+    request_kw['instance_xml'] = self.generateSafeXml()
+    self.software_instance.requestInstance(**request_kw)
+    requested_instance2 = self.software_instance.getPredecessorValue(
+        portal_type='Software Instance')
+
+    transaction.commit()
+
+    self.assertEqual(requested_instance.getRelativeUrl(),
+        requested_instance2.getRelativeUrl())
+    self.assertEqual(request_kw['instance_xml'],
+        requested_instance2.getTextContent())
+    self.assertEqual(bang_amount+1, self._countBang(requested_instance))
+
+  def test_request_sla_xml_bang(self):
+    request_kw = self.request_kw.copy()
+
+    request_kw['software_title'] = self.generateNewSoftwareTitle()
+    self.software_instance.requestInstance(**request_kw)
+
+    requested_instance = self.software_instance.REQUEST.get(
+        'request_instance')
+
+    self.tic()
+
+    bang_amount = self._countBang(requested_instance)
+
+    request_kw['sla_xml'] = self.generateSafeXml()
+    self.software_instance.requestInstance(**request_kw)
+    requested_instance2 = self.software_instance.getPredecessorValue(
+        portal_type='Software Instance')
+
+    transaction.commit()
+
+    self.assertEqual(requested_instance.getRelativeUrl(),
+        requested_instance2.getRelativeUrl())
+    self.assertEqual(request_kw['sla_xml'],
+        requested_instance2.getSlaXml())
+    self.assertEqual(bang_amount+1, self._countBang(requested_instance))
