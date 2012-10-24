@@ -48,7 +48,7 @@ def submitJob(args):
 
 def condorStart(args):
   """Start Condor if deamons is currently stopped"""
-  result = os.system(args['restart_bin'])
+  result = os.system(args['condor_status'])
   if result != 0:
     #process failled to restart that mean that condor deamons is not curently started
     os.system(args['start_bin'])

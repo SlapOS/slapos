@@ -177,10 +177,10 @@ class Recipe(GenericBaseRecipe):
     #elif self.role == "execute":
     #  binary = os.path.join(self.wrapper_bin, 'condor_run')
     start_bin = os.path.join(self.wrapper_sbin, 'condor_master')
-    restart_bin = os.path.join(self.wrapper_sbin, 'condor_restart')
+    condor_status = os.path.join(self.wrapper_bin, 'condor_status')
     wrapper = self.createPythonScript(start_condor,
         '%s.configure.condorStart' % __name__,
-        dict(start_bin=start_bin, restart_bin=restart_bin)
+        dict(start_bin=start_bin, condor_status=condor_status)
     )
     path_list.append(wrapper)
     return path_list
