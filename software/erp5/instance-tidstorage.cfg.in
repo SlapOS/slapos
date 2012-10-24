@@ -543,6 +543,7 @@ recipe = slapos.cookbook:logrotate.d
 name = apache-{{ backend_name }}
 log = ${apache-{{ backend_name }}:error-log} ${apache-{{ backend_name }}:access-log}
 post = {{ bin_directory }}/killpidfromfile ${apache-{{ backend_name }}:pid-file} SIGUSR1
+{%-  endif %}
 
 [{{ section('haproxy-' ~ backend_name) }}]
 recipe = slapos.cookbook:haproxy
@@ -556,7 +557,7 @@ wrapper-path = ${directory:services}/haproxy-{{ backend_name }}
 binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
 backend-list = {{ haproxy_backend_list | join(' ')}}
 no-timeout = {{ no_timeout }}
-{%-  endif %}
+
 {% endfor -%}
 [{{ section('publish-apache-backend-list') }}]
 recipe = slapos.cookbook:publish
