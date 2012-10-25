@@ -626,3 +626,117 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 )
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+
+  def test_getFullComputerInformation(self):
+    self._makeComplexComputer()
+    self.login(self.start_requested_software_instance.getReference())
+    response = self.portal_slap.getFullComputerInformation(self.computer_id)
+    self.assertEqual(200, response.status)
+    self.assertEqual('public, max-age=1, stale-if-error=604800',
+        response.headers.get('cache-control'))
+    self.assertEqual('REMOTE_USER',
+        response.headers.get('vary'))
+    self.assertTrue('last-modified' in response.headers)
+    self.assertEqual('text/xml; charset=utf-8',
+        response.headers.get('content-type'))
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+    expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <object id='i2' module='slapos.slap.slap' class='Computer'>
+    <tuple>
+      <string>%(computer_id)s</string>
+    </tuple>
+    <dictionary id='i3'>
+      <string>_computer_id</string>
+      <string>%(computer_id)s</string>
+      <string>_computer_partition_list</string>
+      <list id='i4'>
+        <object id='i5' module='slapos.slap.slap' class='ComputerPartition'>
+          <tuple>
+            <string>%(computer_id)s</string>
+            <string>partition1</string>
+          </tuple>
+          <dictionary id='i6'>
+            <string>_computer_id</string>
+            <string>%(computer_id)s</string>
+            <string>_connection_dict</string>
+            <dictionary id='i7'>
+              <string>parameter1</string>
+              <string>valueof1</string>
+              <string>parameter2</string>
+              <string>https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5</string>
+            </dictionary>
+            <string>_instance_guid</string>
+            <string>%(instance_guid)s</string>
+            <string>_need_modification</string>
+            <int>1</int>
+            <string>_parameter_dict</string>
+            <dictionary id='i8'>
+              <string>ip_list</string>
+              <list id='i9'>
+                <tuple>
+                  <string/>
+                  <string>ip_address_1</string>
+                </tuple>
+              </list>
+              <string>param</string>
+              <string>%(param)s</string>
+              <string>slap_computer_id</string>
+              <string>%(computer_id)s</string>
+              <string>slap_computer_partition_id</string>
+              <string>partition1</string>
+              <string>slap_software_release_url</string>
+              <string>%(software_release_url)s</string>
+              <string>slap_software_type</string>
+              <string>%(software_type)s</string>
+              <string>slave_instance_list</string>
+              <list id='i10'/>
+              <string>timestamp</string>
+              <string>%(timestamp)s</string>
+            </dictionary>
+            <string>_partition_id</string>
+            <string>partition1</string>
+            <string>_request_dict</string>
+            <none/>
+            <string>_requested_state</string>
+            <string>started</string>
+            <string>_software_release_document</string>
+            <object id='i11' module='slapos.slap.slap' class='SoftwareRelease'>
+              <tuple>
+                <string>%(software_release_url)s</string>
+                <string>%(computer_id)s</string>
+              </tuple>
+              <dictionary id='i12'>
+                <string>_computer_guid</string>
+                <string>%(computer_id)s</string>
+                <string>_software_instance_list</string>
+                <list id='i13'/>
+                <string>_software_release</string>
+                <string>%(software_release_url)s</string>
+              </dictionary>
+            </object>
+          </dictionary>
+        </object>
+      </list>
+      <string>_software_release_list</string>
+      <list id='i14'/>
+    </dictionary>
+  </object>
+</marshal>
+""" % dict(
+    computer_id=self.computer_id,
+    instance_guid=self.start_requested_software_instance.getReference(),
+    software_release_url=self.start_requested_software_instance.getRootSoftwareReleaseUrl(),
+    software_type=self.start_requested_software_instance.getSourceReference(),
+    param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
+    timestamp=int(self.start_requested_software_instance.getModificationDate())
+)
+    self.assertEqual(expected_xml, got_xml,
+        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
