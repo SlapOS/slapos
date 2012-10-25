@@ -50,16 +50,13 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_updateSaleTradeCondition</string> </value>
+            <value> <string>SlaveInstance_edit</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>_setDestinationSection.*</string>
-                <string>_setSourceSection.*</string>
-                <string>validate</string>
-                <string>invalidate</string>
+                <string>_setReference</string>
               </list>
             </value>
         </item>
@@ -71,7 +68,7 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Sale Trade Condition</string>
+                <string>Slave Instance</string>
               </list>
             </value>
         </item>

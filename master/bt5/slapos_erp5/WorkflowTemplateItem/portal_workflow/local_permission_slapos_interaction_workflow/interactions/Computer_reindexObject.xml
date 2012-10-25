@@ -27,20 +27,20 @@
         <item>
             <key> <string>after_script_name</string> </key>
             <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>before_commit_script_name</string> </key>
+            <value>
               <list>
                 <string>Base_recursiveReindexObject</string>
               </list>
             </value>
         </item>
         <item>
-            <key> <string>before_commit_script_name</string> </key>
-            <value>
-              <tuple/>
-            </value>
-        </item>
-        <item>
             <key> <string>description</string> </key>
-            <value> <string></string> </value>
+            <value> <string>Reindex Computer Partition which acquire local roles from Computer</string> </value>
         </item>
         <item>
             <key> <string>guard</string> </key>

@@ -34,7 +34,7 @@
             <key> <string>before_commit_script_name</string> </key>
             <value>
               <list>
-                <string>Base_updateAllLocalRoles</string>
+                <string>SoftwareInstance_updateComputerPartitionLocalRoles</string>
               </list>
             </value>
         </item>
@@ -50,16 +50,13 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_updateSaleTradeCondition</string> </value>
+            <value> <string>SoftwareInstance_updateComputerPartition</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>_setDestinationSection.*</string>
-                <string>_setSourceSection.*</string>
-                <string>validate</string>
-                <string>invalidate</string>
+                <string>_setAggregate.*</string>
               </list>
             </value>
         </item>
@@ -71,7 +68,7 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Sale Trade Condition</string>
+                <string>Software Instance</string>
               </list>
             </value>
         </item>

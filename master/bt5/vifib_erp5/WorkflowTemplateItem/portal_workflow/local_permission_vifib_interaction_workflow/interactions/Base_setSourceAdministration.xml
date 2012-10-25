@@ -68,9 +68,6 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Computer</string>
-                <string>Computer Model</string>
-                <string>Computer Network</string>
                 <string>Internal Packing List</string>
                 <string>Purchase Packing List</string>
               </list>

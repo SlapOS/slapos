@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Hosting Subscription</string> </value>
+            <value> <string>HostingSubscription_edit</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>

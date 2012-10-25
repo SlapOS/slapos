@@ -1,0 +1,34 @@
+<workflow_chain>
+ <chain>
+  <type>Computer</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Computer Model</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Computer Network</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Hosting Subscription</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Person</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Slave Instance</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Software Installation</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Software Instance</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+</workflow_chain>

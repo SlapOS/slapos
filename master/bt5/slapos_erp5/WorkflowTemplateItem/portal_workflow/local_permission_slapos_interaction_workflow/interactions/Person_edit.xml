@@ -27,15 +27,15 @@
         <item>
             <key> <string>after_script_name</string> </key>
             <value>
-              <list>
-                <string>Base_updateAllLocalRoles</string>
-              </list>
+              <tuple/>
             </value>
         </item>
         <item>
             <key> <string>before_commit_script_name</string> </key>
             <value>
-              <tuple/>
+              <list>
+                <string>Base_updateAllLocalRoles</string>
+              </list>
             </value>
         </item>
         <item>
@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_setReference</string> </value>
+            <value> <string>Person_edit</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>
@@ -68,10 +68,7 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Computer</string>
                 <string>Person</string>
-                <string>Slave Instance</string>
-                <string>Software Instance</string>
               </list>
             </value>
         </item>

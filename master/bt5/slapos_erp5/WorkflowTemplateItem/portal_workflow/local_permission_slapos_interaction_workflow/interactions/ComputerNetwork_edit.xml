@@ -50,13 +50,13 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_setAllocationScope</string> </value>
+            <value> <string>ComputerNetwork_edit</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>_setAllocationScope.*</string>
+                <string>_setSourceAdministration.*</string>
               </list>
             </value>
         </item>
@@ -68,7 +68,7 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Computer</string>
+                <string>Computer Network</string>
               </list>
             </value>
         </item>
