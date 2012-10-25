@@ -1,5 +1,6 @@
 Hosting Subscription | edit_workflow
 Hosting Subscription | instance_slap_interface_workflow
+Person | person_slap_interface_workflow
 Slave Instance | edit_workflow
 Slave Instance | instance_slap_interface_workflow
 Slave Instance | item_workflow

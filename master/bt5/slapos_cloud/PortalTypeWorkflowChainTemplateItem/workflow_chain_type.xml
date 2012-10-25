@@ -4,6 +4,10 @@
   <workflow>edit_workflow, instance_slap_interface_workflow</workflow>
  </chain>
  <chain>
+  <type>Person</type>
+  <workflow>person_slap_interface_workflow</workflow>
+ </chain>
+ <chain>
   <type>Slave Instance</type>
   <workflow>edit_workflow, instance_slap_interface_workflow, item_workflow</workflow>
  </chain>
