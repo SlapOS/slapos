@@ -1,10 +1,13 @@
 <property_sheet_list>
  <portal_type id="Hosting Subscription">
+  <item>HostingSubscription</item>
+  <item>SoftwareInstance</item>
   <item>TextDocument</item>
   <item>Url</item>
   <item>VariationRange</item>
  </portal_type>
  <portal_type id="Slave Instance">
+  <item>HostingSubscription</item>
   <item>Reference</item>
   <item>SlaveInstanceConstraint</item>
   <item>SoftwareInstance</item>
@@ -16,6 +19,7 @@
   <item>VariationRange</item>
  </portal_type>
  <portal_type id="Software Instance">
+  <item>HostingSubscription</item>
   <item>Reference</item>
   <item>SoftwareInstance</item>
   <item>SoftwareInstanceConstraint</item>

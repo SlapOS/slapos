@@ -1,6 +1,9 @@
+Hosting Subscription | HostingSubscription
+Hosting Subscription | SoftwareInstance
 Hosting Subscription | TextDocument
 Hosting Subscription | Url
 Hosting Subscription | VariationRange
+Slave Instance | HostingSubscription
 Slave Instance | Reference
 Slave Instance | SlaveInstanceConstraint
 Slave Instance | SoftwareInstance
@@ -8,6 +11,7 @@ Slave Instance | TextDocument
 Slave Instance | VariationRange
 Software Installation | Url
 Software Installation | VariationRange
+Software Instance | HostingSubscription
 Software Instance | Reference
 Software Instance | SoftwareInstance
 Software Instance | SoftwareInstanceConstraint
