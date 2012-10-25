@@ -4,10 +4,6 @@
   <workflow>slap_interaction_workflow</workflow>
  </chain>
  <chain>
-  <type>Computer</type>
-  <workflow>computer_slap_interface_workflow</workflow>
- </chain>
- <chain>
   <type>Computer Partition</type>
   <workflow>slap_interaction_workflow</workflow>
  </chain>
