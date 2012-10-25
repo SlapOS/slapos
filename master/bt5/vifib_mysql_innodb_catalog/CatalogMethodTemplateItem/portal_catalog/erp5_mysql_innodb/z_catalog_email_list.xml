@@ -26,7 +26,7 @@ getPortalType</string> </value>
 
 <dtml-let email_list="[]">\n
   <dtml-in prefix="loop" expr="_.range(_.len(uid))">\n
-    <dtml-if expr="getPortalType[loop_item] in [\'Email\', \'Software Release\', \'Software Installation\']">\n
+    <dtml-if expr="getPortalType[loop_item] in [\'Email\', \'Software Release\', \'Software Installation\', \'Software Instance\', \'Hosting Subscription\']">\n
       <dtml-call expr="email_list.append(loop_item)">\n
     </dtml-if>\n
   </dtml-in>\n
