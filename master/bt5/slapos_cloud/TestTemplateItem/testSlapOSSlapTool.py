@@ -934,3 +934,23 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
+  def test_setConnectionXml(self):
+    self._makeComplexComputer()
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    connection_xml = """<marshal>
+  <dictionary id="i2">
+    <string>p1</string>
+    <string>v1</string>
+    <string>p2</string>
+    <string>v2</string>
+  </dictionary>
+</marshal>"""
+    created_at = rfc1123_date(DateTime())
+    self.login(self.start_requested_software_instance.getReference())
+    response = self.portal_slap.setComputerPartitionConnectionXml(self.computer_id,
+      partition_id, connection_xml)
+    self.assertEqual('None', response)
+    self.assertEqual({'p2': 'v2', 'p1': 'v1'},
+      self.start_requested_software_instance.getConnectionXmlAsDict()
+    )
