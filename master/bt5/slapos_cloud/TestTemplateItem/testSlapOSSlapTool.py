@@ -1123,3 +1123,41 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         self.destroy_requested_software_instance.getValidationState())
     self.assertEqual(None, self.destroy_requested_software_instance.getSslKey())
     self.assertEqual(None, self.destroy_requested_software_instance.getSslCertificate())
+
+  def assertInstanceRequestSimulator(self, args, kwargs):
+    stored = eval(open(self.instance_request_simulator).read())
+    # do the same translation magic as in workflow
+    self.assertEqual(stored,
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'requestInstance'}])
+
+  def test_request(self):
+    self._makeComplexComputer()
+    self.instance_request_simulator = tempfile.mkstemp()[1]
+    try:
+      partition_id = self.start_requested_software_instance.getAggregateValue(
+          portal_type='Computer Partition').getReference()
+      self.login(self.start_requested_software_instance.getReference())
+      self.start_requested_software_instance.requestInstance = Simulator(
+        self.instance_request_simulator, 'requestInstance')
+      response = self.portal_slap.requestComputerPartition(self.computer_id,
+          partition_id, 'req_release', 'req_reference',
+          '<marshal><bool>1</bool></marshal>',
+          '<marshal><dictionary id="i2"/></marshal>',
+          '<marshal><dictionary id="i2"/></marshal>',
+          '<marshal><string>started</string></marshal>')
+      self.assertEqual(408, response.status)
+      self.assertEqual('private',
+          response.headers.get('cache-control'))
+      self.assertInstanceRequestSimulator((), {
+          'instance_xml': "<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n",
+          'software_title': '<marshal><bool>1</bool></marshal>',
+          'software_release': 'req_release',
+          'state': 'started',
+          'sla_xml': "<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n",
+          'software_type': 'req_reference',
+          'shared': False})
+    finally:
+      if os.path.exists(self.instance_request_simulator):
+        os.unlink(self.instance_request_simulator)
+      
