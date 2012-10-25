@@ -1,5 +1,9 @@
 <workflow_chain>
  <chain>
+  <type>Computer Partition</type>
+  <workflow>computer_partition_slap_interface_workflow</workflow>
+ </chain>
+ <chain>
   <type>Hosting Subscription</type>
   <workflow>edit_workflow, instance_slap_interface_workflow</workflow>
  </chain>

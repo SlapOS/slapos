@@ -9,7 +9,7 @@
  </chain>
  <chain>
   <type>Computer Partition</type>
-  <workflow>computer_partition_slap_interface_workflow, slap_interaction_workflow</workflow>
+  <workflow>slap_interaction_workflow</workflow>
  </chain>
  <chain>
   <type>Hosting Subscription</type>
