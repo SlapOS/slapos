@@ -1,5 +1,4 @@
 Hosting Subscription | HostingSubscription
 Hosting Subscription | SoftwareInstance
 Slave Instance | HostingSubscription
-Software Installation | Url
 Software Instance | HostingSubscription
