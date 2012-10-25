@@ -66,7 +66,7 @@ portal = context.getPortalObject()\n
 order = context.getParentValue()\n
 if state in [\'planned\', \'ordered\']:\n
   instance = context.getAggregateValue(portal_type=[\'Software Instance\', \'Slave Instance\'])\n
-  instance_software_release_url = instance.getRootSoftwareReleaseUrl()\n
+  instance_software_release_url = instance.getUrlString()\n
   line_software_release_document = context.getAggregateValue(portal_type=\'Software Release\')\n
   line_software_release_url = \'\'\n
   if line_software_release_document is not None:\n

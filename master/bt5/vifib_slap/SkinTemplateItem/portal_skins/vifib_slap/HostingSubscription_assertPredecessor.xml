@@ -58,7 +58,7 @@
   return\n
 \n
 context.requestInstance(\n
-  software_release=context.getRootSoftwareReleaseUrl(),\n
+  software_release=context.getUrlString(),\n
   software_title=context.getTitle(),\n
   software_type=context.getSourceReference(),\n
   instance_xml=context.getTextContent(),\n

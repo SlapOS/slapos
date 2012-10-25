@@ -139,7 +139,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     setupSoftwareInstance(self.start_requested_software_instance, **dict(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
-        root_software_release_url=\
+        url_string=\
           self.start_requested_software_installation.getUrlString(),
         source_reference=self.generateNewSoftwareType(),
         text_content=self.generateSafeXml(),
@@ -150,7 +150,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     setupSoftwareInstance(self.hosting_subscription, **dict(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
-        root_software_release_url=\
+        url_string=\
           self.start_requested_software_installation.getUrlString(),
         source_reference=self.generateNewSoftwareType(),
         text_content=self.generateSafeXml(),
@@ -169,7 +169,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     setupSoftwareInstance(self.stop_requested_software_instance, **dict(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
-        root_software_release_url=\
+        url_string=\
           self.start_requested_software_installation.getUrlString(),
         source_reference=self.generateNewSoftwareType(),
         text_content=self.generateSafeXml(),
@@ -186,7 +186,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     setupSoftwareInstance(self.destroy_requested_software_instance, **dict(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
-        root_software_release_url=\
+        url_string=\
           self.start_requested_software_installation.getUrlString(),
         source_reference=self.generateNewSoftwareType(),
         text_content=self.generateSafeXml(),
@@ -203,7 +203,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     setupSoftwareInstance(self.destroyed_software_instance, **dict(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
-        root_software_release_url=\
+        url_string=\
           self.start_requested_software_installation.getUrlString(),
         source_reference=self.generateNewSoftwareType(),
         text_content=self.generateSafeXml(),
@@ -458,19 +458,19 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
   partition_3_instance_software_type=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
   partition_3_timestamp=int(self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
   partition_3_param=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
-  partition_3_software_release_url=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getRootSoftwareReleaseUrl(),
+  partition_3_software_release_url=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
 
   partition_2_instance_guid=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
   partition_2_instance_software_type=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
   partition_2_timestamp=int(self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
   partition_2_param=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
-  partition_2_software_release_url=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getRootSoftwareReleaseUrl(),
+  partition_2_software_release_url=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
 
   partition_1_instance_guid=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
   partition_1_instance_software_type=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
   partition_1_timestamp=int(self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
   partition_1_param=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
-  partition_1_software_release_url=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getRootSoftwareReleaseUrl(),
+  partition_1_software_release_url=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
   )
 
   def test_getFullComputerInformation(self):
@@ -773,7 +773,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 """ % dict(
     computer_id=self.computer_id,
     instance_guid=self.start_requested_software_instance.getReference(),
-    software_release_url=self.start_requested_software_instance.getRootSoftwareReleaseUrl(),
+    software_release_url=self.start_requested_software_instance.getUrlString(),
     software_type=self.start_requested_software_instance.getSourceReference(),
     param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
     timestamp=int(self.start_requested_software_instance.getModificationDate())
@@ -964,7 +964,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 """ % dict(
   computer_id=self.computer_id,
   param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
-  software_release_url=self.start_requested_software_instance.getRootSoftwareReleaseUrl(),
+  software_release_url=self.start_requested_software_instance.getUrlString(),
   timestamp=int(self.start_requested_software_instance.getModificationDate()),
   instance_guid=self.start_requested_software_instance.getReference(),
   software_type=self.start_requested_software_instance.getSourceReference()

@@ -63,7 +63,7 @@ if hosting_subscription.getDestinationSectionValue().getReference() == \'seleniu
 \n
   person = hosting_subscription.getDestinationSectionValue(portal_type="Person")\n
   person.requestSoftwareInstance(\n
-    software_release=hosting_subscription.getRootSoftwareReleaseUrl(),\n
+    software_release=hosting_subscription.getUrlString(),\n
     instance_xml=hosting_subscription.getTextContent(),\n
     software_type=hosting_subscription.getSourceReference(),\n
     sla_xml=hosting_subscription.getSlaXml(),\n

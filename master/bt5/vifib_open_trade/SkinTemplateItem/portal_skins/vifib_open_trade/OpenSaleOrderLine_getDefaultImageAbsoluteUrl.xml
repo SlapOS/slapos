@@ -55,7 +55,7 @@ portal = context.getPortalObject()\n
 \n
 release = portal.portal_catalog.getResultValue(\n
   portal_type="Software Release",\n
-  url_string=subscription_item.getRootSoftwareReleaseUrl(),\n
+  url_string=subscription_item.getUrlString(),\n
 )\n
 if release is not None:\n
   software_product = release.getAggregateValue()\n

@@ -67,7 +67,7 @@ except KeyError:\n
   raise TypeError, "RequestedInstance_updateParameterInformation takes exactly 5 arguments"\n
 \n
 edit_kw = {\n
-  \'root_software_release_url\': software_release_url_string,\n
+  \'url_string\': software_release_url_string,\n
   \'text_content\': instance_xml,\n
   \'source_reference\': software_type,\n
   \'sla_xml\': sla_xml,\n

@@ -92,7 +92,7 @@
                         <string>my_title</string>
                         <string>your_new_title</string>
                         <string>my_update_button</string>
-                        <string>my_root_software_release_url</string>
+                        <string>my_url_string</string>
                         <string>my_source_reference</string>
                         <string>your_status</string>
                         <string>your_monitoring_status_js</string>

@@ -24,7 +24,7 @@
               <tuple>
                 <string>source_reference</string>
                 <string>root_slave</string>
-                <string>root_software_release_url</string>
+                <string>url_string</string>
               </tuple>
             </value>
         </item>

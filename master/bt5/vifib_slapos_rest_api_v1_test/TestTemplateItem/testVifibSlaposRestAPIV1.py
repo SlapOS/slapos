@@ -519,7 +519,7 @@ class VifibSlaposRestAPIV1InstanceMixin(VifibSlaposRestAPIV1Mixin):
       reference='SI' + self.test_random_id,
       ssl_key='SSL Key',
       ssl_certificate='SSL Certificate',
-      root_software_release_url='http://url.of.software.release/'
+      url_string='http://url.of.software.release/'
     )
     software_instance.validate()
     hosting_subscription.edit(

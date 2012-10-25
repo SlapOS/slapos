@@ -257,7 +257,7 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
     self.assertEquals(software_release,
-                      hosting_subscription.getRootSoftwareReleaseUrl())
+                      hosting_subscription.getUrlString())
     self.assertEquals(software_title, hosting_subscription.getTitle())
     self.assertEquals(software_type, hosting_subscription.getSourceReference())
     self.assertEquals(instance_xml, hosting_subscription.getTextContent())
@@ -363,7 +363,7 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
                       hosting_subscription2.getReference())
 
     self.assertEquals(software_release2,
-                      hosting_subscription.getRootSoftwareReleaseUrl())
+                      hosting_subscription.getUrlString())
     self.assertEquals(software_title, hosting_subscription.getTitle())
     self.assertEquals(software_type2, hosting_subscription.getSourceReference())
     self.assertEquals(instance_xml2, hosting_subscription.getTextContent())
@@ -474,7 +474,7 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
                       hosting_subscription2.getReference())
 
     self.assertEquals(software_release2,
-                      hosting_subscription2.getRootSoftwareReleaseUrl())
+                      hosting_subscription2.getUrlString())
     self.assertEquals(software_title2, hosting_subscription2.getTitle())
     self.assertEquals(software_type2, hosting_subscription2.getSourceReference())
     self.assertEquals(instance_xml2, hosting_subscription2.getTextContent())

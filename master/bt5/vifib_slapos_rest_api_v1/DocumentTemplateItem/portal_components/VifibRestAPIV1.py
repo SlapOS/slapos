@@ -451,7 +451,7 @@ class InstancePublisher(GenericPublisher):
         d = {
           "title": software_instance.getTitle(),
           "status": software_instance.getSlapState(),
-          "software_release": software_instance.getRootSoftwareReleaseUrl(),
+          "software_release": software_instance.getUrlString(),
           "software_type": software_instance.getSourceReference(),
           "slave": software_instance.getPortalType() == 'Slave Instance',
           "connection": software_instance.getConnectionXmlAsDict(),

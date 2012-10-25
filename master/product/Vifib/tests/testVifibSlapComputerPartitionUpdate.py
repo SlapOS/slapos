@@ -23,7 +23,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         'destroy_requested': instance.requestDestroy,
         }
     method_dict[instance.getSlapState()](
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml='<?xml version="1.0" ' \
                      'encoding="utf-8"?><instance><parameter id="foo">bar</parameter></instance>',
         software_type=instance.getSourceReference(),
@@ -435,7 +435,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
         }
     self.assertRaises(UnsupportedWorkflowMethod, 
         method_dict[instance.getSlapState()],
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),

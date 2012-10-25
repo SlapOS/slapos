@@ -562,7 +562,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     instance.requestDestroy(
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
@@ -580,7 +580,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     self.assertRaises(UnsupportedWorkflowMethod, instance.requestDestroy, 
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
@@ -597,7 +597,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     instance.requestStart(
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
@@ -614,7 +614,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     instance.requestStop(
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
@@ -2752,7 +2752,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     instance.requestDestroy(
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
@@ -2769,7 +2769,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     instance.requestStart(
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
@@ -2787,7 +2787,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     instance.requestStop(
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
@@ -2880,7 +2880,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     instance.requestStart(
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),
@@ -2897,7 +2897,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     else:
       raise NotImplementedError
     instance.requestStop(
-        software_release=instance.getRootSoftwareReleaseUrl(),
+        software_release=instance.getUrlString(),
         instance_xml=instance.getTextContent(),
         software_type=instance.getSourceReference(),
         sla_xml=instance.getSlaXml(),

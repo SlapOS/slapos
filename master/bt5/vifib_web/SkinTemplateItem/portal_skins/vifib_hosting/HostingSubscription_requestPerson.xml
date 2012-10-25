@@ -58,7 +58,7 @@ if state is None:\n
 person = context.getDestinationSectionValue()\n
 person.requestSoftwareInstance(\n
   state=state,\n
-  software_release=context.getRootSoftwareReleaseUrl(),\n
+  software_release=context.getUrlString(),\n
   software_title=context.getTitle(),\n
   software_type=context.getSourceReference(),\n
   instance_xml=instance_xml,\n

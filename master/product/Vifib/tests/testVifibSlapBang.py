@@ -654,7 +654,7 @@ class TestVifibSlapBang(TestVifibSlapWebServiceMixin):
 
     self.login(sequence['software_instance_reference'])
     root_software_instance.requestDestroy(
-        software_release=root_software_instance.getRootSoftwareReleaseUrl(),
+        software_release=root_software_instance.getUrlString(),
         instance_xml=root_software_instance.getTextContent(),
         software_type=root_software_instance.getSourceReference(),
         sla_xml=root_software_instance.getSlaXml(),

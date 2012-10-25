@@ -64,7 +64,7 @@ promise_kw = {\n
   \'instance_xml\': context.getTextContent(),\n
   \'software_type\': context.getSourceReference(),\n
   \'sla_xml\': context.getSlaXml(),\n
-  \'software_release\': context.getRootSoftwareReleaseUrl(),\n
+  \'software_release\': context.getUrlString(),\n
   \'shared\': (context.getPortalType() == \'Slave Instance\'),\n
 }\n
 \n

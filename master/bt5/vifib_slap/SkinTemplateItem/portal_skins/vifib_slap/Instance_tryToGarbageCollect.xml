@@ -70,7 +70,7 @@ if (instance.getSlapState() != "destroy_requested"):\n
           (instance.getPortalType(), instance.getRelativeUrl())\n
 \n
       requester.requestInstance(\n
-        software_release=instance.getRootSoftwareReleaseUrl(),\n
+        software_release=instance.getUrlString(),\n
         software_title=instance.getTitle(),\n
         software_type=instance.getSourceReference(),\n
         instance_xml=instance.getTextContent(),\n

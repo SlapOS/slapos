@@ -103,7 +103,7 @@ if can_allocate:\n
 \n
     instance = instance.getObject()\n
 \n
-    software_release_url = instance.getRootSoftwareReleaseUrl()\n
+    software_release_url = instance.getUrlString()\n
     if software_release_url in software_release_capacity_dict:\n
       software_release_capacity = software_release_capacity_dict[software_release_url]\n
     else:\n

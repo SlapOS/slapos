@@ -48,7 +48,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     hosting_subscription.edit(
         title=self.request_kw['software_title'],
         reference="TESTHS-%s" % new_id,
-        root_software_release_url=self.request_kw['software_release'],
+        url_string=self.request_kw['software_release'],
         source_reference=self.request_kw['software_type'],
         text_content=self.request_kw['instance_xml'],
         sla_xml=self.request_kw['sla_xml'],
@@ -62,7 +62,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.software_instance.edit(
         title=self.request_kw['software_title'],
         reference="TESTSI-%s" % new_id,
-        root_software_release_url=self.request_kw['software_release'],
+        url_string=self.request_kw['software_release'],
         source_reference=self.request_kw['software_type'],
         text_content=self.request_kw['instance_xml'],
         sla_xml=self.request_kw['sla_xml'],
@@ -146,7 +146,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual('start_requested',
                      requested_instance.getSlapState())
     self.assertEqual(request_kw['software_release'],
-                     requested_instance.getRootSoftwareReleaseUrl())
+                     requested_instance.getUrlString())
     self.assertEqual(request_kw['instance_xml'],
                      requested_instance.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
@@ -181,7 +181,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual('start_requested',
                      requested_instance.getSlapState())
     self.assertEqual(request_kw['software_release'],
-                     requested_instance.getRootSoftwareReleaseUrl())
+                     requested_instance.getUrlString())
     self.assertEqual(request_kw['instance_xml'],
                      requested_instance.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
@@ -219,7 +219,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual('start_requested',
         requested_instance.getSlapState())
     self.assertEqual(request_kw['software_release'],
-        requested_instance.getRootSoftwareReleaseUrl())
+        requested_instance.getUrlString())
     self.assertEqual(request_kw['instance_xml'],
         requested_instance.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
@@ -253,7 +253,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual('start_requested',
         requested_instance.getSlapState())
     self.assertEqual(request_kw['software_release'],
-        requested_instance.getRootSoftwareReleaseUrl())
+        requested_instance.getUrlString())
     self.assertEqual(request_kw['instance_xml'],
         requested_instance.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
@@ -281,7 +281,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual('start_requested',
         requested_instance2.getSlapState())
     self.assertEqual(request_kw['software_release'],
-        requested_instance2.getRootSoftwareReleaseUrl())
+        requested_instance2.getUrlString())
     self.assertEqual(request_kw['instance_xml'],
         requested_instance2.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
@@ -490,7 +490,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual('start_requested',
         requested_instance.getSlapState())
     self.assertEqual(request_kw['software_release'],
-        requested_instance.getRootSoftwareReleaseUrl())
+        requested_instance.getUrlString())
     self.assertEqual(request_kw['instance_xml'],
         requested_instance.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
@@ -517,7 +517,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual('stop_requested',
         requested_instance2.getSlapState())
     self.assertEqual(request_kw['software_release'],
-        requested_instance2.getRootSoftwareReleaseUrl())
+        requested_instance2.getUrlString())
     self.assertEqual(request_kw['instance_xml'],
         requested_instance2.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
@@ -546,7 +546,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual('destroy_requested',
         requested_instance3.getSlapState())
     self.assertEqual(request_kw['software_release'],
-        requested_instance3.getRootSoftwareReleaseUrl())
+        requested_instance3.getUrlString())
     self.assertEqual(request_kw['instance_xml'],
         requested_instance3.getTextContent())
     self.assertEqual(request_kw['sla_xml'],
@@ -760,7 +760,7 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     self.assertEqual(requested_instance.getRelativeUrl(),
         requested_instance2.getRelativeUrl())
     self.assertEqual(request_kw['software_release'],
-        requested_instance2.getRootSoftwareReleaseUrl())
+        requested_instance2.getUrlString())
     self.assertEqual(bang_amount+1, self._countBang(requested_instance))
 
   def test_request_software_type_bang(self):

@@ -663,7 +663,7 @@ class SlapTool(BaseTool):
         slap_partition._requested_state = 'started'
 
       slap_partition._software_release_document = SoftwareRelease(
-            software_release=software_instance.getRootSoftwareReleaseUrl(),
+            software_release=software_instance.getUrlString(),
             computer_guid=computer_reference)
 
       slap_partition._need_modification = 1
@@ -799,7 +799,7 @@ class SlapTool(BaseTool):
         slap_partition._requested_state = 'started'
 
       slap_partition._software_release_document = SoftwareRelease(
-            software_release=software_instance.getRootSoftwareReleaseUrl(),
+            software_release=software_instance.getUrlString(),
             computer_guid=computer_id)
 
       slap_partition._need_modification = 1
@@ -1395,7 +1395,7 @@ class SlapTool(BaseTool):
       'slap_computer_id': computer_partition.getParentValue().getReference(),
       'slap_computer_partition_id': computer_partition.getReference(),
       'slap_software_type': software_instance.getSourceReference(),
-      'slap_software_release_url': software_instance.getRootSoftwareReleaseUrl(),
+      'slap_software_release_url': software_instance.getUrlString(),
       'slave_instance_list': slave_instance_list,
       'ip_list': ip_list,
       'timestamp': "%i" % timestamp,

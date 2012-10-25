@@ -68,7 +68,7 @@ elif slap_state == \'busy\':\n
   if (instance is None) or (instance.getSlapState() != "start_requested"):\n
     return []\n
   else:\n
-    return [instance.getRootSoftwareReleaseUrl()]\n
+    return [instance.getUrlString()]\n
 \n
 else:\n
   return []\n

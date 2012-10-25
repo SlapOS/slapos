@@ -56,7 +56,7 @@
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>_setRootSoftwareReleaseUrl</string>
+                <string>_setUrlString</string>
                 <string>_setTextContent</string>
                 <string>_setSourceReference</string>
                 <string>_setSlaXml</string>

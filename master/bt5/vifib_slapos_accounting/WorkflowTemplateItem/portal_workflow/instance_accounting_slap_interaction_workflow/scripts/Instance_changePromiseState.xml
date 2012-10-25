@@ -122,9 +122,9 @@ else:\n
       if (packing_list  is not None):\n
         instance.edit(causality_value=packing_list)\n
     else:\n
-      software_release_document = instance.Base_getSoftwareReleaseDocument(instance.getRootSoftwareReleaseUrl())\n
+      software_release_document = instance.Base_getSoftwareReleaseDocument(instance.getUrlString())\n
       if software_release_document is None:\n
-        raise NotImplemnetedError(\'Software Release %r not ready yet\' % instance.getRootSoftwareReleaseUrl())\n
+        raise NotImplemnetedError(\'Software Release %r not ready yet\' % instance.getUrlString())\n
       # Create a new packing list from scratch\n
       if (state == started):\n
         service_relative_url = hosting_service_relative_url\n
@@ -149,9 +149,9 @@ else:\n
     service_relative_url = line.getResource()\n
 \n
     def letsclone(service_relative_url):\n
-      software_release_document = instance.Base_getSoftwareReleaseDocument(instance.getRootSoftwareReleaseUrl())\n
+      software_release_document = instance.Base_getSoftwareReleaseDocument(instance.getUrlString())\n
       if software_release_document is None:\n
-        raise NotImplementedError(\'Software Release %r not ready yet\' % instance.getRootSoftwareReleaseUrl())\n
+        raise NotImplementedError(\'Software Release %r not ready yet\' % instance.getUrlString())\n
       new_delivery = delivery.Base_createCloneDocument(batch_mode=1)\n
       new_delivery.edit(start_date=DateTime(), stop_date=DateTime(), causality_value=None)\n
       delivery_line = new_delivery.contentValues(portal_type="Sale Packing List Line")[0]\n
