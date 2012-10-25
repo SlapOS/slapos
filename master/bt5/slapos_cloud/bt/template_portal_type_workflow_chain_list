@@ -1,6 +1,7 @@
 Computer Partition | computer_partition_slap_interface_workflow
 Computer | computer_slap_interface_workflow
 Hosting Subscription | edit_workflow
+Hosting Subscription | hosting_subscription_workflow
 Hosting Subscription | instance_slap_interface_workflow
 Person | person_slap_interface_workflow
 Slave Instance | edit_workflow
