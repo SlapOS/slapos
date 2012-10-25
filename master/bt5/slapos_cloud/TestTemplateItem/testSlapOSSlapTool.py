@@ -591,10 +591,11 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
 class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   def test_getComputerPartitionCertificate(self):
     self._makeComplexComputer()
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
     self.login(self.start_requested_software_instance.getReference())
     response = self.portal_slap.getComputerPartitionCertificate(self.computer_id,
-      self.start_requested_software_instance.getAggregateValue(
-        portal_type='Computer Partition').getReference())
+        partition_id)
     self.assertEqual(200, response.status)
     self.assertEqual( 'public, max-age=0, must-revalidate',
         response.headers.get('cache-control'))
@@ -740,3 +741,91 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 )
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+
+  def test_getComputerPartitionStatus(self):
+    self._makeComplexComputer()
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    created_at = rfc1123_date(DateTime())
+    self.login(self.start_requested_software_instance.getReference())
+    response = self.portal_slap.getComputerPartitionStatus(self.computer_id,
+      partition_id)
+    self.assertEqual(200, response.status)
+    self.assertEqual( 'public, max-age=60, stale-if-error=604800',
+        response.headers.get('cache-control'))
+    self.assertEqual('REMOTE_USER',
+        response.headers.get('vary'))
+    self.assertTrue('last-modified' in response.headers)
+    self.assertEqual('text/xml; charset=utf-8',
+        response.headers.get('content-type'))
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+    expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <dictionary id='i2'>
+    <string>created_at</string>
+    <string>%(created_at)s</string>
+    <string>text</string>
+    <string>#error no data found for %(instance_guid)s</string>
+    <string>user</string>
+    <string>%(instance_guid)s</string>
+  </dictionary>
+</marshal>
+""" % dict(
+  created_at=created_at,
+  instance_guid=self.start_requested_software_instance.getReference(),
+)
+    self.assertEqual(expected_xml, got_xml,
+        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+
+  def test_getComputerPartitionStatus_visited(self):
+    self._makeComplexComputer()
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    created_at = rfc1123_date(DateTime())
+    self.login(self.start_requested_software_instance.getReference())
+    self.portal_slap.registerComputerPartition(self.computer_id, partition_id)
+    response = self.portal_slap.getComputerPartitionStatus(self.computer_id,
+      partition_id)
+    self.assertEqual(200, response.status)
+    self.assertEqual( 'public, max-age=60, stale-if-error=604800',
+        response.headers.get('cache-control'))
+    self.assertEqual('REMOTE_USER',
+        response.headers.get('vary'))
+    self.assertTrue('last-modified' in response.headers)
+    self.assertEqual('text/xml; charset=utf-8',
+        response.headers.get('content-type'))
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+    expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <dictionary id='i2'>
+    <unicode>created_at</unicode>
+    <unicode>%(created_at)s</unicode>
+    <unicode>text</unicode>
+    <unicode>#access %(computer_id)s %(partition_id)s</unicode>
+    <unicode>user</unicode>
+    <unicode>%(instance_guid)s</unicode>
+  </dictionary>
+</marshal>
+""" % dict(
+  created_at=created_at,
+  instance_guid=self.start_requested_software_instance.getReference(),
+  computer_id=self.computer_id,
+  partition_id=partition_id
+)
+    self.assertEqual(expected_xml, got_xml,
+        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+
