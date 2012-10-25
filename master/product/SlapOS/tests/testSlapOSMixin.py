@@ -34,6 +34,9 @@ from Products.ERP5Type.tests.utils import DummyMailHost
 
 class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
   def afterSetUp(self):
+    if self.isLiveTest():
+      # nothing to do in Live Test
+      return
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
     self.portal.portal_caches._p_changed = 1
     transaction.commit()
@@ -47,9 +50,6 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       transaction.commit()
 
   def bootstrapSite(self):
-    if self.isLiveTest():
-      # nothing to do in Live Test
-      return
     self.setupPortalCertificateAuthority()
     self.setupPayZenInterface()
     self.setUpMemcached()
