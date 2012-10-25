@@ -1060,6 +1060,15 @@ class SlapTool(BaseTool):
     instance = self._getSoftwareInstanceForComputerPartition(
         computer_id,
         computer_partition_id)
+    if instance.getSlapState() == 'destroy_requested':
+      # remove certificate from SI
+      if instance.getSslKey() is not None or instance.getSslCertificate() is not None:
+        instance.edit(
+          ssl_key=None,
+          ssl_certificate=None,
+        )
+      if instance.getValidationState() == 'validated':
+        instance.invalidate()
     delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
     if delivery is not None:
       portal = self.getPortalObject()
@@ -1083,13 +1092,6 @@ class SlapTool(BaseTool):
           # even if certificate was already revoked
           pass
 
-        # remove certificate from SI
-        instance.edit(
-          ssl_key=None,
-          ssl_certificate=None,
-        )
-
-        instance.invalidate()
 
   @convertToREST
   def _setComputerPartitionConnectionXml(self, computer_id,
