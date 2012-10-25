@@ -1088,3 +1088,30 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       if os.path.exists(self.instance_bang_simulator):
         os.unlink(self.instance_bang_simulator)
       
+  def assertInstanceRenameSimulator(self, args, kwargs):
+    stored = eval(open(self.instance_rename_simulator).read())
+    # do the same translation magic as in workflow
+    self.assertEqual(stored,
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'rename'}])
+
+  def test_softwareInstanceRename(self):
+    self._makeComplexComputer()
+    self.instance_rename_simulator = tempfile.mkstemp()[1]
+    try:
+      partition_id = self.start_requested_software_instance.getAggregateValue(
+          portal_type='Computer Partition').getReference()
+      self.login(self.start_requested_software_instance.getReference())
+      self.start_requested_software_instance.rename = Simulator(
+        self.instance_rename_simulator, 'rename')
+      new_name = 'new me'
+      response = self.portal_slap.softwareInstanceRename(new_name, self.computer_id,
+        partition_id)
+      self.assertEqual('None', response)
+      self.assertInstanceRenameSimulator((), {
+          'comment': 'Rename %s into %s' % (self.start_requested_software_instance.getTitle(),
+            new_name), 'new_name': new_name})
+    finally:
+      if os.path.exists(self.instance_rename_simulator):
+        os.unlink(self.instance_rename_simulator)
+      
