@@ -71,13 +71,11 @@ if obj.getPortalType() == \'Person\':\n
     return [{\'aggregate\': open_sale_order.getRelativeUrl()}]\n
 \n
 if obj.getPortalType() == \'Software Instance\':\n
-  delivery_line = obj.getAggregateRelatedValue(portal_type=\'Sale Packing List Line\')\n
-  if delivery_line is not None:\n
-    hosting_subscription = delivery_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
-    if hosting_subscription is not None:\n
-      open_sale_order_line = hosting_subscription.getAggregateRelatedValue(portal_type=\'Open Sale Order Line\')\n
-      if open_sale_order_line is not None and open_sale_order_line.getParentValue().getValidationState() == \'validated\':\n
-        return [{\'aggregate\': open_sale_order_line.getParentValue().getRelativeUrl()}]\n
+  hosting_subscription = obj.getAggregateValue(portal_type=\'Hosting Subscription\')\n
+  if hosting_subscription is not None:\n
+    open_sale_order_line = hosting_subscription.getAggregateRelatedValue(portal_type=\'Open Sale Order Line\')\n
+    if open_sale_order_line is not None and open_sale_order_line.getParentValue().getValidationState() == \'validated\':\n
+      return [{\'aggregate\': open_sale_order_line.getParentValue().getRelativeUrl()}]\n
     \n
 return []\n
 </string> </value>

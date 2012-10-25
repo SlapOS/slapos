@@ -132,19 +132,9 @@ def getSoftwareInstanceSecurityCategory(self, base_category_list, user_name,
         category_dict.setdefault(base_category, []).extend(['role', 'role/instance'])
       if base_category == "aggregate":
         software_instance = software_instance_list[0]
-        current_delivery_line = self.portal_catalog.unrestrictedGetResultValue(
-          portal_type='Sale Packing List Line',
-          aggregate_uid=software_instance.getUid(),
-          simulation_state=self.getPortalCurrentInventoryStateList() + \
-              self.getPortalFutureInventoryStateList() + \
-              self.getPortalReservedInventoryStateList() + \
-              self.getPortalTransitInventoryStateList(),
-          sort_on=(('movement.start_date', 'DESC'),)
-        )
-        if current_delivery_line is not None:
-          hosting_item = current_delivery_line.getAggregateValue(portal_type='Hosting Subscription')
-          if hosting_item is not None:
-            category_dict.setdefault(base_category, []).append(hosting_item.getRelativeUrl())
+        hosting_item = software_instance.getAggregateValue(portal_type='Hosting Subscription')
+        if hosting_item is not None:
+          category_dict.setdefault(base_category, []).append(hosting_item.getRelativeUrl())
     category_list.append(category_dict)
   elif len(software_instance_list) > 1:
     raise ConsistencyError, "Error: There is more than one Software Instance " \
