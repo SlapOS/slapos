@@ -71,7 +71,7 @@ category_list = []\n
 scope = computer.getAllocationScope()\n
 if scope == \'open/public\':\n
   return {"Auditor": ["R-SHADOW-PERSON"]}\n
-elif scope == \'open/private\':\n
+elif scope == \'open/personal\':\n
   person = computer.getSourceAdministrationValue(portal_type="Person")\n
   if person is not None:\n
     return {"Auditor": ["SHADOW-%s" % person.getReference()]}\n
