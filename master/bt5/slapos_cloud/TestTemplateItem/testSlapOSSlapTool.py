@@ -1111,3 +1111,15 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       if os.path.exists(self.instance_rename_simulator):
         os.unlink(self.instance_rename_simulator)
       
+  def test_destroyedComputerPartition(self):
+    self._makeComplexComputer()
+    partition_id = self.destroy_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    self.login(self.destroy_requested_software_instance.getReference())
+    response = self.portal_slap.destroyedComputerPartition(self.computer_id,
+      partition_id)
+    self.assertEqual('None', response)
+    self.assertEqual('invalidated',
+        self.destroy_requested_software_instance.getValidationState())
+    self.assertEqual(None, self.destroy_requested_software_instance.getSslKey())
+    self.assertEqual(None, self.destroy_requested_software_instance.getSslCertificate())
