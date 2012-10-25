@@ -1,0 +1,8 @@
+[buildout]
+
+[drupal-init]
+recipe = slapos.cookbook:drupal_init
+drush-binary = ${apache-php:location}/bin/drush
+htdocs = $${rootdirectory:srv}/www
+dependency = $${apache-php:recipe}
+
