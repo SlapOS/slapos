@@ -113,6 +113,7 @@ class TestVifibSkinSelection(testVifibMixin):
 custom
 vifib_upgrader
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_cash
@@ -220,6 +221,7 @@ custom
 vifib_upgrader
 vifib_hosting
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_core
@@ -326,6 +328,7 @@ zpt_generic
 custom
 vifib_upgrader
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_core
@@ -426,6 +429,7 @@ zpt_generic
 custom
 vifib_upgrader
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_core
@@ -526,6 +530,7 @@ zpt_generic
 custom
 vifib_upgrader
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_core
@@ -629,6 +634,7 @@ zpt_generic
 custom
 vifib_upgrader
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_core
@@ -732,6 +738,7 @@ zpt_generic
 custom
 vifib_upgrader
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_core
@@ -832,6 +839,7 @@ zpt_generic
 custom
 vifib_upgrader
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_core
@@ -931,6 +939,7 @@ zpt_generic
 custom
 vifib_upgrader
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_core
@@ -1033,6 +1042,7 @@ vifib_upgrader_201210
 vifib_upgrader_before_201208
 vifib_upgrader_before_201209
 slapos_cloud
+slapos_core
 vifib_agent
 vifib_base
 vifib_core
