@@ -18,8 +18,6 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 
-    self.setupPortalCertificateAuthority()
-
     # Clone computer document
     computer = portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)

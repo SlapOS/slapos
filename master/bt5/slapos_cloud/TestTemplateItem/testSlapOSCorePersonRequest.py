@@ -17,8 +17,6 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 
-    self.setupPortalCertificateAuthority()
-
     # Clone person document
     person_user = portal.person_module.template_member.\
                                  Base_createCloneDocument(batch_mode=1)
