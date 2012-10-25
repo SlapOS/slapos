@@ -1030,10 +1030,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
-  def _countBang(self, document):
-    return len([q for q in document.workflow_history[
-        'instance_slap_interface_workflow'] if q['action'] == 'bang'])
-
   def assertInstanceBangSimulator(self, args, kwargs):
     stored = eval(open(self.instance_bang_simulator).read())
     # do the same translation magic as in workflow
