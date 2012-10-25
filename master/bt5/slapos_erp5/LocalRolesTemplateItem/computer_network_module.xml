@@ -4,7 +4,7 @@
    <item>Auditor</item>
    <item>Author</item>
   </role>
-  <role id='R-SHADOW'>
+  <role id='R-SHADOW-PERSON'>
    <item>Auditor</item>
   </role>
   <role id='zope'>
