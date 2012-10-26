@@ -70,6 +70,8 @@ def assignComputerPartition(software_instance):\n
     hosting_subscription = software_instance.getSpecialiseValue(\n
         portal_type=\'Hosting Subscription\')\n
     person = hosting_subscription.getDestinationSectionValue(portal_type=\'Person\')\n
+    if person is None:\n
+      raise ValueError(\'%s does not have person related\' % hosting_subscription.getRelativeUrl())\n
     if not person.Person_isAllowedToAllocate():\n
       raise Unauthorized(\'Allocation disallowed\')\n
 \n
