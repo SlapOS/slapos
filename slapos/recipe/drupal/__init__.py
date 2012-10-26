@@ -27,9 +27,26 @@
 
 import os
 import subprocess
+import tempfile
+import textwrap
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
+
+# XXX
+# Current issues:
+# - drush connects to mysql with the password on command line
+#    see http://stackoverflow.com/questions/6607675/shell-script-password-security-of-command-line-parameters
+#    it could use a socket, but we are on a different instance than mysql
+# - the admin_password is not published yet.
+# - using slapproxy, sometimes this recipe is not able to connect to mysql (tunnel down).
+#   restarting from supervisor usually solves it.
+#
+
+
+def chown_set(path, mode):
+    prev_mode = os.stat(path).st_mode
+    os.chmod(path, prev_mode | mode)
 
 
 class InitRecipe(GenericBaseRecipe):
@@ -38,19 +55,90 @@ class InitRecipe(GenericBaseRecipe):
 
         - Call the 'drush' command to install a Drupal site and initial database schema.
 
+    Database connection parameters are taken from the provided settings.php file.
+
+    If the database is not empty (ie contains at least one table) the drush script is not called.
+
     """
 
     def install(self):
         drush_binary = self.options['drush-binary']
         htdocs = self.options['htdocs']
+
+        settings_php = self.options['settings-php']
+        if not settings_php.startswith('/'):
+            settings_php = os.path.join(htdocs, settings_php)
+
         os.chdir(htdocs)
-        output = subprocess.check_output([drush_binary,
-                                         '-y', 'site-install',
-                                         '--account-name=admin',
-                                         '--account-pass=admin'
-                                         ])
+
+        if self.is_db_empty(php_binary=self.options['php-binary'],
+                            settings_php=settings_php):
+
+            drush_output = subprocess.check_output([drush_binary,
+                                                   '-y', 'site-install',
+                                                   '--account-name=admin'
+                                                   ],
+                                                   stderr=subprocess.STDOUT)
+
+            self.options['admin_password'] = self.extract_password(drush_output)
+
+            # drush removes the 'w' bit from both the settings file and its
+            # directory.
+            # we restore them, otherwise buildout will see the file as changed
+            # and try to remove it and reinstall the apachephp recipe.
+
+            for path in [settings_php, os.path.dirname(settings_php)]:
+                chown_set(path, 0200)
+
         # XXX return what?
         return []
+
+
+    def extract_password(self, drush_output):
+        return re.search('User password: (\S+)', drush_output).groups()[0]
+
+
+    def is_db_empty(self, php_binary, settings_php):
+        with tempfile.NamedTemporaryFile() as fout:
+            settings_dirname, settings_filename = os.path.split(settings_php)
+            fout.write(textwrap.dedent("""\
+                #!%(php_binary)s
+                <?php
+
+                ini_set('include_path',ini_get('include_path').':%(settings_dirname)s:');
+                require('%(settings_filename)s');
+
+                # taken from drupal: includes/mysql/database.inc
+                $connection_options = $databases['default']['default'];
+
+                $dsn = 'mysql:host=' . $connection_options['host'] . ';port=' . (empty($connection_options['port']) ? 3306 : $connection_options['port']);
+                $dsn .= ';dbname=' . $connection_options['database'];
+
+                $db = new PDO($dsn, $connection_options['username'], $connection_options['password']);
+
+                $tables = $db->query('SHOW TABLES')->fetchAll();
+
+                if (count($tables) > 0) {
+                    exit(10);
+                } else {
+                    exit(0);
+                }
+                """ % {
+                    'php_binary': php_binary,
+                    'settings_dirname': settings_dirname,
+                    'settings_filename': settings_filename
+                    }))
+            fout.flush()
+
+            try:
+                output = subprocess.check_call([php_binary, '-f', fout.name])
+            except subprocess.CalledProcessError as exc:
+                if exc.returncode == 10:
+                    # the database already contains some tables.
+                    return False
+
+        return True
+
 
 
 

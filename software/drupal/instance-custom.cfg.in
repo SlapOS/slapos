@@ -3,6 +3,8 @@
 [drupal-init]
 recipe = slapos.cookbook:drupal_init
 drush-binary = ${apache-php:location}/bin/drush
+php-binary = ${apache-php:location}/bin/php
+settings-php = ${application-configuration:location}
 htdocs = $${rootdirectory:srv}/www
 dependency = $${apache-php:recipe}
 
