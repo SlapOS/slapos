@@ -15,6 +15,7 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
     return 'http://example.org/test%s.cfg' % self.generateNewId()
 
   def afterSetUp(self):
+    super(TestSlapOSCorePersonComputerSupply, self).afterSetUp()
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 

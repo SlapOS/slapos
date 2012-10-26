@@ -13,6 +13,7 @@ class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
     return 'My Comp %s' % self.generateNewId()
 
   def afterSetUp(self):
+    super(TestSlapOSCorePersonRequestComputer, self).afterSetUp()
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 
