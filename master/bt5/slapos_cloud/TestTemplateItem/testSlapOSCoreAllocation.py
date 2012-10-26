@@ -2,6 +2,7 @@
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 import transaction
+from Products.ERP5Type.tests.utils import createZODBPythonScript
 
 class TestSlapOSAllocation(testSlapOSMixin):
 
@@ -142,3 +143,45 @@ class TestSlapOSAllocation(testSlapOSMixin):
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  def _simulateSoftwareInstance_tryToAllocatePartition(self):
+    script_name = 'SoftwareInstance_tryToAllocatePartition'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by SoftwareInstance_tryToAllocatePartition') """ )
+    transaction.commit()
+  
+  def _dropSoftwareInstance_tryToAllocatePartition(self):
+    script_name = 'SoftwareInstance_tryToAllocatePartition'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+    
+  def test_alarm_unallocated(self):
+    self._simulateSoftwareInstance_tryToAllocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_allocate_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(
+        'Visited by SoftwareInstance_tryToAllocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_allocated(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.tic()
+    self._simulateSoftwareInstance_tryToAllocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_allocate_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToAllocatePartition()
+    self.assertNotEqual(
+        'Visited by SoftwareInstance_tryToAllocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
