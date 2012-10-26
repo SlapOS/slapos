@@ -8,6 +8,7 @@ Slave Instance | Reference
 Slave Instance | SlaveInstanceConstraint
 Slave Instance | SoftwareInstance
 Slave Instance | TextDocument
+Slave Instance | Url
 Slave Instance | VariationRange
 Software Installation | Url
 Software Installation | VariationRange
