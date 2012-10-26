@@ -26,7 +26,6 @@ class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
         default_email_text="live_test_%s@example.org" % new_id,
     )
 
-    person_user.updateLocalRolesOnSecurityGroups()
     person_user.validate()
     for assignment in person_user.contentValues(portal_type="Assignment"):
       assignment.open()

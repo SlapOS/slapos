@@ -50,7 +50,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
       default_email_text="live_test_%s@example.org" % new_id,
     )
 
-    self.person_user.updateLocalRolesOnSecurityGroups()
     self.person_user.validate()
     for assignment in self.person_user.contentValues(portal_type="Assignment"):
       assignment.open()
@@ -72,7 +71,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
         predecessor=self.software_instance.getRelativeUrl(),
         destination_section=self.person_user.getRelativeUrl()
     )
-    hosting_subscription.updateLocalRolesOnSecurityGroups()
     hosting_subscription.validate()
     self.portal.portal_workflow._jumpToStateFor(hosting_subscription, 'start_requested')
 
@@ -87,7 +85,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
     )
     self.portal.portal_workflow._jumpToStateFor(self.software_instance, 'start_requested')
     self.software_instance.validate()
-    self.software_instance.updateLocalRolesOnSecurityGroups()
     self.tic()
 
     self.login()
@@ -197,7 +194,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
       default_email_text="live_test_%s@example.org" % new_id,
     )
 
-    person_user.updateLocalRolesOnSecurityGroups()
     person_user.validate()
     for assignment in person_user.contentValues(portal_type="Assignment"):
       assignment.open()

@@ -63,7 +63,6 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
       reference="TESTCOMP-%s" % new_id
     )
 
-    self.computer.updateLocalRolesOnSecurityGroups()
     self.computer.validate()
 
     self.tic()
@@ -162,7 +161,6 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self.portal.portal_workflow._jumpToStateFor(
         self.start_requested_software_instance, 'start_requested')
     self.start_requested_software_instance.validate()
-    self.start_requested_software_instance.updateLocalRolesOnSecurityGroups()
 
     self.stop_requested_software_instance = self.portal.software_instance_module\
         .template_software_instance.Base_createCloneDocument(batch_mode=1)
@@ -179,7 +177,6 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self.portal.portal_workflow._jumpToStateFor(
         self.stop_requested_software_instance, 'stop_requested')
     self.stop_requested_software_instance.validate()
-    self.stop_requested_software_instance.updateLocalRolesOnSecurityGroups()
 
     self.destroy_requested_software_instance = self.portal.software_instance_module\
         .template_software_instance.Base_createCloneDocument(batch_mode=1)
@@ -196,7 +193,6 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self.portal.portal_workflow._jumpToStateFor(
         self.destroy_requested_software_instance, 'destroy_requested')
     self.destroy_requested_software_instance.validate()
-    self.destroy_requested_software_instance.updateLocalRolesOnSecurityGroups()
 
     self.destroyed_software_instance = self.portal.software_instance_module\
         .template_software_instance.Base_createCloneDocument(batch_mode=1)
@@ -214,7 +210,6 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
         self.destroyed_software_instance, 'destroy_requested')
     self.destroyed_software_instance.validate()
     self.destroyed_software_instance.invalidate()
-    self.destroyed_software_instance.updateLocalRolesOnSecurityGroups()
 
     self.tic()
 

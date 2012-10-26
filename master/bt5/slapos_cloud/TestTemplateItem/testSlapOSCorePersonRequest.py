@@ -27,7 +27,6 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
       default_email_text="live_test_%s@example.org" % new_id,
     )
 
-    person_user.updateLocalRolesOnSecurityGroups()
     person_user.validate()
     for assignment in person_user.contentValues(portal_type="Assignment"):
       assignment.open()
@@ -395,7 +394,6 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
       state=state,
     )
     hosting_subscription = person.REQUEST.get('request_hosting_subscription')
-    hosting_subscription.updateLocalRolesOnSecurityGroups()
     transaction.commit()
     hosting_subscription2 = hosting_subscription.Base_createCloneDocument(
                                                                 batch_mode=1)

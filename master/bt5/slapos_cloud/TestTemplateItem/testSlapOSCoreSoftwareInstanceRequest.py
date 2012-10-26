@@ -55,7 +55,6 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
         root_slave=self.request_kw['shared'],
         predecessor=self.software_instance.getRelativeUrl()
     )
-    hosting_subscription.updateLocalRolesOnSecurityGroups()
     hosting_subscription.validate()
     self.portal.portal_workflow._jumpToStateFor(hosting_subscription, 'start_requested')
 
@@ -70,7 +69,6 @@ class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
     )
     self.portal.portal_workflow._jumpToStateFor(self.software_instance, 'start_requested')
     self.software_instance.validate()
-    self.software_instance.updateLocalRolesOnSecurityGroups()
     self.tic()
 
     # Login as new Software Instance

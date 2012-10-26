@@ -36,10 +36,8 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
       reference="TESTCOMP-%s" % new_id,
       source_administration=person_user.getRelativeUrl()
     )
-    computer.updateLocalRolesOnSecurityGroups()
     computer.validate()
     self.computer = computer
-    person_user.updateLocalRolesOnSecurityGroups()
     person_user.validate()
     for assignment in person_user.contentValues(portal_type="Assignment"):
       assignment.open()
