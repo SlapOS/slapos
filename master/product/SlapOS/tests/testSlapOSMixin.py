@@ -76,8 +76,6 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     Install the business templates.
     """
     result = [
-      'erp5_upgrader',
-      'vifib_upgrader', # XXX: rebrand
       'erp5_full_text_myisam_catalog',
       'erp5_core_proxy_field_legacy',
       'erp5_base',
