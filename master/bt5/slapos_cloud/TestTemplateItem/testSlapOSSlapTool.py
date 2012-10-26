@@ -123,88 +123,120 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self.computer.partition2.markBusy()
     self.computer.partition3.markBusy()
 
+    # prepare some trees
     hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    self.start_requested_software_instance = self.portal.software_instance_module\
-        .template_software_instance.Base_createCloneDocument(batch_mode=1)
     hosting_subscription.edit(
-        predecessor=self.start_requested_software_instance.getRelativeUrl()
     )
     hosting_subscription.validate()
-    self.start_requested_software_instance.edit(
-        title=self.generateNewSoftwareTitle(),
-        reference="TESTSI-%s" % self.generateNewId(),
-        url_string=\
-          self.start_requested_software_installation.getUrlString(),
-        source_reference=self.generateNewSoftwareType(),
-        text_content=self.generateSafeXml(),
-        sla_xml=self.generateSafeXml(),
-        aggregate=self.computer.partition1.getRelativeUrl(),
-        specialise=hosting_subscription.getRelativeUrl()
-    )
     hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
-        url_string=\
-          self.start_requested_software_installation.getUrlString(),
-        source_reference=self.generateNewSoftwareType(),
-        text_content=self.generateSafeXml(),
-        sla_xml=self.generateSafeXml(),
-        aggregate=self.computer.partition1.getRelativeUrl()
     )
-    self.portal.portal_workflow._jumpToStateFor(
-        hosting_subscription, 'start_requested')
-    self.portal.portal_workflow._jumpToStateFor(
-        self.start_requested_software_instance, 'start_requested')
-    self.start_requested_software_instance.validate()
+    kw = dict(
+      software_release=\
+          self.start_requested_software_installation.getUrlString(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title=hosting_subscription.getTitle(),
+      state='started'
+    )
+    hosting_subscription.requestStart(**kw)
+    hosting_subscription.requestInstance(**kw)
 
-    self.stop_requested_software_instance = self.portal.software_instance_module\
-        .template_software_instance.Base_createCloneDocument(batch_mode=1)
-    self.stop_requested_software_instance.edit(
+    self.start_requested_software_instance = hosting_subscription.getPredecessorValue()
+    self.start_requested_software_instance.edit(aggregate=self.computer.partition1.getRelativeUrl())
+
+    hosting_subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.edit(
+    )
+    hosting_subscription.validate()
+    hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
-        url_string=\
+    )
+    kw = dict(
+      software_release=\
           self.start_requested_software_installation.getUrlString(),
-        source_reference=self.generateNewSoftwareType(),
-        text_content=self.generateSafeXml(),
-        sla_xml=self.generateSafeXml(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title=hosting_subscription.getTitle(),
+      state='stopped'
+    )
+    hosting_subscription.requestStop(**kw)
+    hosting_subscription.requestInstance(**kw)
+
+    self.stop_requested_software_instance = hosting_subscription.getPredecessorValue()
+    self.stop_requested_software_instance.edit(
         aggregate=self.computer.partition2.getRelativeUrl()
     )
-    self.portal.portal_workflow._jumpToStateFor(
-        self.stop_requested_software_instance, 'stop_requested')
-    self.stop_requested_software_instance.validate()
 
-    self.destroy_requested_software_instance = self.portal.software_instance_module\
-        .template_software_instance.Base_createCloneDocument(batch_mode=1)
-    self.destroy_requested_software_instance.edit(
+    hosting_subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.edit(
+    )
+    hosting_subscription.validate()
+    hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
-        url_string=\
+    )
+    kw = dict(
+      software_release=\
           self.start_requested_software_installation.getUrlString(),
-        source_reference=self.generateNewSoftwareType(),
-        text_content=self.generateSafeXml(),
-        sla_xml=self.generateSafeXml(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title=hosting_subscription.getTitle(),
+      state='stopped'
+    )
+    hosting_subscription.requestStop(**kw)
+    hosting_subscription.requestInstance(**kw)
+
+    kw['state'] = 'destroyed'
+    hosting_subscription.requestDestroy(**kw)
+
+    self.destroy_requested_software_instance = hosting_subscription.getPredecessorValue()
+    self.destroy_requested_software_instance.requestDestroy(**kw)
+    self.destroy_requested_software_instance.edit(
         aggregate=self.computer.partition3.getRelativeUrl()
     )
-    self.portal.portal_workflow._jumpToStateFor(
-        self.destroy_requested_software_instance, 'destroy_requested')
-    self.destroy_requested_software_instance.validate()
 
-    self.destroyed_software_instance = self.portal.software_instance_module\
-        .template_software_instance.Base_createCloneDocument(batch_mode=1)
-    self.destroyed_software_instance.edit(
+    hosting_subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.edit(
+    )
+    hosting_subscription.validate()
+    hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
-        url_string=\
+    )
+    kw = dict(
+      software_release=\
           self.start_requested_software_installation.getUrlString(),
-        source_reference=self.generateNewSoftwareType(),
-        text_content=self.generateSafeXml(),
-        sla_xml=self.generateSafeXml(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title=hosting_subscription.getTitle(),
+      state='stopped'
+    )
+    hosting_subscription.requestStop(**kw)
+    hosting_subscription.requestInstance(**kw)
+
+    kw['state'] = 'destroyed'
+    hosting_subscription.requestDestroy(**kw)
+
+    self.destroyed_software_instance = hosting_subscription.getPredecessorValue()
+    self.destroyed_software_instance.edit(
         aggregate=self.computer.partition4.getRelativeUrl()
     )
-    self.portal.portal_workflow._jumpToStateFor(
-        self.destroyed_software_instance, 'destroy_requested')
-    self.destroyed_software_instance.validate()
+    self.destroyed_software_instance.requestDestroy(**kw)
     self.destroyed_software_instance.invalidate()
 
     self.tic()
