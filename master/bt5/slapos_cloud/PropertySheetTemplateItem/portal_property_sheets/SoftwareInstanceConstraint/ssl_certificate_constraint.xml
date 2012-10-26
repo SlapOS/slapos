@@ -68,7 +68,7 @@
         </item>
         <item>
             <key> <string>test_tales_expression</string> </key>
-            <value> <string>python: context.SoftwareInstance_getStatus() != \'Destroyed\'</string> </value>
+            <value> <string>python: context.getSlapState() != \'destroy_requested\'</string> </value>
         </item>
       </dictionary>
     </pickle>
