@@ -7,9 +7,11 @@ Person | person_slap_interface_workflow
 Slave Instance | edit_workflow
 Slave Instance | instance_slap_interface_workflow
 Slave Instance | item_workflow
+Slave Instance | slapos_cloud_interaction_workflow
 Software Installation | edit_workflow
 Software Installation | installation_slap_interface_workflow
 Software Installation | item_workflow
 Software Instance | edit_workflow
 Software Instance | instance_slap_interface_workflow
 Software Instance | item_workflow
+Software Instance | slapos_cloud_interaction_workflow

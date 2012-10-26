@@ -17,7 +17,7 @@
  </chain>
  <chain>
   <type>Slave Instance</type>
-  <workflow>edit_workflow, instance_slap_interface_workflow, item_workflow</workflow>
+  <workflow>edit_workflow, instance_slap_interface_workflow, item_workflow, slapos_cloud_interaction_workflow</workflow>
  </chain>
  <chain>
   <type>Software Installation</type>
@@ -25,6 +25,6 @@
  </chain>
  <chain>
   <type>Software Instance</type>
-  <workflow>edit_workflow, instance_slap_interface_workflow, item_workflow</workflow>
+  <workflow>edit_workflow, instance_slap_interface_workflow, item_workflow, slapos_cloud_interaction_workflow</workflow>
  </chain>
 </workflow_chain>
