@@ -74,7 +74,6 @@ class Recipe(GenericBaseRecipe):
     self.ipv6 = options['ip'].strip()
     self.condor_host = options['condor_host'].strip()
     self.collector = options['collector_name'].strip()
-    self.centralhost = self.options['central-host'].strip()
 
   def install(self):
     path_list = []
@@ -91,10 +90,8 @@ class Recipe(GenericBaseRecipe):
     if self.options['machine-role'].strip() == "manager":
       self.role = "manager,submit"
     elif self.options['machine-role'].strip() == "worker":
-      if not self.centralhost:
-        raise Exception("ERROR: Cannot deploy condor worker without specify the central manager")
       self.role = "execute"
-      install_args += ['--central-manager='+self.centralhost,
+      install_args += ['--central-manager='+self.condor_host,
                                                         '--type='+self.role]
     configure = subprocess.Popen(install_args, env=self.environ,
                   stdout=subprocess.PIPE)
@@ -115,13 +112,15 @@ class Recipe(GenericBaseRecipe):
       self.substituteTemplate(self.getTemplateFilename('condor_config.generic'),
       condor_configure))
     path_list.append(config)
+    #update condor_config.local
+    with open(config_local, 'a') as f:
+      f.write("\nSTART = TRUE")
 
     #create condor binary launcher for slapos
     if not os.path.exists(self.wrapper_bin):
       os.makedirs(self.wrapper_bin, int('0744', 8))
     if not os.path.exists(self.wrapper_sbin):
       os.makedirs(self.wrapper_sbin, int('0744', 8))
-    #self.path = wrapper_bin+":"+wrapper_sbin+":"+self.path
     #generate script for each file in prefix/bin
     for binary in os.listdir(self.prefix+'/bin'):
       wrapper_location = os.path.join(self.wrapper_bin, binary)
@@ -172,15 +171,11 @@ class Recipe(GenericBaseRecipe):
 
     #generate script for start condor
     start_condor = os.path.join(self.wrapperdir, 'start_condor')
-    #if self.role == "manager,submit":
-    #  binary = os.path.join(self.wrapper_sbin, 'condor_master')
-    #elif self.role == "execute":
-    #  binary = os.path.join(self.wrapper_bin, 'condor_run')
     start_bin = os.path.join(self.wrapper_sbin, 'condor_master')
-    condor_status = os.path.join(self.wrapper_bin, 'condor_status')
+    condor_reconfig = os.path.join(self.wrapper_sbin, 'condor_reconfig')
     wrapper = self.createPythonScript(start_condor,
         '%s.configure.condorStart' % __name__,
-        dict(start_bin=start_bin, condor_status=condor_status)
+        dict(start_bin=start_bin, condor_reconfig=condor_reconfig)
     )
     path_list.append(wrapper)
     return path_list
@@ -228,24 +223,24 @@ class AppSubmit(GenericBaseRecipe):
         if value and (value.startswith('http') or value.startswith('ftp')):
           self.options['name_'+pos] = os.path.basename(urlparse.urlparse(value)[2])
           self.options['file_'+pos] = self.download(value)
+          os.chmod(self.options['file_'+pos], 0600)
         else:
           self.options['file_'+pos] = value
-        os.chmod(self.options['file_'+pos], 0600)
     executable = self.options['executable']
     if executable and (executable.startswith('http') or executable.startswith('ftp')):
       self.options['executable'] = self.download(executable,
                                     self.options['executable-name'].strip())
-    os.chmod(self.options['executable'], 0700)
+      os.chmod(self.options['executable'], 0700)
     submit_file = self.options['description-file']
     if submit_file and (submit_file.startswith('http') or submit_file.startswith('ftp')):
       self.options['description-file'] = self.download(submit_file, 'submit')
-    os.chmod(self.options['description-file'], 0600)
+      os.chmod(self.options['description-file'], 0600)
 
   def install(self):
     path_list = []
     #check if curent condor instance is an condor master
     if self.options['machine-role'].strip() != "manager":
-      print "ERROR: cannot submit a job to a worker condor instance"
+      print "ERROR: cannot submit a job to Condor worker instance"
       return []
     #Setup directory
     jobdir = self.options['job-dir'].strip()

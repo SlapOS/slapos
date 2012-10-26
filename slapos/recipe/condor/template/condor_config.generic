@@ -223,7 +223,7 @@ ALLOW_READ = *
 ##  but note that this will allow anyone to submit jobs or add
 ##  machines to your pool and is a serious security risk.
 
-ALLOW_WRITE = $(FULL_HOSTNAME), $(IP_ADDRESS)
+ALLOW_WRITE = $(FULL_HOSTNAME), $(IP_ADDRESS), %(ipv6)s
 #ALLOW_WRITE = *.your.domain, your-friend's-machine.other.domain
 #DENY_WRITE = bad-machine.your.domain
 
