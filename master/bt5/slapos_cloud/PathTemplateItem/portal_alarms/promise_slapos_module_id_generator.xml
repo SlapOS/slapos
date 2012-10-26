@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_checkPromiseVifibModuleIdGenerator</string> </value>
+            <value> <string>Alarm_checkPromiseSlapOSModuleIdGenerator</string> </value>
         </item>
         <item>
             <key> <string>alarm_notification_mode</string> </key>
@@ -30,7 +30,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>promise_vifib_module_id_generator</string> </value>
+            <value> <string>promise_slapos_module_id_generator</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>
@@ -93,11 +93,11 @@
         </item>
         <item>
             <key> <string>solve_method_id</string> </key>
-            <value> <string>Alarm_fixPromiseVifibModuleIdGenerator</string> </value>
+            <value> <string>Alarm_fixWithActiveSense</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Module Id Generator Vifib Promise</string> </value>
+            <value> <string>Module Id Generator SlapOS Promise</string> </value>
         </item>
       </dictionary>
     </pickle>

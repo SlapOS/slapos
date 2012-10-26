@@ -5,6 +5,7 @@ computer_module/template_computer/**
 hosting_subscription_module/template_hosting_subscription
 person_module/template_member
 person_module/template_member/**
+portal_alarms/promise_slapos_module_id_generator
 portal_alarms/promise_slapos_pas
 portal_alarms/slapos_allocate_instance
 software_installation_module/template_software_installation

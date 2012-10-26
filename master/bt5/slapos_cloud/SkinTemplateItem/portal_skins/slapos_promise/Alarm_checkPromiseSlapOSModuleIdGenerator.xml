@@ -89,7 +89,7 @@ context.newActiveProcess().postResult(active_result)\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_checkPromiseVifibModuleIdGenerator</string> </value>
+            <value> <string>Alarm_checkPromiseSlapOSModuleIdGenerator</string> </value>
         </item>
       </dictionary>
     </pickle>
