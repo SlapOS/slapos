@@ -50,36 +50,16 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>promise_dict = {\n
-  \'IExtractionPlugin\': [\n
-    \'Vifib Machine Authentication Plugin\',\n
-  ],\n
-  \'IAuthenticationPlugin\': [\n
-    \'Vifib Machine Authentication Plugin\',\n
-    \'Vifib Shadow Authentication Plugin\',\n
-    \'SlapOS Shadow Authentication Plugin\',\n
-  ],\n
-  \'IGroupsPlugin\': [\n
-    \'Vifib Machine Authentication Plugin\',\n
-    \'Vifib Shadow Authentication Plugin\',\n
-    \'SlapOS Shadow Authentication Plugin\',\n
-  ],\n
-  \'IUserEnumerationPlugin\': [\n
-    \'Vifib Machine Authentication Plugin\',\n
-    \'Vifib Shadow Authentication Plugin\',\n
-    \'SlapOS Shadow Authentication Plugin\',\n
-  ]\n
-}\n
-context.Alarm_checkPromiseVifibPASBase(promise_dict, tag, fixit=fixit, **kw)\n
+            <value> <string>context.activeSense(fixit=1)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit=False, **kw</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_checkPromiseVifibPAS</string> </value>
+            <value> <string>Alarm_fixWithActiveSense</string> </value>
         </item>
       </dictionary>
     </pickle>

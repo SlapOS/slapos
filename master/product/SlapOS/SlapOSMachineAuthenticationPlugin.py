@@ -7,7 +7,7 @@
 # programmers who take the whole responsibility of assessing all potential
 # consequences resulting from its eventual inadequacies and bugs
 # End users who are looking for a ready-to-use solution with commercial
-# guarantees and support are strongly adviced to contract a Free Software
+# guarantees and support are strongly advised to contract a Free Software
 # Service Company
 #
 # This program is Free Software; you can redistribute it and/or
@@ -51,21 +51,21 @@ from Products.ZSQLCatalog.SQLCatalog import Query, ComplexQuery
 from Products.ERP5Security.ERP5UserManager import getValidAssignmentList
 
 #Form for new plugin in ZMI
-manage_addVifibMachineAuthenticationPluginForm = PageTemplateFile(
-  'www/Vifib_addVifibMachineAuthenticationPlugin', globals(),
-  __name__='manage_addVifibMachineAuthenticationPluginForm')
+manage_addSlapOSMachineAuthenticationPluginForm = PageTemplateFile(
+  'www/SlapOS_addSlapOSMachineAuthenticationPlugin', globals(),
+  __name__='manage_addSlapOSMachineAuthenticationPluginForm')
 
-def addVifibMachineAuthenticationPlugin(dispatcher, id, title=None, REQUEST=None):
-  """ Add a VifibMachineAuthenticationPlugin to a Pluggable Auth Service. """
+def addSlapOSMachineAuthenticationPlugin(dispatcher, id, title=None, REQUEST=None):
+  """ Add a SlapOSMachineAuthenticationPlugin to a Pluggable Auth Service. """
 
-  plugin = VifibMachineAuthenticationPlugin(id, title)
+  plugin = SlapOSMachineAuthenticationPlugin(id, title)
   dispatcher._setObject(plugin.getId(), plugin)
 
   if REQUEST is not None:
       REQUEST['RESPONSE'].redirect(
           '%s/manage_workspace'
           '?manage_tabs_message='
-          'VifibMachineAuthenticationPlugin+added.'
+          'SlapOSMachineAuthenticationPlugin+added.'
           % dispatcher.absolute_url())
 
 @transactional_cached(lambda portal, *args: args)
@@ -101,12 +101,12 @@ def getUserByLogin(portal, login):
   #  by default (feature).
   return [x.getObject() for x in result if x['reference'] in login]
 
-class VifibMachineAuthenticationPlugin(BasePlugin):
+class SlapOSMachineAuthenticationPlugin(BasePlugin):
   """
   Plugin to authenicate as machines.
   """
 
-  meta_type = "Vifib Machine Authentication Plugin"
+  meta_type = "SlapOS Machine Authentication Plugin"
   security = ClassSecurityInfo()
 
   def __init__(self, id, title=None):
@@ -174,7 +174,7 @@ class VifibMachineAuthenticationPlugin(BasePlugin):
     except ConflictError:
       raise
     except:
-      LOG('VifibMachineAuthenticationPlugin', PROBLEM, 'getUserByLogin failed',
+      LOG('SlapOSMachineAuthenticationPlugin', PROBLEM, 'getUserByLogin failed',
         error=sys.exc_info())
       # Here we must raise an exception to prevent callers from caching
       # a result of a degraded situation.
@@ -346,17 +346,14 @@ class VifibMachineAuthenticationPlugin(BasePlugin):
     return tuple(user_info)
 
 #List implementation of class
-classImplements(VifibMachineAuthenticationPlugin,
+classImplements(SlapOSMachineAuthenticationPlugin,
                 plugins.IAuthenticationPlugin)
-classImplements( VifibMachineAuthenticationPlugin,
-                plugins.ILoginPasswordHostExtractionPlugin
-               )
-classImplements( VifibMachineAuthenticationPlugin,
-               plugins.IGroupsPlugin
-               )
-classImplements( VifibMachineAuthenticationPlugin,
-               plugins.IUserEnumerationPlugin
-               )
+classImplements( SlapOSMachineAuthenticationPlugin,
+                plugins.ILoginPasswordHostExtractionPlugin)
+classImplements( SlapOSMachineAuthenticationPlugin,
+               plugins.IGroupsPlugin)
+classImplements( SlapOSMachineAuthenticationPlugin,
+               plugins.IUserEnumerationPlugin)
 
 
-InitializeClass(VifibMachineAuthenticationPlugin)
+InitializeClass(SlapOSMachineAuthenticationPlugin)

@@ -2,19 +2,17 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="VifibMachineAuthenticationPlugin" module="Products.Vifib.VifibMachineAuthenticationPlugin"/>
+      <global name="SlapOSMachineAuthenticationPlugin" module="Products.SlapOS.SlapOSMachineAuthenticationPlugin"/>
     </pickle>
     <pickle>
       <dictionary>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_machine_authentication</string> </value>
+            <value> <string>slapos_machine</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string></string> </value>
         </item>
       </dictionary>
     </pickle>

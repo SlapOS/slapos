@@ -1,14 +1,14 @@
 <h1 tal:replace="structure here/manage_page_header">Header</h1>
 
-<h2 tal:define="form_title string:Add Vifib Machine Authentication Plugin"
+<h2 tal:define="form_title string:Add SlapOS Machine Authentication Plugin"
     tal:replace="structure here/manage_form_title">Form Title</h2>
 
 <p class="form-help">
-Vifib Machine Authentication Plugin allows to login machines (Computers and
+SlapOS Machine Authentication Plugin allows to login machines (Computers and
 Software Instances)
 </p>
 
-<form action="addVifibMachineAuthenticationPlugin" method="post">
+<form action="addSlapOSMachineAuthenticationPlugin" method="post">
 <table cellspacing="0" cellpadding="2" border="0">
   <tr>
     <td align="left" valign="top">

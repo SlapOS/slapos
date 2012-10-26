@@ -1,9 +1,11 @@
+acl_users/slapos_machine
 acl_users/slapos_shadow
 computer_module/template_computer
 computer_module/template_computer/**
 hosting_subscription_module/template_hosting_subscription
 person_module/template_member
 person_module/template_member/**
+portal_alarms/promise_slapos_pas
 portal_alarms/slapos_allocate_instance
 software_installation_module/template_software_installation
 software_instance_module/template_software_instance

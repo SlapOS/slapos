@@ -30,7 +30,7 @@
 
 from Acquisition import Implicit
 from AccessControl import ClassSecurityInfo, getSecurityManager, Unauthorized
-from Products.Vifib.VifibMachineAuthenticationPlugin import getUserByLogin
+from Products.SlapOS.SlapOSMachineAuthenticationPlugin import getUserByLogin
 from Products.ERP5Type import Permissions
 from ComputedAttribute import ComputedAttribute
 from zLOG import LOG, ERROR
