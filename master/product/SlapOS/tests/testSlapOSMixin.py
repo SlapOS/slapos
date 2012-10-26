@@ -81,6 +81,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_base',
       'erp5_workflow',
       'erp5_configurator',
+      'slapos_configurator',
       'vifib_configurator', # XXX: rebrand
       'erp5_simulation',
       'erp5_administration',

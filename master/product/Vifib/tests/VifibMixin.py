@@ -118,6 +118,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data_web',
       'vifib_data_simulation',
       'vifib_data_payzen',
+      'slapos_configurator',
       'vifib_configurator',
       'vifib_agent',
       'erp5_web_shadir',
