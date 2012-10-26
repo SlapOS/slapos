@@ -57,6 +57,7 @@
             <value>
               <list>
                 <string>_setReference</string>
+                <string>_setSpecialise</string>
               </list>
             </value>
         </item>
