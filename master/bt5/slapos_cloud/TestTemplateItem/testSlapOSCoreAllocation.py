@@ -89,8 +89,7 @@ class TestSlapOSAllocation(testSlapOSMixin):
     self.software_instance.updateLocalRolesOnSecurityGroups()
     self.tic()
 
-    # Login as new Software Instance
-    self.login(self.software_instance.getReference())
+    self.login()
 
   def beforeTearDown(self):
     pass
@@ -133,7 +132,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
     self.tic()
 
   def test_allocation_free_partition(self):
-    self.login()
     self._makeComputer()
     self._installSoftware(self.computer,
         self.software_instance.getUrlString())
