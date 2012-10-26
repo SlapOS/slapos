@@ -60,7 +60,6 @@ portal.portal_catalog.searchAndActivate(\n
   left_join_list=select_dict.keys(),\n
 \n
   method_id=\'SoftwareInstance_tryToAllocatePartition\',\n
-  method_kw={\'manual\': False},\n
   packet_size=1, # Separate calls to many transactions\n
   activate_kw={\'tag\': tag}\n
 )\n
