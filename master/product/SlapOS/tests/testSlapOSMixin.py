@@ -129,6 +129,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_ui_test_core',
       'erp5_ui_test',
       'slapos_cloud',
+      'slapos_slap_tool',
       'slapos_category',
       'slapos_erp5',
     ]
