@@ -17,6 +17,12 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 
+    # XXX setupPortalCertificateAuthority is deprecated but it 
+    #     cannot be completly removed yet, This is going to be
+    #     replace such logic by promise alarms.
+    if not self.isLiveTest():
+      self.setupPortalCertificateAuthority()
+
     # Clone person document
     person_user = portal.person_module.template_member.\
                                  Base_createCloneDocument(batch_mode=1)

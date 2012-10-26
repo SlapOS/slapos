@@ -18,6 +18,12 @@ class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
     portal = self.getPortalObject()
     new_id = self.generateNewId()
 
+    # XXX setupPortalCertificateAuthority is deprecated but it 
+    #     cannot be completly removed yet, This is going to be
+    #     replace such logic by promise alarms.
+    if not self.isLiveTest():    
+      self.setupPortalCertificateAuthority()
+
     # Clone computer document
     computer = portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
