@@ -1,4 +1,3 @@
 business_configuration_module/slapos_master_configuration
-portal_alarms/promise_vifib_*
 workflow_module/vifib_configuration_workflow
 workflow_module/vifib_configuration_workflow/**
