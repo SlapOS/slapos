@@ -57,6 +57,7 @@ computer.edit(\n
   allocation_scope=\'open/personal\',\n
   source_administration_value=person,\n
 )\n
+portal.portal_workflow.doActionFor(computer, \'validate_action\')\n
 </string> </value>
         </item>
         <item>
