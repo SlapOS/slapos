@@ -42,17 +42,17 @@ class TestSlapOSAllocation(testSlapOSMixin):
     )
 
     # Clone person document
-    person_user = portal.person_module.template_member.\
+    self.person_user = portal.person_module.template_member.\
                                  Base_createCloneDocument(batch_mode=1)
-    person_user.edit(
+    self.person_user.edit(
       title="live_test_%s" % new_id,
       reference="live_test_%s" % new_id,
       default_email_text="live_test_%s@example.org" % new_id,
     )
 
-    person_user.updateLocalRolesOnSecurityGroups()
-    person_user.validate()
-    for assignment in person_user.contentValues(portal_type="Assignment"):
+    self.person_user.updateLocalRolesOnSecurityGroups()
+    self.person_user.validate()
+    for assignment in self.person_user.contentValues(portal_type="Assignment"):
       assignment.open()
     transaction.commit()
     # prepare part of tree
@@ -70,7 +70,7 @@ class TestSlapOSAllocation(testSlapOSMixin):
         sla_xml=self.request_kw['sla_xml'],
         root_slave=self.request_kw['shared'],
         predecessor=self.software_instance.getRelativeUrl(),
-        destination_section=person_user.getRelativeUrl()
+        destination_section=self.person_user.getRelativeUrl()
     )
     hosting_subscription.updateLocalRolesOnSecurityGroups()
     hosting_subscription.validate()
@@ -143,6 +143,77 @@ class TestSlapOSAllocation(testSlapOSMixin):
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  def test_allocation_capacity_scope_close(self):
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+    self.computer.edit(capacity_scope='close')
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_allocation_scope_close(self):
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+    self.computer.edit(allocation_scope='close')
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_allocation_scope_open_personal(self):
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+    self.computer.edit(allocation_scope='open/personal',
+      source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_allocation_scope_open_friend(self):
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+    # change computer owner
+    new_id = self.generateNewId()
+    person_user = self.portal.person_module.template_member.\
+                                 Base_createCloneDocument(batch_mode=1)
+    person_user.edit(
+      title="live_test_%s" % new_id,
+      reference="live_test_%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
+    )
+
+    person_user.updateLocalRolesOnSecurityGroups()
+    person_user.validate()
+    for assignment in person_user.contentValues(portal_type="Assignment"):
+      assignment.open()
+
+    self.computer.edit(
+      source_administration=person_user.getRelativeUrl(),
+      destination_section=self.person_user.getRelativeUrl(),
+      allocation_scope='open/friend')
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
   def _simulateSoftwareInstance_tryToAllocatePartition(self):
     script_name = 'SoftwareInstance_tryToAllocatePartition'
     if script_name in self.portal.portal_skins.custom.objectIds():
@@ -154,13 +225,13 @@ class TestSlapOSAllocation(testSlapOSMixin):
 """portal_workflow = context.portal_workflow
 portal_workflow.doActionFor(context, action='edit_action', comment='Visited by SoftwareInstance_tryToAllocatePartition') """ )
     transaction.commit()
-  
+
   def _dropSoftwareInstance_tryToAllocatePartition(self):
     script_name = 'SoftwareInstance_tryToAllocatePartition'
     if script_name in self.portal.portal_skins.custom.objectIds():
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
-    
+
   def test_alarm_unallocated(self):
     self._simulateSoftwareInstance_tryToAllocatePartition()
     try:
