@@ -92,9 +92,13 @@ if software_instance.getValidationState() != \'validated\' \\\n
 try:\n
   computer_partition_url = assignComputerPartition(software_instance)\n
 except ValueError:\n
+  if manual:\n
+    raise\n
   # It was not possible to find free Computer Partition\n
   markHistory(software_instance, \'Allocation failed: no free Computer Partition\')\n
 except Unauthorized, e:\n
+  if manual:\n
+    raise\n
   # user has bad balance\n
   markHistory(software_instance, \'Allocation failed: %s\' % e)\n
 else:\n
@@ -102,6 +106,8 @@ else:\n
     try:\n
       software_instance.Base_checkConsistency()\n
     except ValidationFailed:\n
+      if manual:\n
+        raise\n
       # order not ready yet\n
       markHistory(software_instance, \'Allocation failed: consistency failed\')\n
     else:\n
@@ -110,7 +116,7 @@ else:\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>manual=True</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
