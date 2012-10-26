@@ -14,7 +14,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       PersonRequestSoftwareInstance \
       Tic \
       Logout \
-      CallConfirmOrderedSaleOrderAlarm \
+      CallSlaposAllocateInstanceAlarm \
       CleanTic \
       CallVifibTriggerBuildAlarm \
       CleanTic \
@@ -246,7 +246,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -350,7 +350,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SlapLoginCurrentSoftwareInstance
       RequestComputerPartition
@@ -571,7 +571,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -692,7 +692,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -710,7 +710,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -740,7 +740,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -859,7 +859,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -876,7 +876,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -906,7 +906,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -1033,7 +1033,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       Logout
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -1050,7 +1050,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -1121,7 +1121,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetCurrentPersonSlapRequestedSoftwareInstance
-      SoftwareInstanceSaleOrderLineNoPartitionFound
+      SoftwareInstanceFailedAllocation
       Logout
 
       SlapLoginTestVifibCustomer
@@ -1130,7 +1130,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      SoftwareInstanceSaleOrderLineNoPartitionFound
+      SoftwareInstanceFailedAllocation
       Logout
 
       LoginERP5TypeTestCase
@@ -1167,7 +1167,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
 
@@ -1237,7 +1237,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
 
@@ -1280,7 +1280,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
 
@@ -1324,7 +1324,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -1395,7 +1395,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -1442,7 +1442,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Tic
       SlapLogout
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
       SlapLoginCurrentSoftwareInstance
@@ -1585,7 +1585,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
 

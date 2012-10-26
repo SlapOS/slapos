@@ -21,9 +21,7 @@
         <item>
             <key> <string>activate_script_name</string> </key>
             <value>
-              <list>
-                <string>SaleOrder_triggerAlarm</string>
-              </list>
+              <tuple/>
             </value>
         </item>
         <item>
@@ -50,14 +48,13 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SaleOrder_reindexObject</string> </value>
+            <value> <string>SoftwareInstance_validate</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>reindexObject</string>
-                <string>recursiveReindexObject</string>
+                <string>validate</string>
               </list>
             </value>
         </item>
@@ -69,7 +66,8 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Sale Order</string>
+                <string>Slave Instance</string>
+                <string>Software Instance</string>
               </list>
             </value>
         </item>

@@ -41,7 +41,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
 
@@ -63,7 +63,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
 
       LoginDefaultUser
       SetCurrentPersonSlapRequestedSoftwareInstance
-      SoftwareInstanceSaleOrderLineNoPartitionFound
+      SoftwareInstanceFailedAllocation
       Logout
 
       LoginERP5TypeTestCase
@@ -97,7 +97,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
 
@@ -155,7 +155,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
 
@@ -285,7 +285,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
 
@@ -348,7 +348,7 @@ class TestVifibSlapOpenOrderRequest(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
 

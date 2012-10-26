@@ -105,7 +105,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for owner
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -122,7 +122,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # fail to instantiate for someone else
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       CheckNoRelatedSalePackingListLineForSoftwareInstance
       Logout
@@ -135,7 +135,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for owner
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -204,7 +204,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for owner
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -221,7 +221,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for friend
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -238,7 +238,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # fail to instantiate for someone else
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       CheckNoRelatedSalePackingListLineForSoftwareInstance
       Logout
@@ -251,7 +251,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for friend
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -307,7 +307,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for owner
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -324,7 +324,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for someone else
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -379,7 +379,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # fail to instantiate for owner
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       CheckNoRelatedSalePackingListLineForSoftwareInstance
       Logout
@@ -429,7 +429,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # fail to instantiate for owner
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       CheckNoRelatedSalePackingListLineForSoftwareInstance
       Logout
@@ -481,7 +481,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for someone else
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -499,7 +499,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       CheckSoftwareInstanceAndRelatedComputerPartition
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition
@@ -530,7 +530,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for someone else
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -597,7 +597,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for friend
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -617,7 +617,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for someone else
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -653,7 +653,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
       SlapLogout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       CheckSoftwareInstanceAndRelatedComputerPartition
       CheckRequestedSoftwareInstanceAndRelatedComputerPartition
@@ -684,7 +684,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for someone else
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -728,7 +728,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for someone else
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -803,7 +803,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for owner
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Tic
       SetSelectedComputerPartition
@@ -822,7 +822,7 @@ class TestVifibSlapAllocationScope(TestVifibSlapWebServiceMixin):
 
       # instantiate for someone else
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid

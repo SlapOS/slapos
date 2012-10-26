@@ -225,7 +225,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SlapLogout \
       \
       LoginDefaultUser \
-      CallConfirmOrderedSaleOrderAlarm \
+      CallSlaposAllocateInstanceAlarm \
       Tic \
       CheckComputerPartitionInstanceSetupSalePackingListDelivered \
       Logout \
@@ -255,7 +255,7 @@ class TestVifibSlapComputerGetComputerPartitionList(TestVifibSlapWebServiceMixin
       SlapLogout \
       \
       LoginDefaultUser \
-      CallConfirmOrderedSaleOrderAlarm \
+      CallSlaposAllocateInstanceAlarm \
       Tic \
       SetDeliveryLineAmountEqualOne \
       CheckComputerPartitionInstanceSetupSalePackingListDelivered \

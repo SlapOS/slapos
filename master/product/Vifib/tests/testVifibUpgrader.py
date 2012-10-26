@@ -42,7 +42,7 @@ class TestVifibUpgrader(testVifibMixin):
     self.assertEqual(1,
         self.portal.portal_alarms.accept_submitted_credentials.isEnabled())
     self.assertEqual(1,
-        self.portal.portal_alarms.confirm_ordered_sale_order.isEnabled())
+        self.portal.portal_alarms.slapos_allocate_instance.isEnabled())
 
 
 def test_suite():

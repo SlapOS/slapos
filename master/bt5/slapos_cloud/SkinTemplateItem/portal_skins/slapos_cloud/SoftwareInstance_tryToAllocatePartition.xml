@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from Products.DCWorkflow.DCWorkflow import ValidationFailed\n
+from zExceptions import Unauthorized\n
+\n
+if context.getPortalType() not in (\'Software Instance\', \'Slave Instance\'):\n
+  raise TypeError(\'%s is not supported\' % context.getPortalType())\n
+\n
+def markHistory(document, comment):\n
+  portal_workflow = document.portal_workflow\n
+  last_workflow_item = portal_workflow.getInfoFor(ob=document,\n
+                                          name=\'comment\', wf_id=\'edit_workflow\')\n
+  if last_workflow_item != comment:\n
+    portal_workflow.doActionFor(document, action=\'edit_action\', comment=comment)\n
+\n
+def assignComputerPartition(software_instance):\n
+  computer_partition = software_instance.getAggregateValue(\n
+      portal_type="Computer Partition")\n
+  if computer_partition is None:\n
+    hosting_subscription = software_instance.getSpecialiseValue(\n
+        portal_type=\'Hosting Subscription\')\n
+    person = hosting_subscription.getDestinationSectionValue(portal_type=\'Person\')\n
+    if not person.Person_isAllowedToAllocate():\n
+      raise Unauthorized(\'Allocation disallowed\')\n
+\n
+    computer_partition_relative_url = person.Person_restrictMethodAsShadowUser(\n
+      shadow_document=person,\n
+      callable_object=person.Person_findPartition,\n
+      argument_list=[software_instance.getUrlString(), software_instance.getSourceReference(),\n
+      software_instance.getPortalType(), software_instance.getSlaXmlAsDict()])\n
+    return computer_partition_relative_url\n
+  return (None, None)\n
+\n
+software_instance = context\n
+if software_instance.getValidataionState() != \'validated\' \\\n
+  or software_instance.getSlapState() not in (\'start_requested\', \'stop_requested\') \\\n
+  or software_instance.getAggregateValue(portal_type=\'Computer Partition\') is not None:\n
+  return\n
+\n
+try:\n
+  computer_partition_url = assignComputerPartition(software_instance)\n
+except ValueError:\n
+  # It was not possible to find free Computer Partition\n
+  markHistory(software_instance, \'Allocation failed: no free Computer Partition\')\n
+except Unauthorized, e:\n
+  # user has bad balance\n
+  markHistory(software_instance, \'Allocation failed: %s\' % e)\n
+else:\n
+  if computer_partition_url is not None:\n
+    try:\n
+      software_instance.Base_checkConsistency()\n
+    except ValidationFailed:\n
+      # order not ready yet\n
+      markHistory(software_instance, \'Allocation failed: consistency failed\')\n
+    else:\n
+      software_instance.allocatePartition(computer_partition_url=computer_partition_url)\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SoftwareInstance_tryToAllocatePartition</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

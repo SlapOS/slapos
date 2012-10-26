@@ -53,7 +53,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 import random\n
-open_sale_order = context\n
+person = context\n
 \n
 computer_partition = None\n
 query_kw = {\n
@@ -66,8 +66,8 @@ if software_instance_portal_type == "Slave Instance":\n
 elif software_instance_portal_type == "Software Instance":\n
   query_kw[\'free_for_request\'] = 1\n
 else:\n
-  raise NotImplementedError, "Unknown portal type %s" % \\\n
-     software_instance_portal_type \n
+  raise NotImplementedError("Unknown portal type %s"%\n
+      software_instance_portal_type)\n
 \n
 # support SLA\n
 \n
@@ -144,8 +144,8 @@ if test_mode:\n
 SQL_WINDOW_SIZE = 50\n
 \n
 # fetch at mot 50 random Computer Partitions, and check if they are ok\n
-isTransitionPossible = open_sale_order.getPortalObject().portal_workflow.isTransitionPossible\n
-result_count = open_sale_order.portal_catalog.countResults(**query_kw)[0][0]\n
+isTransitionPossible = person.getPortalObject().portal_workflow.isTransitionPossible\n
+result_count = person.portal_catalog.countResults(**query_kw)[0][0]\n
 offset = max(0, result_count-1)\n
 if offset >= SQL_WINDOW_SIZE:\n
   limit = (random.randint(0, offset), SQL_WINDOW_SIZE)\n
@@ -154,7 +154,7 @@ else:\n
 \n
 for computer_partition_candidate in context.portal_catalog(\n
                                          limit=limit, **query_kw):\n
-  computer_partition_candidate = computer_partition_candidate.getObject()    \n
+  computer_partition_candidate = computer_partition_candidate.getObject()\n
   if software_instance_portal_type == "Software Instance":\n
     # Check if the computer partition can be marked as busy\n
     if isTransitionPossible(computer_partition_candidate, \'mark_busy\'):\n
@@ -183,7 +183,7 @@ return computer_partition.getRelativeUrl()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>OpenSaleOrder_findPartition</string> </value>
+            <value> <string>Person_findPartition</string> </value>
         </item>
       </dictionary>
     </pickle>

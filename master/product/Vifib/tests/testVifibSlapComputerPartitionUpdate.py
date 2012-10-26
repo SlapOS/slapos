@@ -67,7 +67,7 @@ class TestVifibSlapComputerPartitionUpdate(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid

@@ -408,11 +408,7 @@ class InstancePublisher(GenericPublisher):
           portal_type="Person")
       else:
         raise NotImplementedError, "Can not get Person document"
-      open_order = self.portal_catalog.getResultValue(
-        portal_type='Open Sale Order',
-        default_destination_decision_uid=user.getUid(),
-        validation_state='validated')
-      result = open_order.OpenSaleOrder_findPartition(
+      user.Person_findPartition(
         self.jbody['software_release'],
         self.jbody['software_type'],
         ('Software Instance', 'Slave Instance')[int(self.jbody['slave'])],

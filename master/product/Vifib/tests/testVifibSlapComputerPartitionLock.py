@@ -65,7 +65,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       \
       LoginDefaultUser \
       SoftwareInstanceSaleOrderConfirmRaisesUnauthorized \
-      CallConfirmOrderedSaleOrderAlarm \
+      CallSlaposAllocateInstanceAlarm \
       Tic \
       AssertNoComputerPartition \
       Logout \
@@ -94,7 +94,7 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
       \
       LoginDefaultUser \
       SoftwareInstanceSaleOrderConfirmRaisesUnauthorized \
-      CallConfirmOrderedSaleOrderAlarm \
+      CallSlaposAllocateInstanceAlarm \
       Tic \
       AssertNoComputerPartition \
       Logout \

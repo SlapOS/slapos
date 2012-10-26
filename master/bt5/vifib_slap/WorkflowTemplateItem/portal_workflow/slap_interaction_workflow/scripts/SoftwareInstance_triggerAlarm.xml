@@ -50,19 +50,12 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_order = state_change[\'object\']\n
+            <value> <string>software_instance = state_change[\'object\']\n
 \n
-portal = sale_order.getPortalObject()\n
+portal = software_instance.getPortalObject()\n
 \n
-simulation_state = sale_order.getSimulationState()\n
-alarm = None\n
-if simulation_state == \'planned\':\n
-  alarm = portal.portal_alarms.order_planned_sale_order\n
-elif simulation_state == \'ordered\':\n
-  alarm = portal.portal_alarms.confirm_ordered_sale_order\n
-\n
-if alarm is not None:\n
-  context.Alarm_safeTrigger(alarm)\n
+if software_instance.getValidationState() == \'validated\':\n
+  context.Alarm_safeTrigger(portal.portal_alarms.slapos_allocate_instance)\n
 </string> </value>
         </item>
         <item>
@@ -71,7 +64,7 @@ if alarm is not None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SaleOrder_triggerAlarm</string> </value>
+            <value> <string>SoftwareInstance_triggerAlarm</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -355,7 +355,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
           portal_type='Sale Order Line').getAggregateValue(
             portal_type='Hosting Subscription').getUid())
 
-  def stepSoftwareInstanceSaleOrderLineNoPartitionFound(self, sequence,
+  def stepSoftwareInstanceFailedAllocation(self, sequence,
     **kw):
     """Checks that current software instance is realted only with sale order
     and that no partition is found
@@ -363,18 +363,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
     software_instance = self.portal.portal_catalog.getResultValue(
       uid=sequence['software_instance_uid'])
 
-    aggregate_value_list = software_instance.getAggregateRelatedValueList(
-        portal_type=[self.sale_packing_list_line_portal_type,
-        self.sale_order_line_portal_type])
-
-    self.assertEqual(1, len(aggregate_value_list))
-    self.assertTrue(self.sale_order_line_portal_type in [q.getPortalType() for\
-        q in aggregate_value_list])
-    sale_order_line = aggregate_value_list[0]
-
-    self.assertNotEqual('confirmed', sale_order_line.getSimulationState())
-    sale_order_line.SaleOrderLine_tryToAllocatePartition()
-    self.assertNotEqual('confirmed', sale_order_line.getSimulationState())
+    self.assertEqual(None, software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None, software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
 
   def stepCheckViewCurrentSoftwareInstance(self, sequence, **kw):
     software_instance = self.portal.portal_catalog.getResultValue(
@@ -1007,7 +1000,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   prepare_install_requested_computer_partition_sequence_string = \
       prepare_person_requested_software_instance + """
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       CallVifibTriggerBuildAlarm
       CleanTic
@@ -1128,7 +1121,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict \
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
       RequestComputerPartition \
@@ -1146,7 +1139,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Tic
       CheckRaisesNotFoundComputerPartitionParameterDict
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       Logout
       RequestComputerPartition
@@ -1241,7 +1234,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       Logout \
       \
       LoginDefaultUser \
-      CallConfirmOrderedSaleOrderAlarm \
+      CallSlaposAllocateInstanceAlarm \
       CleanTic \
       CallVifibExpandConfirmedSaleOrderAlarm \
       CleanTic \
@@ -1658,7 +1651,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
         software_type, software_type + str(2))
     self.stepLoginDefaultUser()
     self.stepTic()
-    self.stepCallConfirmOrderedSaleOrderAlarm()
+    self.stepCallSlaposAllocateInstanceAlarm()
     self.stepTic()
     self.stepLogout()
     first = slap_computer_partition.request(software_release,
@@ -2651,17 +2644,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   def stepCheckSlaveInstanceNotReady(self, sequence):
     slave_instance = self.portal.portal_catalog.getResultValue(
         uid=sequence['software_instance_uid'])
-    self.assertEquals(self.slave_instance_portal_type,
-        slave_instance.getPortalType())
-    sale_order_line = slave_instance.getAggregateRelatedValue(
-        portal_type=self.sale_order_line_portal_type)
-    self.assertEquals("ordered", sale_order_line.getSimulationState())
-    sale_order_line.SaleOrderLine_tryToAllocatePartition()
-    transaction.commit()
-    self.assertEquals("ordered", sale_order_line.getSimulationState())
-    sale_packing_list_line = slave_instance.getAggregateRelatedValue(
-        portal_type=self.sale_packing_list_line_portal_type)
-    self.assertEquals(sale_packing_list_line, None)
+    self.assertEqual(slave_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    slave_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(slave_instance.getAggregateValue(
+        portal_type='Computer Partition'))
 
   def stepSelectSlaveInstanceFromOneComputerPartition(self, sequence):
     slave_instance = self._getSlaveInstanceFromCurrentComputerPartition(sequence)
@@ -3258,7 +3245,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid

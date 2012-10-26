@@ -42,7 +42,7 @@ class TestVifibSlapComputerPartitionConnection(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginDefaultUser
-      CallConfirmOrderedSaleOrderAlarm
+      CallSlaposAllocateInstanceAlarm
       Tic
       CheckGetSetConnectionDict
 

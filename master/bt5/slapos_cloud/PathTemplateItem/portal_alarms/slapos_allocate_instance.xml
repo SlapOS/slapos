@@ -8,11 +8,13 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_orderPlannedSaleOrder</string> </value>
+            <value> <string>Alarm_allocateInstance</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Orders planned Sale Orders.</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>enabled</string> </key>
@@ -20,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>order_planned_sale_order</string> </value>
+            <value> <string>slapos_allocate_instance</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
@@ -87,7 +89,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Order planned Sale Orders</string> </value>
+            <value> <string>Allocates instances</string> </value>
         </item>
       </dictionary>
     </pickle>
