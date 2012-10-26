@@ -42,8 +42,8 @@ portal_tools = ( SlapTool.SlapTool, VifibRestApiTool.VifibRestApiTool)
 from Products.PluggableAuthService.PluggableAuthService import registerMultiPlugin
 
 import VifibMachineAuthenticationPlugin
-import VifibShadowAuthenticationPlugin
 import VifibCookieHashExtractionPlugin
+import SlapOSShadowAuthenticationPlugin
 
 def initialize(context):
   import Document
@@ -61,11 +61,11 @@ def initialize(context):
                          , icon='www/portal.gif'
                          )
 
-  context.registerClass( VifibShadowAuthenticationPlugin.VifibShadowAuthenticationPlugin
+  context.registerClass( SlapOSShadowAuthenticationPlugin.SlapOSShadowAuthenticationPlugin
                          , permission=ManageUsers
                          , constructors=(
-                            VifibShadowAuthenticationPlugin.manage_addVifibShadowAuthenticationPluginForm,
-                            VifibShadowAuthenticationPlugin.addVifibShadowAuthenticationPlugin, )
+                            SlapOSShadowAuthenticationPlugin.manage_addSlapOSShadowAuthenticationPluginForm,
+                            SlapOSShadowAuthenticationPlugin.addSlapOSShadowAuthenticationPlugin, )
                          , visibility=None
                          , icon='www/portal.gif'
                          )
@@ -99,7 +99,7 @@ def initialize(context):
 
 
 registerMultiPlugin(VifibMachineAuthenticationPlugin.VifibMachineAuthenticationPlugin.meta_type)
-registerMultiPlugin(VifibShadowAuthenticationPlugin.VifibShadowAuthenticationPlugin.meta_type)
+registerMultiPlugin(SlapOSShadowAuthenticationPlugin.SlapOSShadowAuthenticationPlugin.meta_type)
 registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibFacebookServerExtractionPlugin.meta_type)
 registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibGoogleServerExtractionPlugin.meta_type)
 registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibBrowserIDExtractionPlugin.meta_type)

@@ -4,7 +4,6 @@ acl_users/vifib_browser_id_authentication
 acl_users/vifib_facebook_authentication
 acl_users/vifib_google_authentication
 acl_users/vifib_machine_authentication
-acl_users/vifib_shadow
 currency_module/EUR
 document_module/1
 notification_message_module/vifib_hosting_hosting_request
