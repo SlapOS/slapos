@@ -51,7 +51,6 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
 
   def bootstrapSite(self):
     self.setupPortalCertificateAuthority()
-    self.setupPayZenInterface()
     self.setUpMemcached()
     portal = self.getPortal()
     if 'MailHost' in portal.objectIds():
