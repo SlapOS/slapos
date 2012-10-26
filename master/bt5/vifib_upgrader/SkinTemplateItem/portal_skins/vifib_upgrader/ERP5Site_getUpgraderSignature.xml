@@ -100,7 +100,6 @@ REQUIRED_BT5_ID_LIST = (\n
   \'erp5_project\',\n
   \'erp5_credential_oauth2\',\n
 # vifib\n
-  \'vifib_mysql_innodb_catalog\',\n
   \'vifib_base\',\n
   \'vifib_core\',\n
   \'vifib_data_category\',\n

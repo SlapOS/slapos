@@ -19,7 +19,6 @@ slapos_category
 vifib_data_payzen
 vifib_data_simulation
 vifib_data_web
-vifib_mysql_innodb_catalog
 vifib_open_trade
 vifib_payzen
 vifib_slap

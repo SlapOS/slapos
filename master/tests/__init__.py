@@ -15,7 +15,6 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
     'vifib_data_web',
     'slapos_erp5',
     'vifib_erp5',
-    'vifib_mysql_innodb_catalog',
     'vifib_open_trade',
     'vifib_slap',
     'vifib_software_pdm',

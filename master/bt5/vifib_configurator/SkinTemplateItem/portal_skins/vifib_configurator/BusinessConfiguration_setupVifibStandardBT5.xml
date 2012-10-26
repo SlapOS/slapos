@@ -53,7 +53,7 @@
             <value> <string>configuration_save = context.restrictedTraverse(configuration_save_url)\n
 \n
 bt5_update_catalog_list = (\'erp5_ingestion_mysql_innodb_catalog\',\n
-                           \'vifib_mysql_innodb_catalog\')\n
+                           \'slapos_cloud\')\n
 \n
 bt5_installation_list = bt5_update_catalog_list + (\'vifib_erp5\',)\n
  \n

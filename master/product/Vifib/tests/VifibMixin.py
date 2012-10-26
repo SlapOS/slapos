@@ -114,7 +114,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_slapos_rest_api_v1',
       'vifib_slapos_capacity',
       'vifib_slapos_accounting',
-      'vifib_mysql_innodb_catalog',
       'vifib_data_web',
       'vifib_data_simulation',
       'vifib_data_payzen',
