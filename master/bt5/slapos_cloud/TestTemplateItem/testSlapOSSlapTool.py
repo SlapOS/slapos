@@ -73,9 +73,6 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     pass
 
   def _makeComplexComputer(self):
-    def setupSoftwareInstance(instance, **kw):
-      instance.edit(**kw)
-
     for i in range(1, 5):
       id_ = 'partition%s' % i
       p = self.computer.newContent(portal_type='Computer Partition',
@@ -135,7 +132,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
         predecessor=self.start_requested_software_instance.getRelativeUrl()
     )
     self.hosting_subscription.validate()
-    setupSoftwareInstance(self.start_requested_software_instance, **dict(
+    self.start_requested_software_instance.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
         url_string=\
@@ -145,8 +142,8 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
         sla_xml=self.generateSafeXml(),
         aggregate=self.computer.partition1.getRelativeUrl(),
         specialise=self.hosting_subscription.getRelativeUrl()
-    ))
-    setupSoftwareInstance(self.hosting_subscription, **dict(
+    )
+    self.hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
         url_string=\
@@ -155,7 +152,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
         text_content=self.generateSafeXml(),
         sla_xml=self.generateSafeXml(),
         aggregate=self.computer.partition1.getRelativeUrl()
-    ))
+    )
     self.portal.portal_workflow._jumpToStateFor(
         self.hosting_subscription, 'start_requested')
     self.portal.portal_workflow._jumpToStateFor(
@@ -164,7 +161,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
 
     self.stop_requested_software_instance = self.portal.software_instance_module\
         .template_software_instance.Base_createCloneDocument(batch_mode=1)
-    setupSoftwareInstance(self.stop_requested_software_instance, **dict(
+    self.stop_requested_software_instance.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
         url_string=\
@@ -173,14 +170,14 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
         text_content=self.generateSafeXml(),
         sla_xml=self.generateSafeXml(),
         aggregate=self.computer.partition2.getRelativeUrl()
-    ))
+    )
     self.portal.portal_workflow._jumpToStateFor(
         self.stop_requested_software_instance, 'stop_requested')
     self.stop_requested_software_instance.validate()
 
     self.destroy_requested_software_instance = self.portal.software_instance_module\
         .template_software_instance.Base_createCloneDocument(batch_mode=1)
-    setupSoftwareInstance(self.destroy_requested_software_instance, **dict(
+    self.destroy_requested_software_instance.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
         url_string=\
@@ -189,14 +186,14 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
         text_content=self.generateSafeXml(),
         sla_xml=self.generateSafeXml(),
         aggregate=self.computer.partition3.getRelativeUrl()
-    ))
+    )
     self.portal.portal_workflow._jumpToStateFor(
         self.destroy_requested_software_instance, 'destroy_requested')
     self.destroy_requested_software_instance.validate()
 
     self.destroyed_software_instance = self.portal.software_instance_module\
         .template_software_instance.Base_createCloneDocument(batch_mode=1)
-    setupSoftwareInstance(self.destroyed_software_instance, **dict(
+    self.destroyed_software_instance.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
         url_string=\
@@ -205,7 +202,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
         text_content=self.generateSafeXml(),
         sla_xml=self.generateSafeXml(),
         aggregate=self.computer.partition4.getRelativeUrl()
-    ))
+    )
     self.portal.portal_workflow._jumpToStateFor(
         self.destroyed_software_instance, 'destroy_requested')
     self.destroyed_software_instance.validate()
