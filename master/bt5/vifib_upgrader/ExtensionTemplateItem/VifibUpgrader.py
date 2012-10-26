@@ -287,7 +287,7 @@ def Computer_updateLocalRoles(self):
 def Instance_migrateRootSoftwareReleaseUrl(self):
   @WorkflowMethod.disable
   def real(self):
-    if self.getPortalType() not in ('Hosting Subscription', 'Software Instance'):
+    if self.getPortalType() not in ('Hosting Subscription', 'Software Instance', 'Slave Instance'):
       raise TypeError('%s type is not supported' % self.getPortalType())
     if 'root_software_release_url' in self.__dict__:
       self.url_string = self.root_software_release_url
