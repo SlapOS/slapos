@@ -123,14 +123,14 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self.computer.partition2.markBusy()
     self.computer.partition3.markBusy()
 
-    self.hosting_subscription = self.portal.hosting_subscription_module\
+    hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
     self.start_requested_software_instance = self.portal.software_instance_module\
         .template_software_instance.Base_createCloneDocument(batch_mode=1)
-    self.hosting_subscription.edit(
+    hosting_subscription.edit(
         predecessor=self.start_requested_software_instance.getRelativeUrl()
     )
-    self.hosting_subscription.validate()
+    hosting_subscription.validate()
     self.start_requested_software_instance.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
@@ -140,9 +140,9 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
         text_content=self.generateSafeXml(),
         sla_xml=self.generateSafeXml(),
         aggregate=self.computer.partition1.getRelativeUrl(),
-        specialise=self.hosting_subscription.getRelativeUrl()
+        specialise=hosting_subscription.getRelativeUrl()
     )
-    self.hosting_subscription.edit(
+    hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
         url_string=\
@@ -153,7 +153,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
         aggregate=self.computer.partition1.getRelativeUrl()
     )
     self.portal.portal_workflow._jumpToStateFor(
-        self.hosting_subscription, 'start_requested')
+        hosting_subscription, 'start_requested')
     self.portal.portal_workflow._jumpToStateFor(
         self.start_requested_software_instance, 'start_requested')
     self.start_requested_software_instance.validate()
