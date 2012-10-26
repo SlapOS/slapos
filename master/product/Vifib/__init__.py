@@ -43,7 +43,6 @@ from Products.PluggableAuthService.PluggableAuthService import registerMultiPlug
 
 import VifibMachineAuthenticationPlugin
 import VifibCookieHashExtractionPlugin
-import SlapOSShadowAuthenticationPlugin
 
 def initialize(context):
   import Document
@@ -57,15 +56,6 @@ def initialize(context):
                          , constructors=(
                             VifibMachineAuthenticationPlugin.manage_addVifibMachineAuthenticationPluginForm,
                             VifibMachineAuthenticationPlugin.addVifibMachineAuthenticationPlugin, )
-                         , visibility=None
-                         , icon='www/portal.gif'
-                         )
-
-  context.registerClass( SlapOSShadowAuthenticationPlugin.SlapOSShadowAuthenticationPlugin
-                         , permission=ManageUsers
-                         , constructors=(
-                            SlapOSShadowAuthenticationPlugin.manage_addSlapOSShadowAuthenticationPluginForm,
-                            SlapOSShadowAuthenticationPlugin.addSlapOSShadowAuthenticationPlugin, )
                          , visibility=None
                          , icon='www/portal.gif'
                          )
@@ -99,7 +89,6 @@ def initialize(context):
 
 
 registerMultiPlugin(VifibMachineAuthenticationPlugin.VifibMachineAuthenticationPlugin.meta_type)
-registerMultiPlugin(SlapOSShadowAuthenticationPlugin.SlapOSShadowAuthenticationPlugin.meta_type)
 registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibFacebookServerExtractionPlugin.meta_type)
 registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibGoogleServerExtractionPlugin.meta_type)
 registerMultiPlugin(VifibCookieHashExtractionPlugin.VifibBrowserIDExtractionPlugin.meta_type)
