@@ -26,6 +26,7 @@
 ##############################################################################
 
 import os
+import re
 import subprocess
 import tempfile
 import textwrap
@@ -80,7 +81,7 @@ class InitRecipe(GenericBaseRecipe):
                                                    ],
                                                    stderr=subprocess.STDOUT)
 
-            self.options['admin_password'] = self.extract_password(drush_output)
+            self.options['admin-password'] = self.extract_password(drush_output)
 
             # drush removes the 'w' bit from both the settings file and its
             # directory.
