@@ -1,6 +1,8 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
 import transaction
+from AccessControl.SecurityManagement import getSecurityManager, \
+             setSecurityManager
 
 
 class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
@@ -209,8 +211,13 @@ class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
     # check that title is ok
     computer = person.restrictedTraverse(computer_url)
 
-    computer2 = computer.Base_createCloneDocument(batch_mode=1)
-    computer2.validate()
+    sm = getSecurityManager()
+    try:
+      self.login()
+      computer2 = computer.Base_createCloneDocument(batch_mode=1)
+      computer2.validate()
+    finally:
+      setSecurityManager(sm)
     self.tic()
 
     self.assertRaises(NotImplementedError, person.requestComputer,
