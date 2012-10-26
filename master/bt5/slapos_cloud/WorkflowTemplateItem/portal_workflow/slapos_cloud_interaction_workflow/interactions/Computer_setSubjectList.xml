@@ -27,15 +27,15 @@
         <item>
             <key> <string>after_script_name</string> </key>
             <value>
-              <tuple/>
+              <list>
+                <string>Computer_updateDestinationSection</string>
+              </list>
             </value>
         </item>
         <item>
             <key> <string>before_commit_script_name</string> </key>
             <value>
-              <list>
-                <string>SaleTradeCondition_updateDestinationSection</string>
-              </list>
+              <tuple/>
             </value>
         </item>
         <item>
@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SaleTradeCondition_setSubjectList</string> </value>
+            <value> <string>Computer_setSubjectList</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>
@@ -62,13 +62,13 @@
         </item>
         <item>
             <key> <string>once_per_transaction</string> </key>
-            <value> <int>1</int> </value>
+            <value> <int>0</int> </value>
         </item>
         <item>
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Sale Trade Condition</string>
+                <string>Computer</string>
               </list>
             </value>
         </item>

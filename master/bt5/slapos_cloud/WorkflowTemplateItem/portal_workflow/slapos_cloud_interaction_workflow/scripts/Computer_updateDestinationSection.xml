@@ -50,17 +50,17 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>sale_trade_condition = state_change[\'object\']\n
-portal = sale_trade_condition.getPortalObject()\n
+            <value> <string>computer = state_change[\'object\']\n
+portal = computer.getPortalObject()\n
 \n
-subject_list = sale_trade_condition.getSubjectList()\n
+subject_list = computer.getSubjectList()\n
 person_list = []\n
 \n
 for subject in subject_list:\n
   if subject:\n
     person_list.extend([x.getObject() for x in portal.portal_catalog(validation_state="validated", portal_type="Person", default_email_text=subject)])\n
 \n
-sale_trade_condition.edit(destination_section_value_list=person_list)\n
+computer.edit(destination_section_value_list=person_list)\n
 </string> </value>
         </item>
         <item>
@@ -77,7 +77,7 @@ sale_trade_condition.edit(destination_section_value_list=person_list)\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SaleTradeCondition_updateDestinationSection</string> </value>
+            <value> <string>Computer_updateDestinationSection</string> </value>
         </item>
       </dictionary>
     </pickle>
