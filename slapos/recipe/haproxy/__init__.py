@@ -73,17 +73,21 @@ class Recipe(GenericBaseRecipe):
     server_snippet = ""
     i = 0
     name = self.options['name']
-    for address in self.options['backend-list'].split():
+    backend_list = self.options['backend-list']
+    if isinstance(backend_list, str):
+      # BBB
+      backend_list = backend_list.split()
+    for address in backend_list:
       i += 1
       server_snippet += self.substituteTemplate(
           snippet_filename, dict(
-             name='%s_%s' % (name, i), 
+             name='%s_%s' % (name, i),
              address=address,
              cluster_zope_thread_amount=self.options['maxconn']))
 
     config = dict(
-        name=name, 
-        ip=self.options['ip'], 
+        name=name,
+        ip=self.options['ip'],
         port=self.options['port'],
         server_text=server_snippet,
         server_check_path=self.options['server-check-path'],)

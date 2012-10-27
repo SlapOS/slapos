@@ -8,9 +8,12 @@
 # Loud fail is really required in such case.
 sql-mode="NO_ENGINE_SUBSTITUTION"
 
+# Workaround for https://bugs.launchpad.net/maria/+bug/985828
+# that causes wrong result in Resource_zGetInventoryList etc.
+optimizer_switch = derived_merge=off
+
 skip-show-database
-port = %(tcp_port)s
-bind-address = %(ip)s
+%(networking)s
 socket = %(socket)s
 datadir = %(data_directory)s
 pid-file = %(pid_file)s
@@ -21,7 +24,7 @@ long_query_time = 1
 max_allowed_packet = 128M
 query_cache_size = 32M
 
-plugin-load = ha_mroonga.so;ha_sphinx.so;handlersocket.so
+plugin-load = ha_mroonga.so;handlersocket.so
 
 # By default only 100 connections are allowed, when using zeo
 # we may have much more connections

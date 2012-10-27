@@ -29,13 +29,21 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
   def install(self):
-    path_list = []
-    a = path_list.append
-    configuration_file = self.createFile(self.options['configuration-path'], self.substituteTemplate(self.getTemplateFilename('tidstorage.py.in'), self.options))
-    a(configuration_file)
-    tidstorage_wrapper = self.createPythonScript(self.options['tidstorage-wrapper'], 'slapos.recipe.librecipe.execute.execute', [self.options['tidstoraged-binary'], '--nofork', '--config', configuration_file])
-    a(tidstorage_wrapper)
-    repozo_wrapper = self.createPythonScript(self.options['repozo-wrapper'], 'slapos.recipe.librecipe.execute.execute', [self.options['tidstorage-repozo-binary'], '--config', configuration_file, '--repozo', self.options['repozo-binary'], '-z'])
-    a(repozo_wrapper)
+    configuration_file = self.createFile(
+      self.options['configuration-path'],
+      self.substituteTemplate(
+        self.getTemplateFilename('tidstorage.py.in'), self.options))
 
-    return path_list
+    tidstorage_wrapper = self.createPythonScript(
+      self.options['tidstorage-wrapper'],
+      'slapos.recipe.librecipe.execute.execute',
+      [self.options['tidstoraged-binary'],  '--nofork', '--config',
+        configuration_file])
+
+    repozo_wrapper = self.createPythonScript(
+      self.options['repozo-wrapper'],
+      'slapos.recipe.librecipe.execute.execute',
+      [self.options['tidstorage-repozo-binary'], '--config',
+        configuration_file, '--repozo', self.options['repozo-binary'], '-z'])
+
+    return [configuration_file, tidstorage_wrapper, repozo_wrapper]

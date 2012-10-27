@@ -35,7 +35,13 @@ import urlparse
 import pkg_resources
 import zc.buildout
 
+from slapos.recipe.librecipe import shlex
+
 class GenericBaseRecipe(object):
+  """Boilerplate class for all Buildout recipes providing helpful methods like
+     creating configuration file, creating wrappers, generating passwords, etc.
+     Can be extended in SlapOS recipes to ease development.
+  """
 
   TRUE_VALUES = ['y', 'yes', '1', 'true']
   FALSE_VALUES = ['n', 'no', '0', 'false']
@@ -103,6 +109,28 @@ class GenericBaseRecipe(object):
       path, arguments=arguments)[0]
     return script
 
+  def createWrapper(self, name, command, parameters):
+    """
+    Creates a very simple (one command) shell script for process replacement.
+    Takes care of quoting.
+    """
+
+    q = shlex.quote
+    lines = [
+            '#!/bin/sh',
+            'exec %s' % shlex.quote(command)
+            ]
+
+    for param in parameters:
+      if len(lines[-1]) < 30:
+        lines[-1] += ' ' + shlex.quote(param)
+      else:
+        lines[-1] += ' \\'
+        lines.append('\t' + shlex.quote(param))
+
+    content = '\n'.join(lines) + '\n'
+    return self.createFile(name, content, 0700)
+
   def createDirectory(self, parent, name, mode=0700):
     path = os.path.join(parent, name)
     if not os.path.exists(path):
@@ -125,6 +153,15 @@ class GenericBaseRecipe(object):
         'template/%s' % template_name)
 
   def generatePassword(self, len_=32):
+    """
+    The purpose of this method is to generate a password which doesn't change
+    from one execution to the next, so the generated password doesn't change
+    on each slapgrid-cp execution.
+
+    Currently, it returns a hardcoded password because no decision has been
+    taken on where a generated password should be kept (so it is generated
+    once only).
+    """
     # TODO: implement a real password generator which remember the last
     # call.
     return "insecure"
@@ -145,9 +182,6 @@ class GenericBaseRecipe(object):
     * if the host is an ipv6 address, brackets will be added to surround it.
 
     """
-    # XXX-Antoine: I didn't find any standard module to join an url with
-    # login, password, ipv6 host and port.
-    # So instead of copy and past in every recipe I factorized it right here.
     netloc = ''
     if auth is not None:
       auth = tuple(auth)

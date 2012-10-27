@@ -31,8 +31,10 @@ class Recipe(GenericBaseRecipe):
 
   def _options(self, options):
     options['password'] = self.generatePassword()
-    options['test-password'] = self.generatePassword()
-    for x in xrange(0, int(options['parallel-test-database-amount'])):
+    if 'test-database' in options:
+      options['test-password'] = self.generatePassword()
+    options.setdefault('parallel-test-database-amount', '0')
+    for x in xrange(int(options['parallel-test-database-amount'])):
       options['test-password-%s' % x] = self.generatePassword()
 
   def install(self):
@@ -40,28 +42,27 @@ class Recipe(GenericBaseRecipe):
 
     template_filename = self.getTemplateFilename('my.cnf.in')
 
-    mysql_conf = dict(
-        ip=self.options['ip'],
-        data_directory=self.options['data-directory'],
-        tcp_port=self.options['port'],
-        pid_file=self.options['pid-file'],
-        socket=self.options['socket'],
-        error_log=self.options['error-log'],
-        slow_query_log=self.options['slow-query-log'],
-        mysql_database=self.options['database'],
-        mysql_user=self.options['user'],
-        mysql_password=self.options['password'],
-        mysql_test_database=self.options['test-database'],
-        mysql_test_user=self.options['test-user'],
-        mysql_test_password=self.options['test-password'],
-    )
-
     mysql_binary = self.options['mysql-binary']
-    socket = self.options['socket'],
+    socket = self.options['socket']
+
+    if 'ip' in self.options:
+      networking = 'port = %s\nbind-address = %s' % (
+        self.options['port'],
+        self.options['ip'],
+      )
+    else:
+      networking = 'skip-networking'
 
     mysql_conf_file = self.createFile(
       self.options['conf-file'],
-      self.substituteTemplate(template_filename, mysql_conf)
+      self.substituteTemplate(template_filename, {
+        'networking': networking,
+        'data_directory': self.options['data-directory'],
+        'pid_file': self.options['pid-file'],
+        'socket': self.options['socket'],
+        'error_log': self.options['error-log'],
+        'slow_query_log': self.options['slow-query-log'],
+      })
     )
     path_list.append(mysql_conf_file)
 
@@ -77,22 +78,23 @@ class Recipe(GenericBaseRecipe):
     mysql_script_list.append(self.substituteTemplate(
       self.getTemplateFilename('initmysql.sql.in'),
       {
-        'mysql_database': mysql_conf['mysql_database'],
-        'mysql_user': mysql_conf['mysql_user'],
-        'mysql_password': mysql_conf['mysql_password']
+        'mysql_database': self.options['database'],
+        'mysql_user': self.options['user'],
+        'mysql_password': self.options['password']
       }
     ))
     # default test database
-    mysql_script_list.append(self.substituteTemplate(
-      self.getTemplateFilename('initmysql.sql.in'),
-      {
-        'mysql_database': mysql_conf['mysql_test_database'],
-        'mysql_user': mysql_conf['mysql_test_user'],
-        'mysql_password': mysql_conf['mysql_test_password']
-      }
-    ))
+    if 'test-database' in self.options:
+      mysql_script_list.append(self.substituteTemplate(
+        self.getTemplateFilename('initmysql.sql.in'),
+        {
+          'mysql_database': self.options['test-database'],
+          'mysql_user': self.options['test-user'],
+          'mysql_password': self.options['test-password']
+        }
+      ))
     # parallel test databases
-    for x in xrange(0, int(self.options['parallel-test-database-amount'])):
+    for x in xrange(int(self.options['parallel-test-database-amount'])):
       mysql_script_list.append(self.substituteTemplate(
         self.getTemplateFilename('initmysql.sql.in'),
         {
@@ -122,62 +124,81 @@ class Recipe(GenericBaseRecipe):
       self.options['wrapper'],
       '%s.mysql.runMysql' % __name__,
       [dict(
+        mysql_base_directory=self.options['mysql-base-directory'],
         mysql_install_binary=self.options['mysql-install-binary'],
         mysqld_binary=mysqld_binary,
-        data_directory=mysql_conf['data_directory'],
+        data_directory=self.options['data-directory'],
         mysql_binary=mysql_binary,
         socket=socket,
         configuration_file=mysql_conf_file,
        )]
     )
     path_list.append(mysqld)
-    # backup configuration
-    full_backup = self.options['full-backup-directory']
-    incremental_backup = self.options['incremental-backup-directory']
-    innobackupex_argument_list = [self.options['perl-binary'],
-        self.options['innobackupex-binary'],
-        '--defaults-file=%s' % mysql_conf_file,
-        '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
-        '--ibbackup=%s'% self.options['xtrabackup-binary']]
-    environment = dict(PATH='%s' % self.options['bin-directory'])
-    innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
-    path_list.append(innobackupex_incremental)
-    innobackupex_full = self.createPythonScript(self.options['innobackupex-full'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list, environment])
-    path_list.append(innobackupex_full)
-    backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
-    path_list.append(backup_controller)
-    # maatkit installation
+    # TODO: move to a separate recipe (ack'ed by Cedric)
+    if 'backup-script' in self.options:
+      # backup configuration
+      full_backup = self.options['full-backup-directory']
+      incremental_backup = self.options['incremental-backup-directory']
+      innobackupex_argument_list = [self.options['perl-binary'],
+          self.options['innobackupex-binary'],
+          '--defaults-file=%s' % mysql_conf_file,
+          '--socket=%s' % socket.strip(), '--user=root',
+          '--ibbackup=%s'% self.options['xtrabackup-binary']]
+      environment = dict(PATH='%s' % self.options['bin-directory'])
+      innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
+      path_list.append(innobackupex_incremental)
+      innobackupex_full = self.createPythonScript(self.options['innobackupex-full'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list, environment])
+      path_list.append(innobackupex_full)
+      backup_controller = self.createPythonScript(self.options['backup-script'], __name__ + '.innobackupex.controller', [innobackupex_incremental, innobackupex_full, full_backup, incremental_backup])
+      path_list.append(backup_controller)
+    # TODO: move to a separate recipe (ack'ed by Cedric)
+    # percona toolkit (formerly known as maatkit) installation
     for pt_script_name in (
+        'pt-align',
         'pt-archiver',
+        'pt-collect',
         'pt-config-diff',
         'pt-deadlock-logger',
+        'pt-diskstats',
         'pt-duplicate-key-checker',
         'pt-fifo-split',
         'pt-find',
+        'pt-fingerprint',
         'pt-fk-error-logger',
         'pt-heartbeat',
         'pt-index-usage',
+        'pt-ioprofile',
         'pt-kill',
         'pt-log-player',
+        'pt-mext',
+        'pt-mysql-summary',
         'pt-online-schema-change',
+        'pt-pmp',
         'pt-query-advisor',
         'pt-query-digest',
         'pt-show-grants',
+        'pt-sift',
         'pt-slave-delay',
         'pt-slave-find',
         'pt-slave-restart',
+        'pt-stalk',
+        'pt-summary',
         'pt-table-checksum',
         'pt-table-sync',
+        'pt-table-usage',
         'pt-tcp-model',
         'pt-trend',
         'pt-upgrade',
         'pt-variable-advisor',
         'pt-visual-explain',
         ):
+      option_name = pt_script_name + '-binary'
+      if option_name not in self.options:
+        continue
       pt_argument_list = [self.options['perl-binary'],
-          self.options['%s-binary' % pt_script_name],
+          self.options[option_name],
           '--defaults-file=%s' % mysql_conf_file,
-          '--socket=%s' %mysql_conf['socket'].strip(), '--user=root',
+          '--socket=%s' % socket.strip(), '--user=root',
           ]
       pt_exe = self.createPythonScript(os.path.join(self.options['bin-directory'], pt_script_name), 'slapos.recipe.librecipe.execute.executee', [pt_argument_list, environment])
       path_list.append(pt_exe)

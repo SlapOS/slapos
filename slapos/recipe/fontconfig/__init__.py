@@ -77,7 +77,7 @@ class Recipe(GenericBaseRecipe):
       onetimedownload_config['url'] = url
       onetimedownload_config['file_path'] = file_path
       onetimedownload_runner_path = self.createExecutable(bin_path,
-          self.substituteTemplate(wrapper_template_location, 
+          self.substituteTemplate(wrapper_template_location,
                                   onetimedownload_config))
 
       created_file_list.append(onetimedownload_runner_path)

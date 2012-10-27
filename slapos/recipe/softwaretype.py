@@ -87,6 +87,8 @@ class Recipe:
       computer_partition_id)
     self.parameter_dict = self.computer_partition.getInstanceParameterDict()
     software_type = self.parameter_dict['slap_software_type']
+    self.logger.info('Deploying instance with software type %s' % \
+        software_type)
 
     if software_type not in self.options:
       if 'default' in self.options:
@@ -120,7 +122,7 @@ class Recipe:
                  self.getLocalIPv4Address())
     buildout.set('slap-network-information', 'global-ipv6',
                  self.getGlobalIPv6Address())
-    buildout.set('slap-network-information', 'network-interface', 
+    buildout.set('slap-network-information', 'network-interface',
                  self.getNetworkInterface())
 
     # Copy/paste slap_connection
@@ -128,6 +130,8 @@ class Recipe:
     for key, value in self.buildout['slap_connection'].iteritems():
       # XXX: Waiting for SlapBaseRecipe to use dash instead of underscores
       buildout.set('slap-connection', key.replace('_', '-'), value)
+    # XXX: Needed for lxc. Use non standard API
+    buildout.set('slap-connection', 'requested', self.computer_partition._requested_state)
 
     work_directory = os.path.abspath(self.buildout['buildout'][
       'directory'])

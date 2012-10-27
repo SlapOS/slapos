@@ -19,7 +19,7 @@ long_query_time = 5
 max_allowed_packet = 128M
 query_cache_size = 32M
 
-plugin-load = ha_mroonga.so;ha_sphinx.so
+plugin-load = ha_mroonga.so
 
 # The following are important to configure and depend a lot on to the size of
 # your database and the available resources.

@@ -1,0 +1,536 @@
+{% if software_type == slap_software_type -%}
+{#
+Note: all port counters are pre-incremented. No idea why base port is skipped.
+-#}
+{% set current_zeo_port = zeo_port_base | int -%}
+{% set zope_port_base = zope_port_base | int -%}
+{% set zope_dummy_list = [] -%}
+{% set current_apache_port = apache_port_base | int -%}
+{% set current_haproxy_port = haproxy_port_base | int -%}
+{% set json = json_module.loads(slapparameter_dict['json']) -%}
+{% set bin_directory = parameter_dict['buildout-bin-directory'] -%}
+{#
+XXX: This template only supports exactly one IPv4 and one IPv6 per
+partition. No more (undefined result), no less (IndexError).
+-#}
+{% set ipv4 = (ipv4_set | list)[0] -%}
+{% set ipv6 = (ipv6_set | list)[0] -%}
+{#
+BBB: erp5-ca['state'] has been configured as string by mistake. Keep this for
+backward compatibility with existing automatically setup CAs.
+-#}
+{% set erp5_ca = json.get('erp5-ca', {
+  'country-code': 'ZZ',
+  'email': 'nobody@example.com',
+  'state': "('State',)",
+  'city': 'City',
+  'company': 'Company',
+}) -%}
+{% set site_id = json['site-id'] -%}
+{% set part_list = [] -%}
+{% set known_tid_storage_identifier_dict = {} -%}
+{% set zodb_connection_list = [] -%}
+{% macro section(name) %}{% do part_list.append(name) %}{{ name }}{% endmacro -%}
+{% macro zope(
+  name,
+  thread_amount=1,
+  timerserver_interval=0,
+  longrequest_logger_file='',
+  longrequest_logger_timeout='',
+  longrequest_logger_interval=''
+) -%}
+{% set conf_name = name ~ '-conf' -%}
+{% set conf_parameter_name = conf_name ~ '-param' -%}
+[{{ conf_parameter_name }}]
+< = zope-conf-parameter-base
+pid-file = ${directory:run}/{{ name }}.pid
+lock-file = ${directory:run}/{{ name }}.lock
+{% do zope_dummy_list.append(None) -%}
+{% set offset = zope_dummy_list | length -%}
+port = {{ zope_port_base + offset }}
+thread-amount = {{ thread_amount }}
+{% if timerserver_interval -%}
+timerserver-interval = {{ timerserver_interval }}
+{% endif -%}
+event-log = ${directory:log}/{{ name }}-event.log
+z2-log = ${directory:log}/{{ name }}-Z2.log
+
+[{{ conf_name }}]
+< = zope-conf-base
+rendered = ${directory:etc}/{{ name }}.conf
+extra-context =
+  section parameter_dict {{ conf_parameter_name }}
+
+[{{ section(name) }}]
+< = zope-base
+longrequest-logger-file = {{ longrequest_logger_file }}
+longrequest-logger-timeout = {{ longrequest_logger_timeout }}
+longrequest-logger-interval = {{ longrequest_logger_interval }}
+wrapper = ${directory:services}/{{ name }}
+configuration-file = {{ '${' ~ conf_name ~ ':rendered}' }}
+port = {{ '${' ~ conf_parameter_name ~ ':port}' }}
+
+[{{ section('logrotate-entry-' ~ name) }}]
+< = logrotate-base
+recipe = slapos.cookbook:logrotate.d
+name = {{ name }}
+log = {{ '${' ~ conf_parameter_name ~ ':event-log}' }} {{ '${' ~ conf_parameter_name ~ ':z2-log}' }}
+post = {{ bin_directory }}/killpidfromfile {{ '${' ~ conf_parameter_name ~ ':pid-file}' }} SIGUSR2
+{% endmacro -%}
+#############################
+# Directory creation
+#############################
+[directory]
+recipe = slapos.cookbook:mkdirectory
+apache-conf = ${:etc}/apache
+backup = ${:srv}/backup
+bin = ${buildout:directory}/bin
+ca-dir = ${:srv}/ssl
+cron-entries = ${:etc}/cron.d
+cronstamps = ${:etc}/cronstamps
+crontabs = ${:etc}/crontabs
+erp5-ca-dir = ${:srv}/erp5-ssl
+etc = ${buildout:directory}/etc
+instance = ${:srv}/erp5shared
+instance-constraint = ${:instance}/Constraint
+instance-document = ${:instance}/Document
+instance-etc = ${:instance}/etc
+instance-etc-package-include = ${:instance}/etc/package-include
+instance-extensions = ${:instance}/Extensions
+instance-import = ${:instance}/import
+instance-lib = ${:instance}/lib
+instance-products = ${:instance}/Products
+instance-propertysheet = ${:instance}/PropertySheet
+instance-tests = ${:instance}/tests
+log = ${:var}/log
+logrotate-backup = ${:backup}/logrotate
+logrotate-entries = ${:etc}/logrotate.d
+run = ${:var}/run
+services = ${:etc}/run
+srv = ${buildout:directory}/srv
+tidstorage = ${:srv}/tidstorage
+tmp = ${buildout:directory}/tmp
+var = ${buildout:directory}/var
+zodb = ${:srv}/zodb
+zodb-backup = ${:backup}/zodb
+
+#############################
+# Binary symlinking
+#############################
+[binary-link]
+recipe = slapos.cookbook:symbolic.link
+target-directory = ${directory:bin}
+link-binary =
+  {{ parameter_dict['coreutils'] }}/bin/basename
+  {{ parameter_dict['coreutils'] }}/bin/cat
+  {{ parameter_dict['coreutils'] }}/bin/cp
+  {{ parameter_dict['coreutils'] }}/bin/ls
+  {{ parameter_dict['coreutils'] }}/bin/tr
+  {{ parameter_dict['coreutils'] }}/bin/uname
+  {{ parameter_dict['git'] }}/bin/git
+  {{ parameter_dict['graphviz'] }}/bin/dot
+  {{ parameter_dict['grep'] }}/bin/grep
+  {{ parameter_dict['imagemagick'] }}/bin/convert
+  {{ parameter_dict['imagemagick'] }}/bin/identify
+  {{ parameter_dict['mariadb'] }}/bin/mysql
+  {{ parameter_dict['mariadb'] }}/bin/mysqldump
+  {{ parameter_dict['pdftk'] }}/bin/pdftk
+  {{ parameter_dict['sed'] }}/bin/sed
+  {{ parameter_dict['tesseract'] }}/bin/tesseract
+  {{ parameter_dict['w3m'] }}/bin/w3m
+  {{ parameter_dict['poppler'] }}/bin/pdfinfo
+  {{ parameter_dict['poppler'] }}/bin/pdfseparate
+  {{ parameter_dict['poppler'] }}/bin/pdftotext
+  {{ parameter_dict['poppler'] }}/bin/pdftohtml
+  {{ parameter_dict['poppler'] }}/bin/pdfunite
+  {{ parameter_dict['dmtx-utils'] }}/bin/dmtxwrite
+
+#############################
+# CA
+#############################
+[cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = ${directory:ca-dir}/requests
+private = ${directory:ca-dir}/private
+certs = ${directory:ca-dir}/certs
+newcerts = ${directory:ca-dir}/newcerts
+crl = ${directory:ca-dir}/crl
+
+[certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ parameter_dict['openssl'] }}/bin/openssl
+ca-dir = ${directory:ca-dir}
+requests-directory = ${cadirectory:requests}
+wrapper = ${directory:services}/ca
+ca-private = ${cadirectory:private}
+ca-certs = ${cadirectory:certs}
+ca-newcerts = ${cadirectory:newcerts}
+ca-crl = ${cadirectory:crl}
+
+#############################
+# ERP5 CA
+#############################
+[erp5-cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = ${directory:erp5-ca-dir}/requests
+private = ${directory:erp5-ca-dir}/private
+certs = ${directory:erp5-ca-dir}/certs
+newcerts = ${directory:erp5-ca-dir}/newcerts
+crl = ${directory:erp5-ca-dir}/crl
+
+[erp5-certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ parameter_dict['openssl'] }}/bin/openssl
+ca-dir = ${directory:erp5-ca-dir}
+requests-directory = ${erp5-cadirectory:requests}
+wrapper = ${directory:services}/erp5-ca
+ca-private = ${erp5-cadirectory:private}
+ca-certs = ${erp5-cadirectory:certs}
+ca-newcerts = ${erp5-cadirectory:newcerts}
+ca-crl = ${erp5-cadirectory:crl}
+country-code = {{ erp5_ca['country-code'] }}
+email = {{ erp5_ca['email'] }}
+state = {{ erp5_ca['state'] }}
+city = {{ erp5_ca['city'] }}
+company = {{ erp5_ca['company'] }}
+
+#############################
+# CRON
+#############################
+[cron-base]
+cron-entries = ${directory:cron-entries}
+
+[cron]
+< = cron-base
+recipe = slapos.cookbook:cron
+dcrond-binary = {{ parameter_dict['dcron'] }}/sbin/crond
+crontabs = ${directory:crontabs}
+cronstamps = ${directory:cronstamps}
+catcher = ${cron-simplelogger:wrapper}
+binary = ${directory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = ${directory:bin}/cron_simplelogger
+log = ${directory:log}/cron.log
+
+#############################
+# Logrotate
+#############################
+[logrotate-base]
+logrotate-entries = ${directory:logrotate-entries}
+backup = ${directory:logrotate-backup}
+
+[logrotate]
+< = logrotate-base
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = {{ parameter_dict['logrotate'] }}/usr/sbin/logrotate
+gzip-binary = {{ parameter_dict['gzip'] }}/bin/gzip
+gunzip-binary = {{ parameter_dict['gzip'] }}/bin/gunzip
+# Directories
+wrapper = ${directory:bin}/logrotate
+conf = ${directory:etc}/logrotate.conf
+state-file = ${directory:srv}/logrotate.status
+
+[cron-entry-logrotate]
+< = cron-base
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = ${logrotate:wrapper}
+
+#############################
+# ERP5 bootstrap
+#############################
+[erp5-bootstrap]
+recipe = slapos.cookbook:erp5.bootstrap
+runner-path = ${directory:services}/erp5-bootstrap
+mysql-url = {{ slapparameter_dict['mysql-url'] }}
+zope-url = http://${zope-admin:user}:${zope-admin:password}@${zope-admin:ip}:${zope-admin:port}/{{ site_id }}
+
+#############################
+# ERP5 promise
+#############################
+[erp5-promise]
+recipe = slapos.cookbook:erp5.promise
+promise-path = ${directory:etc}/erp5promise.cfg
+kumofs-url = {{ slapparameter_dict['kumofs-url'] }}
+memcached-url = {{ slapparameter_dict['memcached-url'] }}
+cloudooo-url = {{ slapparameter_dict['cloudooo-url'] }}
+smtp-url = ${slap-parameter:smtp-url}
+bt5 = ${slap-parameter:bt5}
+bt5-repository-url = ${slap-parameter:bt5-repository-url}
+
+#############################
+# ZEO
+#############################
+[zeo-instance-entry-common]
+recipe = slapos.cookbook:zeo
+ip = {{ ipv4 }}
+binary-path = {{ bin_directory }}/runzeo
+
+{% for zeo_id, zeo_configuration_list in json['zeo'].iteritems() -%}
+{%   set current_zeo_port = current_zeo_port + 1 -%}
+{%   set storage_list = [] -%}
+{%   for zeo_slave in zeo_configuration_list -%}
+{%     do zodb_connection_list.append((
+         zeo_slave['storage-name'],
+         zeo_slave['mount-point'] % {'site-id': site_id},
+         zeo_slave['zope-cache-size'],
+         'zeoclient',
+         {
+           'cache-size': zeo_slave['zeo-cache-size'],
+           'server': ipv4 ~ ':' ~ current_zeo_port,
+           'storage': zeo_slave['storage-name'],
+           'name': zeo_slave['storage-name'],
+         },
+       )) -%}
+{%     set zodb_path = '${directory:zodb}/' ~ zeo_slave['storage-name'] ~ '.fs' -%}
+{%     do storage_list.append('storage-name=%(storage-name)s zodb-path=%(zodb-path)s' % {'zodb-path': zodb_path, 'storage-name': zeo_slave['storage-name']}) -%}
+{%     do known_tid_storage_identifier_dict.__setitem__("((('${zeo-instance-%(zeo_id)s:ip}', ${zeo-instance-%(zeo_id)s:port}),), '%(storage_name)s')" % {
+         'zeo_id': zeo_id,
+         'storage_name': zeo_slave['storage-name']
+       }, (zodb_path, '${directory:zodb-backup}/%s/' % zeo_slave['storage-name'], zeo_slave['serialize-path'] % {'site-id': site_id})) -%}
+{%   endfor -%}
+[{{ section('zeo-instance-%s' % zeo_id) }}]
+< = zeo-instance-entry-common
+log-path = ${directory:log}/zeo-{{ zeo_id }}.log
+pid-path = ${directory:run}/zeo-{{ zeo_id }}.pid
+conf-path = ${directory:etc}/zeo-{{ zeo_id }}.conf
+port = {{ current_zeo_port }}
+storage =
+  {{ storage_list | join('\n  ') }}
+wrapper-path = ${directory:services}/zeo-{{ zeo_id }}
+
+[{{ section('logrotate-entry-zeo-%s' % zeo_id) }}]
+< = logrotate-base
+recipe = slapos.cookbook:logrotate.d
+name = zeo-{{ zeo_id }}
+log = ${zeo-instance-{{ zeo_id }}:log-path}
+post = {{ bin_directory }}/killpidfromfile ${zeo-instance-{{ zeo_id }}:pid-path} SIGUSR2
+
+{% endfor -%}
+#############################
+# Zope
+#############################
+[zope-base]
+recipe = slapos.cookbook:generic.zope.zeo.client
+user = zope
+ip = {{ ipv4 }}
+timezone = {{ json['timezone'] }}
+tidstorage-ip = ${tidstorage:ip}
+tidstorage-port = ${tidstorage:port}
+instance-etc = ${directory:instance-etc}
+bt5-repository = ${directory:var}/bt5_repository
+tmp-path = ${directory:tmp}
+bin-path = ${directory:bin}
+site-zcml = ${:instance-etc}/site.zcml
+inituser = ${directory:instance}/inituser
+runzope-binary = {{ bin_directory }}/runzope
+bt5-repository-list =
+
+[deadlock-debugger-password]
+recipe = slapos.cookbook:pwgen.stable
+
+[zope-conf-parameter-base]
+ip = {{ ipv4 }}
+site-id = {{ site_id }}
+zodb-list = {{ dumps(zodb_connection_list) }}
+
+[zope-conf-base]
+recipe = slapos.recipe.template:jinja2
+template = {{ parameter_dict['zope-conf-template'] }}
+extra-context =
+context =
+  key instance directory:instance
+  key instance_products directory:instance-products
+  raw deadlock_path /manage_debug_threads
+  key deadlock_debugger_password deadlock-debugger-password:password
+  key tidstorage_ip tidstorage:ip
+  key tidstorage_port tidstorage:port
+  key promise_path erp5-promise:promise-path
+  ${:extra-context}
+
+# Distribution node
+{{ zope('zope-distribution', timerserver_interval=1) }}
+# Admin node
+{{ zope('zope-admin') }}
+# Activity nodes
+{% for q in range(1, json['activity']['zopecount'] + 1) -%}
+{{   zope('zope-activity-%s' % q, timerserver_interval=1) }}
+{%- endfor %}
+# Other zopes, apaches and haproxies
+{% set publish_url_list =  [] -%}
+{% for backend_name, backend_configuration in json['backend'].iteritems() -%}
+{%   set haproxy_backend_list = [] -%}
+{%   set longrequest_logger = backend_configuration.get('longrequest-logger') -%}
+{%   for q in range(1, backend_configuration['zopecount'] + 1) -%}
+{%     set part_name = 'zope-%s-%s' % (backend_name, q) -%}
+{%     if longrequest_logger != None -%}
+{%       set longrequest_logger_file = '${directory:log}/%s-longrequest.log' % (part_name, ) -%}
+{%       set longrequest_logger_timeout = longrequest_logger.get('timeout', '4') -%}
+{%       set longrequest_logger_interval = longrequest_logger.get('interval', '2') -%}
+{%     else -%}
+{%       set longrequest_logger_file = '' -%}
+{%       set longrequest_logger_timeout = '' -%}
+{%       set longrequest_logger_interval = '' -%}
+{%     endif -%}
+{{     zope(
+         part_name,
+         thread_amount=backend_configuration['thread-amount'],
+         longrequest_logger_file=longrequest_logger_file,
+         longrequest_logger_timeout=longrequest_logger_timeout,
+         longrequest_logger_interval=longrequest_logger_interval,
+       ) }}
+{%     do haproxy_backend_list.append('${%(part_name)s:ip}:${%(part_name)s:port}' % {'part_name': part_name}) -%}
+{%  endfor -%}
+{%   set scheme = backend_configuration.get('scheme', ['https']) -%}
+{%   set current_apache_port = current_apache_port + 2 -%}
+{%   set current_haproxy_port = current_haproxy_port + 1 -%}
+{%   if 'http' in scheme -%}
+{%     set section_name = 'apache-public-' ~ backend_name -%}
+{%     do publish_url_list.append(
+         'url-public-%(backend_name)s = http://[${%(section_name)s:ip}]:${%(section_name)s:port}' % {
+         'backend_name': backend_name,
+         'section_name': section_name,
+       }) -%}
+[{{ section(section_name) }}]
+recipe = slapos.cookbook:apache.zope.backend
+backend = http://${haproxy-{{ backend_name }}:ip}:${haproxy-{{ backend_name }}:port}
+ip = {{ ipv6 }}
+port = {{ current_apache_port }}
+scheme = http
+wrapper = ${directory:services}/apache-public-{{ backend_name }}
+configuration-file = ${directory:apache-conf}/apache-public-{{ backend_name }}.conf
+access-control-string = {{ backend_configuration['access-control-string'] }}
+pid-file = ${directory:run}/apache-public-{{ backend_name }}.pid
+lock-file = ${directory:run}/apache-public-{{ backend_name }}.lock
+error-log = ${directory:log}/apache-public-{{ backend_name }}-error.log
+access-log = ${directory:log}/apache-public-{{ backend_name }}-access.log
+apache-binary = {{ parameter_dict['apache'] }}/bin/httpd
+
+[{{ section('logrotate-entry-apache-public-' ~ backend_name) }}]
+< = logrotate-base
+recipe = slapos.cookbook:logrotate.d
+name = apache-public-{{ backend_name }}
+log = ${apache-public-{{ backend_name }}:error-log} ${apache-public-{{ backend_name }}:access-log}
+post = {{ bin_directory }}/killpidfromfile ${apache-public-{{ backend_name }}:pid-file} SIGUSR1
+{%   endif -%}
+{%   if 'https' in scheme -%}
+{%     set section_name = 'apache-' ~ backend_name -%}
+{%     do publish_url_list.append(
+         'url-%(backend_name)s = https://[${%(section_name)s:ip}]:${%(section_name)s:port}' % {
+         'backend_name': backend_name,
+         'section_name': section_name,
+       }) -%}
+[{{ section(section_name) }}]
+recipe = slapos.cookbook:apache.zope.backend
+backend = http://${haproxy-{{ backend_name }}:ip}:${haproxy-{{ backend_name }}:port}
+ip = {{ ipv6 }}
+port = {{ current_apache_port - 1 }}
+wrapper = ${directory:bin}/apache-{{ backend_name }}
+scheme = https
+key-file = ${directory:apache-conf}/apache-{{ backend_name }}.key
+cert-file = ${directory:apache-conf}/apache-{{ backend_name }}.crt
+configuration-file = ${directory:apache-conf}/apache-{{ backend_name }}.conf
+access-control-string = {{ backend_configuration['access-control-string'] }}
+pid-file = ${directory:run}/apache-{{ backend_name }}.pid
+lock-file = ${directory:run}/apache-{{ backend_name }}.lock
+ssl-session-cache = $${directory:log}/apache-ssl-session-cache
+error-log = ${directory:log}/apache-{{ backend_name }}-error.log
+access-log = ${directory:log}/apache-{{ backend_name }}-access.log
+apache-binary = {{ parameter_dict['apache'] }}/bin/httpd
+ssl-authentication = {{ backend_configuration.get('ssl-authentication', False) }}
+backend-path = {{ backend_configuration.get('backend-path', '/') % {'site-id': site_id} }}
+# Note: Without erp5-certificate-authority main certificate have to be hardcoded
+ssl-authentication-certificate = ${erp5-certificate-authority:ca-dir}/cacert.pem
+ssl-authentication-crl = ${erp5-certificate-authority:ca-crl}
+
+[{{ section('ca-apache-' ~ backend_name) }}]
+< = certificate-authority
+recipe = slapos.cookbook:certificate_authority.request
+key-file = ${apache-{{ backend_name }}:key-file}
+cert-file = ${apache-{{ backend_name }}:cert-file}
+executable = ${apache-{{ backend_name }}:wrapper}
+wrapper = ${directory:services}/apache-{{ backend_name }}
+
+[{{ section('logrotate-entry-apache-' ~ backend_name) }}]
+< = logrotate-base
+recipe = slapos.cookbook:logrotate.d
+name = apache-{{ backend_name }}
+log = ${apache-{{ backend_name }}:error-log} ${apache-{{ backend_name }}:access-log}
+post = {{ bin_directory }}/killpidfromfile ${apache-{{ backend_name }}:pid-file} SIGUSR1
+
+[{{ section('haproxy-' ~ backend_name) }}]
+recipe = slapos.cookbook:haproxy
+name = {{ backend_name }}
+conf-path = ${directory:etc}/haproxy-{{ backend_name }}.cfg
+ip = {{ ipv4 }}
+port = {{ current_haproxy_port }}
+maxconn = {{ backend_configuration['maxconn'] }}
+server-check-path = /{{ site_id }}/getId
+wrapper-path = ${directory:services}/haproxy-{{ backend_name }}
+binary-path = {{ parameter_dict['haproxy'] }}/sbin/haproxy
+backend-list = {{ haproxy_backend_list | join(' ')}}
+{%-  endif %}
+{% endfor -%}
+[{{ section('publish-apache-backend-list') }}]
+recipe = slapos.cookbook:publish
+{{ publish_url_list | join('\n') }}
+
+#############################
+# tidstorage
+#############################
+[tidstorage]
+recipe = slapos.cookbook:tidstorage
+known-tid-storage-identifier-dict = {{ known_tid_storage_identifier_dict }}
+configuration-path = ${directory:etc}/tidstorage.py
+ip = {{ ipv4 }}
+port = 6001
+timestamp-file-path = ${directory:tidstorage}/repozo_tidstorage_timestamp.log
+logfile-name = ${directory:log}/tidstorage.log
+pidfile-name = ${directory:run}/tidstorage.pid
+status-file = ${directory:tidstorage}/tidstorage.tid
+tidstorage-repozo-binary = {{ bin_directory }}/tidstorage_repozo
+tidstoraged-binary = {{ bin_directory }}/tidstoraged
+repozo-binary = {{ bin_directory }}/repozo
+tidstorage-wrapper = ${directory:services}/tidstoraged
+repozo-wrapper = ${buildout:bin-directory}/tidstorage-repozo
+
+[cron-entry-tidstorage-backup]
+< = cron-base
+recipe = slapos.cookbook:cron.d
+name = tidstorage
+frequency = 0 0 * * *
+command = ${tidstorage:repozo-wrapper}
+
+[logrotate-entry-tidstorage]
+< = logrotate-base
+recipe = slapos.cookbook:logrotate.d
+name = tidstorage
+log = ${tidstorage:logfile-name}
+post = {{ bin_directory }}/killpidfromfile ${tidstorage:pidfile-name} SIGHUP
+
+#############################
+# buildout main section
+#############################
+[buildout]
+parts =
+  logrotate
+  cron
+  cron-entry-logrotate
+  certificate-authority
+  erp5-certificate-authority
+  tidstorage
+  cron-entry-tidstorage-backup
+  logrotate-entry-tidstorage
+  binary-link
+  erp5-promise
+  erp5-bootstrap
+  {{ part_list | join('\n  ') }}
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+{%- endif %}

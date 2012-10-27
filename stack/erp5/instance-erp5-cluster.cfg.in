@@ -1,0 +1,106 @@
+#############################
+#
+# Request erp5 production environnment
+#
+#############################
+[buildout]
+
+parts =
+  request-tidstorage
+  basedirectory
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[request-common]
+recipe = slapos.cookbook:request
+software-url = ${slap-connection:software-release-url}
+sla = computer_guid
+return = url
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+[request-mariadb]
+<=request-common
+name = MariaDB DataBase
+software-type = mariadb
+sla-computer_guid = ${slap-parameter:mariadb-computer-guid}
+
+[request-cloudooo]
+<=request-common
+name = Cloudooo
+config = cloudooo-json
+config-cloudooo-json = ${slap-parameter:cloudooo-json}
+software-type = cloudooo
+sla-computer_guid = ${slap-parameter:cloudooo-computer-guid}
+
+[request-memcached]
+<=request-common
+name = Memcached
+software-type = memcached
+sla-computer_guid = ${slap-parameter:memcached-computer-guid}
+
+[request-kumofs]
+<=request-common
+name = KumoFS
+software-type = kumofs
+sla-computer_guid = ${slap-parameter:kumofs-computer-guid}
+
+[request-tidstorage]
+<=request-common
+name = TidStorage
+return = url-login
+config =
+  json
+  mysql-url
+  memcached-url
+  cloudooo-url
+  kumofs-url
+  smtp-url
+  bt5
+  bt5-repository-url
+config-json = ${slap-parameter:json}
+config-mysql-url = ${request-mariadb:connection-url}
+config-memcached-url = ${request-memcached:connection-url}
+config-cloudooo-url = ${request-cloudooo:connection-url}
+config-kumofs-url = ${request-kumofs:connection-url}
+config-bt5 = ${slap-parameter:bt5}
+config-bt5-repository-url = ${slap-parameter:bt5-repository-url}
+config-smtp-url = ${slap-parameter:smtp-url}
+software-type = tidstorage
+sla-computer_guid = ${slap-parameter:tidstorage-computer-guid}
+
+[request-varnish]
+<=request-common
+name = Varnish
+config = tidstorage-url
+config-tidstorage-url = ${request-tidstorage:connection-url-login}
+config-web-checker-mail-address = ${slap-parameter:web-checker-mail-address}
+config-web-checker-smtp-host = ${slap-parameter:web-checker-smtp-host}
+software-type = varnish
+sla-computer_guid = ${slap-parameter:varnish-computer-guid}
+
+[slap-parameter]
+# Default value if no computer_guid is specified for each type
+mariadb-computer-guid = ${slap-connection:computer-id}
+cloudooo-computer-guid = ${slap-connection:computer-id}
+memcached-computer-guid = ${slap-connection:computer-id}
+kumofs-computer-guid = ${slap-connection:computer-id}
+tidstorage-computer-guid = ${slap-connection:computer-id}
+varnish-computer-guid = ${slap-connection:computer-id}
+cloudooo-json =
+bt5 = erp5_full_text_myisam_catalog
+  erp5_configurator_standard
+  erp5_configurator_maxma_demo
+  erp5_configurator_ung
+  erp5_configurator_run_my_doc
+bt5-repository-url = {{ local_bt5_repository }}
+smtp-url = smtp://localhost:25/
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = ${buildout:directory}/etc/run
