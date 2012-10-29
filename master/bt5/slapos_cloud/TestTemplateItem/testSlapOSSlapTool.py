@@ -730,12 +730,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
             <string>_computer_id</string>
             <string>%(computer_id)s</string>
             <string>_connection_dict</string>
-            <dictionary id='i7'>
-              <string>parameter1</string>
-              <string>valueof1</string>
-              <string>parameter2</string>
-              <string>https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5</string>
-            </dictionary>
+            <dictionary id='i7'/>
             <string>_instance_guid</string>
             <string>%(instance_guid)s</string>
             <string>_need_modification</string>
@@ -924,12 +919,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       <string>_computer_id</string>
       <string>%(computer_id)s</string>
       <string>_connection_dict</string>
-      <dictionary id='i4'>
-        <string>parameter1</string>
-        <string>valueof1</string>
-        <string>parameter2</string>
-        <string>https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5</string>
-      </dictionary>
+      <dictionary id='i4'/>
       <string>_instance_guid</string>
       <string>%(instance_guid)s</string>
       <string>_need_modification</string>
