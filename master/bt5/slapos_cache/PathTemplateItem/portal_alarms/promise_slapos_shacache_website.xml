@@ -7,6 +7,23 @@
     <pickle>
       <dictionary>
         <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>alarm_shacache_website_promise</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>active_sense_method_id</string> </key>
             <value> <string>Alarm_checkPromiseShacacheWebSite</string> </value>
         </item>
@@ -16,6 +33,16 @@
               <tuple>
                 <string>never</string>
               </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>alarm_shacache_website_promise</string> </key>
+            <value> <string>embeeded</string> </value>
+        </item>
+        <item>
+            <key> <string>configuration_form_id</string> </key>
+            <value>
+              <none/>
             </value>
         </item>
         <item>
@@ -30,7 +57,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>promise_vifib_shacache_website</string> </value>
+            <value> <string>promise_slapos_shacache_website</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>

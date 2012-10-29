@@ -9,8 +9,6 @@ erp5_tiosafe_core
 erp5_ui_test
 erp5_ui_test_core
 erp5_web
-erp5_web_shacache
-erp5_web_shadir
 vifib_agent
 vifib_base
 vifib_configurator

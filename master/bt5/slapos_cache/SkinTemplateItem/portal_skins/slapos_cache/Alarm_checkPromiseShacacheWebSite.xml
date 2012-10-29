@@ -62,30 +62,32 @@ if web_site_module is None:\n
 shacache = getattr(web_site_module, \'shacache\', None)\n
 shadir = getattr(web_site_module, \'shadir\', None)\n
 \n
+expected_state = context.portal_preferences.getPreferredShacacheWebsiteExpectedState("published")\n
+\n
 active_result = ActiveResult()\n
-if shacache is None:\n
+if expected_state == "published" and shacache is None:\n
   severity = 1\n
   summary = "Shacache WebSite do not exist"\n
   detail = ""\n
-elif shadir is None:\n
+elif expected_state == "published" and shadir is None:\n
   severity = 1\n
   summary = "Shadir WebSite do not exist"\n
   detail = ""\n
-elif shacache.getSkinSelectionName() != "SHACACHE":\n
+elif expected_state == "published" and shacache.getSkinSelectionName() != "SHACACHE":\n
   severity = 1\n
   summary = "shacache site don\'t have SHACACHE as skin selection name"\n
   detail = ""\n
-elif shadir.getSkinSelectionName() != "SHADIR":\n
+elif expected_state == "published" and shadir.getSkinSelectionName() != "SHADIR":\n
   severity = 1\n
   summary = "shadir site don\'t have SHADIR as skin selection name"\n
   detail = ""\n
-elif shacache.getValidationState() != "published":\n
+elif shacache is not None and shacache.getValidationState() != expected_state:\n
   severity = 1\n
-  summary = "shacache site is not published"\n
+  summary = "shacache site is not what is expected: %s" % expected_state\n
   detail = ""\n
-elif shadir.getValidationState() != "published":\n
+elif shadir is not None and shadir.getValidationState() != expected_state:\n
   severity = 1\n
-  summary = "shadir site is not published"\n
+  summary = "shadir site is not published %s" % expected_state\n
   detail = ""\n
 else:\n
   severity = 0\n
