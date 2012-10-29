@@ -408,7 +408,7 @@ class InstancePublisher(GenericPublisher):
           portal_type="Person")
       else:
         raise NotImplementedError, "Can not get Person document"
-      user.Person_findPartition(
+      result = user.Person_findPartition(
         self.jbody['software_release'],
         self.jbody['software_type'],
         ('Software Instance', 'Slave Instance')[int(self.jbody['slave'])],
