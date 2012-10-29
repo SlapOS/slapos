@@ -68,8 +68,12 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
 
     self.computer_id = self.computer.getReference()
 
-  def beforeTearDown(self):
+  def _cleaupREQUEST(self):
     self.portal.REQUEST['request_instance'] = None
+    self.portal.REQUEST.headers = {}
+
+  def beforeTearDown(self):
+    self._cleaupREQUEST()
 
   def _makeComplexComputer(self):
     for i in range(1, 5):
@@ -240,7 +244,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self.destroyed_software_instance.invalidate()
 
     self.tic()
-    self.portal.REQUEST['request_instance'] = None
+    self._cleaupREQUEST()
 
 class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
   def _getPartitionXml(self):
