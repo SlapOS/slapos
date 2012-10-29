@@ -594,6 +594,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   created_at=created_at,
+  computer_id=self.computer_id
 )
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
