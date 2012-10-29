@@ -67,12 +67,14 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self.tic()
 
     self.computer_id = self.computer.getReference()
+    self.pinDateTime(DateTime())
 
   def _cleaupREQUEST(self):
     self.portal.REQUEST['request_instance'] = None
     self.portal.REQUEST.headers = {}
 
   def beforeTearDown(self):
+    self.unpinDateTime()
     self._cleaupREQUEST()
 
   def _makeComplexComputer(self):
