@@ -16,6 +16,10 @@
   <skin_selection>Fiber</skin_selection>
  </skin_folder_selection>
  <skin_folder_selection>
+  <skin_folder>vifib_fiber</skin_folder>
+  <skin_selection>Fiber</skin_selection>
+ </skin_folder_selection>
+ <skin_folder_selection>
   <skin_folder>vifib_fiber_theme</skin_folder>
   <skin_selection>Fiber</skin_selection>
  </skin_folder_selection>
