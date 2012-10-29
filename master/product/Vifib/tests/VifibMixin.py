@@ -113,7 +113,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'slapos_erp5',
       'vifib_web',
       'vifib_upgrader',
-      'vifib_slapos_capacity',
       'vifib_slapos_accounting',
       'vifib_data_web',
       'vifib_data_simulation',

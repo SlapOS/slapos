@@ -127,7 +127,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web
 vifib_web_ui_test
@@ -235,7 +234,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web
 vifib_web_ui_test
@@ -339,7 +337,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web_ui_test
 vifib_configurator
@@ -440,7 +437,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web_ui_test
 vifib_configurator
@@ -541,7 +537,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web
 vifib_web_ui_test
@@ -645,7 +640,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web_ui_test
 vifib_configurator
@@ -749,7 +743,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web_ui_test
 vifib_configurator
@@ -850,7 +843,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web_ui_test
 vifib_configurator
@@ -950,7 +942,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web_ui_test
 vifib_configurator
@@ -1053,7 +1044,6 @@ vifib_payzen
 vifib_promise
 vifib_simulation
 vifib_slap
-vifib_slapos_capacity
 vifib_test
 vifib_web_ui_test
 vifib_configurator
