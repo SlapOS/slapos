@@ -7,4 +7,5 @@ organisation_module
 person_module
 software_installation_module
 software_instance_module
+software_product_module
 software_release_module

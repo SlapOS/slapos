@@ -16,7 +16,6 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
     'vifib_erp5',
     'vifib_open_trade',
     'vifib_slap',
-    'vifib_software_pdm',
     'vifib_upgrader',
     'vifib_web',
   ]

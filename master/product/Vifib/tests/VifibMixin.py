@@ -104,7 +104,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'slapos_slap_tool',
       'slapos_category',
       'vifib_payzen',
-      'vifib_software_pdm',
+      'slapos_pdm',
       'erp5_upgrader',
       'slapos_rest_api',
       'vifib_data',
