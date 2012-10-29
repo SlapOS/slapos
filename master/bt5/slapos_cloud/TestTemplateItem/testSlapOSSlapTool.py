@@ -284,12 +284,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_computer_id</string>
             <string>%(computer_id)s</string>
             <string>_connection_dict</string>
-            <dictionary id='i9'>
-              <string>parameter1</string>
-              <string>valueof1</string>
-              <string>parameter2</string>
-              <string>https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5</string>
-            </dictionary>
+            <dictionary id='i9'/>
             <string>_instance_guid</string>
             <string>%(partition_3_instance_guid)s</string>
             <string>_need_modification</string>
@@ -350,12 +345,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_computer_id</string>
             <string>%(computer_id)s</string>
             <string>_connection_dict</string>
-            <dictionary id='i18'>
-              <string>parameter1</string>
-              <string>valueof1</string>
-              <string>parameter2</string>
-              <string>https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5</string>
-            </dictionary>
+            <dictionary id='i18'/>
             <string>_instance_guid</string>
             <string>%(partition_2_instance_guid)s</string>
             <string>_need_modification</string>
@@ -416,12 +406,7 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_computer_id</string>
             <string>%(computer_id)s</string>
             <string>_connection_dict</string>
-            <dictionary id='i27'>
-              <string>parameter1</string>
-              <string>valueof1</string>
-              <string>parameter2</string>
-              <string>https://niut:pass@example.com:4567/arfarf/oink?m=1#4.5</string>
-            </dictionary>
+            <dictionary id='i27'/>
             <string>_instance_guid</string>
             <string>%(partition_1_instance_guid)s</string>
             <string>_need_modification</string>
