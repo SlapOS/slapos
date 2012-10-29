@@ -58,6 +58,7 @@
               <list>
                 <string>_setReference</string>
                 <string>_setSpecialise</string>
+                <string>_setAggregate</string>
               </list>
             </value>
         </item>
