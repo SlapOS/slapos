@@ -90,6 +90,7 @@ def convertToREST(function):
       raise NotFound(log)
     except SoftwareInstanceNotReady, log:
       self.REQUEST.response.setStatus(408)
+      self.REQUEST.response.setHeader('Cache-Control', 'private')
       return self.REQUEST.response
     except ValidationFailed:
       LOG('SlapTool', INFO, 'Converting ValidationFailed to ValidationFailed,'\
