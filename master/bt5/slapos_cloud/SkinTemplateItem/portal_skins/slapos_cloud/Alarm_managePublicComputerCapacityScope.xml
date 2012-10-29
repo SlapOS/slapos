@@ -56,7 +56,7 @@ portal.portal_catalog.searchAndActivate(\n
   portal_type=\'Computer\',\n
   default_allocation_scope_uid=portal.restrictedTraverse("portal_categories/allocation_scope/open/public").getUid(),\n
   validation_state="validated",\n
-  method_id=\'Computer_checkAndDesactivatePartitionList\',\n
+  method_id=\'Computer_checkAndUpdateCapacityScope\',\n
   activate_kw={\'tag\': tag}\n
 )\n
 context.activate(after_tag=tag).getId()\n
@@ -68,7 +68,7 @@ context.activate(after_tag=tag).getId()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_desactivateDeadComputer</string> </value>
+            <value> <string>Alarm_managePublicComputerCapacityScope</string> </value>
         </item>
       </dictionary>
     </pickle>

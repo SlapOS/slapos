@@ -2,3 +2,4 @@ SoftwareInstanceConstraint
 SlaveInstanceConstraint
 SoftwareInstance
 HostingSubscription
+SlaposCapacity

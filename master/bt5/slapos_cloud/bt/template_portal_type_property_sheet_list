@@ -1,3 +1,4 @@
+Computer | SlaposCapacity
 Hosting Subscription | HostingSubscription
 Hosting Subscription | SoftwareInstance
 Hosting Subscription | TextDocument
@@ -19,3 +20,4 @@ Software Instance | SoftwareInstanceConstraint
 Software Instance | TextDocument
 Software Instance | Url
 Software Instance | VariationRange
+Software Release | SlaposCapacity

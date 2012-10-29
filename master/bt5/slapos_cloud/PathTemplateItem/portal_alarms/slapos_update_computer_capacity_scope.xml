@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_desactivateDeadComputer</string> </value>
+            <value> <string>Alarm_managePublicComputerCapacityScope</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_desactivate_dead_computer</string> </value>
+            <value> <string>slapos_update_computer_capacity_scope</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>

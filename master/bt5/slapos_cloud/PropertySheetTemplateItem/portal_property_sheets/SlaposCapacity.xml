@@ -32,7 +32,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibCapacity</string> </value>
+            <value> <string>SlaposCapacity</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>

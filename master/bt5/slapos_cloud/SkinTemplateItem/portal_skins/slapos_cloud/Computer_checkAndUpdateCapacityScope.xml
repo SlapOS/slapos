@@ -151,7 +151,7 @@ if new_value is not None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Computer_checkAndDesactivatePartitionList</string> </value>
+            <value> <string>Computer_checkAndUpdateCapacityScope</string> </value>
         </item>
       </dictionary>
     </pickle>
