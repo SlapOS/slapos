@@ -1,6 +1,11 @@
 Changes
 =======
 
+(unreleased)
+------------
+
+ * --only_sr also accepts plain text URIs. [Marco Mariani]
+
 0.33 (2012-10-15)
 -----------------
 

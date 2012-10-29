@@ -563,7 +563,8 @@ class Slapgrid(object):
           completed_tag = os.path.join(software_path, '.completed')
           if self.develop or (not os.path.exists(completed_tag) and \
                  len(self.software_release_filter_list) == 0) or \
-             url_hash in self.software_release_filter_list:
+                 url_hash in self.software_release_filter_list or \
+                 url_hash in (md5(uri).hexdigest() for uri in self.software_release_filter_list):
             try:
               software_release.building()
             except NotFoundError:
