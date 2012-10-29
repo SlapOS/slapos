@@ -69,7 +69,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self.computer_id = self.computer.getReference()
 
   def beforeTearDown(self):
-    pass
+    self.portal.REQUEST['request_instance'] = None
 
   def _makeComplexComputer(self):
     for i in range(1, 5):
@@ -240,6 +240,7 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self.destroyed_software_instance.invalidate()
 
     self.tic()
+    self.portal.REQUEST['request_instance'] = None
 
 class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
   def _getPartitionXml(self):
