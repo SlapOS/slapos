@@ -52,7 +52,7 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-tool = context.getPortalObject().portal_vifib_rest_api\n
+tool = context.getPortalObject().portal_slapos_rest_api\n
 return """\n
 <ul id="vifib_monitoring"></ul>\n
 \n
