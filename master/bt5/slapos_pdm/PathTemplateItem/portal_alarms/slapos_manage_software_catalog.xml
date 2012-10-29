@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>manage_software_catalog</string> </value>
+            <value> <string>slapos_manage_software_catalog</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>
