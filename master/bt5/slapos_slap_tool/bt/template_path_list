@@ -1,0 +1,6 @@
+portal_caches/computer_information_cache_factory
+portal_caches/computer_information_cache_factory/persistent_cache_plugin
+portal_caches/last_stored_data_cache_factory
+portal_caches/last_stored_data_cache_factory/**
+portal_caches/slap_cache_factory
+portal_caches/slap_cache_factory/persistent_cache_plugin
