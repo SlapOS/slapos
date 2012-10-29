@@ -37,8 +37,8 @@ document_classes = updateGlobals(this_module, globals(),
 object_classes = ()
 content_classes = ()
 content_constructors = ()
-from Tool import SlapTool, VifibRestApiTool
-portal_tools = ( SlapTool.SlapTool, VifibRestApiTool.VifibRestApiTool)
+from Tool import SlapTool
+portal_tools = ( SlapTool.SlapTool, )
 from Products.PluggableAuthService.PluggableAuthService import registerMultiPlugin
 
 import VifibCookieHashExtractionPlugin

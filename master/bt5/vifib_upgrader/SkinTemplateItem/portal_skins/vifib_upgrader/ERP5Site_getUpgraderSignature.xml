@@ -100,6 +100,7 @@ REQUIRED_BT5_ID_LIST = (\n
   \'erp5_project\',\n
   \'erp5_credential_oauth2\',\n
 # vifib\n
+  \'vifib_mysql_innodb_catalog\',\n
   \'vifib_base\',\n
   \'vifib_core\',\n
   \'vifib_data_category\',\n
@@ -114,9 +115,9 @@ REQUIRED_BT5_ID_LIST = (\n
   \'slapos_cloud\',\n
   \'vifib_slapos_accounting\',\n
   \'vifib_slapos_capacity\',\n
-  \'vifib_slapos_rest_api_tool_portal_type\',\n
-  \'vifib_slapos_rest_api\',\n
-  \'vifib_slapos_rest_api_v1\',\n
+  \'slapos_rest_api_tool_portal_type\',\n
+  \'slapos_rest_api\',\n
+  \'slapos_rest_api_v1\',\n
   \'vifib_erp5\',\n
   \'vifib_data\',\n
   \'vifib_data_web\',\n

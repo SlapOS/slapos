@@ -5,10 +5,9 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
   _saved_test_id = 'Products.Vifib.tests.VifibMixin.testVifibMixin'
   _bt_list = [
     'slapos_cloud',
-    'vifib_slapos_rest_api',
-    'vifib_slapos_rest_api_v1',
-    'vifib_slapos_rest_api_tool_portal_type',
-    'vifib_slapos_rest_api_v1_test',
+    'slapos_rest_api',
+    'slapos_rest_api_v1',
+    'slapos_rest_api_tool_portal_type',
     'vifib_base',
     'vifib_data',
     'slapos_category',
@@ -25,4 +24,7 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
 class SlapOSCloud(SavedTestSuite, ProjectTestSuite):
   _product_list = ['SlapOS']
   _saved_test_id = 'Products.SlapOS.tests.testSlapOSMixin.testSlapOSMixin'
-  _bt_list = ['slapos_cloud']
+  _bt_list = [
+    'slapos_cloud',
+    'slapos_rest_api_v1',
+  ]

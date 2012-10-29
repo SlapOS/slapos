@@ -98,7 +98,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_workflow',
       'erp5_web_shadir',
       'vifib_slap',
-      'vifib_slapos_rest_api_tool_portal_type',
+      'slapos_rest_api_tool_portal_type',
       'erp5_configurator',
       'slapos_cache',
       'slapos_slap_tool',
@@ -106,14 +106,14 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_payzen',
       'vifib_software_pdm',
       'erp5_upgrader',
-      'vifib_slapos_rest_api',
+      'slapos_rest_api',
       'vifib_data',
       'slapos_configurator',
       'erp5_ui_test_core',
+      'slapos_rest_api_v1',
       'slapos_erp5',
       'vifib_web',
       'vifib_upgrader',
-      'vifib_slapos_rest_api_v1',
       'vifib_slapos_capacity',
       'vifib_slapos_accounting',
       'vifib_data_web',
@@ -129,7 +129,6 @@ class testVifibMixin(ERP5TypeTestCase):
       # in order to check this list.
       'vifib_erp5',
       'vifib_test',
-      'vifib_slapos_rest_api_v1_test',
       'vifib_web_ui_test',
     ]
     return result

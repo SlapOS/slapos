@@ -35,7 +35,8 @@ document_classes = updateGlobals(this_module, globals(),
 object_classes = ()
 content_classes = ()
 content_constructors = ()
-portal_tools = ()
+from Tool import SlapOSRestAPITool
+portal_tools = (SlapOSRestAPITool.SlapOSRestAPITool, )
 from Products.PluggableAuthService.PluggableAuthService import registerMultiPlugin
 
 import SlapOSMachineAuthenticationPlugin

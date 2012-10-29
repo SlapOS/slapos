@@ -114,6 +114,7 @@ custom
 vifib_upgrader
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_cash
@@ -126,7 +127,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -222,6 +222,7 @@ vifib_upgrader
 vifib_hosting
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_core
@@ -234,7 +235,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -329,6 +329,7 @@ custom
 vifib_upgrader
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_core
@@ -338,7 +339,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -430,6 +430,7 @@ custom
 vifib_upgrader
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_core
@@ -439,7 +440,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -531,6 +531,7 @@ custom
 vifib_upgrader
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_core
@@ -540,7 +541,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web
@@ -635,6 +635,7 @@ custom
 vifib_upgrader
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_core
@@ -644,7 +645,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -739,6 +739,7 @@ custom
 vifib_upgrader
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_core
@@ -748,7 +749,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -840,6 +840,7 @@ custom
 vifib_upgrader
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_core
@@ -849,7 +850,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -940,6 +940,7 @@ custom
 vifib_upgrader
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_core
@@ -949,7 +950,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
@@ -1043,6 +1043,7 @@ vifib_upgrader_before_201208
 vifib_upgrader_before_201209
 slapos_cloud
 slapos_core
+slapos_rest_api
 vifib_agent
 vifib_base
 vifib_core
@@ -1052,7 +1053,6 @@ vifib_promise
 vifib_simulation
 vifib_slap
 vifib_slapos_capacity
-vifib_slapos_rest_api
 vifib_software_pdm
 vifib_test
 vifib_web_ui_test
