@@ -1155,11 +1155,11 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
           response.headers.get('cache-control'))
       self.assertInstanceRequestSimulator((), {
           'instance_xml': "<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n",
-          'software_title': '<marshal><bool>1</bool></marshal>',
+          'software_title': 'req_reference',
           'software_release': 'req_release',
           'state': 'started',
           'sla_xml': "<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n",
-          'software_type': 'req_reference',
+          'software_type': 'req_type',
           'shared': False})
     finally:
       if os.path.exists(self.instance_request_simulator):
