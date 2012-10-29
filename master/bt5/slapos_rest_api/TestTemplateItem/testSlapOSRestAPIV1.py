@@ -66,7 +66,6 @@ class CustomHeaderHTTPConnection(httplib.HTTPConnection):
     return httplib.HTTPConnection.request(self, *args, **kwargs)
 
 def SlapOSRestAPIV1MixinBase_afterSetUp(self):
-#   self.setupVifibMachineAuthenticationPlugin()
   self.test_random_id = self.generateNewId()
   self.access_control_allow_headers = 'some, funny, headers, ' \
     'always, expected, %s' % self.test_random_id
@@ -97,7 +96,11 @@ class SlapOSRestAPIV1MixinBase(testSlapOSMixin):
     self.assertEqual('must-revalidate',
       self.response.getheader('Cache-Control'))
 
+  def _afterSetUp(self):
+    super(SlapOSRestAPIV1MixinBase, self).afterSetUp()
+
   def afterSetUp(self):
+    self._afterSetUp()
     SlapOSRestAPIV1MixinBase_afterSetUp(self)
 
   def beforeTearDown(self):
@@ -129,7 +132,6 @@ class SlapOSRestAPIV1MixinBase(testSlapOSMixin):
 
 def SlapOSRestAPIV1Mixin_afterSetUp(self):
   SlapOSRestAPIV1MixinBase_afterSetUp(self)
-#   self.setupVifibMachineAuthenticationPlugin()
 
   self.person_request_simulator = tempfile.mkstemp()[1]
   self.customer, self.customer_reference = self.createPerson()
@@ -160,6 +162,7 @@ class SlapOSRestAPIV1Mixin(SlapOSRestAPIV1MixinBase):
     return customer, customer_reference
 
   def afterSetUp(self):
+    self._afterSetUp()
     SlapOSRestAPIV1Mixin_afterSetUp(self)
 
   def beforeTearDown(self):
@@ -504,6 +507,7 @@ def SlapOSRestAPIV1InstanceMixin_afterSetUp(self):
 
 class SlapOSRestAPIV1InstanceMixin(SlapOSRestAPIV1Mixin):
   def afterSetUp(self):
+    self._afterSetUp()
     SlapOSRestAPIV1InstanceMixin_afterSetUp(self)
 
   def assertLastModifiedHeader(self):
@@ -1012,6 +1016,7 @@ def SlapOSRestAPIV1BangMixin_beforeTearDown(self):
 
 class SlapOSRestAPIV1BangMixin(SlapOSRestAPIV1InstanceMixin):
   def afterSetUp(self):
+    self._afterSetUp()
     SlapOSRestAPIV1BangMixin_afterSetUp(self)
 
   def beforeTearDown(self):
@@ -1801,6 +1806,7 @@ class TestComputerPUT(SlapOSRestAPIV1MixinBase):
 
 class TestStatusGET(SlapOSRestAPIV1InstanceMixin):
   def afterSetUp(self):
+    self._afterSetUp()
     SlapOSRestAPIV1Mixin_afterSetUp(self)
 
   def createComputer(self):
