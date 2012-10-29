@@ -30,7 +30,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_open_order_interaction_workflow</string> </value>
+            <value> <string>slapos_open_order_interaction_workflow</string> </value>
         </item>
         <item>
             <key> <string>manager_bypass</string> </key>
@@ -38,7 +38,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Vifib Open Order Interaction Workflow</string> </value>
+            <value> <string>SlapOS Open Order Interaction Workflow</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -1,7 +1,7 @@
 <workflow_chain>
  <chain>
   <type>Purchase Packing List</type>
-  <workflow>vifib_open_order_interaction_workflow</workflow>
+  <workflow>slapos_open_order_interaction_workflow</workflow>
  </chain>
  <chain>
   <type>Subscription Item Root Simulation Rule</type>

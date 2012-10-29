@@ -122,6 +122,8 @@ REQUIRED_BT5_ID_LIST = (\n
   \'vifib_data\',\n
   \'vifib_data_web\',\n
   \'vifib_data_simulation\',\n
+  \'slapos_subscription\',\n
+  \'slapos_erp5\',\n
 )\n
 \n
 REINSTALLABLE_BT5_ID_LIST = ()\n
