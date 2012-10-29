@@ -1138,12 +1138,17 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
       self.login(self.start_requested_software_instance.getReference())
       self.start_requested_software_instance.requestInstance = Simulator(
         self.instance_request_simulator, 'requestInstance')
-      response = self.portal_slap.requestComputerPartition(self.computer_id,
-          partition_id, 'req_release', 'req_reference',
-          '<marshal><bool>1</bool></marshal>',
-          '<marshal><dictionary id="i2"/></marshal>',
-          '<marshal><dictionary id="i2"/></marshal>',
-          '<marshal><string>started</string></marshal>')
+      response = self.portal_slap.requestComputerPartition(
+          computer_id=self.computer_id,
+          computer_partition_id=partition_id,
+          software_release='req_release',
+          software_type='req_type',
+          partition_reference='req_reference',
+          partition_parameter_xml='<marshal><dictionary id="i2"/></marshal>',
+          filter_xml='<marshal><dictionary id="i2"/></marshal>',
+          state='<marshal><string>started</string></marshal>',
+          shared_xml='<marshal><bool>0</bool></marshal>',
+          )
       self.assertEqual(408, response.status)
       self.assertEqual('private',
           response.headers.get('cache-control'))
@@ -1158,4 +1163,4 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     finally:
       if os.path.exists(self.instance_request_simulator):
         os.unlink(self.instance_request_simulator)
-      
+
