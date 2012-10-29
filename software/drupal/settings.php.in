@@ -200,12 +200,23 @@
  *   );
  * @endcode
  */
+
+/*
++ * The apachephp recipe provided with both host+port in the same string.
++ * Split them again, php way.
++ * And it could be an ipv6 as well, so beware of colons.
++ */
+$mysql_host_port = '%(mysql_host)s';
+$mysql_port = substr(strrchr($mysql_host_port, ":"), 1);
+$mysql_host = substr($mysql_host_port, 0, strlen($mysql_host_port) - strlen($mysql_port) - 1);
+
 $databases['default']['default'] = array(
   'driver' => 'mysql',
   'database' => '%(mysql_database)s',
   'username' => '%(mysql_user)s',
   'password' => '%(mysql_password)s',
-  'host' => '%(mysql_host)s',
+  'host' => $mysql_host,
+  'port' => $mysql_port,
   'prefix' => '',
 );
 

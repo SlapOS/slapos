@@ -1,0 +1,18 @@
+--- a/system.theme.css  Mon Oct 29 11:20:30 2012 +0100
++++ b/system.theme.css  Mon Oct 29 11:20:53 2012 +0100
+@@ -1,3 +1,14 @@
++
++#install-settings-form .form-item-driver,
++#install-settings-form #edit-mysql * {
++  display: none;
++}
++
++#install-settings-form #edit-mysql:before {
++  content: "The database has been set up by SlapOS.";
++  font-weight: bold;
++  font-size: 120%;
++}
+ 
+ /**
+  * @file
+
