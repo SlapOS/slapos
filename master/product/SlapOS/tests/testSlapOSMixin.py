@@ -127,6 +127,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_payzen_secure_payment',
       'erp5_ui_test_core',
       'erp5_ui_test',
+      'slapos_cache',
       'slapos_cloud',
       'slapos_slap_tool',
       'slapos_category',
