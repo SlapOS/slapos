@@ -118,7 +118,6 @@ REQUIRED_BT5_ID_LIST = (\n
   \'vifib_slapos_capacity\',\n
   \'slapos_rest_api_tool_portal_type\',\n
   \'slapos_rest_api\',\n
-  \'slapos_rest_api_v1\',\n
   \'vifib_erp5\',\n
   \'vifib_data\',\n
   \'vifib_data_web\',\n

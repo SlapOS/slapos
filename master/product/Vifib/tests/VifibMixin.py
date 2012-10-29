@@ -110,7 +110,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data',
       'slapos_configurator',
       'erp5_ui_test_core',
-      'slapos_rest_api_v1',
       'slapos_erp5',
       'vifib_web',
       'vifib_upgrader',
