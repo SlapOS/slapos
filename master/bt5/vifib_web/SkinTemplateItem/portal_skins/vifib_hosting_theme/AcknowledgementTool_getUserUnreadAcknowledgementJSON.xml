@@ -50,7 +50,11 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>result_list = context.AcknowledgementTool_getUserUnreadAcknowledgementList()\n
+            <value> <string>try:\n
+  result_list = context.AcknowledgementTool_getUserUnreadAcknowledgementList()\n
+except ValueError:\n
+  result_list = []\n
+\n
 if len(result_list):\n
   result_list = [result_list[0]]\n
 \n
