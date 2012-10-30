@@ -7,13 +7,6 @@ from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 
 class TestSlapOSCorePersonComputerSupply(testSlapOSMixin):
 
-  def generateNewId(self):
-    return self.getPortalObject().portal_ids.generateNewId(
-                                     id_group=('slapos_core_test'))
-
-  def generateNewSoftwareReleaseUrl(self):
-    return 'http://example.org/test%s.cfg' % self.generateNewId()
-
   def afterSetUp(self):
     super(TestSlapOSCorePersonComputerSupply, self).afterSetUp()
     portal = self.getPortalObject()

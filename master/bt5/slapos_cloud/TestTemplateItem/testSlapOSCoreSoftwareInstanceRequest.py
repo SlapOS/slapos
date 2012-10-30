@@ -7,23 +7,6 @@ from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
 
-  def generateNewId(self):
-    return self.getPortalObject().portal_ids.generateNewId(
-        id_group=('slapos_core_test'))
-
-  def generateNewSoftwareReleaseUrl(self):
-    return 'http://example.org/test%s.cfg' % self.generateNewId()
-
-  def generateNewSoftwareType(self):
-    return 'Type%s' % self.generateNewId()
-
-  def generateNewSoftwareTitle(self):
-    return 'Title%s' % self.generateNewId()
-
-  def generateSafeXml(self):
-    return '<?xml version="1.0" encoding="utf-8"?><instance><parameter '\
-      'id="param">%s</parameter></instance>' % self.generateNewId()
-
   def afterSetUp(self):
     super(TestSlapOSCoreSoftwareInstanceRequest, self).afterSetUp()
     portal = self.getPortalObject()

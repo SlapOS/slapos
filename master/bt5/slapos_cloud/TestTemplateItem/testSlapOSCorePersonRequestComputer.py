@@ -7,10 +7,6 @@ from AccessControl.SecurityManagement import getSecurityManager, \
 
 class TestSlapOSCorePersonRequestComputer(testSlapOSMixin):
 
-  def generateNewId(self):
-    return self.getPortalObject().portal_ids.generateNewId(
-        id_group=('slapos_core_test'))
-
   def generateNewComputerTitle(self):
     return 'My Comp %s' % self.generateNewId()
 
