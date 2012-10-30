@@ -1,12 +1,2 @@
-web_page_module/vifib_payzen_referral
-web_page_module/vifib_payzen_success
-web_page_module/vifib_payzen_refused
-web_page_module/vifib_payzen_cancel
-web_page_module/vifib_payzen_return
-web_page_module/vifib_payzen_error
 web_site_module/cash
 web_site_module/erpypi
-web_site_module/hosting
-image_module/vifib.cloud
-image_module/vifib.rack
-image_module/vifib.kvm
