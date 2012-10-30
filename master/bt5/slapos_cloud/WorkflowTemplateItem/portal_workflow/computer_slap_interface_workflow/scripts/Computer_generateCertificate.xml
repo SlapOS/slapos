@@ -53,6 +53,8 @@
             <value> <string>computer = state_change[\'object\']\n
 \n
 if computer.getDestinationReference() is not None:\n
+  context.REQUEST.set("computer_certificate", None)\n
+  context.REQUEST.set("computer_key", None)\n
   raise ValueError(\'Certificate still active.\')\n
 \n
 ca = context.getPortalObject().portal_certificate_authority\n
