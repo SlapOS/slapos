@@ -847,6 +847,7 @@ vifib_test
 vifib_web_ui_test
 vifib_configurator
 erp5_km
+erp5_web_download_theme
 erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
