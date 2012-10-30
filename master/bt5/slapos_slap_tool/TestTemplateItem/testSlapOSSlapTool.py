@@ -642,6 +642,57 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
+  def assertComputerBangSimulator(self, args, kwargs):
+    stored = eval(open(self.computer_bang_simulator).read())
+    # do the same translation magic as in workflow
+    kwargs['comment'] = kwargs.pop('comment')
+    self.assertEqual(stored,
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'reportComputerBang'}])
+
+  def test_computerBang(self):
+    self._makeComplexComputer()
+    self.computer_bang_simulator = tempfile.mkstemp()[1]
+    try:
+      self.login(self.computer_id)
+      self.computer.reportComputerBang = Simulator(
+        self.computer_bang_simulator, 'reportComputerBang')
+      error_log = 'Please bang me'
+      response = self.portal_slap.computerBang(self.computer_id,
+        error_log)
+      self.assertEqual('None', response)
+      created_at = rfc1123_date(DateTime())
+      response = self.portal_slap.getComputerStatus(self.computer_id)
+      # check returned XML
+      xml_fp = StringIO.StringIO()
+
+      xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
+          stream=xml_fp)
+      xml_fp.seek(0)
+      got_xml = xml_fp.read()
+      expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <dictionary id='i2'>
+    <unicode>created_at</unicode>
+    <unicode>%(created_at)s</unicode>
+    <unicode>text</unicode>
+    <unicode>#error bang</unicode>
+    <unicode>user</unicode>
+    <unicode>%(computer_id)s</unicode>
+  </dictionary>
+</marshal>
+""" % dict(
+    created_at=created_at,
+    computer_id=self.computer_id,
+  )
+      self.assertEqual(expected_xml, got_xml,
+          '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+      self.assertComputerBangSimulator((), {'comment': error_log})
+    finally:
+      if os.path.exists(self.computer_bang_simulator):
+        os.unlink(self.computer_bang_simulator)
+
 class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   def test_getComputerPartitionCertificate(self):
     self._makeComplexComputer()
