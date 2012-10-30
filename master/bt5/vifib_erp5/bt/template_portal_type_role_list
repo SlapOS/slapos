@@ -17,18 +17,11 @@ Contribution Tool
 Credit Card
 Currency
 Currency Module
-Data Set
-Data Set Module
 Document Ingestion Module
-Document Module
-Drawing
 Event Module
 Fax Message
-File
 Gadget
 Gadget Tool
-Image
-Image Module
 Integration Site
 Integration Tool
 Internal Packing List
@@ -47,7 +40,6 @@ Notification Message
 Notification Message Module
 Open Sale Order
 Open Sale Order Module
-PDF
 Payment Transaction
 Payzen Event
 Phone Call
@@ -76,13 +68,11 @@ Service
 Service Module
 Short Message
 Site Message
-Spreadsheet
 Support Request
 Support Request Module
 System Event Module
 Tax
 Tax Module
-Text
 Transformation
 Transformation Module
 Visit

@@ -20,7 +20,6 @@ currency_module
 currency_module/EUR
 data_set_module
 document_ingestion_module
-document_module
 event_module
 image_module
 internal_packing_list_module
@@ -49,7 +48,6 @@ person_module/test_vifib_developer
 person_module/test_vifib_member
 person_module/test_vifib_user_admin
 person_module/test_vifib_user_developer
-portal_contributions
 portal_gadgets
 portal_integrations
 portal_integrations/vifib_payzen_integration
