@@ -14,7 +14,7 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
     'vifib_erp5',
     'vifib_slap',
     'vifib_upgrader',
-    'vifib_web',
+    'slapos_web',
   ]
 
 class SlapOSCloud(SavedTestSuite, ProjectTestSuite):
@@ -28,6 +28,7 @@ class SlapOSCloud(SavedTestSuite, ProjectTestSuite):
     'slapos_subscription',
     'slapos_slap_tool',
     'slapos_rest_api',
+    'slapos_web',
     'erp5_web_shadir',
     'erp5_web_shacache',
   ]
