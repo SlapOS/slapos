@@ -1,3 +1,2 @@
 Person | get_certificate
 Person | revoke_certificate
-Slave Instance | web_view
