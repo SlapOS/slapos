@@ -3,5 +3,4 @@ testSlapOSCorePersonRequest
 testSlapOSCorePersonRequestComputer
 testSlapOSCoreSoftwareInstanceRequest
 testSlapOSShadow
-testSlapOSSlapTool
 testSlapOSCoreAllocation
