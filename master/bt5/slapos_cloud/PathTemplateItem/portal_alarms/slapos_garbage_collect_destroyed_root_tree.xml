@@ -8,11 +8,13 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_searchComputerPartitionAndMarkFree</string> </value>
+            <value> <string>Alarm_garbageCollectDestroyedRootTree</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Automatically find computer partitions which can be marked as free</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>enabled</string> </key>
@@ -20,12 +22,18 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>free_computer_partition</string> </value>
+            <value> <string>slapos_garbage_collect_destroyed_root_tree</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
             <value>
               <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_hour_frequency</string> </key>
+            <value>
+              <none/>
             </value>
         </item>
         <item>
@@ -62,7 +70,7 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1288051200.0</float>
+                    <float>1340727840.0</float>
                     <string>GMT</string>
                   </tuple>
                 </state>
@@ -80,14 +88,8 @@
             <value> <string>Alarm</string> </value>
         </item>
         <item>
-            <key> <string>sense_method_id</string> </key>
-            <value>
-              <none/>
-            </value>
-        </item>
-        <item>
             <key> <string>title</string> </key>
-            <value> <string>Mark computer partition as free</string> </value>
+            <value> <string>Garbage Collect Destroyed Root Tree</string> </value>
         </item>
       </dictionary>
     </pickle>

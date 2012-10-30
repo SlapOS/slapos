@@ -8,13 +8,11 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_garbageCollectDestroyedRootTree</string> </value>
+            <value> <string>Alarm_searchComputerPartitionAndMarkFree</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>Automatically find computer partitions which can be marked as free</string> </value>
         </item>
         <item>
             <key> <string>enabled</string> </key>
@@ -22,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>garbage_collect_destroyed_root_tree</string> </value>
+            <value> <string>slapos_free_computer_partition</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
@@ -31,14 +29,14 @@
             </value>
         </item>
         <item>
-            <key> <string>periodicity_hour_frequency</string> </key>
-            <value> <int>1</int> </value>
-        </item>
-        <item>
             <key> <string>periodicity_minute</string> </key>
             <value>
               <tuple/>
             </value>
+        </item>
+        <item>
+            <key> <string>periodicity_minute_frequency</string> </key>
+            <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>periodicity_month</string> </key>
@@ -64,7 +62,7 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>1340727840.0</float>
+                    <float>1288051200.0</float>
                     <string>GMT</string>
                   </tuple>
                 </state>
@@ -82,8 +80,14 @@
             <value> <string>Alarm</string> </value>
         </item>
         <item>
+            <key> <string>sense_method_id</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>title</string> </key>
-            <value> <string>Garbage Collect Destroyed Root Tree</string> </value>
+            <value> <string>Mark computer partition as free</string> </value>
         </item>
       </dictionary>
     </pickle>
