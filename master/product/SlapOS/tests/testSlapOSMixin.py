@@ -120,7 +120,6 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_credential',
       'erp5_credential_oauth2',
       'erp5_km',
-      'erp5_web_download_theme',
       'erp5_tiosafe_core',
       'erp5_system_event',
       'erp5_secure_payment',

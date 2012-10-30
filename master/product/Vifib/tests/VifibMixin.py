@@ -69,7 +69,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_knowledge_pad',
       'erp5_credential',
       'erp5_tax_resource',
-      'erp5_web_download_theme',
       'slapos_cloud',
       'erp5_open_trade',
       'erp5_tiosafe_core',
