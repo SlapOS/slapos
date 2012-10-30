@@ -117,7 +117,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_cash
 vifib_core
@@ -224,7 +223,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_core
 vifib_hosting_theme
@@ -330,7 +328,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_core
 vifib_payzen
@@ -430,7 +427,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_core
 vifib_payzen
@@ -530,7 +526,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_core
 vifib_payzen
@@ -633,7 +628,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_core
 vifib_payzen
@@ -736,7 +730,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_core
 vifib_payzen
@@ -836,7 +829,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_core
 vifib_payzen
@@ -935,7 +927,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_core
 vifib_payzen
@@ -1037,7 +1028,6 @@ slapos_core
 slapos_pdm
 slapos_rest_api
 slapos_subscription
-vifib_agent
 vifib_base
 vifib_core
 vifib_payzen

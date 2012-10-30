@@ -117,7 +117,6 @@ class testVifibMixin(ERP5TypeTestCase):
       'vifib_data_simulation',
       'vifib_data_payzen',
       'vifib_configurator',
-      'vifib_agent',
       'erp5_ui_test',
       # All business templates above are the dependency
       # tree of vifib_erp5, so if you mofify this list
