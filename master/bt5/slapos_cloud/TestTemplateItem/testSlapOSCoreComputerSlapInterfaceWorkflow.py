@@ -22,6 +22,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.portal.REQUEST['computer_certificate'] = None
 
   def test_generateCertificate(self):
+    self.login(self.computer.getReference())
     self.computer.generateCertificate()
     computer_key = self.portal.REQUEST.get('computer_key')
     computer_certificate = self.portal.REQUEST.get('computer_certificate')
@@ -30,6 +31,7 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertTrue(self.computer.getReference() in computer_certificate)
 
   def test_generateCertificate_twice(self):
+    self.login(self.computer.getReference())
     self.computer.generateCertificate()
     computer_key = self.portal.REQUEST.get('computer_key')
     computer_certificate = self.portal.REQUEST.get('computer_certificate')
