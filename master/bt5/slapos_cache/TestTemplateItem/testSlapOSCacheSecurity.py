@@ -4,7 +4,6 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 from Products.ERP5Type.tests.SecurityTestCase import SecurityTestCase
 from Products.ERP5Type.tests.backportUnittest import expectedFailure
 from AccessControl import Unauthorized
-import transaction
 
 READ = 'Access contents information'
 VIEW = 'View'
@@ -188,9 +187,6 @@ class TestSlapOSCache(testSlapOSMixin, SecurityTestCase):
   def test_PDFPermission(self):
     self._testDocumentPermission(self.portal.document_module, "PDF")
 
-  def test_DrawingLocalRole(self):
-    self._testDocumentPermission(self.portal.document_module, "Drawing")
-
   def test_ImagePermission(self):
     self._testDocumentPermission(self.portal.image_module, "Image")
 
@@ -229,9 +225,6 @@ class TestSlapOSCache(testSlapOSMixin, SecurityTestCase):
 
   def test_DocumentModulePermission(self):
     self._testModulePermission(self.portal.document_module)
-
-  def test_DocumentModulePermission(self):
-    self._testModulePermission(self.portal.image_module)
 
   # Contribution Tool
   @expectedFailure

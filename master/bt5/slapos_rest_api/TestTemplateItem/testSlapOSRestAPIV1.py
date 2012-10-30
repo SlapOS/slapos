@@ -1897,8 +1897,6 @@ class TestStatusGET(SlapOSRestAPIV1InstanceMixin):
 
   def test_no_data_in_memcached(self):
     self.computer = self.createComputer()
-    reference = self.computer.getReference()
-    value = json.dumps({'foo': reference})
     self.connection.request(method='GET',
       url='/'.join([self.api_path, 'status',
       self.computer.getRelativeUrl()]),

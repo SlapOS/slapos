@@ -143,7 +143,6 @@ class TestSlapOSCorePersonRequest(testSlapOSMixin):
     """
     sla_xml = "test"
     shared = True
-    state = "started"
 
     # Only started, stopped, destroyed
     self.assertRaises(ValueError, person.requestSoftwareInstance,
