@@ -4,3 +4,4 @@ testSlapOSCorePersonRequestComputer
 testSlapOSCoreSoftwareInstanceRequest
 testSlapOSShadow
 testSlapOSCoreAllocation
+testSlapOSCoreComputerSlapInterfaceWorkflow
