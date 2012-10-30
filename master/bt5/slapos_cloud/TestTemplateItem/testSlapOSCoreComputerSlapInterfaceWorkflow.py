@@ -1,8 +1,6 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
-import transaction
-from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
 
 class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
   def afterSetUp(self):
@@ -42,3 +40,29 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertRaises(ValueError, self.computer.generateCertificate)
     self.assertEqual(None, self.portal.REQUEST.get('computer_key'))
     self.assertEqual(None, self.portal.REQUEST.get('computer_certificate'))
+
+  def test_approveComputerRegistration(self):
+    # Clone person document
+    new_id = self.generateNewId()
+    person_user = self.portal.person_module.template_member.\
+                                 Base_createCloneDocument(batch_mode=1)
+    person_user.edit(
+      title="live_test_%s" % new_id,
+      reference="live_test_%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
+    )
+
+    person_user.validate()
+    for assignment in person_user.contentValues(portal_type="Assignment"):
+      assignment.open()
+    self.tic()
+    self.login(person_user.getReference())
+    computer = self.portal.computer_module.newContent(portal_type='Computer',
+      title="Computer %s for %s" % (new_id, person_user.getReference()),
+      reference="TESTCOMP-%s" % new_id)
+    computer.requestComputerRegistration()
+    computer.approveComputerRegistration()
+    self.assertEqual('open/personal', computer.getAllocationScope())
+    self.assertEqual(person_user.getRelativeUrl(),
+        computer.getSourceAdministration())
+    self.assertEqual('validated', computer.getValidationState())
