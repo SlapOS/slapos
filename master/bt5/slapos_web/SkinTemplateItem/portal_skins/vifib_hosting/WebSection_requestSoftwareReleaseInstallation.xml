@@ -52,8 +52,6 @@
             <key> <string>_body</string> </key>
             <value> <string>"""Add selected product to the cart and continue"""\n
 portal = context.getPortalObject()\n
-prefered_resource = portal.portal_preferences.getPreferredSoftwareSetupResource()\n
-service = portal.restrictedTraverse(prefered_resource)\n
 \n
 # XXX context is a computer\n
 if context.getPortalType() != "Computer":\n
