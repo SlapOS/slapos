@@ -55,7 +55,7 @@
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>The default SlapOS configuration workflow, used to setup a SlapOS Master</string> </value>
+            <value> <string>The Legacy Vifib configuration workflow, used to setup a former vifib.net Configuration.</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
@@ -75,7 +75,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Slapos Configuration Workflow</string> </value>
+            <value> <string>Vifib Master Legacy Configuration Workflow</string> </value>
         </item>
       </dictionary>
     </pickle>
