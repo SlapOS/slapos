@@ -125,7 +125,7 @@
             <key> <string>periodicity_month_day</string> </key>
             <value>
               <tuple>
-                <int>23</int>
+                <int>28</int>
               </tuple>
             </value>
         </item>

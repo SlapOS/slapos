@@ -1,10 +1,3 @@
-Computer Partition | unfiltered_tracking_list
-Computer | computer_usage
 Person | get_certificate
 Person | revoke_certificate
-Slave Instance | jump_to_software_instance
-Slave Instance | unfiltered_tracking_list
 Slave Instance | web_view
-Software Instance | jump_to_software_instance
-Software Instance | unfiltered_tracking_list
-Software Release | usable_computer
