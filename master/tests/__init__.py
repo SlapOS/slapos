@@ -22,5 +22,12 @@ class SlapOSCloud(SavedTestSuite, ProjectTestSuite):
   _saved_test_id = 'Products.SlapOS.tests.testSlapOSMixin.testSlapOSMixin'
   _bt_list = [
     'slapos_cloud',
+    'slapos_cache',
+    'slapos_erp5',
+    'slapos_pdm',
+    'slapos_subscription',
+    'slapos_slap_tool',
     'slapos_rest_api',
+    'erp5_web_shadir',
+    'erp5_web_shacache',
   ]
