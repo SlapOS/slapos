@@ -25,7 +25,6 @@
 #
 ##############################################################################
 
-import subprocess
 import facebook
 from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
 import httplib
@@ -38,11 +37,6 @@ import oauth2client.client
 import socket
 from Products.ERP5Security.ERP5UserManager import getUserByLogin
 from Products.ERP5Type.UnrestrictedMethod import UnrestrictedMethod
-
-def formatXml(self, xml):
-  """Simple way to have nicely formatted XML"""
-  popen = subprocess.Popen(['xmllint', '--format', '--recover', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-  return popen.communicate(xml)[0]
 
 # common methods
 def _getCacheFactory(self, cache_factory_name):
