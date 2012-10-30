@@ -9,7 +9,6 @@ class VIFIB(SavedTestSuite, ProjectTestSuite):
     'vifib_base',
     'vifib_data',
     'slapos_category',
-    'vifib_data_web',
     'slapos_erp5',
     'vifib_erp5',
     'vifib_slap',
