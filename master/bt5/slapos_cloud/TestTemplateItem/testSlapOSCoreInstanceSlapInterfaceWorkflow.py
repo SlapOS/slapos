@@ -204,6 +204,139 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     )
     transaction.abort()
 
+  def test_requestStop(self):
+    self.login(self.instance.getReference())
+
+    request_kw = self.request_kw.copy()
+    self.instance.requestStop(**request_kw)
+    self.assertEqual('stop_requested', self.instance.getSlapState())
+    transaction.abort()
+
+  def test_requestStop_required(self):
+    self.login(self.instance.getReference())
+
+    software_release=self.request_kw['software_release']
+    software_type=self.request_kw['software_type']
+    instance_xml=self.request_kw['instance_xml']
+    sla_xml=self.request_kw['sla_xml']
+    shared=self.request_kw['shared']
+
+    self.assertRaises(TypeError, self.instance.requestStop)
+    transaction.abort()
+
+    # no software_release
+    self.assertRaises(TypeError, self.instance.requestStop,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+    # no software_type
+    self.assertRaises(TypeError, self.instance.requestStop,
+      software_release=software_release,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+    # no instance_xml
+    self.assertRaises(TypeError, self.instance.requestStop,
+      software_release=software_release,
+      software_type=software_type,
+      sla_xml=sla_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+    # no shared
+    self.assertRaises(TypeError, self.instance.requestStop,
+      software_release=software_release,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+    )
+    transaction.abort()
+    
+    # no sla_xml
+    self.assertRaises(TypeError, self.instance.requestStop,
+      software_release=software_release,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+  def test_requestStart(self):
+    self.login(self.instance.getReference())
+
+    request_kw = self.request_kw.copy()
+    self.instance.requestStop(**request_kw)
+    self.instance.requestStart(**request_kw)
+    self.assertEqual('start_requested', self.instance.getSlapState())
+    transaction.abort()
+
+  def test_requestStart_required(self):
+    self.login(self.instance.getReference())
+
+    self.instance.requestStop(**self.request_kw)
+
+    software_release=self.request_kw['software_release']
+    software_type=self.request_kw['software_type']
+    instance_xml=self.request_kw['instance_xml']
+    sla_xml=self.request_kw['sla_xml']
+    shared=self.request_kw['shared']
+
+    self.assertRaises(TypeError, self.instance.requestStart)
+    transaction.abort()
+
+    # no software_release
+    self.assertRaises(TypeError, self.instance.requestStart,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+    # no software_type
+    self.assertRaises(TypeError, self.instance.requestStart,
+      software_release=software_release,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+    # no instance_xml
+    self.assertRaises(TypeError, self.instance.requestStart,
+      software_release=software_release,
+      software_type=software_type,
+      sla_xml=sla_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+    # no shared
+    self.assertRaises(TypeError, self.instance.requestStart,
+      software_release=software_release,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+    )
+    transaction.abort()
+    
+    # no sla_xml
+    self.assertRaises(TypeError, self.instance.requestStart,
+      software_release=software_release,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
 class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):
   """Tests instance.requestInstance"""
   def afterSetUp(self):
