@@ -68,3 +68,57 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual(person_user.getRelativeUrl(),
         computer.getSourceAdministration())
     self.assertEqual('validated', computer.getValidationState())
+
+  def _countInstanceBang(self, instance, comment):
+    return len([q for q in instance.workflow_history[
+        'instance_slap_interface_workflow'] if q['action'] == 'bang' and \
+            q['comment'] == comment])
+
+  def _countComputereBang(self, computer, comment):
+    return len([q for q in computer.workflow_history[
+        'computer_slap_interface_workflow'] if q['action'] == \
+            'report_computer_bang' and q['comment'] == comment])
+
+  def test_reportComputerBang(self):
+    self._makeComplexComputer()
+    self.login(self.computer.getReference())
+    comment = 'Bang from computer'
+    started_instance = self.computer.partition1.getAggregateRelatedValue(
+        portal_type='Software Instance')
+    stopped_instance = self.computer.partition2.getAggregateRelatedValue(
+        portal_type='Software Instance')
+    destroyed_instance1 = self.computer.partition3.getAggregateRelatedValue(
+        portal_type='Software Instance')
+    destroyed_instance2 = self.computer.partition4.getAggregateRelatedValue(
+        portal_type='Software Instance')
+
+    # test sanity check -- do not trust _makeComplexComputer
+    self.assertEqual('start_requested', started_instance.getSlapState())
+    self.assertEqual('stop_requested', stopped_instance.getSlapState())
+    self.assertEqual('destroy_requested', destroyed_instance1.getSlapState())
+    self.assertEqual('destroy_requested', destroyed_instance2.getSlapState())
+
+    # store counts before bang
+    computer_bang_count = self._countComputereBang(self.computer, comment)
+    started_instance_bang_count = self._countInstanceBang(started_instance,
+        comment)
+    stopped_instance_bang_count = self._countInstanceBang(stopped_instance,
+        comment)
+    destroyed_instance1_bang_count = self._countInstanceBang(
+        destroyed_instance1, comment)
+    destroyed_instance2_bang_count = self._countInstanceBang(
+        destroyed_instance2, comment)
+
+    self.computer.reportComputerBang(comment=comment)
+    self.tic()
+
+    self.assertEqual(1+computer_bang_count,
+        self._countComputereBang(self.computer, comment))
+    self.assertEqual(1+started_instance_bang_count,
+        self._countInstanceBang(started_instance, comment))
+    self.assertEqual(1+stopped_instance_bang_count,
+        self._countInstanceBang(stopped_instance, comment))
+    self.assertEqual(destroyed_instance1_bang_count,
+        self._countInstanceBang(destroyed_instance1, comment))
+    self.assertEqual(destroyed_instance2_bang_count,
+        self._countInstanceBang(destroyed_instance2, comment))
