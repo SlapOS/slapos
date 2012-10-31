@@ -1,6 +1,8 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
+import transaction
+from Products.ERP5Type.tests.backportUnittest import expectedFailure
 
 class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
   def afterSetUp(self):
@@ -16,6 +18,21 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.computer.validate()
     self.tic()
 
+  def _makePerson(self):
+    new_id = self.generateNewId()
+    self.person_user = self.portal.person_module.template_member.\
+                                 Base_createCloneDocument(batch_mode=1)
+    self.person_user.edit(
+      title="live_test_%s" % new_id,
+      reference="live_test_%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
+    )
+
+    self.person_user.validate()
+    for assignment in self.person_user.contentValues(portal_type="Assignment"):
+      assignment.open()
+    self.tic()
+
   def beforeTearDown(self):
     super(TestSlapOSCoreComputerSlapInterfaceWorkflow, self).beforeTearDown()
     self.portal.REQUEST['computer_key'] = None
@@ -28,6 +45,9 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     computer_certificate = self.portal.REQUEST.get('computer_certificate')
     self.assertNotEqual(None, computer_key)
     self.assertNotEqual(None, computer_certificate)
+    self.assertNotEqual(None, self.computer.getDestinationReference())
+    serial = '0x%x' % int(self.computer.getDestinationReference(), 16)
+    self.assertTrue(serial in computer_certificate)
     self.assertTrue(self.computer.getReference() in computer_certificate)
 
   def test_generateCertificate_twice(self):
@@ -37,6 +57,9 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     computer_certificate = self.portal.REQUEST.get('computer_certificate')
     self.assertNotEqual(None, computer_key)
     self.assertNotEqual(None, computer_certificate)
+    self.assertNotEqual(None, self.computer.getDestinationReference())
+    serial = '0x%x' % int(self.computer.getDestinationReference(), 16)
+    self.assertTrue(serial in computer_certificate)
     self.assertTrue(self.computer.getReference() in computer_certificate)
 
     self.assertRaises(ValueError, self.computer.generateCertificate)
@@ -44,28 +67,16 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertEqual(None, self.portal.REQUEST.get('computer_certificate'))
 
   def test_approveComputerRegistration(self):
-    # Clone person document
+    self._makePerson()
+    self.login(self.person_user.getReference())
     new_id = self.generateNewId()
-    person_user = self.portal.person_module.template_member.\
-                                 Base_createCloneDocument(batch_mode=1)
-    person_user.edit(
-      title="live_test_%s" % new_id,
-      reference="live_test_%s" % new_id,
-      default_email_text="live_test_%s@example.org" % new_id,
-    )
-
-    person_user.validate()
-    for assignment in person_user.contentValues(portal_type="Assignment"):
-      assignment.open()
-    self.tic()
-    self.login(person_user.getReference())
     computer = self.portal.computer_module.newContent(portal_type='Computer',
-      title="Computer %s for %s" % (new_id, person_user.getReference()),
+      title="Computer %s for %s" % (new_id, self.person_user.getReference()),
       reference="TESTCOMP-%s" % new_id)
     computer.requestComputerRegistration()
     computer.approveComputerRegistration()
     self.assertEqual('open/personal', computer.getAllocationScope())
-    self.assertEqual(person_user.getRelativeUrl(),
+    self.assertEqual(self.person_user.getRelativeUrl(),
         computer.getSourceAdministration())
     self.assertEqual('validated', computer.getValidationState())
 
@@ -122,3 +133,156 @@ class TestSlapOSCoreComputerSlapInterfaceWorkflow(testSlapOSMixin):
         self._countInstanceBang(destroyed_instance1, comment))
     self.assertEqual(destroyed_instance2_bang_count,
         self._countInstanceBang(destroyed_instance2, comment))
+
+  def test_requestSoftwareRelease_software_release_url_required(self):
+    self._makePerson()
+    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+    self.login(self.person_user.getReference())
+    self.assertRaises(TypeError, self.computer.requestSoftwareRelease,
+        state='available')
+    transaction.abort()
+
+  def test_requestSoftwareRelease_state_required(self):
+    self._makePerson()
+    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+    self.login(self.person_user.getReference())
+    url = self.generateNewSoftwareReleaseUrl()
+    self.assertRaises(TypeError, self.computer.requestSoftwareRelease,
+        software_release_url=url)
+    transaction.abort()
+
+  def test_requestSoftwareRelease_available(self):
+    self._makePerson()
+    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+    self.login(self.person_user.getReference())
+    url = self.generateNewSoftwareReleaseUrl()
+    self.computer.requestSoftwareRelease(software_release_url=url,
+        state='available')
+    self.tic()
+    self.login()
+    software_installation = self.computer.getAggregateRelatedValue(
+        portal_type='Software Installation')
+    self.assertEqual('start_requested', software_installation.getSlapState())
+    self.assertEqual(url, software_installation.getUrlString())
+    self.assertEqual('validated', software_installation.getValidationState())
+
+  def test_requestSoftwareRelease_destroyed(self):
+    self._makePerson()
+    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+    self.login(self.person_user.getReference())
+    url = self.generateNewSoftwareReleaseUrl()
+    self.computer.requestSoftwareRelease(software_release_url=url,
+        state='destroyed')
+    self.tic()
+    self.login()
+    software_installation = self.computer.getAggregateRelatedValue(
+        portal_type='Software Installation')
+    self.assertEqual(None, software_installation)
+
+  def test_requestSoftwareRelease_available_destroyed(self):
+    self._makePerson()
+    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+    self.login(self.person_user.getReference())
+    url = self.generateNewSoftwareReleaseUrl()
+    self.computer.requestSoftwareRelease(software_release_url=url,
+        state='available')
+    self.tic()
+    self.login()
+    software_installation = self.computer.getAggregateRelatedValue(
+        portal_type='Software Installation')
+    self.assertEqual('start_requested', software_installation.getSlapState())
+    self.assertEqual(url, software_installation.getUrlString())
+    self.assertEqual('validated', software_installation.getValidationState())
+
+    self.login(self.person_user.getReference())
+    self.computer.requestSoftwareRelease(software_release_url=url,
+        state='destroyed')
+
+    self.tic()
+    self.login()
+    software_installation = self.computer.getAggregateRelatedValue(
+        portal_type='Software Installation')
+    self.assertEqual('destroy_requested', software_installation.getSlapState())
+    self.assertEqual(url, software_installation.getUrlString())
+    self.assertEqual('validated', software_installation.getValidationState())
+
+  def test_requestSoftwareRelease_not_indexed(self):
+    self._makePerson()
+    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+    self.login(self.person_user.getReference())
+    url = self.generateNewSoftwareReleaseUrl()
+    self.computer.requestSoftwareRelease(software_release_url=url,
+        state='available')
+    transaction.commit()
+    self.assertRaises(NotImplementedError,
+        self.computer.requestSoftwareRelease, software_release_url=url,
+        state='available')
+    transaction.abort()
+
+  @expectedFailure
+  def test_requestSoftwareRelease_same_transaction(self):
+    self._makePerson()
+    self.computer.edit(source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+    self.login(self.person_user.getReference())
+    url = self.generateNewSoftwareReleaseUrl()
+    self.computer.requestSoftwareRelease(software_release_url=url,
+        state='available')
+    self.assertRaises(NotImplementedError,
+        self.computer.requestSoftwareRelease, software_release_url=url,
+        state='available')
+    transaction.abort()
+
+  def test_revokeCertificate(self):
+    self.login(self.computer.getReference())
+    self.computer.generateCertificate()
+    computer_key = self.portal.REQUEST.get('computer_key')
+    computer_certificate = self.portal.REQUEST.get('computer_certificate')
+    self.assertNotEqual(None, computer_key)
+    self.assertNotEqual(None, computer_certificate)
+    self.assertNotEqual(None, self.computer.getDestinationReference())
+    serial = '0x%x' % int(self.computer.getDestinationReference(), 16)
+    self.assertTrue(serial in computer_certificate)
+    self.assertTrue(self.computer.getReference() in computer_certificate)
+
+    self.computer.revokeCertificate()
+    self.assertEqual(None, self.portal.REQUEST.get('computer_key'))
+    self.assertEqual(None, self.portal.REQUEST.get('computer_certificate'))
+
+    self.assertEqual(None, self.computer.getDestinationReference())
+
+  def test_revokeCertificateNoCertificate(self):
+    self.login(self.computer.getReference())
+    self.assertRaises(ValueError, self.computer.revokeCertificate)
+    self.assertEqual(None, self.portal.REQUEST.get('computer_key'))
+    self.assertEqual(None, self.portal.REQUEST.get('computer_certificate'))
+    self.assertEqual(None, self.computer.getDestinationReference())
+
+  def test_revokeCertificate_twice(self):
+    self.login(self.computer.getReference())
+    self.computer.generateCertificate()
+    computer_key = self.portal.REQUEST.get('computer_key')
+    computer_certificate = self.portal.REQUEST.get('computer_certificate')
+    self.assertNotEqual(None, computer_key)
+    self.assertNotEqual(None, computer_certificate)
+    self.assertNotEqual(None, self.computer.getDestinationReference())
+    serial = '0x%x' % int(self.computer.getDestinationReference(), 16)
+    self.assertTrue(serial in computer_certificate)
+    self.assertTrue(self.computer.getReference() in computer_certificate)
+
+    self.computer.revokeCertificate()
+    self.assertEqual(None, self.portal.REQUEST.get('computer_key'))
+    self.assertEqual(None, self.portal.REQUEST.get('computer_certificate'))
+
+    self.assertEqual(None, self.computer.getDestinationReference())
+
+    self.assertRaises(ValueError, self.computer.revokeCertificate)
+    self.assertEqual(None, self.portal.REQUEST.get('computer_key'))
+    self.assertEqual(None, self.portal.REQUEST.get('computer_certificate'))
+    self.assertEqual(None, self.computer.getDestinationReference())
