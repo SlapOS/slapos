@@ -12,6 +12,9 @@
   <item>Url</item>
   <item>VariationRange</item>
  </portal_type>
+ <portal_type id="Person">
+  <item>SlaposPersonConstraint</item>
+ </portal_type>
  <portal_type id="Slave Instance">
   <item>HostingSubscription</item>
   <item>Reference</item>

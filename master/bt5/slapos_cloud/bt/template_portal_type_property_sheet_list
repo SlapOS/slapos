@@ -5,6 +5,7 @@ Hosting Subscription | SoftwareInstance
 Hosting Subscription | TextDocument
 Hosting Subscription | Url
 Hosting Subscription | VariationRange
+Person | SlaposPersonConstraint
 Slave Instance | HostingSubscription
 Slave Instance | Reference
 Slave Instance | SlaveInstanceConstraint

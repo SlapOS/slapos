@@ -3,4 +3,5 @@ SlaveInstanceConstraint
 SoftwareInstance
 HostingSubscription
 SlaposCapacity
+SlaposPersonConstraint
 SlaposAssignmentConstraint
