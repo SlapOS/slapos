@@ -123,20 +123,30 @@ class Recipe(object):
 
     isSlave = options.get('slave', '').lower() in \
         librecipe.GenericBaseRecipe.TRUE_VALUES
-    self.instance = instance = request(software_url, software_type,
+    self.instance = request(software_url, software_type,
       name, partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=isSlave)
+
+    self._raise_resource_not_ready = None
+    try:
+        # XXX what is the right way to get a global id?
+        options['instance_guid'] = self.instance.getId()
+    except slapmodule.ResourceNotReady as exc:
+        self._raise_resource_not_ready = exc
 
     for param in return_parameters:
       try:
         options['connection-%s' % param] = str(
-          instance.getConnectionParameter(param))
+          self.instance.getConnectionParameter(param))
       except (slapmodule.NotFoundError, slapmodule.ServerError):
         options['connection-%s' % param] = ''
         if self.failed is None:
           self.failed = param
 
   def install(self):
+    if self._raise_resource_not_ready:
+      raise slapmodule.ResourceNotReady(self._resource_not_ready)
+
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
