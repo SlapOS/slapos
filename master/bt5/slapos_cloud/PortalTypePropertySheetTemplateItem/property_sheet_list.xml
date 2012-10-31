@@ -1,4 +1,7 @@
 <property_sheet_list>
+ <portal_type id="Assignment">
+  <item>SlaposAssignmentConstraint</item>
+ </portal_type>
  <portal_type id="Computer">
   <item>SlaposCapacity</item>
  </portal_type>

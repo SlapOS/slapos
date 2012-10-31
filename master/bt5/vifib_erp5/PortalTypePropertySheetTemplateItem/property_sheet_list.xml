@@ -1,7 +1,4 @@
 <property_sheet_list>
- <portal_type id="Assignment">
-  <item>VifibAssignmentConstraint</item>
- </portal_type>
  <portal_type id="Computer">
   <item>VifibComputerConstraint</item>
  </portal_type>
