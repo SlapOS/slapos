@@ -1,4 +1,5 @@
 SoftwareInstanceConstraint
+SlaposComputerPartitionConstraint
 SlaveInstanceConstraint
 SoftwareInstance
 HostingSubscription

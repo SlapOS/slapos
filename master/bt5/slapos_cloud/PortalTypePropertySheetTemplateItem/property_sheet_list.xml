@@ -5,6 +5,9 @@
  <portal_type id="Computer">
   <item>SlaposCapacity</item>
  </portal_type>
+ <portal_type id="Computer Partition">
+  <item>SlaposComputerPartitionConstraint</item>
+ </portal_type>
  <portal_type id="Hosting Subscription">
   <item>HostingSubscription</item>
   <item>SoftwareInstance</item>
