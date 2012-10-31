@@ -82,3 +82,19 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
         comment))
     self.assertEqual(count2+1, self._countInstanceBang(request_instance,
         comment))
+
+  def test_allocatePartition_computer_partition_url_required(self):
+    self.login(self.instance.getReference())
+    self.assertRaises(TypeError, self.instance.allocatePartition)
+
+  def test_allocatePartition(self):
+    computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    computer.validate()
+    computer_partition = computer.newContent(portal_type='Computer Partition')
+    computer_partition.validate()
+    computer_partition.markFree()
+    computer_partition_url = computer_partition.getRelativeUrl()
+    self.instance.allocatePartition(
+        computer_partition_url=computer_partition_url)
+    self.assertEqual(self.instance.getAggregate(), computer_partition_url)
