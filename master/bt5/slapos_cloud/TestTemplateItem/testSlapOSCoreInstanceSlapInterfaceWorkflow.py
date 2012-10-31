@@ -98,3 +98,60 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     self.instance.allocatePartition(
         computer_partition_url=computer_partition_url)
     self.assertEqual(self.instance.getAggregate(), computer_partition_url)
+
+  def test_softwareInstanceRename_new_name_required(self):
+    self.login(self.instance.getReference())
+    self.assertRaises(KeyError, self.instance.rename)
+
+  def test_softwareInstanceRename(self):
+    new_name = 'New %s' % self.generateNewId()
+    self.login(self.instance.getReference())
+    self.instance.rename(new_name=new_name)
+    self.assertEqual(new_name, self.instance.getTitle())
+    transaction.abort()
+
+  def test_softwareInstanceRename_twice_not_indexed(self):
+    new_name = 'New %s' % self.generateNewId()
+    self.login(self.instance.getReference())
+    self.instance.rename(new_name=new_name)
+    self.assertEqual(new_name, self.instance.getTitle())
+    transaction.commit()
+    self.assertRaises(NotImplementedError, self.instance.rename,
+        new_name=new_name)
+    transaction.abort()
+
+  @expectedFailure
+  def test_softwareInstanceRename_twice_same_transaction(self):
+    new_name = 'New %s' % self.generateNewId()
+    self.login(self.instance.getReference())
+    self.instance.rename(new_name=new_name)
+    self.assertEqual(new_name, self.instance.getTitle())
+    self.assertRaises(NotImplementedError, self.instance.rename,
+        new_name=new_name)
+    transaction.abort()
+
+  def test_softwareInstanceRename_existing(self):
+    new_name = 'New %s' % self.generateNewId()
+    self.login(self.instance.getReference())
+
+    request_kw = dict(
+      software_release=\
+          self.generateNewSoftwareReleaseUrl(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title=new_name,
+      state='started'
+    )
+
+    self.instance.requestInstance(**request_kw)
+    request_instance = self.instance.REQUEST['request_instance']
+    self.instance.REQUEST['request_instance'] = None
+    # test sanity check
+    self.assertEqual(new_name, request_instance.getTitle())
+    self.tic()
+
+    self.assertRaises(ValueError, self.instance.rename, new_name=new_name)
+    transaction.abort()
+
