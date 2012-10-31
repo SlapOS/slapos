@@ -64,7 +64,7 @@ if software_instance.getValidationState() == \'validated\':\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_triggerAlarm</string> </value>
+            <value> <string>Instance_triggerAllocationAlarm</string> </value>
         </item>
       </dictionary>
     </pickle>

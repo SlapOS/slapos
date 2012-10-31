@@ -22,7 +22,7 @@
             <key> <string>activate_script_name</string> </key>
             <value>
               <list>
-                <string>SoftwareInstance_triggerAlarm</string>
+                <string>Instance_triggerAllocationAlarm</string>
               </list>
             </value>
         </item>
@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SoftwareInstance_validate</string> </value>
+            <value> <string>Instance_validate</string> </value>
         </item>
         <item>
             <key> <string>method_id</string> </key>
