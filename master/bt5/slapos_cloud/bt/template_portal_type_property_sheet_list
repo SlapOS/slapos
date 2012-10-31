@@ -4,6 +4,7 @@ Computer | SlaposCapacity
 Computer | SlaposComputerConstraint
 Email | SlaposEmailConstraint
 Hosting Subscription | HostingSubscription
+Hosting Subscription | SlaposHostingSubscriptionConstraint
 Hosting Subscription | SoftwareInstance
 Hosting Subscription | TextDocument
 Hosting Subscription | Url

@@ -14,6 +14,7 @@
  </portal_type>
  <portal_type id="Hosting Subscription">
   <item>HostingSubscription</item>
+  <item>SlaposHostingSubscriptionConstraint</item>
   <item>SoftwareInstance</item>
   <item>TextDocument</item>
   <item>Url</item>
