@@ -27,13 +27,14 @@
 import os
 import shutil
 from slapos.recipe.librecipe import GenericSlapRecipe
-from subprocess import Popen
+import shutil
+import subprocess
 import sys
 
 class Recipe(GenericSlapRecipe):
   def _install(self):
     path_list = []
-    poc_location = self.buildout['pocdirectory']['poc']
+    accords_location = self.buildout['accordsdirectory']['accords']
 
     parameter_dict = dict(
         userid=self.options['userid'],
@@ -41,7 +42,7 @@ class Recipe(GenericSlapRecipe):
         domain=self.options['domain'],
         openstack_url=self.options['openstack_url'],
         python_location=sys.executable,
-        poc_location=poc_location,
+        accords_location=accords_location,
         manifest_name=self.options['manifest-name'],
         # XXX this is workaround
         accords_lib_directory=self.options['accords_lib_directory'],
@@ -70,10 +71,15 @@ class Recipe(GenericSlapRecipe):
         accords_configuration_parameter_dict))
     path_list.append(accords_configuration_file_location)
 
+    # XXX is it dangerous?
+    security_path = os.path.join(accords_location, 'security')
+    if os.path.exists(security_path):
+      shutil.rmtree(security_path)
+
     # Initiate configuration
-    Popen('./accords-config',
-          cwd=poc_location
-    ).communicate()
+    subprocess.check_call('./accords-config',
+                          cwd=accords_location
+    )
 
     # Generate manifest
     manifest_origin_location = self.options['manifest-source']
