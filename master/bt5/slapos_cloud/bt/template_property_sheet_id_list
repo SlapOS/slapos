@@ -6,3 +6,4 @@ HostingSubscription
 SlaposCapacity
 SlaposPersonConstraint
 SlaposAssignmentConstraint
+SlaposEmailConstraint

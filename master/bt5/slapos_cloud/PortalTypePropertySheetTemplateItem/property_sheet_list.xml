@@ -8,6 +8,9 @@
  <portal_type id="Computer Partition">
   <item>SlaposComputerPartitionConstraint</item>
  </portal_type>
+ <portal_type id="Email">
+  <item>SlaposEmailConstraint</item>
+ </portal_type>
  <portal_type id="Hosting Subscription">
   <item>HostingSubscription</item>
   <item>SoftwareInstance</item>

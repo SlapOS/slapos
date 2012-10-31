@@ -1,5 +1,4 @@
 Computer | VifibComputerConstraint
-Email | VifibEmailConstraint
 Hosting Subscription | VifibHostingSubscriptionConstraint
 Internal Packing List Line | VifibInternalPackingListLineConstraint
 Internal Packing List | VifibInternalPackingListConstraint
