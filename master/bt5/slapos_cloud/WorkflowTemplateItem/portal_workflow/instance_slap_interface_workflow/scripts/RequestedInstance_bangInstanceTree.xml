@@ -55,11 +55,10 @@ instance = state_change[\'object\']\n
 assert instance.getPortalType() in ["Slave Instance", "Software Instance"]\n
 \n
 instance.edit(bang_timestamp=int(DateTime()))\n
-\n
+comment = state_change.kwargs[\'comment\'] # comment is required to pass the transition\n
 if state_change.kwargs[\'bang_tree\']:\n
   from Products.ZSQLCatalog.SQLCatalog import Query, NegatedQuery\n
   portal = instance.getPortalObject()\n
-  comment = state_change.kwargs[\'comment\']\n
   hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
   portal.portal_catalog.searchAndActivate(\n
     default_specialise_uid=hosting_subscription.getUid(),\n
