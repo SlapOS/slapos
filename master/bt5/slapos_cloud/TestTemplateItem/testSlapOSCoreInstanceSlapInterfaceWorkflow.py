@@ -91,6 +91,39 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
         computer_partition_url=computer_partition_url)
     self.assertEqual(self.instance.getAggregate(), computer_partition_url)
 
+  def test_unallocatePartition(self):
+    computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    computer.validate()
+    computer_partition = computer.newContent(portal_type='Computer Partition')
+    computer_partition.validate()
+    computer_partition.markFree()
+    computer_partition_url = computer_partition.getRelativeUrl()
+    self.instance.allocatePartition(
+        computer_partition_url=computer_partition_url)
+    self.assertEqual(self.instance.getAggregate(), computer_partition_url)
+
+    self.instance.requestDestroy(**self.request_kw)
+    self.instance.unallocatePartition()
+    self.assertEqual(None, self.instance.getAggregate())
+
+  def test_unallocatePartition_twice(self):
+    computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    computer.validate()
+    computer_partition = computer.newContent(portal_type='Computer Partition')
+    computer_partition.validate()
+    computer_partition.markFree()
+    computer_partition_url = computer_partition.getRelativeUrl()
+    self.instance.allocatePartition(
+        computer_partition_url=computer_partition_url)
+    self.assertEqual(self.instance.getAggregate(), computer_partition_url)
+
+    self.instance.requestDestroy(**self.request_kw)
+    self.instance.unallocatePartition()
+    self.assertEqual(None, self.instance.getAggregate())
+    self.assertRaises(AssertionError, self.instance.unallocatePartition)
+
   def test_rename_new_name_required(self):
     self.login(self.instance.getReference())
     self.assertRaises(KeyError, self.instance.rename)
