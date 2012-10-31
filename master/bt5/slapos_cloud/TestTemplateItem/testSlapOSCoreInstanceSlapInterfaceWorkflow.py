@@ -17,7 +17,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
         title=self.generateNewSoftwareTitle(),
         reference="TESTHS-%s" % self.generateNewId(),
     )
-    kw = dict(
+    self.request_kw = dict(
       software_release=\
           self.generateNewSoftwareReleaseUrl(),
       software_type=self.generateNewSoftwareType(),
@@ -27,8 +27,8 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
       software_title=hosting_subscription.getTitle(),
       state='started'
     )
-    hosting_subscription.requestStart(**kw)
-    hosting_subscription.requestInstance(**kw)
+    hosting_subscription.requestStart(**self.request_kw)
+    hosting_subscription.requestInstance(**self.request_kw)
 
     self.instance = hosting_subscription.getPredecessorValue()
     self.tic()
@@ -58,16 +58,8 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
 
   def test_bang_tree(self):
     self.login(self.instance.getReference())
-    request_kw = dict(
-      software_release=\
-          self.generateNewSoftwareReleaseUrl(),
-      software_type=self.generateNewSoftwareType(),
-      instance_xml=self.generateSafeXml(),
-      sla_xml=self.generateSafeXml(),
-      shared=False,
-      software_title='New %s' % self.generateNewId(),
-      state='started'
-    )
+    request_kw = self.request_kw.copy()
+    request_kw['software_title'] = 'New %s' % self.generateNewId()
     self.instance.requestInstance(**request_kw)
     request_instance = self.instance.REQUEST['request_instance']
     self.instance.REQUEST['request_instance'] = None
@@ -134,16 +126,8 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     new_name = 'New %s' % self.generateNewId()
     self.login(self.instance.getReference())
 
-    request_kw = dict(
-      software_release=\
-          self.generateNewSoftwareReleaseUrl(),
-      software_type=self.generateNewSoftwareType(),
-      instance_xml=self.generateSafeXml(),
-      sla_xml=self.generateSafeXml(),
-      shared=False,
-      software_title=new_name,
-      state='started'
-    )
+    request_kw = self.request_kw.copy()
+    request_kw['software_title'] = new_name
 
     self.instance.requestInstance(**request_kw)
     request_instance = self.instance.REQUEST['request_instance']
