@@ -139,3 +139,67 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     self.assertRaises(ValueError, self.instance.rename, new_name=new_name)
     transaction.abort()
 
+  def test_requestDestroy(self):
+    self.login(self.instance.getReference())
+
+    request_kw = self.request_kw.copy()
+    self.instance.requestDestroy(**request_kw)
+    self.assertEqual('destroy_requested', self.instance.getSlapState())
+    transaction.abort()
+
+  def test_requestDestroy_required(self):
+    self.login(self.instance.getReference())
+
+    software_release=self.request_kw['software_release']
+    software_type=self.request_kw['software_type']
+    instance_xml=self.request_kw['instance_xml']
+    sla_xml=self.request_kw['sla_xml']
+    shared=self.request_kw['shared']
+
+    self.assertRaises(TypeError, self.instance.requestDestroy)
+    transaction.abort()
+
+    # no software_release
+    self.assertRaises(TypeError, self.instance.requestDestroy,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+    # no software_type
+    self.assertRaises(TypeError, self.instance.requestDestroy,
+      software_release=software_release,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+    # no instance_xml
+    self.assertRaises(TypeError, self.instance.requestDestroy,
+      software_release=software_release,
+      software_type=software_type,
+      sla_xml=sla_xml,
+      shared=shared,
+    )
+    transaction.abort()
+
+    # no shared
+    self.assertRaises(TypeError, self.instance.requestDestroy,
+      software_release=software_release,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      sla_xml=sla_xml,
+    )
+    transaction.abort()
+    
+    # no sla_xml
+    self.assertRaises(TypeError, self.instance.requestDestroy,
+      software_release=software_release,
+      software_type=software_type,
+      instance_xml=instance_xml,
+      shared=shared,
+    )
+    transaction.abort()
