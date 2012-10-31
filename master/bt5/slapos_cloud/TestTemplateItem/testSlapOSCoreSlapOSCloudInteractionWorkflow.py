@@ -2,7 +2,7 @@
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 
-class TestSlapOSCorePersonRequest(testSlapOSMixin):
+class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
   def test(self):
     raise NotImplementedError
