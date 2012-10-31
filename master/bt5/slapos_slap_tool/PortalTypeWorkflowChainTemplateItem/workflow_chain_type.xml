@@ -1,0 +1,18 @@
+<workflow_chain>
+ <chain>
+  <type>Computer Partition</type>
+  <workflow>slapos_slap_tool_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Slave Instance</type>
+  <workflow>slapos_slap_tool_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Software Installation</type>
+  <workflow>slapos_slap_tool_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Software Instance</type>
+  <workflow>slapos_slap_tool_interaction_workflow</workflow>
+ </chain>
+</workflow_chain>
