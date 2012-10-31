@@ -4,6 +4,7 @@
  </portal_type>
  <portal_type id="Computer">
   <item>SlaposCapacity</item>
+  <item>SlaposComputerConstraint</item>
  </portal_type>
  <portal_type id="Computer Partition">
   <item>SlaposComputerPartitionConstraint</item>

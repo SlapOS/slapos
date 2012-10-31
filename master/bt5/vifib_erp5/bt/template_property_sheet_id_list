@@ -1,5 +1,4 @@
 VifibPersonConstraint
-VifibComputerConstraint
 VifibInternalPackingListConstraint
 VifibInternalPackingListLineConstraint
 VifibPurchasePackingListLineConstraint

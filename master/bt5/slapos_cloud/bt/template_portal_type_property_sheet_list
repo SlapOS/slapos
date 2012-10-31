@@ -1,6 +1,7 @@
 Assignment | SlaposAssignmentConstraint
 Computer Partition | SlaposComputerPartitionConstraint
 Computer | SlaposCapacity
+Computer | SlaposComputerConstraint
 Email | SlaposEmailConstraint
 Hosting Subscription | HostingSubscription
 Hosting Subscription | SoftwareInstance
