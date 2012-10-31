@@ -6,3 +6,4 @@ testSlapOSShadow
 testSlapOSCoreAllocation
 testSlapOSCoreComputerSlapInterfaceWorkflow
 testSlapOSCoreComputerPartitionSlapInterfaceWorkflow
+testSlapOSCoreInstanceSlapInterfaceWorkflow
