@@ -29,6 +29,7 @@
 import os
 from slapos import slap
 import signal
+import subprocess
 from subprocess import Popen
 import sys
 import time
@@ -44,32 +45,35 @@ def runAccords(accords_conf):
   key_file = accords_conf['key_file']
   cert_file = accords_conf['cert_file']
   accords_lib_directory = accords_conf['accords_lib_directory']
-  poc_location = accords_conf['poc_location']
+  accords_location = accords_conf['accords_location']
   manifest_name = accords_conf['manifest_name']
 
   environment = dict(
      LD_LIBRARY_PATH=accords_lib_directory,
-     PATH= accords_conf['path'],
+     PATH=accords_conf['path'],
+     HOME=accords_location,
   )
 
   # Set handler to stop ACCORDS when end of world comes
+  # XXX use subprocess.check_call and add exception handlers
   def sigtermHandler(signum, frame):
     Popen(['./co-command', 'stop', '/service/*'],
-        cwd=poc_location, env=environment).communicate()
+        cwd=accords_location, env=environment).communicate()
     Popen(['./co-stop'],
-        cwd=poc_location, env=environment).communicate()
+        cwd=accords_location, env=environment).communicate()
     sys.exit(0)
 
   signal.signal(signal.SIGTERM, sigtermHandler)
 
   # Launch ACCORDS, parse & broke manifest to deploy instance
-  Popen(['./co-start'],cwd=poc_location, env=environment).communicate()
+  print 'Starting ACCORDS and friends...'
+  subprocess.check_call(['./co-start'],cwd=accords_location, env=environment)
   print 'Parsing manifest...'
-  Popen(['./co-parser', manifest_name],
-      cwd=poc_location, env=environment).communicate()
+  subprocess.check_call(['./co-parser', manifest_name],
+      cwd=accords_location, env=environment)
   print 'Brokering manifest...'
-  Popen(['./co-broker', manifest_name],
-      cwd=poc_location, env=environment).communicate()
+  subprocess.check_call(['./co-broker', manifest_name],
+      cwd=accords_location, env=environment)
   print 'Done.'
 
   # Parse answer
