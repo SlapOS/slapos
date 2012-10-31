@@ -1,7 +1,6 @@
 testSlapOSCorePersonComputerSupply
 testSlapOSCorePersonRequest
 testSlapOSCorePersonRequestComputer
-testSlapOSCoreSoftwareInstanceRequest
 testSlapOSShadow
 testSlapOSCoreAllocation
 testSlapOSCoreComputerSlapInterfaceWorkflow
