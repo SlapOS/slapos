@@ -91,18 +91,18 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
         computer_partition_url=computer_partition_url)
     self.assertEqual(self.instance.getAggregate(), computer_partition_url)
 
-  def test_softwareInstanceRename_new_name_required(self):
+  def test_rename_new_name_required(self):
     self.login(self.instance.getReference())
     self.assertRaises(KeyError, self.instance.rename)
 
-  def test_softwareInstanceRename(self):
+  def test_rename(self):
     new_name = 'New %s' % self.generateNewId()
     self.login(self.instance.getReference())
     self.instance.rename(new_name=new_name)
     self.assertEqual(new_name, self.instance.getTitle())
     transaction.abort()
 
-  def test_softwareInstanceRename_twice_not_indexed(self):
+  def test_rename_twice_not_indexed(self):
     new_name = 'New %s' % self.generateNewId()
     self.login(self.instance.getReference())
     self.instance.rename(new_name=new_name)
@@ -113,7 +113,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
     transaction.abort()
 
   @expectedFailure
-  def test_softwareInstanceRename_twice_same_transaction(self):
+  def test_rename_twice_same_transaction(self):
     new_name = 'New %s' % self.generateNewId()
     self.login(self.instance.getReference())
     self.instance.rename(new_name=new_name)
@@ -122,7 +122,7 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
         new_name=new_name)
     transaction.abort()
 
-  def test_softwareInstanceRename_existing(self):
+  def test_rename_existing(self):
     new_name = 'New %s' % self.generateNewId()
     self.login(self.instance.getReference())
 
