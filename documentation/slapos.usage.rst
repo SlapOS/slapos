@@ -5,10 +5,10 @@ SlapOS command line usage
 
 Note:
 -----
- * Default configuration file of "Node" commands if not explicitly defined (slapos node, slapos supervisor) is:
+ * Default configuration file of "Node" commands (slapos node, slapos supervisor) if not explicitly defined as first argument is:
     /etc/opt/slapos/slapos.cfg or value of SLAPOS_CONFIGURATION environment variable if exists.
 
- * Default configuration file of "Client" commands if not explicitly defined (slapos request, slapos supply, ...) is:
+ * Default configuration file of "Client" commands (slapos request, slapos supply, ...) if not explicitly defined as first argument is:
     ~/.slapos/slapos.cfg or value of SLAPOS_CLIENT_CONFIGURATION environment variable if exists.
 
  * Default log file for Node commands is /var/log/[slapos-node-software.log | slapos-node-instance.log | slapos-node-report.log]. This one requires working log in slapgrid, currently log/console is a total mess.
@@ -36,19 +36,23 @@ Those commands are used by clients (as human beings or programs) to manage their
 slapos request
 ~~~~~~~~~~~~~~
 Usage:
-  slapos request [slapos_configuration] <reference> <software_alias | software-url> [--node id=<computer guid>,region=<region>,network-type=<network> | location/to/node.json] [--configuration foo=value1,bar=value2 | location/to/configuration.json ] [--type type] [--slave]
+  slapos request [slapos_configuration] <reference> <software_alias | software-url> [--node id=<computer guid> region=<region> network-type=<network> | location/to/node.json] [--configuration foo=value1 bar=value2 | location/to/configuration.json ] [--type type] [--slave]
 
 Request an instance and get status and parameters of instance.
 
 Examples:
  * Request a wordpress instance named "mybeautifulinstance" on Node named "COMP-12345":
-     slapos request wordpress mybeautifulinstance --node id=COMP-12345
+     slapos request mybeautifulinstance wordpress --node id=COMP-12345
+
+ * Request a kvm instance named "mykvm" on Node named "COMP-12345", specifying nbd-host and nbd-ip parameters:
+     slapos request mykvm kvm --node id=COMP-12345 --configuration nbd-host=debian.nbd.vifib.org nbd-port=1024
 
 XXX Change in slaplib: allow to fetch instance params without changing anything. i.e we should do "slapos request myalreadyrequestedinstance" to fetch connection parameters without erasing previously defined instance parameters.
 
 
 slapos search
 ~~~~~~~~~~~~~
+Note: Not yet implemented.
 Usage:
   slapos search <search parameters ex. computer region, instance reference, source_section, etc.>
 
@@ -66,9 +70,22 @@ Examples:
  * Ask installation of wordpress Software Release on COMP-12345:
     slapos supply wordpress COMP-12345
 
+slapos remove
+~~~~~~~~~~~~~
+Note: Not yet implemented.
+Usage:
+   slapos remove <software | software_group> <computer_guid | commputer_group>
+
+Ask Removal of a software on a specific node or group of nodes. Existing instances won't work anymore.
+XXX "slapos autounsupply a.k.a slapos cleanup"
+
+Examples:
+ * Ask installation of wordpress Software Release on COMP-12345:
+    slapos supply wordpress COMP-12345
 
 slapos autosupply
 ~~~~~~~~~~~~~~~~~
+Note: Not yet implemented.
 Usage:
   slapos autosupply <software | software_group> <computer_guid | computer_group>
 
@@ -82,6 +99,7 @@ Enter in a python console with slap library imported. See "Slapconsole" section 
 
 slapos <stop|start|destroy>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Note: Not yet implemented.
 Usage:
   slapos <stop|start|destroy> <instance reference>
 
@@ -241,7 +259,7 @@ Return values:
 
 
 slapos node <start|stop|restart|tail|status>
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Usage:
   slapos node <start|stop|restart|tail|status> <instance>:[process]
 
@@ -274,6 +292,7 @@ Launch, if not already launched, supervisor daemon.
 
 slapos node log
 ~~~~~~~~~~~~~~~
+Note: Not yet implemented.
 Usage:
   slapos node log <software|instance|report>
 
