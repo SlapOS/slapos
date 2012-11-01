@@ -33,6 +33,8 @@ import sys
 from slapos.bang import main as bang
 from slapos.client import slapconsole as console
 from slapos.client import request as request
+from slapos.client import remove as remove
+from slapos.client import supply as supply
 from slapos.format import main as format
 from slapos.grid.slapgrid import runComputerPartition as instance
 from slapos.grid.slapgrid import runSoftwareRelease as software
@@ -139,7 +141,9 @@ def dispatch(command, is_node_command):
   elif command == 'request':
     call(request, config=USER_SLAPOS_CONFIGURATION)
   elif command == 'supply':
-    raise EntryPointNotImplementedError(command)
+    call(supply, config=USER_SLAPOS_CONFIGURATION)
+  elif command == 'remove':
+    call(remove, config=USER_SLAPOS_CONFIGURATION)
   elif command == 'start':
     raise EntryPointNotImplementedError(command)
   elif command == 'stop':

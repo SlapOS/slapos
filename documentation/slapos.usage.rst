@@ -72,7 +72,6 @@ Examples:
 
 slapos remove
 ~~~~~~~~~~~~~
-Note: Not yet implemented.
 Usage:
    slapos remove <software | software_group> <computer_guid | commputer_group>
 

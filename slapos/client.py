@@ -221,6 +221,80 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
         "couple of minutes to get connection informations")
     exit(2)
 
+def _supply(software_url, computer_id, local, remove=False):
+  """
+  Request installation of Software Release
+  'software_url' on computer 'computer_id'.
+  if destroy argument is True, request deletion of Software Release.
+  """
+  # XXX-Cedric Implement software_group support
+  # XXX-Cedric Implement computer_group support
+  if not remove:
+    state = 'available'
+    print 'Requesting installation of %s Software Release...' % software_url
+
+  else:
+    state = 'destroyed'
+    print 'Requesting deletion of %s Software Release...' % software_url
+
+  if software_url in local:
+    software_url = local[software_url]
+  local['slap'].slap.registerSupply().supply(
+      software_release = software_url,
+      computer_guid = computer_id,
+      state=state,
+  )
+  print 'Done.'
+
+def supply():
+  """
+  Ran when invoking slapos supply.
+  """
+  # XXX-Cedric: move argument parsing to main entry point
+  config = Config()
+  parser = argparse.ArgumentParser()
+  parser.add_argument("configuration_file",
+                      nargs=1,
+                      help="SlapOS configuration file")
+  parser.add_argument("software_url",
+                      help="Your software url")
+  parser.add_argument("node",
+                      help = "Target node")
+  args = parser.parse_args()
+  # Convert to dict
+  if args.configuration is not None:
+    args.configuration = argToDict(args.configuration)
+  if args.node is not None:
+    args.node = argToDict(args.node)
+
+  config.setConfig(args, args.configuration_file)
+  _supply(args.software_url, args.node, init(args))
+
+def remove():
+  """
+  Ran when invoking slapos remove.
+  """
+  # XXX-Cedric: move argument parsing to main entry point
+  config = Config()
+  parser = argparse.ArgumentParser()
+  parser.add_argument("configuration_file",
+                      nargs=1,
+                      help="SlapOS configuration file.")
+  parser.add_argument("software_url",
+                      help="Your software url")
+  parser.add_argument("node",
+                      help = "Target node")
+  args = parser.parse_args()
+  # Convert to dict
+  if args.configuration is not None:
+    args.configuration = argToDict(args.configuration)
+  if args.node is not None:
+    args.node = argToDict(args.node)
+
+  config.setConfig(args, args.configuration_file)
+  _supply(args.software_url, args.node, init(args), remove=True)
+
+
 def slapconsole():
   """Ran when invoking slapconsole"""
   # Parse arguments
