@@ -115,7 +115,7 @@ def check_request_args():
 
 
 class Config:
-  def setConfig(self, option_dict, configuration_file_path):
+  def setConfig(self, option_dict, configuration_file_path=None):
     """
     Set options given by parameters.
     """
@@ -125,10 +125,15 @@ class Config:
 
     # Load configuration file
     configuration_parser = ConfigParser.SafeConfigParser()
-    configuration_parser.read(configuration_file_path)
+    if configuration_file_path:
+      configuration_file_path = os.path.expanduser(configuration_file_path)
+      if not os.path.isfile(configuration_file_path):
+        raise OSError('Specified configuration file %s does not exist.'
+            ' Exiting.' % configuration_file_path)
+      configuration_parser.read(configuration_file_path)
     # Merges the arguments and configuration
     try:
-      configuration_dict = dict(configuration_parser.items("slapconsole"))
+      configuration_dict = dict(configuration_parser.items('slapconsole'))
     except ConfigParser.NoSectionError:
       pass
     else:
@@ -184,11 +189,13 @@ def init(config):
   return local
 
 def request():
-  """Ran when invoking slapos-request"""
+  """Ran when invoking slapos request. Request an instance."""
   # Parse arguments and inititate needed parameters
+  # XXX-Cedric: usage is different from what is specified in slapos doc.
   usage = """usage: %s [options] CONFIGURATION_FILE INSTANCE_REFERENCE SOFTWARE_INSTANCE
 slapos-request allows you to request slapos instances.""" % sys.argv[0]
   config = Config()
+  # XXX-Cedric: move argument parsing to main entry point
   options = check_request_args()
   config.setConfig(options, options.configuration_file)
   local = init(config)
@@ -204,7 +211,7 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
       software_type = config.type,
       filter_kw = config.node,
       shared = config.slave
-      )
+    )
     print "Instance requested.\nState is : %s." % partition.getState()
     print "Connection parameters of instance are:"
     pprint.pprint(partition.getConnectionParameterDict())
