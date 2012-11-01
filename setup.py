@@ -49,9 +49,9 @@ setup(name=name,
         'console_scripts': [
           # One entry point to control them all
           'slapos = slapos.entry:main',
+          'slapos-watchdog = slapos.grid.watchdog:main',
           # Deprecated entry points
           'slapconsole = slapos.client:slapconsole',
-          'slapos-watchdog = slapos.grid.watchdog:main',
           'slapformat = slapos.format:main',
           'slapgrid = slapos.grid.slapgrid:run',
           'slapgrid-sr = slapos.grid.slapgrid:runSoftwareRelease',
