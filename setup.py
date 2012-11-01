@@ -50,7 +50,7 @@ setup(name=name,
           # One entry point to control them all
           'slapos = slapos.entry:main',
           # Deprecated entry points
-          'slapconsole = slapos.client:run',
+          'slapconsole = slapos.client:slapconsole',
           'slapos-watchdog = slapos.grid.watchdog:main',
           'slapformat = slapos.format:main',
           'slapgrid = slapos.grid.slapgrid:run',

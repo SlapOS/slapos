@@ -214,7 +214,7 @@ slapos-request allows you to request slapos instances.""" % sys.argv[0]
         "couple of minutes to get connection informations")
     exit(2)
 
-def run():
+def slapconsole():
   """Ran when invoking slapconsole"""
   # Parse arguments
   usage = """usage: %s [options] CONFIGURATION_FILE

@@ -31,7 +31,7 @@ import ConfigParser
 import os
 import sys
 from slapos.bang import main as bang
-from slapos.client import run as console
+from slapos.client import slapconsole as console
 from slapos.client import request as request
 from slapos.format import main as format
 from slapos.grid.slapgrid import runComputerPartition as instance
