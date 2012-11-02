@@ -148,6 +148,8 @@ def dispatch(command, is_node_command):
     raise EntryPointNotImplementedError(command)
   elif command == 'stop':
     raise EntryPointNotImplementedError(command)
+  elif command == 'destroy':
+    raise EntryPointNotImplementedError(command)
   elif command == 'console':
     call(console, config=USER_SLAPOS_CONFIGURATION)
   else:
@@ -185,4 +187,5 @@ def main():
       parser.print_help()
       sys.exit(1)
   except EntryPointNotImplementedError, exception:
-    print 'Not yet implemented: %s. Please use old-style commands.' % exception
+    print 'Not yet implemented: %s. Please use old-style commands or SlapOS '
+        'Master web UI.' % exception
