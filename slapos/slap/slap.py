@@ -319,6 +319,9 @@ def _syncComputerPartitionInformation(func):
   def decorated(self, *args, **kw):
     if getattr(self, '_synced', 0):
       return func(self, *args, **kw)
+    if not self._computer_id:
+      # XXX Is it only in case of requesting instance?
+      raise ResourceNotReady("Intance is not ready yet.")
     # XXX: This is a ugly way to keep backward compatibility,
     # We should stablise slap library soon.
     computer = self._connection_helper.getFullComputerInformation(self._computer_id)
