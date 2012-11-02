@@ -170,9 +170,31 @@ def main():
   else:
     is_node = False
 
-  # XXX-Cedric: add "description" for parser.
+  usage = """SlapOS command line interface.
+For more informations, refer to SlapOS documentation.
+
+Client subcommands usage:
+  slapos request <instance-name> <software-url> [--configuration arg1=value1 arg2=value2 ... argN=valueN]
+  slapos supply <software-url> <node-id>
+  slapos console
+Node subcommands usage:
+  slapos node
+  slapos node register <node-id>
+  slapos node software
+  slapos node instance
+  slapos node report
+  slapos node start <process>
+  slapos node stop <process>
+  slapos node restart <process>
+  slapos node tail [process]
+  slapos node status <process>
+  slapos node supervisorctl
+  slapos node supervisord
+"""
+
   # Parse arguments
-  parser = argparse.ArgumentParser()
+  # XXX remove the "positional arguments" from help message
+  parser = argparse.ArgumentParser(usage=usage)
   parser.add_argument('command')
   parser.add_argument('argument_list', nargs=argparse.REMAINDER)
 
@@ -187,5 +209,6 @@ def main():
       parser.print_help()
       sys.exit(1)
   except EntryPointNotImplementedError, exception:
-    print 'Not yet implemented: %s. Please use old-style commands or SlapOS '
+    print 'Not yet implemented: %s. Please use old-style commands or SlapOS ' \
         'Master web UI.' % exception
+    sys.exit(1)
