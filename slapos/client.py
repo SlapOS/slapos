@@ -85,7 +85,6 @@ def check_request_args():
   """
   parser = argparse.ArgumentParser()
   parser.add_argument("configuration_file",
-                      nargs=1,
                       help="SlapOS configuration file.")
   parser.add_argument("reference",
                       help="Your instance reference")
@@ -115,7 +114,7 @@ def check_request_args():
 
 
 class Config:
-  def setConfig(self, option_dict, configuration_file_path=None):
+  def __init__(self, option_dict, configuration_file_path=None):
     """
     Set options given by parameters.
     """
@@ -189,15 +188,11 @@ def init(config):
   return local
 
 def request():
-  """Ran when invoking slapos request. Request an instance."""
+  """Run when invoking slapos request. Request an instance."""
   # Parse arguments and inititate needed parameters
-  # XXX-Cedric: usage is different from what is specified in slapos doc.
-  usage = """usage: %s [options] CONFIGURATION_FILE INSTANCE_REFERENCE SOFTWARE_INSTANCE
-slapos-request allows you to request slapos instances.""" % sys.argv[0]
-  config = Config()
   # XXX-Cedric: move argument parsing to main entry point
   options = check_request_args()
-  config.setConfig(options, options.configuration_file)
+  config = Config(options, options.configuration_file)
   local = init(config)
   # Request instance
   print("Requesting %s..." % config.reference)
@@ -239,60 +234,46 @@ def _supply(software_url, computer_id, local, remove=False):
 
   if software_url in local:
     software_url = local[software_url]
-  local['slap'].slap.registerSupply().supply(
-      software_release = software_url,
-      computer_guid = computer_id,
+  local['slap'].registerSupply().supply(
+      software_release=software_url,
+      computer_guid=computer_id,
       state=state,
   )
   print 'Done.'
 
 def supply():
   """
-  Ran when invoking slapos supply.
+  Run when invoking slapos supply. Mostly argument parsing.
   """
   # XXX-Cedric: move argument parsing to main entry point
-  config = Config()
   parser = argparse.ArgumentParser()
   parser.add_argument("configuration_file",
-                      nargs=1,
                       help="SlapOS configuration file")
   parser.add_argument("software_url",
                       help="Your software url")
   parser.add_argument("node",
-                      help = "Target node")
+                      help="Target node")
   args = parser.parse_args()
-  # Convert to dict
-  if args.configuration is not None:
-    args.configuration = argToDict(args.configuration)
-  if args.node is not None:
-    args.node = argToDict(args.node)
 
-  config.setConfig(args, args.configuration_file)
-  _supply(args.software_url, args.node, init(args))
+  config = Config(args, args.configuration_file)
+  _supply(args.software_url, args.node, init(config))
 
 def remove():
   """
-  Ran when invoking slapos remove.
+  Run when invoking slapos remove. Mostly argument parsing.
   """
   # XXX-Cedric: move argument parsing to main entry point
-  config = Config()
   parser = argparse.ArgumentParser()
   parser.add_argument("configuration_file",
-                      nargs=1,
                       help="SlapOS configuration file.")
   parser.add_argument("software_url",
                       help="Your software url")
   parser.add_argument("node",
-                      help = "Target node")
+                      help="Target node")
   args = parser.parse_args()
-  # Convert to dict
-  if args.configuration is not None:
-    args.configuration = argToDict(args.configuration)
-  if args.node is not None:
-    args.node = argToDict(args.node)
 
-  config.setConfig(args, args.configuration_file)
-  _supply(args.software_url, args.node, init(args), remove=True)
+  config = Config(args, args.configuration_file)
+  _supply(args.software_url, args.node, init(config), remove=True)
 
 
 def slapconsole():
@@ -309,8 +290,7 @@ examples :
   >>> supply(kvm, "mycomputer")
   >>> # Fetch instance informations on already launched instance
   >>> request(kvm, "myuniquekvm").getConnectionParameter("url")""" % sys.argv[0]
-  config = Config()
-  config.setConfig(*Parser(usage=usage).check_args())
+  config = Config(*Parser(usage=usage).check_args())
 
   local = init(config)
   __import__("code").interact(banner="", local=local)
