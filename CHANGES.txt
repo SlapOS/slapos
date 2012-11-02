@@ -1,23 +1,19 @@
 Changes
 =======
 
-(unreleased)
-------------
-
- * --only_sr also accepts plain text URIs. [Marco Mariani]
-
-0.33 (2012-10-15)
+0.33 (2012-11-02)
 -----------------
 
- * TODO: Revamp "slapos node register" to support new type of users. [Romain 
-   Courteaud, Cédric de Saint Martin]
  * Continue to improve new entry points. The following are now functional:
      - slapos node format
      - slapos node start/stop/restart/tail
      - slapos node supervisord/supervisorctl
+     - slapos node supply
+   and add basic usage.
    [Cedric de Saint Martin]
  * Add support for "SLAPOS_CONFIGURATION" and SLAPOS_CLIENT_CONFIGURATION
    environment variables. (commit c72a53b1) [Cédric de Saint Martin]
+ * --only_sr also accepts plain text URIs. [Marco Mariani]
 
 0.32.3 (2012-10-15)
 -------------------
