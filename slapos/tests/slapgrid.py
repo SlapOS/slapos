@@ -707,7 +707,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
 mkdir -p etc/run &&
 echo "#!/bin/sh" > etc/run/daemon &&
 echo "touch launched
-touch ./crashed; echo "Failing\\nFailing\\n"; sleep 1; return 111;
+touch ./crashed; echo "Failing\\nFailing\\n"; sleep 1; exit 111;
 " >> etc/run/daemon &&
 chmod 755 etc/run/daemon &&
 touch worked
@@ -742,6 +742,7 @@ touch worked
       if os.path.getsize(daemon_log) > 0:
         break
       time.sleep(0.1)
+    time.sleep(1)
     self.assertTrue('Failing' in open(daemon_log, 'r').read())
     tries = 200
     while tries > 0:
@@ -1018,7 +1019,7 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     instance1 = computer.instance_list[1]
     instance1.software = computer.software_list[1]
     instance0.software.setBuildout("""#!/bin/sh
-return 42""")
+exit 42""")
     self.launchSlapgrid()
     self.assertEqual(instance0.sequence,
                      ['softwareInstanceError'])
