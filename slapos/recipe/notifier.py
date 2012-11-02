@@ -47,12 +47,13 @@ class Callback(GenericBaseRecipe):
 
   def createCallback(self, notification_id, callback):
     callback_id = sha512(notification_id).hexdigest()
-    callback = self.createFile(os.path.join(self.options['callbacks'],
-                                            callback_id),
-                               callback)
-    return callback
+
+    filepath = os.path.join(self.options['callbacks'], callback_id)
+    self.addLineToFile(filepath, callback)
+    return filepath
 
   def install(self):
+    # XXX this path is returned multiple times, one for each callback that has been added.
     return [self.createCallback(self.options['on-notification-id'],
                                 self.options['callback'])]
 
