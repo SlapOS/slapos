@@ -1,13 +1,13 @@
 computer_model_module
-document_module
-image_module
-portal_contributions
 computer_module
 computer_network_module
 credential_update_module
+document_module
 hosting_subscription_module
+image_module
 organisation_module
 person_module
+portal_contributions
 software_installation_module
 software_instance_module
 software_product_module

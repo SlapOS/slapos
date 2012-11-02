@@ -1,15 +1,5 @@
 Assignment
 Computer
-Data Set
-Data Set Module
-Document Module
-Drawing
-File
-Image
-Image Module
-PDF
-Spreadsheet
-Text
 Computer Model
 Computer Model Module
 Computer Module
@@ -17,12 +7,21 @@ Computer Network
 Computer Network Module
 Computer Partition
 Credential Update Module
+Data Set
+Data Set Module
+Document Module
+Drawing
+File
 Hosting Subscription
 Hosting Subscription Module
+Image
+Image Module
 Organisation
 Organisation Module
+PDF
 Person
 Person Module
+Presentation
 Slave Instance
 Software Installation
 Software Installation Module
@@ -32,3 +31,5 @@ Software Product
 Software Product Module
 Software Release
 Software Release Module
+Spreadsheet
+Text
