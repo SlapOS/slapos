@@ -75,13 +75,18 @@ def assignComputerPartition(software_instance):\n
     if not person.Person_isAllowedToAllocate():\n
       raise Unauthorized(\'Allocation disallowed\')\n
 \n
-    computer_partition_relative_url = person.Person_restrictMethodAsShadowUser(\n
-      shadow_document=person,\n
-      callable_object=person.Person_findPartition,\n
-      argument_list=[software_instance.getUrlString(), software_instance.getSourceReference(),\n
-      software_instance.getPortalType(), software_instance.getSlaXmlAsDict()])\n
+    try:\n
+      sla_dict = software_instance.getSlaXmlAsDict()\n
+    except Exception:\n
+      # Note: it is impossible to import module exceptions from python scripts\n
+      computer_partition_relative_url = None\n
+    else:\n
+      computer_partition_relative_url = person.Person_restrictMethodAsShadowUser(\n
+        shadow_document=person,\n
+        callable_object=person.Person_findPartition,\n
+        argument_list=[software_instance.getUrlString(), software_instance.getSourceReference(),\n
+        software_instance.getPortalType(), sla_dict])\n
     return computer_partition_relative_url\n
-  return (None, None)\n
 \n
 software_instance = context\n
 if software_instance.getValidationState() != \'validated\' \\\n
