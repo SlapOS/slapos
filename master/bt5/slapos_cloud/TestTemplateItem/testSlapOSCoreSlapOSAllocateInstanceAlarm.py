@@ -190,6 +190,15 @@ class TestSlapOSAllocation(testSlapOSMixin):
     self.assertEqual(self.partition.getRelativeUrl(),
         self.software_instance.getAggregate(portal_type='Computer Partition'))
 
+  def test_allocation_does_not_fail_on_instance_with_damaged_sla_xml(self):
+    self.software_instance.setSlaXml('this is not xml')
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    transaction.abort()
+
   def _simulateSoftwareInstance_tryToAllocatePartition(self):
     script_name = 'SoftwareInstance_tryToAllocatePartition'
     if script_name in self.portal.portal_skins.custom.objectIds():
