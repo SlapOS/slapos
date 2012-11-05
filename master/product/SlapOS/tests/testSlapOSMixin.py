@@ -94,6 +94,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_crm',
       'erp5_jquery',
       'erp5_jquery_ui',
+      'erp5_dhtml_style',
       'erp5_knowledge_pad',
       'erp5_web',
       'erp5_dms',
