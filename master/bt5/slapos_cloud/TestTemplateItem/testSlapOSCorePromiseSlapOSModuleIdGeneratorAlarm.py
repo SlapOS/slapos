@@ -5,6 +5,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 
 class TestSlapOSCorePromiseSlapOSModuleIdGeneratorAlarm(testSlapOSMixin):
   def test_Module_assertIdGenerator(self):
+    self.login()
     module = self.portal.newContent(portal_type='Person Module',
         id=str(self.generateNewId()),
         id_generator='bad_id_generator')
