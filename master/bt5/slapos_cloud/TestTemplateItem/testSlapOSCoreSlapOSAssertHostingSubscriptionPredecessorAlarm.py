@@ -73,6 +73,7 @@ class TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm(
 
   def test_HostingSubscription_assertPredecessor(self):
     self.software_instance.edit(title=self.generateNewSoftwareTitle())
+    self.tic()
 
     # check that no interaction has recreated the instance
     self.assertFalse(self.hosting_subscription.getTitle() in
@@ -81,8 +82,6 @@ class TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm(
     self.hosting_subscription.HostingSubscription_assertPredecessor()
     self.assertTrue(self.hosting_subscription.getTitle() in
         self.hosting_subscription.getPredecessorTitleList())
-
-    transaction.abort()
 
   def _simulateHostingSubscription_assertPredecessor(self):
     script_name = 'HostingSubscription_assertPredecessor'
