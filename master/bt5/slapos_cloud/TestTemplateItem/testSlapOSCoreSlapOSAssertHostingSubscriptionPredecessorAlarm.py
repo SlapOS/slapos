@@ -79,7 +79,7 @@ class TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm(
         self.hosting_subscription.getPredecessorTitleList())
 
     self.hosting_subscription.HostingSubscription_assertPredecessor()
-    self.assertTrue(self.software_instance.getTitle() in
+    self.assertTrue(self.hosting_subscription.getTitle() in
         self.hosting_subscription.getPredecessorTitleList())
 
     transaction.abort()
