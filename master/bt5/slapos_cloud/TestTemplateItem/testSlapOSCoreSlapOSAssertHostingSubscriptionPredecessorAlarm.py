@@ -72,7 +72,7 @@ class TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm(
     self.login()
 
   def test_HostingSubscription_assertPredecessor(self):
-    self.software_instance.edit(title=self.generateNewSoftwareTitle())
+    self.software_instance.rename(new_name=self.generateNewSoftwareTitle())
     self.tic()
 
     # check that no interaction has recreated the instance
