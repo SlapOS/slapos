@@ -35,7 +35,7 @@
     },
 
 
-    "nbd-ip": {
+    "nbd-host": {
       "title": "NBD hostname",
       "description": "hostname (or IP) of the NBD server containing the boot image.",
       "type": "string",
