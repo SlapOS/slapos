@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.33.1 (2012-11-05)
+-------------------
+
+ * Fix "slapos console" argument parsing. [Cedric de Saint Martin]
+
 0.33 (2012-11-02)
 -----------------
 
