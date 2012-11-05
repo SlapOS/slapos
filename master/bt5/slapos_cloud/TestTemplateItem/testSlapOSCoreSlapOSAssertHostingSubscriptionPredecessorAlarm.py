@@ -83,6 +83,47 @@ class TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm(
     self.assertTrue(self.hosting_subscription.getTitle() in
         self.hosting_subscription.getPredecessorTitleList())
 
+  def test_HostingSubscription_assertPredecessor_stop_requested(self):
+    self.software_instance.rename(new_name=self.generateNewSoftwareTitle())
+    self.portal.portal_workflow._jumpToStateFor(self.hosting_subscription,
+        'stop_requested')
+    self.tic()
+
+    # check that no interaction has recreated the instance
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+    self.hosting_subscription.HostingSubscription_assertPredecessor()
+    self.assertTrue(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+  def test_HostingSubscription_assertPredecessor_destroy_requested(self):
+    self.software_instance.rename(new_name=self.generateNewSoftwareTitle())
+    self.portal.portal_workflow._jumpToStateFor(self.hosting_subscription,
+        'destroy_requested')
+    self.tic()
+
+    # check that no interaction has recreated the instance
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+    self.hosting_subscription.HostingSubscription_assertPredecessor()
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+  def test_HostingSubscription_assertPredecessor_invalidated(self):
+    self.software_instance.rename(new_name=self.generateNewSoftwareTitle())
+    self.hosting_subscription.invalidate()
+    self.tic()
+
+    # check that no interaction has recreated the instance
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+    self.hosting_subscription.HostingSubscription_assertPredecessor()
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
   def _simulateHostingSubscription_assertPredecessor(self):
     script_name = 'HostingSubscription_assertPredecessor'
     if script_name in self.portal.portal_skins.custom.objectIds():
