@@ -61,7 +61,7 @@ return True\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>id_generator, fixit</string> </value>
+            <value> <string>id_generator, fixit, active_process=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

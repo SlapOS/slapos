@@ -54,9 +54,10 @@
 \n
 portal = context.getPortalObject()\n
 wrong_module_list = []\n
+active_process = context.newActiveProcess()\n
 for module_id in portal.objectIds(spec=(\'ERP5 Folder\',)) + ["portal_simulation", "portal_activities"]:\n
   module = portal.restrictedTraverse(module_id)\n
-  if not module.Module_assertIdGenerator(\'_generatePerDayId\', fixit):\n
+  if not module.Module_assertIdGenerator(\'_generatePerDayId\', fixit, active_process):\n
     wrong_module_list.append(module.getRelativeUrl())\n
 \n
 if len(wrong_module_list) != 0:\n
@@ -78,7 +79,7 @@ active_result.edit(\n
   severity=severity,\n
   detail=detail)\n
 \n
-context.newActiveProcess().postResult(active_result)\n
+active_process.postResult(active_result)\n
 </string> </value>
         </item>
         <item>
