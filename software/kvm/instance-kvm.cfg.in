@@ -45,8 +45,10 @@ bytes = 4
 recipe = slapos.cookbook:kvm
 vnc-ip = $${slap-network-information:local-ipv4}
 vnc-port = 5901
-nbd-ip = $${slap-parameter:nbd-host}
+nbd-host = $${slap-parameter:nbd-host}
 nbd-port = $${slap-parameter:nbd-port}
+nbd2-host = $${slap-parameter:nbd2-host}
+nbd2-port = $${slap-parameter:nbd2-port}
 tap = $${slap-network-information:network-interface}
 disk-path = $${directory:srv}/virtual.qcow2
 disk-size = $${slap-parameter:disk-size}
@@ -168,6 +170,8 @@ frontend-software-url = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/ta
 
 nbd-port = 1024
 nbd-host = debian.nbd.vifib.net
+nbd2-port = 1024
+nbd2-host =
 
 ram-size = 1024
 disk-size = 10
