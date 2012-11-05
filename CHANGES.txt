@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.70 (2012-11-05)
+-----------------
+
+ * KVM: Add support for disk-type, second nbd and cpu-count. [Cedric de Saint
+   Martin]
+
 0.69 (2012-10-30)
 -----------------
 
