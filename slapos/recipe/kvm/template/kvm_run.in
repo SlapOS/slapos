@@ -36,7 +36,7 @@ kvm_argument_list = ['%(qemu_path)s', '-enable-kvm', '-net', 'nic,macaddr=%(mac_
   '-net', 'tap,ifname=%(tap_interface)s,script=no,downscript=no',
   '-smp', '%(smp_count)s',
   '-m', '%(ram_size)s',
-  '-drive', 'file=%(disk_path)s,if=virtio,boot=on',
+  '-drive', 'file=%(disk_path)s,if=%(disk_type)s,boot=on',
   '-vnc', '%(vnc_ip)s:1,ipv4,password',
   '-boot', 'menu=on',
   '-qmp', 'unix:%(socket_path)s,server',

@@ -50,9 +50,10 @@ nbd-port = $${slap-parameter:nbd-port}
 tap = $${slap-network-information:network-interface}
 disk-path = $${directory:srv}/virtual.qcow2
 disk-size = $${slap-parameter:disk-size}
+disk-type = $${slap-parameter:disk-type}
 socket-path = $${directory:var}/qmp_socket
 pid-path = $${directory:run}/pid_file
-smp-count = 1
+smp-count = $${slap-parameter:cpu-count}
 ram-size = $${slap-parameter:ram-size}
 mac-address = $${create-mac:mac-address}
 runner-path = $${directory:services}/kvm
@@ -174,3 +175,6 @@ nbd_ip = $${:nbd-ip}
 
 ram-size = 1024
 disk-size = 10
+disk-type = virtio
+
+cpu-count = 1
