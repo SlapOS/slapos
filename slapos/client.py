@@ -68,7 +68,8 @@ class Parser(OptionParser):
     elif not os.path.isfile(args[0]):
       self.error("%s: Not found or not a regular file." % args[0])
 
-    return options, args
+    # Return options and only first element of args since there is only one.
+    return options, args[0]
 
 
 def argToDict(element):
