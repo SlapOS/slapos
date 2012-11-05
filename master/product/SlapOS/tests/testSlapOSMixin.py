@@ -50,6 +50,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       transaction.commit()
 
   def bootstrapSite(self):
+    self.setupPortalAlarms()
     self.setupPortalCertificateAuthority()
     self.setUpMemcached()
     portal = self.getPortal()

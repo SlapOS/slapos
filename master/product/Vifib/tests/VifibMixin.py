@@ -158,6 +158,11 @@ class testVifibMixin(ERP5TypeTestCase):
     if payzen.getServicePassword() == '':
       payzen.setServicePassword('09876')
 
+  def setupPortalAlarms(self):
+    if not self.portal.portal_alarms.isSubscribed():
+      self.portal.portal_alarms.subscribe()
+    self.assertTrue(self.portal.portal_alarms.isSubscribed())
+
   def setupPortalCertificateAuthority(self):
     """Sets up portal_certificate_authority"""
     if not self.portal.hasObject('portal_certificate_authority'):
@@ -294,6 +299,7 @@ class testVifibMixin(ERP5TypeTestCase):
     if self.isLiveTest():
       # nothing to do in Live Test
       return
+    self.setupPortalAlarms()
     self.setupPortalCertificateAuthority()
     self.setupPayZenInterface()
     self.setUpMemcached()
