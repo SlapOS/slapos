@@ -64,7 +64,7 @@ def mergePASDictDifference(portal, d, fixit):\n
     for expected in active_list:\n
       if expected not in meta_type_list:\n
         error = \'Plugin %s missing %s.\' % (plugin, expected)\n
-        if fixit:         \n
+        if fixit:\n
           existing = [q for q in portal.acl_users.objectValues() if q.meta_type == expected]\n
           if len(existing) == 0:\n
             error_list.append(\'%s not found\' % expected)\n
