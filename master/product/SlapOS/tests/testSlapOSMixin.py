@@ -66,7 +66,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     self.login()
     # Invoke Post-configurator script, this invokes all 
     # alarms related to configuration.
-    self.portal.BusinessConfiguration_invokePromiseAlarmList()
+    self.portal.BusinessConfiguration_invokeSlapOSMasterPromiseAlarmList()
     transaction.commit()
     self.tic()
     self.logout()
