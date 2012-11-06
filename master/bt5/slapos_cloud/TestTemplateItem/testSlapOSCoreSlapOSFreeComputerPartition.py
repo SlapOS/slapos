@@ -81,3 +81,38 @@ class TestSlapOSFreeComputerPartitionAlarm(testSlapOSMixin):
     self.tic()
     self.assertEqual(None, self.software_instance.getAggregate())
     self.assertEqual('free', self.partition.getSlapState())
+
+  def test_Instance_tryToUnallocatePartition_concurrency(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.partition.activate(tag="allocate_%s" % self.partition.getRelativeUrl()\
+        ).getId()
+    transaction.commit()
+    self.software_instance.Instance_tryToUnallocatePartition()
+    self.tic()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate())
+    self.assertEqual('busy', self.partition.getSlapState())
+
+  def test_Instance_tryToUnallocatePartition_twoInstances(self):
+    software_instance = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.software_instance.Instance_tryToUnallocatePartition()
+    self.tic()
+    self.assertEqual(None, self.software_instance.getAggregate())
+    self.assertEqual('busy', self.partition.getSlapState())
+    self.assertEqual(self.partition.getRelativeUrl(), software_instance.getAggregate())
