@@ -1,5 +1,6 @@
 Computer Partition | unfiltered_tracking_list
 Computer | computer_usage
+Computer | view_capacity
 Hosting Subscription Module | view
 Hosting Subscription | view
 Person | jump_to_hosting_subscription
@@ -13,3 +14,4 @@ Software Instance | jump_to_software_instance
 Software Instance | unfiltered_tracking_list
 Software Instance | view
 Software Release | usable_computer
+Software Release | view_capacity
