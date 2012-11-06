@@ -112,8 +112,9 @@ if can_allocate:\n
           url_string={\'query\': software_release_url, \'key\': \'ExactMatch\'})\n
       if software_release is not None:\n
         software_release_capacity = software_release.getCapacityQuantity(1)\n
-        software_release_capacity_dict[software_release_url] = software_release_capacity\n
-\n
+      else:\n
+        software_release_capacity = 1\n
+      software_release_capacity_dict[software_release_url] = software_release_capacity\n
     consumed_capacity += software_release_capacity\n
     if consumed_capacity >= computer_capacity_quantity:\n
       can_allocate = False\n
