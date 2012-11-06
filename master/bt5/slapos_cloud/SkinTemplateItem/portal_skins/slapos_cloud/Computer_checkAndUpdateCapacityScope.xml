@@ -117,7 +117,7 @@ if can_allocate:\n
     consumed_capacity += software_release_capacity\n
     if consumed_capacity >= computer_capacity_quantity:\n
       can_allocate = False\n
-      comment = \'Computer capacity limit exceded\'\n
+      comment = \'Computer capacity limit exceeded\'\n
       break\n
 \n
 # if can_allocate:\n
