@@ -12,8 +12,9 @@ def getMessageList(o):
   return [str(q.getMessage()) for q in o.checkConsistency()]
 
 class TestSlapOSConstraintMixin(testSlapOSMixin):
-  def _test_property_existence(self, property_id, consistency_message):
-    self.software_instance.edit(**{property_id:'A'})
+  def _test_property_existence(self, property_id, consistency_message,
+      value='A'):
+    self.software_instance.edit(**{property_id:value})
 
     # fetch basic list of consistency messages
     current_message_list = getMessageList(self.software_instance)
@@ -29,7 +30,7 @@ class TestSlapOSConstraintMixin(testSlapOSMixin):
     self.software_instance.edit(**{property_id:''})
     self.assertTrue(consistency_message in getMessageList(self.software_instance))
 
-    self.software_instance.edit(**{property_id:'A'})
+    self.software_instance.edit(**{property_id:value})
     self.assertFalse(consistency_message in getMessageList(self.software_instance))
     self.assertSameSet(current_message_list, getMessageList(self.software_instance))
 
@@ -341,3 +342,106 @@ class TestSlapOSSlaveInstanceConstraint(TestSlapOSConstraintMixin):
 
   def test_setup_packing_list(self):
     raise NotImplementedError('It requires not migrated resources')
+
+class TestSlapOSHostingSubscriptionConstraint(TestSlapOSConstraintMixin):
+  def afterSetUp(self):
+    self.software_instance = self.portal.hosting_subscription_module.newContent(
+      portal_type='Hosting Subscription')
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def test_property_existence_reference(self):
+    self._test_property_existence('reference',
+        'Property existence error for property reference, this document'
+        ' has no such property or the property has never been set')
+
+  def test_property_existence_title(self):
+    self._test_property_existence('title',
+        'Property existence error for property title, this document'
+        ' has no such property or the property has never been set')
+
+  def test_property_existence_source_reference(self):
+    property_id = 'source_reference'
+    consistency_message = 'Property existence error for property '\
+        'source_reference, this document has no such property or the property '\
+        'has never been set'
+    # not required in draft state
+    self.software_instance.edit(**{property_id:None})
+    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+
+    self.software_instance.edit(**{property_id:''})
+    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'start_requested')
+    self._test_property_existence(property_id, consistency_message)
+
+  def test_property_existence_root_slave(self):
+    property_id = 'root_slave'
+    consistency_message = 'Property existence error for property '\
+        'root_slave, this document has no such property or the property '\
+        'has never been set'
+    # not required in draft state
+    self.software_instance.edit(**{property_id:None})
+    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+
+    self.software_instance.edit(**{property_id:''})
+    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'start_requested')
+    self._test_property_existence(property_id, consistency_message, value=True)
+
+  def test_property_existence_url_string(self):
+    property_id = 'url_string'
+    consistency_message = 'Property existence error for property '\
+        'url_string, this document has no such property or the property '\
+        'has never been set'
+    # not required in draft state
+    self.software_instance.edit(**{property_id:None})
+    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+
+    self.software_instance.edit(**{property_id:''})
+    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'start_requested')
+    self._test_property_existence(property_id, consistency_message)
+
+  def test_predecessor_related(self):
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'start_requested')
+    software_instance2 = self.portal.software_instance_module.newContent(
+      portal_type='Software Instance')
+    software_instance3 = self.portal.software_instance_module.newContent(
+      portal_type='Software Instance')
+
+    self.software_instance.setPredecessor(software_instance2.getRelativeUrl())
+
+    # fetch basic list of consistency messages
+    current_message_list = getMessageList(self.software_instance)
+
+    consistency_message = "Arity Error for Relation ['predecessor'], arity is "\
+        "equal to 0 but should be at least 1"
+
+    # test the test: no expected message found
+    self.assertFalse(consistency_message in current_message_list)
+
+    # 0 is bad
+    self.software_instance.setPredecessor(None)
+    self.assertTrue(consistency_message in getMessageList(self.software_instance))
+    # Note: There is (nonsense) constraint
+    # SlaposHostingSubscriptionConstraint/predecessor_constraint which
+    # defines minimum as 0, thats why this test will fail
+
+    # one is good
+    self.software_instance.edit(predecessor=software_instance2.getRelativeUrl())
+    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+
+    # more then one is good
+    self.software_instance.edit(predecessor_list=[software_instance2.getRelativeUrl(),
+        software_instance3.getRelativeUrl()])
+    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
