@@ -107,9 +107,10 @@ if can_allocate:\n
     if software_release_url in software_release_capacity_dict:\n
       software_release_capacity = software_release_capacity_dict[software_release_url]\n
     else:\n
-      delivery_line = instance.getCausalityValue().getMovementList[0]\n
-      software_release = delivery_line.getAggregateValue(portal_type=\'Software Release\')\n
-      if software_release:\n
+      software_release = portal.portal_catalog.getResultValue(\n
+          portal_type=\'Software Release\',\n
+          url_string={\'query\': software_release_url, \'key\': \'ExactMatch\'})\n
+      if software_release is not None:\n
         software_release_capacity = software_release.getCapacityQuantity(1)\n
         software_release_capacity_dict[software_release_url] = software_release_capacity\n
 \n
