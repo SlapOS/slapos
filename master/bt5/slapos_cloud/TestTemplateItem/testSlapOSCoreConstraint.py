@@ -33,6 +33,46 @@ class TestSlapOSConstraintMixin(testSlapOSMixin):
     self.assertFalse(consistency_message in getMessageList(self.software_instance))
     self.assertSameSet(current_message_list, getMessageList(self.software_instance))
 
+class TestSlapOSComputerPartitionConstraint(TestSlapOSConstraintMixin):
+  def test_non_busy_partition_has_no_related_instance(self):
+    computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    partition = computer.newContent(portal_type='Computer Partition')
+    self.portal.portal_workflow._jumpToStateFor(partition, 'free')
+    software_instance = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+    slave_instance = self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance')
+
+    partition.immediateReindexObject()
+    software_instance.immediateReindexObject()
+    slave_instance.immediateReindexObject()
+
+    consistency_message = "Arity Error for Relation ['default_aggregate'], " \
+        "arity is equal to 1 but should be between 0 and 0"
+
+    # test the test: no expected message found
+    current_message_list = getMessageList(partition)
+    self.assertFalse(consistency_message in current_message_list)
+
+    # check case for Software Instance
+    software_instance.setAggregate(partition.getRelativeUrl())
+    software_instance.immediateReindexObject()
+    self.assertTrue(consistency_message in getMessageList(partition))
+    self.portal.portal_workflow._jumpToStateFor(partition, 'busy')
+    self.assertFalse(consistency_message in getMessageList(partition))
+    self.portal.portal_workflow._jumpToStateFor(partition, 'free')
+    software_instance.setAggregate(None)
+    software_instance.immediateReindexObject()
+
+    # check case fo Slave Instance
+    slave_instance.setAggregate(partition.getRelativeUrl())
+    slave_instance.immediateReindexObject()
+    self.assertTrue(consistency_message in getMessageList(partition))
+    self.portal.portal_workflow._jumpToStateFor(partition, 'busy')
+    self.assertFalse(consistency_message in getMessageList(partition))
+    self.portal.portal_workflow._jumpToStateFor(partition, 'free')
+
 class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
   def afterSetUp(self):
     self.software_instance = self.portal.software_instance_module.newContent(
