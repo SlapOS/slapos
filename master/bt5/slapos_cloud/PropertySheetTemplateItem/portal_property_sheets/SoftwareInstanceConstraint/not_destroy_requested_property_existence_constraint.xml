@@ -22,17 +22,20 @@
             <key> <string>constraint_property</string> </key>
             <value>
               <tuple>
+                <string>ssl_certificate</string>
                 <string>ssl_key</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Property SSL Key must be defined</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ssl_key_constraint</string> </value>
+            <value> <string>not_destroy_requested_property_existence_constraint</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
@@ -48,7 +51,7 @@
         </item>
         <item>
             <key> <string>message_no_such_property</string> </key>
-            <value> <string>SSL Key must be set</string> </value>
+            <value> <string>Property existence error for property ${property_id}, this document has no such property or the property has never been set</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>

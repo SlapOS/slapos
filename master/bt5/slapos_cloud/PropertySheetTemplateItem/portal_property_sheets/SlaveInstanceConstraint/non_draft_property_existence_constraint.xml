@@ -13,6 +13,23 @@
             </value>
         </item>
         <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>message_property_not_set</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>string</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>_range_criterion</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
@@ -22,17 +39,20 @@
             <key> <string>constraint_property</string> </key>
             <value>
               <tuple>
-                <string>ssl_certificate</string>
+                <string>source_reference</string>
+                <string>text_content</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Property SSL Certificate must be defined</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ssl_certificate_constraint</string> </value>
+            <value> <string>non_draft_property_existence_constraint</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
@@ -48,7 +68,11 @@
         </item>
         <item>
             <key> <string>message_no_such_property</string> </key>
-            <value> <string>SSL Certificate must be set</string> </value>
+            <value> <string>Property existence error for property ${property_id}, this document has no such property or the property has never been set</string> </value>
+        </item>
+        <item>
+            <key> <string>message_property_not_set</string> </key>
+            <value> <string>Property existence error for property ${property_id}, this document has no such property or the property has never been set</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -68,7 +92,7 @@
         </item>
         <item>
             <key> <string>test_tales_expression</string> </key>
-            <value> <string>python: context.getSlapState() != \'destroy_requested\'</string> </value>
+            <value> <string>python: here.getSlapState() != \'draft\'</string> </value>
         </item>
       </dictionary>
     </pickle>
