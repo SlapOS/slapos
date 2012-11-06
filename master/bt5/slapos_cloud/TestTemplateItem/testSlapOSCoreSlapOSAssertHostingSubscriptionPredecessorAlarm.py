@@ -111,9 +111,9 @@ class TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm(
     self.assertFalse(self.hosting_subscription.getTitle() in
         self.hosting_subscription.getPredecessorTitleList())
 
-  def test_HostingSubscription_assertPredecessor_invalidated(self):
+  def test_HostingSubscription_assertPredecessor_archived(self):
     self.software_instance.rename(new_name=self.generateNewSoftwareTitle())
-    self.hosting_subscription.invalidate()
+    self.hosting_subscription.archive()
     self.tic()
 
     # check that no interaction has recreated the instance
