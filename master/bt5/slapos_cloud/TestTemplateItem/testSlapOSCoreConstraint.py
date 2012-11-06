@@ -485,3 +485,69 @@ class TestSlapOSPersonConstraint(testSlapOSMixin):
     person.newContent(portal_type='Email')
 
     self.assertFalse(consistency_message in getMessageList(person))
+
+class TestSlapOSAssignmentConstraint(testSlapOSMixin):
+  def test_parent_person_validated(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    assignment = person.newContent(portal_type='Assignment')
+
+    consistency_message = 'The person document has to be validated to start '\
+      'assignment'
+    self.assertTrue(consistency_message in getMessageList(assignment))
+
+    person.validate()
+
+    self.assertFalse(consistency_message in getMessageList(assignment))
+
+class TestSlapOSEmailConstraint(testSlapOSMixin):
+  def test_url_string_not_empty(self):
+    email = self.portal.person_module.newContent(portal_type='Person'
+      ).newContent(portal_type='Email')
+    consistency_message = 'Email must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(email))
+
+    email.setUrlString(self.generateNewId())
+
+    self.assertFalse(consistency_message in getMessageList(email))
+
+class TestSlapOSComputerConstraint(testSlapOSMixin):
+  def test_title_not_empty(self):
+    computer = self.portal.computer_module.newContent(portal_type='Computer')
+    consistency_message = 'Title must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(computer))
+
+    computer.setTitle(self.generateNewId())
+
+    self.assertFalse(consistency_message in getMessageList(computer))
+
+  def test_reference_not_empty(self):
+    computer = self.portal.computer_module.newContent(portal_type='Computer')
+    consistency_message = 'Reference must be defined'
+
+    self.assertTrue(consistency_message in getMessageList(computer))
+
+    computer.setReference(self.generateNewId())
+
+    self.assertFalse(consistency_message in getMessageList(computer))
+
+  def test_reference_unique(self):
+    reference = self.generateNewId()
+    reference_2 = self.generateNewId()
+    computer = self.portal.computer_module.newContent(portal_type='Computer',
+      reference=reference)
+    computer_2 = self.portal.computer_module.newContent(portal_type='Computer',
+      reference=reference)
+    consistency_message = 'Reference must be unique'
+
+    self.stepTic()
+
+    self.assertTrue(consistency_message in getMessageList(computer))
+    self.assertTrue(consistency_message in getMessageList(computer_2))
+
+    computer_2.setReference(reference_2)
+    self.stepTic()
+
+    self.assertFalse(consistency_message in getMessageList(computer))
+    self.assertFalse(consistency_message in getMessageList(computer_2))
