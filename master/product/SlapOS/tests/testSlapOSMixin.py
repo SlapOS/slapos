@@ -122,6 +122,26 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     ]
     return result
 
+  def _makeComputer(self):
+    self.computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    reference = 'TESTCOMP-%s' % self.generateNewId()
+    self.computer.edit(
+        allocation_scope='open/public',
+        capacity_scope='open',
+        reference=reference,
+        title=reference
+        )
+    self.computer.validate()
+    reference = 'TESTPART-%s' % self.generateNewId()
+    self.partition = self.computer.newContent(portal_type='Computer Partition',
+      reference=reference,
+      title=reference
+    )
+    self.partition.markFree()
+    self.partition.validate()
+    self.tic()
+
   def _makeComplexComputer(self):
     for i in range(1, 5):
       id_ = 'partition%s' % i

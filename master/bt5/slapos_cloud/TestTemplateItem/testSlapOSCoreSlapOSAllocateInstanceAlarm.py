@@ -79,26 +79,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
     self.assertEqual(None, self.software_instance.getAggregateValue(
         portal_type='Computer Partition'))
 
-  def _makeComputer(self):
-    self.computer = self.portal.computer_module.template_computer\
-        .Base_createCloneDocument(batch_mode=1)
-    reference = 'TESTCOMP-%s' % self.generateNewId()
-    self.computer.edit(
-        allocation_scope='open/public',
-        capacity_scope='open',
-        reference=reference,
-        title=reference
-        )
-    self.computer.validate()
-    reference = 'TESTPART-%s' % self.generateNewId()
-    self.partition = self.computer.newContent(portal_type='Computer Partition',
-      reference=reference,
-      title=reference
-    )
-    self.partition.markFree()
-    self.partition.validate()
-    self.tic()
-
   def _installSoftware(self, computer, url):
     software_installation = self.portal.software_installation_module\
         .template_software_installation.Base_createCloneDocument(batch_mode=1)
