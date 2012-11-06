@@ -116,3 +116,89 @@ class TestSlapOSFreeComputerPartitionAlarm(testSlapOSMixin):
     self.assertEqual(None, self.software_instance.getAggregate())
     self.assertEqual('busy', self.partition.getSlapState())
     self.assertEqual(self.partition.getRelativeUrl(), software_instance.getAggregate())
+
+  def _simulateInstance_tryToUnallocatePartition(self):
+    script_name = 'Instance_tryToUnallocatePartition'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Instance_tryToUnallocatePartition') """ )
+    transaction.commit()
+
+  def _dropInstance_tryToUnallocatePartition(self):
+    script_name = 'Instance_tryToUnallocatePartition'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm_allocated(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.software_instance.invalidate()
+    self.tic()
+    self._simulateInstance_tryToUnallocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_free_computer_partition.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToUnallocatePartition()
+    self.assertEqual(
+        'Visited by Instance_tryToUnallocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_unallocated(self):
+    self._makeComputer()
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.software_instance.invalidate()
+    self.tic()
+    self._simulateInstance_tryToUnallocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_free_computer_partition.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToUnallocatePartition()
+    self.assertNotEqual(
+        'Visited by Instance_tryToUnallocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_validated(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+    self._simulateInstance_tryToUnallocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_free_computer_partition.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToUnallocatePartition()
+    self.assertNotEqual(
+        'Visited by Instance_tryToUnallocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_start_requested(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.tic()
+    self._simulateInstance_tryToUnallocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_free_computer_partition.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToUnallocatePartition()
+    self.assertNotEqual(
+        'Visited by Instance_tryToUnallocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
