@@ -27,7 +27,7 @@
 
 from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager, newSecurityManager
-from AccessControl import Unauthorized
+from Products.ERP5Security.ERP5UserManager import SUPER_USER
 
 def SoftwareInstance_bangAsSelf(self, relative_url=None, reference=None,
   comment=None):
