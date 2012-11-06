@@ -1,5 +1,6 @@
 [buildout]
-extends = ${template-pbsready:output}
+
+extends = ${instance-pbsready:output}
 
 parts += cron-entry-backup
 
