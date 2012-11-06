@@ -138,7 +138,7 @@ class Recipe(object):
       try:
         options['connection-%s' % param] = str(
           self.instance.getConnectionParameter(param))
-      except (slapmodule.NotFoundError, slapmodule.ServerError):
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         options['connection-%s' % param] = ''
         if self.failed is None:
           self.failed = param
