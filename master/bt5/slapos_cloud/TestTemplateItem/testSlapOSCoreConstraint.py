@@ -541,13 +541,13 @@ class TestSlapOSComputerConstraint(testSlapOSMixin):
       reference=reference)
     consistency_message = 'Reference must be unique'
 
-    self.stepTic()
+    self.tic()
 
     self.assertTrue(consistency_message in getMessageList(computer))
     self.assertTrue(consistency_message in getMessageList(computer_2))
 
     computer_2.setReference(reference_2)
-    self.stepTic()
+    self.tic()
 
     self.assertFalse(consistency_message in getMessageList(computer))
     self.assertFalse(consistency_message in getMessageList(computer_2))
