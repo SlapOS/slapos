@@ -1,6 +1,6 @@
 [buildout]
 
-extends = ${instance-pbsready:output}
+extends = ${pbsready:output}
 
 parts += import-on-notification
 
