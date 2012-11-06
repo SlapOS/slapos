@@ -12,13 +12,13 @@ offline = true
 
 [switch_softwaretype]
 recipe = slapos.cookbook:softwaretype
-default = ${template-default-root:output}
-apache = ${template-apache-php:output}
+default = ${instance-default-root:output}
+apache = ${instance-apache-php:output}
 resilient = ${template-resilient-lamp:rendered}
 mariadb = ${template-mariadb:output}
 mariadb-import = ${template-mariadb-import:output}
 mariadb-export = ${template-mariadb-export:output}
 pull-backup = ${template-pull-backup:output}
-apache-backup = ${template-apache-backup:output}
-frozen = ${template-frozen:output}
+apache-backup = ${instance-apache-backup:output}
+frozen = ${instance-frozen:output}
 

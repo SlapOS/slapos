@@ -144,11 +144,12 @@ rotate-num = 30
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc/
-var = $${buildout:directory}/var/
-srv = $${buildout:directory}/srv/
 bin = $${buildout:directory}/bin/
+etc = $${buildout:directory}/etc/
+home = $${buildout:directory}/home/
+srv = $${buildout:directory}/srv/
 tmp = $${buildout:directory}/tmp/
+var = $${buildout:directory}/var/
 
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -157,6 +158,8 @@ services = $${rootdirectory:etc}/run/
 run = $${rootdirectory:var}/run/
 backup = $${rootdirectory:srv}/backup/
 promises = $${rootdirectory:etc}/promise/
+ssh-home = $${rootdirectory:home}/ssh
+notifier = $${rootdirectory:etc}/notifier/
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -172,13 +175,6 @@ pbs-wrappers = $${rootdirectory:bin}/pbs/
 dot-ssh = $${basedirectory:ssh-home}/.ssh/
 notifier-feeds = $${basedirectory:notifier}/feeds/
 notifier-callbacks = $${basedirectory:notifier}/callbacks/
-
-[basedirectory]
-ssh-home = $${rootdirectory:home}/ssh
-notifier = $${rootdirectory:etc}/notifier/
-
-[rootdirectory]
-home = $${buildout:directory}/home/
 
 
 # Default values
