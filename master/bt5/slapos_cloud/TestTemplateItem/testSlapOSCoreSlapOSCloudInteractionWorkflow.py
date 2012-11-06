@@ -1,8 +1,6 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
-from Products.ERP5Type.tests.utils import createZODBPythonScript
-import transaction
 
 class TestSlapOSCoreSlapOSCloudInteractionWorkflow(testSlapOSMixin):
 
