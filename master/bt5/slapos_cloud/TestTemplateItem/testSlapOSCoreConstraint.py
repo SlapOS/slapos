@@ -445,3 +445,43 @@ class TestSlapOSHostingSubscriptionConstraint(TestSlapOSConstraintMixin):
         software_instance3.getRelativeUrl()])
     self.assertFalse(consistency_message in getMessageList(self.software_instance))
     self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+
+class TestSlapOSPersonConstraint(testSlapOSMixin):
+
+  def test_role(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    consistency_message = 'One role should be defined'
+    self.assertTrue(consistency_message in getMessageList(person))
+
+    role_id_list = list(self.portal.portal_categories.role.objectIds())
+    self.assertTrue(len(role_id_list) >= 2)
+    person.setRole(role_id_list[0])
+    self.assertFalse(consistency_message in getMessageList(person))
+
+    person.setRoleList(role_id_list)
+    self.assertTrue(consistency_message in getMessageList(person))
+    person.setRole(role_id_list[0])
+    self.assertFalse(consistency_message in getMessageList(person))
+
+  def test_subordination_state(self):
+    organisation = self.portal.organisation_module.newContent(
+      portal_type='Organisation')
+    person = self.portal.person_module.newContent(portal_type='Person',
+      subordination=organisation.getRelativeUrl())
+    consistency_message = 'The Organisation is not validated'
+
+    self.assertTrue(consistency_message in getMessageList(person))
+
+    organisation.validate()
+
+    self.assertFalse(consistency_message in getMessageList(person))
+
+  def test_email(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    consistency_message = 'Person have to contain an Email'
+
+    self.assertTrue(consistency_message in getMessageList(person))
+
+    person.newContent(portal_type='Email')
+
+    self.assertFalse(consistency_message in getMessageList(person))
