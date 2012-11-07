@@ -81,23 +81,7 @@ if "instance_guid" in filter_kw:\n
   explicit_location = True\n
   portal = context.getPortalObject()\n
   instance_guid = filter_kw.pop("instance_guid")\n
-  instance = portal.portal_catalog.getResultValue(portal_type="Software Instance", reference=instance_guid)\n
-  if instance is None:\n
-    # XXX Other user do not have access to the instance document...\n
-    if instance_guid == "SOFTINST-9238":\n
-      # XXX Let\'s be nice with Cedric and Vincent\n
-      query_kw["uid"] = "2225067"\n
-    elif instance_guid == "SOFTINST-11031":\n
-      # XXX Let\'s be nice with KVM frontend\n
-      query_kw["uid"] = "2874296"\n
-    else:\n
-      query_kw["uid"] = "-1"\n
-  else:\n
-    partition_uid = instance.getAggregateUid(portal_type="Computer Partition")\n
-    if partition_uid:\n
-      query_kw["uid"] = partition_uid\n
-    else:\n
-      query_kw["uid"] = "-1"\n
+  query_kw["aggregate_related_reference"] = instance_guid\n
 \n
 if \'network_guid\' in filter_kw:\n
   network_guid = filter_kw.pop(\'network_guid\')\n
