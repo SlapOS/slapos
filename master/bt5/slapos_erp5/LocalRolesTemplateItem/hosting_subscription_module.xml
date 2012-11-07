@@ -10,7 +10,7 @@
    <item>Auditor</item>
    <item>Author</item>
   </role>
-  <role id='devel'>
+  <role id='zope'>
    <item>Owner</item>
   </role>
  </local_roles>
