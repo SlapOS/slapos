@@ -85,11 +85,7 @@ if "instance_guid" in filter_kw:\n
 \n
 if \'network_guid\' in filter_kw:\n
   network_guid = filter_kw.pop(\'network_guid\')\n
-  network = context.getPortalObject().portal_catalog.getResultValue(portal_type=\'Computer Network\', reference=network_guid)\n
-  if network is None:\n
-    query_kw["uid"] = "-1"\n
-  else:\n
-    query_kw["subordination_uid"] = network.getUid()\n
+  query_kw["default_subordination_reference"] = network_guid\n
 \n
 computer_base_category_list = [\n
   \'group\',\n
