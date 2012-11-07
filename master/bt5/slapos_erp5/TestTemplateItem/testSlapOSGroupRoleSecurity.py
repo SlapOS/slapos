@@ -234,3 +234,11 @@ class TestComputerPartition(TestSlapOSGroupRoleSecurityMixin):
 
   test_SoftwareInstanceGroupRelatedToComputerPartition = \
       test_CustomerOfThePartition
+
+class TestCredentialUpdateModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.credential_update_module
+    self.assertSecurityGroup(module,
+        ['zope', 'R-MEMBER'], False)
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
