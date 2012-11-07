@@ -242,3 +242,107 @@ class TestCredentialUpdateModule(TestSlapOSGroupRoleSecurityMixin):
         ['zope', 'R-MEMBER'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
     self.assertRoles(module, 'zope', ['Owner'])
+
+class TestDataSet(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestDataSetModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestDocumentModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestDrawing(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestFile(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestHostingSubscription(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestHostingSubscriptionModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestImage(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestImageModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestOrganisation(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestOrganisationModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestPDF(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestPerson(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestPersonModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestPresentation(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSlaveInstance(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSoftwareInstallation(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSoftwareInstallationModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSoftwareInstance(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSoftwareInstanceModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSoftwareProduct(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSoftwareProductModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSoftwareRelease(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSoftwareReleaseModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSpreadsheet(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestText(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    raise NotImplementedError
