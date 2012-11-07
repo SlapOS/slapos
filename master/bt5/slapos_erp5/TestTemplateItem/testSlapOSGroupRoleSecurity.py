@@ -306,16 +306,54 @@ class TestFile(TestSlapOSGroupRoleSecurityMixin):
   test_GroupCompany = test_SecurityForShacache
 
 class TestHostingSubscription(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_RelatedSoftwareInstanceGroup(self):
+    reference = 'TESTHS-%s' % self.generateNewId()
+    subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription', reference=reference)
+    subscription.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(subscription, [self.user_id, reference], False)
+    self.assertRoles(subscription, reference, ['Assignor'])
+
+  def test_CustomOfTheHostingSubscription(self):
+    customer_reference = 'TESTPERSON-%s' % self.generateNewId()
+    customer = self.portal.person_module.newContent(
+        portal_type='Person', reference=customer_reference)
+    reference = 'TESTHS-%s' % self.generateNewId()
+    subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription', reference=reference,
+        destination_section=customer.getRelativeUrl())
+    subscription.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(subscription, [self.user_id, reference,
+        customer_reference], False)
+    self.assertRoles(subscription, reference, ['Assignor'])
+    self.assertRoles(subscription, customer_reference, ['Assignee'])
 
 class TestHostingSubscriptionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
-    raise NotImplementedError
+    module = self.portal.hosting_subscription_module
+    self.assertSecurityGroup(module,
+        ['R-COMPUTER', 'R-MEMBER', 'R-INSTANCE', 'zope'], False)
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(module, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestImage(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_SecurityForShacache(self):
+    image = self.portal.image_module.newContent(portal_type='Image')
+    image.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(image,
+        ['G-COMPANY', self.user_id, 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'],
+        False)
+    self.assertRoles(image, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(image, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(image, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(image, 'G-COMPANY', ['Assignor'])
+
+  test_GroupCompany = test_SecurityForShacache
 
 class TestImageModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
