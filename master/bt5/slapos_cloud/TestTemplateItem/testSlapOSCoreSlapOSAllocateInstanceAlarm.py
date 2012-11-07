@@ -3,6 +3,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 import transaction
 from Products.ERP5Type.tests.utils import createZODBPythonScript
+from Products.ERP5Type.tests.backportUnittest import skip
 
 class TestSlapOSAllocation(testSlapOSMixin):
 
@@ -342,3 +343,188 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
     self.assertNotEqual(
         'Visited by SoftwareInstance_tryToAllocatePartition',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_allocation_computer_guid(self):
+    self._makeTree()
+    self.login()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='computer_guid'>%s</parameter>
+        </instance>""" % '%s_foo' % self.partition.getParentValue().getReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='computer_guid'>%s</parameter>
+        </instance>""" % '%s' % self.partition.getParentValue().getReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_instance_guid(self):
+    self._makeSlaveTree()
+    self.login()
+
+    self._makeComputer()
+    self._allocateHost(self.requested_software_instance,
+        self.partition)
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='instance_guid'>%s</parameter>
+        </instance>""" % '%s_foo' % \
+        self.requested_software_instance.getReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='instance_guid'>%s</parameter>
+        </instance>""" % '%s' % \
+        self.requested_software_instance.getReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_network_guid(self):
+    self._makeTree()
+    self.login()
+
+    self._makeComputer()
+    new_id = self.generateNewId()
+    computer_network = self.portal.computer_network_module.newContent(
+        portal_type='Computer Network',
+        title="live_test_%s" % new_id,
+        reference="live_test_%s" % new_id)
+    computer_network.validate()
+    self.computer.edit(
+        subordination_value=computer_network)
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='network_guid'>%s</parameter>
+        </instance>""" % '%s_foo' % \
+          self.partition.getParentValue().getSubordinationReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='network_guid'>%s</parameter>
+        </instance>""" % '%s' % \
+          self.partition.getParentValue().getSubordinationReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_unexpected_sla_parameter(self):
+    self._makeTree()
+    self.login()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='foo'>bar</parameter>
+        </instance>""")
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def check_allocation_category_sla(self, base_category, computer_category,
+                                    other_category):
+    self._makeTree()
+    self.login()
+
+    self._makeComputer()
+    self.computer.edit(**{base_category: computer_category})
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    # Another category
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='%s'>%s</parameter>
+        </instance>""" % (base_category, other_category))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    # No existing category
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='%s'>foo</parameter>
+        </instance>""" % (base_category))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    # Computer category
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='%s'>%s</parameter>
+        </instance>""" % (base_category, computer_category))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_group_sla(self):
+    return self.check_allocation_category_sla('group', 'vifib', 'ovh')
+
+  @skip('No category available')
+  def test_allocation_cpu_core_sla(self):
+    return self.check_allocation_category_sla('cpu_core', 'vifib', 'ovh')
+
+  def test_allocation_cpu_frequency_sla(self):
+    return self.check_allocation_category_sla('cpu_frequency', '1000', '2000')
+
+  def test_allocation_cpu_type_sla(self):
+    return self.check_allocation_category_sla('cpu_type', 'x86', 'x86/x86_32')
+
+  def test_allocation_local_area_network_type_sla(self):
+    return self.check_allocation_category_sla('local_area_network_type', 
+                                              'ethernet', 'wifi')
+
+  def test_allocation_memory_size_sla(self):
+    return self.check_allocation_category_sla('memory_size', '128', '256')
+
+  def test_allocation_memory_type_sla(self):
+    return self.check_allocation_category_sla('memory_type', 'ddr2', 'ddr3')
+
+  def test_allocation_storage_capacity_sla(self):
+    return self.check_allocation_category_sla('storage_capacity', 'finite', 
+                                              'infinite')
+
+  def test_allocation_storage_interface_sla(self):
+    return self.check_allocation_category_sla('storage_interface', 'nas', 'san')
+
+  def test_allocation_storage_redundancy_sla(self):
+    return self.check_allocation_category_sla('storage_redundancy', 'dht', 'raid')
