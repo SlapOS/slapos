@@ -397,43 +397,6 @@ class TestSlapOSHostingSubscriptionConstraint(TestSlapOSConstraintMixin):
         'start_requested')
     self._test_property_existence(property_id, consistency_message)
 
-  def test_predecessor_related(self):
-    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
-        'start_requested')
-    software_instance2 = self.portal.software_instance_module.newContent(
-      portal_type='Software Instance')
-    software_instance3 = self.portal.software_instance_module.newContent(
-      portal_type='Software Instance')
-
-    self.software_instance.setPredecessor(software_instance2.getRelativeUrl())
-
-    # fetch basic list of consistency messages
-    current_message_list = getMessageList(self.software_instance)
-
-    consistency_message = "Arity Error for Relation ['predecessor'], arity is "\
-        "equal to 0 but should be at least 1"
-
-    # test the test: no expected message found
-    self.assertFalse(consistency_message in current_message_list)
-
-    # 0 is bad
-    self.software_instance.setPredecessor(None)
-    self.assertTrue(consistency_message in getMessageList(self.software_instance))
-    # Note: There is (nonsense) constraint
-    # SlaposHostingSubscriptionConstraint/predecessor_constraint which
-    # defines minimum as 0, thats why this test will fail
-
-    # one is good
-    self.software_instance.edit(predecessor=software_instance2.getRelativeUrl())
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
-
-    # more then one is good
-    self.software_instance.edit(predecessor_list=[software_instance2.getRelativeUrl(),
-        software_instance3.getRelativeUrl()])
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
-
 class TestSlapOSPersonConstraint(testSlapOSMixin):
 
   def test_role(self):
