@@ -357,11 +357,26 @@ class TestImage(TestSlapOSGroupRoleSecurityMixin):
 
 class TestImageModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
-    raise NotImplementedError
+    module = self.portal.image_module
+    self.assertSecurityGroup(module,
+        ['R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', 'zope', 'G-COMPANY'], False)
+    self.assertRoles(module, 'R-COMPUTER', ['Author'])
+    self.assertRoles(module, 'R-INSTANCE', ['Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Author', 'Auditor'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestOrganisation(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_GroupCompany(self):
+    organisation = self.portal.organisation_module.newContent(
+        portal_type='Organisation')
+    organisation.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(organisation,
+        ['G-COMPANY', self.user_id, 'R-MEMBER'], False)
+    self.assertRoles(organisation, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(organisation, 'R-MEMBER', ['Auditor'])
+
+  test_Member = test_GroupCompany
 
 class TestOrganisationModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
