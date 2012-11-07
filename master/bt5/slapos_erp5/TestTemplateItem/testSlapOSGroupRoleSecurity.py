@@ -49,6 +49,7 @@ class TestAssignment(TestSlapOSGroupRoleSecurityMixin):
     self.assertSecurityGroup(assignment,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(assignment, 'G-COMPANY', ['Auditor', 'Assignor'])
+    self.assertRoles(assignment, self.user_id, ['Owner'])
 
 class TestComputer(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
