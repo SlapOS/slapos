@@ -37,7 +37,7 @@ The use case is: delete (rename) and create a new clone.</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>setup_packing_list_constraint</string> </value>
+            <value> <string>software_instance_setup_packing_list_constraint</string> </value>
         </item>
         <item>
             <key> <string>max_arity</string> </key>
