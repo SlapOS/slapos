@@ -706,9 +706,35 @@ class TestSoftwareReleaseModule(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestSpreadsheet(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_SecurityForShacache(self):
+    spreadsheet = self.portal.document_module.newContent(
+        portal_type='Spreadsheet')
+    spreadsheet.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(spreadsheet,
+        ['G-COMPANY', self.user_id, 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'],
+        False)
+    self.assertRoles(spreadsheet, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(spreadsheet, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(spreadsheet, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(spreadsheet, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(spreadsheet, self.user_id, ['Owner'])
+
+  test_GroupCompany = test_SecurityForShacache
 
 class TestText(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_SecurityForShacache(self):
+    text = self.portal.document_module.newContent(
+        portal_type='Text')
+    text.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(text,
+        ['G-COMPANY', self.user_id, 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'],
+        False)
+    self.assertRoles(text, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(text, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(text, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(text, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(text, self.user_id, ['Owner'])
+
+  test_GroupCompany = test_SecurityForShacache
