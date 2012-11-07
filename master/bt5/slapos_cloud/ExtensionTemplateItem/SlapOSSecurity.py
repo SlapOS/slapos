@@ -49,7 +49,7 @@ def getComputerSecurityCategory(self, base_category_list, user_name,
     for base_category in base_category_list:
       if base_category == "role":
         category_list.append(
-         {base_category: ['role', 'role/computer']})
+         {base_category: ['role/computer']})
   elif len(computer_list) > 1:
     raise ConsistencyError, "Error: There is more than one Computer " \
                             "with reference '%s'" % user_name
@@ -75,7 +75,7 @@ def getSoftwareInstanceSecurityCategory(self, base_category_list, user_name,
     category_dict = {}
     for base_category in base_category_list:
       if base_category == "role":
-        category_dict.setdefault(base_category, []).extend(['role', 'role/instance'])
+        category_dict.setdefault(base_category, []).extend(['role/instance'])
       if base_category == "aggregate":
         software_instance = software_instance_list[0]
         hosting_item = software_instance.getSpecialiseValue(portal_type='Hosting Subscription')
