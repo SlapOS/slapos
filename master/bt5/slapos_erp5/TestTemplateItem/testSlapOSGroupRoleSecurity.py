@@ -398,19 +398,60 @@ class TestOrganisation(TestSlapOSGroupRoleSecurityMixin):
 
 class TestOrganisationModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
-    raise NotImplementedError
+    module = self.portal.organisation_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', 'zope'], False)
+    self.assertRoles(module, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestPDF(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_SecurityForShacache(self):
+    pdf = self.portal.document_module.newContent(portal_type='PDF')
+    pdf.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(pdf,
+        ['G-COMPANY', self.user_id, 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'],
+        False)
+    self.assertRoles(pdf, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(pdf, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(pdf, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(pdf, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(pdf, self.user_id, ['Owner'])
+
+  test_GroupCompany = test_SecurityForShacache
 
 class TestPerson(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_GroupCompany(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    person.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(person,
+        ['G-COMPANY', self.user_id], False)
+    self.assertRoles(person, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(person, self.user_id, ['Owner'])
+
+  def test_TheUserHimself(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    person.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(person,
+        ['G-COMPANY', self.user_id, reference], False)
+    self.assertRoles(person, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(person, reference, ['Associate'])
+    self.assertRoles(person, self.user_id, ['Owner'])
 
 class TestPersonModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
-    raise NotImplementedError
+    module = self.portal.person_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'R-MEMBER', 'zope'], False)
+    self.assertRoles(module, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestPresentation(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
