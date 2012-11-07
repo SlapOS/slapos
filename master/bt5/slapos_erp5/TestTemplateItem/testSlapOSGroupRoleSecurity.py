@@ -141,6 +141,7 @@ class TestComputerModelModule(TestSlapOSGroupRoleSecurityMixin):
     self.assertSecurityGroup(module,
         ['R-MEMBER', 'zope'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestComputerModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
@@ -150,6 +151,7 @@ class TestComputerModule(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
     self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestComputerNetwork(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
@@ -182,6 +184,7 @@ class TestComputerNetworkModule(TestSlapOSGroupRoleSecurityMixin):
         ['R-MEMBER', 'R-SHADOW-PERSON', 'zope'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestComputerPartition(TestSlapOSGroupRoleSecurityMixin):
   def test_CustomerOfThePartition(self):
