@@ -244,24 +244,66 @@ class TestCredentialUpdateModule(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestDataSet(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_AnyFromShadirGroup(self):
+    data_set = self.portal.data_set_module.newContent(portal_type='Data Set')
+    data_set.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(data_set,
+        [self.user_id, 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'], False)
+    self.assertRoles(data_set, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(data_set, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(data_set, 'R-MEMBER', ['Auditor'])
 
 class TestDataSetModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
-    raise NotImplementedError
+    module = self.portal.data_set_module
+    self.assertSecurityGroup(module,
+        ['R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', 'zope'], False)
+    self.assertRoles(module, 'R-COMPUTER', ['Author'])
+    self.assertRoles(module, 'R-INSTANCE', ['Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestDocumentModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
-    raise NotImplementedError
+    module = self.portal.document_module
+    self.assertSecurityGroup(module,
+        ['R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', 'zope', 'G-COMPANY'], False)
+    self.assertRoles(module, 'R-COMPUTER', ['Author'])
+    self.assertRoles(module, 'R-INSTANCE', ['Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Author', 'Auditor'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestDrawing(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_SecurityForShacache(self):
+    drawing = self.portal.document_module.newContent(portal_type='Drawing')
+    drawing.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(drawing,
+        ['G-COMPANY', self.user_id, 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'],
+        False)
+    self.assertRoles(drawing, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(drawing, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(drawing, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(drawing, 'G-COMPANY', ['Assignor'])
+
+  test_GroupCompany = test_SecurityForShacache
 
 class TestFile(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_SecurityForShacache(self):
+    file_ = self.portal.document_module.newContent(portal_type='File')
+    file_.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(file_,
+        ['G-COMPANY', self.user_id, 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'],
+        False)
+    self.assertRoles(file_, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(file_, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(file_, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(file_, 'G-COMPANY', ['Assignor'])
+
+  test_GroupCompany = test_SecurityForShacache
 
 class TestHostingSubscription(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
