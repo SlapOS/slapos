@@ -454,12 +454,89 @@ class TestPersonModule(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestPresentation(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_SecurityForShacache(self):
+    presentation = self.portal.document_module.newContent(
+        portal_type='Presentation')
+    presentation.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(presentation,
+        ['G-COMPANY', self.user_id, 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'],
+        False)
+    self.assertRoles(presentation, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(presentation, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(presentation, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(presentation, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(presentation, self.user_id, ['Owner'])
+
+  test_GroupCompany = test_SecurityForShacache
 
 class TestSlaveInstance(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_GroupCompany(self):
+    instance = self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance')
+    instance.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(instance, ['G-COMPANY', self.user_id], False)
+    self.assertRoles(instance, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(instance, self.user_id, ['Owner', 'Assignee'])
+
+  test_OwnerBecomeAssignee = test_GroupCompany
+
+  def test_CustomerOfTheInstance(self):
+    customer_reference = 'TESTPERSON-%s' % self.generateNewId()
+    customer = self.portal.person_module.newContent(
+        portal_type='Person', reference=customer_reference)
+
+    subscription_reference = 'TESTHS-%s ' % self.generateNewId()
+    subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription',
+        reference=subscription_reference,
+        destination_section=customer.getRelativeUrl())
+
+    instance = self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance', specialise=subscription.getRelativeUrl())
+    instance.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(instance, ['G-COMPANY', customer_reference,
+        subscription_reference, self.user_id], False)
+    self.assertRoles(instance, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(instance, customer_reference, ['Assignee'])
+    self.assertRoles(instance, subscription_reference, ['Assignor'])
+    self.assertRoles(instance, self.user_id, ['Owner', 'Assignee'])
+
+  test_InstanceRelatedByHostingSubscription = test_CustomerOfTheInstance
+
+  def test_SoftwareInstanceWhichProvidesThisSlaveInstance(self):
+    computer_reference = 'TESTCOMP-%s' % self.generateNewId()
+    computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    computer.edit(reference=computer_reference)
+    partition = computer.newContent(portal_type='Computer Partition')
+
+    provider_reference = 'TESTSI-%s' % self.generateNewId()
+
+    provider = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+
+    provider.edit(reference=provider_reference,
+        aggregate=partition.getRelativeUrl())
+    provider.validate()
+
+    provider.recursiveImmediateReindexObject()
+    partition.recursiveImmediateReindexObject()
+
+    instance = self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance', aggregate=partition.getRelativeUrl())
+    instance.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(instance, ['G-COMPANY', provider_reference,
+        computer_reference, self.user_id], False)
+    self.assertRoles(instance, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(instance, provider_reference, ['Assignor'])
+    self.assertRoles(instance, computer_reference, ['Assignor'])
+    self.assertRoles(instance, self.user_id, ['Owner', 'Assignee'])
+
+  test_Computer = test_SoftwareInstanceWhichProvidesThisSlaveInstance
 
 class TestSoftwareInstallation(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
