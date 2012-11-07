@@ -122,7 +122,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     ]
     return result
 
-  def _makeTree(self):
+  def _makeTree(self, requested_template_id='template_software_instance'):
     new_id = self.generateNewId()
 
     self.request_kw = dict(
@@ -152,7 +152,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     self.hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
     self.software_instance = self.portal.software_instance_module\
-        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+        [requested_template_id].Base_createCloneDocument(batch_mode=1)
 
     self.hosting_subscription.edit(
         title=self.request_kw['software_title'],
