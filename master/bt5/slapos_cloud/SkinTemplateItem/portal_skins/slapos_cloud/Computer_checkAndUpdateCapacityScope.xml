@@ -97,7 +97,7 @@ if can_allocate:\n
   consumed_capacity = 0\n
 \n
   for instance in portal.portal_catalog.portal_catalog(\n
-      default_aggregate_uid=computer.getUid(),\n
+      default_aggregate_relative_url=\'%s/%%\' % computer.getRelativeUrl(),\n
       portal_type=[\'Software Instance\', \'Slave Instance\'],\n
       validation_state=\'validated\'):\n
 \n
