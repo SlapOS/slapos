@@ -302,12 +302,6 @@ class TestSlapOSSlaveInstanceConstraint(TestSlapOSConstraintMixin):
         'Property existence error for property reference, this document'
         ' has no such property or the property has never been set')
 
-  def test_property_existence_destination_reference(self):
-    self._test_property_existence('destination_reference',
-        'Property existence error for property destination_reference, '
-        'this document has no such property or the property has never '
-        'been set')
-
   def test_predecessor_related(self):
     software_instance2 = self.portal.software_instance_module.newContent(
       portal_type='Slave Instance')

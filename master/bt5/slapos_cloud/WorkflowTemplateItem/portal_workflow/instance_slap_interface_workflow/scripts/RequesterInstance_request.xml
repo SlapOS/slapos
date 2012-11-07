@@ -127,15 +127,21 @@ if (request_software_instance is None):\n
   else:\n
     instance_found = True\n
     # First time that the software instance is requested\n
-    if is_slave == True:\n
-      software_instance_portal_type = "Slave Instance"\n
-    else:\n
-      software_instance_portal_type = "Software Instance"\n
+\n
     # Create a new one\n
     reference = "SOFTINST-%s" % portal.portal_ids.generateNewId(\n
       id_group=\'slap_software_instance_reference\',\n
       id_generator=\'uid\')\n
-    certificate_dict = portal.portal_certificate_authority.getNewCertificate(reference)\n
+\n
+    new_content_kw = {}\n
+    if is_slave == True:\n
+      software_instance_portal_type = "Slave Instance"\n
+    else:\n
+      software_instance_portal_type = "Software Instance"\n
+      certificate_dict = portal.portal_certificate_authority.getNewCertificate(reference)\n
+      new_content_kw[\'destination_reference\'] = certificate_dict[\'id\']\n
+      new_content_kw[\'ssl_key\'] = certificate_dict[\'key\']\n
+      new_content_kw[\'ssl_certificate\'] = certificate_dict[\'certificate\']\n
 \n
     module = portal.getDefaultModule(portal_type="Software Instance")\n
     request_software_instance = module.newContent(\n
@@ -143,10 +149,8 @@ if (request_software_instance is None):\n
       title=software_title,\n
       specialise_value=hosting_subscription,\n
       reference=reference,\n
-      destination_reference=certificate_dict[\'id\'],\n
-      ssl_key=certificate_dict[\'key\'],\n
-      ssl_certificate=certificate_dict[\'certificate\'],\n
       activate_kw={\'tag\': tag},\n
+      **new_content_kw\n
     )\n
     # request_software_instance.portal_workflow.doActionFor(request_software_instance, \'validate_action\')\n
     request_software_instance.validate()\n

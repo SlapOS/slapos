@@ -40,7 +40,6 @@
             <value>
               <tuple>
                 <string>reference</string>
-                <string>destination_reference</string>
               </tuple>
             </value>
         </item>
