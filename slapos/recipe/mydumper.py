@@ -28,85 +28,76 @@ import subprocess
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
-def dump(args):
-  mydumper_cmd = [args['mydumper']]
-  mydumper_cmd.extend(['-B', args['database']])
 
-  if args['socket'] is not None:
-    mydumper_cmd.extend(['-S', args['socket']])
+def _mydumper_base_cmd(mydumper, database, user, password,
+                       socket=None, host=None, port=None, **kw):
+  cmd = [mydumper]
+  cmd.extend(['-B', database])
+
+  if socket:
+    cmd.extend(['-S', socket])
   else:
-    mydumper_cmd.extend(['-h', args['host']])
-    mydumper_cmd.etxned(['-P', args['port']])
+    cmd.extend(['-h', host])
+    cmd.extend(['-P', port])
 
-  mydumper_cmd.extend(['-u', args['user']])
-  if args['password'] is not None:
-    mydumper_cmd.extend(['-p', args['password']])
+  cmd.extend(['-u', user])
+  if password:
+    cmd.extend(['-p', password])
+
+  return cmd
+
+
+def do_export(args):
+  cmd = _mydumper_base_cmd(**args)
 
   if args['compression']:
-    mydumper_cmd.append('--compress')
+    cmd.append('--compress')
 
   if args['rows'] is not None:
-    mydumper_cmd.extend(['-r', args['rows']])
+    cmd.extend(['-r', args['rows']])
 
-  mydumper_cmd.extend(['-o', args['directory']])
+  cmd.extend(['-o', args['directory']])
 
-  subprocess.check_call(mydumper_cmd)
-
+  subprocess.check_call(cmd)
 
 
 def do_import(args):
-  mydumper_cmd = [args['mydumper']]
-  mydumper_cmd.extend(['-B', args['database']])
-
-  if args['socket'] is not None:
-    mydumper_cmd.extend(['-S', args['socket']])
-  else:
-    mydumper_cmd.extend(['-h', args['host']])
-    mydumper_cmd.etxned(['-P', args['port']])
-
-  mydumper_cmd.extend(['-u', args['user']])
-  if args['password'] is not None:
-    mydumper_cmd.extend(['-p', args['password']])
-
-  mydumper_cmd.append('--overwrite-tables')
-
-  mydumper_cmd.extend(['-d', args['directory']])
-
-  subprocess.check_call(mydumper_cmd)
-
+  cmd = _mydumper_base_cmd(**args)
+  cmd.append('--overwrite-tables')
+  cmd.extend(['-d', args['directory']])
+  subprocess.check_call(cmd)
 
 
 class Recipe(GenericBaseRecipe):
 
   def install(self):
-    # Host or socket should be defined
-    try:
-      self.options['host']
-    except:
-      self.options['socket']
+    config = {
+      'database': self.options['database'],
+      'directory': self.options['backup-directory'],
+      'user': self.options['user'],
+      'password': self.options.get('password'),
+    }
 
-    config = dict(database=self.options['database'],
-                  socket=self.options.get('socket'),
-                  host=self.options.get('host'),
-                  port=self.options.get('port', 3306),
-                  directory=self.options['backup-directory'],
-                  user=self.options['user'],
-                  password=self.options.get('password'),
-                 )
-
-    name = __name__
-    if self.optionIsTrue('import', False):
-      config.update(mydumper=self.options['myloader-binary'])
-      name += '.do_import'
+    if self.options.get('host'):
+      config['host'] = self.options['host']
+      config['port'] = self.options.get('port', 3306)
+    elif self.options.get('socket'):
+      config['socket'] = self.options['socket']
     else:
-      config.update(mydumper=self.options['mydumper-binary'],
-                    compression=self.optionIsTrue('compression', default=False),
-                    rows=self.options.get('rows'),
-                   )
-      name += '.dump'
+      raise ValueError("host or socket must be defined")
 
-    wrapper = self.createPythonScript(self.options['wrapper'],
-                                      name,
-                                      config)
+    if self.optionIsTrue('import', False):
+      function = do_import
+      config['mydumper'] = self.options['myloader-binary']
+    else:
+      function = do_export
+      config['mydumper'] = self.options['mydumper-binary']
+      config['compression'] = self.optionIsTrue('compression', default=False)
+      config['rows'] = self.options.get('rows')
+
+    wrapper = self.createPythonScript(name=self.options['wrapper'],
+                                      absolute_function = '%s.%s' % (__name__, function.func_name),
+                                      arguments=config)
 
     return [wrapper]
+
