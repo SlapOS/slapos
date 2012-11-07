@@ -198,9 +198,6 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
     self.assertFalse(consistency_message in getMessageList(self.software_instance))
     self.assertSameSet(current_message_list, getMessageList(self.software_instance))
 
-  def test_setup_packing_list(self):
-    raise NotImplementedError('It requires not migrated resources')
-
   def test_sla_xml(self):
     # fetch basic list of consistency messages
     current_message_list = getMessageList(self.software_instance)
@@ -333,9 +330,6 @@ class TestSlapOSSlaveInstanceConstraint(TestSlapOSConstraintMixin):
     self.tic()
     self.assertFalse(consistency_message in getMessageList(self.software_instance))
     self.assertSameSet(current_message_list, getMessageList(self.software_instance))
-
-  def test_setup_packing_list(self):
-    raise NotImplementedError('It requires not migrated resources')
 
 class TestSlapOSHostingSubscriptionConstraint(TestSlapOSConstraintMixin):
   def afterSetUp(self):
