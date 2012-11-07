@@ -30,59 +30,10 @@ import unittest
 import random
 import transaction
 from AccessControl import getSecurityManager
-from Products.SlapOS.tests.testSlapOSMixin import testSlapOSMixin
+from testSlapOSSecurityGroup import TestSlapOSSecurityMixin
 
-class TestSlapOSShadow(testSlapOSMixin):
-  def _generateRandomUniqueReference(self, portal_type):
-    reference = None
-    while reference is None:
-      random_reference = "test_%s" % random.random()
-      result_list = self.portal.portal_catalog(
-          portal_type=portal_type,
-          reference=random_reference,
-          )
-      if not len(result_list):
-        reference = random_reference
-    return reference
-
-  def _assertUserExists(self, login, password):
-    """Checks that a user with login and password exists and can log in to the
-    system.
-    """
-    from Products.PluggableAuthService.interfaces.plugins import\
-                                                      IAuthenticationPlugin
-    uf = self.getUserFolder()
-    self.assertNotEquals(uf.getUserById(login, None), None)
-    for plugin_name, plugin in uf._getOb('plugins').listPlugins(
-                                IAuthenticationPlugin ):
-      if plugin.authenticateCredentials(
-                  {'login':login,
-                   'password':password,
-                   'machine_login': login}) is not None:
-        break
-    else:
-      self.fail("No plugin could authenticate '%s' with password '%s'" %
-              (login, password))
-
-  def _assertUserDoesNotExists(self, login, password):
-    """Checks that a user with login and password does not exists and cannot
-    log in to the system.
-    """
-    from Products.PluggableAuthService.interfaces.plugins import\
-                                                        IAuthenticationPlugin
-    uf = self.getUserFolder()
-    for plugin_name, plugin in uf._getOb('plugins').listPlugins(
-                              IAuthenticationPlugin ):
-      if plugin.authenticateCredentials(
-                {'login':login,
-                 'password':password,
-                 'machine_login': login}) is not None:
-        self.fail(
-           "Plugin %s should not have authenticated '%s' with password '%s'" %
-           (plugin_name, login, password))
-
-class TestSlapOSShadowPerson(TestSlapOSShadow):
-  def test_shadow_Person(self):
+class TestSlapOSShadowPerson(TestSlapOSSecurityMixin):
+  def test_active(self):
     self.login()
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
@@ -103,7 +54,7 @@ class TestSlapOSShadowPerson(TestSlapOSShadow):
     self.assertSameSet(['R-SHADOW-PERSON', 'SHADOW-%s' % reference],
       user.getGroups())
 
-  def test_shadow_Person_inactive(self):
+  def test_inactive(self):
     self.login()
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
@@ -117,8 +68,8 @@ class TestSlapOSShadowPerson(TestSlapOSShadow):
     self._assertUserDoesNotExists(reference, password)
     self._assertUserDoesNotExists(shadow_reference, None)
 
-class TestSlapOSShadowComputer(TestSlapOSShadow):
-  def test_shadow_Computer(self):
+class TestSlapOSShadowComputer(TestSlapOSSecurityMixin):
+  def test_active(self):
     self.login()
     reference = self._generateRandomUniqueReference('Computer')
     shadow_reference = 'SHADOW-%s' % reference
@@ -137,7 +88,7 @@ class TestSlapOSShadowComputer(TestSlapOSShadow):
     self.assertSameSet(['R-SHADOW-COMPUTER', 'SHADOW-%s' % reference],
       user.getGroups())
 
-  def test_shadow_Computer_inactive(self):
+  def test_inactive(self):
     self.login()
     reference = self._generateRandomUniqueReference('Computer')
     shadow_reference = 'SHADOW-%s' % reference
@@ -149,7 +100,7 @@ class TestSlapOSShadowComputer(TestSlapOSShadow):
     self._assertUserDoesNotExists(reference, None)
     self._assertUserDoesNotExists(shadow_reference, None)
 
-class TestSlapOSShadowSoftwareInstance(TestSlapOSShadow):
+class TestSlapOSShadowSoftwareInstance(TestSlapOSSecurityMixin):
   portal_type = 'Software Instance'
   def test_active(self):
     self.login()
