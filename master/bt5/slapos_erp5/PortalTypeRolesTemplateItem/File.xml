@@ -1,4 +1,9 @@
 <type_roles>
+  <role id='Assignor'>
+   <property id='title'>Group company</property>
+   <multi_property id='category'>group/company</multi_property>
+   <multi_property id='base_category'>group</multi_property>
+  </role>
   <role id='Auditor'>
    <property id='title'>Shacache Security (Auditor)</property>
    <property id='description'>Any user which has a valid assignment where the role is instance must have Auditor role.</property>
