@@ -178,14 +178,14 @@ class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
 
     # add to group category
     self.login()
-    person.newContent(portal_type='Assignment', group='vifib').open()
+    person.newContent(portal_type='Assignment', group='company').open()
     person.recursiveImmediateReindexObject()
 
     self.portal.portal_caches.clearAllCache()
     self.login(reference)
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
-    self.assertSameSet(['G-VIFIB'], user.getGroups())
+    self.assertSameSet(['G-COMPANY'], user.getGroups())
 
     # add to role category
     self.login()
@@ -196,7 +196,7 @@ class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
     self.login(reference)
     user = getSecurityManager().getUser()
     self.assertTrue('Authenticated' in user.getRoles())
-    self.assertSameSet(['R-MEMBER', 'G-VIFIB'], user.getGroups())
+    self.assertSameSet(['R-MEMBER', 'G-COMPANY'], user.getGroups())
 
   def test_inactive(self):
     self.login()
