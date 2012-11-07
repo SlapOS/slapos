@@ -596,28 +596,114 @@ class TestSoftwareInstallationModule(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestSoftwareInstance(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_GroupCompany(self):
+    instance = self.portal.software_instance_module.newContent(
+        portal_type='Software Instance')
+    instance.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(instance, ['G-COMPANY', self.user_id], False)
+    self.assertRoles(instance, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(instance, self.user_id, ['Owner', 'Assignee'])
+
+  test_OwnerBecomeAssignee = test_GroupCompany
+
+  def test_CustomerOfTheInstance(self):
+    customer_reference = 'TESTPERSON-%s' % self.generateNewId()
+    customer = self.portal.person_module.newContent(
+        portal_type='Person', reference=customer_reference)
+
+    subscription_reference = 'TESTHS-%s ' % self.generateNewId()
+    subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription',
+        reference=subscription_reference,
+        destination_section=customer.getRelativeUrl())
+
+    instance = self.portal.software_instance_module.newContent(
+        portal_type='Software Instance', specialise=subscription.getRelativeUrl())
+    instance.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(instance, ['G-COMPANY', customer_reference,
+        subscription_reference, self.user_id], False)
+    self.assertRoles(instance, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(instance, customer_reference, ['Assignee'])
+    self.assertRoles(instance, subscription_reference, ['Assignor'])
+    self.assertRoles(instance, self.user_id, ['Owner', 'Assignee'])
+
+  test_InstanceRelatedByHostingSubscription = test_CustomerOfTheInstance
+
+  def test_Computer(self):
+    computer_reference = 'TESTCOMP-%s' % self.generateNewId()
+    computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    computer.edit(reference=computer_reference)
+    partition = computer.newContent(portal_type='Computer Partition')
+
+    partition.recursiveImmediateReindexObject()
+
+    instance = self.portal.software_instance_module.newContent(
+        portal_type='Software Instance', aggregate=partition.getRelativeUrl())
+    instance.updateLocalRolesOnSecurityGroups()
+
+    self.assertSecurityGroup(instance, ['G-COMPANY', computer_reference,
+        self.user_id], False)
+    self.assertRoles(instance, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(instance, computer_reference, ['Assignor'])
+    self.assertRoles(instance, self.user_id, ['Owner', 'Assignee'])
 
 class TestSoftwareInstanceModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
-    raise NotImplementedError
+    module = self.portal.software_instance_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', 'zope'], False)
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
+    self.assertRoles(module, 'R-INSTANCE', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestSoftwareProduct(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_GroupCompany(self):
+    product = self.portal.software_product_module.newContent(
+        portal_type='Software Product')
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', 'R-MEMBER', self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  test_Member = test_GroupCompany
 
 class TestSoftwareProductModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
-    raise NotImplementedError
+    module = self.portal.software_product_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'R-MEMBER', 'zope'], False)
+    self.assertRoles(module, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestSoftwareRelease(TestSlapOSGroupRoleSecurityMixin):
-  def test(self):
-    raise NotImplementedError
+  def test_GroupCompany(self):
+    release = self.portal.software_release_module.newContent(
+        portal_type='Software Release')
+    release.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(release,
+        ['G-COMPANY', 'R-MEMBER', self.user_id], False)
+    self.assertRoles(release, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(release, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(release, self.user_id, ['Owner'])
+
+  test_Member = test_GroupCompany
 
 class TestSoftwareReleaseModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
-    raise NotImplementedError
+    module = self.portal.software_release_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'R-MEMBER', 'zope'], False)
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestSpreadsheet(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
