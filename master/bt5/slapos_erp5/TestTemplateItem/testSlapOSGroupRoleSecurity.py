@@ -738,3 +738,14 @@ class TestText(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(text, self.user_id, ['Owner'])
 
   test_GroupCompany = test_SecurityForShacache
+
+class TestContributionTool(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.portal_contributions
+    self.assertSecurityGroup(module,
+        ['R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', 'zope', 'G-COMPANY'], True)
+    self.assertRoles(module, 'R-COMPUTER', ['Author'])
+    self.assertRoles(module, 'R-INSTANCE', ['Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Author', 'Auditor'])
+    self.assertRoles(module, 'zope', ['Owner'])
