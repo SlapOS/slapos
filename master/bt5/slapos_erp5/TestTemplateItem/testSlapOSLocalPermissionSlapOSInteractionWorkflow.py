@@ -216,3 +216,48 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
         computer.getReference(), hosting_subscription.getReference()], False)
     self.assertSecurityGroup(partition, [self.user_id,
         hosting_subscription.getReference()], True)
+
+  def test_SlaveInstance_setSpecialise(self):
+    slave_instance = self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance')
+    self.assertSecurityGroup(slave_instance, [self.user_id, 'G-COMPANY'],
+        False)
+
+    hosting_subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription', reference='TESTHS-%s' %
+            self.generateNewId())
+    slave_instance.edit(specialise=hosting_subscription.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(slave_instance, [self.user_id, 'G-COMPANY',
+        hosting_subscription.getReference()], False)
+
+  def test_SlaveInstance_setAggregate(self):
+    hosting_subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription', reference='TESTHS-%s' %
+            self.generateNewId())
+    software_instance = self.portal.software_instance_module.newContent(
+        portal_type='Software Instance',
+        reference='TESTSO-%s' % self.generateNewId(),
+        specialise=hosting_subscription.getRelativeUrl())
+    software_instance.validate()
+    slave_instance = self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance',
+        specialise=hosting_subscription.getRelativeUrl())
+    self.assertSecurityGroup(slave_instance, [self.user_id, 'G-COMPANY',
+        hosting_subscription.getReference()],
+        False)
+
+    computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    computer.edit(reference='TESTC-%s' % self.generateNewId())
+    partition = computer.newContent(portal_type='Computer Partition')
+    software_instance.edit(aggregate=partition.getRelativeUrl())
+    self.portal.portal_workflow._jumpToStateFor(partition, 'busy')
+    self.tic()
+
+    slave_instance.edit(aggregate=partition.getRelativeUrl())
+
+    self.assertSecurityGroup(slave_instance, [self.user_id, 'G-COMPANY',
+        software_instance.getReference(), computer.getReference(),
+        hosting_subscription.getReference()], False)

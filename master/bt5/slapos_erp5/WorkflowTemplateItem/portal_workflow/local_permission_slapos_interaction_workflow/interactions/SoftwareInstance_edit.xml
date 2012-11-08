@@ -69,6 +69,7 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
+                <string>Slave Instance</string>
                 <string>Software Instance</string>
               </list>
             </value>
