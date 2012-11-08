@@ -45,7 +45,8 @@ class Recipe(GenericSlapRecipe):
     path_conf = os.path.join(self.options['script'], 'conf.in')
     path_bully = os.path.join(self.options['script'], self.parameter_dict['script'])
     path_bully_new = os.path.join(self.options['script'], 'new.py')
-    path_run = os.path.join(self.options['run'], self.parameter_dict['wrapper'])
+    # XXX use the bin directory, do not run automatically yet
+    path_run = os.path.join(self.options['bin'], self.parameter_dict['wrapper'])
     print 'paths: %s\n%s\n' % (path_run, path_bully)
     bully_conf = dict(self_id=self_id,
                       ip_list=ip,

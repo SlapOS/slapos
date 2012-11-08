@@ -23,6 +23,8 @@ parts =
 recipe = slapos.cookbook:addresiliency
 script = $${basedirectory:script}
 run = $${basedirectory:services}
+bin = $${rootdirectory:bin}
+# XXX don't run bully automatically, yet
 
 # sets up an rdiff-backup server (with a dropbear server for ssh)
 [urls]
