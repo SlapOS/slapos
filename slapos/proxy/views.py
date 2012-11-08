@@ -272,6 +272,17 @@ def requestComputerPartition():
   else:
     return request_slave()
 
+
+@app.route('/softwareInstanceRename', methods=['POST'])
+def softwareInstanceRename():
+  new_name = request.form['new_name'].encode()
+  computer_partition_id = request.form['computer_partition_id'].encode()
+
+  q = 'UPDATE %s SET partition_reference = ? WHERE reference = ?'
+  execute_db('partition', q, [new_name, computer_partition_id])
+  return 'done'
+
+
 def request_not_shared():
   software_release = request.form['software_release'].encode()
   # some supported parameters
