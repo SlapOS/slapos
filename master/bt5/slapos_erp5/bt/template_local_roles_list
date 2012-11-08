@@ -2,6 +2,7 @@ computer_model_module
 computer_module
 computer_network_module
 credential_update_module
+data_set_module
 document_module
 hosting_subscription_module
 image_module
@@ -12,4 +13,3 @@ software_installation_module
 software_instance_module
 software_product_module
 software_release_module
-data_set_module
