@@ -33,9 +33,24 @@ import Products.Vifib.tests.VifibMixin
 from Products.ERP5Type.tests.utils import DummyMailHost
 
 class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
+  def _setUpDummyMailHost(self):
+    """Do not play with NON persistent replacement of MailHost"""
+    if not self.isLiveTest():
+      super(self, testSlapOSMixin)._setUpDummyMailHost()
+
+  def _restoreMailHost(self):
+    """Do not play with NON persistent replacement of MailHost"""
+    if not self.isLiveTest():
+      super(self, testSlapOSMixin)._restoreMailHost()
+
+  def beforeTearDown(self):
+    if self.isLiveTest():
+      self.deSetUpPersistentDummyMailHost()
+      return
+
   def afterSetUp(self):
     if self.isLiveTest():
-      # nothing to do in Live Test
+      self.setUpPersistentDummyMailHost()
       return
     self.portal.portal_caches.erp5_site_global_id = '%s' % random.random()
     self.portal.portal_caches._p_changed = 1
@@ -49,17 +64,24 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       self.portal._p_changed = 1
       transaction.commit()
 
+  def deSetUpPersistentDummyMailHost(self):
+    if 'MailHost' in self.portal.objectIds():
+      self.portal.manage_delObjects(['MailHost'])
+    self.portal.manage_addProduct['MailHost'].manage_addMailHost('MailHost')
+    transaction.commit()
+
+  def setUpPersistentDummyMailHost(self):
+    if 'MailHost' in self.portal.objectIds():
+      self.portal.manage_delObjects(['MailHost'])
+    self.portal._setObject('MailHost', DummyMailHost('MailHost'))
+
+    self.portal.email_from_address = 'romain@nexedi.com'
+    self.portal.email_to_address = 'romain@nexedi.com'
+
   def bootstrapSite(self):
     self.setupPortalAlarms()
     self.setupPortalCertificateAuthority()
     self.setUpMemcached()
-    portal = self.getPortal()
-    if 'MailHost' in portal.objectIds():
-      portal.manage_delObjects(['MailHost'])
-    portal._setObject('MailHost', DummyMailHost('MailHost'))
-
-    portal.email_from_address = 'romain@nexedi.com'
-    portal.email_to_address = 'romain@nexedi.com'
 
     self.clearCache()
 
