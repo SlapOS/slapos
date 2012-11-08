@@ -108,3 +108,111 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
       Folder.recursiveReindexObject = Folder.recursiveReindexObject_call
     self.assertEqual(comment,
         computer.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_HostingSubscription_setReference(self):
+    hosting_subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription')
+    self.assertSecurityGroup(hosting_subscription, [self.user_id,
+        hosting_subscription.getId()],
+        False)
+
+    hosting_subscription.edit(reference='TESTHS-%s' % self.generateNewId())
+    transaction.commit()
+
+    self.assertSecurityGroup(hosting_subscription, [self.user_id,
+        hosting_subscription.getReference()], False)
+
+  def test_HostingSubscription_setDestinationSection(self):
+    self._makePerson()
+    hosting_subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription')
+    self.assertSecurityGroup(hosting_subscription, [self.user_id,
+        hosting_subscription.getId()],
+        False)
+
+    hosting_subscription.edit(
+        destination_section=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(hosting_subscription, [self.user_id,
+        hosting_subscription.getId(), self.person_user.getReference()],
+        False)
+
+  def test_Person_setReference(self):
+    person = self.portal.person_module.newContent(portal_type='Person')
+    self.assertSecurityGroup(person, [self.user_id, 'G-COMPANY'], False)
+
+    person.edit(reference='TESTPER-%s' % self.generateNewId())
+    transaction.commit()
+
+    self.assertSecurityGroup(person, [self.user_id, 'G-COMPANY',
+        person.getReference()], False)
+
+  def test_SoftwareInstallation_setAggregate(self):
+    installation = self.portal.software_installation_module.newContent(
+        portal_type='Software Installation')
+    self.assertSecurityGroup(installation, [self.user_id, 'G-COMPANY'], False)
+
+    computer = self.portal.computer_module.newContent(portal_type='Computer',
+        reference='TESTC-%s' % self.generateNewId())
+
+    installation.edit(aggregate=computer.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(installation, [self.user_id, 'G-COMPANY',
+        computer.getReference()], False)
+
+
+  def test_SoftwareInstallation_setDestinationSection(self):
+    installation = self.portal.software_installation_module.newContent(
+        portal_type='Software Installation')
+    self.assertSecurityGroup(installation, [self.user_id, 'G-COMPANY'], False)
+
+    self._makePerson()
+
+    installation.edit(destination_section=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(installation, [self.user_id, 'G-COMPANY',
+        self.person_user.getReference()], False)
+
+  def test_SoftwareInstance_setSpecialise(self):
+    software_instance = self.portal.software_instance_module.newContent(
+        portal_type='Software Instance')
+    self.assertSecurityGroup(software_instance, [self.user_id, 'G-COMPANY'],
+        False)
+
+    hosting_subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription', reference='TESTHS-%s' %
+            self.generateNewId())
+    software_instance.edit(specialise=hosting_subscription.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(software_instance, [self.user_id, 'G-COMPANY',
+        hosting_subscription.getReference()], False)
+
+  def test_SoftwareInstance_setAggregate(self):
+    hosting_subscription = self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription', reference='TESTHS-%s' %
+            self.generateNewId())
+    software_instance = self.portal.software_instance_module.newContent(
+        portal_type='Software Instance',
+        specialise=hosting_subscription.getRelativeUrl())
+    self.assertSecurityGroup(software_instance, [self.user_id, 'G-COMPANY',
+        hosting_subscription.getReference()],
+        False)
+
+    computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    computer.edit(reference='TESTC-%s' % self.generateNewId())
+    partition = computer.newContent(portal_type='Computer Partition')
+    self.portal.portal_workflow._jumpToStateFor(partition, 'busy')
+    self.assertSecurityGroup(partition, [self.user_id],
+        True)
+    software_instance.edit(aggregate=partition.getRelativeUrl())
+    self.tic()
+
+    self.assertSecurityGroup(software_instance, [self.user_id, 'G-COMPANY',
+        computer.getReference(), hosting_subscription.getReference()], False)
+    self.assertSecurityGroup(partition, [self.user_id,
+        hosting_subscription.getReference()], True)
