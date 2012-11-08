@@ -36,12 +36,12 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
   def _setUpDummyMailHost(self):
     """Do not play with NON persistent replacement of MailHost"""
     if not self.isLiveTest():
-      super(self, testSlapOSMixin)._setUpDummyMailHost()
+      super(testSlapOSMixin, self)._setUpDummyMailHost()
 
   def _restoreMailHost(self):
     """Do not play with NON persistent replacement of MailHost"""
     if not self.isLiveTest():
-      super(self, testSlapOSMixin)._restoreMailHost()
+      super(testSlapOSMixin, self)._restoreMailHost()
 
   def beforeTearDown(self):
     if self.isLiveTest():
