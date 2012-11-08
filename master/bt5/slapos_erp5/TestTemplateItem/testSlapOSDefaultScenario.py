@@ -66,14 +66,30 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     welcome_message = findMessage(email, "de votre nouveau compte ERP5")
     self.assertNotEqual(None, welcome_message)
 
-  def addServerViaSlapTool(self, title):
+  def requestComputer(self, title):
     requestXml = self.portal.portal_slap.requestComputer(title)
+    self.tic()
     self.assertTrue('marshal' in requestXml)
     computer = xml_marshaller.loads(requestXml)
     computer_id = getattr(computer, '_computer_id', None)
     self.assertNotEqual(None, computer_id)
-    self.tic()
     return computer_id
+
+  def supplySoftware(self, server, url, state='available'):
+    self.portal.portal_slap.supplySupply(url, server.getReference(), state)
+    self.tic()
+
+    software_installation = self.portal.portal_catalog.getResultValue(
+        portal_type='Software Installation',
+        url_string=url,
+        default_aggregate_uid=server.getUid())
+
+    self.assertNotEqual(None, software_installation)
+
+    if state=='available':
+      self.assertEqual('start_requested', software_installation.getSlapState())
+    else:
+      self.assertEqual('destroy_requested', software_installation.getSlapState())
 
   @changeSkin('Hosting')
   def setServerOpenPublic(self, server):
@@ -112,25 +128,35 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.login(owner_reference)
 
     public_server_title = 'Public Server for %s' % owner_reference
-    public_server_id = self.addServerViaSlapTool(public_server_title)
+    public_server_id = self.requestComputer(public_server_title)
     public_server = self.portal.portal_catalog.getResultValue(
         portal_type='Computer', reference=public_server_id)
     self.assertNotEqual(None, public_server)
     self.setServerOpenPublic(public_server)
 
     personal_server_title = 'Personal Server for %s' % owner_reference
-    personal_server_id = self.addServerViaSlapTool(personal_server_title)
+    personal_server_id = self.requestComputer(personal_server_title)
     personal_server = self.portal.portal_catalog.getResultValue(
         portal_type='Computer', reference=personal_server_id)
     self.assertNotEqual(None, personal_server)
     self.setServerOpenPersonal(personal_server)
 
     friend_server_title = 'Friend Server for %s' % owner_reference
-    friend_server_id = self.addServerViaSlapTool(friend_server_title)
+    friend_server_id = self.requestComputer(friend_server_title)
     friend_server = self.portal.portal_catalog.getResultValue(
         portal_type='Computer', reference=friend_server_id)
     self.assertNotEqual(None, friend_server)
     self.setServerOpenFriend(friend_server)
 
+    # and install some software on them
+
+    public_server_software = self.generateNewSoftwareReleaseUrl()
+    self.supplySoftware(public_server, public_server_software)
+
+    personal_server_software = self.generateNewSoftwareReleaseUrl()
+    self.supplySoftware(personal_server, personal_server_software)
+
+    friend_server_software = self.generateNewSoftwareReleaseUrl()
+    self.supplySoftware(friend_server, friend_server_software)
     # remove the assertion after test is finished
     self.assertTrue(False, 'Test not finished')
