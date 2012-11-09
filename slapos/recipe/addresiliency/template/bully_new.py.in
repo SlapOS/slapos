@@ -26,7 +26,7 @@ def rename_broken_and_stop():
                                         software_type='frozen',
                                         partition_reference='%(namebase)s0')
 
-    broken.rename('broken-%%s' %% (time.strftime("%%d-%%b_%%H:%%M:%%S", time.gmtime())))
+    broken.rename('broken-{}'.format(time.strftime("%%d-%%b_%%H:%%M:%%S", time.gmtime())))
     broken.stopped()
     computer_partition.rename('%(namebase)s0')
     print 'renaming done\n'
@@ -94,7 +94,7 @@ class ResilientInstance(object):
 
             elif message == 'victory':
                 if int(sender) == int(self.halter) and self.state == 'waitingConfirm':
-                    print '%s thinks %s is the leader\n' % (self.id, sender)
+                    print '{} thinks {} is the leader\n'.format(self.id, sender)
                     self.comm.send('ok', sender)
                 self.state = 'normal'
 
@@ -106,7 +106,7 @@ class ResilientInstance(object):
             self.comm.send('ping', higher)
             message, sender = self.okCanal.get()
             if message:
-                #print '%s is alive (%s)\n' % (higher, self.id)
+                #print '{} is alive ({})\n'.format(higher, self.id)
                 self.inElection = False
                 return False
             continue
@@ -115,7 +115,7 @@ class ResilientInstance(object):
             return False
 
         #I should be the new coordinator, halt those below me
-        print 'Should be ME : %s \n' % self.id
+        print 'Should be ME : {} \n'.format(self.id)
         self.state = 'election'
         self.halter = self.id
         ups = []
@@ -136,7 +136,7 @@ class ResilientInstance(object):
             return self.election()
         self.state = 'normal'
         self.active = True
-        print '%s Is THE LEADER \n' % self.id
+        print '{} Is THE LEADER \n'.format(self.id)
 
         rename_broken_and_stop()
 
@@ -202,7 +202,7 @@ class Wrapper(object):
         try:
             s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             s.connect((self.ips[number], port + number))
-            s.send(message + (' %s\n' % self.id))
+            s.send(message + (' {}\n'.format(self.id)))
         except (socket.error, socket.herror, socket.gaierror, socket.timeout):
           pass
         finally:
