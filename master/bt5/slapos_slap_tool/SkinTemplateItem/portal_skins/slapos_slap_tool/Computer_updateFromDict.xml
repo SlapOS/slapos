@@ -55,23 +55,25 @@
     additional_dict = {}\n
   to_delete_ip_id_list = []\n
   to_add_ip_dict_list = address_list[:]\n
-  for address in document.contentValues(portal_type=\'Internet Protocol Address\'):\n
+  existing_address_list = document.contentValues(portal_type=\'Internet Protocol Address\')\n
+  existing_address_list.sort(key=lambda x: {0: 1, 1: 2}[int(x.id == \'default_network_interface\')])\n
+  for address in existing_address_list:\n
     current_dict = {\n
       \'addr\': address.getIpAddress(),\n
       \'netmask\': address.getNetmask()\n
     }\n
-    if not current_dict in to_add_ip_dict_list:\n
-      to_delete_ip_id_list.append(address.getId())\n
-    else:\n
+    if current_dict in to_add_ip_dict_list:\n
       to_add_ip_dict_list.remove(current_dict)\n
-  \n
+    else:\n
+      to_delete_ip_id_list.append(address.getId())\n
+\n
   for address in to_add_ip_dict_list:\n
     if to_delete_ip_id_list:\n
       id = to_delete_ip_id_list.pop()\n
-      address_document = getattr(document, id)\n
+      address_document = document.restrictedTraverse(id)\n
     else:\n
       kw = {\'portal_type\': \'Internet Protocol Address\'}\n
-      if len(document.objectIds(portal_type=\'Internet Protocol Address\')):\n
+      if not len(document.objectIds(portal_type=\'Internet Protocol Address\')):\n
         kw.update(id=\'default_network_address\')\n
       address_document = document.newContent(**kw)\n
     address_document.edit(\n
