@@ -506,6 +506,39 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
       if os.path.exists(self.computer_bang_simulator):
         os.unlink(self.computer_bang_simulator)
 
+  def assertLoadComputerConfigurationFromXML(self, args, kwargs):
+    stored = eval(open(self.computer_load_configuration_simulator).read())
+    # do the same translation magic as in workflow
+    self.assertEqual(stored,
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'Computer_updateFromDict'}])
+
+  def test_loadComputerConfigurationFromXML(self):
+    self.computer_load_configuration_simulator = tempfile.mkstemp()[1]
+    try:
+      self.login(self.computer_id)
+      self.computer.Computer_updateFromDict = Simulator(
+        self.computer_load_configuration_simulator, 'Computer_updateFromDict')
+
+      computer_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <dictionary id='i2'>
+    <string>reference</string>
+    <string>%(computer_reference)s</string>
+  </dictionary>
+</marshal>
+""" % {'computer_reference': self.computer.getReference()}
+
+      response = self.portal_slap.loadComputerConfigurationFromXML(
+        computer_xml)
+      self.assertEqual('Content properly posted.', response)
+      self.assertLoadComputerConfigurationFromXML(
+        ({'reference': self.computer.getReference()},), {})
+    finally:
+      if os.path.exists(self.computer_load_configuration_simulator):
+        os.unlink(self.computer_load_configuration_simulator)
+
 class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   def test_getComputerPartitionCertificate(self):
     self._makeComplexComputer()
