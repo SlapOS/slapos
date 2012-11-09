@@ -240,7 +240,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     self.partition.validate()
     self.tic()
 
-  def _makeComplexComputer(self):
+  def _makeComplexComputer(self, person=None):
     for i in range(1, 5):
       id_ = 'partition%s' % i
       p = self.computer.newContent(portal_type='Computer Partition',
@@ -301,6 +301,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
+        destination_section_value=person,
     )
     kw = dict(
       software_release=\
@@ -326,6 +327,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTSI-%s" % self.generateNewId(),
+        destination_section_value=person,
     )
     kw = dict(
       software_release=\
