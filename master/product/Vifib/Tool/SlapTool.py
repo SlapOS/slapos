@@ -42,6 +42,7 @@ from Products.ERP5Type.Cache import DEFAULT_CACHE_SCOPE
 from Products.ERP5Type.Cache import CachingMethod
 from lxml import etree
 import time
+from Products.ERP5Type.tests.utils import DummyMailHostMixin
 try:
   from slapos.slap.slap import Computer
   from slapos.slap.slap import ComputerPartition as SlapComputerPartition
@@ -152,7 +153,7 @@ class SlapTool(BaseTool):
   ####################################################
 
   def _isTestRun(self):
-    if self.getPortalObject().MailHost.__class__.__name__ == 'DummyMailHost' \
+    if issubclass(self.getPortalObject().MailHost.__class__, DummyMailHostMixin) \
         or self.REQUEST.get('test_list'):
       return True
     return False
