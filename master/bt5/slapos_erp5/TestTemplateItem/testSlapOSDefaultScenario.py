@@ -126,6 +126,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
   def WebSection_getCurrentHostingSubscriptionList(self):
     return self.web_site.hosting.myspace.my_services\
         .WebSection_getCurrentHostingSubscriptionList()
+
   def formatComputer(self, computer, partition_count=10):
     computer_dict = dict(
       software_root='/opt',
@@ -181,6 +182,19 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
               computer_partition_id=partition._partition_id,
               connection_xml=connection_xml
             )
+            for slave in partition._parameter_dict['slave_instance_list']:
+              slave_reference = slave['slave_reference']
+              connection_xml = xml_marshaller.xml_marshaller.dumps(dict(
+                url_1 = 'http://%s/%s' % (ip_list[0][1], slave_reference),
+                url_2 = 'http://%s/%s' % (ip_list[1][1], slave_reference)
+              ))
+              self.portal.portal_slap.setComputerPartitionConnectionXml(
+                computer_id=computer_reference,
+                computer_partition_id=partition._partition_id,
+                connection_xml=connection_xml,
+                slave_reference=slave_reference
+              )
+
           finally:
             setSecurityManager(oldsm)
     finally:
@@ -199,6 +213,51 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     software_instance = xml_marshaller.xml_marshaller.loads(response)
     self.assertEqual('SoftwareInstance', software_instance.__class__.__name__)
     return software_instance
+
+  def checkSlaveInstanceAllocation(self, person_reference, instance_title,
+      software_release, software_type, server):
+
+    self.login(person_reference)
+    self.personRequestInstanceNotReady(
+      software_release=software_release,
+      software_type=software_type,
+      partition_reference=instance_title,
+      shared_xml='<marshal><bool>1</bool></marshal>'
+    )
+
+    self.stepCallSlaposAllocateInstanceAlarm()
+    self.tic()
+
+    self.personRequestInstance(
+      software_release=software_release,
+      software_type=software_type,
+      partition_reference=instance_title,
+      shared_xml='<marshal><bool>1</bool></marshal>'
+    )
+
+    # now instantiate it on computer and set some nice connection dict
+    self.simulateSlapgridCP(server)
+
+    # let's find instances of user and check connection strings
+    hosting_subscription_list = [q.getObject() for q in
+        self.WebSection_getCurrentHostingSubscriptionList()
+        if q.getTitle() == instance_title]
+    self.assertEqual(1, len(hosting_subscription_list))
+    hosting_subscription = hosting_subscription_list[0]
+
+    software_instance = hosting_subscription.getPredecessorValue()
+    self.assertEqual(software_instance.getTitle(),
+        hosting_subscription.getTitle())
+    connection_dict = software_instance.getConnectionXmlAsDict()
+    self.assertSameSet(('url_1', 'url_2'), connection_dict.keys())
+    self.login()
+    partition = software_instance.getAggregateValue()
+    self.assertSameSet(
+        ['http://%s/%s' % (q.getIpAddress(), software_instance.getReference())
+            for q in partition.contentValues(
+                portal_type='Internet Protocol Address')],
+        connection_dict.values())
+
 
   def checkInstanceAllocation(self, person_reference, instance_title,
       software_release, software_type, server):
@@ -223,10 +282,11 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.simulateSlapgridCP(server)
 
     # let's find instances of user and check connection strings
-    hosting_subscription_list = self.\
-        WebSection_getCurrentHostingSubscriptionList()
+    hosting_subscription_list = [q.getObject() for q in
+        self.WebSection_getCurrentHostingSubscriptionList()
+        if q.getTitle() == instance_title]
     self.assertEqual(1, len(hosting_subscription_list))
-    hosting_subscription = hosting_subscription_list[0].getObject()
+    hosting_subscription = hosting_subscription_list[0]
 
     software_instance = hosting_subscription.getPredecessorValue()
     self.assertEqual(software_instance.getTitle(),
@@ -295,8 +355,9 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.joinSlapOS(self.web_site, public_reference)
 
     public_instance_title = 'Public title %s' % self.generateNewId()
+    public_instance_type = 'public type'
     self.checkInstanceAllocation(public_reference, public_instance_title,
-        public_server_software, 'public type', public_server)
+        public_server_software, public_instance_type, public_server)
 
     # join as owner friend and request a software instance on computer
     # configured by owner
@@ -313,8 +374,32 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.setServerOpenFriend(friend_server, [friend_email])
 
     friend_instance_title = 'Friend title %s' % self.generateNewId()
+    friend_instance_type = 'friend_type'
     self.checkInstanceAllocation(friend_reference, friend_instance_title,
-        friend_server_software, 'friend_type', friend_server)
+        friend_server_software, friend_instance_type, friend_server)
+
+    # check that friend is able to request slave instance matching the
+    # public's computer software instance
+    friend_slave_instance_title = 'Friend slave title %s' % self.\
+        generateNewId()
+    self.checkSlaveInstanceAllocation(friend_reference,
+        friend_slave_instance_title, public_server_software,
+        public_instance_type, public_server)
+
+    # turn public guy to a friend and check that he can allocate slave
+    # instance on instance provided by friend
+
+    self.login()
+    public_email = self.portal.portal_catalog.getResultValue(
+        portal_type='Person', reference=public_reference).getDefaultEmailText()
+    self.login(owner_reference)
+    self.setServerOpenFriend(friend_server, [friend_email, public_email])
+
+    public_slave_instance_title = 'Public slave titmle %s' % self\
+        .generateNewId()
+    self.checkSlaveInstanceAllocation(public_reference,
+        public_slave_instance_title, friend_server_software,
+        friend_instance_type, friend_server)
 
     # remove the assertion after test is finished
     self.assertTrue(False, 'Test not finished')
