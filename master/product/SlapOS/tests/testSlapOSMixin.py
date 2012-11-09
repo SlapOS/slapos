@@ -33,6 +33,7 @@ import Products.Vifib.tests.VifibMixin
 from Products.ERP5Type.tests.utils import DummyMailHost
 
 class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
+
   def _setUpDummyMailHost(self):
     """Do not play with NON persistent replacement of MailHost"""
     if not self.isLiveTest():
@@ -49,6 +50,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       return
 
   def afterSetUp(self):
+    self.createAlarmStep()
     if self.isLiveTest():
       self.setUpPersistentDummyMailHost()
       return
