@@ -157,6 +157,35 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     finally:
       setSecurityManager(sm)
 
+  def simulateSlapgridUR(self, computer):
+    sm = getSecurityManager()
+    computer_reference = computer.getReference()
+    try:
+      self.login(computer_reference)
+      computer_xml = self.portal.portal_slap.getFullComputerInformation(
+          computer_id=computer.getReference())
+      slap_computer = xml_marshaller.xml_marshaller.loads(computer_xml)
+      self.assertEqual('Computer', slap_computer.__class__.__name__)
+      destroyed_partition_id_list = []
+      for partition in slap_computer._computer_partition_list:
+        if partition._requested_state == 'destroyed' \
+              and partition._need_modification == 1:
+          self.portal.portal_slap.destroyedComputerPartition(computer.getReference(),
+              partition._partition_id
+              )
+          destroyed_partition_id_list.append(partition._partition_id)
+    finally:
+      setSecurityManager(sm)
+    self.tic()
+    self.stepCallSlaposFreeComputerPartitionAlarm()
+    self.tic()
+    free_partition_id_list = []
+    for partition in computer.contentValues(portal_type='Computer Partition'):
+      if partition.getReference() in destroyed_partition_id_list \
+          and partition.getSlapState() == 'free':
+        free_partition_id_list.append(partition.getReference())
+    self.assertSameSet(destroyed_partition_id_list, free_partition_id_list)
+
   def simulateSlapgridCP(self, computer):
     sm = getSecurityManager()
     computer_reference = computer.getReference()
@@ -167,7 +196,8 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       slap_computer = xml_marshaller.xml_marshaller.loads(computer_xml)
       self.assertEqual('Computer', slap_computer.__class__.__name__)
       for partition in slap_computer._computer_partition_list:
-        if partition._requested_state in ('started', 'stopped'):
+        if partition._requested_state in ('started', 'stopped') \
+              and partition._need_modification == 1:
           instance_reference = partition._instance_guid
           ip_list = partition._parameter_dict['ip_list']
           connection_xml = xml_marshaller.xml_marshaller.dumps(dict(
@@ -212,6 +242,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.assertTrue(isinstance(response, str))
     software_instance = xml_marshaller.xml_marshaller.loads(response)
     self.assertEqual('SoftwareInstance', software_instance.__class__.__name__)
+    self.tic()
     return software_instance
 
   def checkSlaveInstanceAllocation(self, person_reference, instance_title,
@@ -258,6 +289,44 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
                 portal_type='Internet Protocol Address')],
         connection_dict.values())
 
+  def checkSlaveInstanceUnallocation(self, person_reference, instance_title,
+      software_release, software_type, server):
+
+    self.login(person_reference)
+    self.personRequestInstanceNotReady(
+      software_release=software_release,
+      software_type=software_type,
+      partition_reference=instance_title,
+      shared_xml='<marshal><bool>1</bool></marshal>',
+      state='<marshal><string>destroyed</string></marshal>'
+    )
+
+    # let's find instances of user and check connection strings
+    hosting_subscription_list = [q.getObject() for q in
+        self.WebSection_getCurrentHostingSubscriptionList()
+        if q.getTitle() == instance_title]
+
+    self.assertEqual(0, len(hosting_subscription_list))
+
+  def checkInstanceUnallocation(self, person_reference, instance_title,
+      software_release, software_type, server):
+
+    self.login(person_reference)
+    self.personRequestInstanceNotReady(
+      software_release=software_release,
+      software_type=software_type,
+      partition_reference=instance_title,
+      state='<marshal><string>destroyed</string></marshal>'
+    )
+
+    # now instantiate it on computer and set some nice connection dict
+    self.simulateSlapgridUR(server)
+
+    # let's find instances of user and check connection strings
+    hosting_subscription_list = [q.getObject() for q in
+        self.WebSection_getCurrentHostingSubscriptionList()
+        if q.getTitle() == instance_title]
+    self.assertEqual(0, len(hosting_subscription_list))
 
   def checkInstanceAllocation(self, person_reference, instance_title,
       software_release, software_type, server):
@@ -395,11 +464,25 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.login(owner_reference)
     self.setServerOpenFriend(friend_server, [friend_email, public_email])
 
-    public_slave_instance_title = 'Public slave titmle %s' % self\
+    public_slave_instance_title = 'Public slave title %s' % self\
         .generateNewId()
     self.checkSlaveInstanceAllocation(public_reference,
         public_slave_instance_title, friend_server_software,
         friend_instance_type, friend_server)
 
-    # remove the assertion after test is finished
-    self.assertTrue(False, 'Test not finished')
+    # now deallocate the slaves
+    self.checkSlaveInstanceUnallocation(public_reference,
+        public_slave_instance_title, friend_server_software,
+        friend_instance_type, friend_server)
+
+    self.checkSlaveInstanceUnallocation(friend_reference,
+        friend_slave_instance_title, public_server_software,
+        public_instance_type, public_server)
+
+    # and the instances
+    self.checkInstanceUnallocation(public_reference, public_instance_title,
+        public_server_software, public_instance_type, public_server)
+
+    self.checkInstanceUnallocation(friend_reference, friend_instance_title,
+
+        friend_server_software, friend_instance_type, friend_server)
