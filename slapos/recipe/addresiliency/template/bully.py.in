@@ -8,6 +8,7 @@ import sys
 
 sys.path[:] = %(syspath)s
 
+import slapos
 from slapos import slap as slapmodule
 
 port = 50000
