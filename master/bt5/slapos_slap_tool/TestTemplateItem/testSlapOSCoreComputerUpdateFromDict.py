@@ -1,4 +1,5 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
+import transaction
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 
@@ -23,6 +24,9 @@ class TestSlapOSCoreComputerUpdateFromDict(testSlapOSMixin):
     self.assertEqual(len(partition_list), 0)
 
     self.login()
+
+  def beforeTearDown(self):
+    transaction.abort()
 
   #############################################
   # Computer network information
