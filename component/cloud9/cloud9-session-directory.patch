@@ -1,0 +1,22 @@
+diff --git a/configs/default.js b/configs/default.js
+index 6d1c85f..be35b37 100644
+--- a/configs/default.js
++++ b/configs/default.js
+@@ -22,6 +22,8 @@ var vfsUrl = "/vfs";
+ var port = argv.p || process.env.PORT || 3131;
+ var host = argv.l || process.env.IP || "localhost";
+ 
++var home = process.env['HOME']
++
+ var config = [
+     {
+         packagePath: "connect-architect/connect",
+@@ -167,7 +169,7 @@ var config = [
+     },
+     {
+         packagePath: "connect-architect/connect.session.file",
+-        sessionsPath: __dirname + "/../.sessions"
++        sessionsPath: home + "/.sessions"
+     },
+     "./cloud9.permissions",
+     {
