@@ -66,7 +66,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     self.tic()
 
-    welcome_message = findMessage(email, "de votre nouveau compte ERP5")
+    welcome_message = findMessage(email, "the creation of you new ERP5 account")
     self.assertNotEqual(None, welcome_message)
 
   def requestComputer(self, title):
