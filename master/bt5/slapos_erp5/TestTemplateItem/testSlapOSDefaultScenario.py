@@ -200,6 +200,46 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.assertEqual('SoftwareInstance', software_instance.__class__.__name__)
     return software_instance
 
+  def checkInstanceAllocation(self, person_reference, instance_title,
+      software_release, software_type, server):
+
+    self.login(person_reference)
+    self.personRequestInstanceNotReady(
+      software_release=software_release,
+      software_type=software_type,
+      partition_reference=instance_title,
+    )
+
+    self.stepCallSlaposAllocateInstanceAlarm()
+    self.tic()
+
+    self.personRequestInstance(
+      software_release=software_release,
+      software_type=software_type,
+      partition_reference=instance_title,
+    )
+
+    # now instantiate it on computer and set some nice connection dict
+    self.simulateSlapgridCP(server)
+
+    # let's find instances of user and check connection strings
+    hosting_subscription_list = self.\
+        WebSection_getCurrentHostingSubscriptionList()
+    self.assertEqual(1, len(hosting_subscription_list))
+    hosting_subscription = hosting_subscription_list[0].getObject()
+
+    software_instance = hosting_subscription.getPredecessorValue()
+    self.assertEqual(software_instance.getTitle(),
+        hosting_subscription.getTitle())
+    connection_dict = software_instance.getConnectionXmlAsDict()
+    self.assertSameSet(('url_1', 'url_2'), connection_dict.keys())
+    self.login()
+    partition = software_instance.getAggregateValue()
+    self.assertSameSet(
+        ['http://%s/' % q.getIpAddress() for q in
+            partition.contentValues(portal_type='Internet Protocol Address')],
+        connection_dict.values())
+
   def test(self):
     # some preparation
     self.logout()
@@ -248,49 +288,33 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.formatComputer(personal_server)
     self.formatComputer(friend_server)
 
-    # now join as the another visitor and request software instance
-    # on public computer
+    # join as the another visitor and request software instance on public
+    # computer
     self.logout()
     public_reference = 'public-%s' % self.generateNewId()
     self.joinSlapOS(self.web_site, public_reference)
-    self.login(public_reference)
 
     public_instance_title = 'Public title %s' % self.generateNewId()
-    self.personRequestInstanceNotReady(
-      software_release=public_server_software,
-      software_type='public type',
-      partition_reference=public_instance_title,
-    )
+    self.checkInstanceAllocation(public_reference, public_instance_title,
+        public_server_software, 'public type', public_server)
 
-    self.stepCallSlaposAllocateInstanceAlarm()
-    self.tic()
+    # join as owner friend and request a software instance on computer
+    # configured by owner
 
-    self.personRequestInstance(
-      software_release=public_server_software,
-      software_type='public type',
-      partition_reference=public_instance_title,
-    )
-
-    # now instantiate it on computer and set some nice connection dict
-    self.simulateSlapgridCP(public_server)
-
-    # let's find instances of user and check connection strings
-    hosting_subscription_list = self.\
-        WebSection_getCurrentHostingSubscriptionList()
-    self.assertEqual(1, len(hosting_subscription_list))
-    hosting_subscription = hosting_subscription_list[0].getObject()
-
-    software_instance = hosting_subscription.getPredecessorValue()
-    self.assertEqual(software_instance.getTitle(),
-        hosting_subscription.getTitle())
-    connection_dict = software_instance.getConnectionXmlAsDict()
-    self.assertSameSet(('url_1', 'url_2'), connection_dict.keys())
+    self.logout()
+    friend_reference = 'friend-%s' % self.generateNewId()
+    self.joinSlapOS(self.web_site, friend_reference)
     self.login()
-    partition = software_instance.getAggregateValue()
-    self.assertSameSet(
-        ['http://%s/' % q.getIpAddress() for q in
-            partition.contentValues(portal_type='Internet Protocol Address')],
-        connection_dict.values())
+    friend_email = self.portal.portal_catalog.getResultValue(
+        portal_type='Person', reference=friend_reference).getDefaultEmailText()
+
+    # allow friend to alloce on friendly computer
+    self.login(owner_reference)
+    self.setServerOpenFriend(friend_server, [friend_email])
+
+    friend_instance_title = 'Friend title %s' % self.generateNewId()
+    self.checkInstanceAllocation(friend_reference, friend_instance_title,
+        friend_server_software, 'friend_type', friend_server)
 
     # remove the assertion after test is finished
     self.assertTrue(False, 'Test not finished')
