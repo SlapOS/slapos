@@ -50,41 +50,18 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>if params is None:\n
-  params = {}\n
-kw = {}\n
-search_kw = {}\n
-from DateTime import DateTime\n
-from Products.ZSQLCatalog.SQLCatalog import Query\n
-from Products.ERP5Type.DateUtils import addToDate\n
-\n
-last_active_process = context.getLastActiveProcess()\n
-if last_active_process is not None and not(params.get(\'full\', False)):\n
-  # fetch only objects modified since last alarm run\n
-  kw[\'modification_date\'] = last_active_process.getStartDate()\n
-  search_kw[\'modification_date\'] = Query(modification_date=addToDate(last_active_process.getStartDate(), to_add={\'hour\': -1}), range="min")\n
-# register active process in order to have "windows" of last indexed objects\n
-context.newActiveProcess()\n
-\n
-context.getPortalObject().portal_catalog.searchAndActivate(\n
-  method_id=\'Person_storeOpenSaleOrderJournal\',\n
-  method_kw={\'modification_date\': kw.get(\'modification_date\'), \'tag\': tag, \'stop_date\': params.get(\'stop_date\')},\n
-  activate_kw={\'tag\': tag},\n
-  packet_size=1, # Person_storeOpenSaleOrderJournal generates big transactions\n
-  portal_type=\'Person\',\n
-  **search_kw\n
-)\n
-\n
-context.activate(after_tag=tag).getId()\n
+            <value> <string>person = context.getDestinationSectionValue()\n
+if person is not None:\n
+  person.Person_storeOpenSaleOrderJournal()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_updatePersonOpenSaleOrder</string> </value>
+            <value> <string>HostingSubscription_requestUpdateOpenSaleOrder</string> </value>
         </item>
       </dictionary>
     </pickle>

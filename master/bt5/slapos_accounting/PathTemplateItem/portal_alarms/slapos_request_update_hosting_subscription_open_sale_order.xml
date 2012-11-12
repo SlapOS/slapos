@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_updatePersonOpenSaleOrder</string> </value>
+            <value> <string>Alarm_requestUpdateHostingSubscriptionOpenSaleOrder</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_person_update_open_sale_order</string> </value>
+            <value> <string>slapos_request_update_hosting_subscription_open_sale_order</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
@@ -31,14 +31,22 @@
             </value>
         </item>
         <item>
+            <key> <string>periodicity_hour_frequency</string> </key>
+            <value> <int>1</int> </value>
+        </item>
+        <item>
             <key> <string>periodicity_minute</string> </key>
             <value>
-              <tuple/>
+              <tuple>
+                <int>0</int>
+              </tuple>
             </value>
         </item>
         <item>
             <key> <string>periodicity_minute_frequency</string> </key>
-            <value> <int>1</int> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>periodicity_month</string> </key>
@@ -83,7 +91,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Updates Persons\' Open Order to reflect changes</string> </value>
+            <value> <string>Updates Open Sale Order for Hosting Subscription which does not have correct OSO</string> </value>
         </item>
       </dictionary>
     </pickle>
