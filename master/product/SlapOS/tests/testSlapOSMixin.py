@@ -240,7 +240,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     self.partition.validate()
     self.tic()
 
-  def _makeComplexComputer(self, person=None):
+  def _makeComplexComputer(self, person=None, with_slave=False):
     for i in range(1, 5):
       id_ = 'partition%s' % i
       p = self.computer.newContent(portal_type='Computer Partition',
@@ -316,6 +316,30 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
 
     self.start_requested_software_instance = hosting_subscription.getPredecessorValue()
     self.start_requested_software_instance.edit(aggregate=self.computer.partition1.getRelativeUrl())
+
+    if with_slave:
+      hosting_subscription = self.portal.hosting_subscription_module\
+          .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+      hosting_subscription.validate()
+      hosting_subscription.edit(
+          title=self.generateNewSoftwareTitle(),
+          reference="TESTSI-%s" % self.generateNewId(),
+          destination_section_value=person,
+      )
+      slave_kw = dict(
+        software_release=kw['software_release'],
+        software_type=kw['software_type'],
+        instance_xml=self.generateSafeXml(),
+        sla_xml=self.generateSafeXml(),
+        shared=True,
+        software_title=hosting_subscription.getTitle(),
+        state='started'
+      )
+      hosting_subscription.requestStart(**slave_kw)
+      hosting_subscription.requestInstance(**slave_kw)
+
+      self.start_requested_slave_instance = hosting_subscription.getPredecessorValue()
+      self.start_requested_slave_instance.edit(aggregate=self.computer.partition1.getRelativeUrl())
 
     hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
@@ -403,6 +427,10 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     self.destroyed_software_instance.invalidate()
 
     self.tic()
+    if with_slave:
+      # as slave is created in non usual way update its local roles
+      self.start_requested_slave_instance.updateLocalRolesOnSecurityGroups()
+      self.tic()
     self._cleaupREQUEST()
 
   def _cleaupREQUEST(self):
