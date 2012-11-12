@@ -1,5 +1,5 @@
 # Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
-from testSlapOSCloudGroupRoleSecurity import TestSlapOSGroupRoleSecurityMixin
+from testSlapOSERP5GroupRoleSecurity import TestSlapOSGroupRoleSecurityMixin
 import transaction
 
 class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
