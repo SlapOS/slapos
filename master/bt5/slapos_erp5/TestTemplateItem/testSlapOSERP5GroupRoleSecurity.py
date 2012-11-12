@@ -915,3 +915,21 @@ class TestCurrency(TestSlapOSGroupRoleSecurityMixin):
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
+
+class TestSaleTradeConditionModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.sale_trade_condition_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'admin'], False)
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'admin', ['Owner'])
+
+class TestSaleTradeCondition(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    product = self.portal.sale_trade_condition_module.newContent(
+        portal_type='Sale Trade Condition')
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])

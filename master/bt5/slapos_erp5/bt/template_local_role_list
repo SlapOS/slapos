@@ -15,6 +15,7 @@ person_module
 portal_contributions
 sale_order_module
 sale_packing_list_module
+sale_trade_condition_module
 service_module
 software_installation_module
 software_instance_module
