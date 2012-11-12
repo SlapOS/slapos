@@ -51,6 +51,9 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>instance = context\n
+if instance.getSlapState() != \'destroy_requested\':\n
+  return\n
+\n
 partition = instance.getAggregateValue(portal_type="Computer Partition")\n
 portal = instance.getPortalObject()\n
 if partition is not None:\n
