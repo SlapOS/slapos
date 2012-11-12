@@ -179,7 +179,7 @@ return add_kw_kw, modify_kw_kw, list(remove_id_list)\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_getOpenOrderDifference</string> </value>
+            <value> <string>Person_getOpenSaleOrderDifference</string> </value>
         </item>
       </dictionary>
     </pickle>

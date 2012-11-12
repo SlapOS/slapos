@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_updatePersonOpenOrder</string> </value>
+            <value> <string>Alarm_updatePersonOpenSaleOrder</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_person_update_open_order</string> </value>
+            <value> <string>slapos_person_update_open_sale_order</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>

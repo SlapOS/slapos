@@ -93,7 +93,7 @@ class testVifibMixin(ERP5TypeTestCase):
       'erp5_accounting_l10n_fr',
       'erp5_web_shacache',
       'erp5_data_set',
-      'slapos_subscription',
+      'slapos_accounting',
       'vifib_base',
       'erp5_workflow',
       'erp5_web_shadir',

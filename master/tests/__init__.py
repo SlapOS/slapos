@@ -24,7 +24,7 @@ class SlapOSCloud(SavedTestSuite, ProjectTestSuite):
     'slapos_cache',
     'slapos_erp5',
     'slapos_pdm',
-    'slapos_subscription',
+    'slapos_accounting',
     'slapos_slap_tool',
     'slapos_rest_api',
     'slapos_web',

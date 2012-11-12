@@ -56,7 +56,7 @@ from DateTime import DateTime\n
 \n
 person = context\n
 portal = person.getPortalObject()\n
-tag = \'%s_updateOpenOrder\' % person.getUid()\n
+tag = \'%s_updateOpenSaleOrder\' % person.getUid()\n
 activate_kw = {\'tag\': tag}\n
 if portal.portal_activities.countMessageWithTag(tag) > 0:\n
   # nothing to do\n
@@ -65,7 +65,7 @@ if portal.portal_activities.countMessageWithTag(tag) > 0:\n
 def storeWorkflowComment(document, comment):\n
   portal.portal_workflow.doActionFor(document, \'edit_action\', comment=comment)\n
 \n
-add_kw_kw, modify_kw_kw, remove_id_list = context.Person_getOpenOrderDifference(\n
+add_kw_kw, modify_kw_kw, remove_id_list = context.Person_getOpenSaleOrderDifference(\n
   remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list,\n
   stop_date=stop_date, start_date_tuple_list=start_date_tuple_list)\n
 \n
@@ -87,7 +87,7 @@ if previous_open_sale_order is None:\n
         destination=person.getRelativeUrl(),\n
         price_currency=\'currency_module/EUR\',\n
         specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
-        title="ViFiB Open Order",\n
+        title="SlapOS Subscription Open Sale Order",\n
         effective_date=now,\n
         activate_kw=activate_kw)\n
   open_sale_order.order(activate_kw=activate_kw)\n
@@ -133,7 +133,7 @@ return add_kw_kw, modify_kw_kw, remove_id_list\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_updateOpenOrder</string> </value>
+            <value> <string>Person_updateOpenSaleOrder</string> </value>
         </item>
       </dictionary>
     </pickle>

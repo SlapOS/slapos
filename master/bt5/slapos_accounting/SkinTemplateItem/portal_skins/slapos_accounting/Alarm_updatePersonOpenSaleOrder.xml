@@ -67,10 +67,10 @@ if last_active_process is not None and not(params.get(\'full\', False)):\n
 context.newActiveProcess()\n
 \n
 context.getPortalObject().portal_catalog.searchAndActivate(\n
-  method_id=\'Person_storeOpenOrderJournal\',\n
+  method_id=\'Person_storeOpenSaleOrderJournal\',\n
   method_kw={\'modification_date\': kw.get(\'modification_date\'), \'tag\': tag, \'stop_date\': params.get(\'stop_date\')},\n
   activate_kw={\'tag\': tag},\n
-  packet_size=1, # Person_storeOpenOrderJournal generates big transactions\n
+  packet_size=1, # Person_storeOpenSaleOrderJournal generates big transactions\n
   portal_type=\'Person\',\n
   **search_kw\n
 )\n
@@ -84,7 +84,7 @@ context.activate(after_tag=tag).getId()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_updatePersonOpenOrder</string> </value>
+            <value> <string>Alarm_updatePersonOpenSaleOrder</string> </value>
         </item>
       </dictionary>
     </pickle>

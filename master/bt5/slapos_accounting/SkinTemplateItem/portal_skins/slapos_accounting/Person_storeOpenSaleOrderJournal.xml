@@ -102,7 +102,7 @@ for hosting_subscription in portal.portal_catalog(\n
     start_date_tuple_list.append((hosting_subscription.getRelativeUrl(), start_date, hosting_subscription.getPath()))\n
 \n
 \n
-result = context.Person_updateOpenOrder(src__=src__, remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list, start_date_tuple_list=start_date_tuple_list, stop_date=stop_date)\n
+result = context.Person_updateOpenSaleOrder(src__=src__, remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list, start_date_tuple_list=start_date_tuple_list, stop_date=stop_date)\n
 from pprint import pformat\n
 return pformat(result)\n
 </string> </value>
@@ -113,7 +113,7 @@ return pformat(result)\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Person_storeOpenOrderJournal</string> </value>
+            <value> <string>Person_storeOpenSaleOrderJournal</string> </value>
         </item>
       </dictionary>
     </pickle>
