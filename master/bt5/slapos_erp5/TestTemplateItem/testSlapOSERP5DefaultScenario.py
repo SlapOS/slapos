@@ -5,7 +5,7 @@
 #
 ##############################################################################
 
-from testSlapOSSecurityGroup import TestSlapOSSecurityMixin
+from testSlapOSCloudSecurityGroup import TestSlapOSSecurityMixin
 import re
 import xml_marshaller
 from AccessControl.SecurityManagement import getSecurityManager, \
