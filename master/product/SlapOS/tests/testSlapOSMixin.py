@@ -142,6 +142,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'slapos_rest_api',
       'slapos_pdm',
       'slapos_web',
+      'slapos_accounting',
       'slapos_erp5',
     ]
     return result
