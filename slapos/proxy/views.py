@@ -286,8 +286,7 @@ def softwareInstanceRename():
 def request_not_shared():
   software_release = request.form['software_release'].encode()
   # some supported parameters
-  software_type = request.form.get('software_type', 'RootSoftwareInstance'
-      ).encode()
+  software_type = request.form.get('software_type').encode()
   partition_reference = request.form.get('partition_reference', '').encode()
   partition_id = request.form.get('computer_partition_id', '').encode()
   partition_parameter_kw = request.form.get('partition_parameter_xml', None)
@@ -296,14 +295,20 @@ def request_not_shared():
                                               partition_parameter_kw.encode())
   else:
     partition_parameter_kw = {}
+
   instance_xml = dict2xml(partition_parameter_kw)
   args = []
   a = args.append
   q = 'SELECT * FROM %s WHERE partition_reference=?'
   a(partition_reference)
-  if partition_id:
-    q += ' AND requested_by=?'
-    a(partition_id)
+
+#
+#  XXX the following filter breaks renaming asked by the bully script
+#
+#  if partition_id:
+#    q += ' AND requested_by=?'
+#    a(partition_id)
+
   partition = execute_db('partition', q, args, one=True)
 
   args = []
@@ -319,15 +324,21 @@ def request_not_shared():
       abort(408)
     q += ' ,software_release=?'
     a(software_release)
-    if software_type:
-      q += ' ,software_type=?'
-      a(software_type)
     if partition_reference:
       q += ' ,partition_reference=?'
       a(partition_reference)
     if partition_id:
       q += ' ,requested_by=?'
       a(partition_id)
+    if not software_type:
+      software_type = 'RootSoftwareInstance'
+
+  #
+  # XXX change software_type when requested
+  #
+  if software_type:
+    q += ' ,software_type=?'
+    a(software_type)
 
   # Else: only update partition_parameter_kw
   if instance_xml:
