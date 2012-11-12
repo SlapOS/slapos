@@ -144,3 +144,34 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by I
         'Visited by Instance_tryToUnallocatePartition',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
+class TestSlapOSFreeComputerPartitionAlarmWithSlave(testSlapOSMixin):
+  def afterSetUp(self):
+    super(TestSlapOSFreeComputerPartitionAlarmWithSlave, self).afterSetUp()
+    self._makeTree(requested_template_id='template_slave_instance')
+    self.login()
+
+  def test_Instance_tryToUnallocatePartition(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.software_instance.Instance_tryToUnallocatePartition()
+    self.tic()
+    self.assertEqual(None, self.software_instance.getAggregate())
+    self.assertEqual('free', self.partition.getSlapState())
+
+  def test_Instance_tryToUnallocatePartition_nonDestroyed(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.tic()
+
+    self.software_instance.Instance_tryToUnallocatePartition()
+    self.tic()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate())
+    self.assertEqual('busy', self.partition.getSlapState())
+
