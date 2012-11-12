@@ -4,12 +4,12 @@ import socket
 import time
 import sys
 import thread
-import time
 import os
 
 sys.path[:] = %(syspath)s
 
 from slapos import slap as slapmodule
+import slapos
 
 port = 50000
 
@@ -43,7 +43,6 @@ class ResilientInstance(object):
         self.id = 0
         self.state = 'normal'
         self.halter = 0
-        self.nbComp = nbComp
         self.inElection = False
         self.alive = True
         self.lastPing = time.clock()
@@ -68,6 +67,7 @@ class ResilientInstance(object):
     ## Needs to be changed to use the master
     def aliveManagement(self):
         while self.alive:
+            print 'XXX sleeping for 30 minutes'
             time.sleep(30*60)
             if self.id == 0:
                 continue
@@ -165,9 +165,7 @@ class FilteredCanal(object):
             self.lock.acquire()
             if self.list:
                 self.lock.release()
-                val = self.list[0]
-                self.list = self.list[1:]
-                return val
+                return self.list.pop(0)
             self.lock.release()
         return [None, None]
 
@@ -175,8 +173,6 @@ class FilteredCanal(object):
 class Wrapper(object):
 
     def __init__(self, timeout=20):
-        self.read_pipes = [os.fdopen(x) for x in read_pipes]
-        self.write_pipes = write_pipes
         self.canals = []
         self.ips = []
         self.id = 0
@@ -195,7 +191,7 @@ class Wrapper(object):
         self.getConnectionInfos()
         self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         self.socket.bind((self.ips[self.id], port + self.id))
-        s.listen(5)
+        self.socket.listen(5)
 
     def send(self, message, number):
         self.getConnectionInfos()
@@ -204,7 +200,7 @@ class Wrapper(object):
             s.connect((self.ips[number], port + number))
             s.send(message + (' {}\n'.format(self.id)))
         except (socket.error, socket.herror, socket.gaierror, socket.timeout):
-          pass
+            pass
         finally:
             s.close()
 
@@ -214,15 +210,15 @@ class Wrapper(object):
         return created
 
     def recv(self):
-        client, _ = s.accept()
+        client, _ = self.socket.accept()
         client_message = client.recv(1024)
         if client_message:
             message, sender = client_message.split()
             for canal in self.canals:
-                canal.append(message, sender)
+                canal.append(message, int(sender))
 
 
-wrapper = createWrapper(20)
+wrapper = Wrapper(20)
 
 computer = ResilientInstance(wrapper)
 
@@ -239,6 +235,7 @@ thread.start_new_thread(computer.main, ())
 thread.start_new_thread(computer.aliveManagement, ())
 
 while True:
+    # XXX tight loop
     continue
 
 
