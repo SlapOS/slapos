@@ -62,9 +62,29 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
     self._cleaupREQUEST()
 
 class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
-  def _getPartitionXml(self):
-    return """\
-<?xml version='1.0' encoding='UTF-8'?>
+  def test_getFullComputerInformation(self):
+    self.login()
+    self._makeComplexComputer(with_slave=True)
+    self.login(self.computer_id)
+    response = self.portal_slap.getFullComputerInformation(self.computer_id)
+    self.assertEqual(200, response.status)
+    self.assertEqual('public, max-age=1, stale-if-error=604800',
+        response.headers.get('cache-control'))
+    self.assertEqual('REMOTE_USER',
+        response.headers.get('vary'))
+    self.assertTrue('last-modified' in response.headers)
+    self.assertEqual('text/xml; charset=utf-8',
+        response.headers.get('content-type'))
+    
+      
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+    expected_xml = """<?xml version='1.0' encoding='UTF-8'?>
 <marshal>
   <object id='i2' module='slapos.slap.slap' class='Computer'>
     <tuple>
@@ -251,7 +271,18 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
               <string>slap_software_type</string>
               <string>%(partition_1_instance_software_type)s</string>
               <string>slave_instance_list</string>
-              <list id='i30'/>
+              <list id='i30'>
+                <dictionary id='i31'>
+                  <string>param</string>
+                  <string>%(slave_1_param)s</string>
+                  <string>slap_software_type</string>
+                  <string>%(slave_1_software_type)s</string>
+                  <string>slave_reference</string>
+                  <string>%(slave_1_instance_guid)s</string>
+                  <string>slave_title</string>
+                  <string>%(slave_1_title)s</string>
+                </dictionary>
+              </list>
               <string>timestamp</string>
               <string>%(partition_1_timestamp)s</string>
             </dictionary>
@@ -262,16 +293,16 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
             <string>_requested_state</string>
             <string>started</string>
             <string>_software_release_document</string>
-            <object id='i31' module='slapos.slap.slap' class='SoftwareRelease'>
+            <object id='i32' module='slapos.slap.slap' class='SoftwareRelease'>
               <tuple>
                 <string>%(partition_1_software_release_url)s</string>
                 <string>%(computer_id)s</string>
               </tuple>
-              <dictionary id='i32'>
+              <dictionary id='i33'>
                 <string>_computer_guid</string>
                 <string>%(computer_id)s</string>
                 <string>_software_instance_list</string>
-                <list id='i33'/>
+                <list id='i34'/>
                 <string>_software_release</string>
                 <string>%(partition_1_software_release_url)s</string>
               </dictionary>
@@ -279,81 +310,36 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
           </dictionary>
         </object>
       </list>
-""" % dict(
-  computer_id=self.computer_id,
-
-  partition_3_instance_guid=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
-  partition_3_instance_software_type=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
-  partition_3_timestamp=int(self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
-  partition_3_param=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
-  partition_3_software_release_url=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
-
-  partition_2_instance_guid=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
-  partition_2_instance_software_type=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
-  partition_2_timestamp=int(self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
-  partition_2_param=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
-  partition_2_software_release_url=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
-
-  partition_1_instance_guid=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
-  partition_1_instance_software_type=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
-  partition_1_timestamp=int(self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
-  partition_1_param=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
-  partition_1_software_release_url=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
-  )
-
-  def test_getFullComputerInformation(self):
-    self.login()
-    self._makeComplexComputer()
-    self.login(self.computer_id)
-    response = self.portal_slap.getFullComputerInformation(self.computer_id)
-    self.assertEqual(200, response.status)
-    self.assertEqual('public, max-age=1, stale-if-error=604800',
-        response.headers.get('cache-control'))
-    self.assertEqual('REMOTE_USER',
-        response.headers.get('vary'))
-    self.assertTrue('last-modified' in response.headers)
-    self.assertEqual('text/xml; charset=utf-8',
-        response.headers.get('content-type'))
-    
-      
-    # check returned XML
-    xml_fp = StringIO.StringIO()
-
-    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
-        stream=xml_fp)
-    xml_fp.seek(0)
-    got_xml = xml_fp.read()
-    expected_xml = self._getPartitionXml() + """\
       <string>_software_release_list</string>
-      <list id='i34'>
-        <object id='i35' module='slapos.slap.slap' class='SoftwareRelease'>
+      <list id='i35'>
+        <object id='i36' module='slapos.slap.slap' class='SoftwareRelease'>
           <tuple>
             <string>%(destroy_requested_url)s</string>
             <string>%(computer_id)s</string>
           </tuple>
-          <dictionary id='i36'>
+          <dictionary id='i37'>
             <string>_computer_guid</string>
             <string>%(computer_id)s</string>
             <string>_requested_state</string>
             <string>destroyed</string>
             <string>_software_instance_list</string>
-            <list id='i37'/>
+            <list id='i38'/>
             <string>_software_release</string>
             <string>%(destroy_requested_url)s</string>
           </dictionary>
         </object>
-        <object id='i38' module='slapos.slap.slap' class='SoftwareRelease'>
+        <object id='i39' module='slapos.slap.slap' class='SoftwareRelease'>
           <tuple>
             <string>%(start_requested_url)s</string>
             <string>%(computer_id)s</string>
           </tuple>
-          <dictionary id='i39'>
+          <dictionary id='i40'>
             <string>_computer_guid</string>
             <string>%(computer_id)s</string>
             <string>_requested_state</string>
             <string>available</string>
             <string>_software_instance_list</string>
-            <list id='i40'/>
+            <list id='i41'/>
             <string>_software_release</string>
             <string>%(start_requested_url)s</string>
           </dictionary>
@@ -364,8 +350,26 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
 </marshal>
 """ % dict(
   computer_id=self.computer_id,
-
   destroy_requested_url=self.destroy_requested_software_installation.getUrlString(),
+  partition_1_instance_guid=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
+  partition_1_instance_software_type=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
+  partition_1_param=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
+  partition_1_software_release_url=self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
+  partition_1_timestamp=int(self.computer.partition1.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
+  partition_2_instance_guid=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
+  partition_2_instance_software_type=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
+  partition_2_param=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
+  partition_2_software_release_url=self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
+  partition_2_timestamp=int(self.computer.partition2.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
+  partition_3_instance_guid=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getReference(),
+  partition_3_instance_software_type=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getSourceReference(),
+  partition_3_param=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getInstanceXmlAsDict()['param'],
+  partition_3_software_release_url=self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getUrlString(),
+  partition_3_timestamp=int(self.computer.partition3.getAggregateRelatedValue(portal_type='Software Instance').getModificationDate()),
+  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['param'],
+  slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
+  slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
+  slave_1_title=self.start_requested_slave_instance.getTitle(),
   start_requested_url=self.start_requested_software_installation.getUrlString()
 )
     self.assertEqual(expected_xml, got_xml,
@@ -580,7 +584,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
   def test_getFullComputerInformation(self):
-    self._makeComplexComputer()
+    self._makeComplexComputer(with_slave=True)
     self.login(self.start_requested_software_instance.getReference())
     response = self.portal_slap.getFullComputerInformation(self.computer_id)
     self.assertEqual(200, response.status)
@@ -644,7 +648,18 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
               <string>slap_software_type</string>
               <string>%(software_type)s</string>
               <string>slave_instance_list</string>
-              <list id='i10'/>
+              <list id='i10'>
+                <dictionary id='i11'>
+                  <string>param</string>
+                  <string>%(slave_1_param)s</string>
+                  <string>slap_software_type</string>
+                  <string>%(slave_1_software_type)s</string>
+                  <string>slave_reference</string>
+                  <string>%(slave_1_instance_guid)s</string>
+                  <string>slave_title</string>
+                  <string>%(slave_1_title)s</string>
+                </dictionary>
+              </list>
               <string>timestamp</string>
               <string>%(timestamp)s</string>
             </dictionary>
@@ -655,16 +670,16 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
             <string>_requested_state</string>
             <string>started</string>
             <string>_software_release_document</string>
-            <object id='i11' module='slapos.slap.slap' class='SoftwareRelease'>
+            <object id='i12' module='slapos.slap.slap' class='SoftwareRelease'>
               <tuple>
                 <string>%(software_release_url)s</string>
                 <string>%(computer_id)s</string>
               </tuple>
-              <dictionary id='i12'>
+              <dictionary id='i13'>
                 <string>_computer_guid</string>
                 <string>%(computer_id)s</string>
                 <string>_software_instance_list</string>
-                <list id='i13'/>
+                <list id='i14'/>
                 <string>_software_release</string>
                 <string>%(software_release_url)s</string>
               </dictionary>
@@ -673,7 +688,7 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
         </object>
       </list>
       <string>_software_release_list</string>
-      <list id='i14'/>
+      <list id='i15'/>
     </dictionary>
   </object>
 </marshal>
@@ -683,7 +698,11 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     software_release_url=self.start_requested_software_instance.getUrlString(),
     software_type=self.start_requested_software_instance.getSourceReference(),
     param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
-    timestamp=int(self.start_requested_software_instance.getModificationDate())
+    timestamp=int(self.start_requested_software_instance.getModificationDate()),
+    slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['param'],
+    slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
+    slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
+    slave_1_title=self.start_requested_slave_instance.getTitle(),
 )
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
@@ -771,6 +790,120 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   instance_guid=self.start_requested_software_instance.getReference(),
   computer_id=self.computer_id,
   partition_id=partition_id
+)
+    self.assertEqual(expected_xml, got_xml,
+        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+
+  def test_registerComputerPartition_withSlave(self):
+    self._makeComplexComputer(with_slave=True)
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    self.login(self.start_requested_software_instance.getReference())
+    response = self.portal_slap.registerComputerPartition(self.computer_id, partition_id)
+    self.assertEqual(200, response.status)
+    self.assertEqual( 'public, max-age=1, stale-if-error=604800',
+        response.headers.get('cache-control'))
+    self.assertEqual('REMOTE_USER',
+        response.headers.get('vary'))
+    self.assertTrue('last-modified' in response.headers)
+    self.assertEqual('text/xml; charset=utf-8',
+        response.headers.get('content-type'))
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+    expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <object id='i2' module='slapos.slap.slap' class='ComputerPartition'>
+    <tuple>
+      <string>%(computer_id)s</string>
+      <string>partition1</string>
+    </tuple>
+    <dictionary id='i3'>
+      <string>_computer_id</string>
+      <string>%(computer_id)s</string>
+      <string>_connection_dict</string>
+      <dictionary id='i4'/>
+      <string>_instance_guid</string>
+      <string>%(instance_guid)s</string>
+      <string>_need_modification</string>
+      <int>1</int>
+      <string>_parameter_dict</string>
+      <dictionary id='i5'>
+        <string>ip_list</string>
+        <list id='i6'>
+          <tuple>
+            <string/>
+            <string>ip_address_1</string>
+          </tuple>
+        </list>
+        <string>param</string>
+        <string>%(param)s</string>
+        <string>slap_computer_id</string>
+        <string>%(computer_id)s</string>
+        <string>slap_computer_partition_id</string>
+        <string>partition1</string>
+        <string>slap_software_release_url</string>
+        <string>%(software_release_url)s</string>
+        <string>slap_software_type</string>
+        <string>%(software_type)s</string>
+        <string>slave_instance_list</string>
+        <list id='i7'>
+          <dictionary id='i8'>
+            <string>param</string>
+            <string>%(slave_1_param)s</string>
+            <string>slap_software_type</string>
+            <string>%(slave_1_software_type)s</string>
+            <string>slave_reference</string>
+            <string>%(slave_1_instance_guid)s</string>
+            <string>slave_title</string>
+            <string>%(slave_1_title)s</string>
+          </dictionary>
+        </list>
+        <string>timestamp</string>
+        <string>%(timestamp)s</string>
+      </dictionary>
+      <string>_partition_id</string>
+      <string>partition1</string>
+      <string>_request_dict</string>
+      <none/>
+      <string>_requested_state</string>
+      <string>started</string>
+      <string>_software_release_document</string>
+      <object id='i9' module='slapos.slap.slap' class='SoftwareRelease'>
+        <tuple>
+          <string>%(software_release_url)s</string>
+          <string>%(computer_id)s</string>
+        </tuple>
+        <dictionary id='i10'>
+          <string>_computer_guid</string>
+          <string>%(computer_id)s</string>
+          <string>_software_instance_list</string>
+          <list id='i11'/>
+          <string>_software_release</string>
+          <string>%(software_release_url)s</string>
+        </dictionary>
+      </object>
+      <string>_synced</string>
+      <bool>1</bool>
+    </dictionary>
+  </object>
+</marshal>
+""" % dict(
+  computer_id=self.computer_id,
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
+  software_release_url=self.start_requested_software_instance.getUrlString(),
+  timestamp=int(self.start_requested_software_instance.getModificationDate()),
+  instance_guid=self.start_requested_software_instance.getReference(),
+  software_type=self.start_requested_software_instance.getSourceReference(),
+  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['param'],
+  slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
+  slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
+  slave_1_title=self.start_requested_slave_instance.getTitle(),
 )
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
@@ -873,6 +1006,27 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 )
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+
+  def test_setConnectionXml_withSlave(self):
+    self._makeComplexComputer(with_slave=True)
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    slave_reference = self.start_requested_slave_instance.getReference()
+    connection_xml = """<marshal>
+  <dictionary id="i2">
+    <string>p1</string>
+    <string>v1</string>
+    <string>p2</string>
+    <string>v2</string>
+  </dictionary>
+</marshal>"""
+    self.login(self.start_requested_software_instance.getReference())
+    response = self.portal_slap.setComputerPartitionConnectionXml(self.computer_id,
+      partition_id, connection_xml, slave_reference)
+    self.assertEqual('None', response)
+    self.assertEqual({'p2': 'v2', 'p1': 'v1'},
+      self.start_requested_slave_instance.getConnectionXmlAsDict()
+    )
 
   def test_setConnectionXml(self):
     self._makeComplexComputer()
@@ -1032,6 +1186,41 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     self.assertEqual(stored,
       [{'recargs': args, 'reckwargs': kwargs,
       'recmethod': 'requestInstance'}])
+
+  def test_request_withSlave(self):
+    self._makeComplexComputer()
+    self.instance_request_simulator = tempfile.mkstemp()[1]
+    try:
+      partition_id = self.start_requested_software_instance.getAggregateValue(
+          portal_type='Computer Partition').getReference()
+      self.login(self.start_requested_software_instance.getReference())
+      self.start_requested_software_instance.requestInstance = Simulator(
+        self.instance_request_simulator, 'requestInstance')
+      response = self.portal_slap.requestComputerPartition(
+          computer_id=self.computer_id,
+          computer_partition_id=partition_id,
+          software_release='req_release',
+          software_type='req_type',
+          partition_reference='req_reference',
+          partition_parameter_xml='<marshal><dictionary id="i2"/></marshal>',
+          filter_xml='<marshal><dictionary id="i2"/></marshal>',
+          state='<marshal><string>started</string></marshal>',
+          shared_xml='<marshal><bool>1</bool></marshal>',
+          )
+      self.assertEqual(408, response.status)
+      self.assertEqual('private',
+          response.headers.get('cache-control'))
+      self.assertInstanceRequestSimulator((), {
+          'instance_xml': "<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n",
+          'software_title': 'req_reference',
+          'software_release': 'req_release',
+          'state': 'started',
+          'sla_xml': "<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n",
+          'software_type': 'req_type',
+          'shared': True})
+    finally:
+      if os.path.exists(self.instance_request_simulator):
+        os.unlink(self.instance_request_simulator)
 
   def test_request(self):
     self._makeComplexComputer()
@@ -1310,6 +1499,121 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
+  def test_registerComputerPartition_withSlave(self):
+    self.login()
+    self._makeComplexComputer(person=self.person, with_slave=True)
+    partition_id = self.start_requested_software_instance.getAggregateValue(
+        portal_type='Computer Partition').getReference()
+    self.login(self.person_reference)
+    response = self.portal_slap.registerComputerPartition(self.computer_id, partition_id)
+    self.assertEqual(200, response.status)
+    self.assertEqual( 'public, max-age=1, stale-if-error=604800',
+        response.headers.get('cache-control'))
+    self.assertEqual('REMOTE_USER',
+        response.headers.get('vary'))
+    self.assertTrue('last-modified' in response.headers)
+    self.assertEqual('text/xml; charset=utf-8',
+        response.headers.get('content-type'))
+    # check returned XML
+    xml_fp = StringIO.StringIO()
+
+    xml.dom.ext.PrettyPrint(xml.dom.ext.reader.Sax.FromXml(response.body),
+        stream=xml_fp)
+    xml_fp.seek(0)
+    got_xml = xml_fp.read()
+    expected_xml = """\
+<?xml version='1.0' encoding='UTF-8'?>
+<marshal>
+  <object id='i2' module='slapos.slap.slap' class='ComputerPartition'>
+    <tuple>
+      <string>%(computer_id)s</string>
+      <string>partition1</string>
+    </tuple>
+    <dictionary id='i3'>
+      <string>_computer_id</string>
+      <string>%(computer_id)s</string>
+      <string>_connection_dict</string>
+      <dictionary id='i4'/>
+      <string>_instance_guid</string>
+      <string>%(instance_guid)s</string>
+      <string>_need_modification</string>
+      <int>1</int>
+      <string>_parameter_dict</string>
+      <dictionary id='i5'>
+        <string>ip_list</string>
+        <list id='i6'>
+          <tuple>
+            <string/>
+            <string>ip_address_1</string>
+          </tuple>
+        </list>
+        <string>param</string>
+        <string>%(param)s</string>
+        <string>slap_computer_id</string>
+        <string>%(computer_id)s</string>
+        <string>slap_computer_partition_id</string>
+        <string>partition1</string>
+        <string>slap_software_release_url</string>
+        <string>%(software_release_url)s</string>
+        <string>slap_software_type</string>
+        <string>%(software_type)s</string>
+        <string>slave_instance_list</string>
+        <list id='i7'>
+          <dictionary id='i8'>
+            <string>param</string>
+            <string>%(slave_1_param)s</string>
+            <string>slap_software_type</string>
+            <string>%(slave_1_software_type)s</string>
+            <string>slave_reference</string>
+            <string>%(slave_1_instance_guid)s</string>
+            <string>slave_title</string>
+            <string>%(slave_1_title)s</string>
+          </dictionary>
+        </list>
+        <string>timestamp</string>
+        <string>%(timestamp)s</string>
+      </dictionary>
+      <string>_partition_id</string>
+      <string>partition1</string>
+      <string>_request_dict</string>
+      <none/>
+      <string>_requested_state</string>
+      <string>started</string>
+      <string>_software_release_document</string>
+      <object id='i9' module='slapos.slap.slap' class='SoftwareRelease'>
+        <tuple>
+          <string>%(software_release_url)s</string>
+          <string>%(computer_id)s</string>
+        </tuple>
+        <dictionary id='i10'>
+          <string>_computer_guid</string>
+          <string>%(computer_id)s</string>
+          <string>_software_instance_list</string>
+          <list id='i11'/>
+          <string>_software_release</string>
+          <string>%(software_release_url)s</string>
+        </dictionary>
+      </object>
+      <string>_synced</string>
+      <bool>1</bool>
+    </dictionary>
+  </object>
+</marshal>
+""" % dict(
+  computer_id=self.computer_id,
+  param=self.start_requested_software_instance.getInstanceXmlAsDict()['param'],
+  software_release_url=self.start_requested_software_instance.getUrlString(),
+  timestamp=int(self.start_requested_software_instance.getModificationDate()),
+  instance_guid=self.start_requested_software_instance.getReference(),
+  software_type=self.start_requested_software_instance.getSourceReference(),
+  slave_1_param=self.start_requested_slave_instance.getInstanceXmlAsDict()['param'],
+  slave_1_software_type=self.start_requested_slave_instance.getSourceReference(),
+  slave_1_instance_guid=self.start_requested_slave_instance.getReference(),
+  slave_1_title=self.start_requested_slave_instance.getTitle(),
+)
+    self.assertEqual(expected_xml, got_xml,
+        '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
+
   def test_registerComputerPartition(self):
     self.login()
     self._makeComplexComputer(person=self.person)
@@ -1499,6 +1803,37 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
     self.assertEqual(stored,
       [{'recargs': args, 'reckwargs': kwargs,
       'recmethod': 'requestSoftwareInstance'}])
+
+  def test_request_withSlave(self):
+    self.login()
+    self.instance_request_simulator = tempfile.mkstemp()[1]
+    try:
+      self.login(self.person_reference)
+      self.person.requestSoftwareInstance = Simulator(
+        self.instance_request_simulator, 'requestSoftwareInstance')
+      response = self.portal_slap.requestComputerPartition(
+          software_release='req_release',
+          software_type='req_type',
+          partition_reference='req_reference',
+          partition_parameter_xml='<marshal><dictionary id="i2"/></marshal>',
+          filter_xml='<marshal><dictionary id="i2"/></marshal>',
+          state='<marshal><string>started</string></marshal>',
+          shared_xml='<marshal><bool>1</bool></marshal>',
+          )
+      self.assertEqual(408, response.status)
+      self.assertEqual('private',
+          response.headers.get('cache-control'))
+      self.assertInstanceRequestSimulator((), {
+          'instance_xml': "<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n",
+          'software_title': 'req_reference',
+          'software_release': 'req_release',
+          'state': 'started',
+          'sla_xml': "<?xml version='1.0' encoding='utf-8'?>\n<instance/>\n",
+          'software_type': 'req_type',
+          'shared': True})
+    finally:
+      if os.path.exists(self.instance_request_simulator):
+        os.unlink(self.instance_request_simulator)
 
   def test_request(self):
     self.login()
