@@ -6,6 +6,7 @@ data_set_module
 document_module
 hosting_subscription_module
 image_module
+open_sale_order_module
 organisation_module
 person_module
 portal_contributions

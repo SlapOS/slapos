@@ -749,3 +749,22 @@ class TestContributionTool(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(module, 'R-MEMBER', ['Author'])
     self.assertRoles(module, 'G-COMPANY', ['Author', 'Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
+
+class TestOpenSaleOrderModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.open_sale_order_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'zope'], False)
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
+
+class TestOpenSaleOrder(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    product = self.portal.open_sale_order_module.newContent(
+        portal_type='Open Sale Order')
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
