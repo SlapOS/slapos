@@ -880,3 +880,20 @@ class TestService(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+class TestAccountModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.account_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'zope'], False)
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'zope', ['Owner'])
+
+class TestAccount(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    product = self.portal.account_module.newContent(
+        portal_type='Account')
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
