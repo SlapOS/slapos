@@ -1,10 +1,7 @@
 Account
 Account Module
 Accounting Period
-Accounting Transaction
-Accounting Transaction Module
 Acknowledgement
-Balance Transaction
 Bank Account
 Business Process
 Business Process Module
@@ -37,12 +34,10 @@ Meeting Module
 Note
 Notification Message
 Notification Message Module
-Payment Transaction
 Payzen Event
 Phone Call
 Product
 Product Module
-Purchase Invoice Transaction
 Purchase Order
 Purchase Order Module
 Purchase Packing List
@@ -51,7 +46,6 @@ Purchase Trade Condition
 Purchase Trade Condition Module
 Query
 Query Module
-Sale Invoice Transaction
 Sale Opportunity
 Sale Opportunity Module
 Sale Trade Condition

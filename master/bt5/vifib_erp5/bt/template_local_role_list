@@ -10,7 +10,6 @@ account_module/purchase
 account_module/receivable
 account_module/refundable_vat
 account_module/sales
-accounting_module
 business_process_module
 business_process_module/vifib_purchase_business_process
 business_process_module/vifib_sale_business_process
