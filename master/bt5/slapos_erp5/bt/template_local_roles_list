@@ -8,10 +8,10 @@ hosting_subscription_module
 image_module
 open_sale_order_module
 organisation_module
-sale_order_module
-sale_packing_list_module
 person_module
 portal_contributions
+sale_order_module
+sale_packing_list_module
 software_installation_module
 software_instance_module
 software_product_module
