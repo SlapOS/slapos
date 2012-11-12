@@ -7,7 +7,7 @@
   <role id='R-MEMBER'>
    <item>Auditor</item>
   </role>
-  <role id='devel'>
+  <role id='zope'>
    <item>Owner</item>
   </role>
  </local_roles>
