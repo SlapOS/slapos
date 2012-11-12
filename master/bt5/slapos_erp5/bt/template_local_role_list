@@ -4,6 +4,7 @@ computer_model_module
 computer_module
 computer_network_module
 credential_update_module
+currency_module
 data_set_module
 document_module
 hosting_subscription_module
