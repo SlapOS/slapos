@@ -108,6 +108,7 @@ class TestSlaposSkinSelection(testSlapOSMixin):
 """
 custom
 vifib_hosting
+slapos_accounting
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
@@ -153,6 +154,7 @@ erp5_ingestion_test
 erp5_item
 erp5_item_trade
 erp5_jquery
+erp5_open_trade
 erp5_pdm
 erp5_promise
 erp5_software_pdm
@@ -185,6 +187,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_accounting
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
@@ -226,6 +229,7 @@ erp5_ingestion_test
 erp5_item
 erp5_item_trade
 erp5_jquery
+erp5_open_trade
 erp5_pdm
 erp5_promise
 erp5_software_pdm
@@ -258,6 +262,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_accounting
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
@@ -300,6 +305,7 @@ erp5_item
 erp5_item_trade
 erp5_jquery
 erp5_km_widget_library
+erp5_open_trade
 erp5_pdm
 erp5_promise
 erp5_software_pdm
@@ -332,6 +338,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_accounting
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
@@ -372,6 +379,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_item
 erp5_item_trade
+erp5_open_trade
 erp5_pdm
 erp5_promise
 erp5_software_pdm
@@ -403,6 +411,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_accounting
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
@@ -443,6 +452,7 @@ erp5_ingestion
 erp5_ingestion_test
 erp5_item
 erp5_item_trade
+erp5_open_trade
 erp5_pdm
 erp5_promise
 erp5_software_pdm
