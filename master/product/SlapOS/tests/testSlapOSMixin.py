@@ -125,6 +125,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_content_translation',
       'erp5_software_pdm',
       'erp5_computer_immobilisation',
+      'erp5_open_trade',
       'erp5_accounting',
       'erp5_commerce',
       'erp5_xhtml_jquery_style',
