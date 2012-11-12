@@ -295,8 +295,6 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     # prepare some trees
     hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    hosting_subscription.edit(
-    )
     hosting_subscription.validate()
     hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
@@ -321,8 +319,6 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
 
     hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    hosting_subscription.edit(
-    )
     hosting_subscription.validate()
     hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
@@ -349,8 +345,6 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
 
     hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    hosting_subscription.edit(
-    )
     hosting_subscription.validate()
     hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
@@ -380,8 +374,6 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
 
     hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    hosting_subscription.edit(
-    )
     hosting_subscription.validate()
     hosting_subscription.edit(
         title=self.generateNewSoftwareTitle(),
