@@ -75,6 +75,11 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
 
     self.assertEqual('SlapOS Subscription Open Sale Order',
         open_sale_order.getTitle())
+    self.assertEqual(0, len(open_sale_order.contentValues()))
+    open_sale_order_template = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredOpenSaleOrderTemplate())
+    self.assertTrue(all([q in open_sale_order.getCategoryList() \
+        for q in open_sale_order_template.getCategoryList()]))
 
   @simulateHostingSubscription_requestUpdateOpenSaleOrder
   def test_alarm_HS_validated(self):
@@ -235,6 +240,8 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
     self.assertEqual(open_sale_order_line_template.getResource(),
         line.getResource())
+    self.assertTrue(all([q in line.getCategoryList() \
+        for q in open_sale_order_line_template.getCategoryList()]))
     self.assertEqual(None, line.getStartDate())
 
   def test_usualLifetime_HostingSubscription(self):
@@ -280,6 +287,8 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(subscription.getRelativeUrl(), line.getAggregate())
     open_sale_order_line_template = self.portal.restrictedTraverse(
         self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
+    self.assertTrue(all([q in line.getCategoryList() \
+        for q in open_sale_order_line_template.getCategoryList()]))
     self.assertEqual(open_sale_order_line_template.getResource(),
         line.getResource())
     self.assertEqual(request_time, line.getStartDate())
@@ -329,6 +338,8 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     self.assertEqual(subscription.getRelativeUrl(),
         archived_line.getAggregate())
+    self.assertTrue(all([q in archived_line.getCategoryList() \
+        for q in open_sale_order_line_template.getCategoryList()]))
     self.assertEqual(open_sale_order_line_template.getResource(),
         archived_line.getResource())
     self.assertEqual(request_time, archived_line.getStartDate())
