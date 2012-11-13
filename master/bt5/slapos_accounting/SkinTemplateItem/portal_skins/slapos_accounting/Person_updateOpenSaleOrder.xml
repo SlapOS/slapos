@@ -79,14 +79,13 @@ previous_open_sale_order = portal.portal_catalog.getResultValue(\n
       validation_state="validated")\n
 \n
 if previous_open_sale_order is None:\n
-  open_sale_order = portal.open_sale_order_module.newContent(\n
-        source=\'organisation_module/vifib_internet\',\n
-        source_section=\'organisation_module/vifib_internet\',\n
+  open_sale_order_template = portal.restrictedTraverse(\n
+      portal.portal_preferences.getPreferredOpenSaleOrderTemplate())\n
+  open_sale_order = open_sale_order_template.Base_createCloneDocument(batch_mode=1)\n
+  open_sale_order.edit(\n
         destination_section=person.getRelativeUrl(),\n
         destination_decision=person.getRelativeUrl(),\n
         destination=person.getRelativeUrl(),\n
-        price_currency=\'currency_module/EUR\',\n
-        specialise=\'sale_trade_condition_module/vifib_trade_condition\',\n
         title="SlapOS Subscription Open Sale Order",\n
         effective_date=now,\n
         activate_kw=activate_kw)\n
@@ -102,9 +101,13 @@ if previous_open_sale_order is not None:\n
   open_sale_order.order(activate_kw=activate_kw)\n
   open_sale_order.validate(activate_kw=activate_kw)\n
 \n
+open_sale_order_line_template = portal.restrictedTraverse(\n
+    portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())\n
 for kw in add_kw_kw.itervalues():\n
   explanation_list = kw.pop(\'explanation\', [])\n
-  line = open_sale_order.newContent(activate_kw=activate_kw, **kw)\n
+  line = open_sale_order_line_template.Base_createCloneDocument(batch_mode=1,\n
+      destination=open_sale_order)\n
+  line.edit(activate_kw=activate_kw, **kw)\n
   for explanation in explanation_list:\n
     storeWorkflowComment(line, explanation)\n
 \n

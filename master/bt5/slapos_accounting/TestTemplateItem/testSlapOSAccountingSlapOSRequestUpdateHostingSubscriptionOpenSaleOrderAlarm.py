@@ -231,8 +231,10 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     line = open_sale_order_line_list[0].getObject()
 
     self.assertEqual(subscription.getRelativeUrl(), line.getAggregate())
-    self.assertEqual(self.portal.portal_preferences\
-        .getPreferredInstanceSubscriptionResource(), line.getResource())
+    open_sale_order_line_template = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
+    self.assertEqual(open_sale_order_line_template.getResource(),
+        line.getResource())
     self.assertEqual(None, line.getStartDate())
 
   def test_usualLifetime_HostingSubscription(self):
@@ -276,8 +278,10 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     line = open_sale_order_line_list[0].getObject()
 
     self.assertEqual(subscription.getRelativeUrl(), line.getAggregate())
-    self.assertEqual(self.portal.portal_preferences\
-        .getPreferredInstanceSubscriptionResource(), line.getResource())
+    open_sale_order_line_template = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
+    self.assertEqual(open_sale_order_line_template.getResource(),
+        line.getResource())
     self.assertEqual(request_time, line.getStartDate())
 
     destroy_time = DateTime('2012/02/01')
@@ -325,8 +329,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     self.assertEqual(subscription.getRelativeUrl(),
         archived_line.getAggregate())
-    self.assertEqual(self.portal.portal_preferences\
-        .getPreferredInstanceSubscriptionResource(),
+    self.assertEqual(open_sale_order_line_template.getResource(),
         archived_line.getResource())
     self.assertEqual(request_time, archived_line.getStartDate())
 
