@@ -14,6 +14,6 @@ business_process_module/slapos_sale_business_process
 currency_module/EUR
 organisation_module/slapos
 organisation_module/slapos/bank_account
+service_module/slapos_discount
 service_module/slapos_instance_subscription
 service_module/slapos_tax
-service_module/slapos_discount
