@@ -60,7 +60,7 @@ FROM catalog\n
   LEFT JOIN catalog AS order_catalog ON order_catalog.uid=category.uid AND order_catalog.portal_type=\'Open Sale Order Line\' AND order_catalog.validation_state=<dtml-sqlvar open_sale_order_line_validation_state type="string">\n
 WHERE catalog.portal_type=\'Hosting Subscription\' and catalog.validation_state=<dtml-sqlvar hosting_subscription_validation_state type="string">\n
 GROUP BY catalog.uid\n
-having count(order_catalog.uid) = 0\n
+HAVING count(order_catalog.uid) = 0\n
 
 
 ]]></string> </value>
