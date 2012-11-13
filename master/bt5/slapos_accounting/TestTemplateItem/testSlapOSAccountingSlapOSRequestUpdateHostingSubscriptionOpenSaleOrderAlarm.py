@@ -432,3 +432,158 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     while stop_date < now:
       stop_date = addToDate(stop_date, to_add={'month': 1})
     self.assertEqual(stop_date, line.getStopDate())
+
+  def test_two_HostingSubscription(self):
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    self.tic()
+    subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    subscription.edit(reference='TESTHS-%s' % self.generateNewId(),
+        title='Test Title %s' % self.generateNewId(),
+        destination_section=person.getRelativeUrl())
+    self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
+
+    request_time = DateTime('2012/01/01')
+    subscription.workflow_history['instance_slap_interface_workflow'].append({
+        'comment':'Simulated request instance',
+        'error_message': '',
+        'actor': 'ERP5TypeTestCase',
+        'slap_state': 'start_requested',
+        'time': request_time,
+        'action': 'request_instance'
+    })
+    self.tic()
+
+    subscription.HostingSubscription_requestUpdateOpenSaleOrder()
+    self.tic()
+
+    open_sale_order_list = self.portal.portal_catalog(
+        portal_type='Open Sale Order',
+        default_destination_section_uid=person.getUid()
+    )
+
+    self.assertEqual(1, len(open_sale_order_list))
+    open_sale_order = open_sale_order_list[0].getObject()
+    self.assertEqual('validated', open_sale_order.getValidationState())
+
+    open_sale_order_line_list = open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+
+    self.assertEqual(1, len(open_sale_order_line_list))
+    line = open_sale_order_line_list[0].getObject()
+
+    self.assertEqual(subscription.getRelativeUrl(), line.getAggregate())
+    open_sale_order_line_template = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
+    self.assertTrue(all([q in line.getCategoryList() \
+        for q in open_sale_order_line_template.getCategoryList()]))
+    self.assertEqual(open_sale_order_line_template.getResource(),
+        line.getResource())
+    self.assertEqual(open_sale_order_line_template.getQuantity(),
+        line.getQuantity())
+    self.assertEqual(open_sale_order_line_template.getPrice(),
+        line.getPrice())
+    self.assertEqual(request_time, line.getStartDate())
+
+    subscription2 = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    subscription2.edit(reference='TESTHS-%s' % self.generateNewId(),
+        title='Test Title %s' % self.generateNewId(),
+        destination_section=person.getRelativeUrl())
+    self.portal.portal_workflow._jumpToStateFor(subscription2, 'validated')
+
+    request_time_2 = DateTime('2012/08/01')
+    subscription2.workflow_history['instance_slap_interface_workflow'].append({
+        'comment':'Simulated request instance',
+        'error_message': '',
+        'actor': 'ERP5TypeTestCase',
+        'slap_state': 'start_requested',
+        'time': request_time_2,
+        'action': 'request_instance'
+    })
+    self.tic()
+
+    subscription2.HostingSubscription_requestUpdateOpenSaleOrder()
+    self.tic()
+
+    open_sale_order_list = self.portal.portal_catalog(
+        portal_type='Open Sale Order',
+        default_destination_section_uid=person.getUid()
+    )
+
+    self.assertEqual(2, len(open_sale_order_list))
+    validated_open_sale_order_list = [q for q in open_sale_order_list
+        if q.getValidationState() == 'validated']
+    archived_open_sale_order_list = [q for q in open_sale_order_list
+        if q.getValidationState() == 'archived']
+    self.assertEqual(1, len(validated_open_sale_order_list))
+    self.assertEqual(1, len(archived_open_sale_order_list))
+    validated_open_sale_order = validated_open_sale_order_list[0].getObject()
+    archived_open_sale_order = archived_open_sale_order_list[0]\
+        .getObject()
+    self.assertEqual(open_sale_order.getRelativeUrl(),
+        archived_open_sale_order.getRelativeUrl())
+
+    validated_line_list = validated_open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+    archived_line_list = archived_open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+    self.assertEqual(2, len(validated_line_list))
+    self.assertEqual(1, len(archived_line_list))
+
+    archived_line = archived_line_list[0].getObject()
+
+    self.assertEqual(line.getRelativeUrl(), archived_line.getRelativeUrl())
+
+    self.assertEqual(subscription.getRelativeUrl(),
+        archived_line.getAggregate())
+    self.assertTrue(all([q in archived_line.getCategoryList() \
+        for q in open_sale_order_line_template.getCategoryList()]))
+    self.assertEqual(open_sale_order_line_template.getResource(),
+        archived_line.getResource())
+    self.assertEqual(open_sale_order_line_template.getQuantity(),
+        line.getQuantity())
+    self.assertEqual(open_sale_order_line_template.getPrice(),
+        line.getPrice())
+    self.assertEqual(request_time, archived_line.getStartDate())
+
+    # calculate stop date to be after now, begin with start date with precision
+    # of month
+    stop_date = request_time
+    now = DateTime()
+    while stop_date < now:
+      stop_date = addToDate(stop_date, to_add={'month': 1})
+    self.assertEqual(stop_date, archived_line.getStopDate())
+
+    stop_date_2 = request_time_2
+    now = DateTime()
+    while stop_date_2 < now:
+      stop_date_2 = addToDate(stop_date_2, to_add={'month': 1})
+
+    validated_line_1 = [q for q in validated_line_list if q.getAggregate() == \
+        subscription.getRelativeUrl()][0]
+    validated_line_2 = [q for q in validated_line_list if q.getAggregate() == \
+        subscription2.getRelativeUrl()][0]
+
+    self.assertTrue(all([q in validated_line_1.getCategoryList() \
+        for q in open_sale_order_line_template.getCategoryList()]))
+    self.assertEqual(open_sale_order_line_template.getResource(),
+        validated_line_1.getResource())
+    self.assertEqual(open_sale_order_line_template.getQuantity(),
+        line.getQuantity())
+    self.assertEqual(open_sale_order_line_template.getPrice(),
+        line.getPrice())
+    self.assertEqual(request_time, validated_line_1.getStartDate())
+    self.assertEqual(stop_date, validated_line_1.getStopDate())
+
+    self.assertTrue(all([q in validated_line_2.getCategoryList() \
+        for q in open_sale_order_line_template.getCategoryList()]))
+    self.assertEqual(open_sale_order_line_template.getResource(),
+        validated_line_2.getResource())
+    self.assertEqual(open_sale_order_line_template.getQuantity(),
+        line.getQuantity())
+    self.assertEqual(open_sale_order_line_template.getPrice(),
+        line.getPrice())
+    self.assertEqual(request_time_2, validated_line_2.getStartDate())
+    self.assertEqual(stop_date_2, validated_line_2.getStopDate())
