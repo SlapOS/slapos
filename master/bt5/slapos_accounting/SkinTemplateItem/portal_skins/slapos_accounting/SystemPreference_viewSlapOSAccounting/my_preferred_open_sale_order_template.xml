@@ -10,14 +10,13 @@
             <key> <string>delegated_list</string> </key>
             <value>
               <list>
-                <string>items</string>
                 <string>title</string>
               </list>
             </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_preferred_instance_subscription_resource</string> </value>
+            <value> <string>my_preferred_open_sale_order_template</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -62,17 +61,7 @@
                     <value> <string></string> </value>
                 </item>
                 <item>
-                    <key> <string>items</string> </key>
-                    <value>
-                      <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
-                    </value>
-                </item>
-                <item>
                     <key> <string>target</string> </key>
-                    <value> <string></string> </value>
-                </item>
-                <item>
-                    <key> <string>title</string> </key>
                     <value> <string></string> </value>
                 </item>
               </dictionary>
@@ -84,17 +73,11 @@
               <dictionary>
                 <item>
                     <key> <string>field_id</string> </key>
-                    <value> <string>my_category</string> </value>
+                    <value> <string>my_string_field</string> </value>
                 </item>
                 <item>
                     <key> <string>form_id</string> </key>
                     <value> <string>Base_viewFieldLibrary</string> </value>
-                </item>
-                <item>
-                    <key> <string>items</string> </key>
-                    <value>
-                      <list/>
-                    </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -102,23 +85,10 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Preferred Instance Subscription Resource</string> </value>
+                    <value> <string>Preferred Open Sale Order Template</string> </value>
                 </item>
               </dictionary>
             </value>
-        </item>
-      </dictionary>
-    </pickle>
-  </record>
-  <record id="2" aka="AAAAAAAAAAI=">
-    <pickle>
-      <global name="TALESMethod" module="Products.Formulator.TALESField"/>
-    </pickle>
-    <pickle>
-      <dictionary>
-        <item>
-            <key> <string>_text</string> </key>
-            <value> <string>python: [(\'\', \'\')] + [(x.getTitle(), x.getRelativeUrl()) for x in here.portal_catalog(portal_type=\'Service\', sort_on=((\'title\', \'ASC\'),),checked_permission=\'View\')]</string> </value>
         </item>
       </dictionary>
     </pickle>

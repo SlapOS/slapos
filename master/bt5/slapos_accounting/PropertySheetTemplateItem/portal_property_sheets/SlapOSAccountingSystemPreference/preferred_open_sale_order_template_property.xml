@@ -33,11 +33,13 @@
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Resource used to represent fact of Software Instance subscription</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>preferred_instance_subscription_resource_property</string> </value>
+            <value> <string>preferred_open_sale_order_template_property</string> </value>
         </item>
         <item>
             <key> <string>mode</string> </key>
