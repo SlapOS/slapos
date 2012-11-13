@@ -31,7 +31,5 @@ person_module/test_vifib_user_developer/**
 portal_alarms/promise_vifib_*
 service_module/computer_registration
 service_module/computer_registration/**
-service_module/vifib_discount
 service_module/vifib_registration
 service_module/vifib_registration/default_ssl
-service_module/vifib_tax

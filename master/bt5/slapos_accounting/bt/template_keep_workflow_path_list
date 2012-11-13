@@ -1,0 +1,15 @@
+organisation_module/slapos/bank_account
+service_module/slapos_instance_subscription
+account_module/bank
+account_module/capital
+account_module/coll_vat
+account_module/equipments
+account_module/inventories
+account_module/payable
+account_module/profit_loss
+account_module/purchase
+account_module/receivable
+account_module/refundable_vat
+account_module/sales
+service_module/slapos_tax
+service_module/slapos_discount

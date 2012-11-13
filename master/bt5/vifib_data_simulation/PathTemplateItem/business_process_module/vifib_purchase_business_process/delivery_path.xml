@@ -69,8 +69,8 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_phase/vifib/delivery</string>
-                <string>trade_date/trade_phase/vifib/order</string>
+                <string>trade_phase/slapos/delivery</string>
+                <string>trade_date/trade_phase/slapos/order</string>
                 <string>end_of/day</string>
               </tuple>
             </value>

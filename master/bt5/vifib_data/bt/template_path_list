@@ -3,7 +3,6 @@ acl_users/erp5_google_extraction
 acl_users/vifib_browser_id_authentication
 acl_users/vifib_facebook_authentication
 acl_users/vifib_google_authentication
-currency_module/EUR
 document_module/1
 notification_message_module/vifib_hosting_hosting_request
 service_module/cpu_consumption
@@ -14,8 +13,6 @@ service_module/vifib_instance_hosting
 service_module/vifib_instance_hosting/default_ssl
 service_module/vifib_instance_setup
 service_module/vifib_instance_setup/default_ssl
-service_module/vifib_instance_subscription
-service_module/vifib_instance_subscription/default_ssl
 service_module/vifib_instance_update
 service_module/vifib_instance_update/default_ssl
 service_module/vifib_software_cleanup

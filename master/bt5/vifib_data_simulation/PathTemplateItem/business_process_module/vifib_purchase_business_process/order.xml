@@ -77,7 +77,7 @@
             <value>
               <tuple>
                 <string>successor/trade_state/ordered</string>
-                <string>trade_phase/vifib/order</string>
+                <string>trade_phase/slapos/order</string>
               </tuple>
             </value>
         </item>
