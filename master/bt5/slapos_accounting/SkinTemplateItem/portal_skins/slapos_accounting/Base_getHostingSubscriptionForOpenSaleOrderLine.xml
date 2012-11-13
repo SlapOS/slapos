@@ -56,7 +56,7 @@ open_sale_order_line_validation_state</string> </value>
 SELECT\n
   catalog.uid, catalog.path\n
 FROM catalog\n
-  LEFT JOIN category ON category.category_uid=catalog.uid AND category.base_category_uid=1229\n
+  LEFT JOIN category ON category.category_uid=catalog.uid AND category.base_category_uid=<dtml-var "portal_categories.aggregate.getUid()">\n
   LEFT JOIN catalog AS order_catalog ON order_catalog.uid=category.uid AND order_catalog.portal_type=\'Open Sale Order Line\' AND order_catalog.validation_state=<dtml-sqlvar open_sale_order_line_validation_state type="string">\n
 WHERE catalog.portal_type=\'Hosting Subscription\' and catalog.validation_state=<dtml-sqlvar hosting_subscription_validation_state type="string">\n
 GROUP BY catalog.uid\n
