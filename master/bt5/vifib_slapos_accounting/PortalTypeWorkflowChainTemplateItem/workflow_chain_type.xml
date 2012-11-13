@@ -1,5 +1,9 @@
 <workflow_chain>
  <chain>
+  <type>Purchase Packing List</type>
+  <workflow>slapos_open_order_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Slave Instance</type>
   <workflow>instance_accounting_slap_interaction_workflow</workflow>
  </chain>
@@ -10,5 +14,9 @@
  <chain>
   <type>Software Instance</type>
   <workflow>instance_accounting_slap_interaction_workflow</workflow>
+ </chain>
+ <chain>
+  <type>Subscription Item Root Simulation Rule</type>
+  <workflow>edit_workflow, rule_validation_workflow</workflow>
  </chain>
 </workflow_chain>

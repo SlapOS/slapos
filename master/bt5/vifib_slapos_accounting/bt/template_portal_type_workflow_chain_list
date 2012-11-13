@@ -1,3 +1,6 @@
+Purchase Packing List | slapos_open_order_interaction_workflow
 Slave Instance | instance_accounting_slap_interaction_workflow
 Software Installation | installation_accounting_slap_interaction_workflow
 Software Instance | instance_accounting_slap_interaction_workflow
+Subscription Item Root Simulation Rule | edit_workflow
+Subscription Item Root Simulation Rule | rule_validation_workflow
