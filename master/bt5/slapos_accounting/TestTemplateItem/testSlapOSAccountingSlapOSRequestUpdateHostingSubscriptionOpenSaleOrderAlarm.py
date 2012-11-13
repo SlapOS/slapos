@@ -242,6 +242,10 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         line.getResource())
     self.assertTrue(all([q in line.getCategoryList() \
         for q in open_sale_order_line_template.getCategoryList()]))
+    self.assertEqual(open_sale_order_line_template.getQuantity(),
+        line.getQuantity())
+    self.assertEqual(open_sale_order_line_template.getPrice(),
+        line.getPrice())
     self.assertEqual(None, line.getStartDate())
 
   def test_usualLifetime_HostingSubscription(self):
@@ -291,6 +295,10 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         for q in open_sale_order_line_template.getCategoryList()]))
     self.assertEqual(open_sale_order_line_template.getResource(),
         line.getResource())
+    self.assertEqual(open_sale_order_line_template.getQuantity(),
+        line.getQuantity())
+    self.assertEqual(open_sale_order_line_template.getPrice(),
+        line.getPrice())
     self.assertEqual(request_time, line.getStartDate())
 
     destroy_time = DateTime('2012/02/01')
@@ -342,6 +350,10 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         for q in open_sale_order_line_template.getCategoryList()]))
     self.assertEqual(open_sale_order_line_template.getResource(),
         archived_line.getResource())
+    self.assertEqual(open_sale_order_line_template.getQuantity(),
+        line.getQuantity())
+    self.assertEqual(open_sale_order_line_template.getPrice(),
+        line.getPrice())
     self.assertEqual(request_time, archived_line.getStartDate())
 
     # calculate stop date to be after now, begin with start date with precision
