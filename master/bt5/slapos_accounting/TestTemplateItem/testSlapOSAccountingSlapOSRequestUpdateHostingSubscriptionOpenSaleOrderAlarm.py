@@ -288,6 +288,14 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(1, len(open_sale_order_line_list))
     line = open_sale_order_line_list[0].getObject()
 
+    # calculate stop date to be after now, begin with start date with precision
+    # of month
+    stop_date = request_time
+    now = DateTime()
+    while stop_date < now:
+      stop_date = addToDate(stop_date, to_add={'month': 1})
+    self.assertEqual(stop_date, line.getStopDate())
+
     self.assertEqual(subscription.getRelativeUrl(), line.getAggregate())
     open_sale_order_line_template = self.portal.restrictedTraverse(
         self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
@@ -300,6 +308,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
     self.assertEqual(request_time, line.getStartDate())
+    self.assertEqual(stop_date, line.getStopDate())
 
     destroy_time = DateTime('2012/02/01')
     subscription.workflow_history['instance_slap_interface_workflow'].append({
@@ -355,14 +364,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
     self.assertEqual(request_time, archived_line.getStartDate())
-
-    # calculate stop date to be after now, begin with start date with precision
-    # of month
-    stop_date = request_time
-    now = DateTime()
-    while stop_date < now:
-      stop_date = addToDate(stop_date, to_add={'month': 1})
-    self.assertEqual(stop_date, archived_line.getStopDate())
+    self.assertEqual(stop_date, line.getStopDate())
 
   def test_lateAnalysed_HostingSubscription(self):
     person = self.portal.person_module.template_member\
@@ -486,6 +488,14 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         line.getPrice())
     self.assertEqual(request_time, line.getStartDate())
 
+    # calculate stop date to be after now, begin with start date with precision
+    # of month
+    stop_date = request_time
+    now = DateTime()
+    while stop_date < now:
+      stop_date = addToDate(stop_date, to_add={'month': 1})
+    self.assertEqual(stop_date, line.getStopDate())
+
     subscription2 = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
     subscription2.edit(reference='TESTHS-%s' % self.generateNewId(),
@@ -547,13 +557,6 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
     self.assertEqual(request_time, archived_line.getStartDate())
-
-    # calculate stop date to be after now, begin with start date with precision
-    # of month
-    stop_date = request_time
-    now = DateTime()
-    while stop_date < now:
-      stop_date = addToDate(stop_date, to_add={'month': 1})
     self.assertEqual(stop_date, archived_line.getStopDate())
 
     stop_date_2 = request_time_2
