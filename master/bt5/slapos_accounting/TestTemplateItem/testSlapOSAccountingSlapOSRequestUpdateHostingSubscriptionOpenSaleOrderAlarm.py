@@ -363,3 +363,72 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     while stop_date < now:
       stop_date = addToDate(stop_date, to_add={'month': 1})
     self.assertEqual(stop_date, archived_line.getStopDate())
+
+  def test_lateAnalysed_HostingSubscription(self):
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    self.tic()
+    subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    subscription.edit(reference='TESTHS-%s' % self.generateNewId(),
+        title='Test Title %s' % self.generateNewId(),
+        destination_section=person.getRelativeUrl())
+    self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
+
+    request_time = DateTime('2012/01/01')
+    subscription.workflow_history['instance_slap_interface_workflow'].append({
+        'comment':'Simulated request instance',
+        'error_message': '',
+        'actor': 'ERP5TypeTestCase',
+        'slap_state': 'start_requested',
+        'time': request_time,
+        'action': 'request_instance'
+    })
+
+    destroy_time = DateTime('2012/02/01')
+    subscription.workflow_history['instance_slap_interface_workflow'].append({
+        'comment':'Simulated request instance',
+        'error_message': '',
+        'actor': 'ERP5TypeTestCase',
+        'slap_state': 'destroy_requested',
+        'time': destroy_time,
+        'action': 'request_destroy'
+    })
+    self.tic()
+
+    subscription.HostingSubscription_requestUpdateOpenSaleOrder()
+    self.tic()
+
+    open_sale_order_list = self.portal.portal_catalog(
+        portal_type='Open Sale Order',
+        default_destination_section_uid=person.getUid()
+    )
+
+    self.assertEqual(1, len(open_sale_order_list))
+    open_sale_order = open_sale_order_list[0].getObject()
+    self.assertEqual('validated', open_sale_order.getValidationState())
+
+    open_sale_order_line_list = open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+
+    self.assertEqual(1, len(open_sale_order_line_list))
+    line = open_sale_order_line_list[0].getObject()
+
+    self.assertEqual(subscription.getRelativeUrl(), line.getAggregate())
+    open_sale_order_line_template = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
+    self.assertTrue(all([q in line.getCategoryList() \
+        for q in open_sale_order_line_template.getCategoryList()]))
+    self.assertEqual(open_sale_order_line_template.getResource(),
+        line.getResource())
+    self.assertEqual(open_sale_order_line_template.getQuantity(),
+        line.getQuantity())
+    self.assertEqual(open_sale_order_line_template.getPrice(),
+        line.getPrice())
+    self.assertEqual(request_time, line.getStartDate())
+
+    stop_date = request_time
+    now = DateTime()
+    while stop_date < now:
+      stop_date = addToDate(stop_date, to_add={'month': 1})
+    self.assertEqual(stop_date, line.getStopDate())
