@@ -14,21 +14,32 @@ import slapos
 port = 50000
 
 
+arg_server_url = '%(server_url)s'
+arg_key_file = '%(key_file)s'
+arg_cert_file = '%(cert_file)s'
+arg_computer_id = '%(computer_id)s'
+arg_partition_id = '%(partition_id)s'
+arg_software = '%(software)s'
+arg_namebase = '%(namebase)s'
+arg_confpath = '%(confpath)s'
+
+
+
 def rename_broken_and_stop():
   try:
     slap = slapmodule.slap()
-    slap.initializeConnection('%(server_url)s',
-                              '%(key_file)s',
-                              '%(cert_file)s')
-    computer_partition = slap.registerComputerPartition(computer_guid='%(computer_id)s',
-                                                        partition_id='%(partition_id)s')
-    broken = computer_partition.request(software_release='%(software)s',
+    slap.initializeConnection(arg_server_url,
+                              arg_key_file,
+                              arg_cert_file)
+    computer_partition = slap.registerComputerPartition(computer_guid=arg_computer_id,
+                                                        partition_id=arg_partition_id)
+    broken = computer_partition.request(software_release=arg_software,
                                         software_type='frozen',
-                                        partition_reference='%(namebase)s0')
+                                        partition_reference=arg_namebase+'0')
 
     broken.rename('broken-{}'.format(time.strftime("%%d-%%b_%%H:%%M:%%S", time.gmtime())))
     broken.stopped()
-    computer_partition.rename('%(namebase)s0')
+    computer_partition.rename(arg_namebase+'0')
     print 'renaming done\n'
   except slapos.slap.slap.ServerError:
     print 'Internal server error\n'
@@ -55,7 +66,7 @@ class ResilientInstance(object):
 
 
     def loadConnectionInfos(self):
-        file = open('%(confpath)s', 'r')
+        file = open(arg_confpath, 'r')
         params = file.read().split('\n')
         file.close()
         self.nbComp = len([x.strip("' ") for x in params[0].strip('[],').split(',')])
@@ -181,7 +192,7 @@ class Wrapper(object):
         self.socket = None
 
     def getConnectionInfos(self):
-        file = open('%(confpath)s', 'r')
+        file = open(arg_confpath, 'r')
         params = file.read().split('\n')
         file.close()
         self.ips = [x.strip("' ") for x in params[0].strip('[],').split(',')]
