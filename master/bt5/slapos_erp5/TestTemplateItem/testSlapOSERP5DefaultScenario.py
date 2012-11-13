@@ -369,6 +369,38 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
             partition.contentValues(portal_type='Internet Protocol Address')],
         connection_dict.values())
 
+  def assertOpenSaleOrderCoverage(self, person_reference):
+    self.login()
+    person = self.portal.portal_catalog.getResultValue(portal_type='Person',
+        reference=person_reference)
+    hosting_subscription_list = self.portal.portal_catalog(
+        portal_type='Hosting Subscription',
+        default_destination_section_uid=person.getUid()
+    )
+
+    open_sale_order_list = self.portal.portal_catalog(
+        portal_type='Open Sale Order',
+        default_destination_section_uid=person.getUid(),
+        validation_state='validated'
+    )
+
+    if len(hosting_subscription_list) == 0:
+      self.assertEqual(0, len(open_sale_order_list))
+      return
+
+    self.assertEqual(1, len(open_sale_order_list))
+    open_sale_order = open_sale_order_list[0]
+    line_list = open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+
+    self.assertEqual(len(hosting_subscription_list), len(line_list))
+
+    self.assertSameSet(
+        [q.getRelativeUrl() for q in hosting_subscription_list],
+        [q.getAggregate() for q in line_list]
+    )
+
+
   def test(self):
     # some preparation
     self.logout()
@@ -484,5 +516,14 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
         public_server_software, public_instance_type, public_server)
 
     self.checkInstanceUnallocation(friend_reference, friend_instance_title,
-
         friend_server_software, friend_instance_type, friend_server)
+
+    # check the Open Sale Order coverage
+    self.stepCallSlaposRequestUpdateHostingSubscriptionOpenSaleOrderAlarm()
+    self.tic()
+
+    self.login()
+
+    self.assertOpenSaleOrderCoverage(owner_reference)
+    self.assertOpenSaleOrderCoverage(friend_reference)
+    self.assertOpenSaleOrderCoverage(public_reference)
