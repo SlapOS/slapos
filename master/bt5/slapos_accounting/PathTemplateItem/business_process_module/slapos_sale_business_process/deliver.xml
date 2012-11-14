@@ -106,6 +106,7 @@
                 <string>trade_phase/slapos/delivery</string>
                 <string>predecessor/trade_state/ordered</string>
                 <string>successor/trade_state/delivered</string>
+                <string>delivery_builder/portal_deliveries/slapos_sale_packing_list_builder</string>
               </tuple>
             </value>
         </item>
