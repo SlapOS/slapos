@@ -14,7 +14,7 @@ class TestSlapOSConstraintMixin(testSlapOSMixin):
     return [str(q.getMessage()) for q in o.checkConsistency()]
 
   def _test_property_existence(self, obj, property_id, consistency_message,
-      value='A'):
+      value='A', empty_string=True):
     obj.edit(**{property_id:value})
 
     # fetch basic list of consistency messages
@@ -28,8 +28,9 @@ class TestSlapOSConstraintMixin(testSlapOSMixin):
     delattr(obj, property_id)
     self.assertTrue(consistency_message in self.getMessageList(obj))
 
-    obj.edit(**{property_id:''})
-    self.assertTrue(consistency_message in self.getMessageList(obj))
+    if empty_string:
+      obj.edit(**{property_id:''})
+      self.assertTrue(consistency_message in self.getMessageList(obj))
 
     obj.edit(**{property_id:value})
     self.assertFalse(consistency_message in self.getMessageList(obj))
