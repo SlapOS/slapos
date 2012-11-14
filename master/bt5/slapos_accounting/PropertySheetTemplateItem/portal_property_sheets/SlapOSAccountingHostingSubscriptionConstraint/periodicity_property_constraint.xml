@@ -68,7 +68,7 @@
         </item>
         <item>
             <key> <string>test_tales_expression</string> </key>
-            <value> <string>python: context.getPortalObject().portal_catalog.getResultValue(portal_type=\'Sale Packing List Line\', default_aggregate_uid=context.getUid(), default_resource_uid=context.getPortalObject().restrictedTraverse(context.getPortalObject().portal_preferences.getPreferredInstanceSetupResource()).getUid(), simulation_state=(\'stopped\', \'delivered\')) is not None</string> </value>
+            <value> <string>python: True</string> </value>
         </item>
       </dictionary>
     </pickle>

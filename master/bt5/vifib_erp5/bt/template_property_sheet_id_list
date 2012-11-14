@@ -9,6 +9,5 @@ VifibSaleInvoiceConstraint
 VifibSalePackingListLineConstraint
 VifibSalePackingListConstraint
 VifibOpenSaleOrderLineConstraint
-VifibHostingSubscriptionConstraint
 VifibOpenSaleOrderConstraint
 VifibObsoleteConstraint
