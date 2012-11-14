@@ -50,7 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
+            <value> <string>return\n
+instance = state_change[\'object\']\n
 hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
 person_relative_url = hosting_subscription.getDestinationSection()\n
 portal = instance.getPortalObject()\n

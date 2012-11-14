@@ -31,8 +31,6 @@ portal_rules/vifib_order_root_simulation_rule
 portal_rules/vifib_order_root_simulation_rule/**
 portal_rules/vifib_payment_simulation_rule
 portal_rules/vifib_payment_simulation_rule/**
-portal_rules/vifib_subscription_item_rule
-portal_rules/vifib_subscription_item_rule/**
 portal_rules/vifib_trade_model_simulation_rule
 portal_rules/vifib_trade_model_simulation_rule/**
 portal_solvers/Accept Solver

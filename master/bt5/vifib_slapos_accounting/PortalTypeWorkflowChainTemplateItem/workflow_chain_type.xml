@@ -15,8 +15,4 @@
   <type>Software Instance</type>
   <workflow>instance_accounting_slap_interaction_workflow</workflow>
  </chain>
- <chain>
-  <type>Subscription Item Root Simulation Rule</type>
-  <workflow>edit_workflow, rule_validation_workflow</workflow>
- </chain>
 </workflow_chain>

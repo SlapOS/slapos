@@ -50,7 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
+            <value> <string>return\n
+instance = state_change[\'object\']\n
 # Get latest workflow transition\n
 state = instance.getSlapState()\n
 started = "start_requested"\n

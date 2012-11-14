@@ -1,0 +1,6 @@
+<workflow_chain>
+ <chain>
+  <type>Subscription Item Root Simulation Rule</type>
+  <workflow>edit_workflow, rule_validation_workflow</workflow>
+ </chain>
+</workflow_chain>
