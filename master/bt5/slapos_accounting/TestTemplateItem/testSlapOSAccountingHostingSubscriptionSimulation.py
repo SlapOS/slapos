@@ -158,4 +158,86 @@ class TestHostingSubscriptionSimulation(testSlapOSMixin):
     # There are 3 movements, for February, March and April
     self.assertEqual(3, len(simulation_movement_list))
 
+  def test_update_frozen_simulation(self):
+    self._prepare()
+    applied_rule_list = self.portal.portal_catalog(portal_type='Applied Rule',
+        causality_uid=self.subscription.getUid())
+    self.assertEqual(1, len(applied_rule_list))
 
+    applied_rule = applied_rule_list[0].getObject()
+    rule = applied_rule.getSpecialiseValue()
+
+    self.assertEqual('Subscription Item Root Simulation Rule',
+        rule.getPortalType())
+    self.assertEqual('default_subscription_item_rule', rule.getReference())
+
+    simulation_movement_list = self.portal.portal_catalog(
+        portal_type='Simulation Movement',
+        parent_uid=applied_rule.getUid(),
+        sort_on=(('movement.start_date', 'ASC'),)
+    )
+
+    # There are 2 movements, for February and March
+    self.assertEqual(2, len(simulation_movement_list))
+
+    # Check the list of expected simulation
+    idx = 0
+    for simulation_movement in simulation_movement_list:
+      simulation_movement = simulation_movement.getObject()
+      movement_start_date = addToDate(self.initial_date, to_add=dict(month=idx))
+      movement_stop_date = addToDate(self.initial_date, to_add=dict(month=idx+1))
+      # Check simulation movement property
+      self.assertEqual(movement_start_date, simulation_movement.getStartDate())
+      self.assertEqual(movement_stop_date, simulation_movement.getStopDate())
+      self.assertEquals(self.open_order_line.getQuantity(),
+        simulation_movement.getQuantity())
+      self.assertEquals(self.open_order_line.getQuantityUnit(),
+        simulation_movement.getQuantityUnit())
+      self.assertEquals(self.open_order_line.getPrice(),
+        simulation_movement.getPrice())
+      self.assertEquals(self.open_order_line.getPriceCurrency(),
+        simulation_movement.getPriceCurrency())
+      self.assertEquals(self.open_order_line.getSource(),
+        simulation_movement.getSource())
+      self.assertEquals(self.open_order_line.getSourceSection(),
+        simulation_movement.getSourceSection())
+      self.assertEquals(self.open_order_line.getDestination(),
+        simulation_movement.getDestination())
+      self.assertEquals(self.open_order_line.getDestinationSection(),
+        simulation_movement.getDestinationSection())
+      self.assertEquals(self.open_order_line.getSpecialise(),
+        simulation_movement.getSpecialise())
+      self.assertEquals(self.open_order_line.getResource(),
+        simulation_movement.getResource())
+      self.assertEquals(applied_rule.getSpecialiseValue().getTradePhaseList(),
+        simulation_movement.getTradePhaseList())
+      self.assertSameSet(self.open_order_line.getAggregateList(),
+        simulation_movement.getAggregateList())
+      self.assertEqual('planned', simulation_movement.getSimulationState())
+      self.assertEqual(None, simulation_movement.getDelivery())
+
+      applied_rule_list_level_2 = simulation_movement.contentValues(
+          portal_type='Applied Rule')
+      self.assertEqual(0, len(applied_rule_list_level_2))
+      # check next simulation movement
+      idx += 1
+    def isFrozen(*args, **kwargs):
+      return True
+    try:
+      from Products.ERP5.Document.SimulationMovement import SimulationMovement
+      SimulationMovement.originalIsFrozen = SimulationMovement.isFrozen
+      SimulationMovement.isFrozen = isFrozen
+
+      # reexpanding non changed will work correctly
+      applied_rule.expand(expand_policy='immediate')
+      self.tic()
+
+      # reexpanding with change on frozen movement will raise
+      self.subscription.edit(periodicity_month_day=self.subscription\
+          .getPeriodicityMonthDay() - 1)
+      self.tic()
+      self.assertRaises(NotImplementedError,
+          applied_rule.expand, expand_policy='immediate')
+    finally:
+      SimulationMovement.isFrozen = SimulationMovement.originalIsFrozen
+      delattr(SimulationMovement, 'originalIsFrozen')
