@@ -369,6 +369,35 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
             partition.contentValues(portal_type='Internet Protocol Address')],
         connection_dict.values())
 
+  def assertHostingSubscriptionSimulationCoverage(self, subscription,
+      level=1):
+    self.login()
+    applied_rule_list = self.portal.portal_catalog(portal_type='Applied Rule',
+        causality_uid=subscription.getUid())
+    self.assertEqual(1, len(applied_rule_list))
+    applied_rule = applied_rule_list[0]
+    simulation_movement_list = applied_rule.contentValues(
+        portal_type='Simulation Movement')
+    self.assertNotEqual(0, len(simulation_movement_list))
+
+    open_sale_order_line_template = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
+    for simulation_movement in simulation_movement_list:
+      self.assertEqual(open_sale_order_line_template.getResource(),
+          simulation_movement.getResource())
+      self.assertEqual(subscription.getRelativeUrl(),
+          simulation_movement.getAggregate())
+      self.assertEqual(subscription.getPeriodicityMonthDay(),
+          simulation_movement.getStartDate().day())
+      self.assertEqual(subscription.getPeriodicityMonthDay(),
+          simulation_movement.getStopDate().day())
+      applied_rule_list_l2 = simulation_movement.contentValues(
+          portal_type='Applied Rule')
+      if level == 1:
+        self.assertEqual(0, len(applied_rule_list_l2))
+      else:
+        raise NotImplementedError
+
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
     person = self.portal.portal_catalog.getResultValue(portal_type='Person',
@@ -527,3 +556,18 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.assertOpenSaleOrderCoverage(owner_reference)
     self.assertOpenSaleOrderCoverage(friend_reference)
     self.assertOpenSaleOrderCoverage(public_reference)
+
+    # check the Subscription Simulation
+
+    self.stepCallUpdateOpenOrderSimulationAlarm()
+    self.tic()
+
+    for person_reference in (owner_reference, friend_reference,
+        public_reference):
+      person = self.portal.portal_catalog.getResultValue(portal_type='Person',
+          reference=person_reference)
+      for subscription in self.portal.portal_catalog(
+          portal_type='Hosting Subscription',
+          default_destination_section_uid=person.getUid()):
+        self.assertHostingSubscriptionSimulationCoverage(
+            subscription.getObject())
