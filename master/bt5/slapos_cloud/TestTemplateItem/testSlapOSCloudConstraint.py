@@ -25,7 +25,7 @@ class TestSlapOSConstraintMixin(testSlapOSMixin):
 
 
     # required
-    obj.edit(**{property_id:None})
+    delattr(obj, property_id)
     self.assertTrue(consistency_message in self.getMessageList(obj))
 
     obj.edit(**{property_id:''})
