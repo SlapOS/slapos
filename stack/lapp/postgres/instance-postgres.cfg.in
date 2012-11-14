@@ -13,8 +13,11 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
 
+#----------------
+#--
+#-- Fetches parameters defined in SlapOS Master for this instance
+
 [instance-parameters]
-# Fetches parameters defined in SlapOS Master for this instance
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap-connection:computer-id}
 partition = $${slap-connection:partition-id}
@@ -23,21 +26,9 @@ key = $${slap-connection:key-file}
 cert = $${slap-connection:cert-file}
 
 
-[cron]
-recipe = slapos.cookbook:cron
-dcrond-binary = ${dcron:location}/sbin/crond
-cron-entries = $${directory:cron-entries}
-crontabs = $${directory:crontabs}
-cronstamps = $${directory:cronstamps}
-catcher = $${cron-simplelogger:wrapper}
-binary = $${basedirectory:services}/crond
-
-
-[cron-simplelogger]
-recipe = slapos.cookbook:simplelogger
-wrapper = $${rootdirectory:bin}/cron_simplelogger
-log = $${basedirectory:log}/crond.log
-
+#----------------
+#--
+#-- Creation of all needed directories.
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -60,14 +51,30 @@ crontabs = $${rootdirectory:etc}/crontabs/
 cronstamps = $${rootdirectory:etc}/cronstamps/
 
 
-[symlinks]
-recipe = cns.recipe.symlink
-symlink_target = $${rootdirectory:bin}
-symlink_base = ${postgresql:location}/bin
+#----------------
+#--
+#-- Cron
 
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${basedirectory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${rootdirectory:bin}/cron_simplelogger
+log = $${basedirectory:log}/crond.log
+
+
+#----------------
+#--
+#-- Creates a Postgres cluster, configuration files, and a database.
 
 [postgres-instance]
-# create cluster, configuration files and a database
 recipe = slapos.cookbook:postgres
 
 # Options
@@ -83,13 +90,30 @@ bin = $${rootdirectory:bin}
 dependency-symlinks = $${symlinks:recipe}
 
 
-# Deploy promises scripts
+#----------------
+#--
+#-- Creates symlinks from the instance to the software release.
+
+[symlinks]
+recipe = cns.recipe.symlink
+symlink_target = $${rootdirectory:bin}
+symlink_base = ${postgresql:location}/bin
+
+
+#----------------
+#--
+#-- Deploy promise scripts.
+
 [postgres-promise]
 recipe = slapos.cookbook:check_port_listening
 path = $${basedirectory:promises}/postgres
 hostname = $${slap-network-information:global-ipv6}
 port = $${postgres-instance:port}
 
+
+#----------------
+#--
+#-- Publish instance URL.
 
 [urls]
 recipe = slapos.cookbook:publishurl

@@ -34,14 +34,16 @@ import os
 import lxml
 
 
-# TODO: remove the hack below, used to reach psycopg2
 # XXX: When run inside webrunner, Postgres refuses connection.
 # TODO: make the recipe work inside webrunner
 
 
+# XXX What follows is a crud hack to import psycopg2.
+# It basically relies on the fact that lxml (required by slapos.core) is installed
+# alongside with psycopg2.
+# This should be rewritten (how?) and DOES NOT WORK WHEN DEVELOPING slapos.core.
 
 def temporary_hack():
-    # XXX TODO provide psycopg to sys.path by other means
     import sys
     develop_eggs = '/'.join(lxml.__file__.split('/')[:lxml.__file__.split('/').index('develop-eggs')+1])
     for egg_folder in os.listdir(develop_eggs):

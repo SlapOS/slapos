@@ -1,4 +1,5 @@
 [buildout]
+extends = ${custom-application-deployment:path}
 
 parts =
   certificate-authority
@@ -14,14 +15,17 @@ parts =
   frontend-promise
   content-promise
   publish-connection-informations
-  maarch-instance
+  ${custom-application-deployment:part-list}
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
 
-# Creation of all needed directories
+#----------------
+#--
+#-- Creation of all needed directories.
+
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
 etc = $${buildout:directory}/etc/
@@ -60,7 +64,10 @@ newcerts = $${directory:ca-dir}/newcerts/
 crl = $${directory:ca-dir}/crl/
 
 
-# Deploy stunnel
+#----------------
+#--
+#-- Deploy stunnel.
+
 [stunnel]
 recipe = slapos.cookbook:stunnel
 client = true
@@ -78,7 +85,10 @@ wrapper = $${rootdirectory:bin}/raw_stunnel
 post-rotate-script = $${rootdirectory:bin}/stunnel_post_rotate
 
 
-# Certificate stuffs
+#----------------
+#--
+#-- Certificate stuff.
+
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = ${openssl:location}/bin/openssl
@@ -99,7 +109,10 @@ key-file = $${stunnel:key-file}
 cert-file = $${stunnel:cert-file}
 
 
-# Request Postgres instance and parse its URL
+#----------------
+#--
+#-- Request Postgres instance and parse its URL.
+
 [request-postgres]
 <= slap-connection
 recipe = slapos.cookbook:request
@@ -115,7 +128,11 @@ recipe = slapos.cookbook:urlparse
 url = $${request-postgres:connection-url}
 
 
-# Deploy Apache + PHP application
+#----------------
+#--
+#-- Deploy Apache + PHP application.
+#-- Despite the names of mysql-* parameters, they are not really specific to mysql.
+
 [apache-php]
 recipe = slapos.cookbook:apachephp
 source = ${application:location}
@@ -144,7 +161,10 @@ mysql-host = $${stunnel:local-host}
 mysql-port = $${stunnel:local-port}
 
 
-# Deploy logrotate, cron, configure it
+#----------------
+#--
+#-- Deploy logrotate, cron, configure it.
+
 [logrotate]
 recipe = slapos.cookbook:logrotate
 # Binaries
@@ -202,7 +222,10 @@ frequency = 0 0 * * *
 command = $${logrotate:wrapper}
 
 
-# Request frontend
+#----------------
+#--
+#-- Request frontend.
+
 [request-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
@@ -216,7 +239,10 @@ return = site_url
 config-custom_domain = $${slap-parameter:domain}
 
 
-# Deploy slapmonitor
+#----------------
+#--
+#-- Deploy slapmonitor.
+
 [slapmonitor]
 recipe = slapos.cookbook:slapmonitor
 pid-file = $${basedirectory:run}/apache.pid
@@ -239,14 +265,20 @@ slapreport-path = ${buildout:bin-directory}/slapreport
 path = $${basedirectory:services}/slapreport
 
 
-# Publish all instance parameters (url of instance)
+#----------------
+#--
+#-- Publish all instance parameters (url of instance).
+
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 backend_url = $${apache-php:url}
 url = $${request-frontend:connection-site_url}
 
 
-# Deploy promises scripts
+#----------------
+#--
+#-- Deploy promises scripts.
+
 [promise]
 recipe = slapos.cookbook:check_port_listening
 path = $${basedirectory:promises}/apache
@@ -267,6 +299,9 @@ url = $${request-frontend:connection-site_url}
 dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 
+
+
+
 [slap-parameter]
 # Default value if no domain is specified
 domain =
@@ -275,16 +310,4 @@ logbox-ip =
 logbox-port =
 logbox-user =
 logbox-passwd =
-
-[maarch-instance]
-recipe = slapos.cookbook:maarch.configuration
-htdocs = $${apache-php:htdocs}
-db_host = $${postgres-urlparse:host}
-db_port = $${postgres-urlparse:port}
-db_dbname = $${postgres-urlparse:path}
-db_username = $${postgres-urlparse:username}
-db_password = $${postgres-urlparse:password}
-language = en
-php_ini_dir = $${directory:php-ini-dir}
-root_docservers = $${buildout:directory}/srv/docservers
 
