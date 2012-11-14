@@ -12,6 +12,7 @@ from Products.ERP5Type.DateUtils import addToDate
 
 class TestHostingSubscriptionSimulation(testSlapOSMixin):
   def _prepare(self):
+    self.login()
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
     self.subscription = self.portal.hosting_subscription_module\
