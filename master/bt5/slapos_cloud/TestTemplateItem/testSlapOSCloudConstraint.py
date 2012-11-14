@@ -8,31 +8,32 @@ from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 import transaction
 
-def getMessageList(o):
-  return [str(q.getMessage()) for q in o.checkConsistency()]
-
 class TestSlapOSConstraintMixin(testSlapOSMixin):
-  def _test_property_existence(self, property_id, consistency_message,
+  @staticmethod
+  def getMessageList(o):
+    return [str(q.getMessage()) for q in o.checkConsistency()]
+
+  def _test_property_existence(self, obj, property_id, consistency_message,
       value='A'):
-    self.software_instance.edit(**{property_id:value})
+    obj.edit(**{property_id:value})
 
     # fetch basic list of consistency messages
-    current_message_list = getMessageList(self.software_instance)
+    current_message_list = self.getMessageList(obj)
 
     # test the test: no expected message found
     self.assertFalse(consistency_message in current_message_list)
 
 
     # required
-    self.software_instance.edit(**{property_id:None})
-    self.assertTrue(consistency_message in getMessageList(self.software_instance))
+    obj.edit(**{property_id:None})
+    self.assertTrue(consistency_message in self.getMessageList(obj))
 
-    self.software_instance.edit(**{property_id:''})
-    self.assertTrue(consistency_message in getMessageList(self.software_instance))
+    obj.edit(**{property_id:''})
+    self.assertTrue(consistency_message in self.getMessageList(obj))
 
-    self.software_instance.edit(**{property_id:value})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    obj.edit(**{property_id:value})
+    self.assertFalse(consistency_message in self.getMessageList(obj))
+    self.assertSameSet(current_message_list, self.getMessageList(obj))
 
 class TestSlapOSComputerPartitionConstraint(TestSlapOSConstraintMixin):
   def test_non_busy_partition_has_no_related_instance(self):
@@ -53,15 +54,15 @@ class TestSlapOSComputerPartitionConstraint(TestSlapOSConstraintMixin):
         "arity is equal to 1 but should be between 0 and 0"
 
     # test the test: no expected message found
-    current_message_list = getMessageList(partition)
+    current_message_list = self.getMessageList(partition)
     self.assertFalse(consistency_message in current_message_list)
 
     # check case for Software Instance
     software_instance.setAggregate(partition.getRelativeUrl())
     software_instance.immediateReindexObject()
-    self.assertTrue(consistency_message in getMessageList(partition))
+    self.assertTrue(consistency_message in self.getMessageList(partition))
     self.portal.portal_workflow._jumpToStateFor(partition, 'busy')
-    self.assertFalse(consistency_message in getMessageList(partition))
+    self.assertFalse(consistency_message in self.getMessageList(partition))
     self.portal.portal_workflow._jumpToStateFor(partition, 'free')
     software_instance.setAggregate(None)
     software_instance.immediateReindexObject()
@@ -69,9 +70,9 @@ class TestSlapOSComputerPartitionConstraint(TestSlapOSConstraintMixin):
     # check case fo Slave Instance
     slave_instance.setAggregate(partition.getRelativeUrl())
     slave_instance.immediateReindexObject()
-    self.assertTrue(consistency_message in getMessageList(partition))
+    self.assertTrue(consistency_message in self.getMessageList(partition))
     self.portal.portal_workflow._jumpToStateFor(partition, 'busy')
-    self.assertFalse(consistency_message in getMessageList(partition))
+    self.assertFalse(consistency_message in self.getMessageList(partition))
     self.portal.portal_workflow._jumpToStateFor(partition, 'free')
 
 class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
@@ -84,7 +85,7 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
 
   def test_connection_xml(self):
     # fetch basic list of consistency messages
-    current_message_list = getMessageList(self.software_instance)
+    current_message_list = self.getMessageList(self.software_instance)
 
     consistency_message = "Connection XML is invalid: Start tag expected, '<' not "\
         "found, line 1, column 1"
@@ -95,23 +96,24 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
 
     # connection_xml is optional
     self.software_instance.edit(connection_xml=None)
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
     self.software_instance.edit(connection_xml='')
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
     # if available shall be correct XML
     self.software_instance.edit(connection_xml='this is bad xml')
-    self.assertTrue(consistency_message in getMessageList(self.software_instance))
+    self.assertTrue(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(connection_xml=self.generateEmptyXml())
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
   def test_property_existence_destination_reference(self):
-    self._test_property_existence('destination_reference',
+    self._test_property_existence(self.software_instance,
+        'destination_reference',
         'Property existence error for property destination_reference, this document'
         ' has no such property or the property has never been set')
 
@@ -122,17 +124,18 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
         'has never been set'
     # not required in draft state
     self.software_instance.edit(**{property_id:None})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(**{property_id:''})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.portal.portal_workflow._jumpToStateFor(self.software_instance,
         'start_requested')
-    self._test_property_existence(property_id, consistency_message)
+    self._test_property_existence(self.software_instance,property_id,
+        consistency_message)
 
   def test_property_existence_reference(self):
-    self._test_property_existence('reference',
+    self._test_property_existence(self.software_instance, 'reference',
         'Property existence error for property reference, this document'
         ' has no such property or the property has never been set')
 
@@ -141,30 +144,32 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
     consistency_message = 'Property existence error for property '\
         'ssl_certificate, this document has no such property or the property'\
         ' has never been set'
-    self._test_property_existence(property_id, consistency_message)
+    self._test_property_existence(self.software_instance, property_id,
+        consistency_message)
     # not required in destroy_requested state
     self.portal.portal_workflow._jumpToStateFor(self.software_instance,
         'destroy_requested')
     self.software_instance.edit(**{property_id:None})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(**{property_id:''})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
   def test_property_existence_ssl_key(self):
     property_id = 'ssl_key'
     consistency_message = 'Property existence error for property '\
         'ssl_key, this document has no such property or the property'\
         ' has never been set'
-    self._test_property_existence(property_id, consistency_message)
+    self._test_property_existence(self.software_instance, property_id,
+        consistency_message)
     # not required in destroy_requested state
     self.portal.portal_workflow._jumpToStateFor(self.software_instance,
         'destroy_requested')
     self.software_instance.edit(**{property_id:None})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(**{property_id:''})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
   def test_predecessor_related(self):
     software_instance2 = self.portal.software_instance_module.newContent(
@@ -173,7 +178,7 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
       portal_type='Software Instance')
 
     # fetch basic list of consistency messages
-    current_message_list = getMessageList(self.software_instance)
+    current_message_list = self.getMessageList(self.software_instance)
 
     consistency_message = "There is more then one related predecessor"
 
@@ -184,23 +189,23 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
     software_instance2.edit(predecessor=self.software_instance.getRelativeUrl())
     software_instance3.edit(predecessor=self.software_instance.getRelativeUrl())
     self.tic()
-    self.assertTrue(consistency_message in getMessageList(self.software_instance))
+    self.assertTrue(consistency_message in self.getMessageList(self.software_instance))
 
     # one is good
     software_instance2.edit(predecessor=None)
     self.tic()
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
     # none is good
     software_instance3.edit(predecessor=None)
     self.tic()
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
   def test_sla_xml(self):
     # fetch basic list of consistency messages
-    current_message_list = getMessageList(self.software_instance)
+    current_message_list = self.getMessageList(self.software_instance)
 
     consistency_message = "Sla XML is invalid: Start tag expected, '<' not "\
         "found, line 1, column 1"
@@ -211,24 +216,24 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
 
     # sla_xml is optional
     self.software_instance.edit(sla_xml=None)
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
     self.software_instance.edit(sla_xml='')
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
     # if available shall be correct XML
     self.software_instance.edit(sla_xml='this is bad xml')
-    self.assertTrue(consistency_message in getMessageList(self.software_instance))
+    self.assertTrue(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(sla_xml=self.generateEmptyXml())
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
   def test_text_content(self):
     # fetch basic list of consistency messages
-    current_message_list = getMessageList(self.software_instance)
+    current_message_list = self.getMessageList(self.software_instance)
 
     consistency_message = "Instance XML is invalid: Start tag expected, '<' not "\
         "found, line 1, column 1"
@@ -239,20 +244,20 @@ class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
 
     # text_content is optional
     self.software_instance.edit(text_content=None)
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
     self.software_instance.edit(text_content='')
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
     # if available shall be correct XML
     self.software_instance.edit(text_content='this is bad xml')
-    self.assertTrue(consistency_message in getMessageList(self.software_instance))
+    self.assertTrue(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(text_content=self.generateEmptyXml())
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
 class TestSlapOSSlaveInstanceConstraint(TestSlapOSConstraintMixin):
   def afterSetUp(self):
@@ -269,14 +274,15 @@ class TestSlapOSSlaveInstanceConstraint(TestSlapOSConstraintMixin):
     property_id = 'source_reference'
     # not required in draft state
     self.software_instance.edit(**{property_id:None})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(**{property_id:''})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.portal.portal_workflow._jumpToStateFor(self.software_instance,
         'start_requested')
-    self._test_property_existence(property_id, consistency_message)
+    self._test_property_existence(self.software_instance,
+        property_id, consistency_message)
 
   def test_property_existence_text_content(self):
     consistency_message = 'Property existence error for property '\
@@ -285,17 +291,18 @@ class TestSlapOSSlaveInstanceConstraint(TestSlapOSConstraintMixin):
     property_id = 'text_content'
     # not required in draft state
     self.software_instance.edit(**{property_id:None})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(**{property_id:''})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.portal.portal_workflow._jumpToStateFor(self.software_instance,
         'start_requested')
-    self._test_property_existence(property_id, consistency_message)
+    self._test_property_existence(self.software_instance, property_id,
+        consistency_message)
 
   def test_property_existence_reference(self):
-    self._test_property_existence('reference',
+    self._test_property_existence(self.software_instance, 'reference',
         'Property existence error for property reference, this document'
         ' has no such property or the property has never been set')
 
@@ -306,7 +313,7 @@ class TestSlapOSSlaveInstanceConstraint(TestSlapOSConstraintMixin):
       portal_type='Slave Instance')
 
     # fetch basic list of consistency messages
-    current_message_list = getMessageList(self.software_instance)
+    current_message_list = self.getMessageList(self.software_instance)
 
     consistency_message = "There is more then one related predecessor"
 
@@ -317,19 +324,19 @@ class TestSlapOSSlaveInstanceConstraint(TestSlapOSConstraintMixin):
     software_instance2.edit(predecessor=self.software_instance.getRelativeUrl())
     software_instance3.edit(predecessor=self.software_instance.getRelativeUrl())
     self.tic()
-    self.assertTrue(consistency_message in getMessageList(self.software_instance))
+    self.assertTrue(consistency_message in self.getMessageList(self.software_instance))
 
     # one is good
     software_instance2.edit(predecessor=None)
     self.tic()
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
     # none is good
     software_instance3.edit(predecessor=None)
     self.tic()
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
-    self.assertSameSet(current_message_list, getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
+    self.assertSameSet(current_message_list, self.getMessageList(self.software_instance))
 
 class TestSlapOSHostingSubscriptionConstraint(TestSlapOSConstraintMixin):
   def afterSetUp(self):
@@ -340,12 +347,12 @@ class TestSlapOSHostingSubscriptionConstraint(TestSlapOSConstraintMixin):
     transaction.abort()
 
   def test_property_existence_reference(self):
-    self._test_property_existence('reference',
+    self._test_property_existence(self.software_instance, 'reference',
         'Property existence error for property reference, this document'
         ' has no such property or the property has never been set')
 
   def test_property_existence_title(self):
-    self._test_property_existence('title',
+    self._test_property_existence(self.software_instance, 'title',
         'Property existence error for property title, this document'
         ' has no such property or the property has never been set')
 
@@ -356,14 +363,15 @@ class TestSlapOSHostingSubscriptionConstraint(TestSlapOSConstraintMixin):
         'has never been set'
     # not required in draft state
     self.software_instance.edit(**{property_id:None})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(**{property_id:''})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.portal.portal_workflow._jumpToStateFor(self.software_instance,
         'start_requested')
-    self._test_property_existence(property_id, consistency_message)
+    self._test_property_existence(self.software_instance, property_id,
+        consistency_message)
 
   def test_property_existence_root_slave(self):
     property_id = 'root_slave'
@@ -372,14 +380,15 @@ class TestSlapOSHostingSubscriptionConstraint(TestSlapOSConstraintMixin):
         'has never been set'
     # not required in draft state
     self.software_instance.edit(**{property_id:None})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(**{property_id:''})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.portal.portal_workflow._jumpToStateFor(self.software_instance,
         'start_requested')
-    self._test_property_existence(property_id, consistency_message, value=True)
+    self._test_property_existence(self.software_instance, property_id,
+        consistency_message, value=True)
 
   def test_property_existence_url_string(self):
     property_id = 'url_string'
@@ -388,31 +397,32 @@ class TestSlapOSHostingSubscriptionConstraint(TestSlapOSConstraintMixin):
         'has never been set'
     # not required in draft state
     self.software_instance.edit(**{property_id:None})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.software_instance.edit(**{property_id:''})
-    self.assertFalse(consistency_message in getMessageList(self.software_instance))
+    self.assertFalse(consistency_message in self.getMessageList(self.software_instance))
 
     self.portal.portal_workflow._jumpToStateFor(self.software_instance,
         'start_requested')
-    self._test_property_existence(property_id, consistency_message)
+    self._test_property_existence(self.software_instance, property_id,
+        consistency_message)
 
-class TestSlapOSPersonConstraint(testSlapOSMixin):
+class TestSlapOSPersonConstraint(TestSlapOSConstraintMixin):
 
   def test_role(self):
     person = self.portal.person_module.newContent(portal_type='Person')
     consistency_message = 'One role should be defined'
-    self.assertTrue(consistency_message in getMessageList(person))
+    self.assertTrue(consistency_message in self.getMessageList(person))
 
     role_id_list = list(self.portal.portal_categories.role.objectIds())
     self.assertTrue(len(role_id_list) >= 2)
     person.setRole(role_id_list[0])
-    self.assertFalse(consistency_message in getMessageList(person))
+    self.assertFalse(consistency_message in self.getMessageList(person))
 
     person.setRoleList(role_id_list)
-    self.assertTrue(consistency_message in getMessageList(person))
+    self.assertTrue(consistency_message in self.getMessageList(person))
     person.setRole(role_id_list[0])
-    self.assertFalse(consistency_message in getMessageList(person))
+    self.assertFalse(consistency_message in self.getMessageList(person))
 
   def test_subordination_state(self):
     organisation = self.portal.organisation_module.newContent(
@@ -421,67 +431,67 @@ class TestSlapOSPersonConstraint(testSlapOSMixin):
       subordination=organisation.getRelativeUrl())
     consistency_message = 'The Organisation is not validated'
 
-    self.assertTrue(consistency_message in getMessageList(person))
+    self.assertTrue(consistency_message in self.getMessageList(person))
 
     organisation.validate()
 
-    self.assertFalse(consistency_message in getMessageList(person))
+    self.assertFalse(consistency_message in self.getMessageList(person))
 
   def test_email(self):
     person = self.portal.person_module.newContent(portal_type='Person')
     consistency_message = 'Person have to contain an Email'
 
-    self.assertTrue(consistency_message in getMessageList(person))
+    self.assertTrue(consistency_message in self.getMessageList(person))
 
     person.newContent(portal_type='Email')
 
-    self.assertFalse(consistency_message in getMessageList(person))
+    self.assertFalse(consistency_message in self.getMessageList(person))
 
-class TestSlapOSAssignmentConstraint(testSlapOSMixin):
+class TestSlapOSAssignmentConstraint(TestSlapOSConstraintMixin):
   def test_parent_person_validated(self):
     person = self.portal.person_module.newContent(portal_type='Person')
     assignment = person.newContent(portal_type='Assignment')
 
     consistency_message = 'The person document has to be validated to start '\
       'assignment'
-    self.assertTrue(consistency_message in getMessageList(assignment))
+    self.assertTrue(consistency_message in self.getMessageList(assignment))
 
     person.validate()
 
-    self.assertFalse(consistency_message in getMessageList(assignment))
+    self.assertFalse(consistency_message in self.getMessageList(assignment))
 
-class TestSlapOSEmailConstraint(testSlapOSMixin):
+class TestSlapOSEmailConstraint(TestSlapOSConstraintMixin):
   def test_url_string_not_empty(self):
     email = self.portal.person_module.newContent(portal_type='Person'
       ).newContent(portal_type='Email')
     consistency_message = 'Email must be defined'
 
-    self.assertTrue(consistency_message in getMessageList(email))
+    self.assertTrue(consistency_message in self.getMessageList(email))
 
     email.setUrlString(self.generateNewId())
 
-    self.assertFalse(consistency_message in getMessageList(email))
+    self.assertFalse(consistency_message in self.getMessageList(email))
 
-class TestSlapOSComputerConstraint(testSlapOSMixin):
+class TestSlapOSComputerConstraint(TestSlapOSConstraintMixin):
   def test_title_not_empty(self):
     computer = self.portal.computer_module.newContent(portal_type='Computer')
     consistency_message = 'Title must be defined'
 
-    self.assertTrue(consistency_message in getMessageList(computer))
+    self.assertTrue(consistency_message in self.getMessageList(computer))
 
     computer.setTitle(self.generateNewId())
 
-    self.assertFalse(consistency_message in getMessageList(computer))
+    self.assertFalse(consistency_message in self.getMessageList(computer))
 
   def test_reference_not_empty(self):
     computer = self.portal.computer_module.newContent(portal_type='Computer')
     consistency_message = 'Reference must be defined'
 
-    self.assertTrue(consistency_message in getMessageList(computer))
+    self.assertTrue(consistency_message in self.getMessageList(computer))
 
     computer.setReference(self.generateNewId())
 
-    self.assertFalse(consistency_message in getMessageList(computer))
+    self.assertFalse(consistency_message in self.getMessageList(computer))
 
   def test_reference_unique(self):
     reference = self.generateNewId()
@@ -494,11 +504,11 @@ class TestSlapOSComputerConstraint(testSlapOSMixin):
 
     self.tic()
 
-    self.assertTrue(consistency_message in getMessageList(computer))
-    self.assertTrue(consistency_message in getMessageList(computer_2))
+    self.assertTrue(consistency_message in self.getMessageList(computer))
+    self.assertTrue(consistency_message in self.getMessageList(computer_2))
 
     computer_2.setReference(reference_2)
     self.tic()
 
-    self.assertFalse(consistency_message in getMessageList(computer))
-    self.assertFalse(consistency_message in getMessageList(computer_2))
+    self.assertFalse(consistency_message in self.getMessageList(computer))
+    self.assertFalse(consistency_message in self.getMessageList(computer_2))
