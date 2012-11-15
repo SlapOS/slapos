@@ -98,12 +98,28 @@
             <value> <string>service_module/vifib_instance_cleanup</string> </value>
         </item>
         <item>
+            <key> <string>preferred_instance_delivery_template</string> </key>
+            <value> <string>sale_packing_list_module/slapos_accounting_instance_delivery_template</string> </value>
+        </item>
+        <item>
+            <key> <string>preferred_instance_destroy_movement_template</string> </key>
+            <value> <string>sale_packing_list_module/slapos_accounting_instance_delivery_line_template/destroy</string> </value>
+        </item>
+        <item>
             <key> <string>preferred_instance_hosting_resource</string> </key>
             <value> <string>service_module/vifib_instance_hosting</string> </value>
         </item>
         <item>
+            <key> <string>preferred_instance_setup_movement_template</string> </key>
+            <value> <string>sale_packing_list_module/slapos_accounting_instance_delivery_line_template/setup</string> </value>
+        </item>
+        <item>
             <key> <string>preferred_instance_setup_resource</string> </key>
             <value> <string>service_module/vifib_instance_setup</string> </value>
+        </item>
+        <item>
+            <key> <string>preferred_instance_update_movement_template</string> </key>
+            <value> <string>sale_packing_list_module/slapos_accounting_instance_delivery_line_template/update</string> </value>
         </item>
         <item>
             <key> <string>preferred_instance_update_resource</string> </key>

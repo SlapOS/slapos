@@ -50,49 +50,25 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>instance = state_change[\'object\']\n
-portal = instance.getPortalObject()\n
+            <value> <string>portal = context.getPortalObject()\n
 \n
-# Get current sale order\n
-delivery = instance.getCausalityValue(portal_type=["Sale Order"])\n
-\n
-sale_order_line = delivery.contentValues(portal_type="Sale Order Line")[0]\n
-\n
-packing_list_module = portal.getDefaultModule(portal_type=\'Sale Packing List\')\n
-packing_list = packing_list_module.newContent(\n
-  portal_type=\'Sale Packing List\',\n
-  specialise=delivery.getSpecialise() or delivery.getCausalityValue().getSpecialise(),\n
-  destination=delivery.getDestination(),\n
-  destination_section=delivery.getDestinationSection(),\n
-  destination_decision=delivery.getDestinationDecision(),\n
-  source=delivery.getSource(),\n
-  source_section=delivery.getSourceSection(),\n
-  price_currency=delivery.getPriceCurrency(),\n
-  start_date=DateTime())\n
-\n
-aggregate_list = sale_order_line.getAggregateList(portal_type=[\'Slave Instance\', \'Software Instance\', \'Hosting Subscription\', \'Computer Partition\'])\n
-aggregate_list.append(software_release_document.getRelativeUrl())\n
-packing_list_line = packing_list.newContent(\n
-  portal_type=\'Sale Packing List Line\',\n
-  resource=service.getRelativeUrl(),\n
-  quantity_unit="unit/piece",\n
-  quantity=1,\n
-  aggregate_list=aggregate_list,\n
-  # XXX Hardcode price on service\n
-  price=service.getSaleSupplyLineBasePrice(),\n
+portal.portal_catalog.searchAndActivate(\n
+  portal_type=["Slave Instance", "Software Instance"],\n
+  causality_state="diverged",\n
+  method_id=\'Instance_solveInvoicingGeneration\',\n
+  activate_kw={\'tag\': tag}\n
 )\n
 \n
-\n
-return packing_list\n
+context.activate(after_tag=tag).getId()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change, service, software_release_document</string> </value>
+            <value> <string>tag, fixit, params</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Instance_createSalePackingList</string> </value>
+            <value> <string>Alarm_searchDivergedInstanceList</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -4,15 +4,7 @@
   <workflow>slapos_open_order_interaction_workflow</workflow>
  </chain>
  <chain>
-  <type>Slave Instance</type>
-  <workflow>instance_accounting_slap_interaction_workflow</workflow>
- </chain>
- <chain>
   <type>Software Installation</type>
   <workflow>installation_accounting_slap_interaction_workflow</workflow>
- </chain>
- <chain>
-  <type>Software Instance</type>
-  <workflow>instance_accounting_slap_interaction_workflow</workflow>
  </chain>
 </workflow_chain>

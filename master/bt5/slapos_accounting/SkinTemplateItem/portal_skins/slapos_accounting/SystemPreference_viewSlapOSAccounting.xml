@@ -95,6 +95,10 @@
                       <list>
                         <string>my_preferred_open_sale_order_line_template</string>
                         <string>my_preferred_open_sale_order_template</string>
+                        <string>my_preferred_instance_update_movement_template</string>
+                        <string>my_preferred_instance_destroy_movement_template</string>
+                        <string>my_preferred_instance_setup_movement_template</string>
+                        <string>my_preferred_instance_delivery_template</string>
                       </list>
                     </value>
                 </item>

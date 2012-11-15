@@ -51,7 +51,8 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>document = state_change["object"]\n
-document.diverge()\n
+if document.getPortalObject().portal_workflow.isTransitionPossible(document, \'diverge\'):\n
+  document.diverge()\n
 </string> </value>
         </item>
         <item>

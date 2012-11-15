@@ -2,4 +2,10 @@
  <portal_type id="Hosting Subscription">
   <item>SlapOSAccountingHostingSubscriptionConstraint</item>
  </portal_type>
+ <portal_type id="Slave Instance">
+  <item>InstanceAccountingSynchronisation</item>
+ </portal_type>
+ <portal_type id="Software Instance">
+  <item>InstanceAccountingSynchronisation</item>
+ </portal_type>
 </property_sheet_list>
