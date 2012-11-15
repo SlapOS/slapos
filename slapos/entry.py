@@ -101,7 +101,7 @@ def call(fun, config=False, option=None):
     checkOption(element)
   if config:
     if not checkSlaposCfg():
-      sys.argv = [sys.argv[0]] + [config] + sys.argv[1:]
+      sys.argv = [sys.argv[0]] + [os.path.expanduser(config)] + sys.argv[1:]
   fun()
   sys.exit(0)
 
