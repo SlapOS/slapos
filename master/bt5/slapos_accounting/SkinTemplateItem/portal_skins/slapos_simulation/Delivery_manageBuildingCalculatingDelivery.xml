@@ -57,7 +57,9 @@ path = delivery.getPath()\n
 portal_activities = context.getPortalObject().portal_activities\n
 if portal_activities.countMessage(path=path) == 0 \\\n
   and portal_activities.countMessageWithTag(\'%s_solve\' % path) == 0:\n
+  delivery.serialize()\n
   delivery.updateCausalityState(solve_automatically=False)\n
+  delivery.updateSimulation(expand_root=1, expand_related=1)\n
 </string> </value>
         </item>
         <item>
@@ -66,7 +68,7 @@ if portal_activities.countMessage(path=path) == 0 \\\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Delivery_updateCausalityState</string> </value>
+            <value> <string>Delivery_manageBuildingCalculatingDelivery</string> </value>
         </item>
       </dictionary>
     </pickle>

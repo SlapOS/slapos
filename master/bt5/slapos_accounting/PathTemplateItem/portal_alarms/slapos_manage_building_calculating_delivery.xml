@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_expandConfirmedSaleOrder</string> </value>
+            <value> <string>Alarm_manageBuildingCalculatingDelivery</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,13 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_expand_confirmed_sale_order</string> </value>
-        </item>
-        <item>
-            <key> <string>periodicity_day_frequency</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>slapos_manage_building_calculating_delivery</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>
@@ -70,7 +64,7 @@
                 </tuple>
                 <state>
                   <tuple>
-                    <float>575131320.0</float>
+                    <float>323620920.0</float>
                     <string>GMT</string>
                   </tuple>
                 </state>
@@ -89,7 +83,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Expands Confirmed Sale Orders</string> </value>
+            <value> <string>Operates on building and calculating deliveries</string> </value>
         </item>
       </dictionary>
     </pickle>

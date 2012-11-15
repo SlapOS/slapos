@@ -50,32 +50,18 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-portal = context.getPortalObject()\n
+            <value> <string>portal = context.getPortalObject()\n
 activate_kw = {\n
   \'tag\': tag\n
 }\n
-path_list = [q.getPath() for q in portal.Base_getNotCategoryRelatedList(\n
-  portal_type_list=[\'Sale Order Line\'],\n
-  simulation_state_list=[\'confirmed\'],\n
-  base_category_uid=portal.portal_categories.delivery.getUid())]\n
-\n
-if len(path_list) > 0:\n
-  portal.portal_catalog.searchAndActivate(\n
-    path=path_list,\n
-    activate_kw=activate_kw,\n
-    packet_size=1, # Separate calls to many transactions\n
-    method_id=\'DeliveryLine_updateAppliedRule\',\n
-    method_kw={\'activate_kw\': activate_kw, \'kw\': {\'activate_kw\': activate_kw}},\n
-  )\n
-\n
-  # register activity on alarm object waiting for own tag in order to have only one alarm\n
-  # running in same time\n
-  context.activate(after_tag=tag).getId()\n
-
-
-]]></string> </value>
+portal.portal_catalog.searchAndActivate(\n
+  portal_type=portal.getPortalDeliveryTypeList(),\n
+  causality_state=(\'building\', \'calculating\'),\n
+  activate_kw=activate_kw,\n
+  method_id=\'Delivery_manageBuildingCalculatingDelivery\'\n
+)\n
+context.activate(after_tag=tag).getId()\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -83,7 +69,7 @@ if len(path_list) > 0:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_expandConfirmedSaleOrder</string> </value>
+            <value> <string>Alarm_manageBuildingCalculatingDelivery</string> </value>
         </item>
       </dictionary>
     </pickle>
