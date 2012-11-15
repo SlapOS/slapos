@@ -8,12 +8,25 @@ import time
 from slapos import slap as slapmodule
 import slapos
 
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+
 
 BASE_PORT = 50000
 SLEEPING_MINS = 2           # XXX was 30, increase after testing
 
-log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+MSG_PING = 'ping'
+MSG_HALT = 'halt'
+MSG_VICTORY = 'victory'
+
+MSG_OK = 'ok'
+
+STATE_NORMAL = 'normal'
+STATE_WAITINGCONFIRM = 'waitingConfirm'
+STATE_ELECTION = 'election'
+STATE_REORGANIZATION = 'reorganization'
+
+
 
 
 class Renamer(object):
@@ -44,7 +57,7 @@ class Renamer(object):
                             partition_reference=cp_old_name)
 
         broken_new_name = 'broken-{}'.format(time.strftime("%d-%b_%H:%M:%S", time.gmtime()))
-        # XXX how to print the old name
+        # XXX how can we retrieve and log the old name?
         log.debug("Renaming {}: {}".format(broken.getId(), broken_new_name))
         broken.rename(broken_new_name)
 
@@ -69,38 +82,36 @@ class ResilientInstance(object):
 
     def __init__(self, comm, renamer, confpath):
         self.comm = comm
-        self.id = 0
-        self.state = 'normal'
-        self.halter = 0
+        self.participant_id = 0
+        self.state = STATE_NORMAL
+        self.halter_id = 0
         self.inElection = False
         self.alive = True
         self.lastPing = time.clock()
 
-        self.mainCanal = self.comm.canal(['ping', 'halt', 'victory'])
+        self.mainCanal = self.comm.canal([MSG_PING, MSG_HALT, MSG_VICTORY])
 
         self.renamer = renamer
-        self.okCanal = self.comm.canal(['ok'])
+        self.okCanal = self.comm.canal([MSG_OK])
         self.confpath = confpath
         self.loadConnectionInfo()
 
     def loadConnectionInfo(self):
-        file = open(self.confpath, 'r')
-        params = file.read().split('\n')
-        file.close()
-        self.nbComp = len([x.strip("' ") for x in params[0].strip('[],').split(',')])
+        params = open(self.confpath, 'r').readlines()
+        self.total_participants = len(params[0].split())
         new_id = int(params[1])
-        if self.id != new_id:
-            self.halter = new_id
-            self.id = new_id 
+        if self.participant_id != new_id:
+            self.halter_id = new_id
+            self.participant_id = new_id 
 
     ## Needs to be changed to use the master
     def aliveManagement(self):
         while self.alive:
             log.info('XXX sleeping for %d minutes' % SLEEPING_MINS)
             time.sleep(SLEEPING_MINS*60)
-            if self.id == 0:
+            if self.participant_id == 0:
                 continue
-            self.comm.send('ping', 0)
+            self.comm.send(MSG_PING, 0)
             message, sender = self.okCanal.get()
             if message:
                 continue
@@ -113,29 +124,29 @@ class ResilientInstance(object):
     def main(self):
         while self.alive:
             message, sender = self.mainCanal.get()
-            if message == 'ping':
-                self.comm.send('ok', sender)
+            if message == MSG_PING:
+                self.comm.send(MSG_OK, sender)
 
-            elif message == 'halt':
-                self.state = 'waitingConfirm'
-                self.halter = sender
-                self.comm.send('ok', sender)
+            elif message == MSG_HALT:
+                self.state = STATE_WAITINGCONFIRM
+                self.halter_id = int(sender)
+                self.comm.send(MSG_OK, sender)
 
-            elif message == 'victory':
-                if int(sender) == int(self.halter) and self.state == 'waitingConfirm':
-                    log.info('{} thinks {} is the leader'.format(self.id, sender))
-                    self.comm.send('ok', sender)
-                self.state = 'normal'
+            elif message == MSG_VICTORY:
+                if int(sender) == self.halter_id and self.state == STATE_WAITINGCONFIRM:
+                    log.info('{} thinks {} is the leader'.format(self.participant_id, sender))
+                    self.comm.send(MSG_OK, sender)
+                self.state = STATE_NORMAL
 
     def election(self):
         self.inElection = True
         self.loadConnectionInfo()
-        #Check if I'm the highest instance alive
-        for higher in range(self.id + 1, self.nbComp):
-            self.comm.send('ping', higher)
+        # Check if I'm the highest instance alive
+        for higher in range(self.participant_id + 1, self.total_participants):
+            self.comm.send(MSG_PING, higher)
             message, sender = self.okCanal.get()
             if message:
-                log.info('{} is alive ({})'.format(higher, self.id))
+                log.info('{} is alive ({})'.format(higher, self.participant_id))
                 self.inElection = False
                 return False
             continue
@@ -143,29 +154,29 @@ class ResilientInstance(object):
         if not self.alive:
             return False
 
-        #I should be the new coordinator, halt those below me
-        log.info('Should be ME : {}'.format(self.id))
-        self.state = 'election'
-        self.halter = self.id
+        # I should be the new coordinator, halt those below me
+        log.info('Should be ME : {}'.format(self.participant_id))
+        self.state = STATE_ELECTION
+        self.halter_id = self.participant_id
         ups = []
-        for lower in range(self.id):
-            self.comm.send('halt', lower)
+        for lower in range(self.participant_id):
+            self.comm.send(MSG_HALT, lower)
             message, sender = self.okCanal.get()
             if message:
                 ups.append(lower)
 
         #Broadcast Victory
-        self.state = 'reorganization'
+        self.state = STATE_REORGANIZATION
         for up in ups:
-            self.comm.send('victory', up)
+            self.comm.send(MSG_VICTORY, up)
             message, sender = self.okCanal.get()
             if message:
                 continue
             log.info('Something is wrong... let\'s start over')
             return self.election()
-        self.state = 'normal'
+        self.state = STATE_NORMAL
         self.active = True
-        log.info('{} Is THE LEADER'.format(self.id))
+        log.info('{} Is THE LEADER'.format(self.participant_id))
 
         self.renamer.failover()
 
@@ -204,23 +215,21 @@ class Wrapper(object):
     def __init__(self, confpath, timeout=20):
         self.canals = []
         self.ips = []
-        self.id = 0
+        self.participant_id = 0
         self.timeout = timeout
         self.confpath = confpath
         self.getConnectionInfo()
         self.socket = None
 
     def getConnectionInfo(self):
-        file = open(self.confpath, 'r')
-        params = file.read().split('\n')
-        file.close()
-        self.ips = [x.strip("' ") for x in params[0].strip('[],').split(',')]
-        self.id = int(params[1])
+        params = open(self.confpath, 'r').readlines()
+        self.ips = params[0].split()
+        self.participant_id = int(params[1])
 
     def start(self):
         self.getConnectionInfo()
         self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        self.socket.bind((self.ips[self.id], BASE_PORT + self.id))
+        self.socket.bind((self.ips[self.participant_id], BASE_PORT + self.participant_id))
         self.socket.listen(5)
 
     def send(self, message, number):
@@ -228,7 +237,7 @@ class Wrapper(object):
         try:
             s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             s.connect((self.ips[number], BASE_PORT + number))
-            s.send(message + (' {}\n'.format(self.id)))
+            s.send(message + (' {}\n'.format(self.participant_id)))
         except (socket.error, socket.herror, socket.gaierror, socket.timeout):
             pass
         finally:
@@ -269,7 +278,7 @@ def run(args):
     computer = ResilientInstance(wrapper, renamer=renamer, confpath=confpath)
 
     # idle waiting for connection infos
-    while computer.nbComp < 2 :
+    while computer.total_participants < 2:
         computer.loadConnectionInfo()
         time.sleep(30)
 

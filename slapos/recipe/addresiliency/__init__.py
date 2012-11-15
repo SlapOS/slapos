@@ -39,15 +39,15 @@ class Recipe(GenericSlapRecipe):
 
         confpath = os.path.join(self.options['script'], 'bully.conf')
 
-        ip = self.parameter_dict['ip-list'].split(' ')
-        print 'Creating bully configuration with ips : %s\n' % ip
+        ip_list = self.parameter_dict['ip-list']
+        print 'Creating bully configuration with ips : %s\n' % ip_list
 
         conf = self.createFile(confpath,
                                self.substituteTemplate(
                                self.getTemplateFilename('bully.conf.in'),
                                {
                                    'self_id': int(self.parameter_dict['number']),
-                                   'ip_list': ip
+                                   'ip_list': ip_list
                                    }
                                ))
         path_list.append(conf)
@@ -58,7 +58,7 @@ class Recipe(GenericSlapRecipe):
         wrapper = self.createPythonScript(
             name=os.path.join(self.options['bin'], self.parameter_dict['wrapper']),
             absolute_function='slapos.recipe.addresiliency.bully.run',
-            arguments= {
+            arguments={
                 'confpath': confpath,
                 'server_url': slap_connection['server-url'],
                 'key_file': slap_connection.get('key-file'),
