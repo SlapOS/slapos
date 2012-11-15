@@ -135,6 +135,8 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_web_shacache',
       'erp5_data_set',
       'erp5_web_shadir',
+      'erp5_accounting',
+      'erp5_invoicing',
       'slapos_cache',
       'slapos_cloud',
       'slapos_slap_tool',
