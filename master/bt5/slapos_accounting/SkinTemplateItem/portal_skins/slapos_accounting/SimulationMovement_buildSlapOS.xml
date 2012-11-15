@@ -50,12 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>"""\n
-Take care!\n
-\n
-This method does not lock in same transaction, as it locks on two different documents (and only on those two)\n
-"""\n
-if context.getDelivery() is not None:\n
+            <value> <string>if context.getDelivery() is not None:\n
   # movement build but not indexed, so do nothing\n
   return\n
 \n
