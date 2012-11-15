@@ -131,7 +131,7 @@ class Recipe(object):
       try:
         options['connection-%s' % param] = str(
           instance.getConnectionParameter(param))
-      except (slapmodule.NotFoundError, slapmodule.ServerError):
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         options['connection-%s' % param] = ''
         if self.failed is None:
           self.failed = param
@@ -144,7 +144,7 @@ class Recipe(object):
           status = self.instance.getState()
         else:
           status = 'not ready yet'
-      except (slapmodule.NotFoundError, slapmodule.ServerError):
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         status = 'not ready yet'
       except AttributeError:
         status = 'unknown'
