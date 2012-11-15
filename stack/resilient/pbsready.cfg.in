@@ -18,7 +18,30 @@ parts =
   dropbear-server-pbs-authorized-key
   notifier
 
-# adds the resiliency script for the bully algorithm
+
+#----------------
+#--
+#-- Creation of all needed directories.
+
+[basedirectory]
+script = $${rootdirectory:etc}/script/
+services = $${rootdirectory:etc}/run/
+cache = $${rootdirectory:var}/cache/
+notifier = $${rootdirectory:etc}/notifier/
+
+[directory]
+backup = $${basedirectory:backup}/$${slap-parameter:namebase}
+ssh = $${rootdirectory:etc}/ssh/
+sshkeys = $${rootdirectory:srv}/sshkeys
+notifier-feeds = $${basedirectory:notifier}/feeds/
+notifier-callbacks = $${basedirectory:notifier}/callbacks/
+script = $${basedirectory:script}
+
+
+#----------------
+#--
+#-- resiliency script for the bully algorithm
+
 [resiliency]
 recipe = slapos.cookbook:addresiliency
 script = $${basedirectory:script}
@@ -26,15 +49,66 @@ run = $${basedirectory:services}
 bin = $${rootdirectory:bin}
 # XXX don't run bully automatically, yet
 
-# sets up an rdiff-backup server (with a dropbear server for ssh)
+
+#----------------
+#--
+#-- sets up an rdiff-backup server (with a dropbear server for ssh)
+
 [urls]
 ssh-public-key = $${sshkeys-dropbear:public-key-value}
 ssh-url = ssh://nobody@[$${dropbear-server:host}]:$${dropbear-server:port}/$${rdiff-backup-server:path}
 
+[rdiff-backup-server]
+recipe = slapos.cookbook:pbs
+client = false
+path = $${directory:backup}
+wrapper = $${rootdirectory:bin}/rdiffbackup-server
+rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
+
+
+#----------------
+#--
+#-- Set up the equeue and notifier.
+
+[equeue]
+recipe = slapos.cookbook:equeue
+socket = $${basedirectory:run}/equeue.sock
+log = $${basedirectory:log}/equeue.log
+database = $${rootdirectory:srv}/equeue.db
+wrapper = $${basedirectory:services}/equeue
+equeue-binary = ${buildout:bin-directory}/equeue
+
+# notifier.notify adds the [exporter, notifier] to the execution queue
+# notifier.notify.callback sets up a callback
+[notifier]
+recipe = slapos.cookbook:notifier
+feeds = $${directory:notifier-feeds}
+callbacks = $${directory:notifier-callbacks}
+id-file = $${rootdirectory:etc}/notifier.id
+equeue-socket = $${equeue:socket}
+host = $${slap-network-information:global-ipv6}
+port = 8080
+wrapper = $${basedirectory:services}/notifier
+server-binary = ${buildout:bin-directory}/pubsubserver
+notifier-binary = ${buildout:bin-directory}/pubsubnotifier
+
+[logrotate-entry-equeue]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = equeue
+log = $${equeue:log}
+frequency = daily
+rotate-num = 30
+
+
+#----------------
+#--
+#-- sshkeys
+
 [sshkeys-directory]
 recipe = slapos.cookbook:mkdirectory
-requests = $${directory:sshkeys}/requests/
-keys = $${directory:sshkeys}/keys/
+requests = $${directory:sshkeys}/requests
+keys = $${directory:sshkeys}/keys
 
 [sshkeys-authority]
 recipe = slapos.cookbook:sshkeys_authority
@@ -53,6 +127,11 @@ public-key = $${dropbear-server:rsa-keyfile}.pub
 private-key = $${dropbear-server:rsa-keyfile}
 wrapper = $${basedirectory:services}/sshd
 
+
+#----------------
+#--
+#-- Dropbear.
+
 [dropbear-server]
 recipe = slapos.cookbook:dropbear
 host = $${slap-network-information:global-ipv6}
@@ -68,57 +147,5 @@ dropbear-binary = ${dropbear:location}/sbin/dropbear
 recipe = slapos.cookbook:dropbear.add_authorized_key
 key = $${slap-parameter:authorized-key}
 
-[rdiff-backup-server]
-recipe = slapos.cookbook:pbs
-client = false
-path = $${directory:backup}
-wrapper = $${rootdirectory:bin}/rdiffbackup-server
-rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
 
 
-## Sets up the execution queue for the notifier
-[logrotate-entry-equeue]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
-name = equeue
-log = $${equeue:log}
-frequency = daily
-rotate-num = 30
-
-[equeue]
-recipe = slapos.cookbook:equeue
-socket = $${basedirectory:run}/equeue.sock
-log = $${basedirectory:log}/equeue.log
-database = $${rootdirectory:srv}/equeue.db
-wrapper = $${basedirectory:services}/equeue
-equeue-binary = ${buildout:bin-directory}/equeue
-
-
-## notifier.notify adds the [exporter, notifier] to the execution queue
-## notifier.notify.callback sets up a callback
-[notifier]
-recipe = slapos.cookbook:notifier
-feeds = $${directory:notifier-feeds}
-callbacks = $${directory:notifier-callbacks}
-id-file = $${rootdirectory:etc}/notifier.id
-equeue-socket = $${equeue:socket}
-host = $${slap-network-information:global-ipv6}
-port = 8080
-wrapper = $${basedirectory:services}/notifier
-server-binary = ${buildout:bin-directory}/pubsubserver
-notifier-binary = ${buildout:bin-directory}/pubsubnotifier
-
-
-[basedirectory]
-script = $${rootdirectory:etc}/script/
-services = $${rootdirectory:etc}/run/
-cache = $${rootdirectory:var}/cache/
-notifier = $${rootdirectory:etc}/notifier/
-
-[directory]
-backup = $${basedirectory:backup}/$${slap-parameter:namebase}
-ssh = $${rootdirectory:etc}/ssh/
-sshkeys = $${rootdirectory:srv}/sshkeys
-notifier-feeds = $${basedirectory:notifier}/feeds/
-notifier-callbacks = $${basedirectory:notifier}/callbacks/
-script = $${basedirectory:script}

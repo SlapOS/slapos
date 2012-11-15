@@ -20,46 +20,96 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
 
-# Creation of all needed directories
+#----------------
+#--
+#-- Creation of all needed directories.
+
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc/
-var = $${buildout:directory}/var/
-srv = $${buildout:directory}/srv/
-bin = $${buildout:directory}/bin/
-tmp = $${buildout:directory}/tmp/
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
 
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
-log = $${rootdirectory:var}/log/
-services = $${rootdirectory:etc}/run/
-run = $${rootdirectory:var}/run/
-backup = $${rootdirectory:srv}/backup/
-promises = $${rootdirectory:etc}/promise/
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/run
+run = $${rootdirectory:var}/run
+backup = $${rootdirectory:srv}/backup
+promises = $${rootdirectory:etc}/promise
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-ca-dir = $${rootdirectory:srv}/ssl/
-httpd-log = $${basedirectory:log}/apache/
-php-ini-dir = $${rootdirectory:etc}/php/
-tmp-php = $${rootdirectory:tmp}/php/
-logrotate-entries = $${rootdirectory:etc}/logrotate.d/
-logrotate-backup = $${basedirectory:backup}/logrotate/
-stunnel-conf = $${rootdirectory:etc}/stunnel/
-cronstamps = $${rootdirectory:etc}/cronstamps/
-cron-entries = $${rootdirectory:etc}/cron.d/
-crontabs = $${rootdirectory:etc}/crontabs/
+ca-dir = $${rootdirectory:srv}/ssl
+httpd-log = $${basedirectory:log}/apache
+php-ini-dir = $${rootdirectory:etc}/php
+tmp-php = $${rootdirectory:tmp}/php
+logrotate-entries = $${rootdirectory:etc}/logrotate.d
+logrotate-backup = $${basedirectory:backup}/logrotate
+stunnel-conf = $${rootdirectory:etc}/stunnel
+cronstamps = $${rootdirectory:etc}/cronstamps
+cron-entries = $${rootdirectory:etc}/cron.d
+crontabs = $${rootdirectory:etc}/crontabs
 
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
-requests = $${directory:ca-dir}/requests/
-private = $${directory:ca-dir}/private/
-certs = $${directory:ca-dir}/certs/
-newcerts = $${directory:ca-dir}/newcerts/
-crl = $${directory:ca-dir}/crl/
+requests = $${directory:ca-dir}/requests
+private = $${directory:ca-dir}/private
+certs = $${directory:ca-dir}/certs
+newcerts = $${directory:ca-dir}/newcerts
+crl = $${directory:ca-dir}/crl
 
 
-# Deploy stunnel
+#----------------
+#--
+#-- Deploy cron.
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${basedirectory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${rootdirectory:bin}/cron_simplelogger
+log = $${basedirectory:log}/crond.log
+
+
+#----------------
+#--
+#-- Deploy logrotate.
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = $${logrotate:wrapper}
+
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
+gzip-binary = ${gzip:location}/bin/gzip
+gunzip-binary = ${gzip:location}/bin/gunzip
+# Directories
+wrapper = $${rootdirectory:bin}/logrotate
+conf = $${rootdirectory:etc}/logrotate.conf
+logrotate-entries = $${directory:logrotate-entries}
+backup = $${directory:logrotate-backup}
+state-file = $${rootdirectory:srv}/logrotate.status
+
+
+#----------------
+#--
+#-- Deploy stunnel.
+
 [stunnel]
 recipe = slapos.cookbook:stunnel
 client = true
@@ -76,8 +126,22 @@ pid-file = $${basedirectory:run}/stunnel.pid
 wrapper = $${rootdirectory:bin}/raw_stunnel
 post-rotate-script = $${rootdirectory:bin}/stunnel_post_rotate
 
+[logrotate-entry-stunnel]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = stunnel
+log = $${stunnel:log-file}
+frequency = daily
+rotate-num = 30
+notifempty = true
+create = true
+post = $${stunnel:post-rotate-script}
 
-# Certificate stuffs
+
+#----------------
+#--
+#-- Certificate stuff.
+
 [certificate-authority]
 recipe = slapos.cookbook:certificate_authority
 openssl-binary = ${openssl:location}/bin/openssl
@@ -98,7 +162,10 @@ key-file = $${stunnel:key-file}
 cert-file = $${stunnel:cert-file}
 
 
-# Request MariaDB instance and parse its URL
+#----------------
+#--
+#-- Request MariaDB instance and parse its URL.
+
 [request-mariadb]
 <= slap-connection
 recipe = slapos.cookbook:request
@@ -114,7 +181,10 @@ recipe = slapos.cookbook:urlparse
 url = $${request-mariadb:connection-url}
 
 
-# Deploy Apache + PHP application
+#----------------
+#--
+#-- Deploy Apache + PHP application.
+
 [apache-php]
 recipe = slapos.cookbook:apachephp
 source = ${application:location}
@@ -142,21 +212,6 @@ mysql-database = $${mariadb-urlparse:path}
 mysql-host = $${stunnel:local-host}
 mysql-port = $${stunnel:local-port}
 
-
-# Deploy logrotate, cron, configure it
-[logrotate]
-recipe = slapos.cookbook:logrotate
-# Binaries
-logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
-gzip-binary = ${gzip:location}/bin/gzip
-gunzip-binary = ${gzip:location}/bin/gunzip
-# Directories
-wrapper = $${rootdirectory:bin}/logrotate
-conf = $${rootdirectory:etc}/logrotate.conf
-logrotate-entries = $${directory:logrotate-entries}
-backup = $${directory:logrotate-backup}
-state-file = $${rootdirectory:srv}/logrotate.status
-
 [logrotate-entry-apache]
 <= logrotate
 recipe = slapos.cookbook:logrotate.d
@@ -168,40 +223,11 @@ sharedscripts = true
 notifempty = true
 create = true
 
-[logrotate-entry-stunnel]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
-name = stunnel
-log = $${stunnel:log-file}
-frequency = daily
-rotate-num = 30
-notifempty = true
-create = true
-post = $${stunnel:post-rotate-script}
 
-[cron-simplelogger]
-recipe = slapos.cookbook:simplelogger
-wrapper = $${rootdirectory:bin}/cron_simplelogger
-log = $${basedirectory:log}/crond.log
+#----------------
+#--
+#-- Request frontend.
 
-[cron]
-recipe = slapos.cookbook:cron
-dcrond-binary = ${dcron:location}/sbin/crond
-cron-entries = $${directory:cron-entries}
-crontabs = $${directory:crontabs}
-cronstamps = $${directory:cronstamps}
-catcher = $${cron-simplelogger:wrapper}
-binary = $${basedirectory:services}/crond
-
-[cron-entry-logrotate]
-<= cron
-recipe = slapos.cookbook:cron.d
-name = logrotate
-frequency = 0 0 * * *
-command = $${logrotate:wrapper}
-
-
-# Request frontend
 [request-frontend]
 <= slap-connection
 recipe = slapos.cookbook:requestoptional
@@ -215,7 +241,10 @@ return = site_url
 config-custom_domain = $${slap-parameter:domain}
 
 
-# Deploy slapmonitor
+#----------------
+#--
+#-- Deploy slapmonitor.
+
 [slapmonitor]
 recipe = slapos.cookbook:slapmonitor
 pid-file = $${basedirectory:run}/apache.pid
@@ -238,14 +267,20 @@ slapreport-path = ${buildout:bin-directory}/slapreport
 path = $${basedirectory:services}/slapreport
 
 
-# Publish all instance parameters (url of instance)
+#----------------
+#--
+#-- Publish all instance parameters (url of instance).
+
 [publish-connection-informations]
 recipe = slapos.cookbook:publish
 backend_url = $${apache-php:url}
 url = $${request-frontend:connection-site_url}
 
 
-# Deploy promises scripts
+#----------------
+#--
+#-- Deploy promises scripts.
+
 [promise]
 recipe = slapos.cookbook:check_port_listening
 path = $${basedirectory:promises}/apache
@@ -266,6 +301,9 @@ url = $${request-frontend:connection-site_url}
 dash_path = ${dash:location}/bin/dash
 curl_path = ${curl:location}/bin/curl
 
+
+
+
 [slap-parameter]
 # Default value if no domain is specified
 domain =
@@ -274,3 +312,4 @@ logbox-ip =
 logbox-port =
 logbox-user =
 logbox-passwd =
+
