@@ -115,6 +115,7 @@ slapos_cloud_promise
 slapos_core
 slapos_pdm
 slapos_rest_api
+slapos_simulation
 slapos_slap_tool
 vifib_hosting_theme
 vifib_jauks_theme
@@ -194,6 +195,7 @@ slapos_cloud_promise
 slapos_core
 slapos_pdm
 slapos_rest_api
+slapos_simulation
 slapos_slap_tool
 slapos_configurator
 erp5_km
@@ -269,6 +271,7 @@ slapos_cloud_promise
 slapos_core
 slapos_pdm
 slapos_rest_api
+slapos_simulation
 slapos_slap_tool
 slapos_configurator
 erp5_km
@@ -345,6 +348,7 @@ slapos_cloud_promise
 slapos_core
 slapos_pdm
 slapos_rest_api
+slapos_simulation
 slapos_slap_tool
 slapos_configurator
 erp5_commerce_multiflex_layout
@@ -418,6 +422,7 @@ slapos_cloud_promise
 slapos_core
 slapos_pdm
 slapos_rest_api
+slapos_simulation
 slapos_slap_tool
 slapos_configurator
 erp5_km
