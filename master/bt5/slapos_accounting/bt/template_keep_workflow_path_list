@@ -14,3 +14,4 @@ account_module/sales
 service_module/slapos_tax
 service_module/slapos_discount
 portal_rules/slapos_subscription_item_rule
+portal_rules/slapos_invoice_simulation_rule

@@ -134,7 +134,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_invoice_simulation_rule</string> </value>
+            <value> <string>slapos_invoice_simulation_rule</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
@@ -201,7 +201,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Vifib Invoice Simulation Rule</string> </value>
+            <value> <string>SlapOS Invoice Simulation Rule</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
@@ -756,6 +756,51 @@
                     <state>
                       <tuple>
                         <float>1352812175.59</float>
+                        <string>GMT+1</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>922.37643.20645.60979</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass> <reference id="8.1"/> </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1352988484.6</float>
                         <string>GMT+1</string>
                       </tuple>
                     </state>
