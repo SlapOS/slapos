@@ -15,19 +15,6 @@ offline = true
 
 #----------------
 #--
-#-- Fetches parameters defined in SlapOS Master for this instance
-
-[instance-parameters]
-recipe = slapos.cookbook:slapconfiguration
-computer = $${slap-connection:computer-id}
-partition = $${slap-connection:partition-id}
-url = $${slap-connection:server-url}
-key = $${slap-connection:key-file}
-cert = $${slap-connection:cert-file}
-
-
-#----------------
-#--
 #-- Creation of all needed directories.
 
 [rootdirectory]
@@ -39,21 +26,21 @@ bin = $${buildout:directory}/bin
 
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
-log = $${rootdirectory:var}/log/
-services = $${rootdirectory:etc}/run/
-run = $${rootdirectory:var}/run/
-promises = $${rootdirectory:etc}/promise/
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/run
+run = $${rootdirectory:var}/run
+promises = $${rootdirectory:etc}/promise
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
-cron-entries = $${rootdirectory:etc}/cron.d/
-crontabs = $${rootdirectory:etc}/crontabs/
-cronstamps = $${rootdirectory:etc}/cronstamps/
+cron-entries = $${rootdirectory:etc}/cron.d
+crontabs = $${rootdirectory:etc}/crontabs
+cronstamps = $${rootdirectory:etc}/cronstamps
 
 
 #----------------
 #--
-#-- Cron
+#-- Deploy cron and configure it.
 
 [cron]
 recipe = slapos.cookbook:cron
@@ -72,12 +59,23 @@ log = $${basedirectory:log}/crond.log
 
 #----------------
 #--
+#-- Fetches parameters defined in SlapOS Master for this instance
+
+[instance-parameters]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+
+#----------------
+#--
 #-- Creates a Postgres cluster, configuration files, and a database.
 
 [postgres-instance]
 recipe = slapos.cookbook:postgres
-
-# Options
 ipv6_host = $${slap-network-information:global-ipv6}
 user = postgres
 port = 5432
@@ -113,7 +111,7 @@ port = $${postgres-instance:port}
 
 #----------------
 #--
-#-- Publish instance URL.
+#-- Publish instance parameters.
 
 [urls]
 recipe = slapos.cookbook:publishurl
