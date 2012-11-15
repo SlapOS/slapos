@@ -25,7 +25,14 @@ class TestSlapOSConstraintMixin(testSlapOSMixin):
 
 
     # required
-    delattr(obj, property_id)
+    try:
+      # try to drop property from object for ones, where doing
+      # edit(property=None) does not set None, but ('None',)...
+      delattr(obj, property_id)
+    except AttributeError:
+      # ...but in case of magic ones (reference->default_reference)
+      # use setter to set it to None
+      obj.edit(**{property_id:None})
     self.assertTrue(consistency_message in self.getMessageList(obj))
 
     if empty_string:
