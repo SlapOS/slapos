@@ -61,16 +61,14 @@ except AttributeError:\n
   # does not come from Order\n
   pass\n
 \n
-comment = translateString(\'Automatic transition during build.\')\n
+portal = packing_list.getPortalObject()\n
+comment = context.Base_translateString(\'Automatic transition during build.\')\n
 if portal.portal_workflow.isTransitionPossible(context, \'confirm\'):\n
   context.confirm(comment=comment)\n
 if portal.portal_workflow.isTransitionPossible(context, \'start\'):\n
   context.start(comment=comment)\n
   context.stop(comment=comment)\n
   context.deliver(comment=comment)\n
-\n
-line = packing_list.contentValues(portal_type=\'Sale Packing List Line\')[0]\n
-portal = packing_list.getPortalObject()\n
 \n
 # Initialise causality workflow\n
 packing_list.startBuilding()\n
