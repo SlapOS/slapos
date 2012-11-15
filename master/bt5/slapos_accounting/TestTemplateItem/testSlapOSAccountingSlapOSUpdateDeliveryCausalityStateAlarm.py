@@ -25,6 +25,7 @@ def withAbort(func):
 class Simulator:
   def __init__(self, outfile, method, to_return=None):
     self.outfile = outfile
+    open(self.outfile, 'w').write(repr([]))
     self.method = method
     self.to_return = to_return
 
@@ -92,11 +93,11 @@ class TestAlarm(testSlapOSMixin):
     self._test('solved', 'Not visited by Delivery_updateCausalityState')
 
   @withAbort
-  def test_Delivery_updateCausalityState(self):
+  def _test_Delivery_updateCausalityState(self, state, empty=False):
     delivery = self.portal.sale_packing_list_module.newContent(
         title='Not visited by Delivery_updateCausalityState',
         portal_type='Sale Packing List')
-    self.portal.portal_workflow._jumpToStateFor(delivery, 'calculating')
+    self.portal.portal_workflow._jumpToStateFor(delivery, state)
 
     updateCausalityState_simulator = tempfile.mkstemp()[1]
     try:
@@ -110,14 +111,29 @@ class TestAlarm(testSlapOSMixin):
 
       value = eval(open(updateCausalityState_simulator).read())
 
-      self.assertEqual([{
-        'recmethod': 'updateCausalityState',
-        'recargs': (),
-        'reckwargs': {'solve_automatically': False}}],
-        value
-      )
+      if empty:
+        self.assertEqual([], value)
+      else:
+        self.assertEqual([{
+          'recmethod': 'updateCausalityState',
+          'recargs': (),
+          'reckwargs': {'solve_automatically': False}}],
+          value
+        )
     finally:
       Delivery.updateCausalityState = Delivery.original_updateCausalityState
       delattr(Delivery, 'original_updateCausalityState')
       if os.path.exists(updateCausalityState_simulator):
         os.unlink(updateCausalityState_simulator)
+
+  def test_Delivery_updateCausalityState_calculating(self):
+    self._test_Delivery_updateCausalityState('calculating')
+
+  def test_Delivery_updateCausalityState_building(self):
+    self._test_Delivery_updateCausalityState('building')
+
+  def test_Delivery_updateCausalityState_solved(self):
+    self._test_Delivery_updateCausalityState('solved', True)
+
+  def test_Delivery_updateCausalityState_diverged(self):
+    self._test_Delivery_updateCausalityState('diverged', True)
