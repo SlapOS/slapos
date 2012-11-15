@@ -568,13 +568,13 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         self.prepare_installed_computer_partition_sequence_string  + \
         """
         LoginDefaultUser
-        CallVifibTriggerBuildAlarm
+        CallSlaposTriggerBuildAlarm
         Tic
         CheckSubscriptionSalePackingListCoverage
 
-        CallVifibTriggerBuildAlarm
+        CallSlaposTriggerBuildAlarm
         Tic
-        CallVifibUpdateDeliveryCausalityStateAlarm
+        CallSlaposUpdateDeliveryCausalityStateAlarm
         CleanTic
         CallVifibSolveAutomaticallyAlarm
         CleanTic
@@ -588,7 +588,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
         SelectNextSubscriptionDelivery
         Tic
 
-        CallVifibTriggerBuildAlarm
+        CallSlaposTriggerBuildAlarm
         Tic
 
         CheckHostingSubscriptionStoppedDocumentCoverage
@@ -615,7 +615,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 #         SelectNextSubscriptionDelivery
 #         Tic
 # 
-#         CallVifibTriggerBuildAlarm
+#         CallSlaposTriggerBuildAlarm
 #         Tic
 # 
 #         CheckHostingSubscriptionConfirmedInvoiceDocumentCoverage
@@ -626,7 +626,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 #         StopInvoice
 #         Tic
 # 
-#         CallVifibTriggerBuildAlarm
+#         CallSlaposTriggerBuildAlarm
 #         Tic
 # 
 #         CheckHostingSubscriptionStoppedInvoiceDocumentCoverage
@@ -641,7 +641,7 @@ class TestVifibInstanceHostingRelatedDocument(TestVifibSlapWebServiceMixin):
 #         Tic
 # 
 #         # Payment should cover both invoices
-#         CallVifibTriggerBuildAlarm
+#         CallSlaposTriggerBuildAlarm
 #         Tic
 # 
 #         CheckHostingSubscriptionTwoStoppedInvoiceDocumentCoverage

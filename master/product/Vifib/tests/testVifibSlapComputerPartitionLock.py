@@ -8,11 +8,11 @@ class TestVifibSlapComputerPartitionLock(TestVifibSlapWebServiceMixin):
 
   lock_user_sequence_string = '\
       LoginERP5TypeTestCase \
-      CallVifibTriggerBuildAlarm \
+      CallSlaposTriggerBuildAlarm \
       Tic \
       CallStopConfirmedSaleInvoiceTransactionAlarm \
       Tic \
-      CallVifibTriggerBuildAlarm \
+      CallSlaposTriggerBuildAlarm \
       Tic \
       Logout'
 

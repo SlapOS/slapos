@@ -182,9 +182,9 @@ class TestVifibOpenOrderSimulation(TestVifibSlapWebServiceMixin):
         self.prepare_installed_computer_partition_sequence_string + """
       LoginERP5TypeTestCase
 
-      CallVifibTriggerBuildAlarm
+      CallSlaposTriggerBuildAlarm
       CleanTic
-      CallVifibUpdateDeliveryCausalityStateAlarm
+      CallSlaposUpdateDeliveryCausalityStateAlarm
       CleanTic
       CallVifibSolveAutomaticallyAlarm
       CleanTic

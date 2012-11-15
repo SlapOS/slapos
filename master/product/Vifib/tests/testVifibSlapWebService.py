@@ -898,23 +898,23 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
 
   # stabilise accounting until payment is reached
   stabilise_accounting = """
-      CallVifibUpdateDeliveryCausalityStateAlarm
+      CallSlaposUpdateDeliveryCausalityStateAlarm
       CleanTic
       CallVifibSolveAutomaticallyAlarm
       CleanTic
       CallVifibExpandDeliveryLineAlarm
       CleanTic
-      CallVifibTriggerBuildAlarm
+      CallSlaposTriggerBuildAlarm
       CleanTic
-      CallVifibUpdateDeliveryCausalityStateAlarm
+      CallSlaposUpdateDeliveryCausalityStateAlarm
       CleanTic
       CallVifibSolveAutomaticallyAlarm
       CleanTic
       CallVifibExpandDeliveryLineAlarm
       CleanTic
-      CallVifibTriggerBuildAlarm
+      CallSlaposTriggerBuildAlarm
       CleanTic
-      CallVifibUpdateDeliveryCausalityStateAlarm
+      CallSlaposUpdateDeliveryCausalityStateAlarm
       CleanTic
       CallVifibSolveAutomaticallyAlarm
       CleanTic
@@ -922,9 +922,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CleanTic
       CallVifibExpandDeliveryLineAlarm
       CleanTic
-      CallVifibTriggerBuildAlarm
+      CallSlaposTriggerBuildAlarm
       CleanTic
-      CallVifibUpdateDeliveryCausalityStateAlarm
+      CallSlaposUpdateDeliveryCausalityStateAlarm
       CleanTic
       CallVifibSolveAutomaticallyAlarm
       CleanTic
@@ -1002,7 +1002,7 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       LoginDefaultUser
       CallSlaposAllocateInstanceAlarm
       Tic
-      CallVifibTriggerBuildAlarm
+      CallSlaposTriggerBuildAlarm
       CleanTic
       SetSelectedComputerPartition
       SelectCurrentlyUsedSalePackingListUid
@@ -1195,17 +1195,17 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       LoginERP5TypeTestCase \
       CallVifibExpandDeliveryLineAlarm \
       CleanTic \
-      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CallSlaposUpdateDeliveryCausalityStateAlarm \
       CleanTic \
       CallVifibSolveAutomaticallyAlarm \
       CleanTic \
-      CallVifibTriggerBuildAlarm \
+      CallSlaposTriggerBuildAlarm \
       CleanTic \
       CallVifibExpandDeliveryLineAlarm \
       CleanTic \
-      CallVifibTriggerBuildAlarm \
+      CallSlaposTriggerBuildAlarm \
       CleanTic \
-      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CallSlaposUpdateDeliveryCausalityStateAlarm \
       CleanTic \
       CallVifibSolveAutomaticallyAlarm \
       CleanTic \
@@ -1213,11 +1213,11 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CleanTic \
       CallVifibExpandDeliveryLineAlarm \
       CleanTic \
-      CallVifibTriggerBuildAlarm \
+      CallSlaposTriggerBuildAlarm \
       CleanTic \
       CallVifibExpandDeliveryLineAlarm \
       CleanTic \
-      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CallSlaposUpdateDeliveryCausalityStateAlarm \
       CleanTic \
       CallVifibSolveAutomaticallyAlarm \
       CleanTic \
@@ -1238,9 +1238,9 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
       CleanTic \
       CallVifibExpandConfirmedSaleOrderAlarm \
       CleanTic \
-      CallVifibTriggerBuildAlarm \
+      CallSlaposTriggerBuildAlarm \
       CleanTic \
-      CallVifibUpdateDeliveryCausalityStateAlarm \
+      CallSlaposUpdateDeliveryCausalityStateAlarm \
       CleanTic \
       CallVifibSolveAutomaticallyAlarm \
       CleanTic \
@@ -3302,7 +3302,7 @@ class TestVifibSlapWebService(TestVifibSlapWebServiceMixin):
       CheckPersonUpdatedCredential
       Logout
 
-      CallVifibUpdateDeliveryCausalityStateAlarm
+      CallSlaposUpdateDeliveryCausalityStateAlarm
       CleanTic
 
       CallVifibSolveAutomaticallyAlarm

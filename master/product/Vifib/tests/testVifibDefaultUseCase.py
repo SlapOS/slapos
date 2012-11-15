@@ -1048,7 +1048,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CheckRegistrationAccounting \
         PayPayment \
         Tic \
-        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CallSlaposUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1067,9 +1067,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         SlapLogout \
         \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm\
+        CallSlaposUpdateDeliveryCausalityStateAlarm\
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1077,9 +1077,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibExpandDeliveryLineAlarm \
         CleanTic \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CallSlaposUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1104,11 +1104,11 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         Logout \
         \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
         CallStopConfirmedSaleInvoiceTransactionAlarm \
         CleanTic \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
         \
         LoginWebUser \
@@ -1129,9 +1129,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CheckOpenOrderLineRemoved \
         Logout \
         \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CallSlaposUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1146,11 +1146,11 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         \
         SlapLogout \
         Tic \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
         CallVifibExpandDeliveryLineAlarm \
         CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CallSlaposUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1158,9 +1158,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibExpandDeliveryLineAlarm \
         CleanTic \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm\
+        CallSlaposUpdateDeliveryCausalityStateAlarm\
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1176,7 +1176,7 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         PayPayment \
         Tic \
-        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CallSlaposUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1392,9 +1392,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         Tic \
         SlapLogout \
         \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm\
+        CallSlaposUpdateDeliveryCausalityStateAlarm\
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1402,9 +1402,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibExpandDeliveryLineAlarm \
         CleanTic \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CallSlaposUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1517,9 +1517,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         \
         CallVifibExpandDeliveryLineAlarm \
         CleanTic \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CallSlaposUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \
@@ -1527,9 +1527,9 @@ class TestVifibDefaultUseCase(TestVifibSlapWebServiceMixin):
         CleanTic \
         CallVifibExpandDeliveryLineAlarm \
         CleanTic \
-        CallVifibTriggerBuildAlarm \
+        CallSlaposTriggerBuildAlarm \
         CleanTic \
-        CallVifibUpdateDeliveryCausalityStateAlarm \
+        CallSlaposUpdateDeliveryCausalityStateAlarm \
         CleanTic \
         CallVifibSolveAutomaticallyAlarm \
         CleanTic \

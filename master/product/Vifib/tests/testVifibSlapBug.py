@@ -16,7 +16,7 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout \
       CallSlaposAllocateInstanceAlarm \
       CleanTic \
-      CallVifibTriggerBuildAlarm \
+      CallSlaposTriggerBuildAlarm \
       CleanTic \
       LoginERP5TypeTestCase \
       CheckSiteConsistency \
@@ -1542,11 +1542,11 @@ class TestVifibSlapBug(TestVifibSlapWebServiceMixin):
       Logout
 
       LoginERP5TypeTestCase
-      CallVifibTriggerBuildAlarm
+      CallSlaposTriggerBuildAlarm
       Tic
       CallStopConfirmedSaleInvoiceTransactionAlarm
       Tic
-      CallVifibTriggerBuildAlarm
+      CallSlaposTriggerBuildAlarm
       Tic
       PayPayment
       Tic
