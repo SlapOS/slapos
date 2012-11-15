@@ -606,8 +606,8 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
         self.assertHostingSubscriptionRelatedDeliveryList(
             subscription.getObject())
 
-    # check causality solving
-    self.stepCallSlaposUpdateDeliveryCausalityStateAlarm()
+    # check causality solving and simulation expand
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
     for person_reference in (owner_reference, friend_reference,
