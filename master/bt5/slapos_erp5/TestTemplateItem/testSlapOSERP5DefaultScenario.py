@@ -369,8 +369,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
             partition.contentValues(portal_type='Internet Protocol Address')],
         connection_dict.values())
 
-  def assertHostingSubscriptionSimulationCoverage(self, subscription,
-      level=1):
+  def assertHostingSubscriptionSimulationCoverage(self, subscription):
     self.login()
     applied_rule_list = self.portal.portal_catalog(portal_type='Applied Rule',
         causality_uid=subscription.getUid())
@@ -391,32 +390,36 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
           simulation_movement.getStartDate().day())
       self.assertEqual(subscription.getPeriodicityMonthDay(),
           simulation_movement.getStopDate().day())
+      delivery_line = simulation_movement.getDeliveryValue()
+      self.assertNotEqual(None, delivery_line)
+      delivery = delivery_line.getParentValue()
+      self.assertEqual('Sale Packing List',
+          delivery.getPortalType())
+      self.assertEqual('delivered',
+          delivery.getSimulationState())
+      causality_state = delivery.getCausalityState()
+      self.assertEqual('solved', causality_state)
+
       applied_rule_list_l2 = simulation_movement.contentValues(
           portal_type='Applied Rule')
-      if level == 1:
-        self.assertEqual(0, len(applied_rule_list_l2))
-      else:
-        raise NotImplementedError
-
-  def assertHostingSubscriptionRelatedDeliveryList(self, subscription,
-        causality_state='building'):
-    self.login()
-    applied_rule_list = self.portal.portal_catalog(portal_type='Applied Rule',
-        causality_uid=subscription.getUid())
-    self.assertEqual(1, len(applied_rule_list))
-    applied_rule = applied_rule_list[0]
-    simulation_movement_list = applied_rule.contentValues(
-        portal_type='Simulation Movement')
-    self.assertNotEqual(0, len(simulation_movement_list))
-
-    for simulation_movement in simulation_movement_list:
-      self.assertNotEqual(None, simulation_movement.getDelivery())
-      delivery_line = simulation_movement.getDeliveryValue()
+      self.assertEqual(1, len(applied_rule_list_l2))
+      invoice_applied_rule = applied_rule_list_l2[0]
+      invoice_simulation_movement_list = invoice_applied_rule.contentValues(
+          portal_type='Simulation Movement')
+      self.assertEqual(1, len(invoice_simulation_movement_list))
+      invoice_simulation_movement = invoice_simulation_movement_list[0]
+      self.assertEqual(open_sale_order_line_template.getResource(),
+          invoice_simulation_movement.getResource())
+      self.assertEqual(subscription.getRelativeUrl(),
+          invoice_simulation_movement.getAggregate())
+      delivery_line = invoice_simulation_movement.getDeliveryValue()
+      self.assertNotEqual(None, delivery_line)
       delivery = delivery_line.getParentValue()
-
-      self.assertEqual('Sale Packing List', delivery.getPortalType())
+      self.assertEqual('Sale Invoice Transaction',
+          delivery.getPortalType())
       self.assertEqual('delivered', delivery.getSimulationState())
-      self.assertEqual(causality_state, delivery.getCausalityState())
+      causality_state = delivery.getCausalityState()
+      self.assertEqual('solved', causality_state)
 
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
@@ -577,11 +580,28 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.assertOpenSaleOrderCoverage(friend_reference)
     self.assertOpenSaleOrderCoverage(public_reference)
 
-    # check the Subscription Simulation
+    # generate simulation for open order
 
     self.stepCallUpdateOpenOrderSimulationAlarm()
     self.tic()
 
+    # build subscription packing list
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+
+    # stabilise build deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build invoices
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+
+    # stabilise built invoices and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # check final simulation state
     for person_reference in (owner_reference, friend_reference,
         public_reference):
       person = self.portal.portal_catalog.getResultValue(portal_type='Person',
@@ -591,31 +611,4 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
           default_destination_section_uid=person.getUid()):
         self.assertHostingSubscriptionSimulationCoverage(
             subscription.getObject())
-
-    # check the generated Subscription Sale Packing Lists
-    self.stepCallSlaposTriggerBuildAlarm()
-    self.tic()
-
-    for person_reference in (owner_reference, friend_reference,
-        public_reference):
-      person = self.portal.portal_catalog.getResultValue(portal_type='Person',
-          reference=person_reference)
-      for subscription in self.portal.portal_catalog(
-          portal_type='Hosting Subscription',
-          default_destination_section_uid=person.getUid()):
-        self.assertHostingSubscriptionRelatedDeliveryList(
-            subscription.getObject())
-
-    # check causality solving and simulation expand
-    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
-    self.tic()
-
-    for person_reference in (owner_reference, friend_reference,
-        public_reference):
-      person = self.portal.portal_catalog.getResultValue(portal_type='Person',
-          reference=person_reference)
-      for subscription in self.portal.portal_catalog(
-          portal_type='Hosting Subscription',
-          default_destination_section_uid=person.getUid()):
-        self.assertHostingSubscriptionRelatedDeliveryList(
-            subscription.getObject(), causality_state='solved')
+    raise NotImplementedError('Waiting for implementation of payment')
