@@ -25,6 +25,7 @@ def withAbort(func):
 class Simulator:
   def __init__(self, outfile, method, to_return=None):
     self.outfile = outfile
+    open(self.outfile, 'w').write(repr([]))
     self.method = method
     self.to_return = to_return
 
@@ -172,6 +173,69 @@ class TestAlarm(testSlapOSMixin):
             business_link.getUid(), root_applied_rule.getUid()),
           'after_tag': 'lower_tag', 'activity': 'SQLQueue'}}],
         activate_value)
+
+    finally:
+      ActiveObject.activate = ActiveObject.original_activate
+      delattr(ActiveObject, 'original_activate')
+      BusinessLink.build = BusinessLink.original_build
+      delattr(BusinessLink, 'original_build')
+      if os.path.exists(build_simulator):
+        os.unlink(build_simulator)
+      if os.path.exists(activate_simulator):
+        os.unlink(activate_simulator)
+
+  @withAbort
+  def test_SimulationMovement_buildSlapOS_withDelivery(self):
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List')
+    delivery_line = delivery.newContent(portal_type='Sale Packing List Line')
+    business_process = self.portal.business_process_module.newContent(
+        portal_type='Business Process')
+    root_business_link = business_process.newContent(
+        portal_type='Business Link')
+    business_link = business_process.newContent(portal_type='Business Link')
+
+    root_applied_rule = self.portal.portal_simulation.newContent(
+        portal_type='Applied Rule')
+    simulation_movement = root_applied_rule.newContent(
+        causality=root_business_link.getRelativeUrl(),
+        delivery=delivery_line.getRelativeUrl(),
+        portal_type='Simulation Movement')
+
+    applied_rule = simulation_movement.newContent(portal_type='Applied Rule')
+    lower_simulation_movement = applied_rule.newContent(
+        causality=business_link.getRelativeUrl(),
+        delivery=delivery_line.getRelativeUrl(),
+        portal_type='Simulation Movement')
+
+    build_simulator = tempfile.mkstemp()[1]
+    activate_simulator = tempfile.mkstemp()[1]
+    try:
+      from Products.CMFActivity.ActiveObject import ActiveObject
+      ActiveObject.original_activate = ActiveObject.activate
+      ActiveObject.activate = Simulator(activate_simulator, 'activate',
+          root_applied_rule)
+      from Products.ERP5.Document.BusinessLink import BusinessLink
+      BusinessLink.original_build = BusinessLink.build
+      BusinessLink.build = Simulator(build_simulator, 'build')
+
+      simulation_movement.SimulationMovement_buildSlapOS(tag='root_tag')
+
+      build_value = eval(open(build_simulator).read())
+      activate_value = eval(open(activate_simulator).read())
+
+      self.assertEqual([], build_value)
+      self.assertEqual([], activate_value)
+
+      open(build_simulator, 'w').write(repr([]))
+      open(activate_simulator, 'w').write(repr([]))
+
+      lower_simulation_movement.SimulationMovement_buildSlapOS(tag='lower_tag')
+      build_value = eval(open(build_simulator).read())
+      activate_value = eval(open(activate_simulator).read())
+
+      self.assertEqual([], build_value)
+      self.assertEqual([], activate_value)
 
     finally:
       ActiveObject.activate = ActiveObject.original_activate
