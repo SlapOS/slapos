@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_update_delivery_causality_state</string> </value>
+            <value> <string>slapos_update_delivery_causality_state</string> </value>
         </item>
         <item>
             <key> <string>periodicity_hour</string> </key>

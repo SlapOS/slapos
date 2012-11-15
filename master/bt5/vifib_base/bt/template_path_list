@@ -1,4 +1,3 @@
 portal_alarms/vifib_expand_confirmed_sale_order
 portal_alarms/vifib_expand_delivery_line
 portal_alarms/vifib_solve_automatically
-portal_alarms/vifib_update_delivery_causality_state
