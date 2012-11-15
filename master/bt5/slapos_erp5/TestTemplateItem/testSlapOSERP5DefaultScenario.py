@@ -398,6 +398,25 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       else:
         raise NotImplementedError
 
+  def assertHostingSubscriptionRelatedDeliveryList(self, subscription):
+    self.login()
+    applied_rule_list = self.portal.portal_catalog(portal_type='Applied Rule',
+        causality_uid=subscription.getUid())
+    self.assertEqual(1, len(applied_rule_list))
+    applied_rule = applied_rule_list[0]
+    simulation_movement_list = applied_rule.contentValues(
+        portal_type='Simulation Movement')
+    self.assertNotEqual(0, len(simulation_movement_list))
+
+    for simulation_movement in simulation_movement_list:
+      self.assertNotEqual(None, simulation_movement.getDelivery())
+      delivery_line = simulation_movement.getDeliveryValue()
+      delivery = delivery_line.getParentValue()
+
+      self.assertEqual('Sale Packing List', delivery.getPortalType())
+      self.assertEqual('delivered', delivery.getSimulationState())
+      self.assertEqual('building', delivery.getCausalityState())
+
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
     person = self.portal.portal_catalog.getResultValue(portal_type='Person',
@@ -570,4 +589,18 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
           portal_type='Hosting Subscription',
           default_destination_section_uid=person.getUid()):
         self.assertHostingSubscriptionSimulationCoverage(
+            subscription.getObject())
+
+    # check the generated Subscription Sale Packing Lists
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+
+    for person_reference in (owner_reference, friend_reference,
+        public_reference):
+      person = self.portal.portal_catalog.getResultValue(portal_type='Person',
+          reference=person_reference)
+      for subscription in self.portal.portal_catalog(
+          portal_type='Hosting Subscription',
+          default_destination_section_uid=person.getUid()):
+        self.assertHostingSubscriptionRelatedDeliveryList(
             subscription.getObject())
