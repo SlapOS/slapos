@@ -6,7 +6,6 @@ import transaction
 class TestSlapOSGroupRoleSecurityMixin(testSlapOSMixin):
   def afterSetUp(self):
     super(TestSlapOSGroupRoleSecurityMixin, self).afterSetUp()
-    self.login()
     self.user_id = getSecurityManager().getUser().getId()
 
   def beforeTearDown(self):

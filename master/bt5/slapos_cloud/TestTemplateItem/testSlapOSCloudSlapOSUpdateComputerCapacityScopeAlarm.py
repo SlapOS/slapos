@@ -24,7 +24,6 @@ class TestSlapOSGarbageCollectDestroyedRootTreeAlarm(testSlapOSMixin):
         'text': '#access ok'
     })
     transaction.commit()
-    self.login()
 
   def test_Computer_checkAndUpdateCapacityScope(self):
     self.computer.Computer_checkAndUpdateCapacityScope()

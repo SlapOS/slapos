@@ -63,7 +63,6 @@ class TestSlapOSSlapToolMixin(testSlapOSMixin):
 
 class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
   def test_getFullComputerInformation(self):
-    self.login()
     self._makeComplexComputer(with_slave=True)
     self.login(self.computer_id)
     response = self.portal_slap.getFullComputerInformation(self.computer_id)
@@ -1260,8 +1259,6 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
 
 class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
   def afterSetUp(self):
-
-    self.login()
     password = self.generateNewId()
     reference = 'test_%s' % self.generateNewId()
     person = self.portal.person_module.newContent(portal_type='Person',
@@ -1365,7 +1362,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       'recmethod': 'reportComputerBang'}])
 
   def test_computerBang(self):
-    self.login()
     self.login(self.person_reference)
     self.computer_bang_simulator = tempfile.mkstemp()[1]
     try:
@@ -1408,7 +1404,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         os.unlink(self.computer_bang_simulator)
 
   def test_getComputerPartitionStatus(self):
-    self.login()
     self._makeComplexComputer()
     self.login(self.person_reference)
     partition_id = self.start_requested_software_instance.getAggregateValue(
@@ -1452,7 +1447,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
   def test_getComputerPartitionStatus_visited(self):
-    self.login()
     self._makeComplexComputer(person=self.person)
     self.login(self.person_reference)
     partition_id = self.start_requested_software_instance.getAggregateValue(
@@ -1500,7 +1494,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
   def test_registerComputerPartition_withSlave(self):
-    self.login()
     self._makeComplexComputer(person=self.person, with_slave=True)
     partition_id = self.start_requested_software_instance.getAggregateValue(
         portal_type='Computer Partition').getReference()
@@ -1615,7 +1608,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
   def test_registerComputerPartition(self):
-    self.login()
     self._makeComplexComputer(person=self.person)
     partition_id = self.start_requested_software_instance.getAggregateValue(
         portal_type='Computer Partition').getReference()
@@ -1723,7 +1715,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       'recmethod': 'bang'}])
 
   def test_softwareInstanceBang(self):
-    self.login()
     self._makeComplexComputer(person=self.person)
     self.instance_bang_simulator = tempfile.mkstemp()[1]
     try:
@@ -1777,7 +1768,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       'recmethod': 'rename'}])
 
   def test_softwareInstanceRename(self):
-    self.login()
     self._makeComplexComputer(person=self.person)
     self.instance_rename_simulator = tempfile.mkstemp()[1]
     try:
@@ -1805,7 +1795,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       'recmethod': 'requestSoftwareInstance'}])
 
   def test_request_withSlave(self):
-    self.login()
     self.instance_request_simulator = tempfile.mkstemp()[1]
     try:
       self.login(self.person_reference)
@@ -1836,7 +1825,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
         os.unlink(self.instance_request_simulator)
 
   def test_request(self):
-    self.login()
     self.instance_request_simulator = tempfile.mkstemp()[1]
     try:
       self.login(self.person_reference)
@@ -1876,7 +1864,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       'recmethod': 'requestSoftwareRelease'}])
 
   def test_computerSupply(self):
-    self.login()
     self.computer_supply_simulator = tempfile.mkstemp()[1]
     try:
       self.login(self.person_reference)
@@ -1904,7 +1891,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       'recmethod': 'requestComputer'}])
 
   def test_requestComputer(self):
-    self.login()
     self.computer_request_computer_simulator = tempfile.mkstemp()[1]
     try:
       self.login(self.person_reference)
@@ -1953,7 +1939,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       'recmethod': 'generateComputerCertificate'}])
 
   def test_generateComputerCertificate(self):
-    self.login()
     self.generate_computer_certificate_simulator = tempfile.mkstemp()[1]
     try:
       self.login(self.person_reference)
@@ -2001,7 +1986,6 @@ class TestSlapOSSlapToolPersonAccess(TestSlapOSSlapToolMixin):
       'recmethod': 'revokeComputerCertificate'}])
 
   def test_revokeComputerCertificate(self):
-    self.login()
     self.revoke_computer_certificate_simulator = tempfile.mkstemp()[1]
     try:
       self.login(self.person_reference)

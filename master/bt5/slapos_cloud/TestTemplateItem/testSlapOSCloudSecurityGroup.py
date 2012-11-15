@@ -83,7 +83,6 @@ class TestSlapOSSecurityMixin(testSlapOSMixin):
 
 class TestSlapOSComputerSecurity(TestSlapOSSecurityMixin):
   def test_active(self):
-    self.login()
     reference = self._generateRandomUniqueReference('Computer')
 
     computer = self.portal.computer_module.newContent(portal_type='Computer',
@@ -100,7 +99,6 @@ class TestSlapOSComputerSecurity(TestSlapOSSecurityMixin):
       user.getGroups())
 
   def test_inactive(self):
-    self.login()
     reference = self._generateRandomUniqueReference('Computer')
 
     computer = self.portal.computer_module.newContent(portal_type='Computer',
@@ -112,7 +110,6 @@ class TestSlapOSComputerSecurity(TestSlapOSSecurityMixin):
 class TestSlapOSSoftwareInstanceSecurity(TestSlapOSSecurityMixin):
   portal_type = 'Software Instance'
   def test_active(self):
-    self.login()
     reference = self._generateRandomUniqueReference(self.portal_type)
 
     instance = self.portal.getDefaultModule(portal_type=self.portal_type)\
@@ -148,7 +145,6 @@ class TestSlapOSSoftwareInstanceSecurity(TestSlapOSSecurityMixin):
       user.getGroups())
 
   def test_inactive(self):
-    self.login()
     reference = self._generateRandomUniqueReference(self.portal_type)
 
     instance = self.portal.getDefaultModule(portal_type=self.portal_type)\
@@ -159,7 +155,6 @@ class TestSlapOSSoftwareInstanceSecurity(TestSlapOSSecurityMixin):
 
 class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
   def test_active(self):
-    self.login()
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
     person = self.portal.person_module.newContent(portal_type='Person',
@@ -199,7 +194,6 @@ class TestSlapOSPersonSecurity(TestSlapOSSecurityMixin):
     self.assertSameSet(['R-MEMBER', 'G-COMPANY'], user.getGroups())
 
   def test_inactive(self):
-    self.login()
     password = str(random.random())
     reference = self._generateRandomUniqueReference('Person')
     person = self.portal.person_module.newContent(portal_type='Person',

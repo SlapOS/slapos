@@ -11,7 +11,6 @@ class TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm(
     super(TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm,
         self).afterSetUp()
     self._makeTree()
-    self.login()
 
   def test_HostingSubscription_assertPredecessor(self):
     self.software_instance.rename(new_name=self.generateNewSoftwareTitle())

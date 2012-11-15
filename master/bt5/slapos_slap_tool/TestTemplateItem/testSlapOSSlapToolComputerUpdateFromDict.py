@@ -23,8 +23,6 @@ class TestSlapOSCoreComputerUpdateFromDict(testSlapOSMixin):
         portal_type='Computer Partition')
     self.assertEqual(len(partition_list), 0)
 
-    self.login()
-
   def beforeTearDown(self):
     transaction.abort()
 

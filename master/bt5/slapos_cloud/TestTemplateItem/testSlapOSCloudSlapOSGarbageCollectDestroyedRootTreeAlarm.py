@@ -9,7 +9,6 @@ class TestSlapOSGarbageCollectDestroyedRootTreeAlarm(testSlapOSMixin):
   def afterSetUp(self):
     super(TestSlapOSGarbageCollectDestroyedRootTreeAlarm, self).afterSetUp()
     self._makeTree()
-    self.login()
 
   def test_Instance_tryToGarbageCollect(self):
     self.hosting_subscription.archive()

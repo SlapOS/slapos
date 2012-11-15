@@ -23,7 +23,6 @@ def withAbort(func):
 class TestDefaultInvoicingRule(testSlapOSMixin):
   @withAbort
   def test_simulation(self):
-    self.login()
     from Products.ERP5.Document.SimulationMovement import SimulationMovement
     SimulationMovement.original_getSimulationState = SimulationMovement\
         .getSimulationState

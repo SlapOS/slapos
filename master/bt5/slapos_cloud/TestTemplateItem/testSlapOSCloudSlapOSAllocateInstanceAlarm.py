@@ -13,7 +13,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_no_free_partition(self):
     self._makeTree()
-    self.login()
 
     self.assertEqual(None, self.software_instance.getAggregateValue(
         portal_type='Computer Partition'))
@@ -23,7 +22,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_no_host_instance(self):
     self._makeSlaveTree()
-    self.login()
 
     self.assertEqual(None, self.software_instance.getAggregateValue(
         portal_type='Computer Partition'))
@@ -43,7 +41,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_free_partition(self):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     self._installSoftware(self.computer,
@@ -64,7 +61,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_host_instance(self):
     self._makeSlaveTree()
-    self.login()
 
     self._makeComputer()
     self._allocateHost(self.requested_software_instance,
@@ -78,7 +74,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_capacity_scope_close(self):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     self._installSoftware(self.computer,
@@ -94,7 +89,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_host_capacity_scope_close(self):
     self._makeSlaveTree()
-    self.login()
 
     self._makeComputer()
     self._allocateHost(self.requested_software_instance,
@@ -110,7 +104,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_allocation_scope_close(self):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     self._installSoftware(self.computer,
@@ -126,7 +119,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_host_allocation_scope_close(self):
     self._makeSlaveTree()
-    self.login()
 
     self._makeComputer()
     self._allocateHost(self.requested_software_instance,
@@ -142,7 +134,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_allocation_scope_open_personal(self):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     self._installSoftware(self.computer,
@@ -159,7 +150,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_host_allocation_scope_open_personal(self):
     self._makeSlaveTree()
-    self.login()
 
     self._makeComputer()
     self._allocateHost(self.requested_software_instance,
@@ -176,7 +166,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_allocation_scope_open_friend(self):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     self._installSoftware(self.computer,
@@ -209,7 +198,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_host_allocation_scope_open_friend(self):
     self._makeSlaveTree()
-    self.login()
 
     self._makeComputer()
     self._allocateHost(self.requested_software_instance,
@@ -242,7 +230,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_does_not_fail_on_instance_with_damaged_sla_xml(self):
     self._makeTree()
-    self.login()
 
     self.software_instance.setSlaXml('this is not xml')
     self.assertEqual(None, self.software_instance.getAggregateValue(
@@ -254,7 +241,6 @@ class TestSlapOSAllocation(testSlapOSMixin):
 
   def test_allocation_does_not_fail_on_slave_with_damaged_sla_xml(self):
     self._makeSlaveTree()
-    self.login()
 
     self.software_instance.setSlaXml('this is not xml')
     self.assertEqual(None, self.software_instance.getAggregateValue(
@@ -284,7 +270,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_alarm_software_instance_unallocated(self):
     self._makeTree()
-    self.login()
 
     self._simulateSoftwareInstance_tryToAllocatePartition()
     try:
@@ -298,7 +283,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_alarm_slave_instance_unallocated(self):
     self._makeSlaveTree()
-    self.login()
 
     self._simulateSoftwareInstance_tryToAllocatePartition()
     try:
@@ -312,7 +296,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_alarm_software_instance_allocated(self):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     self.software_instance.setAggregate(self.partition.getRelativeUrl())
@@ -329,7 +312,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_alarm_slave_instance_allocated(self):
     self._makeSlaveTree()
-    self.login()
 
     self._makeComputer()
     self.software_instance.setAggregate(self.partition.getRelativeUrl())
@@ -346,7 +328,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_allocation_computer_guid(self):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     self._installSoftware(self.computer,
@@ -373,7 +354,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_allocation_instance_guid(self):
     self._makeSlaveTree()
-    self.login()
 
     self._makeComputer()
     self._allocateHost(self.requested_software_instance,
@@ -402,7 +382,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_allocation_network_guid(self):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     new_id = self.generateNewId()
@@ -439,7 +418,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
 
   def test_allocation_unexpected_sla_parameter(self):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     self._installSoftware(self.computer,
@@ -459,7 +437,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
   def check_allocation_category_sla(self, base_category, computer_category,
                                     other_category):
     self._makeTree()
-    self.login()
 
     self._makeComputer()
     self.computer.edit(**{base_category: computer_category})

@@ -9,7 +9,6 @@ class TestSlapOSFreeComputerPartitionAlarm(testSlapOSMixin):
   def afterSetUp(self):
     super(TestSlapOSFreeComputerPartitionAlarm, self).afterSetUp()
     self._makeTree()
-    self.login()
 
   def test_Instance_tryToUnallocatePartition(self):
     self._makeComputer()
@@ -148,7 +147,6 @@ class TestSlapOSFreeComputerPartitionAlarmWithSlave(testSlapOSMixin):
   def afterSetUp(self):
     super(TestSlapOSFreeComputerPartitionAlarmWithSlave, self).afterSetUp()
     self._makeTree(requested_template_id='template_slave_instance')
-    self.login()
 
   def test_Instance_tryToUnallocatePartition(self):
     self._makeComputer()
