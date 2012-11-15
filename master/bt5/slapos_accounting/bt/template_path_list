@@ -19,6 +19,7 @@ open_sale_order_module/template_open_sale_order
 organisation_module/slapos
 organisation_module/slapos/bank_account
 portal_alarms/slapos_request_update_hosting_subscription_open_sale_order
+portal_alarms/slapos_trigger_build
 portal_categories/trade_phase/slapos
 portal_categories/trade_phase/slapos/**
 portal_deliveries/slapos_sale_packing_list_builder
