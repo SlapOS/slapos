@@ -65,7 +65,7 @@
         </item>
         <item>
             <key> <string>delivery_after_generation_script_id</string> </key>
-            <value> <string>VifibInvoiceTransaction_postGeneration</string> </value>
+            <value> <string>SlapOSSaleInvoiceTransaction_postGeneration</string> </value>
         </item>
         <item>
             <key> <string>delivery_cell_collect_order</string> </key>
@@ -130,15 +130,17 @@
         </item>
         <item>
             <key> <string>delivery_select_method_id</string> </key>
-            <value> <string>VifibDeliveryBuilder_selectPlannedDeliveryList</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Builds Vifib Sale Invoices from Packing list related simulation movements</string> </value>
+            <value> <string>Builds Sale Invoices</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_sale_invoice_builder</string> </value>
+            <value> <string>slapos_sale_invoice_builder</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -152,11 +154,11 @@
         </item>
         <item>
             <key> <string>simulation_select_method_id</string> </key>
-            <value> <string>VifibDeliveryBuilder_selectMovement</string> </value>
+            <value> <string>SlapOSDeliveryBuilder_selectMovement</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Vifib Sale Invoice Builder</string> </value>
+            <value> <string>SlapOS Sale Invoice Builder</string> </value>
         </item>
       </dictionary>
     </pickle>

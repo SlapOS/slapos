@@ -11,7 +11,7 @@
             <value>
               <tuple>
                 <string>divergence_scope/category</string>
-                <string>collect_order_group/line</string>
+                <string>collect_order_group/delivery</string>
               </tuple>
             </value>
         </item>
@@ -23,7 +23,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>category_movement_group_on_line</string> </value>
+            <value> <string>category_movement_group_on_delivery</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
@@ -38,28 +38,19 @@
             <value>
               <tuple>
                 <string>specialise</string>
-                <string>resource</string>
-                <string>quantity_unit</string>
-                <string>base_contribution</string>
-                <string>base_application</string>
-                <string>source_function</string>
-                <string>destination_function</string>
-                <string>source_account</string>
-                <string>destination_account</string>
-                <string>source_administration</string>
-                <string>destination_administration</string>
-                <string>source_project</string>
-                <string>destination_project</string>
-                <string>source_payment</string>
-                <string>destination_payment</string>
-                <string>delivery_mode</string>
-                <string>incoterm</string>
+                <string>source</string>
+                <string>destination</string>
+                <string>source_section</string>
+                <string>destination_section</string>
+                <string>price_currency</string>
+                <string>source_decision</string>
+                <string>destination_decision</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>category_movement_group_on_line</string> </value>
+            <value> <string>category_movement_group_on_delivery</string> </value>
         </item>
         <item>
             <key> <string>update_always</string> </key>

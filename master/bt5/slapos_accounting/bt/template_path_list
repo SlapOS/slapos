@@ -24,6 +24,8 @@ portal_alarms/slapos_request_update_hosting_subscription_open_sale_order
 portal_alarms/slapos_trigger_build
 portal_categories/trade_phase/slapos
 portal_categories/trade_phase/slapos/**
+portal_deliveries/slapos_sale_invoice_builder
+portal_deliveries/slapos_sale_invoice_builder/**
 portal_deliveries/slapos_sale_packing_list_builder
 portal_deliveries/slapos_sale_packing_list_builder/**
 portal_rules/slapos_invoice_simulation_rule

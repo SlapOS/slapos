@@ -66,31 +66,8 @@ if 1:\n
   if not invoice.getResource():\n
     invoice.setResource(invoice.getPriceCurrency())\n
 \n
-if invoice.getStartDate() is None:\n
-  invoice.setStartDate(DateTime())\n
-\n
-tag = \'%s_plan\' % invoice.getPath()\n
-# initialize accounting_workflow to planned state\n
-if invoice.getSimulationState() == \'draft\':\n
-  invoice.plan(comment=translateString(\'Initialised by Delivery Builder.\'), activate_kw={\'tag\': tag})\n
-\n
-# update specialise from movements\n
-specialise_list = invoice.getSpecialiseList()\n
-specialise_list.sort()\n
-\n
-modified = 0\n
-for movement in invoice.getMovementList(portal_type=\'Invoice Line\'):\n
-  movement_specialise = movement.getSpecialise()\n
-  if movement_specialise not in specialise_list:\n
-    modified = 1\n
-    specialise_list.append(movement_specialise)\n
-\n
-if modified:\n
-  specialise_list.sort()\n
-  invoice.setSpecialiseList(specialise_list)\n
-\n
-if invoice.getPortalObject().portal_workflow.isTransitionPossible(invoice, \'start_building\'):\n
-  invoice.startBuilding()\n
+invoice.plan(comment=translateString(\'Initialised by Delivery Builder.\'), activate_kw={\'tag\': tag})\n
+invoice.startBuilding()\n
 </string> </value>
         </item>
         <item>
@@ -99,7 +76,7 @@ if invoice.getPortalObject().portal_workflow.isTransitionPossible(invoice, \'sta
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibInvoiceTransaction_postGeneration</string> </value>
+            <value> <string>SlapOSSaleInvoiceTransaction_postGeneration</string> </value>
         </item>
       </dictionary>
     </pickle>
