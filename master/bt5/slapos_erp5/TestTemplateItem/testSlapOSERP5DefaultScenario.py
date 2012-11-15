@@ -398,7 +398,8 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       else:
         raise NotImplementedError
 
-  def assertHostingSubscriptionRelatedDeliveryList(self, subscription):
+  def assertHostingSubscriptionRelatedDeliveryList(self, subscription,
+        causality_state='building'):
     self.login()
     applied_rule_list = self.portal.portal_catalog(portal_type='Applied Rule',
         causality_uid=subscription.getUid())
@@ -415,7 +416,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
       self.assertEqual('Sale Packing List', delivery.getPortalType())
       self.assertEqual('delivered', delivery.getSimulationState())
-      self.assertEqual('building', delivery.getCausalityState())
+      self.assertEqual(causality_state, delivery.getCausalityState())
 
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
@@ -604,3 +605,17 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
           default_destination_section_uid=person.getUid()):
         self.assertHostingSubscriptionRelatedDeliveryList(
             subscription.getObject())
+
+    # check causality solving
+    self.stepCallSlaposUpdateDeliveryCausalityStateAlarm()
+    self.tic()
+
+    for person_reference in (owner_reference, friend_reference,
+        public_reference):
+      person = self.portal.portal_catalog.getResultValue(portal_type='Person',
+          reference=person_reference)
+      for subscription in self.portal.portal_catalog(
+          portal_type='Hosting Subscription',
+          default_destination_section_uid=person.getUid()):
+        self.assertHostingSubscriptionRelatedDeliveryList(
+            subscription.getObject(), causality_state='solved')
