@@ -50,6 +50,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       return
 
   def afterSetUp(self):
+    self.login()
     self.createAlarmStep()
     if self.isLiveTest():
       self.setUpPersistentDummyMailHost()
@@ -87,14 +88,11 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
 
     self.clearCache()
 
-    self.login()
     # Invoke Post-configurator script, this invokes all 
     # alarms related to configuration.
     self.portal.BusinessConfiguration_invokeSlapOSMasterPromiseAlarmList()
     transaction.commit()
     self.tic()
-    self.logout()
-    self.loginDefaultUser()
 
   def getBusinessTemplateList(self):
     """
