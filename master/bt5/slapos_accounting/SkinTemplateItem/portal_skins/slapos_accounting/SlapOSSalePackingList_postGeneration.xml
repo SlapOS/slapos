@@ -61,17 +61,18 @@ except AttributeError:\n
   # does not come from Order\n
   pass\n
 \n
-# Then, modify state\n
-packing_list.Delivery_confirm()\n
+comment = translateString(\'Automatic transition during build.\')\n
+if portal.portal_workflow.isTransitionPossible(context, \'confirm\'):\n
+  context.confirm(comment=comment)\n
+if portal.portal_workflow.isTransitionPossible(context, \'start\'):\n
+  context.start(comment=comment)\n
+  context.stop(comment=comment)\n
+  context.deliver(comment=comment)\n
 \n
 line = packing_list.contentValues(portal_type=\'Sale Packing List Line\')[0]\n
 portal = packing_list.getPortalObject()\n
 \n
-if line.getResource() == portal.portal_preferences.getPreferredInstanceSetupResource():\n
-  packing_list.activate(after_path_and_method_id=(packing_list.getPath(),\n
-  (\'immediateReindexObject\', \'recursiveImmediateReindexObject\'))).SalePackingList_deliverInstanceSetup()\n
-\n
-# First set the packing_list in the building state\n
+# Initialise causality workflow\n
 packing_list.startBuilding()\n
 </string> </value>
         </item>
