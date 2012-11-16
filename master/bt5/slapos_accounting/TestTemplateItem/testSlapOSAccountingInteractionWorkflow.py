@@ -172,9 +172,11 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
         return self.fixConsistency_call()
 
     # Replace serialize by a dummy method
-    from Products.ERP5Type.Base import Base
-    Base.fixConsistency_call = Base.fixConsistency
-    Base.fixConsistency = verify_fixConsistency_call
+    HostingSubscriptionClass = self.portal.portal_types.getPortalTypeClass(
+        'Hosting Subscription')
+    HostingSubscriptionClass.fixConsistency_call = HostingSubscriptionClass.\
+        fixConsistency
+    HostingSubscriptionClass.fixConsistency = verify_fixConsistency_call
 
     try:
       # manage_afterAdd
@@ -189,7 +191,8 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
           template_hosting_subscription.Base_createCloneDocument,
         batch_mode=1)
     finally:
-      Base.fixConsistency = Base.fixConsistency_call
+      self.portal.portal_types.resetDynamicDocumentsOnceAtTransactionBoundary()
+      transaction.commit()
 
   def _simulateDelivery_calculate(self):
     script_name = 'Delivery_calculate'
