@@ -24,17 +24,17 @@ parts =
 #-- Creation of all needed directories.
 
 [basedirectory]
-script = $${rootdirectory:etc}/script/
-services = $${rootdirectory:etc}/run/
-cache = $${rootdirectory:var}/cache/
-notifier = $${rootdirectory:etc}/notifier/
+script = $${rootdirectory:etc}/script
+services = $${rootdirectory:etc}/run
+cache = $${rootdirectory:var}/cache
+notifier = $${rootdirectory:etc}/notifier
 
 [directory]
 backup = $${basedirectory:backup}/$${slap-parameter:namebase}
 ssh = $${rootdirectory:etc}/ssh/
 sshkeys = $${rootdirectory:srv}/sshkeys
-notifier-feeds = $${basedirectory:notifier}/feeds/
-notifier-callbacks = $${basedirectory:notifier}/callbacks/
+notifier-feeds = $${basedirectory:notifier}/feeds
+notifier-callbacks = $${basedirectory:notifier}/callbacks
 script = $${basedirectory:script}
 
 
@@ -43,11 +43,13 @@ script = $${basedirectory:script}
 #-- resiliency script for the bully algorithm
 
 [resiliency]
+# XXX The bully script is not run automatically, at the moment.
+#     For testing, run bin/bully for all the PBSReady instances.
+#     To enable automatic running, change the recipe and create the wrapper under "script" instead of "bin"
 recipe = slapos.cookbook:addresiliency
 script = $${basedirectory:script}
 run = $${basedirectory:services}
 bin = $${rootdirectory:bin}
-# XXX don't run bully automatically, yet
 
 
 #----------------

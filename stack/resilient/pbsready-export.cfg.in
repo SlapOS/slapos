@@ -7,8 +7,9 @@ parts += cron-entry-backup
 [urls]
 notification-id = http://[$${notifier:host}]:$${notifier:port}/get/$${notifier-exporter:name}
 
-#notify launches executable, and once it's done, notifies the pull-backup-servers.
 [notifier-exporter]
+# notifier.notify launches an (exporter) executable, and when finished,
+# notifies the the pull-backup-servers.
 <= notifier
 recipe = slapos.cookbook:notifier.notify
 name = exporter
@@ -17,8 +18,9 @@ executable = $${exporter:wrapper}
 wrapper = $${rootdirectory:bin}/exporter
 notify = $${slap-parameter:notify}
 
-#adds the exporter to cron
 [cron-entry-backup]
+# Schedule the periodic database dump.
+# Through notifications, this triggers (one or more) incremental backups on PBS instances.
 <= cron
 recipe = slapos.cookbook:cron.d
 name = backup

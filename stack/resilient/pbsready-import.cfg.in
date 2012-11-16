@@ -7,8 +7,9 @@ parts += import-on-notification
 [urls]
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 
-#Launches callback, when a notification is received
 [import-on-notification]
+# notifier.callback runs a script when a notification (sent by a parent PBS)
+# is received
 <= notifier
 recipe = slapos.cookbook:notifier.callback
 on-notification-id = $${slap-parameter:on-notification}

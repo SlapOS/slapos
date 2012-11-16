@@ -44,8 +44,8 @@ slave = false
 
 [sshkeys-directory]
 recipe = slapos.cookbook:mkdirectory
-requests = ${directory:sshkeys}/requests/
-keys = ${directory:sshkeys}/keys/
+requests = ${directory:sshkeys}/requests
+keys = ${directory:sshkeys}/keys
 
 [sshkeys-authority]
 recipe = slapos.cookbook:sshkeys_authority
@@ -168,5 +168,5 @@ sla-instance_guid = ${request-pull-backup-server:instance_guid}
 
 
 [directory]
-ssh = ${rootdirectory:etc}/ssh/
+ssh = ${rootdirectory:etc}/ssh
 sshkeys = ${rootdirectory:srv}/sshkeys
