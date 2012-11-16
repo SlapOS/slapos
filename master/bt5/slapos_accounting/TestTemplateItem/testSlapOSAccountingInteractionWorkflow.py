@@ -2,6 +2,7 @@
 from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 import transaction
+from Products.ERP5Type.tests.utils import createZODBPythonScript
 
 class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
   def beforeTearDown(self):
@@ -189,3 +190,88 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
         batch_mode=1)
     finally:
       Base.fixConsistency = Base.fixConsistency_call
+
+  def _simulateDelivery_calculate(self):
+    script_name = 'Delivery_calculate'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Delivery_calculate') """)
+    transaction.commit()
+
+  def _dropDelivery_calculate(self):
+    script_name = 'Delivery_calculate'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_SalePackingList_calculate(self):
+    new_id = self.generateNewId()
+    newContent = self.portal.sale_packing_list_module.newContent
+    portal_type = "Sale Packing List"
+
+    cancel_spl = newContent(portal_type=portal_type)
+    close_spl = newContent(portal_type=portal_type)
+    confirm_spl = newContent(portal_type=portal_type)
+    deliver_spl = newContent(portal_type=portal_type)
+    deliver_spl.confirm()
+    deliver_spl.stop()
+    order_spl = newContent(portal_type=portal_type)
+    plan_spl = newContent(portal_type=portal_type)
+    setReady_spl = newContent(portal_type=portal_type)
+    setReady_spl.confirm()
+    start_spl = newContent(portal_type=portal_type)
+    start_spl.confirm()
+    stop_spl = newContent(portal_type=portal_type)
+    stop_spl.confirm()
+    submit_spl = newContent(portal_type=portal_type)
+
+    self._simulateDelivery_calculate()
+    try:
+      cancel_spl.cancel()
+      close_spl.close()
+      confirm_spl.confirm()
+      deliver_spl.deliver()
+      order_spl.order()
+      plan_spl.plan()
+      setReady_spl.setReady()
+      start_spl.start()
+      stop_spl.stop()
+      submit_spl.submit()
+    finally:
+      self._dropDelivery_calculate()
+    self.assertEqual(
+      cancel_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+    self.assertEqual(
+      close_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+    self.assertEqual(
+      confirm_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+    self.assertEqual(
+      deliver_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+    self.assertEqual(
+      order_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+    self.assertEqual(
+      plan_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+    self.assertEqual(
+      setReady_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+    self.assertEqual(
+      start_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+    self.assertEqual(
+      stop_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+    self.assertEqual(
+      submit_spl.workflow_history['edit_workflow'][-1]['comment'],
+      'Visited by Delivery_calculate')
+
