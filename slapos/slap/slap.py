@@ -115,9 +115,6 @@ class SoftwareRelease(SlapDocument):
       'computer_id' : self.getComputerId(),
       'error_log': error_log})
 
-  def getURI(self):
-    return self._software_release
-
   def available(self):
     self._connection_helper.POST('/availableSoftwareRelease', {
       'url': self.getURI(),
