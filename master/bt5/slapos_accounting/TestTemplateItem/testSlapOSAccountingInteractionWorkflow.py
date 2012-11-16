@@ -136,3 +136,26 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
 
     instance.requestStop(**request_kw)
     self.assertEqual(instance.getCausalityState(), 'diverged')
+
+  def test_HostingSubscription_fixConsistency(self):
+    new_id = self.generateNewId()
+    item = self.portal.hosting_subscription_module.newContent(
+      portal_type='Hosting Subscription',
+      title="Subscription %s" % new_id,
+      reference="TESTSUB-%s" % new_id,
+      periodicity_hour_list=None,
+      periodicity_minute_list=None,
+      periodicity_month_day=None,
+    )
+
+    self.assertEqual(item.getPeriodicityHour(), None)
+    self.assertEqual(item.getPeriodicityMinute(), None)
+    self.assertEqual(item.getPeriodicityMonthDay(), None)
+
+    item.fixConsistency()
+
+    import datetime
+    self.assertEqual(item.getPeriodicityHourList(), [0])
+    self.assertEqual(item.getPeriodicityMinuteList(), [0])
+    self.assertEqual(item.getPeriodicityMonthDay(), datetime.datetime.today().day)
+    
