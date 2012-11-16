@@ -835,39 +835,16 @@ class SlapTool(BaseTool):
   @convertToREST
   def _buildingSoftwareRelease(self, url, computer_id):
     """
-    Reports that Software Release is being build
+    Kept for compatibility
     """
-    computer_document = self._getComputerDocument(computer_id)
-    software_installation = self._getSoftwareInstallationForComputer(url,
-      computer_document)
-    delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
-    if delivery is not None:
-      portal = self.getPortalObject()
-      line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
-      if line.getResource() == portal.portal_preferences.\
-                                 getPreferredSoftwareSetupResource():
-        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
-          delivery.start(comment='Software Release building report.')
+    pass
 
   @convertToREST
   def _availableSoftwareRelease(self, url, computer_id):
     """
-    Reports that Software Release is available
+    Kept for compatibility
     """
-    computer_document = self._getComputerDocument(computer_id)
-    software_installation = self._getSoftwareInstallationForComputer(url,
-      computer_document)
-    delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
-    if delivery is not None:
-      portal = self.getPortalObject()
-      line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
-      if line.getResource() == portal.portal_preferences.\
-                                 getPreferredSoftwareSetupResource():
-        comment = 'Software Release available report.'
-        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
-          delivery.start(comment=comment)
-        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
-          delivery.stop(comment=comment)
+    pass
 
   @convertToREST
   def _destroyedSoftwareRelease(self, url, computer_id):
@@ -879,19 +856,6 @@ class SlapTool(BaseTool):
       computer_document)
     if software_installation.getSlapState() != 'destroy_requested':
       raise NotFound
-    delivery = software_installation.getCausalityValue(portal_type=["Purchase Packing List"])
-    comment = 'Software Release destroyed report.'
-    portal = self.getPortalObject()
-    if delivery is not None:
-      line = delivery.contentValues(portal_type="Purchase Packing List Line")[0]
-      if line.getResource() == portal.portal_preferences.\
-                                 getPreferredSoftwareCleanupResource():
-        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
-          delivery.start(comment=comment)
-        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
-          delivery.stop(comment=comment)
-        if portal.portal_workflow.isTransitionPossible(delivery, 'deliver'):
-          delivery.deliver(comment=comment)
     if portal.portal_workflow.isTransitionPossible(software_installation,
         'invalidate'):
       software_installation.invalidate(comment=comment)
