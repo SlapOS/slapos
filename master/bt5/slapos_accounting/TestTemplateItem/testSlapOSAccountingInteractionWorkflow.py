@@ -158,4 +158,34 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
     self.assertEqual(item.getPeriodicityHourList(), [0])
     self.assertEqual(item.getPeriodicityMinuteList(), [0])
     self.assertEqual(item.getPeriodicityMonthDay(), datetime.datetime.today().day)
-    
+
+  def test_HostingSubscription_manageAfter(self):
+    class DummyTestException(Exception):
+      pass
+
+    def verify_fixConsistency_call(self):
+      # Check that fixConsistency is called on hosting subscription
+      if self.getRelativeUrl().startswith('hosting_subscription_module/'):
+        raise DummyTestException
+      else:
+        return self.fixConsistency_call()
+
+    # Replace serialize by a dummy method
+    from Products.ERP5Type.Base import Base
+    Base.fixConsistency_call = Base.fixConsistency
+    Base.fixConsistency = verify_fixConsistency_call
+
+    try:
+      # manage_afterAdd
+      self.assertRaises(
+        DummyTestException, 
+        self.portal.hosting_subscription_module.newContent,
+        portal_type='Hosting Subscription')
+      # manage_afterClone
+      self.assertRaises(
+        DummyTestException, 
+        self.portal.hosting_subscription_module.\
+          template_hosting_subscription.Base_createCloneDocument,
+        batch_mode=1)
+    finally:
+      Base.fixConsistency = Base.fixConsistency_call
