@@ -909,36 +909,16 @@ class SlapTool(BaseTool):
   @convertToREST
   def _buildingComputerPartition(self, computer_id, computer_partition_id):
     """
-    Reports that Computer Partition is being build
+    Kept for compatibility
     """
-    instance = self._getSoftwareInstanceForComputerPartition(
-        computer_id,
-        computer_partition_id)
-    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
-    if delivery is not None:
-      portal = self.getPortalObject()
-      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
-      if line.getResource() == portal.portal_preferences.\
-                                 getPreferredInstanceSetupResource():
-        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
-          delivery.start()
+    pass
 
   @convertToREST
   def _availableComputerPartition(self, computer_id, computer_partition_id):
     """
-    Reports that Computer Partition is available
+    Kept for compatibility
     """
-    instance = self._getSoftwareInstanceForComputerPartition(
-        computer_id,
-        computer_partition_id)
-    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
-    if delivery is not None:
-      portal = self.getPortalObject()
-      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
-      if line.getResource() == portal.portal_preferences.\
-                                 getPreferredInstanceSetupResource():
-        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
-          delivery.stop()
+    pass
 
   @convertToREST
   def _softwareInstanceError(self, computer_id,
@@ -1021,38 +1001,16 @@ class SlapTool(BaseTool):
   @convertToREST
   def _startedComputerPartition(self, computer_id, computer_partition_id):
     """
-    Reports that Computer Partition is started
+    Kept for compatibility
     """
-    instance = self._getSoftwareInstanceForComputerPartition(
-        computer_id,
-        computer_partition_id)
-    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
-    if delivery is not None:
-      portal = self.getPortalObject()
-      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
-      if line.getResource() in [
-          portal.portal_preferences.getPreferredInstanceHostingResource(),
-          portal.portal_preferences.getPreferredInstanceUpdateResource()]:
-        if portal.portal_workflow.isTransitionPossible(delivery, 'start'):
-          delivery.start()
+    pass
 
   @convertToREST
   def _stoppedComputerPartition(self, computer_id, computer_partition_id):
     """
-    Reports that Computer Partition is stopped
+    Kept for compatibility
     """
-    instance = self._getSoftwareInstanceForComputerPartition(
-        computer_id,
-        computer_partition_id)
-    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
-    if delivery is not None:
-      portal = self.getPortalObject()
-      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
-      if line.getResource() in [
-          portal.portal_preferences.getPreferredInstanceHostingResource(),
-          portal.portal_preferences.getPreferredInstanceUpdateResource()]:
-        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
-          delivery.stop()
+    pass
 
   @convertToREST
   def _destroyedComputerPartition(self, computer_id, computer_partition_id):
@@ -1071,28 +1029,19 @@ class SlapTool(BaseTool):
         )
       if instance.getValidationState() == 'validated':
         instance.invalidate()
-    delivery = instance.getCausalityValue(portal_type=["Sale Packing List"])
-    if delivery is not None:
-      portal = self.getPortalObject()
-      line = delivery.contentValues(portal_type="Sale Packing List Line")[0]
-      if line.getResource() in [
-          portal.portal_preferences.getPreferredInstanceCleanupResource()]:
-        if portal.portal_workflow.isTransitionPossible(delivery, 'stop'):
-          delivery.stop()
-        if portal.portal_workflow.isTransitionPossible(delivery, 'deliver'):
-          delivery.deliver()
 
-        # XXX Integrate with REST API
-        # Code duplication will be needed until SlapTool is removed
-        # revoke certificate
-        try:
-          portal.portal_certificate_authority\
-            .revokeCertificate(instance.getDestinationReference())
-        except ValueError:
-          # Ignore already revoked certificates, as OpenSSL backend is
-          # non transactional, so it is ok to allow multiple tries to destruction
-          # even if certificate was already revoked
-          pass
+      # XXX Integrate with REST API
+      # Code duplication will be needed until SlapTool is removed
+      # revoke certificate
+      portal = self.getPortalObject()
+      try:
+        portal.portal_certificate_authority\
+          .revokeCertificate(instance.getDestinationReference())
+      except ValueError:
+        # Ignore already revoked certificates, as OpenSSL backend is
+        # non transactional, so it is ok to allow multiple tries to destruction
+        # even if certificate was already revoked
+        pass
 
 
   @convertToREST
