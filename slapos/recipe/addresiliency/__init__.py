@@ -37,7 +37,7 @@ class Recipe(GenericSlapRecipe):
     def _install(self):
         path_list = []
 
-        confpath = os.path.join(self.options['script'], 'bully.conf')
+        confpath = os.path.join(self.options['etc'], 'bully.conf')
 
         ip_list = self.parameter_dict['ip-list']
         print 'Creating bully configuration with ips : %s\n' % ip_list
@@ -54,9 +54,13 @@ class Recipe(GenericSlapRecipe):
 
         slap_connection = self.buildout['slap-connection']
 
-        # XXX use the bin directory, do not run automatically yet
+        if self.optionIsTrue('enable-bully-service', default=False):
+            wrapper_dir = self.options['services']
+        else:
+            wrapper_dir = self.options['bin']
+
         wrapper = self.createPythonScript(
-            name=os.path.join(self.options['bin'], self.parameter_dict['wrapper']),
+            name=os.path.join(wrapper_dir, self.parameter_dict['wrapper']),
             absolute_function='slapos.recipe.addresiliency.bully.run',
             arguments={
                 'confpath': confpath,
