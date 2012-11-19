@@ -103,7 +103,7 @@
         </item>
         <item>
             <key> <string>delivery_creatable</string> </key>
-            <value> <int>0</int> </value>
+            <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>delivery_line_collect_order</string> </key>
