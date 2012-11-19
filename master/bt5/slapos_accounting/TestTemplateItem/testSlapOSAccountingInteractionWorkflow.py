@@ -212,11 +212,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
 
-  def test_SalePackingList_calculate(self):
-    new_id = self.generateNewId()
-    newContent = self.portal.sale_packing_list_module.newContent
-    portal_type = "Sale Packing List"
-
+  def _test_calculate(self, new_id, newContent, portal_type):
     cancel_spl = newContent(portal_type=portal_type)
     close_spl = newContent(portal_type=portal_type)
     confirm_spl = newContent(portal_type=portal_type)
@@ -277,6 +273,18 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
     self.assertEqual(
       submit_spl.workflow_history['edit_workflow'][-1]['comment'],
       'Visited by Delivery_calculate')
+
+  def test_SalePackingList_calculate(self):
+    new_id = self.generateNewId()
+    newContent = self.portal.sale_packing_list_module.newContent
+    portal_type = "Sale Packing List"
+    self._test_calculate(new_id, newContent, portal_type)
+
+  def test_SaleInvoiceTransaction_calculate(self):
+    new_id = self.generateNewId()
+    newContent = self.portal.accounting_module.newContent
+    portal_type = "Sale Invoice Transaction"
+    self._test_calculate(new_id, newContent, portal_type)
 
   def test_HostingSubscription_changePromise(self):
     new_id = self.generateNewId()
