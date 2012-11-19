@@ -29,6 +29,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by H
     try:
       func(self, *args, **kwargs)
     finally:
+      transaction.abort()
       if script_name in self.portal.portal_skins.custom.objectIds():
         self.portal.portal_skins.custom.manage_delObjects(script_name)
       transaction.commit()
