@@ -117,7 +117,7 @@ class TestHostingSubscriptionSimulation(testSlapOSMixin):
 
       applied_rule_list_level_2 = simulation_movement.contentValues(
           portal_type='Applied Rule')
-      self.assertEqual(0, len(applied_rule_list_level_2))
+      self.assertEqual(1, len(applied_rule_list_level_2))
       # check next simulation movement
       idx += 1
 
@@ -216,9 +216,12 @@ class TestHostingSubscriptionSimulation(testSlapOSMixin):
       self.assertEqual('planned', simulation_movement.getSimulationState())
       self.assertEqual(None, simulation_movement.getDelivery())
 
-      applied_rule_list_level_2 = simulation_movement.contentValues(
-          portal_type='Applied Rule')
-      self.assertEqual(0, len(applied_rule_list_level_2))
+      # check children rules' type
+      child_applied_rule_type_list = [q.getSpecialiseReference() for q in \
+          simulation_movement.contentValues(portal_type='Applied Rule')]
+      self.assertSameSet( ['default_invoicing_rule'],
+          child_applied_rule_type_list)
+
       # check next simulation movement
       idx += 1
     def isFrozen(*args, **kwargs):

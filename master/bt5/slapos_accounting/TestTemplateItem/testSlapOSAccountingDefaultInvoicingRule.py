@@ -123,6 +123,12 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
       self.assertEqual(['business_process_module/slapos_sale_business_p'
           'rocess/invoice_path', 'business_process_module/slapos_sale_b'
           'usiness_process/invoice'], simulation_movement.getCausalityList())
+      # check children rules' type
+      child_applied_rule_type_list = [q.getSpecialiseReference() for q in \
+          simulation_movement.contentValues(portal_type='Applied Rule')]
+      self.assertSameSet(
+          ['default_invoice_transaction_rule', 'default_trade_model_rule'],
+          child_applied_rule_type_list)
     finally:
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
