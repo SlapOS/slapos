@@ -28,11 +28,6 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
         .getSimulationState
     try:
       def getSimulationStatePlanned(self, *args, **kwargs):
-        if self.getId() == 'root_simulation_movement':
-          return 'planned'
-      def getSimulationStateDeliveredPLanned(self, *args, **kwargs):
-        if self.getId() == 'root_simulation_movement':
-          return 'delivered'
         return 'planned'
       SimulationMovement.getSimulationState = getSimulationStatePlanned
 
@@ -76,18 +71,6 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
               'business_process/deliver'])
 
       self.assertEqual('planned',
-          root_simulation_movement.getSimulationState())
-      root_simulation_movement.expand(expand_policy='immediate')
-
-      applied_rule_list = root_simulation_movement.contentValues(
-          portal_type='Applied Rule')
-
-      # if movement is not in final state, expand is no-op
-      self.assertEqual(0, len(applied_rule_list))
-
-      SimulationMovement.getSimulationState = \
-          getSimulationStateDeliveredPLanned
-      self.assertEqual('delivered',
           root_simulation_movement.getSimulationState())
       root_simulation_movement.expand(expand_policy='immediate')
 
