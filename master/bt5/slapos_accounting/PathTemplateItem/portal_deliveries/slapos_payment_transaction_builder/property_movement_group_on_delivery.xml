@@ -43,7 +43,9 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>1</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
         <item>
             <key> <string>update_always</string> </key>

@@ -52,11 +52,13 @@
             <key> <string>_body</string> </key>
             <value> <string>isTransitionPossible = context.getPortalObject().portal_workflow.isTransitionPossible\n
 if context.getSimulationState() == \'confirmed\' and len(context.checkConsistency()) == 0 and context.getCausalityState() == \'solved\':\n
-  comment = \'Stopped by alarm as all actions in confirmed state are ready.\'\n
+  comment = \'Delivered by alarm as all actions in confirmed state are ready.\'\n
   if isTransitionPossible(context, \'start\'):\n
     context.start(comment=comment)\n
   if isTransitionPossible(context, \'stop\'):\n
     context.stop(comment=comment)\n
+  if isTransitionPossible(context, \'deliver\'):\n
+    context.deliver(comment=comment)\n
 </string> </value>
         </item>
         <item>
@@ -65,7 +67,7 @@ if context.getSimulationState() == \'confirmed\' and len(context.checkConsistenc
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SaleInvoiceTransaction_stopConfirmed</string> </value>
+            <value> <string>SaleInvoiceTransaction_deliverConfirmed</string> </value>
         </item>
       </dictionary>
     </pickle>

@@ -58,7 +58,7 @@ portal.portal_catalog.searchAndActivate(\n
   portal_type=\'Sale Invoice Transaction\',\n
   simulation_state=\'confirmed\',\n
   causality_state=\'solved\',\n
-  method_id=\'SaleInvoiceTransaction_stopConfirmed\',\n
+  method_id=\'SaleInvoiceTransaction_deliverConfirmed\',\n
   activate_kw={\'tag\': tag}\n
 )\n
 context.activate(after_tag=tag).getId()\n
@@ -70,7 +70,7 @@ context.activate(after_tag=tag).getId()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_stopConfirmedSaleInvoiceTransaction</string> </value>
+            <value> <string>Alarm_deliverConfirmedSaleInvoiceTransaction</string> </value>
         </item>
       </dictionary>
     </pickle>
