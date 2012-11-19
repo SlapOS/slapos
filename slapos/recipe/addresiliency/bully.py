@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import Queue
 import socket
 import thread
 import time
@@ -87,12 +88,11 @@ class ResilientInstance(object):
         self.halter_id = 0
         self.inElection = False
         self.alive = True
-        self.lastPing = time.clock()
 
-        self.mainCanal = self.comm.canal([MSG_PING, MSG_HALT, MSG_VICTORY])
+        self.mainCanal = self.comm.create_canal([MSG_PING, MSG_HALT, MSG_VICTORY])
 
         self.renamer = renamer
-        self.okCanal = self.comm.canal([MSG_OK])
+        self.okCanal = self.comm.create_canal([MSG_OK])
         self.confpath = confpath
         self.loadConnectionInfo()
 
@@ -185,29 +185,24 @@ class ResilientInstance(object):
         return True
 
 
+
 class FilteredCanal(object):
 
     def __init__(self, accept, timeout):
         self.accept = accept
-        self.list = []
-        self.lock = thread.allocate_lock()
+        self.queue = Queue.Queue()
         self.timeout = timeout
 
     def append(self, message, sender):
         if message in self.accept:
-            self.lock.acquire()
-            self.list.append([message, sender])
-            self.lock.release()
+            self.queue.put([message, sender])
 
     def get(self):
-        start = time.clock()
-        while (time.clock() - start < self.timeout):
-            self.lock.acquire()
-            if self.list:
-                self.lock.release()
-                return self.list.pop(0)
-            self.lock.release()
-        return [None, None]
+        try:
+            return self.queue.get(timeout=self.timeout)
+        except Queue.Empty:
+            return [None, None]
+
 
 
 class Wrapper(object):
@@ -243,7 +238,7 @@ class Wrapper(object):
         finally:
             s.close()
 
-    def canal(self, accept):
+    def create_canal(self, accept):
         created = FilteredCanal(accept, self.timeout)
         self.canals.append(created)
         return created
@@ -286,11 +281,7 @@ def run(args):
 
     computer.comm.start()
     thread.start_new_thread(computer.listen, ())
-    thread.start_new_thread(computer.main, ())
     thread.start_new_thread(computer.aliveManagement, ())
 
-    while True:
-        # XXX tight loop
-        continue
-
+    computer.main()
 
