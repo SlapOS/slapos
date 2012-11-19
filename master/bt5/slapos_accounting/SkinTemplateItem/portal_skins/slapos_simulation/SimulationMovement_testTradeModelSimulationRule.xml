@@ -52,9 +52,7 @@
             <key> <string>_body</string> </key>
             <value> <string>movement = context\n
 \n
-script.log(\'on %s\' % movement.getPath())\n
 if not movement.SimulationMovement_testCommonRule(rule):\n
-  script.log(\'on %s does not apply\' % movement.getPath())\n
   return False\n
 \n
 parent = movement.getParentValue()\n
@@ -62,7 +60,6 @@ if parent.getPortalType() != \'Applied Rule\':\n
   return False\n
 \n
 parent_rule = parent.getSpecialiseValue()\n
-script.log(\'on %s %s\' % (movement.getPath(), parent_rule.getPortalType()))\n
 if parent_rule.getPortalType() not in (\'Invoice Root Simulation Rule\',\n
                                        \'Invoice Simulation Rule\'):\n
   return False\n
