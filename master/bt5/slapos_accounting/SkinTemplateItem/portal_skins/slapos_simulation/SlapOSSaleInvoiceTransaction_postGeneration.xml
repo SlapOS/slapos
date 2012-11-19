@@ -66,7 +66,7 @@ if 1:\n
   if not invoice.getResource():\n
     invoice.setResource(invoice.getPriceCurrency())\n
 \n
-invoice.plan(comment=translateString(\'Initialised by Delivery Builder.\'), activate_kw={\'tag\': tag})\n
+invoice.plan(comment=translateString(\'Initialised by Delivery Builder.\'))\n
 invoice.startBuilding()\n
 </string> </value>
         </item>
