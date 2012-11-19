@@ -61,7 +61,7 @@ if software_instance is not None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ComuterPartition_getSoftwareInstanceStatus</string> </value>
+            <value> <string>ComputerPartition_getSoftwareInstanceStatus</string> </value>
         </item>
       </dictionary>
     </pickle>
