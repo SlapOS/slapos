@@ -17,9 +17,7 @@ def withAbort(func):
     try:
       func(self, *args, **kwargs)
     finally:
-      transaction.commit()
-      self.tic()
-#      transaction.abort()
+      transaction.abort()
   return wrapped
 
 class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
