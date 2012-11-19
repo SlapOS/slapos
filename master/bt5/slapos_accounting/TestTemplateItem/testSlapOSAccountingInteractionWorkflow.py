@@ -278,3 +278,58 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
       submit_spl.workflow_history['edit_workflow'][-1]['comment'],
       'Visited by Delivery_calculate')
 
+  def test_HostingSubscription_changePromise(self):
+    new_id = self.generateNewId()
+    subscription = self.portal.hosting_subscription_module.newContent(
+      portal_type='Hosting Subscription',
+      title="Subscription %s" % new_id,
+      reference="TESTSUB-%s" % new_id,
+      )
+    subscription.validate()
+
+    self.assertEqual(subscription.getCausalityState(), 'diverged')
+
+    request_kw = dict(
+      software_release='http://example.org',
+      software_type='http://example.org',
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+    )
+
+    subscription.converge()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
+    subscription.requestStop(**request_kw)
+    self.assertEqual(subscription.getCausalityState(), 'diverged')
+
+    subscription.converge()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
+    subscription.requestStart(**request_kw)
+    self.assertEqual(subscription.getCausalityState(), 'diverged')
+
+    subscription.converge()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
+    subscription.requestDestroy(**request_kw)
+    self.assertEqual(subscription.getCausalityState(), 'diverged')
+
+  def test_HostingSubscription_changePromiseInDivergedState(self):
+    new_id = self.generateNewId()
+    subscription = self.portal.hosting_subscription_module.newContent(
+      portal_type='Hosting Subscription',
+      title="Subscription %s" % new_id,
+      reference="TESTSUB-%s" % new_id,
+      )
+    subscription.validate()
+
+    self.assertEqual(subscription.getCausalityState(), 'diverged')
+
+    request_kw = dict(
+      software_release='http://example.org',
+      software_type='http://example.org',
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+    )
+
+    subscription.requestStop(**request_kw)
+    self.assertEqual(subscription.getCausalityState(), 'diverged')
