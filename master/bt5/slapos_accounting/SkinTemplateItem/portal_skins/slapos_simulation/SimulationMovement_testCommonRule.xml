@@ -63,10 +63,7 @@ if len(rule_trade_phase_list) > 0:\n
     # If Business Process does not define trade phase do not apply\n
     return False\n
 \n
-# if movement.getSimulationState() in business_link.getCompletedStateList():\n
-#   return True\n
-\n
-return False\n
+return True\n
 
 
 ]]></string> </value>
