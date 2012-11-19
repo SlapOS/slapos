@@ -40,7 +40,7 @@ cronstamps = $${rootdirectory:etc}/cronstamps
 
 #----------------
 #--
-#-- Deploy cron and configure it.
+#-- Deploy cron.
 
 [cron]
 recipe = slapos.cookbook:cron
