@@ -5,7 +5,6 @@ Open Sale Order | VifibOpenSaleOrderConstraint
 Person | VifibPersonConstraint
 Purchase Packing List Line | VifibPurchasePackingListLineConstraint
 Purchase Packing List | VifibPurchasePackingListConstraint
-Sale Invoice Transaction | VifibSaleInvoiceConstraint
 Sale Order Line | VifibSaleOrderLineConstraint
 Sale Order | VifibSaleOrderConstraint
 Sale Packing List Line | VifibSalePackingListLineConstraint

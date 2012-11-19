@@ -32,7 +32,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibSaleInvoiceConstraint</string> </value>
+            <value> <string>SlapOSAccountingSaleInvoiceTransactionConstraint</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>

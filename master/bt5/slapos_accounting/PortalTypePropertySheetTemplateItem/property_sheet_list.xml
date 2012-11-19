@@ -2,6 +2,9 @@
  <portal_type id="Hosting Subscription">
   <item>SlapOSAccountingHostingSubscriptionConstraint</item>
  </portal_type>
+ <portal_type id="Sale Invoice Transaction">
+  <item>SlapOSAccountingSaleInvoiceTransactionConstraint</item>
+ </portal_type>
  <portal_type id="Slave Instance">
   <item>InstanceAccountingSynchronisation</item>
  </portal_type>
