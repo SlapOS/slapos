@@ -51,11 +51,12 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
+path_list = [q.PATH for q in portal.Base_getHostingSubscriptionForOpenSaleOrderLine(hosting_subscription_validation_state=\'validated\', open_sale_order_line_validation_state=\'validated\')]\n
+path_list.extend([q.PATH for q in portal.Base_getHostingSubscriptionForOpenSaleOrderLine(hosting_subscription_validation_state=\'archived\', open_sale_order_line_validation_state=\'invalidated\')])\n
 \n
 portal.portal_catalog.searchAndActivate(\n
   method_id=\'HostingSubscription_requestUpdateOpenSaleOrder\',\n
-  portal_type="Hosting Subscription",\n
-  causality_state="diverged",\n
+  path=path_list,\n
   activate_kw={\'tag\': tag},\n
   packet_size=1, # HostingSubscription_trigger_Person_storeOpenSaleOrderJournal\n
 )\n

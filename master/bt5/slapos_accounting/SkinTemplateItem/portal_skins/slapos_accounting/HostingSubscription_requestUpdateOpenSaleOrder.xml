@@ -53,7 +53,6 @@
             <value> <string>person = context.getDestinationSectionValue()\n
 if person is not None:\n
   person.Person_storeOpenSaleOrderJournal()\n
-context.converge()\n
 </string> </value>
         </item>
         <item>
