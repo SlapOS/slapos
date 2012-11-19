@@ -25,6 +25,7 @@
                 <string>predecessor/trade_state/invoiced</string>
                 <string>successor/trade_state/accounted</string>
                 <string>trade_phase/slapos/tax</string>
+                <string>delivery_builder/portal_deliveries/slapos_sale_invoice_transaction_trade_model_builder</string>
               </tuple>
             </value>
         </item>

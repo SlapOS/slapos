@@ -50,37 +50,16 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>#\n
-#  this script is called on the Invoice Transaction\n
-# after the invoice_transaction_builder delivery builder\n
-# created accounting lines in the invoice\n
-# \n
+            <value> <string>from Products.ERP5Type.Message import translateString\n
+from DateTime import DateTime\n
 \n
-# Accounting specific: \n
-#  if every lines have the same resource, then copy the resource \n
-# on the Transaction and delete resource on the lines.\n
-# TODO: this is a Property Assignment Movement Group\n
-\n
-accounting_line_portal_type = context.getPortalAccountingMovementTypeList()\n
-resources_keys = {}\n
-for line in context.contentValues(portal_type=accounting_line_portal_type):\n
-  resources_keys[line.getResource()] = 1\n
-\n
-if len(resources_keys.keys()) == 1 :\n
-  # set the resource on the transaction\n
-  context.setResource(resources_keys.keys()[0])\n
-  # and delete on the invoice lines, so that if the user\n
-  # changes the ressource on the transaction, it also change on \n
-  # the lines. \n
-  for line in context.contentValues(portal_type=accounting_line_portal_type):\n
-    line.setResource(None)\n
-    assert(line.getResource() == context.getResource())\n
-else :\n
-  raise ValueError, "%s doesn\'t have only one resource %s" % (\n
-              context.getPath(), resources_keys.keys())\n
-\n
-# round debit / credit on created transaction.\n
-context.AccountingTransaction_roundDebitCredit()\n
+payment_transaction = context\n
+comment = translateString("Initialised by Delivery Builder.")\n
+payment_transaction.plan(comment=comment)\n
+payment_transaction.confirm(comment=comment)\n
+payment_transaction.start(comment=comment)\n
+payment_transaction.stop(comment=comment)\n
+payment_transaction.deliver(comment=comment)\n
 </string> </value>
         </item>
         <item>
@@ -89,7 +68,7 @@ context.AccountingTransaction_roundDebitCredit()\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibInvoiceTransaction_postTransactionLineGeneration</string> </value>
+            <value> <string>SlapOSPaymentTransaction_postGeneration</string> </value>
         </item>
       </dictionary>
     </pickle>

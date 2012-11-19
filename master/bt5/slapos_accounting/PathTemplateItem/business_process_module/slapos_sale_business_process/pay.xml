@@ -108,6 +108,7 @@
                 <string>successor/trade_state/paid</string>
                 <string>source/account_module/bank</string>
                 <string>destination/account_module/bank</string>
+                <string>delivery_builder/portal_deliveries/slapos_payment_transaction_builder</string>
               </tuple>
             </value>
         </item>

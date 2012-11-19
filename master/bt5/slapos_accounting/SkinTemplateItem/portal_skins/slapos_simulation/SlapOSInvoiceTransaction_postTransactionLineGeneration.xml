@@ -51,53 +51,45 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>#\n
-#  This method is used by the invoice_transaction_builder\n
-# delivery builder to select the Invoice Transaction \n
-# in which creating new Invoice Transaction Lines.\n
-#\n
+#  this script is called on the Invoice Transaction\n
+# after the invoice_transaction_builder delivery builder\n
+# created accounting lines in the invoice\n
+# \n
 \n
-deliveries_keys = {}\n
-for movement in movement_list:\n
-  ar = movement.getParentValue()\n
-  line = None\n
+# Accounting specific: \n
+#  if every lines have the same resource, then copy the resource \n
+# on the Transaction and delete resource on the lines.\n
+# TODO: this is a Property Assignment Movement Group\n
 \n
-  # case of tax movement  \n
-  if ar.getSpecialiseValue().getPortalType() in (\'Tax Rule\', \'Tax Simulation Rule\'):\n
-    for other_rule in ar.getParentValue().contentValues():\n
-      if other_rule == ar:\n
-        continue\n
-      for sm in other_rule.contentValues():\n
-        line = sm.getDeliveryValue()\n
+accounting_line_portal_type = context.getPortalAccountingMovementTypeList()\n
+resources_keys = {}\n
+for line in context.contentValues(portal_type=accounting_line_portal_type):\n
+  resources_keys[line.getResource()] = 1\n
 \n
-  # case of trade model movement\n
-  if ar.getParentValue().getParentValue().getSpecialiseValue().getPortalType() in (\'Trade Model Rule\', \'Trade Model Simulation Rule\'):\n
-    line = ar.getParentValue().getParentValue().getParentValue().getDeliveryValue()\n
+if len(resources_keys.keys()) == 1 :\n
+  # set the resource on the transaction\n
+  context.setResource(resources_keys.keys()[0])\n
+  # and delete on the invoice lines, so that if the user\n
+  # changes the ressource on the transaction, it also change on \n
+  # the lines. \n
+  for line in context.contentValues(portal_type=accounting_line_portal_type):\n
+    line.setResource(None)\n
+    assert(line.getResource() == context.getResource())\n
+else :\n
+  raise ValueError, "%s doesn\'t have only one resource %s" % (\n
+              context.getPath(), resources_keys.keys())\n
 \n
-  # in case of invoice rule (ie. starting from Invoice)\n
-  if line is None:\n
-    line = ar.getParentValue().getOrderValue()\n
-\n
-  # in case of invoicing rule (ie. starting from Order)\n
-  if line is None:\n
-    line = movement.getParentValue().getParentValue().getDeliveryValue()\n
-\n
-  if line is not None:\n
-    deliveries_keys[line.getExplanationValue()] = 1\n
-\n
-return filter(lambda x : x is not None, deliveries_keys.keys())\n
+# round debit / credit on created transaction.\n
+context.AccountingTransaction_roundDebitCredit()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>movement_list, **kw</string> </value>
+            <value> <string>related_simulation_movement_path_list=None, **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>VifibInvoiceTransaction_selectDelivery</string> </value>
-        </item>
-        <item>
-            <key> <string>title</string> </key>
-            <value> <string></string> </value>
+            <value> <string>SlapOSInvoiceTransaction_postTransactionLineGeneration</string> </value>
         </item>
       </dictionary>
     </pickle>

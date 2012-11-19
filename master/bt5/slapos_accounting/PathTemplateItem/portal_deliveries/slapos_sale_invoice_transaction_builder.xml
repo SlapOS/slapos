@@ -25,20 +25,53 @@
             </value>
         </item>
         <item>
+            <key> <string>collect_order</string> </key>
+            <value>
+              <tuple>
+                <string>OrderMovementGroup</string>
+                <string>PathMovementGroup</string>
+                <string>DateMovementGroup</string>
+                <string>ResourceMovementGroup</string>
+                <string>VariantMovementGroup</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>collect_order_list</string> </key>
+            <value>
+              <list>
+                <string>test</string>
+                <string>test2</string>
+              </list>
+            </value>
+        </item>
+        <item>
+            <key> <string>collect_order_list_id</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>comment</string> </key>
             <value>
               <none/>
             </value>
         </item>
         <item>
+            <key> <string>delivery_after_generation_method_id</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>delivery_after_generation_script_id</string> </key>
-            <value> <string>VifibPaymentTransaction_postGeneration</string> </value>
+            <value> <string>SlapOSInvoiceTransaction_postTransactionLineGeneration</string> </value>
         </item>
         <item>
             <key> <string>delivery_cell_collect_order</string> </key>
             <value>
               <tuple>
-                <string>PathMovementGroup</string>
+                <string>ResourceMovementGroup</string>
               </tuple>
             </value>
         </item>
@@ -50,7 +83,6 @@
             <key> <string>delivery_cell_separate_order</string> </key>
             <value>
               <tuple>
-                <string>calculateSeparatePrice</string>
                 <string>calculateAddQuantity</string>
               </tuple>
             </value>
@@ -59,14 +91,15 @@
             <key> <string>delivery_collect_order</string> </key>
             <value>
               <tuple>
-                <string>OrderMovementGroup</string>
                 <string>DateMovementGroup</string>
                 <string>SectionPathMovementGroup</string>
-                <string>PaymentPathMovementGroup</string>
-                <string>ResourceMovementGroup</string>
-                <string>PaymentModeMovementGroup</string>
+                <string>CausalityMovementGroup</string>
               </tuple>
             </value>
+        </item>
+        <item>
+            <key> <string>delivery_creatable</string> </key>
+            <value> <int>0</int> </value>
         </item>
         <item>
             <key> <string>delivery_line_collect_order</string> </key>
@@ -74,12 +107,13 @@
               <tuple>
                 <string>QuantitySignMovementGroup</string>
                 <string>PathMovementGroup</string>
+                <string>ResourceMovementGroup</string>
               </tuple>
             </value>
         </item>
         <item>
             <key> <string>delivery_line_portal_type</string> </key>
-            <value> <string>Accounting Transaction Line</string> </value>
+            <value> <string>Sale Invoice Transaction Line</string> </value>
         </item>
         <item>
             <key> <string>delivery_module</string> </key>
@@ -87,33 +121,37 @@
         </item>
         <item>
             <key> <string>delivery_portal_type</string> </key>
-            <value> <string>Payment Transaction</string> </value>
+            <value> <string>Sale Invoice Transaction</string> </value>
         </item>
         <item>
             <key> <string>delivery_select_method_id</string> </key>
-            <value> <string>VifibDeliveryBuilder_selectPlannedDeliveryList</string> </value>
+            <value> <string>SlapOSInvoiceTransaction_selectDelivery</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>Build Accounting Lines on Vifib Sale Invoice Transactions</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_payment_transaction_builder</string> </value>
+            <value> <string>slapos_sale_invoice_transaction_builder</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
             <value> <string>Delivery Builder</string> </value>
         </item>
         <item>
+            <key> <string>resource_portal_type</string> </key>
+            <value>
+              <none/>
+            </value>
+        </item>
+        <item>
             <key> <string>simulation_select_method_id</string> </key>
-            <value> <string>VifibDeliveryBuilder_selectMovement</string> </value>
+            <value> <string>SlapOSDeliveryBuilder_selectMovement</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Vifib Payment Transaction Builder</string> </value>
+            <value> <string>SlapOS Sale Invoice Transaction Builder</string> </value>
         </item>
       </dictionary>
     </pickle>
