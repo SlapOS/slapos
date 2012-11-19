@@ -159,6 +159,7 @@ erp5_jquery
 erp5_open_trade
 erp5_pdm
 erp5_promise
+erp5_simplified_invoicing
 erp5_software_pdm
 erp5_toolbox
 erp5_trade
@@ -236,6 +237,7 @@ erp5_jquery
 erp5_open_trade
 erp5_pdm
 erp5_promise
+erp5_simplified_invoicing
 erp5_software_pdm
 erp5_toolbox
 erp5_trade
@@ -314,6 +316,7 @@ erp5_km_widget_library
 erp5_open_trade
 erp5_pdm
 erp5_promise
+erp5_simplified_invoicing
 erp5_software_pdm
 erp5_toolbox
 erp5_trade
@@ -390,6 +393,7 @@ erp5_item_trade
 erp5_open_trade
 erp5_pdm
 erp5_promise
+erp5_simplified_invoicing
 erp5_software_pdm
 erp5_toolbox
 erp5_trade
@@ -465,6 +469,7 @@ erp5_item_trade
 erp5_open_trade
 erp5_pdm
 erp5_promise
+erp5_simplified_invoicing
 erp5_software_pdm
 erp5_toolbox
 erp5_trade
