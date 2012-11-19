@@ -100,7 +100,7 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
       debit_movement = debit_movement_list[0]
       credit_movement = credit_movement_list[0]
       def checkSimulationMovement(simulation_movement, source, destination,
-            quantity_sign):
+            quantity_sign, child_rule_reference_list):
         self.assertEqual('planned', simulation_movement.getSimulationState())
         self.assertEqual(source, simulation_movement.getSource())
         self.assertEqual(root_simulation_movement.getSourceSection(),
@@ -127,10 +127,14 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
             simulation_movement.getQuantityUnit())
         self.assertEqual(root_simulation_movement.getSpecialise(),
             simulation_movement.getSpecialise())
+        self.assertSameSet(child_rule_reference_list,
+            [q.getSpecialiseReference() for q in simulation_movement\
+                .contentValues(portal_type='Applied Rule')])
+
       checkSimulationMovement(debit_movement, 'account_module/receivable',
-          'account_module/payable', -1)
+          'account_module/payable', -1, ['default_payment_rule'])
       checkSimulationMovement(credit_movement, 'account_module/sales',
-          'account_module/purchase', 1)
+          'account_module/purchase', 1, [])
     finally:
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
