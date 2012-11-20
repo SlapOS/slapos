@@ -617,6 +617,10 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.stepCallSlaposTriggerBuildAlarm()
     self.tic()
 
+    # build other deliveries
+    self.stepCallSlaposInstanceInvoicingAlarm()
+    self.tic()
+
     # stabilise build deliveries and expand them
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
