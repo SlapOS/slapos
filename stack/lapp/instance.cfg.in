@@ -8,5 +8,6 @@ offline = true
 
 [switch_softwaretype]
 recipe = slapos.cookbook:softwaretype
-default = ${template-apache-php:output}
-postgres = ${template-postgres:output}
+default = ${instance-default-root:output}
+apache = ${instance-apache-php:output}
+postgres = ${instance-postgres:output}
