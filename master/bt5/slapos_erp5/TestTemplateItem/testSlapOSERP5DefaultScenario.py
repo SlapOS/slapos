@@ -390,14 +390,14 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
           simulation_movement.getStartDate().day())
       self.assertEqual(subscription.getPeriodicityMonthDay(),
           simulation_movement.getStopDate().day())
-      delivery_line = simulation_movement.getDeliveryValue()
-      self.assertNotEqual(None, delivery_line)
-      delivery = delivery_line.getParentValue()
+      packing_list_line = simulation_movement.getDeliveryValue()
+      self.assertNotEqual(None, packing_list_line)
+      packing_list = packing_list_line.getParentValue()
       self.assertEqual('Sale Packing List',
-          delivery.getPortalType())
+          packing_list.getPortalType())
       self.assertEqual('delivered',
-          delivery.getSimulationState())
-      causality_state = delivery.getCausalityState()
+          packing_list.getSimulationState())
+      causality_state = packing_list.getCausalityState()
       self.assertEqual('solved', causality_state)
 
       applied_rule_list_l2 = simulation_movement.contentValues(
@@ -412,15 +412,42 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
           invoice_simulation_movement.getResource())
       self.assertEqual(subscription.getRelativeUrl(),
           invoice_simulation_movement.getAggregate())
-      delivery_line = invoice_simulation_movement.getDeliveryValue()
-      self.assertNotEqual(None, delivery_line)
-      delivery = delivery_line.getParentValue()
+      invoice_line = invoice_simulation_movement.getDeliveryValue()
+      self.assertNotEqual(None, invoice_line)
+      invoice = invoice_line.getParentValue()
       self.assertEqual('Sale Invoice Transaction',
-          delivery.getPortalType())
-      self.assertEqual('delivered', delivery.getSimulationState())
-      causality_state = delivery.getCausalityState()
+          invoice.getPortalType())
+      self.assertEqual('delivered', invoice.getSimulationState())
+      causality_state = invoice.getCausalityState()
       self.assertEqual('solved', causality_state)
-      self.assertEqual(0, len(delivery.checkConsistency()))
+      self.assertEqual(0, len(invoice.checkConsistency()))
+      self.assertSameSet([packing_list.getRelativeUrl()],
+          invoice.getCausalityList(
+              portal_type=self.portal.getPortalDeliveryTypeList()))
+      self.assertSameSet([invoice.getRelativeUrl()],
+          packing_list.getCausalityRelatedList(
+              portal_type=self.portal.getPortalDeliveryTypeList()))
+
+      # now use causality related to find payment, as walking through simulation
+      # is really complex
+      # simulation are tested in unit tests, here the assertions are made on
+      # document level
+      payment_list = invoice.getCausalityRelatedValueList(
+          portal_type=self.portal.getPortalDeliveryTypeList())
+      self.assertEqual(1, len(payment_list))
+      payment = payment_list[0]
+      self.assertEqual('Payment Transaction',
+          payment.getPortalType())
+      self.assertEqual('delivered', payment.getSimulationState())
+      causality_state = payment.getCausalityState()
+      self.assertEqual('solved', causality_state)
+      self.assertEqual(0, len(payment.checkConsistency()))
+      self.assertSameSet([invoice.getRelativeUrl()],
+          payment.getCausalityList(
+              portal_type=self.portal.getPortalDeliveryTypeList()))
+      self.assertSameSet([payment.getRelativeUrl()],
+          invoice.getCausalityRelatedList(
+              portal_type=self.portal.getPortalDeliveryTypeList()))
 
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
@@ -626,4 +653,3 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
           default_destination_section_uid=person.getUid()):
         self.assertHostingSubscriptionSimulationCoverage(
             subscription.getObject())
-    raise NotImplementedError('Waiting for implementation of payment')
