@@ -708,3 +708,7 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
     finally:
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
+
+class TestDefaultDeliveryRule(testSlapOSMixin):
+  def test(self):
+    raise NotImplementedError
