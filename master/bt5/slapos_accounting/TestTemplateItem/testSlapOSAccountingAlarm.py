@@ -9,7 +9,7 @@ import transaction
 import functools
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+  testSlapOSMixin, withAbort
 import os
 import tempfile
 from DateTime import DateTime
@@ -1174,15 +1174,6 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         line.getPrice())
     self.assertEqual(request_time_2, validated_line_2.getStartDate())
     self.assertEqual(stop_date_2, validated_line_2.getStopDate())
-
-def withAbort(func):
-  @functools.wraps(func)
-  def wrapped(self, *args, **kwargs):
-    try:
-      func(self, *args, **kwargs)
-    finally:
-      transaction.abort()
-  return wrapped
 
 class Simulator:
   def __init__(self, outfile, method, to_return=None):

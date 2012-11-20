@@ -6,20 +6,9 @@
 ##############################################################################
 
 from Products.SlapOS.tests.testSlapOSMixin import \
-  testSlapOSMixin
+  testSlapOSMixin, withAbort
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
-import transaction
-import functools
-
-def withAbort(func):
-  @functools.wraps(func)
-  def wrapped(self, *args, **kwargs):
-    try:
-      func(self, *args, **kwargs)
-    finally:
-      transaction.abort()
-  return wrapped
 
 class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
   @withAbort

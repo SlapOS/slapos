@@ -30,7 +30,17 @@ import random
 import transaction
 import unittest
 import Products.Vifib.tests.VifibMixin
+import functools
 from Products.ERP5Type.tests.utils import DummyMailHost
+
+def withAbort(func):
+  @functools.wraps(func)
+  def wrapped(self, *args, **kwargs):
+    try:
+      func(self, *args, **kwargs)
+    finally:
+      transaction.abort()
+  return wrapped
 
 class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
 
