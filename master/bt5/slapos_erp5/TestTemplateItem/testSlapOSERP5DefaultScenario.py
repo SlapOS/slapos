@@ -420,6 +420,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       self.assertEqual('delivered', delivery.getSimulationState())
       causality_state = delivery.getCausalityState()
       self.assertEqual('solved', causality_state)
+      self.assertEqual(0, len(delivery.checkConsistency()))
 
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
@@ -598,6 +599,20 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.tic()
 
     # stabilise built invoices and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # deliver the invoices and solve them again
+    self.stepCallSlaposDeliverConfirmedSaleInvoiceTransactionAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build the delivered payment
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+
+    # stabilise the payment deliveries and expand them
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
