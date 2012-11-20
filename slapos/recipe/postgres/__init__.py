@@ -83,8 +83,14 @@ class Recipe(GenericBaseRecipe):
                 ]
 
 
+    def check_exists(self, path):
+        if not os.path.isfile(path):
+            raise IOError('File not found: %s' % path)
+
+
     def createCluster(self):
         initdb_binary = os.path.join(self.options['bin'], 'initdb')
+        self.check_exists(initdb_binary)
 
         pgdata = self.options['pgdata-directory']
 
