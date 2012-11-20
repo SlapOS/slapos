@@ -114,7 +114,7 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
         self.assertEqual(root_simulation_movement.getPriceCurrency(),
             simulation_movement.getResource())
         self.assertEqual([], simulation_movement.getAggregateList())
-        self.assertEqual(root_simulation_movement.getStartDate(),
+        self.assertEqual(root_simulation_movement.getStopDate(),
             simulation_movement.getStartDate())
         self.assertEqual(root_simulation_movement.getStopDate(),
             simulation_movement.getStopDate())
