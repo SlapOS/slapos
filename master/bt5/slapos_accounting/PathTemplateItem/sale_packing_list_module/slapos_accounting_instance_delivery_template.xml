@@ -69,6 +69,17 @@
             </value>
         </item>
         <item>
+            <key> <string>categories</string> </key>
+            <value>
+              <tuple>
+                <string>source_section/organisation_module/slapos</string>
+                <string>source/organisation_module/slapos</string>
+                <string>price_currency/currency_module/EUR</string>
+                <string>specialise/sale_trade_condition_module/slapos_trade_condition</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>comment</string> </key>
             <value>
               <none/>
