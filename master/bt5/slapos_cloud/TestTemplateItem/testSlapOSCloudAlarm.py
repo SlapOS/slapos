@@ -1037,10 +1037,10 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by I
         'Visited by Instance_tryToGarbageCollect',
         self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
 
-class TestSlapOSGarbageCollectDestroyedRootTreeAlarm(testSlapOSMixin):
+class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
 
   def afterSetUp(self):
-    super(TestSlapOSGarbageCollectDestroyedRootTreeAlarm, self).afterSetUp()
+    super(TestSlapOSUpdateComputerCapacityScopeAlarm, self).afterSetUp()
     self.computer = self.portal.computer_module.template_computer\
         .Base_createCloneDocument(batch_mode=1)
     self.computer.edit(
