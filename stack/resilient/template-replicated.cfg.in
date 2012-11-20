@@ -16,13 +16,10 @@ name = {{namebase}}0
 return = url ssh-public-key ssh-url notification-id ip
 
 config = number script wrapper authorized-key notify ip-list namebase
-
-config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
-
-config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}{% endfor %}
-
-config-ip-list =
 config-number = 0
+config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
+config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}{% endfor %}
+config-ip-list =
 
 {% for id in range(1,nbbackup|int) %}
 
@@ -37,14 +34,13 @@ software-url = ${slap-connection:software-release-url}
 software-type = {{typeimport}}
 return = url ssh-public-key ssh-url notification-url ip
 
-config = number script wrapper authorized-key on-notification ip-list namebase
-
-config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
-config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-push
 
-config-ip-list =
+config = number script wrapper authorized-key on-notification ip-list namebase
 config-number = {{id}}
+config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
+config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
+config-ip-list =
 
 {% endfor %}
 
@@ -60,18 +56,14 @@ config-ip-list = ${request-{{namebase}}:connection-ip}{% for j in range(1,nbback
 recipe = slapos.cookbook:request
 name = {{namebase}}0
 
-config = number script wrapper authorized-key notify ip-list namebase
-
 software-url = ${slap-connection:software-release-url}
 software-type = {{typeexport}}
 return = url ssh-public-key ssh-url notification-id ip
 
-
+config = number script wrapper authorized-key notify ip-list namebase
+config-number = 0
 config-authorized-key = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}{% endfor %}
 config-notify = {% for id in range(1,nbbackup|int) %} ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}{% endfor %}
-
-
-config-number=0
 
 {% for id in range(1,nbbackup|int) %}
 [request-{{namebase}}-pseudo-replicating-{{id}}-2]
@@ -87,14 +79,13 @@ software-url = ${slap-connection:software-release-url}
 software-type = {{typeimport}}
 return = url ssh-public-key ssh-url notification-url
 
-config = number script wrapper authorized-key on-notification ip-list namebase
-
-config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
-config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-push
 
-
+config = number script wrapper authorized-key on-notification ip-list namebase
 config-number = {{id}}
+config-authorized-key = ${request-pbs-{{namebase}}-{{id}}:connection-ssh-key}
+config-on-notification = ${request-pbs-{{namebase}}-{{id}}:connection-feeds-url}${:pbs-notification-id}
+
 {% endfor %}
 
 
@@ -135,6 +126,8 @@ config-notify = ${request-pbs-{{namebase}}-{{id}}:connection-notification-url}
 config-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-{{id}}-pull
 config-title = Pulling from {{namebase}}
 slave = true
+sla = instance_guid
+sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 
 [request-pull-backup-server-{{namebase}}-backup-{{id}}]
 <= request-pbs-common
@@ -149,6 +142,8 @@ config-notify = ${request-{{namebase}}-pseudo-replicating-{{id}}:connection-noti
 config-notification-id = ${request-{{namebase}}-pseudo-replicating-{{id}}:pbs-notification-id}
 config-title = Pushing to {{namebase}} backup {{id}}
 slave = true
+sla = instance_guid
+sla-instance_guid = ${request-pbs-{{namebase}}-{{id}}:instance_guid}
 {% endfor %}
 
 {% endmacro %}

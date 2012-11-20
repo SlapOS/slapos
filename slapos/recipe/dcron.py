@@ -33,26 +33,22 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     self.logger.info("Installing dcron...")
 
-    path_list = []
+    options = self.options
+    script = self.createWrapper(name=options['binary'],
+                                command=options['dcrond-binary'].strip(),
+                                parameters=[
+                                    '-s', options['cron-entries'],
+                                    '-c', options['crontabs'],
+                                    '-t', options['cronstamps'],
+                                    '-f', '-l', '5',
+                                    '-M', options['catcher']
+                                    ])
 
-    cronstamps = self.options['cronstamps']
-    cron_d = self.options['cron-entries']
-    crontabs = self.options['crontabs']
-    catcher = self.options['catcher']
-
-    binary = self.options['binary']
-
-    script = self.createPythonScript(binary,
-      'slapos.recipe.librecipe.execute.execute',
-      [self.options['dcrond-binary'].strip(), '-s', cron_d, '-c', crontabs,
-       '-t', cronstamps, '-f', '-l', '5', '-M', catcher]
-      )
-    path_list.append(script)
     self.logger.debug('Main cron executable created at : %r', script)
 
     self.logger.info("dcron successfully installed.")
 
-    return path_list
+    return [script]
 
 
 
