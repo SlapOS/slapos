@@ -1,0 +1,1168 @@
+# Copyright (c) 2002-2012 Nexedi SA and Contributors. All Rights Reserved.
+import transaction
+from Products.SlapOS.tests.testSlapOSMixin import \
+  testSlapOSMixin
+from Products.ERP5Type.tests.utils import createZODBPythonScript
+from Products.ERP5Type.tests.backportUnittest import skip
+import json
+
+class TestSlapOSCorePromiseSlapOSModuleIdGeneratorAlarm(testSlapOSMixin):
+  def test_Module_assertIdGenerator(self):
+    module = self.portal.newContent(portal_type='Person Module',
+        id=str(self.generateNewId()),
+        id_generator='bad_id_generator')
+
+    self.assertEqual('bad_id_generator', module.getIdGenerator())
+
+    # check positive response
+    self.assertTrue(module.Module_assertIdGenerator('bad_id_generator', False))
+    self.assertEqual('bad_id_generator', module.getIdGenerator())
+    self.assertTrue(module.Module_assertIdGenerator('bad_id_generator', True))
+    self.assertEqual('bad_id_generator', module.getIdGenerator())
+
+    # check negative response and that no-op run does not modify
+    self.assertFalse(module.Module_assertIdGenerator('good_id_generator', False))
+    self.assertEqual('bad_id_generator', module.getIdGenerator())
+
+    # check negative response with fixit request
+    self.assertFalse(module.Module_assertIdGenerator('good_id_generator', True))
+    self.assertEqual('good_id_generator', module.getIdGenerator())
+    self.assertTrue(module.Module_assertIdGenerator('good_id_generator', False))
+    self.assertEqual('good_id_generator', module.getIdGenerator())
+
+    transaction.abort()
+
+  def _simulateModule_assertIdGenerator(self):
+    script_name = 'Module_assertIdGenerator'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        'id_generator, fixit, active_process=None',
+                        '# Script body\n'
+"""from Products.CMFActivity.ActiveResult import ActiveResult
+active_result = ActiveResult()
+active_result.edit(
+  summary='Module_assertIdGenerator simulation',
+  severity=0,
+  detail=context.getRelativeUrl())
+active_process.postResult(active_result)
+""" )
+    transaction.commit()
+
+  def _dropModule_assertIdGenerator(self):
+    script_name = 'Module_assertIdGenerator'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm(self):
+    alarm = self.portal.portal_alarms.promise_slapos_module_id_generator
+    previous_active_process = self.portal.portal_catalog.getResultValue(
+      portal_type='Active Process',
+      causality_uid=alarm.getUid(),
+      sort_on=(('creation_date', 'DESC'),)
+    )
+    self._simulateModule_assertIdGenerator()
+    try:
+      alarm.activeSense()
+      self.tic()
+    finally:
+      self._dropModule_assertIdGenerator()
+    active_process = self.portal.portal_catalog.getResultValue(
+      portal_type='Active Process',
+      causality_uid=alarm.getUid(),
+      sort_on=(('creation_date', 'DESC'),)
+    )
+
+    self.assertNotEqual(previous_active_process.getPath(),
+        active_process.getPath())
+
+    visited_list = sorted([q.detail for q in active_process.getResultList() \
+        if q.summary == 'Module_assertIdGenerator simulation'])
+
+    expected_list = sorted([
+      'account_module',
+      'accounting_module',
+      'bug_module',
+      'business_configuration_module',
+      'business_process_module',
+      'campaign_module',
+      'component_module',
+      'computer_model_module',
+      'computer_module',
+      'computer_network_module',
+      'credential_recovery_module',
+      'credential_request_module',
+      'credential_update_module',
+      'currency_module',
+      'data_set_module',
+      'document_ingestion_module',
+      'document_module',
+      'event_module',
+      'external_source_module',
+      'glossary_module',
+      'hosting_subscription_module',
+      'image_module',
+      'internal_order_module',
+      'internal_packing_list_module',
+      'internal_supply_module',
+      'internal_trade_condition_module',
+      'inventory_module',
+      'item_module',
+      'knowledge_pad_module',
+      'meeting_module',
+      'notification_message_module',
+      'open_internal_order_module',
+      'open_purchase_order_module',
+      'open_sale_order_module',
+      'organisation_module',
+      'person_module',
+      'portal_activities',
+      'portal_simulation',
+      'product_module',
+      'purchase_order_module',
+      'purchase_packing_list_module',
+      'purchase_supply_module',
+      'purchase_trade_condition_module',
+      'quantity_unit_conversion_module',
+      'query_module',
+      'returned_purchase_packing_list_module',
+      'returned_sale_packing_list_module',
+      'sale_opportunity_module',
+      'sale_order_module',
+      'sale_packing_list_module',
+      'sale_supply_module',
+      'sale_trade_condition_module',
+      'service_module',
+      'service_report_module',
+      'software_installation_module',
+      'software_instance_module',
+      'software_licence_module',
+      'software_product_module',
+      'software_publication_module',
+      'software_release_module',
+      'support_request_module',
+      'transformation_module',
+      'web_page_module',
+      'web_site_module',
+      'workflow_module',
+    ])
+
+    self.assertSameSet(expected_list, visited_list)
+
+class TestSlapOSAllocation(testSlapOSMixin):
+
+  def _makeSlaveTree(self, requested_template_id='template_slave_instance'):
+    super(TestSlapOSAllocation, self).\
+        _makeTree(requested_template_id=requested_template_id)
+
+  def test_allocation_no_free_partition(self):
+    self._makeTree()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+  def test_allocation_no_host_instance(self):
+    self._makeSlaveTree()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+  def _installSoftware(self, computer, url):
+    software_installation = self.portal.software_installation_module\
+        .template_software_installation.Base_createCloneDocument(batch_mode=1)
+    software_installation.edit(url_string=url,
+        reference='TESTSOFTINST-%s' % self.generateNewId(),
+        aggregate=computer.getRelativeUrl())
+    software_installation.validate()
+    software_installation.requestStart()
+    self.tic()
+
+  def test_allocation_free_partition(self):
+    self._makeTree()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def _allocateHost(self, software_instance, computer_partition):
+    software_instance.edit(
+        aggregate_value=computer_partition
+        )
+    computer_partition.markBusy()
+    self.tic()
+
+  def test_allocation_host_instance(self):
+    self._makeSlaveTree()
+
+    self._makeComputer()
+    self._allocateHost(self.requested_software_instance,
+        self.partition)
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_capacity_scope_close(self):
+    self._makeTree()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+    self.computer.edit(capacity_scope='close')
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_host_capacity_scope_close(self):
+    self._makeSlaveTree()
+
+    self._makeComputer()
+    self._allocateHost(self.requested_software_instance,
+        self.partition)
+    self.computer.edit(capacity_scope='close')
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_allocation_scope_close(self):
+    self._makeTree()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+    self.computer.edit(allocation_scope='close')
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_host_allocation_scope_close(self):
+    self._makeSlaveTree()
+
+    self._makeComputer()
+    self._allocateHost(self.requested_software_instance,
+        self.partition)
+    self.computer.edit(allocation_scope='close')
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_allocation_scope_open_personal(self):
+    self._makeTree()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+    self.computer.edit(allocation_scope='open/personal',
+      source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_host_allocation_scope_open_personal(self):
+    self._makeSlaveTree()
+
+    self._makeComputer()
+    self._allocateHost(self.requested_software_instance,
+        self.partition)
+    self.computer.edit(allocation_scope='open/personal',
+      source_administration=self.person_user.getRelativeUrl())
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_allocation_scope_open_friend(self):
+    self._makeTree()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+    # change computer owner
+    new_id = self.generateNewId()
+    person_user = self.portal.person_module.template_member.\
+                                 Base_createCloneDocument(batch_mode=1)
+    person_user.edit(
+      title="live_test_%s" % new_id,
+      reference="live_test_%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
+    )
+
+    person_user.validate()
+    for assignment in person_user.contentValues(portal_type="Assignment"):
+      assignment.open()
+
+    self.computer.edit(
+      source_administration=person_user.getRelativeUrl(),
+      destination_section=self.person_user.getRelativeUrl(),
+      allocation_scope='open/friend')
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_host_allocation_scope_open_friend(self):
+    self._makeSlaveTree()
+
+    self._makeComputer()
+    self._allocateHost(self.requested_software_instance,
+        self.partition)
+    # change computer owner
+    new_id = self.generateNewId()
+    person_user = self.portal.person_module.template_member.\
+                                 Base_createCloneDocument(batch_mode=1)
+    person_user.edit(
+      title="live_test_%s" % new_id,
+      reference="live_test_%s" % new_id,
+      default_email_text="live_test_%s@example.org" % new_id,
+    )
+
+    person_user.validate()
+    for assignment in person_user.contentValues(portal_type="Assignment"):
+      assignment.open()
+
+    self.computer.edit(
+      source_administration=person_user.getRelativeUrl(),
+      destination_section=self.person_user.getRelativeUrl(),
+      allocation_scope='open/friend')
+    self.tic()
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_does_not_fail_on_instance_with_damaged_sla_xml(self):
+    self._makeTree()
+
+    self.software_instance.setSlaXml('this is not xml')
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    transaction.abort()
+
+  def test_allocation_does_not_fail_on_slave_with_damaged_sla_xml(self):
+    self._makeSlaveTree()
+
+    self.software_instance.setSlaXml('this is not xml')
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+    transaction.abort()
+
+  def _simulateSoftwareInstance_tryToAllocatePartition(self):
+    script_name = 'SoftwareInstance_tryToAllocatePartition'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by SoftwareInstance_tryToAllocatePartition') """ )
+    transaction.commit()
+
+  def _dropSoftwareInstance_tryToAllocatePartition(self):
+    script_name = 'SoftwareInstance_tryToAllocatePartition'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm_software_instance_unallocated(self):
+    self._makeTree()
+
+    self._simulateSoftwareInstance_tryToAllocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_allocate_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(
+        'Visited by SoftwareInstance_tryToAllocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_slave_instance_unallocated(self):
+    self._makeSlaveTree()
+
+    self._simulateSoftwareInstance_tryToAllocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_allocate_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(
+        'Visited by SoftwareInstance_tryToAllocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_software_instance_allocated(self):
+    self._makeTree()
+
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.tic()
+    self._simulateSoftwareInstance_tryToAllocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_allocate_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToAllocatePartition()
+    self.assertNotEqual(
+        'Visited by SoftwareInstance_tryToAllocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_slave_instance_allocated(self):
+    self._makeSlaveTree()
+
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.tic()
+    self._simulateSoftwareInstance_tryToAllocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_allocate_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToAllocatePartition()
+    self.assertNotEqual(
+        'Visited by SoftwareInstance_tryToAllocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_allocation_computer_guid(self):
+    self._makeTree()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='computer_guid'>%s</parameter>
+        </instance>""" % '%s_foo' % self.partition.getParentValue().getReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='computer_guid'>%s</parameter>
+        </instance>""" % '%s' % self.partition.getParentValue().getReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_instance_guid(self):
+    self._makeSlaveTree()
+
+    self._makeComputer()
+    self._allocateHost(self.requested_software_instance,
+        self.partition)
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='instance_guid'>%s</parameter>
+        </instance>""" % '%s_foo' % \
+        self.requested_software_instance.getReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='instance_guid'>%s</parameter>
+        </instance>""" % '%s' % \
+        self.requested_software_instance.getReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_network_guid(self):
+    self._makeTree()
+
+    self._makeComputer()
+    new_id = self.generateNewId()
+    computer_network = self.portal.computer_network_module.newContent(
+        portal_type='Computer Network',
+        title="live_test_%s" % new_id,
+        reference="live_test_%s" % new_id)
+    computer_network.validate()
+    self.computer.edit(
+        subordination_value=computer_network)
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='network_guid'>%s</parameter>
+        </instance>""" % '%s_foo' % \
+          self.partition.getParentValue().getSubordinationReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='network_guid'>%s</parameter>
+        </instance>""" % '%s' % \
+          self.partition.getParentValue().getSubordinationReference())
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_unexpected_sla_parameter(self):
+    self._makeTree()
+
+    self._makeComputer()
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='foo'>bar</parameter>
+        </instance>""")
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def check_allocation_category_sla(self, base_category, computer_category,
+                                    other_category):
+    self._makeTree()
+
+    self._makeComputer()
+    self.computer.edit(**{base_category: computer_category})
+    self._installSoftware(self.computer,
+        self.software_instance.getUrlString())
+
+    self.assertEqual(None, self.software_instance.getAggregateValue(
+        portal_type='Computer Partition'))
+
+    # Another category
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='%s'>%s</parameter>
+        </instance>""" % (base_category, other_category))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    # No existing category
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='%s'>foo</parameter>
+        </instance>""" % (base_category))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(None,
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+    # Computer category
+    self.software_instance.setSlaXml("""<?xml version='1.0' encoding='utf-8'?>
+        <instance>
+        <parameter id='%s'>%s</parameter>
+        </instance>""" % (base_category, computer_category))
+    self.software_instance.SoftwareInstance_tryToAllocatePartition()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate(portal_type='Computer Partition'))
+
+  def test_allocation_group_sla(self):
+    return self.check_allocation_category_sla('group', 'vifib', 'ovh')
+
+  @skip('No category available')
+  def test_allocation_cpu_core_sla(self):
+    return self.check_allocation_category_sla('cpu_core', 'vifib', 'ovh')
+
+  def test_allocation_cpu_frequency_sla(self):
+    return self.check_allocation_category_sla('cpu_frequency', '1000', '2000')
+
+  def test_allocation_cpu_type_sla(self):
+    return self.check_allocation_category_sla('cpu_type', 'x86', 'x86/x86_32')
+
+  def test_allocation_local_area_network_type_sla(self):
+    return self.check_allocation_category_sla('local_area_network_type', 
+                                              'ethernet', 'wifi')
+
+  def test_allocation_memory_size_sla(self):
+    return self.check_allocation_category_sla('memory_size', '128', '256')
+
+  def test_allocation_memory_type_sla(self):
+    return self.check_allocation_category_sla('memory_type', 'ddr2', 'ddr3')
+
+  def test_allocation_storage_capacity_sla(self):
+    return self.check_allocation_category_sla('storage_capacity', 'finite', 
+                                              'infinite')
+
+  def test_allocation_storage_interface_sla(self):
+    return self.check_allocation_category_sla('storage_interface', 'nas', 'san')
+
+  def test_allocation_storage_redundancy_sla(self):
+    return self.check_allocation_category_sla('storage_redundancy', 'dht', 'raid')
+
+class TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm(
+    testSlapOSMixin):
+
+  def afterSetUp(self):
+    super(TestSlapOSCoreSlapOSAssertHostingSubscriptionPredecessorAlarm,
+        self).afterSetUp()
+    self._makeTree()
+
+  def test_HostingSubscription_assertPredecessor(self):
+    self.software_instance.rename(new_name=self.generateNewSoftwareTitle())
+    self.tic()
+
+    # check that no interaction has recreated the instance
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+    self.hosting_subscription.HostingSubscription_assertPredecessor()
+    self.assertTrue(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+  def test_HostingSubscription_assertPredecessor_stop_requested(self):
+    self.software_instance.rename(new_name=self.generateNewSoftwareTitle())
+    self.portal.portal_workflow._jumpToStateFor(self.hosting_subscription,
+        'stop_requested')
+    self.tic()
+
+    # check that no interaction has recreated the instance
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+    self.hosting_subscription.HostingSubscription_assertPredecessor()
+    self.assertTrue(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+  def test_HostingSubscription_assertPredecessor_destroy_requested(self):
+    self.software_instance.rename(new_name=self.generateNewSoftwareTitle())
+    self.portal.portal_workflow._jumpToStateFor(self.hosting_subscription,
+        'destroy_requested')
+    self.tic()
+
+    # check that no interaction has recreated the instance
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+    self.hosting_subscription.HostingSubscription_assertPredecessor()
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+  def test_HostingSubscription_assertPredecessor_archived(self):
+    self.software_instance.rename(new_name=self.generateNewSoftwareTitle())
+    self.hosting_subscription.archive()
+    self.tic()
+
+    # check that no interaction has recreated the instance
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+    self.hosting_subscription.HostingSubscription_assertPredecessor()
+    self.assertFalse(self.hosting_subscription.getTitle() in
+        self.hosting_subscription.getPredecessorTitleList())
+
+  def _simulateHostingSubscription_assertPredecessor(self):
+    script_name = 'HostingSubscription_assertPredecessor'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by HostingSubscription_assertPredecessor') """ )
+    transaction.commit()
+
+  def _dropHostingSubscription_assertPredecessor(self):
+    script_name = 'HostingSubscription_assertPredecessor'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm_renamed(self):
+    self.software_instance.edit(title=self.generateNewSoftwareTitle())
+    self.tic()
+    self._simulateHostingSubscription_assertPredecessor()
+    try:
+      self.portal.portal_alarms.slapos_assert_hosting_subscription_predecessor.activeSense()
+      self.tic()
+    finally:
+      self._dropHostingSubscription_assertPredecessor()
+    self.assertEqual(
+        'Visited by HostingSubscription_assertPredecessor',
+        self.hosting_subscription.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_not_renamed(self):
+    self._simulateHostingSubscription_assertPredecessor()
+    try:
+      self.portal.portal_alarms.slapos_assert_hosting_subscription_predecessor.activeSense()
+      self.tic()
+    finally:
+      self._dropHostingSubscription_assertPredecessor()
+    self.assertNotEqual(
+        'Visited by HostingSubscription_assertPredecessor',
+        self.hosting_subscription.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSFreeComputerPartitionAlarm(testSlapOSMixin):
+
+  def afterSetUp(self):
+    super(TestSlapOSFreeComputerPartitionAlarm, self).afterSetUp()
+    self._makeTree()
+
+  def test_Instance_tryToUnallocatePartition(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.software_instance.Instance_tryToUnallocatePartition()
+    self.tic()
+    self.assertEqual(None, self.software_instance.getAggregate())
+    self.assertEqual('free', self.partition.getSlapState())
+
+  def test_Instance_tryToUnallocatePartition_concurrency(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.partition.activate(tag="allocate_%s" % self.partition.getRelativeUrl()\
+        ).getId()
+    transaction.commit()
+    self.software_instance.Instance_tryToUnallocatePartition()
+    self.tic()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate())
+    self.assertEqual('busy', self.partition.getSlapState())
+
+  def test_Instance_tryToUnallocatePartition_twoInstances(self):
+    software_instance = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.software_instance.Instance_tryToUnallocatePartition()
+    self.tic()
+    self.assertEqual(None, self.software_instance.getAggregate())
+    self.assertEqual('busy', self.partition.getSlapState())
+    self.assertEqual(self.partition.getRelativeUrl(), software_instance.getAggregate())
+
+  def _simulateInstance_tryToUnallocatePartition(self):
+    script_name = 'Instance_tryToUnallocatePartition'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Instance_tryToUnallocatePartition') """ )
+    transaction.commit()
+
+  def _dropInstance_tryToUnallocatePartition(self):
+    script_name = 'Instance_tryToUnallocatePartition'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm_allocated(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.software_instance.invalidate()
+    self.tic()
+    self._simulateInstance_tryToUnallocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_free_computer_partition.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToUnallocatePartition()
+    self.assertEqual(
+        'Visited by Instance_tryToUnallocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_unallocated(self):
+    self._makeComputer()
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.software_instance.invalidate()
+    self.tic()
+    self._simulateInstance_tryToUnallocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_free_computer_partition.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToUnallocatePartition()
+    self.assertNotEqual(
+        'Visited by Instance_tryToUnallocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_validated(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+    self._simulateInstance_tryToUnallocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_free_computer_partition.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToUnallocatePartition()
+    self.assertNotEqual(
+        'Visited by Instance_tryToUnallocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_start_requested(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.tic()
+    self._simulateInstance_tryToUnallocatePartition()
+    try:
+      self.portal.portal_alarms.slapos_free_computer_partition.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToUnallocatePartition()
+    self.assertNotEqual(
+        'Visited by Instance_tryToUnallocatePartition',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSFreeComputerPartitionAlarmWithSlave(testSlapOSMixin):
+  def afterSetUp(self):
+    super(TestSlapOSFreeComputerPartitionAlarmWithSlave, self).afterSetUp()
+    self._makeTree(requested_template_id='template_slave_instance')
+
+  def test_Instance_tryToUnallocatePartition(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.software_instance.Instance_tryToUnallocatePartition()
+    self.tic()
+    self.assertEqual(None, self.software_instance.getAggregate())
+    self.assertEqual('free', self.partition.getSlapState())
+
+  def test_Instance_tryToUnallocatePartition_nonDestroyed(self):
+    self._makeComputer()
+    self.software_instance.setAggregate(self.partition.getRelativeUrl())
+    self.partition.markBusy()
+    self.tic()
+
+    self.software_instance.Instance_tryToUnallocatePartition()
+    self.tic()
+    self.assertEqual(self.partition.getRelativeUrl(),
+        self.software_instance.getAggregate())
+    self.assertEqual('busy', self.partition.getSlapState())
+
+
+class TestSlapOSGarbageCollectDestroyedRootTreeAlarm(testSlapOSMixin):
+
+  def afterSetUp(self):
+    super(TestSlapOSGarbageCollectDestroyedRootTreeAlarm, self).afterSetUp()
+    self._makeTree()
+
+  def test_Instance_tryToGarbageCollect(self):
+    self.hosting_subscription.archive()
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.requested_software_instance.Instance_tryToGarbageCollect()
+    self.tic()
+    self.assertEqual('destroy_requested',
+        self.requested_software_instance.getSlapState())
+    self.assertEqual('validated',
+        self.requested_software_instance.getValidationState())
+
+  def test_Instance_tryToGarbageCollect_not_destroy_requested(self):
+    self.requested_software_instance.Instance_tryToGarbageCollect()
+    self.tic()
+    self.assertEqual('start_requested',
+        self.requested_software_instance.getSlapState())
+    self.assertEqual('validated',
+        self.requested_software_instance.getValidationState())
+
+  def test_Instance_tryToGarbageCollect_not_archived(self):
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.requested_software_instance.Instance_tryToGarbageCollect()
+    self.tic()
+    self.assertEqual('start_requested',
+        self.requested_software_instance.getSlapState())
+    self.assertEqual('validated',
+        self.requested_software_instance.getValidationState())
+
+  def test_Instance_tryToGarbageCollect_only_instance_destroy_requested(self):
+    self.portal.portal_workflow._jumpToStateFor(self.software_instance,
+        'destroy_requested')
+    self.tic()
+
+    self.requested_software_instance.Instance_tryToGarbageCollect()
+    self.tic()
+    self.assertEqual('start_requested',
+        self.requested_software_instance.getSlapState())
+    self.assertEqual('validated',
+        self.requested_software_instance.getValidationState())
+
+  def _simulateInstance_tryToGarbageCollect(self):
+    script_name = 'Instance_tryToGarbageCollect'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Instance_tryToGarbageCollect') """ )
+    transaction.commit()
+
+  def _dropInstance_tryToGarbageCollect(self):
+    script_name = 'Instance_tryToGarbageCollect'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm(self):
+    self.hosting_subscription.archive()
+    self.tic()
+    self._simulateInstance_tryToGarbageCollect()
+    try:
+      self.portal.portal_alarms.slapos_garbage_collect_destroyed_root_tree.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToGarbageCollect()
+    self.assertEqual(
+        'Visited by Instance_tryToGarbageCollect',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_invalidated(self):
+    self.hosting_subscription.archive()
+    self.software_instance.invalidate()
+    self.tic()
+    self._simulateInstance_tryToGarbageCollect()
+    try:
+      self.portal.portal_alarms.slapos_garbage_collect_destroyed_root_tree.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToGarbageCollect()
+    self.assertNotEqual(
+        'Visited by Instance_tryToGarbageCollect',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_not_archived(self):
+    self.tic()
+    self._simulateInstance_tryToGarbageCollect()
+    try:
+      self.portal.portal_alarms.slapos_garbage_collect_destroyed_root_tree.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToGarbageCollect()
+    self.assertNotEqual(
+        'Visited by Instance_tryToGarbageCollect',
+        self.software_instance.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSGarbageCollectDestroyedRootTreeAlarm(testSlapOSMixin):
+
+  def afterSetUp(self):
+    super(TestSlapOSGarbageCollectDestroyedRootTreeAlarm, self).afterSetUp()
+    self.computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    self.computer.edit(
+        allocation_scope='open/public',
+        capacity_scope='open',
+        reference='TESTC-%s' % self.generateNewId(),
+    )
+    self.computer.validate()
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+    memcached_dict[self.computer.getReference()] = json.dumps({
+        'text': '#access ok'
+    })
+    transaction.commit()
+
+  def test_Computer_checkAndUpdateCapacityScope(self):
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('open', self.computer.getCapacityScope())
+
+  def test_Computer_checkAndUpdateCapacityScope_no_capacity_quantity(self):
+    self._makeTree()
+    self.computer.edit(capacity_quantity=1)
+    partition = self.computer.newContent(portal_type='Computer Partition',
+        reference='part1')
+    partition.markFree()
+    partition.markBusy()
+    partition.validate()
+    self.software_instance.setAggregate(partition.getRelativeUrl())
+    self.tic()
+
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('close', self.computer.getCapacityScope())
+    self.assertEqual('Computer capacity limit exceeded',
+        self.computer.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_Computer_checkAndUpdateCapacityScope_no_access(self):
+    self.computer.edit(reference='TESTC-%s' % self.generateNewId())
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('close', self.computer.getCapacityScope())
+    self.assertEqual("Computer didn't contact the server",
+        self.computer.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_Computer_checkAndUpdateCapacityScope_close(self):
+    self.computer.edit(capacity_scope='close')
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('open', self.computer.getCapacityScope())
+
+  def test_Computer_checkAndUpdateCapacityScope_with_error(self):
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+    memcached_dict[self.computer.getReference()] = json.dumps({
+        'text': '#error not ok'
+    })
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('close', self.computer.getCapacityScope())
+    self.assertEqual("Computer reported an error",
+        self.computer.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_Computer_checkAndUpdateCapacityScope_with_error_non_public(self):
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+    memcached_dict[self.computer.getReference()] = json.dumps({
+        'text': '#error not ok'
+    })
+    self.computer.edit(allocation_scope='open/personal')
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('open', self.computer.getCapacityScope())
+
+  def _simulateComputer_checkAndUpdateCapacityScope(self):
+    script_name = 'Computer_checkAndUpdateCapacityScope'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Computer_checkAndUpdateCapacityScope') """ )
+    transaction.commit()
+
+  def _dropComputer_checkAndUpdateCapacityScope(self):
+    script_name = 'Computer_checkAndUpdateCapacityScope'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm(self):
+    self._simulateComputer_checkAndUpdateCapacityScope()
+    try:
+      self.portal.portal_alarms.slapos_update_computer_capacity_scope.activeSense()
+      self.tic()
+    finally:
+      self._dropComputer_checkAndUpdateCapacityScope()
+    self.assertEqual(
+        'Visited by Computer_checkAndUpdateCapacityScope',
+        self.computer.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_non_public(self):
+    self.computer.edit(allocation_scope='open/personal')
+    self.tic()
+    self._simulateComputer_checkAndUpdateCapacityScope()
+    try:
+      self.portal.portal_alarms.slapos_update_computer_capacity_scope.activeSense()
+      self.tic()
+    finally:
+      self._dropComputer_checkAndUpdateCapacityScope()
+    self.assertNotEqual(
+        'Visited by Computer_checkAndUpdateCapacityScope',
+        self.computer.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_invalidated(self):
+    self.computer.invalidate()
+    self.tic()
+    self._simulateComputer_checkAndUpdateCapacityScope()
+    try:
+      self.portal.portal_alarms.slapos_update_computer_capacity_scope.activeSense()
+      self.tic()
+    finally:
+      self._dropComputer_checkAndUpdateCapacityScope()
+    self.assertNotEqual(
+        'Visited by Computer_checkAndUpdateCapacityScope',
+        self.computer.workflow_history['edit_workflow'][-1]['comment'])
