@@ -700,4 +700,81 @@ class TestDefaultTradeModelRule(testSlapOSMixin):
 
 class TestDefaultDeliveryRule(testSlapOSMixin):
   def test(self):
-    raise NotImplementedError
+    def newArrow():
+      return self.portal.organisation_module.newContent(
+          portal_type='Organisation').getRelativeUrl()
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List',
+        source=newArrow(),
+        destination=newArrow(),
+        source_section=newArrow(),
+        destination_section=newArrow(),
+        price_currency='currency_module/EUR',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/02/02')
+    )
+    line = delivery.newContent(portal_type='Sale Packing List Line',
+        resource=self.portal.service_module.newContent(
+            portal_type='Service').getRelativeUrl(),
+        use='trade/sale',
+        quantity_unit='unit/piece',
+        aggregate_list=[
+            self.portal.hosting_subscription_module.newContent(
+                portal_type='Hosting Subscription').getRelativeUrl(),
+            self.portal.service_module.newContent(
+                portal_type='Service').getRelativeUrl()
+        ],
+        base_contribution_list=['base_amount/invoicing/discounted',
+            'base_amount/invoicing/taxable'],
+        price=1.23,
+        quantity=4.56
+    )
+    delivery.confirm()
+    delivery._updateSimulation(create_root=1)
+
+    applied_rule_list = delivery.getCausalityRelatedValueList()
+    self.assertEqual(1, len(applied_rule_list))
+
+    applied_rule = applied_rule_list[0]
+    self.assertEqual('default_delivery_rule',
+        applied_rule.getSpecialiseReference())
+
+    simulation_movement_list = applied_rule.contentValues(
+        portal_type='Simulation Movement')
+    self.assertEqual(1, len(simulation_movement_list))
+
+    simulation_movement = simulation_movement_list[0 ]
+
+    self.assertSameSet(line.getBaseContributionList(),
+        simulation_movement.getBaseContributionList())
+    self.assertSameSet(line.getResourceList(),
+        simulation_movement.getResourceList())
+    self.assertSameSet(line.getAggregateList(),
+        simulation_movement.getAggregateList())
+    self.assertSameSet(line.getQuantityUnitList(),
+        simulation_movement.getQuantityUnitList())
+    self.assertSameSet(line.getUseList(),
+        simulation_movement.getUseList())
+    self.assertEqual(line.getPrice(),
+        simulation_movement.getPrice())
+    self.assertEqual(line.getQuantity(),
+        simulation_movement.getQuantity())
+    self.assertSameSet(delivery.getSourceList(),
+        simulation_movement.getSourceList())
+    self.assertSameSet(delivery.getSourceSectionList(),
+        simulation_movement.getSourceSectionList())
+    self.assertSameSet(delivery.getDestinationList(),
+        simulation_movement.getDestinationList())
+    self.assertSameSet(delivery.getDestinationSectionList(),
+        simulation_movement.getDestinationSectionList())
+    self.assertSameSet(delivery.getPriceCurrencyList(),
+        simulation_movement.getPriceCurrencyList())
+    self.assertSameSet(delivery.getSpecialiseList(),
+        simulation_movement.getSpecialiseList())
+    self.assertEqual(delivery.getStartDate(),
+        simulation_movement.getStartDate())
+    self.assertEqual(delivery.getStopDate(),
+        simulation_movement.getStopDate())
+    self.assertSameSet(['default_invoicing_rule'], [q.getSpecialiseReference()
+        for q in simulation_movement.contentValues(portal_type='Applied Rule')])
