@@ -107,28 +107,6 @@ logrotate-entries = $${directory:logrotate-entries}
 backup = $${directory:logrotate-backup}
 state-file = $${rootdirectory:srv}/logrotate.status
 
-[logrotate-entry-apache]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
-name = apache
-log = $${apache-php:error-log} $${apache-php:access-log}
-frequency = daily
-rotate-num = 30
-sharedscripts = true
-notifempty = true
-create = true
-
-[logrotate-entry-stunnel]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
-name = stunnel
-log = $${stunnel:log-file}
-frequency = daily
-rotate-num = 30
-notifempty = true
-create = true
-post = $${stunnel:post-rotate-script}
-
 
 #----------------
 #--
@@ -149,6 +127,17 @@ cert-file = $${directory:stunnel-conf}/stunnel.crt
 pid-file = $${basedirectory:run}/stunnel.pid
 wrapper = $${rootdirectory:bin}/raw_stunnel
 post-rotate-script = $${rootdirectory:bin}/stunnel_post_rotate
+
+[logrotate-entry-stunnel]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = stunnel
+log = $${stunnel:log-file}
+frequency = daily
+rotate-num = 30
+notifempty = true
+create = true
+post = $${stunnel:post-rotate-script}
 
 
 #----------------
@@ -225,6 +214,17 @@ mysql-password = $${postgres-urlparse:password}
 mysql-database = $${postgres-urlparse:path}
 mysql-host = $${stunnel:local-host}
 mysql-port = $${stunnel:local-port}
+
+[logrotate-entry-apache]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = apache
+log = $${apache-php:error-log} $${apache-php:access-log}
+frequency = daily
+rotate-num = 30
+sharedscripts = true
+notifempty = true
+create = true
 
 
 #----------------
