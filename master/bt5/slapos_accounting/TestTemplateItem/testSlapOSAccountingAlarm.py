@@ -1227,7 +1227,7 @@ if context.getTitle() == 'Not visited by SimulationMovement_buildSlapOS':
       transaction.commit()
   return wrapped
 
-class TestAlarm(testSlapOSMixin):
+class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
   @simulateSimulationMovement_buildSlapOS
   def test_SimulationMovement_withoutDelivery(self):
     applied_rule = self.portal.portal_simulation.newContent(
@@ -1452,7 +1452,7 @@ if context.getTitle() == 'Not visited by Delivery_manageBuildingCalculatingDeliv
       transaction.commit()
   return wrapped
 
-class TestAlarm(testSlapOSMixin):
+class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
   @simulateDelivery_manageBuildingCalculatingDelivery
   def _test(self, state, message):
     delivery = self.portal.sale_packing_list_module.newContent(

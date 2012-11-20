@@ -253,7 +253,7 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
 
-class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
+class TestDefaultPaymentRule(testSlapOSMixin):
   @withAbort
   def test_simulation(self):
     from Products.ERP5.Document.SimulationMovement import SimulationMovement
@@ -600,7 +600,7 @@ class TestHostingSubscriptionSimulation(testSlapOSMixin):
       SimulationMovement.isFrozen = SimulationMovement.originalIsFrozen
       delattr(SimulationMovement, 'originalIsFrozen')
 
-class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
+class TestDefaultTradeModelRule(testSlapOSMixin):
   @withAbort
   def test_simulation(self):
     from Products.ERP5.Document.SimulationMovement import SimulationMovement
