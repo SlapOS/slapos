@@ -6,6 +6,7 @@
 ##############################################################################
 from testSlapOSCloudConstraint import TestSlapOSConstraintMixin
 from Products.ERP5Type.Base import WorkflowMethod
+from Products.SlapOS.tests.testSlapOSMixin import withAbort
 
 import transaction
 
@@ -97,20 +98,100 @@ class TestHostingSubscription(TestSlapOSConstraintMixin):
       template % 'periodicity_month_day', empty_string=False)
 
 class TestSaleInvoiceTransaction(TestSlapOSConstraintMixin):
+  @withAbort
+  def _test_currency(self, invoice, setter, message):
+    self.assertTrue(message in self.getMessageList(invoice))
+
+    currency = self.portal.currency_module.newContent(portal_type='Currency')
+    setter(currency.getRelativeUrl())
+
+    self.assertFalse(message in self.getMessageList(invoice))
+
+    resource = self.portal.service_module.newContent(portal_type='Service')
+    setter(resource.getRelativeUrl())
+    self.assertTrue(message in self.getMessageList(invoice))
+
   def test_price_currency(self):
-    raise NotImplementedError
+    invoice = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction')
+    message = "Arity Error for Relation ['price_currency'], arity is equal "\
+        "to 0 but should be between 1 and 1"
+    self._test_currency(invoice, invoice.setPriceCurrency, message)
 
   def test_resource(self):
-    raise NotImplementedError
+    invoice = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction')
+    message = "Arity Error for Relation ['resource'], arity is equal "\
+        "to 0 but should be between 1 and 1"
+    self._test_currency(invoice, invoice.setResource, message)
 
+  @withAbort
   def test_sale_invoice_specialise_sale_trade_condition_constraint(self):
-    raise NotImplementedError
+    invoice = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction')
+    setter = invoice.setSpecialise
+    message = "Arity Error for Relation ['specialise'], arity is equal "\
+        "to 0 but should be at least 1"
+    self.assertTrue(message in self.getMessageList(invoice))
 
+    sale_condition = self.portal.sale_trade_condition_module.newContent(
+        portal_type='Sale Trade Condition')
+    setter(sale_condition.getRelativeUrl())
+
+    self.assertFalse(message in self.getMessageList(invoice))
+
+    purchase_condition = self.portal.purchase_trade_condition_module.newContent(
+        portal_type='Purchase Trade Condition')
+    setter(purchase_condition.getRelativeUrl())
+    self.assertTrue(message in self.getMessageList(invoice))
+
+  @withAbort
   def test_specialise_value(self):
-    raise NotImplementedError
+    invoice = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction')
+    message = "Only SlapOS trade condition is allowed"
+    self.assertTrue(message in self.getMessageList(invoice))
 
+    sale_condition = self.portal.sale_trade_condition_module.newContent(
+        portal_type='Sale Trade Condition')
+    invoice.setSpecialise(sale_condition.getRelativeUrl())
+
+    self.assertTrue(message in self.getMessageList(invoice))
+
+    invoice.setSpecialise('sale_trade_condition_module/slapos_trade_condition')
+    self.assertFalse(message in self.getMessageList(invoice))
+
+  @withAbort
   def test_total_price_equal_accounting(self):
-    raise NotImplementedError
+    message = "Total price of invoice does not match accounting"
+    invoice = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction',
+        price_currency='currency_module/EUR')
+    invoice.newContent(portal_type='Invoice Line', quantity=1., price=1.)
 
+    self.assertFalse(message in self.getMessageList(invoice))
+    self.portal.portal_workflow._jumpToStateFor(invoice, 'confirmed')
+    self.assertTrue(message in self.getMessageList(invoice))
+
+    invoice.receivable.setQuantity(-1.0)
+    invoice.income.setQuantity(1.0)
+    self.assertFalse(message in self.getMessageList(invoice))
+
+  @withAbort
   def test_trade_model_match_lines(self):
-    raise NotImplementedError
+    message = "Defined Trade Model does not match Lines definition"
+    invoice = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction',
+        price_currency='currency_module/EUR',
+        specialise='sale_trade_condition_module/slapos_trade_condition')
+    invoice.newContent(portal_type='Invoice Line', quantity=1., price=1.,
+        base_contribution='base_amount/invoicing/taxable')
+
+    self.assertFalse(message in self.getMessageList(invoice))
+    self.portal.portal_workflow._jumpToStateFor(invoice, 'confirmed')
+    self.assertTrue(message in self.getMessageList(invoice))
+
+    invoice.newContent(portal_type='Invoice Line', quantity=1., price=.196,
+        use='trade/tax',
+        )
+    self.assertFalse(message in self.getMessageList(invoice))
