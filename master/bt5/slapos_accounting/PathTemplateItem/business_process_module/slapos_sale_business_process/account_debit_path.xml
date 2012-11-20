@@ -52,6 +52,7 @@
                 <string>trade_phase/slapos/accounting</string>
                 <string>source/account_module/receivable</string>
                 <string>destination/account_module/payable</string>
+                <string>trade_date/trade_phase/slapos/invoicing</string>
               </tuple>
             </value>
         </item>

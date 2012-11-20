@@ -22,9 +22,9 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>trade_date/trade_phase/slapos/invoicing</string>
                 <string>trade_phase/slapos/discount</string>
                 <string>trade_phase/slapos/tax</string>
+                <string>trade_date/trade_phase/slapos/invoicing</string>
               </tuple>
             </value>
         </item>
