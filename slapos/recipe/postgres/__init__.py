@@ -201,3 +201,59 @@ class Recipe(GenericBaseRecipe):
         self.createExecutable(name, content=content)
 
 
+
+class ExportRecipe(GenericBaseRecipe):
+
+    def install(self):
+        pgdata = self.options['pgdata-directory']
+
+        ret = []
+
+        if not os.path.exists(pgdata):
+            wrapper = self.options['wrapper']
+            self.createBackupScript(wrapper)
+            ret.append(wrapper)
+
+        return ret
+
+
+    def createBackupScript(self, wrapper):
+        """
+        Create a script to backup the database in plain SQL format.
+        """
+        content = textwrap.dedent("""\
+                #!/bin/sh
+                umask 077
+                %(bin)s/pg_dump -h %(pgdata-directory)s -f %(backup-directory)s/backup.sql %(dbname)s
+                """ % self.options)
+        self.createExecutable(wrapper, content=content)
+
+
+
+class ImportRecipe(GenericBaseRecipe):
+
+    def install(self):
+        pgdata = self.options['pgdata-directory']
+
+        ret = []
+        if not os.path.exists(pgdata):
+            wrapper = self.options['wrapper']
+            self.createRestoreScript(wrapper)
+            ret.append(wrapper)
+
+        return ret
+
+
+    def createRestoreScript(self, wrapper):
+        """
+        Create a script to backup the database in plain SQL format.
+        """
+        content = textwrap.dedent("""\
+                #!/bin/sh
+                %(bin)s/pg_restore -h %(pgdata-directory)s -d %(dbname)s %(backup-directory)s/backup.sql
+                """ % self.options)
+        self.createExecutable(wrapper, content=content)
+
+
+
+

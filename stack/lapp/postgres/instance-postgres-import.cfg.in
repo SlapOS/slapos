@@ -1,0 +1,13 @@
+[buildout]
+extends = ${instance-postgres:output}
+          ${pbsready-import:output}
+
+parts += postgres-instance
+
+[importer]
+recipe = slapos.cookbook:postgres.import
+wrapper = $${rootdirectory:bin}/resilient-importer
+bin = $${postgres-instance:bin}
+pgdata-directory = $${postgres-instance:pgdata-directory}
+backup-directory = $${postgres-instance:backup-directory}
+dbname = $${postgres-instance:dbname}

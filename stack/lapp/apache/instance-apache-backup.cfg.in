@@ -1,0 +1,197 @@
+[buildout]
+
+parts =
+  urls
+  apache-proxy
+  logrotate
+  logrotate-entry-apache
+  cron
+  cron-entry-logrotate
+  sshkeys-authority
+  sshkeys-dropbear
+  dropbear-server
+  dropbear-server-pbs-authorized-key
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+#----------------
+#--
+#-- Creation of all needed directories.
+
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
+
+[basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/run
+run = $${rootdirectory:var}/run
+backup = $${rootdirectory:srv}/backup
+promises = $${rootdirectory:etc}/promise
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+htdocs = $${rootdirectory:srv}/www
+logrotate-entries = $${rootdirectory:etc}/logrotate.d
+logrotate-backup = $${basedirectory:backup}/logrotate
+cronstamps = $${rootdirectory:etc}/cronstamps
+cron-entries = $${rootdirectory:etc}/cron.d
+crontabs = $${rootdirectory:etc}/crontabs
+ssh = $${rootdirectory:etc}/ssh
+sshkeys = $${rootdirectory:srv}/sshkeys
+httpd-log = $${basedirectory:log}/apache
+
+
+#----------------
+#--
+#-- Deploy cron.
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${basedirectory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${rootdirectory:bin}/cron_simplelogger
+log = $${basedirectory:log}/crond.log
+
+
+#----------------
+#--
+#-- Deploy logrotate.
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = $${logrotate:wrapper}
+
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
+gzip-binary = ${gzip:location}/bin/gzip
+gunzip-binary = ${gzip:location}/bin/gunzip
+# Directories
+wrapper = $${rootdirectory:bin}/logrotate
+conf = $${rootdirectory:etc}/logrotate.conf
+logrotate-entries = $${directory:logrotate-entries}
+backup = $${directory:logrotate-backup}
+state-file = $${rootdirectory:srv}/logrotate.status
+
+
+#----------------
+#--
+#-- sshkeys
+
+[sshkeys-directory]
+recipe = slapos.cookbook:mkdirectory
+requests = $${directory:sshkeys}/requests
+keys = $${directory:sshkeys}/keys
+
+[sshkeys-authority]
+recipe = slapos.cookbook:sshkeys_authority
+request-directory = $${sshkeys-directory:requests}
+keys-directory = $${sshkeys-directory:keys}
+wrapper = $${basedirectory:services}/sshkeys_authority
+keygen-binary = ${dropbear:location}/bin/dropbearkey
+
+[sshkeys-dropbear]
+<= sshkeys-authority
+recipe = slapos.cookbook:sshkeys_authority.request
+name = dropbear
+type = rsa
+executable = $${dropbear-server:wrapper}
+public-key = $${dropbear-server:rsa-keyfile}.pub
+private-key = $${dropbear-server:rsa-keyfile}
+wrapper = $${basedirectory:services}/sshd
+
+
+#----------------
+#--
+#-- Dropbear.
+
+[dropbear-server]
+recipe = slapos.cookbook:dropbear
+host = $${slap-network-information:global-ipv6}
+port = 2222
+home = $${directory:ssh}
+wrapper = $${rootdirectory:bin}/raw_sshd
+shell = $${rdiff-backup-server:wrapper}
+rsa-keyfile = $${directory:ssh}/server_key.rsa
+dropbear-binary = ${dropbear:location}/sbin/dropbear
+
+[dropbear-server-pbs-authorized-key]
+<= dropbear-server
+recipe = slapos.cookbook:dropbear.add_authorized_key
+key = $${slap-parameter:authorized-key}
+
+
+#----------------
+#--
+#-- rdiff
+
+[rdiff-backup-server]
+recipe = slapos.cookbook:pbs
+client = false
+path = $${directory:htdocs}
+wrapper = $${rootdirectory:bin}/rdiffbackup-server
+rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
+
+
+#----------------
+#--
+#-- Apache Proxy.
+
+[apache-proxy]
+recipe = slapos.cookbook:apacheproxy
+url = $${slap-parameter:proxy-url}
+pid-file = $${basedirectory:run}/apache.pid
+lock-file = $${basedirectory:run}/apache.lock
+ip = $${slap-network-information:global-ipv6}
+port = 8080
+error-log = $${directory:httpd-log}/error.log
+access-log = $${directory:httpd-log}/access.log
+httpd-conf = $${rootdirectory:etc}/apache.conf
+wrapper = $${basedirectory:services}/apache
+
+promise = $${basedirectory:promises}/apache
+
+httpd-binary = ${apache:location}/bin/httpd
+
+[logrotate-entry-apache]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = apache
+log = $${apache-proxy:error-log} $${apache-proxy:access-log}
+frequency = daily
+rotate-num = 30
+sharedscripts = true
+notifempty = true
+create = true
+
+
+#----------------
+#--
+#-- Publish instance parameters.
+
+[urls]
+recipe = slapos.cookbook:publish
+url = http://[$${apache-proxy:ip}]:$${apache-proxy:port}/
+ssh-public-key = $${sshkeys-dropbear:public-key-value}
+ssh-url = ssh://nobody@[$${dropbear-server:host}]:$${dropbear-server:port}/$${rdiff-backup-server:path}
+
