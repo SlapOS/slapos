@@ -9,16 +9,30 @@ from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin, withAbort
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
+from Products.ERP5.Document.SimulationMovement import SimulationMovement
+import transaction
+
+def getSimulationStatePlanned(self, *args, **kwargs):
+  return 'planned'
+
+def getSimulationStateDelivered(self, *args, **kwargs):
+  if self.getId() == 'root_simulation_movement' or \
+      self.getParentValue().getParentValue().getId() == \
+          'root_simulation_movement':
+      return 'delivered'
+  return 'planned'
+
+def getSimulationStatePlannedDelivered(self, *args, **kwargs):
+  if self.getId() == 'root_simulation_movement':
+    return 'delivered'
+  return 'planned'
 
 class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
   @withAbort
   def test_simulation(self):
-    from Products.ERP5.Document.SimulationMovement import SimulationMovement
     SimulationMovement.original_getSimulationState = SimulationMovement\
         .getSimulationState
     try:
-      def getSimulationStatePlanned(self, *args, **kwargs):
-        return 'planned'
       SimulationMovement.getSimulationState = getSimulationStatePlanned
 
       source = self.portal.person_module.template_member\
@@ -72,7 +86,18 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
           portal_type='Applied Rule') if q.getSpecialiseReference() == \
               'default_invoice_transaction_rule']
 
+      # movement in not final state, it shall not be expanded
+      self.assertEqual(0, len(applied_rule_list))
+
       # movement is in final state, it shall be expanded
+      SimulationMovement.getSimulationState = getSimulationStatePlannedDelivered
+      self.assertEqual('delivered',
+          root_simulation_movement.getSimulationState())
+      root_simulation_movement.expand(expand_policy='immediate')
+      applied_rule_list = [q for q in root_simulation_movement.contentValues(
+          portal_type='Applied Rule') if q.getSpecialiseReference() == \
+              'default_invoice_transaction_rule']
+
       self.assertEqual(1, len(applied_rule_list))
 
       applied_rule = applied_rule_list[0]
@@ -90,8 +115,8 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
       debit_movement = debit_movement_list[0]
       credit_movement = credit_movement_list[0]
       def checkSimulationMovement(simulation_movement, source, destination,
-            quantity_sign, child_rule_reference_list):
-        self.assertEqual('planned', simulation_movement.getSimulationState())
+            quantity_sign, simulation_state, child_rule_reference_list):
+        self.assertEqual(simulation_state, simulation_movement.getSimulationState())
         self.assertEqual(source, simulation_movement.getSource())
         self.assertEqual(root_simulation_movement.getSourceSection(),
             simulation_movement.getSourceSection())
@@ -122,9 +147,16 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
                 .contentValues(portal_type='Applied Rule')])
 
       checkSimulationMovement(debit_movement, 'account_module/receivable',
-          'account_module/payable', -1, ['default_payment_rule'])
+          'account_module/payable', -1, 'planned', [])
       checkSimulationMovement(credit_movement, 'account_module/sales',
-          'account_module/purchase', 1, [])
+          'account_module/purchase', 1, 'planned', [])
+
+      SimulationMovement.getSimulationState = getSimulationStateDelivered
+      root_simulation_movement.expand(expand_policy='immediate')
+      checkSimulationMovement(debit_movement, 'account_module/receivable',
+          'account_module/payable', -1, 'delivered', ['default_payment_rule'])
+      checkSimulationMovement(credit_movement, 'account_module/sales',
+          'account_module/purchase', 1, 'delivered', [])
     finally:
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
@@ -132,12 +164,9 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
 class TestDefaultInvoicingRule(testSlapOSMixin):
   @withAbort
   def test_simulation(self):
-    from Products.ERP5.Document.SimulationMovement import SimulationMovement
     SimulationMovement.original_getSimulationState = SimulationMovement\
         .getSimulationState
     try:
-      def getSimulationStatePlanned(self, *args, **kwargs):
-        return 'planned'
       SimulationMovement.getSimulationState = getSimulationStatePlanned
 
       source = self.portal.person_module.template_member\
@@ -186,7 +215,15 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
       applied_rule_list = root_simulation_movement.contentValues(
           portal_type='Applied Rule')
 
+      # movement in not final state, it shall not be expanded
+      self.assertEqual(0, len(applied_rule_list))
       # movement is in final state, it shall be expanded
+      SimulationMovement.getSimulationState = getSimulationStatePlannedDelivered
+      self.assertEqual('delivered',
+          root_simulation_movement.getSimulationState())
+      root_simulation_movement.expand(expand_policy='immediate')
+      applied_rule_list = root_simulation_movement.contentValues(
+          portal_type='Applied Rule')
       self.assertEqual(1, len(applied_rule_list))
 
       applied_rule = applied_rule_list[0]
@@ -235,6 +272,12 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
       # check children rules' type
       child_applied_rule_type_list = [q.getSpecialiseReference() for q in \
           simulation_movement.contentValues(portal_type='Applied Rule')]
+      self.assertEqual(0, len(child_applied_rule_type_list))
+
+      SimulationMovement.getSimulationState = getSimulationStateDelivered
+      root_simulation_movement.expand(expand_policy='immediate')
+      child_applied_rule_type_list = [q.getSpecialiseReference() for q in \
+          simulation_movement.contentValues(portal_type='Applied Rule')]
       self.assertSameSet(
           ['default_invoice_transaction_rule', 'default_trade_model_rule'],
           child_applied_rule_type_list)
@@ -245,12 +288,9 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
 class TestDefaultPaymentRule(testSlapOSMixin):
   @withAbort
   def test_simulation(self):
-    from Products.ERP5.Document.SimulationMovement import SimulationMovement
     SimulationMovement.original_getSimulationState = SimulationMovement\
         .getSimulationState
     try:
-      def getSimulationStatePlanned(self, *args, **kwargs):
-        return 'planned'
       SimulationMovement.getSimulationState = getSimulationStatePlanned
 
       source = self.portal.person_module.template_member\
@@ -283,7 +323,7 @@ class TestDefaultPaymentRule(testSlapOSMixin):
           quantity_unit='unit/piece',
           specialise='sale_trade_condition_module/slapos_trade_condition',
           causality_list=['business_process_module/slapos_sale_busines'
-              's_process/pay'],
+              's_process/account'],
           delivery_value=self.portal.accounting_module.newContent(
               portal_type='Sale Invoice Transaction').newContent(
                   portal_type='Invoice Line')
@@ -296,7 +336,16 @@ class TestDefaultPaymentRule(testSlapOSMixin):
       applied_rule_list = root_simulation_movement.contentValues(
           portal_type='Applied Rule')
 
+      # movement in not final state, it shall not be expanded
+      self.assertEqual(0, len(applied_rule_list))
+
       # movement is in final state, it shall be expanded
+      SimulationMovement.getSimulationState = getSimulationStatePlannedDelivered
+      self.assertEqual('delivered',
+          root_simulation_movement.getSimulationState())
+      root_simulation_movement.expand(expand_policy='immediate')
+      applied_rule_list = root_simulation_movement.contentValues(
+          portal_type='Applied Rule')
       self.assertEqual(1, len(applied_rule_list))
 
       applied_rule = applied_rule_list[0]
@@ -459,9 +508,25 @@ class TestHostingSubscriptionSimulation(testSlapOSMixin):
       self.assertEqual('planned', simulation_movement.getSimulationState())
       self.assertEqual(None, simulation_movement.getDelivery())
 
-      applied_rule_list_level_2 = simulation_movement.contentValues(
-          portal_type='Applied Rule')
-      self.assertEqual(1, len(applied_rule_list_level_2))
+      applied_rule_list_level_2 = [q.getSpecialiseReference() for q in
+          simulation_movement.contentValues(portal_type='Applied Rule')]
+      self.assertEqual(0, len(applied_rule_list_level_2))
+      SimulationMovement.original_getSimulationState = SimulationMovement\
+          .getSimulationState
+      try:
+        def getSimulationState(self):
+          return 'delivered'
+        SimulationMovement.getSimulationState = getSimulationState
+        simulation_movement.expand(expand_policy='immediate')
+        applied_rule_list_level_2 = [q.getSpecialiseReference() for q in
+            simulation_movement.contentValues(portal_type='Applied Rule')]
+        self.assertSameSet(['default_invoicing_rule'],
+            applied_rule_list_level_2)
+      finally:
+        SimulationMovement.getSimulationState = SimulationMovement\
+            .original_getSimulationState
+        transaction.abort()
+
       # check next simulation movement
       idx += 1
 
@@ -563,15 +628,13 @@ class TestHostingSubscriptionSimulation(testSlapOSMixin):
       # check children rules' type
       child_applied_rule_type_list = [q.getSpecialiseReference() for q in \
           simulation_movement.contentValues(portal_type='Applied Rule')]
-      self.assertSameSet( ['default_invoicing_rule'],
-          child_applied_rule_type_list)
+      self.assertSameSet( [], child_applied_rule_type_list)
 
       # check next simulation movement
       idx += 1
     def isFrozen(*args, **kwargs):
       return True
     try:
-      from Products.ERP5.Document.SimulationMovement import SimulationMovement
       SimulationMovement.originalIsFrozen = SimulationMovement.isFrozen
       SimulationMovement.isFrozen = isFrozen
 
@@ -592,12 +655,9 @@ class TestHostingSubscriptionSimulation(testSlapOSMixin):
 class TestDefaultTradeModelRule(testSlapOSMixin):
   @withAbort
   def test_simulation(self):
-    from Products.ERP5.Document.SimulationMovement import SimulationMovement
     SimulationMovement.original_getSimulationState = SimulationMovement\
         .getSimulationState
     try:
-      def getSimulationStatePlanned(self, *args, **kwargs):
-        return 'planned'
       SimulationMovement.getSimulationState = getSimulationStatePlanned
 
       source = self.portal.person_module.template_member\
@@ -651,7 +711,16 @@ class TestDefaultTradeModelRule(testSlapOSMixin):
           portal_type='Applied Rule') if q.getSpecialiseReference() == \
               'default_trade_model_rule']
 
+      # movement in not final state, it shall not be expanded
+      self.assertEqual(0, len(applied_rule_list))
       # movement is in final state, it shall be expanded
+      SimulationMovement.getSimulationState = getSimulationStatePlannedDelivered
+      self.assertEqual('delivered',
+          root_simulation_movement.getSimulationState())
+      root_simulation_movement.expand(expand_policy='immediate')
+      applied_rule_list = [q for q in root_simulation_movement.contentValues(
+          portal_type='Applied Rule') if
+              q.getSpecialiseReference() == 'default_trade_model_rule']
       self.assertEqual(1, len(applied_rule_list))
 
       applied_rule = applied_rule_list[0]
@@ -744,7 +813,7 @@ class TestDefaultDeliveryRule(testSlapOSMixin):
         portal_type='Simulation Movement')
     self.assertEqual(1, len(simulation_movement_list))
 
-    simulation_movement = simulation_movement_list[0 ]
+    simulation_movement = simulation_movement_list[0]
 
     self.assertSameSet(line.getBaseContributionList(),
         simulation_movement.getBaseContributionList())
@@ -776,5 +845,10 @@ class TestDefaultDeliveryRule(testSlapOSMixin):
         simulation_movement.getStartDate())
     self.assertEqual(delivery.getStopDate(),
         simulation_movement.getStopDate())
+    self.assertSameSet([], [q.getSpecialiseReference()
+        for q in simulation_movement.contentValues(portal_type='Applied Rule')])
+    delivery.stop()
+    delivery.deliver()
+    applied_rule.expand(expand_policy='immediate')
     self.assertSameSet(['default_invoicing_rule'], [q.getSpecialiseReference()
         for q in simulation_movement.contentValues(portal_type='Applied Rule')])
