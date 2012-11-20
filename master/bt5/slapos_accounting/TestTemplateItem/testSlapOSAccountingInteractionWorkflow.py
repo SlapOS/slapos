@@ -212,22 +212,22 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
 
-  def _test_calculate(self, new_id, newContent, portal_type):
-    cancel_spl = newContent(portal_type=portal_type)
-    close_spl = newContent(portal_type=portal_type)
-    confirm_spl = newContent(portal_type=portal_type)
-    deliver_spl = newContent(portal_type=portal_type)
+  def _test_calculate(self, new_id, newContent, **new_kw):
+    cancel_spl = newContent(**new_kw)
+    close_spl = newContent(**new_kw)
+    confirm_spl = newContent(**new_kw)
+    deliver_spl = newContent(**new_kw)
     deliver_spl.confirm()
     deliver_spl.stop()
-    order_spl = newContent(portal_type=portal_type)
-    plan_spl = newContent(portal_type=portal_type)
-    setReady_spl = newContent(portal_type=portal_type)
+    order_spl = newContent(**new_kw)
+    plan_spl = newContent(**new_kw)
+    setReady_spl = newContent(**new_kw)
     setReady_spl.confirm()
-    start_spl = newContent(portal_type=portal_type)
+    start_spl = newContent(**new_kw)
     start_spl.confirm()
-    stop_spl = newContent(portal_type=portal_type)
+    stop_spl = newContent(**new_kw)
     stop_spl.confirm()
-    submit_spl = newContent(portal_type=portal_type)
+    submit_spl = newContent(**new_kw)
 
     self._simulateDelivery_calculate()
     try:
@@ -278,13 +278,14 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
     new_id = self.generateNewId()
     newContent = self.portal.sale_packing_list_module.newContent
     portal_type = "Sale Packing List"
-    self._test_calculate(new_id, newContent, portal_type)
+    self._test_calculate(new_id, newContent, portal_type=portal_type)
 
   def test_SaleInvoiceTransaction_calculate(self):
     new_id = self.generateNewId()
     newContent = self.portal.accounting_module.newContent
     portal_type = "Sale Invoice Transaction"
-    self._test_calculate(new_id, newContent, portal_type)
+    self._test_calculate(new_id, newContent, portal_type=portal_type,
+        start_date='2011/01/01')
 
   def test_HostingSubscription_changePromise(self):
     new_id = self.generateNewId()
