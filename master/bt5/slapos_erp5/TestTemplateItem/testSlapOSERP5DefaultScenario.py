@@ -371,27 +371,12 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
   def assertHostingSubscriptionSimulationCoverage(self, subscription):
     self.login()
-    applied_rule_list = self.portal.portal_catalog(portal_type='Applied Rule',
-        causality_uid=subscription.getUid())
-    self.assertEqual(1, len(applied_rule_list))
-    applied_rule = applied_rule_list[0]
-    simulation_movement_list = applied_rule.contentValues(
-        portal_type='Simulation Movement')
-    self.assertNotEqual(0, len(simulation_movement_list))
-
-    open_sale_order_line_template = self.portal.restrictedTraverse(
-        self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
-    for simulation_movement in simulation_movement_list:
-      self.assertEqual(open_sale_order_line_template.getResource(),
-          simulation_movement.getResource())
-      self.assertEqual(subscription.getRelativeUrl(),
-          simulation_movement.getAggregate())
-      self.assertEqual(subscription.getPeriodicityMonthDay(),
-          simulation_movement.getStartDate().day())
-      self.assertEqual(subscription.getPeriodicityMonthDay(),
-          simulation_movement.getStopDate().day())
-      packing_list_line = simulation_movement.getDeliveryValue()
-      self.assertNotEqual(None, packing_list_line)
+    # this is document level assertion, as simulation and its specific delivery
+    # is covered by unit tests
+    packing_list_line_list = subscription.getAggregateRelatedValueList(
+        portal_type='Sale Packing List Line')
+    self.assertTrue(len(packing_list_line_list) >= 2)
+    for packing_list_line in packing_list_line_list:
       packing_list = packing_list_line.getParentValue()
       self.assertEqual('Sale Packing List',
           packing_list.getPortalType())
@@ -400,21 +385,10 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       causality_state = packing_list.getCausalityState()
       self.assertEqual('solved', causality_state)
 
-      applied_rule_list_l2 = simulation_movement.contentValues(
-          portal_type='Applied Rule')
-      self.assertEqual(1, len(applied_rule_list_l2))
-      invoice_applied_rule = applied_rule_list_l2[0]
-      invoice_simulation_movement_list = invoice_applied_rule.contentValues(
-          portal_type='Simulation Movement')
-      self.assertEqual(1, len(invoice_simulation_movement_list))
-      invoice_simulation_movement = invoice_simulation_movement_list[0]
-      self.assertEqual(open_sale_order_line_template.getResource(),
-          invoice_simulation_movement.getResource())
-      self.assertEqual(subscription.getRelativeUrl(),
-          invoice_simulation_movement.getAggregate())
-      invoice_line = invoice_simulation_movement.getDeliveryValue()
-      self.assertNotEqual(None, invoice_line)
-      invoice = invoice_line.getParentValue()
+      invoice_list = packing_list.getCausalityRelatedValueList(
+          portal_type='Sale Invoice Transaction')
+      self.assertEqual(1, len(invoice_list))
+      invoice = invoice_list[0]
       self.assertEqual('Sale Invoice Transaction',
           invoice.getPortalType())
       self.assertEqual('delivered', invoice.getSimulationState())
@@ -427,27 +401,27 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       self.assertSameSet([invoice.getRelativeUrl()],
           packing_list.getCausalityRelatedList(
               portal_type=self.portal.getPortalDeliveryTypeList()))
-
-      # now use causality related to find payment, as walking through simulation
-      # is really complex
-      # simulation are tested in unit tests, here the assertions are made on
-      # document level
       payment_list = invoice.getCausalityRelatedValueList(
           portal_type=self.portal.getPortalDeliveryTypeList())
-      self.assertEqual(1, len(payment_list))
-      payment = payment_list[0]
-      self.assertEqual('Payment Transaction',
-          payment.getPortalType())
-      self.assertEqual('delivered', payment.getSimulationState())
-      causality_state = payment.getCausalityState()
-      self.assertEqual('solved', causality_state)
-      self.assertEqual(0, len(payment.checkConsistency()))
-      self.assertSameSet([invoice.getRelativeUrl()],
-          payment.getCausalityList(
-              portal_type=self.portal.getPortalDeliveryTypeList()))
-      self.assertSameSet([payment.getRelativeUrl()],
-          invoice.getCausalityRelatedList(
-              portal_type=self.portal.getPortalDeliveryTypeList()))
+      if invoice.getTotalPrice() == 0:
+        self.assertEqual(0, len(payment_list))
+      else:
+        self.assertEqual(1, len(payment_list))
+        payment = payment_list[0]
+        self.assertEqual('Payment Transaction',
+            payment.getPortalType())
+        self.assertEqual('delivered', payment.getSimulationState())
+        causality_state = payment.getCausalityState()
+        self.assertEqual('solved', causality_state)
+        self.assertEqual(0, len(payment.checkConsistency()))
+        self.assertSameSet([invoice.getRelativeUrl()],
+            payment.getCausalityList(
+                portal_type=self.portal.getPortalDeliveryTypeList()))
+        self.assertSameSet([payment.getRelativeUrl()],
+            invoice.getCausalityRelatedList(
+                portal_type=self.portal.getPortalDeliveryTypeList()))
+        self.assertEqual(payment.PaymentTransaction_getTotalPayablePrice(),
+            invoice.getTotalPrice())
 
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
