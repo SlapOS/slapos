@@ -1,8 +1,5 @@
 [buildout]
 
-extends = 
-  ${template-switchsoftware:output}
-
 parts =
   switch_softwaretype
 
@@ -12,12 +9,16 @@ offline = true
 
 [switch_softwaretype]
 recipe = slapos.cookbook:softwaretype
-default = ${template-apache-php:output}
+default = ${instance-default-root:output}
+apache = ${instance-apache-php:output}
 resilient = ${template-resilient-lamp:rendered}
 mariadb = ${template-mariadb:output}
 mariadb-import = ${template-mariadb-import:output}
 mariadb-export = ${template-mariadb-export:output}
+apache-backup = ${instance-apache-backup:output}
+
+#frozen creates a syntax error, meaning it can keep its data.
+#It's dirty as hell, it needs to be replaced.
+frozen = ${instance-frozen:output}
 pull-backup = ${template-pull-backup:output}
-apache-backup = ${template-apache-backup:output}
-frozen = ${template-frozen:output}
 

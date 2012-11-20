@@ -1,15 +1,15 @@
 [buildout]
 extends = ${template-mariadb:output}
-          ${template-pbsready-import:output}
+          ${pbsready-export:output}
 
 parts += mariadb
 
-[importer]
+[exporter]
 recipe = slapos.cookbook:mydumper
-wrapper = $${rootdirectory:bin}/myloader
+wrapper = $${rootdirectory:bin}/$${slap-parameter:namebase}-exporter
 backup-directory = $${directory:backup}
 socket = $${mariadb:socket}
 user = root
-myloader-binary = ${mydumper:location}/bin/myloader
+mydumper-binary = ${mydumper:location}/bin/mydumper
 database = $${mariadb:database}
-import = true
+import = false
