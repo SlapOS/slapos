@@ -568,6 +568,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     self.assertEqual(invoice_1.getRelativeUrl(),
         transaction_line_1_rec.getParentValue().getRelativeUrl())
     self.assertEqual(invoice_1.getRelativeUrl(),
+        transaction_line_1_rec_bis.getParentValue().getRelativeUrl())
+    self.assertEqual(invoice_1.getRelativeUrl(),
         transaction_line_1_sal.getParentValue().getRelativeUrl())
     self.assertEqual(invoice_2.getRelativeUrl(),
         transaction_line_2_rec.getParentValue().getRelativeUrl())
