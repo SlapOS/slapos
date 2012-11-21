@@ -455,6 +455,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       price=1.0,
       quantity=invoice_movement_1.getTotalPrice() * -1,
     )
+    transaction_movement_1_rec_bis = transaction_movement_1_rec\
+        .Base_createCloneDocument(batch_mode=1)
     transaction_movement_1_sal = transaction_rule_1.newContent(
       portal_type='Simulation Movement',
       causality=['business_process_module/slapos_sale_business_process/account',
@@ -518,11 +520,13 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     self.tic()
 
     self.checkSimulationMovement(transaction_movement_1_rec)
+    self.checkSimulationMovement(transaction_movement_1_rec_bis)
     self.checkSimulationMovement(transaction_movement_1_sal)
     self.checkSimulationMovement(transaction_movement_2_rec)
     self.checkSimulationMovement(transaction_movement_2_sal)
 
     transaction_line_1_rec = transaction_movement_1_rec.getDeliveryValue()
+    transaction_line_1_rec_bis = transaction_movement_1_rec_bis.getDeliveryValue()
     transaction_line_1_sal = transaction_movement_1_sal.getDeliveryValue()
     transaction_line_2_rec = transaction_movement_2_rec.getDeliveryValue()
     transaction_line_2_sal = transaction_movement_2_sal.getDeliveryValue()
@@ -545,6 +549,10 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
           portal_type='Delivery Cell'))
 
     checkTransactionLine(transaction_movement_1_rec, transaction_line_1_rec,
+        ['source/account_module/receivable',
+            'destination/account_module/payable'])
+    checkTransactionLine(transaction_movement_1_rec_bis,
+        transaction_line_1_rec_bis,
         ['source/account_module/receivable',
             'destination/account_module/payable'])
     checkTransactionLine(transaction_movement_1_sal, transaction_line_1_sal,
