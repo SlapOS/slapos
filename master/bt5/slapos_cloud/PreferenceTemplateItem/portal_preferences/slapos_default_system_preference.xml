@@ -155,7 +155,7 @@
         </item>
         <item>
             <key> <string>preferred_payzen_integration_site</string> </key>
-            <value> <string>portal_integrations/vifib_payzen_integration</string> </value>
+            <value> <string>portal_integrations/slapos_payzen_integration</string> </value>
         </item>
         <item>
             <key> <string>preferred_registration_resource</string> </key>
