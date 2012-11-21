@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Causality Movement Group" module="erp5.portal_type"/>
+      <global name="Delivery Causality Assignment Movement Group" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -22,15 +22,15 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>causality_movement_group_on_delivery</string> </value>
+            <value> <string>delivery_causality_assignment_movement_group_on_delivery</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
-            <value> <int>3</int> </value>
+            <value> <int>4</int> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Causality Movement Group</string> </value>
+            <value> <string>Delivery Causality Assignment Movement Group</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
