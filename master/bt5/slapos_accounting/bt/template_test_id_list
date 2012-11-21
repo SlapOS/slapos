@@ -1,4 +1,5 @@
 testSlapOSAccountingAlarm
+testSlapOSAccountingBuilder
 testSlapOSAccountingConstraint
 testSlapOSAccountingInteractionWorkflow
 testSlapOSAccountingRule
