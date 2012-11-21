@@ -131,7 +131,7 @@
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>Build Accounting Lines on Vifib Sale Invoice Transactions</string> </value>
+            <value> <string>Build Accounting Lines on Sale Invoice Transactions</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
