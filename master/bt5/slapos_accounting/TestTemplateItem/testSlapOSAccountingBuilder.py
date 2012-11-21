@@ -106,6 +106,8 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
       self.assertEqual('Sale Packing List', delivery.getPortalType())
       self.assertEqual('delivered', delivery.getSimulationState())
       self.assertEqual('building', delivery.getCausalityState())
+      delivery.updateCausalityState(solve_automatically=False)
+      self.assertEqual('solved', delivery.getCausalityState())
       self.assertEqual(simulation_movement.getStartDate(),
         delivery.getStartDate())
       self.assertEqual(simulation_movement.getStopDate(),
