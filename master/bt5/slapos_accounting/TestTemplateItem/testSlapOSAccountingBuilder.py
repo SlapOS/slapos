@@ -41,7 +41,7 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
         portal_type=cell_portal_type))
 
   def checkDelivery(self, simulation_movement, delivery, delivery_portal_type,
-        causality_list, simulation_state='delivered'):
+        category_list, simulation_state='delivered'):
     self.assertEqual(delivery_portal_type, delivery.getPortalType())
     self.assertEqual(simulation_state, delivery.getSimulationState())
     self.assertEqual('building', delivery.getCausalityState())
@@ -62,7 +62,7 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
                 simulation_movement.getDestinationSectionList()) \
             + convertCategoryList('destination_decision',
                 simulation_movement.getDestinationDecisionList()) \
-            + causality_list,
+            + category_list,
       delivery.getCategoryList())
 
   def test(self):
@@ -136,7 +136,7 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
         delivery_2.getRelativeUrl())
 
     delivery_kw = dict(delivery_portal_type='Sale Packing List',
-        causality_list=convertCategoryList('causality',
+        category_list=convertCategoryList('causality',
           simulation_movement_1.getParentValue().getCausalityList()))
     self.checkDelivery(simulation_movement_1, delivery_1, **delivery_kw)
     self.checkDelivery(simulation_movement_2, delivery_2, **delivery_kw)
@@ -305,11 +305,12 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
 
     invoice_kw = dict(delivery_portal_type='Sale Invoice Transaction',
         simulation_state='confirmed')
+    category_list = ['resource/currency_module/EUR']
     self.checkDelivery(invoice_movement_1, invoice_1,
-        causality_list=convertCategoryList('causality',
+        category_list=category_list + convertCategoryList('causality',
           [delivery_1.getRelativeUrl()]), **invoice_kw)
     self.checkDelivery(invoice_movement_2, invoice_2,
-        causality_list=convertCategoryList('causality',
+        category_list=category_list + convertCategoryList('causality',
           [delivery_2.getRelativeUrl()]), **invoice_kw)
 
 class TestSlapOSSaleInvoiceTransactionBuilder(testSlapOSMixin):
