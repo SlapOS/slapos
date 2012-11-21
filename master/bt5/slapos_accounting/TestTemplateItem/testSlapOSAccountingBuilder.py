@@ -104,6 +104,9 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
     delivery_1 = delivery_line_1.getParentValue()
     delivery_2 = delivery_line_2.getParentValue()
 
+    self.assertNotEqual(delivery_1.getRelativeUrl(),
+        delivery_2.getRelativeUrl())
+
     def checkDelivery(simulation_movement, delivery):
       self.assertEqual('Sale Packing List', delivery.getPortalType())
       self.assertEqual('delivered', delivery.getSimulationState())
