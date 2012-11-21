@@ -42,10 +42,6 @@
                 <string>base_application</string>
                 <string>base_contribution</string>
                 <string>quantity_unit</string>
-                <string>source_account</string>
-                <string>destination_account</string>
-                <string>source_function</string>
-                <string>destination_function</string>
               </tuple>
             </value>
         </item>
