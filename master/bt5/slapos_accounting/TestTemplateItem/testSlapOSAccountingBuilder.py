@@ -95,6 +95,8 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
           delivery_line.getPrice())
       self.assertFalse(delivery_line.hasStartDate())
       self.assertFalse(delivery_line.hasStopDate())
+      self.assertEqual([], delivery_line.contentValues(
+          portal_type='Sale Packing List Cell'))
 
     checkDeliveryLine(simulation_movement_1, delivery_line_1)
     checkDeliveryLine(simulation_movement_2, delivery_line_2)
