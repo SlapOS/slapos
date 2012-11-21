@@ -585,6 +585,22 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     checkTransactionedInvoice(invoice_1)
     checkTransactionedInvoice(invoice_2)
 
+    transaction_movement_1_rec_bis2 = transaction_movement_1_rec\
+        .Base_createCloneDocument(batch_mode=1)
+    self.tic()
+    self.portal.portal_deliveries.slapos_sale_invoice_transaction_builder.build(
+        path='%s/%%' % applied_rule.getPath())
+    self.tic()
+    self.checkSimulationMovement(transaction_movement_1_rec_bis2)
+    transaction_line_1_rec_bis2 = transaction_movement_1_rec_bis2\
+        .getDeliveryValue()
+    checkTransactionLine(transaction_movement_1_rec_bis2,
+        transaction_line_1_rec_bis2,
+        ['source/account_module/receivable',
+            'destination/account_module/payable'])
+    self.assertEqual(invoice_1.getRelativeUrl(),
+        transaction_line_1_rec_bis2.getParentValue().getRelativeUrl())
+
 class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(testSlapOSMixin):
   def test(self):
     raise NotImplementedError
