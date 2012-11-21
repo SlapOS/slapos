@@ -1,5 +1,5 @@
 [buildout]
-extends = ${template-mariadb:output}
+extends = ${instance-mariadb:output}
           ${pbsready-import:output}
 
 parts += mariadb
