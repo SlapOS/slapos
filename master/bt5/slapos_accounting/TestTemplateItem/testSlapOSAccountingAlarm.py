@@ -666,11 +666,10 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
         for q in open_sale_order_template.getCategoryList()]))
 
   @simulateHostingSubscription_requestUpdateOpenSaleOrder
-  def test_alarm_HS_validated(self):
+  def test_alarm_HS_diverged(self):
     subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
     subscription.edit(reference='TESTHS-%s' % self.generateNewId())
-    self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
     self.tic()
 
     self.portal.portal_alarms\
@@ -678,114 +677,6 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
         .activeSense()
     self.tic()
     self.assertEqual(
-        'Visited by HostingSubscription_requestUpdateOpenSaleOrder',
-        subscription.workflow_history['edit_workflow'][-1]['comment'])
-
-  @simulateHostingSubscription_requestUpdateOpenSaleOrder
-  def test_alarm_HS_validated_OSO_invalidated(self):
-    subscription = self.portal.hosting_subscription_module\
-        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    subscription.edit(reference='TESTHS-%s' % self.generateNewId())
-    self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
-
-    open_sale_order = self.portal.open_sale_order_module\
-        .template_open_sale_order.Base_createCloneDocument(batch_mode=1)
-    open_sale_order.edit(reference='TESTOSO-%s' % self.generateNewId())
-    open_sale_order.newContent(portal_type='Open Sale Order Line',
-        aggregate=subscription.getRelativeUrl())
-    self.portal.portal_workflow._jumpToStateFor(open_sale_order, 'invalidated')
-    self.tic()
-
-    self.portal.portal_alarms\
-        .slapos_request_update_hosting_subscription_open_sale_order\
-        .activeSense()
-    self.tic()
-    self.assertEqual(
-        'Visited by HostingSubscription_requestUpdateOpenSaleOrder',
-        subscription.workflow_history['edit_workflow'][-1]['comment'])
-
-  @simulateHostingSubscription_requestUpdateOpenSaleOrder
-  def test_alarm_HS_archived(self):
-    subscription = self.portal.hosting_subscription_module\
-        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    subscription.edit(reference='TESTHS-%s' % self.generateNewId())
-    self.portal.portal_workflow._jumpToStateFor(subscription, 'archived')
-    self.tic()
-
-    self.portal.portal_alarms\
-        .slapos_request_update_hosting_subscription_open_sale_order\
-        .activeSense()
-    self.tic()
-    self.assertEqual(
-        'Visited by HostingSubscription_requestUpdateOpenSaleOrder',
-        subscription.workflow_history['edit_workflow'][-1]['comment'])
-
-  @simulateHostingSubscription_requestUpdateOpenSaleOrder
-  def test_alarm_HS_archived_OSO_validated(self):
-    subscription = self.portal.hosting_subscription_module\
-        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    subscription.edit(reference='TESTHS-%s' % self.generateNewId())
-    self.portal.portal_workflow._jumpToStateFor(subscription, 'archived')
-
-    open_sale_order = self.portal.open_sale_order_module\
-        .template_open_sale_order.Base_createCloneDocument(batch_mode=1)
-    open_sale_order.edit(reference='TESTOSO-%s' % self.generateNewId())
-    open_sale_order.newContent(portal_type='Open Sale Order Line',
-        aggregate=subscription.getRelativeUrl())
-    self.portal.portal_workflow._jumpToStateFor(open_sale_order, 'validated')
-    self.tic()
-
-    self.portal.portal_alarms\
-        .slapos_request_update_hosting_subscription_open_sale_order\
-        .activeSense()
-    self.tic()
-    self.assertEqual(
-        'Visited by HostingSubscription_requestUpdateOpenSaleOrder',
-        subscription.workflow_history['edit_workflow'][-1]['comment'])
-
-  @simulateHostingSubscription_requestUpdateOpenSaleOrder
-  def test_alarm_HS_validated_OSO_validated(self):
-    subscription = self.portal.hosting_subscription_module\
-        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    subscription.edit(reference='TESTHS-%s' % self.generateNewId())
-    self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
-
-    open_sale_order = self.portal.open_sale_order_module\
-        .template_open_sale_order.Base_createCloneDocument(batch_mode=1)
-    open_sale_order.edit(reference='TESTOSO-%s' % self.generateNewId())
-    open_sale_order.newContent(portal_type='Open Sale Order Line',
-        aggregate=subscription.getRelativeUrl())
-    self.portal.portal_workflow._jumpToStateFor(open_sale_order, 'validated')
-    self.tic()
-
-    self.portal.portal_alarms\
-        .slapos_request_update_hosting_subscription_open_sale_order\
-        .activeSense()
-    self.tic()
-    self.assertNotEqual(
-        'Visited by HostingSubscription_requestUpdateOpenSaleOrder',
-        subscription.workflow_history['edit_workflow'][-1]['comment'])
-
-  @simulateHostingSubscription_requestUpdateOpenSaleOrder
-  def test_alarm_HS_archived_OSO_invalidated(self):
-    subscription = self.portal.hosting_subscription_module\
-        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
-    subscription.edit(reference='TESTHS-%s' % self.generateNewId())
-    self.portal.portal_workflow._jumpToStateFor(subscription, 'archived')
-
-    open_sale_order = self.portal.open_sale_order_module\
-        .template_open_sale_order.Base_createCloneDocument(batch_mode=1)
-    open_sale_order.edit(reference='TESTOSO-%s' % self.generateNewId())
-    open_sale_order.newContent(portal_type='Open Sale Order Line',
-        aggregate=subscription.getRelativeUrl())
-    self.portal.portal_workflow._jumpToStateFor(open_sale_order, 'invalidated')
-    self.tic()
-
-    self.portal.portal_alarms\
-        .slapos_request_update_hosting_subscription_open_sale_order\
-        .activeSense()
-    self.tic()
-    self.assertNotEqual(
         'Visited by HostingSubscription_requestUpdateOpenSaleOrder',
         subscription.workflow_history['edit_workflow'][-1]['comment'])
 
@@ -803,6 +694,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     subscription.HostingSubscription_requestUpdateOpenSaleOrder()
     self.tic()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
@@ -856,6 +748,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     subscription.HostingSubscription_requestUpdateOpenSaleOrder()
     self.tic()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
@@ -903,10 +796,12 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         'time': destroy_time,
         'action': 'request_destroy'
     })
+    subscription.diverge()
     self.tic()
 
     subscription.HostingSubscription_requestUpdateOpenSaleOrder()
     self.tic()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
@@ -984,6 +879,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     subscription.HostingSubscription_requestUpdateOpenSaleOrder()
     self.tic()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
