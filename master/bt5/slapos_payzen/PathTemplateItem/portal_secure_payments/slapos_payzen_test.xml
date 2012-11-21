@@ -26,11 +26,11 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>default</string> </value>
+            <value> <string>PSERV-Payzen-Test</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_payzen</string> </value>
+            <value> <string>slapos_payzen_test</string> </value>
         </item>
         <item>
             <key> <string>payzen_vads_action_mode</string> </key>
