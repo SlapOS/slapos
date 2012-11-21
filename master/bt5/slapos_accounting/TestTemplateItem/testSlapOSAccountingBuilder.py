@@ -280,10 +280,6 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         path='%s/%%' % applied_rule.getPath())
     self.tic()
 
-    self.portal.portal_deliveries.slapos_sale_packing_list_builder.build(
-        path='%s/%%' % applied_rule.getPath())
-    self.tic()
-
     self.checkSimulationMovement(invoice_movement_1)
     self.checkSimulationMovement(invoice_movement_2)
 
