@@ -800,7 +800,8 @@ class TestDefaultDeliveryRule(testSlapOSMixin):
         quantity=4.56
     )
     delivery.confirm()
-    delivery._updateSimulation(create_root=1)
+    delivery.updateSimulation(create_root=1)
+    self.tic()
 
     applied_rule_list = delivery.getCausalityRelatedValueList()
     self.assertEqual(1, len(applied_rule_list))
