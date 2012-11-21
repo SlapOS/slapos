@@ -93,7 +93,6 @@
                     <key> <string>left</string> </key>
                     <value>
                       <list>
-                        <string>my_preferred_registration_resource</string>
                         <string>my_preferred_maximum_balance</string>
                         <string>my_preferred_maximum_due_day</string>
                       </list>
