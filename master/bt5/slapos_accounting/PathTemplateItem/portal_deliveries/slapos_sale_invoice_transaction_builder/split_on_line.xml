@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Property Movement Group" module="erp5.portal_type"/>
+      <global name="Split Movement Group" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -10,7 +10,6 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>divergence_scope/property</string>
                 <string>collect_order_group/line</string>
               </tuple>
             </value>
@@ -23,32 +22,21 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>property_movement_group_on_line</string> </value>
+            <value> <string>split_on_line</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
-            <value> <int>3</int> </value>
+            <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Property Movement Group</string> </value>
-        </item>
-        <item>
-            <key> <string>tested_property</string> </key>
-            <value>
-              <tuple>
-                <string>destination_total_asset_price</string>
-                <string>source_total_asset_price</string>
-              </tuple>
-            </value>
+            <value> <string>Split Movement Group</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>property_movement_group_on_line</string> </value>
-        </item>
-        <item>
-            <key> <string>update_always</string> </key>
-            <value> <int>0</int> </value>
+            <value>
+              <none/>
+            </value>
         </item>
       </dictionary>
     </pickle>
