@@ -12,9 +12,9 @@ recipe = slapos.cookbook:softwaretype
 default = ${instance-default-root:output}
 apache = ${instance-apache-php:output}
 resilient = ${template-resilient-lamp:rendered}
-mariadb = ${template-mariadb:output}
-mariadb-import = ${template-mariadb-import:output}
-mariadb-export = ${template-mariadb-export:output}
+mariadb = ${instance-mariadb:output}
+mariadb-import = ${instance-mariadb-import:output}
+mariadb-export = ${instance-mariadb-export:output}
 apache-backup = ${instance-apache-backup:output}
 
 #frozen creates a syntax error, meaning it can keep its data.
