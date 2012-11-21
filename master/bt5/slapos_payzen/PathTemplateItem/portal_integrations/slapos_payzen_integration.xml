@@ -92,7 +92,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_payzen_integration</string> </value>
+            <value> <string>slapos_payzen_integration</string> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -106,7 +106,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Vifib Payzen Integration</string> </value>
+            <value> <string>SlapOS Payzen Integration</string> </value>
         </item>
       </dictionary>
     </pickle>
