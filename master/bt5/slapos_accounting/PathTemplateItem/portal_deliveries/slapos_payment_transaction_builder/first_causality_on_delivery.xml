@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Category Movement Group" module="erp5.portal_type"/>
+      <global name="First Causality Movement Group" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -10,8 +10,7 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>divergence_scope/category</string>
-                <string>collect_order_group/cell</string>
+                <string>collect_order_group/delivery</string>
               </tuple>
             </value>
         </item>
@@ -23,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>category_movement_group_on_cell</string> </value>
+            <value> <string>first_causality_on_delivery</string> </value>
         </item>
         <item>
             <key> <string>int_index</string> </key>
@@ -31,20 +30,13 @@
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Category Movement Group</string> </value>
-        </item>
-        <item>
-            <key> <string>tested_property</string> </key>
-            <value>
-              <tuple>
-                <string>source</string>
-                <string>destination</string>
-              </tuple>
-            </value>
+            <value> <string>First Causality Movement Group</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>category_movement_group_on_cell</string> </value>
+            <value>
+              <none/>
+            </value>
         </item>
       </dictionary>
     </pickle>
