@@ -420,7 +420,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
         self.assertSameSet([payment.getRelativeUrl()],
             invoice.getCausalityRelatedList(
                 portal_type=self.portal.getPortalDeliveryTypeList()))
-        self.assertEqual(payment.PaymentTransaction_getTotalPayablePrice(),
+        self.assertEqual(-1 * payment.PaymentTransaction_getTotalPayablePrice(),
             invoice.getTotalPrice())
 
   def assertOpenSaleOrderCoverage(self, person_reference):
@@ -643,3 +643,4 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
           default_destination_section_uid=person.getUid()):
         self.assertHostingSubscriptionSimulationCoverage(
             subscription.getObject())
+    self.assertTrue(False)
