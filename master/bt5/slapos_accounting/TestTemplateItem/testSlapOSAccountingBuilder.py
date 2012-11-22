@@ -834,11 +834,12 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     self.tic()
     self.checkSimulationMovement(model_movement_1_tax_bis)
     model_line_1_tax_bis = model_movement_1_tax_bis.getDeliveryValue()
-    checkModelLine(model_movement_1_tax_bis,
-        model_line_1_tax_bis)
+    checkModelLine(model_movement_1_tax_bis, model_line_1_tax_bis, [
+        'base_application/base_amount/invoicing/taxable',
+        'resource/service_module/slapos_tax',
+         'use/trade/tax'])
     self.assertEqual(invoice_1.getRelativeUrl(),
         model_line_1_tax_bis.getParentValue().getRelativeUrl())
-
 
 class TestSlapOSPaymentTransactionBuilder(testSlapOSMixin):
   def test(self):
