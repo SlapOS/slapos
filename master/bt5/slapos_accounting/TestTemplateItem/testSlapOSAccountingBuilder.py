@@ -39,6 +39,9 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
     self.assertFalse(delivery_line.hasStopDate())
     self.assertEqual([], delivery_line.contentValues(
         portal_type=cell_portal_type))
+    self.assertSameSet([simulation_movement.getRelativeUrl()],
+        delivery_line.getDeliveryRelatedList(
+            portal_type='Simulation Movement'))
 
   def checkDelivery(self, simulation_movement, delivery, delivery_portal_type,
         category_list, simulation_state='delivered'):
@@ -346,6 +349,12 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
           'base_amount/invoicing/taxable'],
     )
 
+    model_line_kw = dict(
+      portal_type='Invoice Line',
+      use='use/trade/tax',
+      resource='service_module/slapos_tax',
+      base_application='base_amount/invoicing/taxable'
+    )
     invoice_1 = self.portal.accounting_module.newContent(
       start_date=DateTime('2012/01/01'),
       stop_date=DateTime('2012/02/01'),
@@ -360,6 +369,11 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       quantity=3.4,
       **invoice_line_kw
     )
+    invoice_line_1_tax = invoice_1.newContent(
+      price=.196,
+      quantity=invoice_line_1.getTotalPrice(),
+      **model_line_kw
+    )
     invoice_2 = self.portal.accounting_module.newContent(
       start_date=DateTime('2012/01/01'),
       stop_date=DateTime('2012/02/01'),
@@ -373,6 +387,11 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       price=5.6,
       quantity=7.8,
       **invoice_line_kw
+    )
+    invoice_line_2_tax = invoice_2.newContent(
+      price=.196,
+      quantity=invoice_line_2.getTotalPrice(),
+      **model_line_kw
     )
     self.portal.portal_workflow._jumpToStateFor(invoice_1, 'confirmed')
     self.portal.portal_workflow._jumpToStateFor(invoice_1, 'calculating')
@@ -414,6 +433,33 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         delivery=invoice_line_1.getRelativeUrl(),
         **invoice_movement_kw)
 
+    trade_movement_kw = dict(
+        portal_type='Simulation Movement',
+        price=.196,
+        delivery_ratio=1.,
+        delivery_error=0.,
+        price_currency='currency_module/EUR',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        resource='service_module/slapos_tax',
+        base_application='base_amount/invoicing/taxable',
+        use='trade/tax',
+        causality=['business_process_module/slapos_sale_business_process/tax',
+            'business_process_module/slapos_sale_business_process/trade_model_path',
+            'sale_trade_condition_module/slapos_trade_condition/1'],
+    )
+    trade_model_rule_1 = invoice_movement_1.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_trade_model_simulation_rule'
+    )
+    trade_movement_1 = trade_model_rule_1.newContent(
+        source=invoice_movement_1.getSource(),
+        destination=invoice_movement_1.getDestination(),
+        source_section=invoice_movement_1.getSourceSection(),
+        destination_section=invoice_movement_1.getDestinationSection(),
+        quantity=invoice_movement_1.getTotalPrice(),
+        delivery=invoice_line_1_tax.getRelativeUrl(),
+        **trade_movement_kw
+    )
     invoice_rule_2 = simulation_movement_2.newContent(
         portal_type='Applied Rule',
         specialise='portal_rules/slapos_invoice_simulation_rule')
@@ -424,6 +470,19 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         price=invoice_line_2.getPrice(),
         delivery=invoice_line_2.getRelativeUrl(),
         **invoice_movement_kw)
+    trade_model_rule_2 = invoice_movement_2.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_trade_model_simulation_rule'
+    )
+    trade_movement_2 = trade_model_rule_2.newContent(
+        source=invoice_movement_2.getSource(),
+        destination=invoice_movement_2.getDestination(),
+        source_section=invoice_movement_2.getSourceSection(),
+        destination_section=invoice_movement_2.getDestinationSection(),
+        quantity=invoice_movement_2.getTotalPrice(),
+        delivery=invoice_line_2_tax.getRelativeUrl(),
+        **trade_movement_kw
+    )
     self.tic()
 
     invoice_1.updateCausalityState(solve_automatically=False)
@@ -475,6 +534,45 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       quantity=invoice_movement_1.getTotalPrice(),
     )
 
+    transation_model_rule_1 = invoice_movement_1.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
+    )
+    transation_model_movement_1_rec = transation_model_rule_1.newContent(
+      portal_type='Simulation Movement',
+      causality=['business_process_module/slapos_sale_business_process/account',
+          'business_process_module/slapos_sale_business_process/accounting_tax2'],
+      destination=['account_module/payable'],
+      destination_decision=invoice_movement_1.getDestinationDecision(),
+      destination_section=invoice_movement_1.getDestinationSection(),
+      quantity_unit='unit/piece',
+      resource='currency_module/EUR',
+      source='account_module/receivable',
+      source_section='organisation_module/slapos',
+      specialise='sale_trade_condition_module/slapos_trade_condition',
+      trade_phase='slapos/accounting',
+      price=1.0,
+      quantity=trade_movement_1.getTotalPrice() * -1,
+    )
+    transation_model_movement_1_rec_bis = transation_model_movement_1_rec\
+        .Base_createCloneDocument(batch_mode=1)
+    transation_model_movement_1_sal = transation_model_rule_1.newContent(
+      portal_type='Simulation Movement',
+      causality=['business_process_module/slapos_sale_business_process/account',
+          'business_process_module/slapos_sale_business_process/accounting_tax1'],
+      destination=['account_module/refundable_vat'],
+      destination_decision=invoice_movement_1.getDestinationDecision(),
+      destination_section=invoice_movement_1.getDestinationSection(),
+      quantity_unit='unit/piece',
+      resource='currency_module/EUR',
+      source='account_module/coll_vat',
+      source_section='organisation_module/slapos',
+      specialise='sale_trade_condition_module/slapos_trade_condition',
+      trade_phase='slapos/accounting',
+      price=1.0,
+      quantity=trade_movement_1.getTotalPrice(),
+    )
+
     transaction_rule_2 = invoice_movement_2.newContent(
         portal_type='Applied Rule',
         specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
@@ -513,6 +611,44 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       price=1.0,
       quantity=invoice_movement_2.getTotalPrice(),
     )
+
+    transation_model_rule_2 = invoice_movement_2.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
+    )
+    transation_model_movement_2_rec = transation_model_rule_2.newContent(
+      portal_type='Simulation Movement',
+      causality=['business_process_module/slapos_sale_business_process/account',
+          'business_process_module/slapos_sale_business_process/accounting_tax2'],
+      destination=['account_module/payable'],
+      destination_decision=invoice_movement_2.getDestinationDecision(),
+      destination_section=invoice_movement_2.getDestinationSection(),
+      quantity_unit='unit/piece',
+      resource='currency_module/EUR',
+      source='account_module/receivable',
+      source_section='organisation_module/slapos',
+      specialise='sale_trade_condition_module/slapos_trade_condition',
+      trade_phase='slapos/accounting',
+      price=1.0,
+      quantity=trade_movement_2.getTotalPrice() * -1,
+    )
+    transation_model_movement_2_sal = transation_model_rule_2.newContent(
+      portal_type='Simulation Movement',
+      causality=['business_process_module/slapos_sale_business_process/account',
+          'business_process_module/slapos_sale_business_process/accounting_tax1'],
+      destination=['account_module/refundable_vat'],
+      destination_decision=invoice_movement_2.getDestinationDecision(),
+      destination_section=invoice_movement_2.getDestinationSection(),
+      quantity_unit='unit/piece',
+      resource='currency_module/EUR',
+      source='account_module/coll_vat',
+      source_section='organisation_module/slapos',
+      specialise='sale_trade_condition_module/slapos_trade_condition',
+      trade_phase='slapos/accounting',
+      price=1.0,
+      quantity=trade_movement_2.getTotalPrice(),
+    )
+
     self.tic()
 
     self.portal.portal_deliveries.slapos_sale_invoice_transaction_builder.build(
@@ -525,11 +661,23 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     self.checkSimulationMovement(transaction_movement_2_rec)
     self.checkSimulationMovement(transaction_movement_2_sal)
 
+    self.checkSimulationMovement(transation_model_movement_1_rec)
+    self.checkSimulationMovement(transation_model_movement_1_rec_bis)
+    self.checkSimulationMovement(transation_model_movement_1_sal)
+    self.checkSimulationMovement(transation_model_movement_2_rec)
+    self.checkSimulationMovement(transation_model_movement_2_sal)
+
     transaction_line_1_rec = transaction_movement_1_rec.getDeliveryValue()
     transaction_line_1_rec_bis = transaction_movement_1_rec_bis.getDeliveryValue()
     transaction_line_1_sal = transaction_movement_1_sal.getDeliveryValue()
     transaction_line_2_rec = transaction_movement_2_rec.getDeliveryValue()
     transaction_line_2_sal = transaction_movement_2_sal.getDeliveryValue()
+
+    transation_model_line_1_rec = transation_model_movement_1_rec.getDeliveryValue()
+    transation_model_line_1_rec_bis = transation_model_movement_1_rec_bis.getDeliveryValue()
+    transation_model_line_1_sal = transation_model_movement_1_sal.getDeliveryValue()
+    transation_model_line_2_rec = transation_model_movement_2_rec.getDeliveryValue()
+    transation_model_line_2_sal = transation_model_movement_2_sal.getDeliveryValue()
 
     def checkTransactionLine(simulation_movement, transaction_line,
           category_list):
@@ -547,6 +695,9 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       self.assertFalse(transaction_line.hasStopDate())
       self.assertEqual([], transaction_line.contentValues(
           portal_type='Delivery Cell'))
+      self.assertSameSet([simulation_movement.getRelativeUrl()],
+          transaction_line.getDeliveryRelatedList(
+              portal_type='Simulation Movement'))
 
     checkTransactionLine(transaction_movement_1_rec, transaction_line_1_rec,
         ['source/account_module/receivable',
@@ -565,6 +716,23 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         ['destination/account_module/purchase',
             'source/account_module/receivable'])
 
+    checkTransactionLine(transation_model_movement_1_rec, transation_model_line_1_rec,
+        ['source/account_module/receivable',
+            'destination/account_module/payable'])
+    checkTransactionLine(transation_model_movement_1_rec_bis,
+        transation_model_line_1_rec_bis,
+        ['source/account_module/receivable',
+            'destination/account_module/payable'])
+    checkTransactionLine(transation_model_movement_1_sal, transation_model_line_1_sal,
+        ['destination/account_module/refundable_vat',
+            'source/account_module/coll_vat'])
+    checkTransactionLine(transation_model_movement_2_rec, transation_model_line_2_rec,
+        ['source/account_module/receivable',
+            'destination/account_module/payable'])
+    checkTransactionLine(transation_model_movement_2_sal, transation_model_line_2_sal,
+        ['destination/account_module/refundable_vat',
+            'source/account_module/coll_vat'])
+
     self.assertEqual(invoice_1.getRelativeUrl(),
         transaction_line_1_rec.getParentValue().getRelativeUrl())
     self.assertEqual(invoice_1.getRelativeUrl(),
@@ -575,6 +743,17 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         transaction_line_2_rec.getParentValue().getRelativeUrl())
     self.assertEqual(invoice_2.getRelativeUrl(),
         transaction_line_2_sal.getParentValue().getRelativeUrl())
+
+    self.assertEqual(invoice_1.getRelativeUrl(),
+        transation_model_line_1_rec.getParentValue().getRelativeUrl())
+    self.assertEqual(invoice_1.getRelativeUrl(),
+        transation_model_line_1_rec_bis.getParentValue().getRelativeUrl())
+    self.assertEqual(invoice_1.getRelativeUrl(),
+        transation_model_line_1_sal.getParentValue().getRelativeUrl())
+    self.assertEqual(invoice_2.getRelativeUrl(),
+        transation_model_line_2_rec.getParentValue().getRelativeUrl())
+    self.assertEqual(invoice_2.getRelativeUrl(),
+        transation_model_line_2_sal.getParentValue().getRelativeUrl())
 
     def checkTransactionedInvoice(invoice):
       self.assertEqual('confirmed', invoice.getSimulationState())
@@ -587,10 +766,13 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
 
     transaction_movement_1_rec_bis2 = transaction_movement_1_rec\
         .Base_createCloneDocument(batch_mode=1)
+    transation_model_movement_1_rec_bis2 = transation_model_movement_1_rec\
+        .Base_createCloneDocument(batch_mode=1)
     self.tic()
     self.portal.portal_deliveries.slapos_sale_invoice_transaction_builder.build(
         path='%s/%%' % applied_rule.getPath())
     self.tic()
+
     self.checkSimulationMovement(transaction_movement_1_rec_bis2)
     transaction_line_1_rec_bis2 = transaction_movement_1_rec_bis2\
         .getDeliveryValue()
@@ -600,6 +782,19 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
             'destination/account_module/payable'])
     self.assertEqual(invoice_1.getRelativeUrl(),
         transaction_line_1_rec_bis2.getParentValue().getRelativeUrl())
+
+    self.checkSimulationMovement(transation_model_movement_1_rec_bis2)
+    transation_model_line_1_rec_bis2 = transation_model_movement_1_rec_bis2\
+        .getDeliveryValue()
+    checkTransactionLine(transation_model_movement_1_rec_bis2,
+        transation_model_line_1_rec_bis2,
+        ['source/account_module/receivable',
+            'destination/account_module/payable'])
+    self.assertEqual(invoice_1.getRelativeUrl(),
+        transation_model_line_1_rec_bis2.getParentValue().getRelativeUrl())
+
+    checkTransactionedInvoice(invoice_1)
+    checkTransactionedInvoice(invoice_2)
 
 class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingListBuilder):
   def test(self):
@@ -747,7 +942,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       trade_phase='slapos/tax',
       causality=['business_process_module/slapos_sale_business_process/tax',
           'business_process_module/slapos_sale_business_process/trade_model_path',
-          'causality/sale_trade_condition_module/slapos_trade_condition/1',
+          'sale_trade_condition_module/slapos_trade_condition/1',
       ],
       price=.196,
       quantity=invoice_movement_1.getTotalPrice(),
@@ -766,7 +961,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       trade_phase='slapos/tax',
       causality=['business_process_module/slapos_sale_business_process/tax',
           'business_process_module/slapos_sale_business_process/trade_model_path',
-          'causality/sale_trade_condition_module/slapos_trade_condition/1',
+          'sale_trade_condition_module/slapos_trade_condition/1',
       ],
       price=.196,
       quantity=invoice_movement_2.getTotalPrice(),
@@ -801,6 +996,9 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       self.assertFalse(transaction_line.hasStopDate())
       self.assertEqual([], transaction_line.contentValues(
           portal_type='Delivery Cell'))
+      self.assertSameSet([simulation_movement.getRelativeUrl()],
+          transaction_line.getDeliveryRelatedList(
+              portal_type='Simulation Movement'))
 
     checkModelLine(model_movement_1_tax, model_line_1_tax, [
         'base_application/base_amount/invoicing/taxable',
