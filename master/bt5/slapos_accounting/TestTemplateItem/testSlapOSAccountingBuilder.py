@@ -535,7 +535,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       quantity=invoice_movement_1.getTotalPrice(),
     )
 
-    transation_model_rule_1 = invoice_movement_1.newContent(
+    transation_model_rule_1 = trade_movement_1.newContent(
         portal_type='Applied Rule',
         specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
     )
@@ -614,7 +614,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       quantity=invoice_movement_2.getTotalPrice(),
     )
 
-    transation_model_rule_2 = invoice_movement_2.newContent(
+    transation_model_rule_2 = trade_movement_2.newContent(
         portal_type='Applied Rule',
         specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
     )
