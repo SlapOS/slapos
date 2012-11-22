@@ -1045,7 +1045,375 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     self.assertEqual(invoice_1.getRelativeUrl(),
         model_line_1_tax_bis.getParentValue().getRelativeUrl())
 
-class TestSlapOSPaymentTransactionBuilder(testSlapOSMixin):
+class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
   def test(self):
-    raise NotImplementedError
+    hosting_subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    applied_rule = self.portal.portal_simulation.newContent(
+      portal_type='Applied Rule',
+      causality=hosting_subscription.getRelativeUrl(),
+      specialise='portal_rules/slapos_subscription_item_rule'
+    )
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    simulation_movement_1 = applied_rule.newContent(
+        portal_type='Simulation Movement'
+    )
+    simulation_movement_2 = applied_rule.newContent(
+        portal_type='Simulation Movement'
+    )
 
+    invoice_rule_1 = simulation_movement_1.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_simulation_rule')
+    invoice_movement_1 = invoice_rule_1.newContent(
+        portal_type='Simulation Movement'
+    )
+    trade_model_rule_1 = invoice_movement_1.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_trade_model_simulation_rule'
+    )
+    trade_movement_1 = trade_model_rule_1.newContent(
+        portal_type='Simulation Movement'
+    )
+    invoice_rule_2 = simulation_movement_2.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_simulation_rule')
+    invoice_movement_2 = invoice_rule_2.newContent(
+        portal_type='Simulation Movement'
+    )
+    trade_model_rule_2 = invoice_movement_2.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_trade_model_simulation_rule'
+    )
+    trade_movement_2 = trade_model_rule_2.newContent(
+        portal_type='Simulation Movement'
+    )
+    transaction_rule_1 = invoice_movement_1.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
+    )
+    invoice_1 = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction')
+    transaction_movement_1_rec = transaction_rule_1.newContent(
+      portal_type='Simulation Movement',
+      delivery=invoice_1.newContent(
+          portal_type='Sale Invoice Transaction Line').getRelativeUrl()
+    )
+    transaction_movement_1_sal = transaction_rule_1.newContent(
+      portal_type='Simulation Movement',
+    )
+
+    transation_model_rule_1 = trade_movement_1.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
+    )
+    transation_model_movement_1_rec = transation_model_rule_1.newContent(
+        portal_type='Simulation Movement',
+        delivery=invoice_1.newContent(
+          portal_type='Sale Invoice Transaction Line').getRelativeUrl()
+    )
+    transation_model_movement_1_sal = transation_model_rule_1.newContent(
+      portal_type='Simulation Movement',
+    )
+
+    transaction_rule_2 = invoice_movement_2.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
+    )
+    invoice_2 = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction')
+    transaction_movement_2_rec = transaction_rule_2.newContent(
+      portal_type='Simulation Movement',
+      delivery=invoice_2.newContent(
+          portal_type='Sale Invoice Transaction Line').getRelativeUrl()
+    )
+    transaction_movement_2_sal = transaction_rule_2.newContent(
+      portal_type='Simulation Movement',
+    )
+
+    transation_model_rule_2 = invoice_movement_2.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
+    )
+    transation_model_movement_2_rec = transation_model_rule_2.newContent(
+        portal_type='Simulation Movement',
+        delivery=invoice_2.newContent(
+          portal_type='Sale Invoice Transaction Line').getRelativeUrl()
+    )
+    transation_model_movement_2_sal = transation_model_rule_2.newContent(
+      portal_type='Simulation Movement',
+    )
+
+    # payment part of tree
+
+    payment_rule_1_rec = transaction_movement_1_rec.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_payment_simulation_rule')
+    payment_movement_1_rec_bank = payment_rule_1_rec.newContent(
+        portal_type='Simulation Movement',
+        price=1.0,
+        quantity=-10.0,
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/01/10'),
+        causality=['business_process_module/slapos_sale_business_process/pay',
+            'business_process_module/slapos_sale_business_process/payment_debit_path'],
+        destination='account_module/bank',
+        destination_section=person.getRelativeUrl(),
+        quantity_unit='unit/piece',
+        resource='currency_module/EUR',
+        source='account_module/bank',
+        source_payment='organisation_module/slapos/bank_account',
+        source_section='organisation_module/slapos',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        trade_phase='slapos/payment'
+    )
+    payment_movement_1_rec_rec = payment_rule_1_rec.newContent(
+        portal_type='Simulation Movement',
+        price=1.0,
+        quantity=10.0,
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/01/10'),
+        causality=['business_process_module/slapos_sale_business_process/pay',
+            'business_process_module/slapos_sale_business_process/payment_credit_path'],
+        destination='account_module/payable',
+        destination_section=person.getRelativeUrl(),
+        quantity_unit='unit/piece',
+        resource='currency_module/EUR',
+        source='account_module/receivable',
+        source_payment='organisation_module/slapos/bank_account',
+        source_section='organisation_module/slapos',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        trade_phase='slapos/payment'
+    )
+    payment_rule_model_1 = transation_model_movement_1_rec.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_payment_simulation_rule')
+    payment_model_movement_1_rec_bank = payment_rule_model_1.newContent(
+        portal_type='Simulation Movement',
+        price=1.0,
+        quantity=-10.0,
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/01/10'),
+        causality=['business_process_module/slapos_sale_business_process/pay',
+            'business_process_module/slapos_sale_business_process/payment_debit_path'],
+        destination='account_module/bank',
+        destination_section=person.getRelativeUrl(),
+        quantity_unit='unit/piece',
+        resource='currency_module/EUR',
+        source='account_module/bank',
+        source_payment='organisation_module/slapos/bank_account',
+        source_section='organisation_module/slapos',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        trade_phase='slapos/payment'
+    )
+    payment_model_movement_1_rec_rec = payment_rule_1_rec.newContent(
+        portal_type='Simulation Movement',
+        price=1.0,
+        quantity=10.0,
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/01/10'),
+        causality=['business_process_module/slapos_sale_business_process/pay',
+            'business_process_module/slapos_sale_business_process/payment_credit_path'],
+        destination='account_module/payable',
+        destination_section=person.getRelativeUrl(),
+        quantity_unit='unit/piece',
+        resource='currency_module/EUR',
+        source='account_module/receivable',
+        source_payment='organisation_module/slapos/bank_account',
+        source_section='organisation_module/slapos',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        trade_phase='slapos/payment'
+    )
+    payment_rule_2_rec = transaction_movement_2_rec.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_payment_simulation_rule')
+    payment_movement_2_rec_bank = payment_rule_2_rec.newContent(
+        portal_type='Simulation Movement',
+        price=1.0,
+        quantity=-10.0,
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/01/10'),
+        causality=['business_process_module/slapos_sale_business_process/pay',
+            'business_process_module/slapos_sale_business_process/payment_debit_path'],
+        destination='account_module/bank',
+        destination_section=person.getRelativeUrl(),
+        quantity_unit='unit/piece',
+        resource='currency_module/EUR',
+        source='account_module/bank',
+        source_payment='organisation_module/slapos/bank_account',
+        source_section='organisation_module/slapos',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        trade_phase='slapos/payment'
+    )
+    payment_movement_2_rec_rec = payment_rule_2_rec.newContent(
+        portal_type='Simulation Movement',
+        price=1.0,
+        quantity=10.0,
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/01/10'),
+        causality=['business_process_module/slapos_sale_business_process/pay',
+            'business_process_module/slapos_sale_business_process/payment_credit_path'],
+        destination='account_module/payable',
+        destination_section=person.getRelativeUrl(),
+        quantity_unit='unit/piece',
+        resource='currency_module/EUR',
+        source='account_module/receivable',
+        source_payment='organisation_module/slapos/bank_account',
+        source_section='organisation_module/slapos',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        trade_phase='slapos/payment'
+    )
+    payment_rule_model_2 = transation_model_movement_2_rec.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_payment_simulation_rule')
+    payment_model_movement_2_rec_bank = payment_rule_model_2.newContent(
+        portal_type='Simulation Movement',
+        price=1.0,
+        quantity=-10.0,
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/01/10'),
+        causality=['business_process_module/slapos_sale_business_process/pay',
+            'business_process_module/slapos_sale_business_process/payment_debit_path'],
+        destination='account_module/bank',
+        destination_section=person.getRelativeUrl(),
+        quantity_unit='unit/piece',
+        resource='currency_module/EUR',
+        source='account_module/bank',
+        source_payment='organisation_module/slapos/bank_account',
+        source_section='organisation_module/slapos',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        trade_phase='slapos/payment'
+    )
+    payment_model_movement_2_rec_rec = payment_rule_2_rec.newContent(
+        portal_type='Simulation Movement',
+        price=1.0,
+        quantity=10.0,
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/01/10'),
+        causality=['business_process_module/slapos_sale_business_process/pay',
+            'business_process_module/slapos_sale_business_process/payment_credit_path'],
+        destination='account_module/payable',
+        destination_section=person.getRelativeUrl(),
+        quantity_unit='unit/piece',
+        resource='currency_module/EUR',
+        source='account_module/receivable',
+        source_payment='organisation_module/slapos/bank_account',
+        source_section='organisation_module/slapos',
+        specialise='sale_trade_condition_module/slapos_trade_condition',
+        trade_phase='slapos/payment'
+    )
+    self.tic()
+    self.portal.portal_deliveries.slapos_payment_transaction_builder.build(
+        path='%s/%%' % applied_rule.getPath())
+    self.tic()
+    self.checkSimulationMovement(payment_movement_1_rec_bank)
+    self.checkSimulationMovement(payment_movement_1_rec_rec)
+    self.checkSimulationMovement(payment_movement_2_rec_bank)
+    self.checkSimulationMovement(payment_movement_2_rec_rec)
+    self.checkSimulationMovement(payment_model_movement_1_rec_bank)
+    self.checkSimulationMovement(payment_model_movement_1_rec_rec)
+    self.checkSimulationMovement(payment_model_movement_2_rec_bank)
+    self.checkSimulationMovement(payment_model_movement_2_rec_rec)
+
+    transaction_line_1_rec_bank = payment_movement_1_rec_bank.getDeliveryValue()
+    transaction_line_1_rec_rec = payment_movement_1_rec_rec.getDeliveryValue()
+    transaction_line_2_rec_bank = payment_movement_2_rec_bank.getDeliveryValue()
+    transaction_line_2_rec_rec = payment_movement_2_rec_rec.getDeliveryValue()
+
+    transaction_model_line_1_rec_bank = payment_model_movement_1_rec_bank.getDeliveryValue()
+    transaction_model_line_1_rec_rec = payment_model_movement_1_rec_rec.getDeliveryValue()
+    transaction_model_line_2_rec_bank = payment_model_movement_2_rec_bank.getDeliveryValue()
+    transaction_model_line_2_rec_rec = payment_model_movement_2_rec_rec.getDeliveryValue()
+
+    def checkTransactionLine(simulation_movement, transaction_line,
+          category_list):
+      self.assertEqual('Accounting Transaction Line',
+          transaction_line.getPortalType())
+      self.assertSameSet(category_list, transaction_line.getCategoryList())
+      self.assertEqual(simulation_movement.getQuantity(),
+          transaction_line.getQuantity())
+      self.assertEqual(simulation_movement.getPrice(),
+          transaction_line.getPrice())
+      self.assertFalse(transaction_line.hasStartDate())
+      self.assertFalse(transaction_line.hasStopDate())
+      self.assertEqual([], transaction_line.contentValues(
+          portal_type='Delivery Cell'))
+      self.assertSameSet([simulation_movement.getRelativeUrl()],
+          transaction_line.getDeliveryRelatedList(
+              portal_type='Simulation Movement'))
+      self.assertFalse(transaction_line.hasStartDate())
+      self.assertFalse(transaction_line.hasStopDate())
+
+    checkTransactionLine(payment_movement_1_rec_bank, transaction_line_1_rec_bank,
+        ['destination/account_module/bank',
+         'source/account_module/bank',
+         'source_payment/organisation_module/slapos/bank_account'])
+    checkTransactionLine(payment_movement_1_rec_rec, transaction_line_1_rec_rec,
+        ['destination/account_module/payable',
+         'source/account_module/receivable',
+         'source_payment/organisation_module/slapos/bank_account'])
+    checkTransactionLine(payment_movement_2_rec_bank, transaction_line_2_rec_bank,
+        ['destination/account_module/bank',
+         'source/account_module/bank',
+         'source_payment/organisation_module/slapos/bank_account'])
+    checkTransactionLine(payment_movement_2_rec_rec, transaction_line_2_rec_rec,
+        ['destination/account_module/payable',
+         'source/account_module/receivable',
+         'source_payment/organisation_module/slapos/bank_account'])
+
+    checkTransactionLine(payment_model_movement_1_rec_bank, transaction_model_line_1_rec_bank,
+        ['destination/account_module/bank',
+         'source/account_module/bank',
+         'source_payment/organisation_module/slapos/bank_account'])
+    checkTransactionLine(payment_model_movement_1_rec_rec, transaction_model_line_1_rec_rec,
+        ['destination/account_module/payable',
+         'source/account_module/receivable',
+         'source_payment/organisation_module/slapos/bank_account'])
+    checkTransactionLine(payment_model_movement_2_rec_bank, transaction_model_line_2_rec_bank,
+        ['destination/account_module/bank',
+         'source/account_module/bank',
+         'source_payment/organisation_module/slapos/bank_account'])
+    checkTransactionLine(payment_model_movement_2_rec_rec, transaction_model_line_2_rec_rec,
+        ['destination/account_module/payable',
+         'source/account_module/receivable',
+         'source_payment/organisation_module/slapos/bank_account'])
+
+    self.assertEqual(transaction_line_1_rec_bank.getParentValue(),
+        transaction_model_line_1_rec_bank.getParentValue())
+    self.assertEqual(transaction_line_2_rec_bank.getParentValue(),
+        transaction_model_line_2_rec_bank.getParentValue())
+    self.assertEqual(transaction_line_1_rec_bank.getParentValue(),
+        transaction_line_1_rec_rec.getParentValue())
+    self.assertEqual(transaction_line_2_rec_bank.getParentValue(),
+        transaction_line_2_rec_rec.getParentValue())
+    self.assertEqual(transaction_model_line_1_rec_bank.getParentValue(),
+        transaction_model_line_1_rec_rec.getParentValue())
+    self.assertEqual(transaction_model_line_2_rec_bank.getParentValue(),
+        transaction_model_line_2_rec_rec.getParentValue())
+
+    self.assertNotEqual(transaction_line_1_rec_bank.getParentValue(),
+        transaction_line_2_rec_bank.getParentValue())
+    self.assertNotEqual(transaction_model_line_1_rec_bank.getParentValue(),
+        transaction_model_line_2_rec_bank.getParentValue())
+
+    def checkPayment(simulation_movement, payment):
+      category_list = ['resource/currency_module/EUR',
+         'source_section/organisation_module/slapos',
+         'specialise/sale_trade_condition_module/slapos_trade_condition']
+      category_list.append('causality/%s' % simulation_movement.getParentValue()\
+            .getParentValue().getDeliveryValue().getParentValue().getRelativeUrl())
+      category_list.append('destination_section/%s' %
+          simulation_movement.getDestinationSection())
+      self.assertSameSet(category_list, payment.getCategoryList())
+      self.assertEqual(simulation_movement.getStartDate(),
+          payment.getStartDate())
+      self.assertEqual(simulation_movement.getStopDate(),
+          payment.getStopDate())
+      self.assertEqual('delivered', payment.getSimulationState())
+      self.assertEqual('building', payment.getCausalityState())
+      payment.updateCausalityState(solve_automatically=False)
+      self.assertEqual('solved', payment.getCausalityState())
+
+    checkPayment(payment_movement_1_rec_bank, transaction_line_1_rec_bank.getParentValue())
+    checkPayment(payment_movement_2_rec_bank, transaction_line_2_rec_bank.getParentValue())
