@@ -95,7 +95,7 @@ class GenericBaseRecipe(object):
 
   def addLineToFile(self, filepath, line, encoding='utf8'):
     """Append a single line to a text file, if the line does not exist yet.
-    
+
     line must be unicode."""
 
     try:
@@ -127,16 +127,18 @@ class GenericBaseRecipe(object):
       path, arguments=arguments)[0]
     return script
 
-  def createWrapper(self, name, command, parameters):
+  def createWrapper(self, name, command, parameters, comments=[]):
     """
     Creates a very simple (one command) shell script for process replacement.
     Takes care of quoting.
     """
 
-    lines = [
-            '#!/bin/sh',
-            'exec %s' % shlex.quote(command)
-            ]
+    lines = [ '#!/bin/sh' ]
+
+    for comment in comments:
+      lines.append('# %s' % comment)
+
+    lines.append('exec %s' % shlex.quote(command))
 
     for param in parameters:
       if len(lines[-1]) < 30:

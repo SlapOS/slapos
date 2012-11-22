@@ -39,7 +39,11 @@ class Recipe(GenericBaseRecipe):
                                    '--feeds', options['feeds'],
                                    '--equeue-socket', options['equeue-socket'],
                                    options['host'], options['port']
-                                   ])
+                                   ],
+                                comments=[
+                                    '',
+                                    'Upon receiving a notification, execute the callback(s).',
+                                    ''])
     return [script]
 
 
@@ -77,7 +81,11 @@ class Notify(GenericBaseRecipe):
 
     return self.createWrapper(name=wrapper,
                               command=notifier_binary,
-                              parameters=parameters)
+                              parameters=parameters,
+                              comments=[
+                                  '',
+                                  'Call an executable and send notification(s).',
+                                  ''])
 
 
   def install(self):
