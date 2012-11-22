@@ -607,6 +607,18 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
+    # update invoices with their tax & discount
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # update invoices with their tax & discount transaction lines
+    self.stepCallSlaposTriggerBuildAlarm()
+    self.tic()
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
     # deliver the invoices and solve them again
     self.stepCallSlaposDeliverConfirmedSaleInvoiceTransactionAlarm()
     self.tic()
