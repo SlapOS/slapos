@@ -798,7 +798,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         transation_model_line_1_rec_bis2.getParentValue().getRelativeUrl())
 
     checkTransactionedInvoice(invoice_1)
-    checkTransactionedInvoice(invoice_2)
+    self.assertEqual('solved', invoice_2.getCausalityState())
+    self.assertEqual('confirmed', invoice_2.getSimulationState())
 
 class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingListBuilder):
   def test(self):
