@@ -516,6 +516,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     )
     transaction_movement_1_rec_bis = transaction_movement_1_rec\
         .Base_createCloneDocument(batch_mode=1)
+    transaction_movement_1_rec_bis.edit(delivery=None, delivery_ratio=1.0)
     transaction_movement_1_sal = transaction_rule_1.newContent(
       portal_type='Simulation Movement',
       causality=['business_process_module/slapos_sale_business_process/account',
@@ -556,6 +557,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     )
     transation_model_movement_1_rec_bis = transation_model_movement_1_rec\
         .Base_createCloneDocument(batch_mode=1)
+    transation_model_movement_1_rec_bis.edit(delivery=None, delivery_ratio=1.0)
     transation_model_movement_1_sal = transation_model_rule_1.newContent(
       portal_type='Simulation Movement',
       causality=['business_process_module/slapos_sale_business_process/account',
@@ -766,8 +768,10 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
 
     transaction_movement_1_rec_bis2 = transaction_movement_1_rec\
         .Base_createCloneDocument(batch_mode=1)
+    transaction_movement_1_rec_bis2.edit(delivery=None, delivery_ratio=1.0)
     transation_model_movement_1_rec_bis2 = transation_model_movement_1_rec\
         .Base_createCloneDocument(batch_mode=1)
+    transation_model_movement_1_rec_bis2.edit(delivery=None, delivery_ratio=1.0)
     self.tic()
     self.portal.portal_deliveries.slapos_sale_invoice_transaction_builder.build(
         path='%s/%%' % applied_rule.getPath())
@@ -1025,6 +1029,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
 
     model_movement_1_tax_bis = model_movement_1_tax.Base_createCloneDocument(
         batch_mode=1)
+    model_movement_1_tax_bis.edit(delivery=None, delivery_ratio=1.0)
     self.tic()
     self.portal.portal_deliveries\
         .slapos_sale_invoice_transaction_trade_model_builder.build(
