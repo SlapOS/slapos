@@ -1082,13 +1082,6 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
     invoice_movement_2 = invoice_rule_2.newContent(
         portal_type='Simulation Movement'
     )
-    trade_model_rule_2 = invoice_movement_2.newContent(
-        portal_type='Applied Rule',
-        specialise='portal_rules/slapos_trade_model_simulation_rule'
-    )
-    trade_movement_2 = trade_model_rule_2.newContent(
-        portal_type='Simulation Movement'
-    )
     transaction_rule_1 = invoice_movement_1.newContent(
         portal_type='Applied Rule',
         specialise='portal_rules/slapos_invoice_transaction_simulation_rule'
@@ -1100,9 +1093,6 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
       delivery=invoice_1.newContent(
           portal_type='Sale Invoice Transaction Line').getRelativeUrl()
     )
-    transaction_movement_1_sal = transaction_rule_1.newContent(
-      portal_type='Simulation Movement',
-    )
 
     transation_model_rule_1 = trade_movement_1.newContent(
         portal_type='Applied Rule',
@@ -1112,9 +1102,6 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         portal_type='Simulation Movement',
         delivery=invoice_1.newContent(
           portal_type='Sale Invoice Transaction Line').getRelativeUrl()
-    )
-    transation_model_movement_1_sal = transation_model_rule_1.newContent(
-      portal_type='Simulation Movement',
     )
 
     transaction_rule_2 = invoice_movement_2.newContent(
@@ -1128,9 +1115,6 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
       delivery=invoice_2.newContent(
           portal_type='Sale Invoice Transaction Line').getRelativeUrl()
     )
-    transaction_movement_2_sal = transaction_rule_2.newContent(
-      portal_type='Simulation Movement',
-    )
 
     transation_model_rule_2 = invoice_movement_2.newContent(
         portal_type='Applied Rule',
@@ -1140,9 +1124,6 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         portal_type='Simulation Movement',
         delivery=invoice_2.newContent(
           portal_type='Sale Invoice Transaction Line').getRelativeUrl()
-    )
-    transation_model_movement_2_sal = transation_model_rule_2.newContent(
-      portal_type='Simulation Movement',
     )
 
     # payment part of tree
