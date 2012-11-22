@@ -643,4 +643,3 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
           default_destination_section_uid=person.getUid()):
         self.assertHostingSubscriptionSimulationCoverage(
             subscription.getObject())
-    self.assertTrue(False)
