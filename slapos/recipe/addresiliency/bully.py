@@ -134,6 +134,7 @@ class ResilientInstance(object):
         if self.participant_id != new_id:
             self.halter_id = new_id
             self.participant_id = new_id 
+        log.debug('I am {} of {}'.format(self.participant_id, self.total_participants))
 
     ## Needs to be changed to use the master
     def aliveManagement(self):
@@ -251,6 +252,7 @@ class Wrapper(object):
         params = open(self.confpath, 'r').readlines()
         self.ips = params[0].split()
         self.participant_id = int(params[1])
+        log.debug('I am {} of {}'.format(self.participant_id, self.ips))
 
     def start(self):
         self.getConnectionInfo()

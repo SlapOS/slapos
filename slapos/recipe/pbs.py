@@ -150,8 +150,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
       parameters.extend(['--restore-as-of', 'now'])
       parameters.append('--force')
       parameters.extend([local_directory, remote_directory])
+      comments = ['','Push data to a PBS *-import instance.','']
     else:
       parameters.extend([remote_directory, local_directory])
+      comments = ['','Pull data from a PBS *-export instance.','']
 
     wrapper_basepath = os.path.join(self.options['wrappers-directory'],
                                     url_hash)
@@ -163,7 +165,8 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
 
     wrapper = self.createWrapper(name=wrapper_path,
                                  command=self.options['rdiffbackup-binary'],
-                                 parameters=parameters)
+                                 parameters=parameters,
+                                 comments = comments)
     path_list.append(wrapper)
 
     if 'notify' in entry:
