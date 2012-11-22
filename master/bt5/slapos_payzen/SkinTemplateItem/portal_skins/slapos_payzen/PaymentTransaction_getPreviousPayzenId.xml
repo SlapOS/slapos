@@ -52,6 +52,8 @@
             <key> <string>_body</string> </key>
             <value> <string>from DateTime import DateTime\n
 transaction = context\n
+return None\n
+\n
 portal = transaction.getPortalObject()\n
 integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
 state_list = portal.getPortalCurrentInventoryStateList()\n

@@ -51,24 +51,21 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-      portal_type="Payment Transaction", \n
-      simulation_state=["confirmed"],\n
-      causality_state=["solved"],\n
-      method_id=\'PaymentTransaction_startExternalPayment\',\n
-      packet_size=1, # just one to minimise errors\n
-      activate_kw={\'tag\': tag}\n
-      )\n
-context.activate(after_tag=tag).getId()\n
+integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
+\n
+relative_url = context.getRelativeUrl()\n
+# Only EUR is supported for now\n
+assert relative_url == \'currency_module/EUR\'\n
+return integration_site.getMappingFromCategory(\'resource/%s\' % relative_url).split(\'/\', 1)[-1]\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_updatePayzenConfirmedPaymentTransaction</string> </value>
+            <value> <string>Currency_getIntegrationMapping</string> </value>
         </item>
       </dictionary>
     </pickle>

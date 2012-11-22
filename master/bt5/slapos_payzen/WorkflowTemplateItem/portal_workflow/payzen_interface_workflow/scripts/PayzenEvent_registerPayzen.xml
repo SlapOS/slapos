@@ -55,6 +55,8 @@
 In order to not transmit sensitive information the registration is done by looking the newest\n
 payzen related transaction for destination_section and doing its duplicate"""\n
 \n
+raise NotImplementedError\n
+\n
 from DateTime import DateTime\n
 payzen_event = state_change[\'object\']\n
 transaction = payzen_event.getDestinationValue()\n
@@ -89,7 +91,7 @@ else:\n
 # do causality mapping in integration_site between transaction.getRelativeUrl and today + transaction_id\n
 payzen_dict = {}\n
 payzen_dict.update(\n
-  devise=integration_site.getMappingFromCategory(\'resource/currency_module/%s\' % transaction.getResourceReference()).split(\'/\')[-1],\n
+  devise=transaction.getResourceValue().Currency_getIntegrationMapping(),\n
   amount=str(int(round((transaction.PaymentTransaction_getTotalPayablePrice() * -100), 0))),\n
   presentationDate=transaction.getStartDate().toZone(\'UTC\').asdatetime(),\n
   newTransactionId=transaction_id,\n
