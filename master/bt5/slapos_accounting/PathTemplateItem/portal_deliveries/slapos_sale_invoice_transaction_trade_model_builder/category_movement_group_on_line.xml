@@ -41,11 +41,6 @@
                 <string>quantity_unit</string>
                 <string>base_contribution</string>
                 <string>base_application</string>
-                <string>source_account</string>
-                <string>destination_account</string>
-                <string>source_payment</string>
-                <string>destination_payment</string>
-                <string>incoterm</string>
               </tuple>
             </value>
         </item>
