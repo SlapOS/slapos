@@ -1168,6 +1168,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         specialise='sale_trade_condition_module/slapos_trade_condition',
         trade_phase='slapos/payment'
     )
+    payment_movement_1_rec_bank_bis = payment_movement_1_rec_bank.Base_createCloneDocument(
+        batch_mode=1)
     payment_movement_1_rec_rec = payment_rule_1_rec.newContent(
         portal_type='Simulation Movement',
         price=1.0,
@@ -1308,6 +1310,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         path='%s/%%' % applied_rule.getPath())
     self.tic()
     self.checkSimulationMovement(payment_movement_1_rec_bank)
+    self.checkSimulationMovement(payment_movement_1_rec_bank_bis)
     self.checkSimulationMovement(payment_movement_1_rec_rec)
     self.checkSimulationMovement(payment_movement_2_rec_bank)
     self.checkSimulationMovement(payment_movement_2_rec_rec)
@@ -1317,6 +1320,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
     self.checkSimulationMovement(payment_model_movement_2_rec_rec)
 
     transaction_line_1_rec_bank = payment_movement_1_rec_bank.getDeliveryValue()
+    transaction_line_1_rec_bank_bis = payment_movement_1_rec_bank_bis.getDeliveryValue()
     transaction_line_1_rec_rec = payment_movement_1_rec_rec.getDeliveryValue()
     transaction_line_2_rec_bank = payment_movement_2_rec_bank.getDeliveryValue()
     transaction_line_2_rec_rec = payment_movement_2_rec_rec.getDeliveryValue()
@@ -1346,6 +1350,10 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
       self.assertFalse(transaction_line.hasStopDate())
 
     checkTransactionLine(payment_movement_1_rec_bank, transaction_line_1_rec_bank,
+        ['destination/account_module/bank',
+         'source/account_module/bank',
+         'source_payment/organisation_module/slapos/bank_account'])
+    checkTransactionLine(payment_movement_1_rec_bank_bis, transaction_line_1_rec_bank_bis,
         ['destination/account_module/bank',
          'source/account_module/bank',
          'source_payment/organisation_module/slapos/bank_account'])
@@ -1380,6 +1388,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
          'source_payment/organisation_module/slapos/bank_account'])
 
     self.assertEqual(transaction_line_1_rec_bank.getParentValue(),
+        transaction_model_line_1_rec_bank.getParentValue())
+    self.assertEqual(transaction_line_1_rec_bank_bis.getParentValue(),
         transaction_model_line_1_rec_bank.getParentValue())
     self.assertEqual(transaction_line_2_rec_bank.getParentValue(),
         transaction_model_line_2_rec_bank.getParentValue())
