@@ -1,0 +1,122 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from Products.ERP5Type.Document import newTempSimulationMovement\n
+\n
+portal = context.getPortalObject()\n
+select_dict = {\'causality_related_uid\': None}\n
+\n
+select_kw = kwargs.copy()\n
+select_kw.pop(\'portal_type\', None)\n
+select_kw.pop(\'delivery_relative_url_list\', None)\n
+select_kw.update(\n
+  portal_type=\'Sale Invoice Transaction\',\n
+  simulation_state=\'stopped\',\n
+  limit=10, # do only some in one shot\n
+  select_dict=select_dict,\n
+  left_join_list=select_dict.keys(),\n
+  causality_related_uid=None\n
+)\n
+\n
+default_source_uid=portal.restrictedTraverse(\'account_module/receivable\').getUid()\n
+movement_list = []\n
+id = 1\n
+for invoice in portal.portal_catalog(**select_kw):\n
+  invoice.getObject().serialize() # in order to avoid selection in same transaction\n
+  quantity = 0.\n
+  for movement in invoice.searchFolder(portal_type=\'Sale Invoice Transaction Line\',\n
+    default_source_uid=default_source_uid):\n
+    quantity += movement.getQuantity()\n
+  temp_movement_kw = dict(\n
+    causality=invoice.getRelativeUrl(),\n
+    source_section=invoice.getSourceSection(),\n
+    destination_section=invoice.getDestinationSection(),\n
+    resource=invoice.getResource(),\n
+    price_currency=invoice.getResource(),\n
+    start_date=invoice.getStartDate(),\n
+    stop_date=invoice.getStopDate(),\n
+    specialise=invoice.getSpecialise(),\n
+    source_payment=\'organisation_module/slapos/bank_account\', # the other place defnied: business process\n
+  )\n
+  temp_movement_rec = newTempSimulationMovement(\n
+    portal, str(id),\n
+    quantity=-1 * quantity,\n
+    source=\'account_module/receivable\',\n
+    destination=\'account_module/payable\',\n
+    **temp_movement_kw\n
+  )\n
+  id += 1\n
+  temp_movement_bank = newTempSimulationMovement(\n
+    portal, str(id),\n
+    quantity=1 * quantity,\n
+    source=\'account_module/bank\',\n
+    destination=\'account_module/bank\',\n
+    **temp_movement_kw\n
+  )\n
+  id += 1\n
+  movement_list.extend([temp_movement_rec, temp_movement_bank])\n
+\n
+return movement_list\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>*args, **kwargs</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>OrderBuilder_generateUnrelatedInvoiceList</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
