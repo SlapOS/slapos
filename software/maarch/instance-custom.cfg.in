@@ -1,7 +1,7 @@
 [buildout]
 
 [maarch-configuration]
-recipe = slapos.cookbook:maarch.configuration
+recipe = slapos.recipe.maarch:default
 htdocs = $${apache-php:htdocs}
 db_host = $${postgres-urlparse:host}
 db_port = $${postgres-urlparse:port}
