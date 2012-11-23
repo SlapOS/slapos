@@ -150,7 +150,7 @@ class Recipe(object):
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        if self.instance.getComputerId() is not None:
+        if self.instance._computer_id is not None:
           status = self.instance.getState()
         else:
           status = 'not ready yet'
@@ -176,7 +176,7 @@ class RequestOptional(Recipe):
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        if self.instance.getComputerId() is not None:
+        if self.instance._computer_id is not None:
           status = self.instance.getState()
         else:
           status = 'not ready yet'
