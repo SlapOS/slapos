@@ -244,6 +244,7 @@ port = $${postgres-instance:port}
 [urls]
 recipe = slapos.cookbook:publish
 url = $${postgres-instance:url}
+ip = $${slap-network-information:global-ipv6}
 
 #----------------
 #--
