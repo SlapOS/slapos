@@ -242,7 +242,7 @@ port = $${postgres-instance:port}
 #-- Publish instance parameters.
 
 [urls]
-recipe = slapos.cookbook:publishurl
+recipe = slapos.cookbook:publish
 url = $${postgres-instance:url}
 
 #----------------
