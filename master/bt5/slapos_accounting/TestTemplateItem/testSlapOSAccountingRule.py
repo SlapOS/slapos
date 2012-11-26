@@ -518,10 +518,9 @@ class TestHostingSubscriptionSimulation(testSlapOSMixin):
           return 'delivered'
         SimulationMovement.getSimulationState = getSimulationState
         simulation_movement.expand(expand_policy='immediate')
-        applied_rule_list_level_2 = [q.getSpecialiseReference() for q in
-            simulation_movement.contentValues(portal_type='Applied Rule')]
-        self.assertSameSet(['default_invoicing_rule'],
-            applied_rule_list_level_2)
+        applied_rule_list_level_2 = simulation_movement.contentValues(
+            portal_type='Applied Rule')
+        self.assertSameSet([], applied_rule_list_level_2)
       finally:
         SimulationMovement.getSimulationState = SimulationMovement\
             .original_getSimulationState
