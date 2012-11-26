@@ -177,7 +177,7 @@ dbname = db
 ip = $${slap-network-information:local-ipv4}
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${rootdirectory:var}/data
-backup-directory = $${basedirectory:backup}
+backup-directory = $${basedirectory:backup}/postgres
 services = $${basedirectory:services}
 bin = $${rootdirectory:bin}
 

@@ -209,10 +209,9 @@ class ExportRecipe(GenericBaseRecipe):
 
         ret = []
 
-        if not os.path.exists(pgdata):
-            wrapper = self.options['wrapper']
-            self.createBackupScript(wrapper)
-            ret.append(wrapper)
+        wrapper = self.options['wrapper']
+        self.createBackupScript(wrapper)
+        ret.append(wrapper)
 
         return ret
 
@@ -224,7 +223,10 @@ class ExportRecipe(GenericBaseRecipe):
         content = textwrap.dedent("""\
                 #!/bin/sh
                 umask 077
-                %(bin)s/pg_dump -h %(pgdata-directory)s -f %(backup-directory)s/backup.sql %(dbname)s
+                %(bin)s/pg_dump \\
+                        -h %(pgdata-directory)s \\
+                        -f %(backup-directory)s/backup.sql \\
+                        %(dbname)s
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
 
