@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Sale Packing List" module="erp5.portal_type"/>
+      <global name="Business Link" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -14,6 +14,7 @@
                 <string>Assignor</string>
                 <string>Associate</string>
                 <string>Auditor</string>
+                <string>Author</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
@@ -26,18 +27,7 @@
                 <string>Assignee</string>
                 <string>Assignor</string>
                 <string>Associate</string>
-                <string>Manager</string>
-                <string>Owner</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>_Delete_objects_Permission</string> </key>
-            <value>
-              <tuple>
-                <string>Assignee</string>
-                <string>Assignor</string>
-                <string>Associate</string>
+                <string>Author</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
@@ -50,6 +40,7 @@
                 <string>Assignee</string>
                 <string>Assignor</string>
                 <string>Associate</string>
+                <string>Author</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
@@ -63,32 +54,44 @@
                 <string>Assignor</string>
                 <string>Associate</string>
                 <string>Auditor</string>
+                <string>Author</string>
                 <string>Manager</string>
                 <string>Owner</string>
               </tuple>
             </value>
         </item>
         <item>
+            <key> <string>_identity_criterion</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAI=</string> </persistent>
+            </value>
+        </item>
+        <item>
+            <key> <string>_range_criterion</string> </key>
+            <value>
+              <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+            </value>
+        </item>
+        <item>
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>source_section/organisation_module/slapos</string>
-                <string>source/organisation_module/slapos</string>
-                <string>destination_section/organisation_module/slapos</string>
-                <string>price_currency/currency_module/EUR</string>
-                <string>specialise/sale_trade_condition_module/slapos_consumption_trade_condition</string>
+                <string>successor/trade_state/ordered</string>
+                <string>trade_phase/slapos/order</string>
               </tuple>
             </value>
         </item>
         <item>
-            <key> <string>comment</string> </key>
+            <key> <string>completed_state</string> </key>
             <value>
-              <none/>
+              <tuple>
+                <string>confirmed</string>
+              </tuple>
             </value>
         </item>
         <item>
-            <key> <string>default_reference</string> </key>
-            <value> <string>SPL-33</string> </value>
+            <key> <string>deliverable</string> </key>
+            <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -97,22 +100,62 @@
             </value>
         </item>
         <item>
-            <key> <string>id</string> </key>
-            <value> <string>slapos_accounting_instance_delivery_template</string> </value>
-        </item>
-        <item>
-            <key> <string>language</string> </key>
+            <key> <string>frozen_state</string> </key>
             <value>
-              <none/>
+              <tuple/>
             </value>
         </item>
         <item>
+            <key> <string>id</string> </key>
+            <value> <string>order</string> </value>
+        </item>
+        <item>
+            <key> <string>int_index</string> </key>
+            <value> <int>1</int> </value>
+        </item>
+        <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Sale Packing List</string> </value>
+            <value> <string>Business Link</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Slapos Accounting Instance Delivery Template</string> </value>
+            <value> <string>order</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="2" aka="AAAAAAAAAAI=">
+    <pickle>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary/>
+            </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+  <record id="3" aka="AAAAAAAAAAM=">
+    <pickle>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>data</string> </key>
+            <value>
+              <dictionary/>
+            </value>
         </item>
       </dictionary>
     </pickle>

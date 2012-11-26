@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Open Sale Order" module="erp5.portal_type"/>
+      <global name="Business Link" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -22,19 +22,6 @@
         </item>
         <item>
             <key> <string>_Add_portal_content_Permission</string> </key>
-            <value>
-              <tuple>
-                <string>Assignee</string>
-                <string>Assignor</string>
-                <string>Associate</string>
-                <string>Author</string>
-                <string>Manager</string>
-                <string>Owner</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>_Delete_objects_Permission</string> </key>
             <value>
               <tuple>
                 <string>Assignee</string>
@@ -80,6 +67,33 @@
             </value>
         </item>
         <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>modification_date</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>date</string> </value>
+                  </item>
+                </dictionary>
+                <dictionary>
+                  <item>
+                      <key> <string>id</string> </key>
+                      <value> <string>creation_date</string> </value>
+                  </item>
+                  <item>
+                      <key> <string>type</string> </key>
+                      <value> <string>date</string> </value>
+                  </item>
+                </dictionary>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>_range_criterion</string> </key>
             <value>
               <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
@@ -89,25 +103,44 @@
             <key> <string>categories</string> </key>
             <value>
               <tuple>
-                <string>source_section/organisation_module/slapos</string>
-                <string>destination_section/organisation_module/slapos</string>
-                <string>source/organisation_module/slapos</string>
-                <string>price_currency/currency_module/EUR</string>
-                <string>specialise/sale_trade_condition_module/slapos_subscription_trade_condition</string>
+                <string>trade_phase/slapos/delivery</string>
+                <string>predecessor/trade_state/ordered</string>
+                <string>successor/trade_state/delivered</string>
+                <string>delivery_builder/portal_deliveries/slapos_sale_packing_list_builder</string>
               </tuple>
             </value>
         </item>
         <item>
-            <key> <string>comment</string> </key>
+            <key> <string>completed_state</string> </key>
             <value>
-              <none/>
+              <tuple>
+                <string>delivered</string>
+                <string>stopped</string>
+              </tuple>
             </value>
         </item>
         <item>
-            <key> <string>default_reference</string> </key>
+            <key> <string>creation_date</string> </key>
             <value>
-              <none/>
+              <object>
+                <klass>
+                  <global id="1.1" name="DateTime" module="DateTime.DateTime"/>
+                </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
+                  </tuple>
+                </state>
+              </object>
             </value>
+        </item>
+        <item>
+            <key> <string>deliverable</string> </key>
+            <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -116,8 +149,21 @@
             </value>
         </item>
         <item>
+            <key> <string>frozen_state</string> </key>
+            <value>
+              <tuple>
+                <string>delivered</string>
+                <string>stopped</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_accounting_open_sale_order_template</string> </value>
+            <value> <string>deliver</string> </value>
+        </item>
+        <item>
+            <key> <string>int_index</string> </key>
+            <value> <int>2</int> </value>
         </item>
         <item>
             <key> <string>language</string> </key>
@@ -126,19 +172,43 @@
             </value>
         </item>
         <item>
+            <key> <string>lead_time</string> </key>
+            <value> <float>10.0</float> </value>
+        </item>
+        <item>
+            <key> <string>modification_date</string> </key>
+            <value>
+              <object>
+                <klass> <reference id="1.1"/> </klass>
+                <tuple>
+                  <none/>
+                </tuple>
+                <state>
+                  <tuple>
+                    <float>1324249200.0</float>
+                    <string>GMT+1</string>
+                  </tuple>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Open Sale Order</string> </value>
+            <value> <string>Business Link</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>SlapOS Accounting Open Sale Order Template</string> </value>
+            <value> <string>deliver</string> </value>
         </item>
       </dictionary>
     </pickle>
   </record>
   <record id="2" aka="AAAAAAAAAAI=">
     <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
     </pickle>
     <pickle>
       <dictionary>
@@ -153,7 +223,10 @@
   </record>
   <record id="3" aka="AAAAAAAAAAM=">
     <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
+      <tuple>
+        <global name="PersistentMapping" module="Persistence.mapping"/>
+        <tuple/>
+      </tuple>
     </pickle>
     <pickle>
       <dictionary>

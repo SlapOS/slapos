@@ -68,7 +68,7 @@ if stop_date is not None:\n
   stop_date = DateTime(stop_date)\n
 \n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n
-      default_destination_section_uid=person.getUid(),\n
+      default_destination_uid=person.getUid(),\n
       portal_type="Open Sale Order",\n
       validation_state="validated")\n
 \n

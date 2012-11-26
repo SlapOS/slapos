@@ -768,6 +768,7 @@ class TestDefaultTradeModelRule(testSlapOSMixin):
         .original_getSimulationState
 
 class TestDefaultDeliveryRule(testSlapOSMixin):
+  trade_condition = 'sale_trade_condition_module/slapos_trade_condition'
   def test(self):
     def newArrow():
       return self.portal.organisation_module.newContent(
@@ -779,7 +780,7 @@ class TestDefaultDeliveryRule(testSlapOSMixin):
         source_section=newArrow(),
         destination_section=newArrow(),
         price_currency='currency_module/EUR',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise=self.trade_condition,
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/02/02')
     )
@@ -893,3 +894,7 @@ class TestDefaultDeliveryRuleConsumption(testSlapOSMixin):
 
     applied_rule_list = delivery.getCausalityRelatedValueList()
     self.assertEqual(0, len(applied_rule_list))
+
+class TestDefaultDeliveryRuleSubscription(testSlapOSMixin):
+  trade_condition = 'sale_trade_condition_module/slapos_subscr'\
+      'iption_trade_condition'

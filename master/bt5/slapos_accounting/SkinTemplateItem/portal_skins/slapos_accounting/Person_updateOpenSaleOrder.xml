@@ -74,7 +74,7 @@ if src__== 1:\n
 \n
 now = DateTime()\n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n
-      default_destination_section_uid=person.getUid(),\n
+      default_destination_uid=person.getUid(),\n
       portal_type="Open Sale Order",\n
       validation_state="validated")\n
 \n
@@ -83,9 +83,8 @@ if previous_open_sale_order is None:\n
       portal.portal_preferences.getPreferredOpenSaleOrderTemplate())\n
   open_sale_order = open_sale_order_template.Base_createCloneDocument(batch_mode=1)\n
   open_sale_order.edit(\n
-        destination_section=person.getRelativeUrl(),\n
-        destination_decision=person.getRelativeUrl(),\n
         destination=person.getRelativeUrl(),\n
+        destination_decision=person.getRelativeUrl(),\n
         title="SlapOS Subscription Open Sale Order",\n
         effective_date=now,\n
         activate_kw=activate_kw)\n

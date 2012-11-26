@@ -627,7 +627,7 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
 
     self.assertEqual(None, self.portal.portal_catalog.getResultValue(
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid()
+        default_destination_uid=person.getUid()
     ))
 
   def test_noOSO_after_fixConsistency(self):
@@ -639,7 +639,7 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
 
     self.assertEqual(None, self.portal.portal_catalog.getResultValue(
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid()
+        default_destination_uid=person.getUid()
     ))
 
   def test_OSO_after_Person_updateOpenSaleOrder(self):
@@ -653,7 +653,7 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
     open_sale_order_list = self.portal.portal_catalog(
         validation_state='validated',
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid()
+        default_destination_uid=person.getUid()
     )
     self.assertEqual(1, len(open_sale_order_list))
     open_sale_order = open_sale_order_list[0]
@@ -699,7 +699,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid()
+        default_destination_uid=person.getUid()
     )
 
     self.assertEqual(1,len(open_sale_order_list))
@@ -753,7 +753,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid()
+        default_destination_uid=person.getUid()
     )
 
     self.assertEqual(1, len(open_sale_order_list))
@@ -806,7 +806,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid()
+        default_destination_uid=person.getUid()
     )
 
     self.assertEqual(2, len(open_sale_order_list))
@@ -884,7 +884,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid()
+        default_destination_uid=person.getUid()
     )
 
     self.assertEqual(1, len(open_sale_order_list))
@@ -943,7 +943,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid()
+        default_destination_uid=person.getUid()
     )
 
     self.assertEqual(1, len(open_sale_order_list))
@@ -1000,7 +1000,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid()
+        default_destination_uid=person.getUid()
     )
 
     self.assertEqual(2, len(open_sale_order_list))
