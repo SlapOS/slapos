@@ -871,7 +871,7 @@ class TestDefaultDeliveryRuleConsumption(testSlapOSMixin):
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/02/02')
     )
-    line = delivery.newContent(portal_type='Sale Packing List Line',
+    delivery.newContent(portal_type='Sale Packing List Line',
         resource=self.portal.service_module.newContent(
             portal_type='Service').getRelativeUrl(),
         use='trade/sale',
