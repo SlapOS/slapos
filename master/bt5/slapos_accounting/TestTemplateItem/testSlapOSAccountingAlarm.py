@@ -240,8 +240,9 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
       portal_type='Sale Packing List Line')
     self.assertEqual(len(packing_list_line), line_count)
     self.assertEqual(delivery.getDestinationValue(), person)
-    self.assertEqual(delivery.getDestinationSectionValue(), person)
     self.assertEqual(delivery.getDestinationDecisionValue(), person)
+    self.assertEqual(delivery.getSpecialise(), 'sale_trade_condition_module'
+        '/slapos_consumption_trade_condition')
     self.assertEqual(delivery.getStopDate(), stop_date)
     self.assertEqual(delivery.getStartDate(), start_date)
     self.assertEqual(delivery.getSimulationState(), 'delivered')

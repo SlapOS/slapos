@@ -853,3 +853,43 @@ class TestDefaultDeliveryRule(testSlapOSMixin):
     applied_rule.expand(expand_policy='immediate')
     self.assertSameSet(['default_invoicing_rule'], [q.getSpecialiseReference()
         for q in simulation_movement.contentValues(portal_type='Applied Rule')])
+
+class TestDefaultDeliveryRuleConsumption(testSlapOSMixin):
+  def test(self):
+    def newArrow():
+      return self.portal.organisation_module.newContent(
+          portal_type='Organisation').getRelativeUrl()
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List',
+        source=newArrow(),
+        destination=newArrow(),
+        source_section=newArrow(),
+        destination_section=newArrow(),
+        price_currency='currency_module/EUR',
+        specialise='sale_trade_condition_module/slapos_consumption_trade_'
+            'condition',
+        start_date=DateTime('2012/01/01'),
+        stop_date=DateTime('2012/02/02')
+    )
+    line = delivery.newContent(portal_type='Sale Packing List Line',
+        resource=self.portal.service_module.newContent(
+            portal_type='Service').getRelativeUrl(),
+        use='trade/sale',
+        quantity_unit='unit/piece',
+        aggregate_list=[
+            self.portal.hosting_subscription_module.newContent(
+                portal_type='Hosting Subscription').getRelativeUrl(),
+            self.portal.service_module.newContent(
+                portal_type='Service').getRelativeUrl()
+        ],
+        base_contribution_list=['base_amount/invoicing/discounted',
+            'base_amount/invoicing/taxable'],
+        price=.0,
+        quantity=1.0
+    )
+    delivery.confirm()
+    delivery.updateSimulation(create_root=1)
+    self.tic()
+
+    applied_rule_list = delivery.getCausalityRelatedValueList()
+    self.assertEqual(0, len(applied_rule_list))

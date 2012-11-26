@@ -53,6 +53,10 @@
             <value> <string>Sale Packing List Line</string> </value>
         </item>
         <item>
+            <key> <string>price</string> </key>
+            <value> <float>0.0</float> </value>
+        </item>
+        <item>
             <key> <string>title</string> </key>
             <value> <string>Destroy Line</string> </value>
         </item>

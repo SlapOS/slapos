@@ -118,9 +118,9 @@ if portal_workflow.isTransitionPossible(instance, \'converge\'):\n
 \n
     delivery.edit(\n
       title="%s API usage" % instance.getReference(),\n
-      destination_section=person.getRelativeUrl(),\n
-      destination_decision=person.getRelativeUrl(),\n
       destination=person.getRelativeUrl(),\n
+      specialise=\'sale_trade_condition_module/slapos_consumption_trade_condition\',\n
+      destination_decision=person.getRelativeUrl(),\n
       start_date=history_entry[\'time\'],\n
       stop_date=portal_workflow.getInfoFor(ob=instance, name=\'time\', wf_id=\'instance_slap_interface_workflow\'),\n
     )\n
