@@ -7,7 +7,7 @@
 		<infrastructure name="test2">
 			<compute name="test2" architecture="x86" cores="1" memory="1G" speed="1G"/>
 			<storage name="test2" size="10G"/>
-			<network name="test2" label="ethernet" vlan="100M"/1>
+			<network name="test2" label="ethernet" vlan="100M"/>
 		</infrastructure>
 		<image name="test2">
 			<system name="debian_with_cosacs"/>
