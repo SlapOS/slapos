@@ -206,26 +206,22 @@ class ExportRecipe(GenericBaseRecipe):
 
     def install(self):
         pgdata = self.options['pgdata-directory']
-
-        ret = []
-
         wrapper = self.options['wrapper']
         self.createBackupScript(wrapper)
-        ret.append(wrapper)
-
-        return ret
+        return [wrapper]
 
 
     def createBackupScript(self, wrapper):
         """
-        Create a script to backup the database in plain SQL format.
+        Create a script to backup the database in 'custom' format.
         """
         content = textwrap.dedent("""\
                 #!/bin/sh
                 umask 077
                 %(bin)s/pg_dump \\
-                        -h %(pgdata-directory)s \\
-                        -f %(backup-directory)s/backup.sql \\
+                        --host=%(pgdata-directory)s \\
+                        --format=custom \\
+                        --file=%(backup-directory)s/backup.dump \\
                         %(dbname)s
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
@@ -236,23 +232,24 @@ class ImportRecipe(GenericBaseRecipe):
 
     def install(self):
         pgdata = self.options['pgdata-directory']
-
-        ret = []
-        if not os.path.exists(pgdata):
-            wrapper = self.options['wrapper']
-            self.createRestoreScript(wrapper)
-            ret.append(wrapper)
-
-        return ret
+        wrapper = self.options['wrapper']
+        self.createRestoreScript(wrapper)
+        return [wrapper]
 
 
     def createRestoreScript(self, wrapper):
         """
-        Create a script to backup the database in plain SQL format.
+        Create a script to restore the database from 'custom' format.
         """
         content = textwrap.dedent("""\
                 #!/bin/sh
-                %(bin)s/pg_restore -h %(pgdata-directory)s -d %(dbname)s %(backup-directory)s/backup.sql
+                %(bin)s/pg_restore \\
+                        --host=%(pgdata-directory)s \\
+                        --dbname=%(dbname)s \\
+                        --clean \\
+                        --no-owner \\
+                        --no-acl \\
+                        %(backup-directory)s/backup.dump
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
 
