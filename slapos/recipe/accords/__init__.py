@@ -38,6 +38,7 @@ class Recipe(GenericSlapRecipe):
 
     parameter_dict = dict(
         userid=self.options['userid'],
+        tenantname=self.options['tenantname'],
         password=self.options['password'],
         domain=self.options['domain'],
         openstack_url=self.options['openstack_url'],
