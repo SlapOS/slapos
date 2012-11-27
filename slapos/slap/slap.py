@@ -115,9 +115,6 @@ class SoftwareRelease(SlapDocument):
       'computer_id' : self.getComputerId(),
       'error_log': error_log})
 
-  def getURI(self):
-    return self._software_release
-
   def available(self):
     self._connection_helper.POST('/availableSoftwareRelease', {
       'url': self.getURI(),
@@ -193,6 +190,8 @@ class OpenOrder(SlapDocument):
         'partition_reference': partition_reference,
         'partition_parameter_xml': xml_marshaller.dumps(partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
+        # XXX Cedric: Why state and shared are marshalled? First is a string
+        #             And second is a boolean.
         'state': xml_marshaller.dumps(state),
         'shared_xml': xml_marshaller.dumps(shared),
       }

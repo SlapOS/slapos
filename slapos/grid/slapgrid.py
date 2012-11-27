@@ -70,6 +70,8 @@ MANDATORY_PARAMETER_LIST = [
 ]
 
 COMPUTER_PARTITION_DESTROYED_STATE = 'destroyed'
+COMPUTER_PARTITION_STARTED_STATE = 'started'
+COMPUTER_PARTITION_STOPPED_STATE = 'stopped'
 
 # Global variables about return state of slapgrid
 SLAPGRID_SUCCESS = 0
@@ -773,16 +775,21 @@ class Slapgrid(object):
       buildout=self.buildout)
 
     computer_partition_state = computer_partition.getState()
-    if computer_partition_state == "started":
+    if computer_partition_state == COMPUTER_PARTITION_STARTED_STATE:
       local_partition.install()
       computer_partition.available()
       local_partition.start()
       self._checkPromises(computer_partition)
       computer_partition.started()
-    elif computer_partition_state == "stopped":
-      local_partition.install()
-      computer_partition.available()
-      local_partition.stop()
+    elif computer_partition_state == COMPUTER_PARTITION_STOPPED_STATE:
+      try:
+        local_partition.install()
+        computer_partition.available()
+      except Exception:
+        raise
+      finally:
+        # Instance has to be stopped even if buildout/reporting is wrong.
+        local_partition.stop()
       computer_partition.stopped()
     elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
       local_partition.stop()

@@ -68,7 +68,7 @@ class IRequester(Interface):
   def request(software_release, software_type, partition_reference,
               shared=False, partition_parameter_kw=None, filter_kw=None):
     """
-    Request software release instanciation to slapgrid server.
+    Request software release instantiation to slapgrid server.
 
     Returns a new computer partition document, where this sofware release will
     be installed.
