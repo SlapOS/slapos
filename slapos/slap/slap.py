@@ -190,6 +190,8 @@ class OpenOrder(SlapDocument):
         'partition_reference': partition_reference,
         'partition_parameter_xml': xml_marshaller.dumps(partition_parameter_kw),
         'filter_xml': xml_marshaller.dumps(filter_kw),
+        # XXX Cedric: Why state and shared are marshalled? First is a string
+        #             And second is a boolean.
         'state': xml_marshaller.dumps(state),
         'shared_xml': xml_marshaller.dumps(shared),
       }
