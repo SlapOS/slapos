@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.33.x (unreleased)
+-------------------
+
+ * slapproxy: Filter by instance_guid, allow computer partition renames
+              and change of software_type and requested_state [Marco Mariani]
+ * slapproxy: Stop instance even if buildout/reporting is wrong [Cedric de Saint Martin]
+
 0.33.1 (2012-11-05)
 -------------------
 
