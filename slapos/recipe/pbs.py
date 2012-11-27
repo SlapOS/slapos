@@ -131,7 +131,10 @@ class Recipe(GenericSlapRecipe, Notify, Callback):
     host = parsed_url.hostname
     known_hosts_file[host] = entry['server-key']
 
-    remote_schema = '%(ssh)s -p %%s %(user)s@%(host)s' % \
+    # XXX use -y because the host might not yet be in the
+    #     trusted hosts file until the next time slapgrid is run.
+
+    remote_schema = '%(ssh)s -y -p %%s %(user)s@%(host)s' % \
       {
         'ssh': self.options['sshclient-binary'],
         'user': parsed_url.username,
