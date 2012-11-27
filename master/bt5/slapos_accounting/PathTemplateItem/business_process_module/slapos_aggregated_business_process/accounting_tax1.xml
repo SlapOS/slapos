@@ -49,9 +49,7 @@
         </item>
         <item>
             <key> <string>int_index</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <int>6</int> </value>
         </item>
         <item>
             <key> <string>membership_criterion_base_category</string> </key>
