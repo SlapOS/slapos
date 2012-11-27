@@ -780,9 +780,14 @@ class Slapgrid(object):
       self._checkPromises(computer_partition)
       computer_partition.started()
     elif computer_partition_state == "stopped":
-      local_partition.install()
-      computer_partition.available()
-      local_partition.stop()
+      try:
+        local_partition.install()
+        computer_partition.available()
+      except Exception:
+        raise
+      finally:
+        # Instance has to be stopped even if buildout/reporting is wrong.
+        local_partition.stop()
       computer_partition.stopped()
     elif computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE:
       local_partition.stop()
