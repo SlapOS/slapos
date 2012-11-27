@@ -158,7 +158,7 @@ class TestSaleInvoiceTransaction(TestSlapOSConstraintMixin):
 
     self.assertTrue(message in self.getMessageList(invoice))
 
-    invoice.setSpecialise('sale_trade_condition_module/slapos_trade_condition')
+    invoice.setSpecialise('sale_trade_condition_module/slapos_aggregated_trade_condition')
     self.assertFalse(message in self.getMessageList(invoice))
 
   @withAbort
@@ -183,7 +183,7 @@ class TestSaleInvoiceTransaction(TestSlapOSConstraintMixin):
     invoice = self.portal.accounting_module.newContent(
         portal_type='Sale Invoice Transaction',
         price_currency='currency_module/EUR',
-        specialise='sale_trade_condition_module/slapos_trade_condition')
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition')
     invoice.newContent(portal_type='Invoice Line', quantity=1., price=1.,
         base_contribution='base_amount/invoicing/taxable')
 

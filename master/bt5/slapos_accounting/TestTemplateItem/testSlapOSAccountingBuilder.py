@@ -59,7 +59,7 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
           'source/organisation_module/slapos',
           'source_section/organisation_module/slapos',
           'price_currency/currency_module/EUR',
-          'specialise/sale_trade_condition_module/slapos_trade_condition'] \
+          'specialise/sale_trade_condition_module/slapos_aggregated_trade_condition'] \
             + convertCategoryList('destination',
                 simulation_movement.getDestinationList()) \
             + convertCategoryList('destination_section',
@@ -84,7 +84,7 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
         aggregate=hosting_subscription.getRelativeUrl(),
         base_contribution=['base_amount/invoicing/discounted',
             'base_amount/invoicing/taxable'],
-        causality=['business_process_module/slapos_sale_business_process'
+        causality=['business_process_module/slapos_aggregated_business_process'
             '/deliver', 'business_process_module/slapos_sale_business_pr'
             'ocess/delivery_path'],
         destination=person.getRelativeUrl(),
@@ -95,7 +95,7 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
         resource='service_module/slapos_instance_subscription',
         source='organisation_module/slapos',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/delivery',
         use='trade/sale',
     )
@@ -162,7 +162,7 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         price_currency='currency_module/EUR',
         source='organisation_module/slapos',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
     )
     delivery_line_kw = dict(
         portal_type='Sale Packing List Line',
@@ -208,7 +208,7 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         aggregate=hosting_subscription.getRelativeUrl(),
         base_contribution=['base_amount/invoicing/discounted',
             'base_amount/invoicing/taxable'],
-        causality=['business_process_module/slapos_sale_business_process'
+        causality=['business_process_module/slapos_aggregated_business_process'
             '/deliver', 'business_process_module/slapos_sale_business_pr'
             'ocess/delivery_path'],
         destination=person.getRelativeUrl(),
@@ -219,7 +219,7 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         resource='service_module/slapos_instance_subscription',
         source='organisation_module/slapos',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/delivery',
         use='trade/sale',
         delivery_ratio=1.0
@@ -254,8 +254,8 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
     invoice_movement_kw = simulation_movement_kw.copy()
     invoice_movement_kw.update(
         causality=[
-            'business_process_module/slapos_sale_business_process/invoice',
-            'business_process_module/slapos_sale_business_process/invoice_path'
+            'business_process_module/slapos_aggregated_business_process/invoice',
+            'business_process_module/slapos_aggregated_business_process/invoice_path'
         ],
         trade_phase='slapos/invoicing'
     )
@@ -338,7 +338,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       source_section='organisation_module/slapos',
       price_currency='currency_module/EUR',
       resource='currency_module/EUR',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       created_by_builder=1
     )
     invoice_line_kw = dict(
@@ -402,8 +402,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     # create new simulation movements
     invoice_movement_kw = dict(
         causality=[
-            'business_process_module/slapos_sale_business_process/invoice',
-            'business_process_module/slapos_sale_business_process/invoice_path'
+            'business_process_module/slapos_aggregated_business_process/invoice',
+            'business_process_module/slapos_aggregated_business_process/invoice_path'
         ],
         trade_phase='slapos/invoicing',
         delivery_ratio=1.0,
@@ -420,7 +420,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         resource='service_module/slapos_instance_subscription',
         source='organisation_module/slapos',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         use='trade/sale',
     )
     invoice_rule_1 = simulation_movement_1.newContent(
@@ -440,13 +440,13 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         delivery_ratio=1.,
         delivery_error=0.,
         price_currency='currency_module/EUR',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         resource='service_module/slapos_tax',
         base_application='base_amount/invoicing/taxable',
         use='trade/tax',
-        causality=['business_process_module/slapos_sale_business_process/tax',
-            'business_process_module/slapos_sale_business_process/trade_model_path',
-            'sale_trade_condition_module/slapos_trade_condition/1'],
+        causality=['business_process_module/slapos_aggregated_business_process/tax',
+            'business_process_module/slapos_aggregated_business_process/trade_model_path',
+            'sale_trade_condition_module/slapos_aggregated_trade_condition/1'],
     )
     trade_model_rule_1 = invoice_movement_1.newContent(
         portal_type='Applied Rule',
@@ -500,8 +500,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     )
     transaction_movement_1_rec = transaction_rule_1.newContent(
       portal_type='Simulation Movement',
-      causality=['business_process_module/slapos_sale_business_process/account',
-          'business_process_module/slapos_sale_business_process/account_debi'
+      causality=['business_process_module/slapos_aggregated_business_process/account',
+          'business_process_module/slapos_aggregated_business_process/account_debi'
             't_path'],
       destination=['account_module/payable'],
       destination_decision=invoice_movement_1.getDestinationDecision(),
@@ -510,7 +510,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       resource='currency_module/EUR',
       source='account_module/receivable',
       source_section='organisation_module/slapos',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       trade_phase='slapos/accounting',
       price=1.0,
       quantity=invoice_movement_1.getTotalPrice() * -1,
@@ -520,8 +520,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     transaction_movement_1_rec_bis.edit(delivery=None, delivery_ratio=1.0)
     transaction_movement_1_sal = transaction_rule_1.newContent(
       portal_type='Simulation Movement',
-      causality=['business_process_module/slapos_sale_business_process/account',
-          'business_process_module/slapos_sale_business_process/account_cred'
+      causality=['business_process_module/slapos_aggregated_business_process/account',
+          'business_process_module/slapos_aggregated_business_process/account_cred'
             'it_path'],
       destination=['account_module/purchase'],
       destination_decision=invoice_movement_1.getDestinationDecision(),
@@ -530,7 +530,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       resource='currency_module/EUR',
       source='account_module/receivable',
       source_section='organisation_module/slapos',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       trade_phase='slapos/accounting',
       price=1.0,
       quantity=invoice_movement_1.getTotalPrice(),
@@ -542,8 +542,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     )
     transation_model_movement_1_rec = transation_model_rule_1.newContent(
       portal_type='Simulation Movement',
-      causality=['business_process_module/slapos_sale_business_process/account',
-          'business_process_module/slapos_sale_business_process/accounting_tax2'],
+      causality=['business_process_module/slapos_aggregated_business_process/account',
+          'business_process_module/slapos_aggregated_business_process/accounting_tax2'],
       destination=['account_module/payable'],
       destination_decision=invoice_movement_1.getDestinationDecision(),
       destination_section=invoice_movement_1.getDestinationSection(),
@@ -551,7 +551,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       resource='currency_module/EUR',
       source='account_module/receivable',
       source_section='organisation_module/slapos',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       trade_phase='slapos/accounting',
       price=1.0,
       quantity=trade_movement_1.getTotalPrice() * -1,
@@ -561,8 +561,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     transation_model_movement_1_rec_bis.edit(delivery=None, delivery_ratio=1.0)
     transation_model_movement_1_sal = transation_model_rule_1.newContent(
       portal_type='Simulation Movement',
-      causality=['business_process_module/slapos_sale_business_process/account',
-          'business_process_module/slapos_sale_business_process/accounting_tax1'],
+      causality=['business_process_module/slapos_aggregated_business_process/account',
+          'business_process_module/slapos_aggregated_business_process/accounting_tax1'],
       destination=['account_module/refundable_vat'],
       destination_decision=invoice_movement_1.getDestinationDecision(),
       destination_section=invoice_movement_1.getDestinationSection(),
@@ -570,7 +570,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       resource='currency_module/EUR',
       source='account_module/coll_vat',
       source_section='organisation_module/slapos',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       trade_phase='slapos/accounting',
       price=1.0,
       quantity=trade_movement_1.getTotalPrice(),
@@ -582,8 +582,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     )
     transaction_movement_2_rec = transaction_rule_2.newContent(
       portal_type='Simulation Movement',
-      causality=['business_process_module/slapos_sale_business_process/account',
-          'business_process_module/slapos_sale_business_process/account_debi'
+      causality=['business_process_module/slapos_aggregated_business_process/account',
+          'business_process_module/slapos_aggregated_business_process/account_debi'
             't_path'],
       destination=['account_module/payable'],
       destination_decision=invoice_movement_2.getDestinationDecision(),
@@ -592,15 +592,15 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       resource='currency_module/EUR',
       source='account_module/receivable',
       source_section='organisation_module/slapos',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       trade_phase='slapos/accounting',
       price=1.0,
       quantity=invoice_movement_2.getTotalPrice() * -1,
     )
     transaction_movement_2_sal = transaction_rule_2.newContent(
       portal_type='Simulation Movement',
-      causality=['business_process_module/slapos_sale_business_process/account',
-          'business_process_module/slapos_sale_business_process/account_cred'
+      causality=['business_process_module/slapos_aggregated_business_process/account',
+          'business_process_module/slapos_aggregated_business_process/account_cred'
             'it_path'],
       destination=['account_module/purchase'],
       destination_decision=invoice_movement_2.getDestinationDecision(),
@@ -609,7 +609,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       resource='currency_module/EUR',
       source='account_module/receivable',
       source_section='organisation_module/slapos',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       trade_phase='slapos/accounting',
       price=1.0,
       quantity=invoice_movement_2.getTotalPrice(),
@@ -621,8 +621,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     )
     transation_model_movement_2_rec = transation_model_rule_2.newContent(
       portal_type='Simulation Movement',
-      causality=['business_process_module/slapos_sale_business_process/account',
-          'business_process_module/slapos_sale_business_process/accounting_tax2'],
+      causality=['business_process_module/slapos_aggregated_business_process/account',
+          'business_process_module/slapos_aggregated_business_process/accounting_tax2'],
       destination=['account_module/payable'],
       destination_decision=invoice_movement_2.getDestinationDecision(),
       destination_section=invoice_movement_2.getDestinationSection(),
@@ -630,15 +630,15 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       resource='currency_module/EUR',
       source='account_module/receivable',
       source_section='organisation_module/slapos',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       trade_phase='slapos/accounting',
       price=1.0,
       quantity=trade_movement_2.getTotalPrice() * -1,
     )
     transation_model_movement_2_sal = transation_model_rule_2.newContent(
       portal_type='Simulation Movement',
-      causality=['business_process_module/slapos_sale_business_process/account',
-          'business_process_module/slapos_sale_business_process/accounting_tax1'],
+      causality=['business_process_module/slapos_aggregated_business_process/account',
+          'business_process_module/slapos_aggregated_business_process/accounting_tax1'],
       destination=['account_module/refundable_vat'],
       destination_decision=invoice_movement_2.getDestinationDecision(),
       destination_section=invoice_movement_2.getDestinationSection(),
@@ -646,7 +646,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       resource='currency_module/EUR',
       source='account_module/coll_vat',
       source_section='organisation_module/slapos',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       trade_phase='slapos/accounting',
       price=1.0,
       quantity=trade_movement_2.getTotalPrice(),
@@ -827,7 +827,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       source_section='organisation_module/slapos',
       price_currency='currency_module/EUR',
       resource='currency_module/EUR',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       created_by_builder=1
     )
     invoice_line_kw = dict(
@@ -875,8 +875,8 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     # create new simulation movements
     invoice_movement_kw = dict(
         causality=[
-            'business_process_module/slapos_sale_business_process/invoice',
-            'business_process_module/slapos_sale_business_process/invoice_path'
+            'business_process_module/slapos_aggregated_business_process/invoice',
+            'business_process_module/slapos_aggregated_business_process/invoice_path'
         ],
         trade_phase='slapos/invoicing',
         delivery_ratio=1.0,
@@ -893,7 +893,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
         resource='service_module/slapos_instance_subscription',
         source='organisation_module/slapos',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         use='trade/sale',
     )
     invoice_rule_1 = simulation_movement_1.newContent(
@@ -933,7 +933,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       quantity_unit='unit/piece',
       source='organisation_module/slapos',
       source_section='organisation_module/slapos',
-      specialise='sale_trade_condition_module/slapos_trade_condition',
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
       portal_type='Simulation Movement',
     )
     model_rule_1 = invoice_movement_1.newContent(
@@ -946,9 +946,9 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       destination_decision=invoice_movement_1.getDestinationDecision(),
       resource='service_module/slapos_tax',
       trade_phase='slapos/tax',
-      causality=['business_process_module/slapos_sale_business_process/tax',
-          'business_process_module/slapos_sale_business_process/trade_model_path',
-          'sale_trade_condition_module/slapos_trade_condition/1',
+      causality=['business_process_module/slapos_aggregated_business_process/tax',
+          'business_process_module/slapos_aggregated_business_process/trade_model_path',
+          'sale_trade_condition_module/slapos_aggregated_trade_condition/1',
       ],
       price=.196,
       quantity=invoice_movement_1.getTotalPrice(),
@@ -965,9 +965,9 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       destination_decision=invoice_movement_2.getDestinationDecision(),
       resource='service_module/slapos_tax',
       trade_phase='slapos/tax',
-      causality=['business_process_module/slapos_sale_business_process/tax',
-          'business_process_module/slapos_sale_business_process/trade_model_path',
-          'sale_trade_condition_module/slapos_trade_condition/1',
+      causality=['business_process_module/slapos_aggregated_business_process/tax',
+          'business_process_module/slapos_aggregated_business_process/trade_model_path',
+          'sale_trade_condition_module/slapos_aggregated_trade_condition/1',
       ],
       price=.196,
       quantity=invoice_movement_2.getTotalPrice(),
@@ -1138,8 +1138,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         quantity=-10.0,
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/01/10'),
-        causality=['business_process_module/slapos_sale_business_process/pay',
-            'business_process_module/slapos_sale_business_process/payment_debit_path'],
+        causality=['business_process_module/slapos_aggregated_business_process/pay',
+            'business_process_module/slapos_aggregated_business_process/payment_debit_path'],
         destination='account_module/bank',
         destination_section=person.getRelativeUrl(),
         quantity_unit='unit/piece',
@@ -1147,7 +1147,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         source='account_module/bank',
         source_payment='organisation_module/slapos/bank_account',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/payment'
     )
     payment_movement_1_rec_bank_bis = payment_movement_1_rec_bank.Base_createCloneDocument(
@@ -1158,8 +1158,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         quantity=10.0,
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/01/10'),
-        causality=['business_process_module/slapos_sale_business_process/pay',
-            'business_process_module/slapos_sale_business_process/payment_credit_path'],
+        causality=['business_process_module/slapos_aggregated_business_process/pay',
+            'business_process_module/slapos_aggregated_business_process/payment_credit_path'],
         destination='account_module/payable',
         destination_section=person.getRelativeUrl(),
         quantity_unit='unit/piece',
@@ -1167,7 +1167,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         source='account_module/receivable',
         source_payment='organisation_module/slapos/bank_account',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/payment'
     )
     payment_rule_model_1 = transation_model_movement_1_rec.newContent(
@@ -1179,8 +1179,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         quantity=-10.0,
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/01/10'),
-        causality=['business_process_module/slapos_sale_business_process/pay',
-            'business_process_module/slapos_sale_business_process/payment_debit_path'],
+        causality=['business_process_module/slapos_aggregated_business_process/pay',
+            'business_process_module/slapos_aggregated_business_process/payment_debit_path'],
         destination='account_module/bank',
         destination_section=person.getRelativeUrl(),
         quantity_unit='unit/piece',
@@ -1188,7 +1188,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         source='account_module/bank',
         source_payment='organisation_module/slapos/bank_account',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/payment'
     )
     payment_model_movement_1_rec_rec = payment_rule_1_rec.newContent(
@@ -1197,8 +1197,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         quantity=10.0,
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/01/10'),
-        causality=['business_process_module/slapos_sale_business_process/pay',
-            'business_process_module/slapos_sale_business_process/payment_credit_path'],
+        causality=['business_process_module/slapos_aggregated_business_process/pay',
+            'business_process_module/slapos_aggregated_business_process/payment_credit_path'],
         destination='account_module/payable',
         destination_section=person.getRelativeUrl(),
         quantity_unit='unit/piece',
@@ -1206,7 +1206,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         source='account_module/receivable',
         source_payment='organisation_module/slapos/bank_account',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/payment'
     )
     payment_rule_2_rec = transaction_movement_2_rec.newContent(
@@ -1218,8 +1218,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         quantity=-10.0,
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/01/10'),
-        causality=['business_process_module/slapos_sale_business_process/pay',
-            'business_process_module/slapos_sale_business_process/payment_debit_path'],
+        causality=['business_process_module/slapos_aggregated_business_process/pay',
+            'business_process_module/slapos_aggregated_business_process/payment_debit_path'],
         destination='account_module/bank',
         destination_section=person.getRelativeUrl(),
         quantity_unit='unit/piece',
@@ -1227,7 +1227,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         source='account_module/bank',
         source_payment='organisation_module/slapos/bank_account',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/payment'
     )
     payment_movement_2_rec_rec = payment_rule_2_rec.newContent(
@@ -1236,8 +1236,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         quantity=10.0,
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/01/10'),
-        causality=['business_process_module/slapos_sale_business_process/pay',
-            'business_process_module/slapos_sale_business_process/payment_credit_path'],
+        causality=['business_process_module/slapos_aggregated_business_process/pay',
+            'business_process_module/slapos_aggregated_business_process/payment_credit_path'],
         destination='account_module/payable',
         destination_section=person.getRelativeUrl(),
         quantity_unit='unit/piece',
@@ -1245,7 +1245,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         source='account_module/receivable',
         source_payment='organisation_module/slapos/bank_account',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/payment'
     )
     payment_rule_model_2 = transation_model_movement_2_rec.newContent(
@@ -1257,8 +1257,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         quantity=-10.0,
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/01/10'),
-        causality=['business_process_module/slapos_sale_business_process/pay',
-            'business_process_module/slapos_sale_business_process/payment_debit_path'],
+        causality=['business_process_module/slapos_aggregated_business_process/pay',
+            'business_process_module/slapos_aggregated_business_process/payment_debit_path'],
         destination='account_module/bank',
         destination_section=person.getRelativeUrl(),
         quantity_unit='unit/piece',
@@ -1266,7 +1266,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         source='account_module/bank',
         source_payment='organisation_module/slapos/bank_account',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/payment'
     )
     payment_model_movement_2_rec_rec = payment_rule_2_rec.newContent(
@@ -1275,8 +1275,8 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         quantity=10.0,
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/01/10'),
-        causality=['business_process_module/slapos_sale_business_process/pay',
-            'business_process_module/slapos_sale_business_process/payment_credit_path'],
+        causality=['business_process_module/slapos_aggregated_business_process/pay',
+            'business_process_module/slapos_aggregated_business_process/payment_credit_path'],
         destination='account_module/payable',
         destination_section=person.getRelativeUrl(),
         quantity_unit='unit/piece',
@@ -1284,7 +1284,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
         source='account_module/receivable',
         source_payment='organisation_module/slapos/bank_account',
         source_section='organisation_module/slapos',
-        specialise='sale_trade_condition_module/slapos_trade_condition',
+        specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
         trade_phase='slapos/payment'
     )
     self.tic()
@@ -1392,7 +1392,7 @@ class TestSlapOSPaymentTransactionBuilder(TestSlapOSSalePackingListBuilder):
     def checkPayment(simulation_movement, payment):
       category_list = ['resource/currency_module/EUR',
          'source_section/organisation_module/slapos',
-         'specialise/sale_trade_condition_module/slapos_trade_condition']
+         'specialise/sale_trade_condition_module/slapos_aggregated_trade_condition']
       category_list.append('causality/%s' % simulation_movement.getParentValue()\
             .getParentValue().getDeliveryValue().getParentValue().getRelativeUrl())
       category_list.append('destination_section/%s' %

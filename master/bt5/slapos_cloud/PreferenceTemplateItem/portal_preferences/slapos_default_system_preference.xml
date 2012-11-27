@@ -83,7 +83,7 @@
         </item>
         <item>
             <key> <string>preferred_aggregated_sale_trade_condition</string> </key>
-            <value> <string>sale_trade_condition_module/slapos_trade_condition</string> </value>
+            <value> <string>sale_trade_condition_module/slapos_aggregated_trade_condition</string> </value>
         </item>
         <item>
             <key> <string>preferred_credential_recovery_automatic_approval</string> </key>

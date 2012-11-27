@@ -69,7 +69,7 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
           use='trade/sale',
           trade_phase='slapos/invoicing',
           quantity_unit='unit/piece',
-          specialise='sale_trade_condition_module/slapos_trade_condition',
+          specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
           causality_list=['business_process_module/slapos_sale_business_p'
           'rocess/invoice_path', 'business_process_module/slapos_sale_b'
           'usiness_process/invoice'],
@@ -203,7 +203,7 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
           use='trade/sale',
           trade_phase='slapos/delivery',
           quantity_unit='unit/piece',
-          specialise='sale_trade_condition_module/slapos_trade_condition',
+          specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
           causality_list=['business_process_module/slapos_sale_business_p'
               'rocess/delivery_path', 'business_process_module/slapos_sale_'
               'business_process/deliver'])
@@ -321,7 +321,7 @@ class TestDefaultPaymentRule(testSlapOSMixin):
           use='trade/sale',
           trade_phase='slapos/accounting',
           quantity_unit='unit/piece',
-          specialise='sale_trade_condition_module/slapos_trade_condition',
+          specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
           causality_list=['business_process_module/slapos_sale_busines'
               's_process/account'],
           delivery_value=self.portal.accounting_module.newContent(
@@ -693,7 +693,7 @@ class TestDefaultTradeModelRule(testSlapOSMixin):
           use='trade/sale',
           trade_phase='slapos/invoicing',
           quantity_unit='unit/piece',
-          specialise='sale_trade_condition_module/slapos_trade_condition',
+          specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
           causality_list=['business_process_module/slapos_sale_business_p'
           'rocess/invoice_path', 'business_process_module/slapos_sale_b'
           'usiness_process/invoice'],
@@ -767,7 +767,7 @@ class TestDefaultTradeModelRule(testSlapOSMixin):
         .original_getSimulationState
 
 class TestDefaultDeliveryRule(testSlapOSMixin):
-  trade_condition = 'sale_trade_condition_module/slapos_trade_condition'
+  trade_condition = 'sale_trade_condition_module/slapos_aggregated_trade_condition'
   def test(self):
     def newArrow():
       return self.portal.organisation_module.newContent(

@@ -2,7 +2,7 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="Sale Trade Condition" module="erp5.portal_type"/>
+      <global name="Business Process" module="erp5.portal_type"/>
     </pickle>
     <pickle>
       <dictionary>
@@ -69,40 +69,30 @@
         <item>
             <key> <string>_identity_criterion</string> </key>
             <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
+              <dictionary/>
             </value>
         </item>
         <item>
             <key> <string>_mt_index</string> </key>
             <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
+              <persistent> <string encoding="base64">AAAAAAAAAAM=</string> </persistent>
             </value>
         </item>
         <item>
             <key> <string>_range_criterion</string> </key>
             <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAU=</string> </persistent>
+              <dictionary/>
             </value>
         </item>
         <item>
             <key> <string>_tree</string> </key>
             <value>
-              <persistent> <string encoding="base64">AAAAAAAAAAY=</string> </persistent>
+              <persistent> <string encoding="base64">AAAAAAAAAAQ=</string> </persistent>
             </value>
         </item>
         <item>
-            <key> <string>categories</string> </key>
-            <value>
-              <tuple>
-                <string>specialise/business_process_module/slapos_sale_business_process</string>
-              </tuple>
-            </value>
-        </item>
-        <item>
-            <key> <string>comment</string> </key>
-            <value>
-              <none/>
-            </value>
+            <key> <string>default_reference</string> </key>
+            <value> <string>slapos_aggregated_business_process</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -112,21 +102,23 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_trade_condition</string> </value>
+            <value> <string>slapos_aggregated_business_process</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
-            <value> <string>Sale Trade Condition</string> </value>
+            <value> <string>Business Process</string> </value>
+        </item>
+        <item>
+            <key> <string>referential_date</string> </key>
+            <value> <string>start_date</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Default SlapOS Sale Trade Condition</string> </value>
+            <value> <string>SlapOS Aggregated Business Process</string> </value>
         </item>
         <item>
             <key> <string>version</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>1</string> </value>
         </item>
       </dictionary>
     </pickle>
@@ -139,53 +131,13 @@
   </record>
   <record id="3" aka="AAAAAAAAAAM=">
     <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
-    </pickle>
-    <pickle>
-      <dictionary>
-        <item>
-            <key> <string>data</string> </key>
-            <value>
-              <dictionary/>
-            </value>
-        </item>
-      </dictionary>
-    </pickle>
-  </record>
-  <record id="4" aka="AAAAAAAAAAQ=">
-    <pickle>
       <global name="OOBTree" module="BTrees.OOBTree"/>
     </pickle>
     <pickle>
       <none/>
     </pickle>
   </record>
-  <record id="5" aka="AAAAAAAAAAU=">
-    <pickle>
-      <global name="PersistentMapping" module="Persistence.mapping"/>
-    </pickle>
-    <pickle>
-      <dictionary>
-        <item>
-            <key> <string>data</string> </key>
-            <value>
-              <dictionary>
-                <item>
-                    <key> <string>start_date</string> </key>
-                    <value>
-                      <tuple>
-                        <none/>
-                        <none/>
-                      </tuple>
-                    </value>
-                </item>
-              </dictionary>
-            </value>
-        </item>
-      </dictionary>
-    </pickle>
-  </record>
-  <record id="6" aka="AAAAAAAAAAY=">
+  <record id="4" aka="AAAAAAAAAAQ=">
     <pickle>
       <global name="OOBTree" module="BTrees.OOBTree"/>
     </pickle>
