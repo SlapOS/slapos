@@ -1614,7 +1614,7 @@ class TestSlapOSPaymentTransactionOrderBuilder(testSlapOSMixin):
     payment = payment_list[0].getObject()
     self.assertPayment(payment, invoice)
 
-class TestSlapOSPaymentTransactionOrderBuilder(testSlapOSMixin):
+class TestSlapOSAggregatedDeliveryBuilder(testSlapOSMixin):
   def emptyBuild(self, **kw):
     delivery_list = self._build(**kw)
     self.assertSameSet([], delivery_list)
