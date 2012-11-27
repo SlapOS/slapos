@@ -76,6 +76,7 @@ class Renamer(object):
         # partition to be deactivated
         cp_broken = cp_root.request(software_release=self.software_release,
                                     software_type='frozen',
+                                    state='stopped',
                                     partition_reference=cp_exporter_ref)
 
         broken_new_ref = 'broken-{}'.format(time.strftime("%d-%b_%H:%M:%S", time.gmtime()))
