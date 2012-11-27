@@ -99,6 +99,7 @@
                         <string>my_preferred_instance_destroy_movement_template</string>
                         <string>my_preferred_instance_setup_movement_template</string>
                         <string>my_preferred_instance_delivery_template</string>
+                        <string>my_preferred_aggregated_sale_trade_condition</string>
                       </list>
                     </value>
                 </item>

@@ -82,6 +82,10 @@
             <value> <string>System Preference</string> </value>
         </item>
         <item>
+            <key> <string>preferred_aggregated_sale_trade_condition</string> </key>
+            <value> <string>sale_trade_condition_module/slapos_trade_condition</string> </value>
+        </item>
+        <item>
             <key> <string>preferred_credential_recovery_automatic_approval</string> </key>
             <value> <int>1</int> </value>
         </item>

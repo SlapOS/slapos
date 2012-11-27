@@ -119,6 +119,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_simulation',
       'erp5_pdm',
       'erp5_trade',
+      'erp5_tiosafe_core',
       'erp5_item',
       'erp5_forge',
       'erp5_ingestion_mysql_innodb_catalog',

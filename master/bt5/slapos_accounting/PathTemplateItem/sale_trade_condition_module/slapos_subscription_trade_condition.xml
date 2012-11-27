@@ -105,6 +105,10 @@
             </value>
         </item>
         <item>
+            <key> <string>default_reference</string> </key>
+            <value> <string>slapos_subscription_trade_condition</string> </value>
+        </item>
+        <item>
             <key> <string>description</string> </key>
             <value>
               <none/>
