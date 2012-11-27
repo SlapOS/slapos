@@ -576,6 +576,80 @@ chmod 755 etc/run/wrapper
                       'stoppedComputerPartition'])
     self.assertEqual(instance.state,'stopped')
 
+  def test_one_broken_partition_stopped(self):
+    """
+    Check that, for, an already started instance if stop is requested,
+    processes will be stopped even if instance is broken (buildout fails
+    to run) but status is still started.
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+
+    instance.requested_state = 'started'
+    instance.software.setBuildout("""#!/bin/sh
+touch worked &&
+mkdir -p etc/run &&
+(
+cat <<'HEREDOC'
+#!%(python)s
+import signal
+def handler(signum, frame):
+  print 'Signal handler called with signal', signum
+  raise SystemExit
+signal.signal(signal.SIGTERM, handler)
+
+while True:
+  print "Working"
+HEREDOC
+)> etc/run/wrapper &&
+chmod 755 etc/run/wrapper
+""" % dict(python = sys.executable))
+    self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
+    self.assertSortedListEqual(os.listdir(self.instance_root), ['0', 'etc',
+      'var'])
+    self.assertSortedListEqual(os.listdir(instance.partition_path), ['.0_wrapper.log',
+      'worked', 'buildout.cfg', 'etc'])
+    wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
+    tries = 50
+    while tries > 0:
+      tries -= 1
+      if os.path.getsize(wrapper_log) > 0:
+        break
+      time.sleep(0.1)
+    os.path.getsize(wrapper_log)
+    self.assertTrue('Working' in open(wrapper_log, 'r').read())
+    self.assertSortedListEqual(os.listdir(self.software_root),
+      [instance.software.software_hash])
+    self.assertEqual(computer.sequence,
+                     ['getFullComputerInformation', 'availableComputerPartition',
+                      'startedComputerPartition'])
+    self.assertEqual(instance.state,'started')
+
+    computer.sequence = []
+    instance.requested_state = 'stopped'
+    instance.software.setBuildout("""#!/bin/sh
+exit 1
+""")
+    self.assertEqual(self.launchSlapgrid(), slapgrid.SLAPGRID_FAIL)
+    self.assertSortedListEqual(os.listdir(self.instance_root),
+                               ['0', 'etc', 'var'])
+    self.assertSortedListEqual(
+      os.listdir(instance.partition_path),
+      ['.0_wrapper.log', '.0_wrapper.log.1', 'worked', 'buildout.cfg', 'etc'])
+    tries = 50
+    expected_text = 'Signal handler called with signal 15'
+    while tries > 0:
+      tries -= 1
+      found = expected_text in open(wrapper_log, 'r').read()
+      if found:
+        break
+      time.sleep(0.1)
+    self.assertTrue(found)
+    self.assertEqual(computer.sequence,
+                     ['getFullComputerInformation',
+                      'softwareInstanceError'])
+    self.assertEqual(instance.state, 'started')
+
 
   def test_one_partition_stopped_started(self):
     computer = ComputerForTest(self.software_root,self.instance_root)
