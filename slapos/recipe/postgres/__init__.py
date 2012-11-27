@@ -221,7 +221,7 @@ class ExportRecipe(GenericBaseRecipe):
                 %(bin)s/pg_dump \\
                         --host=%(pgdata-directory)s \\
                         --format=custom \\
-                        --file=%(backup-directory)s/backup.dump \\
+                        --file=%(backup-directory)s/database.dump \\
                         %(dbname)s
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
@@ -249,7 +249,7 @@ class ImportRecipe(GenericBaseRecipe):
                         --clean \\
                         --no-owner \\
                         --no-acl \\
-                        %(backup-directory)s/backup.dump
+                        %(backup-directory)s/database.dump
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
 
