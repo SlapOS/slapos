@@ -78,7 +78,7 @@ def partitiondict2partition(partition):
 
   if partition['software_release']:
     slap_partition._need_modification = 1
-    slap_partition._requested_state = 'started'
+    slap_partition._requested_state = partition['requested_state']
     slap_partition._parameter_dict = xml2dict(partition['xml'])
     address_list = []
     for address in execute_db('partition_network',
@@ -290,6 +290,7 @@ def request_not_shared():
   partition_reference = request.form.get('partition_reference', '').encode()
   partition_id = request.form.get('computer_partition_id', '').encode()
   partition_parameter_kw = request.form.get('partition_parameter_xml', None)
+  requested_state = xml_marshaller.xml_marshaller.loads(request.form.get('state'))
   if partition_parameter_kw:
     partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
                                               partition_parameter_kw.encode())
@@ -314,6 +315,10 @@ def request_not_shared():
   args = []
   a = args.append
   q = 'UPDATE %s SET slap_state="busy"'
+
+  if requested_state:
+    q += ', requested_state=?'
+    a(requested_state)
 
   # If partition doesn't exist: create it and insert parameters
   if partition is None:
