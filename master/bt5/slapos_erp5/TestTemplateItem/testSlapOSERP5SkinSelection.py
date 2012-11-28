@@ -152,6 +152,7 @@ erp5_gadget
 erp5_glossary
 erp5_ingestion
 erp5_ingestion_test
+erp5_integration
 erp5_invoicing
 erp5_item
 erp5_item_trade
@@ -230,6 +231,7 @@ erp5_glossary
 erp5_html_compatibility
 erp5_ingestion
 erp5_ingestion_test
+erp5_integration
 erp5_invoicing
 erp5_item
 erp5_item_trade
@@ -308,6 +310,7 @@ erp5_gadget
 erp5_glossary
 erp5_ingestion
 erp5_ingestion_test
+erp5_integration
 erp5_invoicing
 erp5_item
 erp5_item_trade
@@ -387,6 +390,7 @@ erp5_gadget
 erp5_glossary
 erp5_ingestion
 erp5_ingestion_test
+erp5_integration
 erp5_invoicing
 erp5_item
 erp5_item_trade
@@ -463,6 +467,7 @@ erp5_gadget
 erp5_glossary
 erp5_ingestion
 erp5_ingestion_test
+erp5_integration
 erp5_invoicing
 erp5_item
 erp5_item_trade
