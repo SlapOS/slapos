@@ -151,7 +151,7 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
       SimulationMovement.getSimulationState = getSimulationStateDelivered
       root_simulation_movement.expand(expand_policy='immediate')
       checkSimulationMovement(debit_movement, 'account_module/receivable',
-          'account_module/payable', -1, 'delivered', ['default_payment_rule'])
+          'account_module/payable', -1, 'delivered', [])
       checkSimulationMovement(credit_movement, 'account_module/sales',
           'account_module/purchase', 1, 'delivered', [])
     finally:
@@ -338,57 +338,7 @@ class TestDefaultPaymentRule(testSlapOSMixin):
       root_simulation_movement.expand(expand_policy='immediate')
       applied_rule_list = root_simulation_movement.contentValues(
           portal_type='Applied Rule')
-      self.assertEqual(1, len(applied_rule_list))
-
-      applied_rule = applied_rule_list[0]
-      self.assertEqual('default_payment_rule',
-          applied_rule.getSpecialiseReference())
-      simulation_movement_list = applied_rule.contentValues(
-          portal_type='Simulation Movement')
-      self.assertEqual(2, len(simulation_movement_list))
-      debit_movement_list = [q for q in simulation_movement_list if \
-          q.getCausality() == 'business_process_module/slapos_aggregated_business_process/payment_debit_path']
-      credit_movement_list = [q for q in simulation_movement_list if \
-          q.getCausality() == 'business_process_module/slapos_aggregated_business_process/payment_credit_path']
-      self.assertEqual(1, len(debit_movement_list))
-      self.assertEqual(1, len(credit_movement_list))
-      debit_movement = debit_movement_list[0]
-      credit_movement = credit_movement_list[0]
-      def checkSimulationMovement(simulation_movement, source, destination,
-            quantity_sign, child_rule_reference_list):
-        self.assertEqual('planned', simulation_movement.getSimulationState())
-        self.assertEqual(source, simulation_movement.getSource())
-        self.assertEqual(root_simulation_movement.getSourceSection(),
-            simulation_movement.getSourceSection())
-        self.assertEqual(destination, simulation_movement.getDestination())
-        self.assertEqual(root_simulation_movement.getDestinationSection(),
-            simulation_movement.getDestinationSection())
-        self.assertEqual(1, simulation_movement.getPrice())
-        self.assertEqual(root_simulation_movement.getTotalPrice() *\
-            quantity_sign, simulation_movement.getQuantity())
-        self.assertEqual(root_simulation_movement.getResource(),
-            simulation_movement.getResource())
-        self.assertEqual([], simulation_movement.getAggregateList())
-        self.assertEqual(root_simulation_movement.getStartDate(),
-            simulation_movement.getStartDate())
-        self.assertEqual(root_simulation_movement.getStopDate(),
-            simulation_movement.getStopDate())
-        self.assertEqual([], simulation_movement.getBaseContributionList())
-        self.assertEqual(None, simulation_movement.getPriceCurrency())
-        self.assertEqual(None, simulation_movement.getUse())
-        self.assertEqual('slapos/payment',
-            simulation_movement.getTradePhase())
-        self.assertEqual(root_simulation_movement.getQuantityUnit(),
-            simulation_movement.getQuantityUnit())
-        self.assertEqual(root_simulation_movement.getSpecialise(),
-            simulation_movement.getSpecialise())
-        self.assertEqual(0, len(simulation_movement.contentValues(
-            portal_type='Applied Rule')))
-
-      checkSimulationMovement(debit_movement, 'account_module/bank',
-          'account_module/bank', 1, ['default_payment_rule'])
-      checkSimulationMovement(credit_movement, 'account_module/receivable',
-          'account_module/payable', -1, [])
+      self.assertEqual(0, len(applied_rule_list))
     finally:
       SimulationMovement.getSimulationState = SimulationMovement\
         .original_getSimulationState
