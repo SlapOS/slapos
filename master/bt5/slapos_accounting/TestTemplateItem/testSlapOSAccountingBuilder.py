@@ -147,18 +147,14 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
 
 class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
   def test(self):
-    hosting_subscription = self.portal.hosting_subscription_module\
-        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
     applied_rule = self.portal.portal_simulation.newContent(
       portal_type='Applied Rule',
-      causality=hosting_subscription.getRelativeUrl(),
       specialise='portal_rules/slapos_delivery_root_simulation_rule'
     )
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
     delivery_kw = dict(
         portal_type='Sale Packing List',
-        causality=hosting_subscription.getRelativeUrl(),
         price_currency='currency_module/EUR',
         source='organisation_module/slapos',
         source_section='organisation_module/slapos',
@@ -171,7 +167,6 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         quantity_unit='unit/piece',
         base_contribution_list=['base_amount/invoicing/discounted',
             'base_amount/invoicing/taxable'],
-        aggregate=hosting_subscription.getRelativeUrl(),
     )
     delivery_1 = self.portal.sale_packing_list_module.newContent(
         destination=person.getRelativeUrl(),
@@ -205,7 +200,6 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
     )
     simulation_movement_kw = dict(
         portal_type='Simulation Movement',
-        aggregate=hosting_subscription.getRelativeUrl(),
         base_contribution=['base_amount/invoicing/discounted',
             'base_amount/invoicing/taxable'],
         causality=['business_process_module/slapos_aggregated_business_process'
@@ -320,11 +314,8 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     self.assertNotEqual(None, simulation_movement.getDeliveryValue())
 
   def test(self):
-    hosting_subscription = self.portal.hosting_subscription_module\
-        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
     applied_rule = self.portal.portal_simulation.newContent(
       portal_type='Applied Rule',
-      causality=hosting_subscription.getRelativeUrl(),
       specialise='portal_rules/slapos_delivery_root_simulation_rule'
     )
     person = self.portal.person_module.template_member\
@@ -370,7 +361,6 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       **invoice_kw
     )
     invoice_line_1 = invoice_1.newContent(
-      aggregate=hosting_subscription.getRelativeUrl(),
       price=1.2,
       quantity=3.4,
       **invoice_line_kw
@@ -389,7 +379,6 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
       **invoice_kw
     )
     invoice_line_2 = invoice_2.newContent(
-      aggregate=hosting_subscription.getRelativeUrl(),
       price=5.6,
       quantity=7.8,
       **invoice_line_kw
@@ -414,7 +403,6 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         delivery_ratio=1.0,
         delivery_error=0.0,
         portal_type='Simulation Movement',
-        aggregate=hosting_subscription.getRelativeUrl(),
         base_contribution=['base_amount/invoicing/discounted',
             'base_amount/invoicing/taxable'],
         destination=person.getRelativeUrl(),
@@ -821,11 +809,8 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     self.assertNotEqual(None, simulation_movement.getDeliveryValue())
 
   def test(self):
-    hosting_subscription = self.portal.hosting_subscription_module\
-        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
     applied_rule = self.portal.portal_simulation.newContent(
       portal_type='Applied Rule',
-      causality=hosting_subscription.getRelativeUrl(),
       specialise='portal_rules/slapos_delivery_root_simulation_rule'
     )
     person = self.portal.person_module.template_member\
@@ -865,7 +850,6 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       **invoice_kw
     )
     invoice_line_1 = invoice_1.newContent(
-      aggregate=hosting_subscription.getRelativeUrl(),
       price=1.2,
       quantity=3.4,
       **invoice_line_kw
@@ -879,7 +863,6 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       **invoice_kw
     )
     invoice_line_2 = invoice_2.newContent(
-      aggregate=hosting_subscription.getRelativeUrl(),
       price=5.6,
       quantity=7.8,
       **invoice_line_kw
@@ -899,7 +882,6 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
         delivery_ratio=1.0,
         delivery_error=0.0,
         portal_type='Simulation Movement',
-        aggregate=hosting_subscription.getRelativeUrl(),
         base_contribution=['base_amount/invoicing/discounted',
             'base_amount/invoicing/taxable'],
         destination=person.getRelativeUrl(),
