@@ -58,7 +58,7 @@ portal_activities = context.getPortalObject().portal_activities\n
 if portal_activities.countMessage(path=path) == 0 \\\n
   and portal_activities.countMessageWithTag(\'%s_solve\' % path) == 0:\n
   delivery.serialize()\n
-  delivery.updateCausalityState(solve_automatically=False)\n
+  delivery.updateCausalityState(solve_automatically=True)\n
   delivery.updateSimulation(expand_root=1, expand_related=1)\n
 </string> </value>
         </item>

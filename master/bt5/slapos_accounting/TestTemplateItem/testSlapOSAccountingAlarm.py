@@ -1397,7 +1397,7 @@ class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
         self.assertEqual([{
           'recmethod': 'updateCausalityState',
           'recargs': (),
-          'reckwargs': {'solve_automatically': False}}],
+          'reckwargs': {'solve_automatically': True}}],
           updateCausalityState_value
         )
         self.assertEqual([{
