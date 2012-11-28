@@ -195,3 +195,27 @@ class TestSaleInvoiceTransaction(TestSlapOSConstraintMixin):
         use='trade/tax',
         )
     self.assertFalse(message in self.getMessageList(invoice))
+
+  @withAbort
+  def test_use_trade_sale_total_price_matches_delivery_constraint(self):
+    message = "Total price does not match related Sale Packing List"
+    delivery = self.portal.sale_packing_list_module.newContent(
+      portal_type='Sale Packing List')
+    delivery.newContent(portal_type='Sale Packing List Line',
+      use='trade/sale', quantity=1., price=1.)
+    invoice = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction',
+        causality=delivery.getRelativeUrl())
+    invoice_line = invoice.newContent(portal_type='Invoice Line', quantity=2.,
+        price=1., use='trade/sale')
+
+    self.assertFalse(message in self.getMessageList(invoice))
+    self.portal.portal_workflow._jumpToStateFor(invoice, 'confirmed')
+    self.assertFalse(message in self.getMessageList(invoice))
+    invoice.setSpecialise('sale_trade_condition_module/slapos_aggregated_trade_condition')
+    self.assertTrue(message in self.getMessageList(invoice))
+    invoice_line.setQuantity(1.)
+    self.assertFalse(message in self.getMessageList(invoice))
+    invoice.newContent(portal_type='Invoice Line', quantity=2.,
+        price=1.)
+    self.assertFalse(message in self.getMessageList(invoice))
