@@ -50,27 +50,28 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from DateTime import DateTime\n
-from Products.ERP5Type.DateUtils import getClosestDate\n
-\n
-portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=\'Sale Invoice Transaction\',\n
-  simulation_state=\'confirmed\',\n
-  causality_state=\'solved\',\n
-  method_id=\'SaleInvoiceTransaction_deliverConfirmed\',\n
-  activate_kw={\'tag\': tag}\n
-)\n
-context.activate(after_tag=tag).getId()\n
+            <value> <string>portal = context.getPortalObject()\n
+if context.getPortalType() not in (\'Sale Packing List\', \'Sale Invoice Transaction\') \\\n
+  and context.getSpecialise() != portal.portal_preferences.getPreferredAggregatedSaleTradeCondition():\n
+  raise TypeError(\'Incorrect delivery.\')\n
+isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
+if context.getSimulationState() == \'confirmed\' and len(context.checkConsistency()) == 0 and context.getCausalityState() == \'solved\':\n
+  comment = \'Delivered by alarm as all actions in confirmed state are ready.\'\n
+  if isTransitionPossible(context, \'start\'):\n
+    context.start(comment=comment)\n
+  if isTransitionPossible(context, \'stop\'):\n
+    context.stop(comment=comment)\n
+  if isTransitionPossible(context, \'deliver\'):\n
+    context.deliver(comment=comment)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_deliverConfirmedSaleInvoiceTransaction</string> </value>
+            <value> <string>Delivery_deliverConfirmedAggregatedDelivery</string> </value>
         </item>
       </dictionary>
     </pickle>
