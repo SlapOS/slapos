@@ -58,6 +58,8 @@ portal_rules/slapos_subscription_item_rule
 portal_rules/slapos_subscription_item_rule/**
 portal_rules/slapos_trade_model_simulation_rule
 portal_rules/slapos_trade_model_simulation_rule/**
+portal_solvers/Automatic Quantity Adopt Solver
+portal_solvers/Automatic Quantity Adopt Solver/**
 sale_packing_list_module/slapos_accounting_instance_delivery_line_template
 sale_packing_list_module/slapos_accounting_instance_delivery_line_template/**
 sale_packing_list_module/slapos_accounting_instance_delivery_template

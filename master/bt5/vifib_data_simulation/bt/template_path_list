@@ -17,8 +17,6 @@ portal_solvers/Accept Solver
 portal_solvers/Accept Solver/*
 portal_solvers/Adopt Solver
 portal_solvers/Adopt Solver/*
-portal_solvers/Automatic Quantity Adopt Solver
-portal_solvers/Automatic Quantity Adopt Solver/**
 portal_solvers/FIFO Delivery Solver
 portal_solvers/FIFO Delivery Solver/*
 portal_solvers/LIFO Delivery Solver
