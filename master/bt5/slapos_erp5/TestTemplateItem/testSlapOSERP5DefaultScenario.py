@@ -434,7 +434,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
-        default_destination_section_uid=person.getUid(),
+        default_destination_uid=person.getUid(),
         validation_state='validated'
     )
 
