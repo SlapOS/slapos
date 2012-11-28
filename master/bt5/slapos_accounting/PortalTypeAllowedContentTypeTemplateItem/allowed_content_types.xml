@@ -30,6 +30,9 @@
   <item>Variant Movement Group</item>
   <item>Variation Property Movement Group</item>
  </portal_type>
+ <portal_type id="Solver Process">
+  <item>Automatic Quantity Adopt Solver</item>
+ </portal_type>
  <portal_type id="Subscription Item Root Simulation Rule">
   <item>Accounting Rule Cell</item>
   <item>Category Membership Divergence Tester</item>
