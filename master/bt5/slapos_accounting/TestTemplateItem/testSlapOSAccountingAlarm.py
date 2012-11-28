@@ -15,6 +15,26 @@ import tempfile
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
 
+class Simulator:
+  def __init__(self, outfile, method, to_return=None):
+    self.outfile = outfile
+    open(self.outfile, 'w').write(repr([]))
+    self.method = method
+    self.to_return = to_return
+
+  def __call__(self, *args, **kwargs):
+    """Simulation Method"""
+    old = open(self.outfile, 'r').read()
+    if old:
+      l = eval(old)
+    else:
+      l = []
+    l.append({'recmethod': self.method,
+      'recargs': args,
+      'reckwargs': kwargs})
+    open(self.outfile, 'w').write(repr(l))
+    return self.to_return
+
 def simulateInstance_solveInvoicingGeneration(func):
   @functools.wraps(func)
   def wrapped(self, *args, **kwargs):
@@ -1072,26 +1092,6 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(request_time_2, validated_line_2.getStartDate())
     self.assertEqual(stop_date_2, validated_line_2.getStopDate())
 
-class Simulator:
-  def __init__(self, outfile, method, to_return=None):
-    self.outfile = outfile
-    open(self.outfile, 'w').write(repr([]))
-    self.method = method
-    self.to_return = to_return
-
-  def __call__(self, *args, **kwargs):
-    """Simulation Method"""
-    old = open(self.outfile, 'r').read()
-    if old:
-      l = eval(old)
-    else:
-      l = []
-    l.append({'recmethod': self.method,
-      'recargs': args,
-      'reckwargs': kwargs})
-    open(self.outfile, 'w').write(repr(l))
-    return self.to_return
-
 def simulateSimulationMovement_buildSlapOS(func):
   @functools.wraps(func)
   def wrapped(self, *args, **kwargs):
@@ -1296,26 +1296,6 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
         os.unlink(build_simulator)
       if os.path.exists(activate_simulator):
         os.unlink(activate_simulator)
-
-class Simulator:
-  def __init__(self, outfile, method, to_return=None):
-    self.outfile = outfile
-    open(self.outfile, 'w').write(repr([]))
-    self.method = method
-    self.to_return = to_return
-
-  def __call__(self, *args, **kwargs):
-    """Simulation Method"""
-    old = open(self.outfile, 'r').read()
-    if old:
-      l = eval(old)
-    else:
-      l = []
-    l.append({'recmethod': self.method,
-      'recargs': args,
-      'reckwargs': kwargs})
-    open(self.outfile, 'w').write(repr(l))
-    return self.to_return
 
 def simulateDelivery_manageBuildingCalculatingDelivery(func):
   @functools.wraps(func)
