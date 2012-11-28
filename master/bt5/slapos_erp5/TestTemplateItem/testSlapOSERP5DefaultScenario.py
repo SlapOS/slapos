@@ -609,7 +609,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.tic()
 
     # deliver aggregated deliveries
-    self.stepCallSlaposDeliverConfirmedAggregatedDeliveryAlarm()
+    self.stepCallSlaposDeliverConfirmedAggregatedSalePackingListAlarm()
     self.tic()
 
     # stabilise aggregated deliveries and expand them
@@ -636,8 +636,8 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
-    # deliver the invoices and solve them again
-    self.stepCallSlaposDeliverConfirmedAggregatedDeliveryAlarm()
+    # stop the invoices and solve them again
+    self.stepCallSlaposStopConfirmedAggregatedSaleInvoiceTransactionAlarm()
     self.tic()
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()

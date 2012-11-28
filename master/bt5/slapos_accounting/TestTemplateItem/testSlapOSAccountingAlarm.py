@@ -1425,3 +1425,11 @@ class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
 
   def test_Delivery_manageBuildingCalculatingDelivery_diverged(self):
     self._test_Delivery_manageBuildingCalculatingDelivery('diverged', True)
+
+class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(testSlapOSMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(testSlapOSMixin):
+  def test(self):
+    raise NotImplementedError

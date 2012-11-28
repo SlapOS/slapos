@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_deliverConfirmedAggregatedDelivery</string> </value>
+            <value> <string>Alarm_stopConfirmedAggregatedSaleInvoiceTransaction</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
@@ -22,7 +22,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>slapos_deliver_confirmed_aggregated_delivery</string> </value>
+            <value> <string>slapos_stop_confirmed_aggregated_sale_invoice_transaction</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>
@@ -89,7 +89,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Deliver confirmed aggregated deliveries</string> </value>
+            <value> <string>Stop confirmed aggregated Sale Invoice Transaction</string> </value>
         </item>
       </dictionary>
     </pickle>
