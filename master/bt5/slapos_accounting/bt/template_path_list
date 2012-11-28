@@ -33,8 +33,6 @@ portal_alarms/slapos_trigger_build
 portal_alarms/slapos_trigger_payment_transaction_order_builder
 portal_categories/trade_phase/slapos
 portal_categories/trade_phase/slapos/**
-portal_deliveries/slapos_payment_transaction_builder
-portal_deliveries/slapos_payment_transaction_builder/**
 portal_deliveries/slapos_sale_invoice_builder
 portal_deliveries/slapos_sale_invoice_builder/**
 portal_deliveries/slapos_sale_invoice_transaction_builder
@@ -55,8 +53,6 @@ portal_rules/slapos_invoice_simulation_rule
 portal_rules/slapos_invoice_simulation_rule/**
 portal_rules/slapos_invoice_transaction_simulation_rule
 portal_rules/slapos_invoice_transaction_simulation_rule/**
-portal_rules/slapos_payment_simulation_rule
-portal_rules/slapos_payment_simulation_rule/**
 portal_rules/slapos_subscription_item_rule
 portal_rules/slapos_subscription_item_rule/**
 portal_rules/slapos_trade_model_simulation_rule
