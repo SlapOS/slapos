@@ -148,10 +148,6 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
 
 class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
   def test(self):
-    applied_rule = self.portal.portal_simulation.newContent(
-      portal_type='Applied Rule',
-      specialise='portal_rules/slapos_delivery_root_simulation_rule'
-    )
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
     delivery_kw = dict(
@@ -177,6 +173,11 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         stop_date=DateTime('2012/02/01'),
         **delivery_kw
     )
+    applied_rule_1 = self.portal.portal_simulation.newContent(
+      portal_type='Applied Rule',
+      specialise='portal_rules/slapos_delivery_root_simulation_rule',
+      causality=delivery_1.getRelativeUrl()
+    )
     self.portal.portal_workflow._jumpToStateFor(delivery_1, 'delivered')
     self.portal.portal_workflow._jumpToStateFor(delivery_1, 'calculating')
     delivery_line_1 = delivery_1.newContent(
@@ -197,6 +198,11 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         start_date=DateTime('2012/01/01'),
         stop_date=DateTime('2012/02/01'),
         **delivery_kw
+    )
+    applied_rule_2 = self.portal.portal_simulation.newContent(
+      portal_type='Applied Rule',
+      specialise='portal_rules/slapos_delivery_root_simulation_rule',
+      causality=delivery_2.getRelativeUrl()
     )
     self.portal.portal_workflow._jumpToStateFor(delivery_2, 'delivered')
     self.portal.portal_workflow._jumpToStateFor(delivery_2, 'calculating')
@@ -225,7 +231,7 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         use='trade/sale',
         delivery_ratio=1.0
     )
-    simulation_movement_1 = applied_rule.newContent(
+    simulation_movement_1 = applied_rule_1.newContent(
         quantity=delivery_line_1.getQuantity(),
         price=delivery_line_1.getPrice(),
         start_date=delivery_1.getStartDate(),
@@ -233,7 +239,7 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         delivery=delivery_line_1.getRelativeUrl(),
         **simulation_movement_kw
     )
-    simulation_movement_1_bis = applied_rule.newContent(
+    simulation_movement_1_bis = applied_rule_1.newContent(
         quantity=delivery_line_1_bis.getQuantity(),
         price=delivery_line_1_bis.getPrice(),
         start_date=delivery_1.getStartDate(),
@@ -242,7 +248,7 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         **simulation_movement_kw
     )
     simulation_movement_1_bis.edit(resource=delivery_line_1_bis.getResource())
-    simulation_movement_2 = applied_rule.newContent(
+    simulation_movement_2 = applied_rule_2.newContent(
         quantity=delivery_line_2.getQuantity(),
         price=delivery_line_2.getPrice(),
         start_date=delivery_2.getStartDate(),
@@ -302,7 +308,9 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
     self.tic()
 
     self.portal.portal_deliveries.slapos_sale_invoice_builder.build(
-        path='%s/%%' % applied_rule.getPath())
+        path='%s/%%' % applied_rule_1.getPath())
+    self.portal.portal_deliveries.slapos_sale_invoice_builder.build(
+        path='%s/%%' % applied_rule_2.getPath())
     self.tic()
 
     self.checkSimulationMovement(invoice_movement_1)
