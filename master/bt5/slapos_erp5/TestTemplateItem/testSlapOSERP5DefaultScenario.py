@@ -600,11 +600,27 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
-    # build invoices
+    # build aggregated packing list
+    self.stepCallSlaposTriggerAggregatedDeliveryOrderBuilderAlarm()
+    self.tic()
+
+    # stabilise aggregated deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # deliver aggregated deliveries
+    self.stepCallSlaposDeliverConfirmedAggregatedDeliveryAlarm()
+    self.tic()
+
+    # stabilise aggregated deliveries and expand them
+    self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
+    self.tic()
+
+    # build aggregated invoices
     self.stepCallSlaposTriggerBuildAlarm()
     self.tic()
 
-    # stabilise built invoices and expand them
+    # stabilise aggregated invoices and expand them
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
@@ -621,13 +637,13 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.tic()
 
     # deliver the invoices and solve them again
-    self.stepCallSlaposDeliverConfirmedSaleInvoiceTransactionAlarm()
+    self.stepCallSlaposDeliverConfirmedAggregatedDeliveryAlarm()
     self.tic()
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
-    # build the delivered payment
-    self.stepCallSlaposTriggerBuildAlarm()
+    # build the aggregated payment
+    self.stepCallSlaposTriggerPaymentTransactionOrderBuilderAlarm()
     self.tic()
 
     # stabilise the payment deliveries and expand them
