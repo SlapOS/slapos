@@ -43,6 +43,7 @@ recipe = slapos.cookbook:postgres
 
 # Options
 ipv6_host = $${instance-parameters:ipv6}
+ipv4_host = $${slap-network-information:local-ipv4}
 user = user
 port = 5432
 dbname = db

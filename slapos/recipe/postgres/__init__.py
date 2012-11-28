@@ -49,7 +49,7 @@ class Recipe(GenericBaseRecipe):
     The URL can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
     """
 
-    def fetch_host(self, options):
+    def fetch_ipv6_host(self, options):
         """
         Returns a string represtation of ipv6_host.
         May receive a regular string, a set or a string serialized by buildout.
@@ -64,7 +64,7 @@ class Recipe(GenericBaseRecipe):
 
     def _options(self, options):
         options['password'] = self.generatePassword()
-        options['url'] = 'postgresql://%(user)s:%(password)s@[%(host)s]:%(port)s/%(dbname)s' % dict(options, host=self.fetch_host(options))
+        options['url'] = 'postgresql://%(user)s:%(password)s@[%(ipv4_host)s]:%(port)s/%(dbname)s' % options
 
 
     def install(self):
@@ -109,7 +109,7 @@ class Recipe(GenericBaseRecipe):
 
         with open(os.path.join(pgdata, 'postgresql.conf'), 'wb') as cfg:
             cfg.write(textwrap.dedent("""\
-                    listen_addresses = '%s'
+                    listen_addresses = '%s,%s'
                     logging_collector = on
                     log_rotation_size = 50MB
                     max_connections = 100
@@ -124,7 +124,8 @@ class Recipe(GenericBaseRecipe):
                     unix_socket_directory = '%s'
                     unix_socket_permissions = 0700
                     """ % (
-                        self.fetch_host(self.options),
+                        self.options['ipv4_host'],
+                        self.fetch_ipv6_host(self.options),
                         pgdata,
                         )))
 
@@ -138,9 +139,10 @@ class Recipe(GenericBaseRecipe):
                     # "local" is for Unix domain socket connections only (check unix_socket_permissions!)
                     local   all             all                                     ident
                     host    all             all             127.0.0.1/32            md5
+                    host    all             all             %s/32                   md5
                     host    all             all             ::1/128                 md5
                     host    all             all             %s/128                  md5
-                    """ % self.fetch_host(self.options)))
+                    """ % (self.options['ipv4_host'], self.fetch_ipv6_host(self.options))))
 
 
     def createDatabase(self):

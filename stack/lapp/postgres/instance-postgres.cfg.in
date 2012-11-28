@@ -132,8 +132,8 @@ config-file = $${directory:stunnel-conf}/stunnel.conf
 key-file = $${directory:stunnel-conf}/stunnel.key
 cert-file = $${directory:stunnel-conf}/stunnel.crt
 pid-file = $${basedirectory:run}/stunnel.pid
-local-host = $${postgres-instance:ip}            # XXX we don't need tunnel
-local-port = $${postgres-instance:port}          # XXX we don't need tunnel
+local-host = $${postgres-instance:ipv4_host}
+local-port = $${postgres-instance:port}
 remote-host = $${slap-network-information:global-ipv6}
 remote-port = 6446
 client = false
@@ -174,7 +174,7 @@ user = postgres
 port = 5432
 dbname = db
 # XXX the next line is required by stunnel, not by us
-ip = $${slap-network-information:local-ipv4}
+ipv4_host = $${slap-network-information:local-ipv4}
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${rootdirectory:var}/data
 backup-directory = $${basedirectory:backup}/postgres
