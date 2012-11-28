@@ -314,6 +314,11 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
           [delivery_2.getRelativeUrl()]), **invoice_kw)
 
 class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
+  def checkSimulationMovement(self, simulation_movement):
+    self.assertNotEqual(0.0, simulation_movement.getDeliveryRatio())
+    self.assertEqual(0.0, simulation_movement.getDeliveryError())
+    self.assertNotEqual(None, simulation_movement.getDeliveryValue())
+
   def test(self):
     hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
@@ -691,14 +696,15 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         transaction_line.getCategoryList()
       )
       self.assertEqual(simulation_movement.getQuantity(),
-          transaction_line.getQuantity())
+          transaction_line.getQuantity()
+          * simulation_movement.getDeliveryRatio())
       self.assertEqual(simulation_movement.getPrice(),
           transaction_line.getPrice())
       self.assertFalse(transaction_line.hasStartDate())
       self.assertFalse(transaction_line.hasStopDate())
       self.assertEqual([], transaction_line.contentValues(
           portal_type='Delivery Cell'))
-      self.assertSameSet([simulation_movement.getRelativeUrl()],
+      self.assertTrue(simulation_movement.getRelativeUrl() in 
           transaction_line.getDeliveryRelatedList(
               portal_type='Simulation Movement'))
 
@@ -778,6 +784,11 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
         path='%s/%%' % applied_rule.getPath())
     self.tic()
 
+    # as invoice_1 has been updated it is time to update its causality
+    # with automatic solving
+    invoice_1.updateCausalityState(solve_automatically=True)
+    self.tic()
+
     self.checkSimulationMovement(transaction_movement_1_rec_bis2)
     transaction_line_1_rec_bis2 = transaction_movement_1_rec_bis2\
         .getDeliveryValue()
@@ -798,11 +809,17 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     self.assertEqual(invoice_1.getRelativeUrl(),
         transation_model_line_1_rec_bis2.getParentValue().getRelativeUrl())
 
-    checkTransactionedInvoice(invoice_1)
+    self.assertEqual('solved', invoice_1.getCausalityState())
+    self.assertEqual('confirmed', invoice_1.getSimulationState())
     self.assertEqual('solved', invoice_2.getCausalityState())
     self.assertEqual('confirmed', invoice_2.getSimulationState())
 
 class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingListBuilder):
+  def checkSimulationMovement(self, simulation_movement):
+    self.assertNotEqual(0.0, simulation_movement.getDeliveryRatio())
+    self.assertEqual(0.0, simulation_movement.getDeliveryError())
+    self.assertNotEqual(None, simulation_movement.getDeliveryValue())
+
   def test(self):
     hosting_subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
@@ -995,14 +1012,15 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
         transaction_line.getCategoryList()
       )
       self.assertEqual(simulation_movement.getQuantity(),
-          transaction_line.getQuantity())
+          transaction_line.getQuantity()
+          * simulation_movement.getDeliveryRatio())
       self.assertEqual(simulation_movement.getPrice(),
           transaction_line.getPrice())
       self.assertFalse(transaction_line.hasStartDate())
       self.assertFalse(transaction_line.hasStopDate())
       self.assertEqual([], transaction_line.contentValues(
           portal_type='Delivery Cell'))
-      self.assertSameSet([simulation_movement.getRelativeUrl()],
+      self.assertTrue(simulation_movement.getRelativeUrl() in
           transaction_line.getDeliveryRelatedList(
               portal_type='Simulation Movement'))
 
@@ -1037,6 +1055,12 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
         .slapos_sale_invoice_transaction_trade_model_builder.build(
         path='%s/%%' % applied_rule.getPath())
     self.tic()
+
+    # as invoice_1 has been updated it is time to update its causality
+    # with automatic solving
+    invoice_1.updateCausalityState(solve_automatically=True)
+    self.tic()
+
     self.checkSimulationMovement(model_movement_1_tax_bis)
     model_line_1_tax_bis = model_movement_1_tax_bis.getDeliveryValue()
     checkModelLine(model_movement_1_tax_bis, model_line_1_tax_bis, [

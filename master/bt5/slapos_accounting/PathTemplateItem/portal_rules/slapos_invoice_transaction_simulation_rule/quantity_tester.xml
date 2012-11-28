@@ -58,7 +58,9 @@
         <item>
             <key> <string>categories</string> </key>
             <value>
-              <tuple/>
+              <tuple>
+                <string>solver/portal_solvers/Automatic Quantity Adopt Solver</string>
+              </tuple>
             </value>
         </item>
         <item>

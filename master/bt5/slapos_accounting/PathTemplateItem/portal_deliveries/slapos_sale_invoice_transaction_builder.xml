@@ -84,7 +84,10 @@
         <item>
             <key> <string>delivery_cell_separate_order</string> </key>
             <value>
-              <tuple/>
+              <tuple>
+                <string>calculateAddQuantity</string>
+                <string>calculateAveragePrice</string>
+              </tuple>
             </value>
         </item>
         <item>
