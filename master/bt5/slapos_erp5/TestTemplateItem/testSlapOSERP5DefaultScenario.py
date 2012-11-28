@@ -31,8 +31,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
   def joinSlapOS(self, web_site, reference):
     def findMessage(email, body):
       for candidate in reversed(self.portal.MailHost.getMessageList()):
-        if email in candidate[1] \
-            and body in candidate[2]:
+        if [q for q in candidate[1] if email in q] and body in candidate[2]:
           return candidate[2]
 
     credential_request_form = self.web_site.ERP5Site_viewCredentialRequestForm()
