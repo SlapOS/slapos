@@ -81,9 +81,11 @@ if context.getTitle() == 'Not visited by %s':
   return wrapper
 
 class TestInstanceInvoicingAlarm(testSlapOSMixin):
-  def afterSetUp(self):
-    super(TestInstanceInvoicingAlarm, self).afterSetUp()
-
+  @withAbort
+  def test_noSaleOrderPackingList_newSoftwareInstance(self):
+    """
+    Be sure no delivery is created synchronously (break old code behaviour)
+    """
     self.software_instance_request_kw = dict(
       software_release=self.generateNewSoftwareReleaseUrl(),
       software_type=self.generateNewSoftwareType(),
@@ -91,7 +93,18 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
       sla_xml=self.generateSafeXml(),
       shared=False,
     )
+    instance = self.portal.software_instance_module.template_software_instance\
+        .Base_createCloneDocument(batch_mode=1)
+    instance.edit(title="TESTSI-%s" % self.generateNewId())
+    instance.requestStart(**self.software_instance_request_kw)
 
+    self.assertEqual(None, instance.getCausalityValue())
+
+  @withAbort
+  def test_noSaleOrderPackingList_newSlaveInstance(self):
+    """
+    Be sure no delivery is created synchronously (break old code behaviour)
+    """
     self.slave_instance_request_kw = dict(
       software_release=self.generateNewSoftwareReleaseUrl(),
       software_type=self.generateNewSoftwareType(),
@@ -100,24 +113,6 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
       shared=True,
     )
 
-  def beforeTearDown(self):
-    transaction.abort()
-
-  def test_noSaleOrderPackingList_newSoftwareInstance(self):
-    """
-    Be sure no delivery is created synchronously (break old code behaviour)
-    """
-    instance = self.portal.software_instance_module.template_software_instance\
-        .Base_createCloneDocument(batch_mode=1)
-    instance.edit(title="TESTSI-%s" % self.generateNewId())
-    instance.requestStart(**self.software_instance_request_kw)
-
-    self.assertEqual(None, instance.getCausalityValue())
-
-  def test_noSaleOrderPackingList_newSlaveInstance(self):
-    """
-    Be sure no delivery is created synchronously (break old code behaviour)
-    """
     instance = self.portal.software_instance_module.template_slave_instance\
         .Base_createCloneDocument(batch_mode=1)
     instance.edit(title="TESTSI-%s" % self.generateNewId())
@@ -168,6 +163,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
         'Visited by Instance_solveInvoicingGeneration',
         instance.workflow_history['edit_workflow'][-1]['comment'])
 
+  @withAbort
   def test_solved_instance(self):
     instance = self.portal.software_instance_module\
         .template_slave_instance.Base_createCloneDocument(batch_mode=1)
@@ -193,6 +189,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.assertEqual(instance.getCausalityState(), 'solved')
     self.assertEqual(None, instance.getCausalityValue())
 
+  @withAbort
   def test_instance_in_draft_state(self):
     instance = self.portal.software_instance_module\
         .template_slave_instance.Base_createCloneDocument(batch_mode=1)
@@ -216,6 +213,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.assertEqual(instance.getCausalityState(), 'solved')
     self.assertEqual(None, instance.getCausalityValue())
 
+  @withAbort
   def test_instance_in_unknown_state(self):
     instance = self.portal.software_instance_module\
         .template_slave_instance.Base_createCloneDocument(batch_mode=1)
@@ -237,6 +235,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
 
     self.assertRaises(AssertionError, instance.Instance_solveInvoicingGeneration) 
 
+  @withAbort
   def test_instance_in_early_destroyed_state(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -308,6 +307,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
                        [instance, subscription])
     self.assertEqual(len(movement.contentValues()), 0)
 
+  @withAbort
   def test_instance_create_non_destroyed_state(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -348,6 +348,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
       self.check_instance_delivery(delivery, start_date, stop_date, person, 1)
     self.check_instance_movement(setup_line, instance, subscription, 1)
 
+  @withAbort
   def test_instance_create_non_destroyed_with_update_state(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -405,6 +406,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.check_instance_movement(setup_line, instance, subscription, 1)
     self.check_instance_movement(update_line, instance, subscription, 2)
 
+  @withAbort
   def test_instance_create_destroyed_with_update_state(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -463,6 +465,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.check_instance_movement(update_line, instance, subscription, 1)
     self.check_instance_movement(destroy_line, instance, subscription, 1)
 
+  @withAbort
   def test_instance_update_non_destroyed_state(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -522,6 +525,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
       self.check_instance_delivery(delivery, start_date, stop_date, person, 1)
     self.check_instance_movement(update_line, instance, subscription, 2)
 
+  @withAbort
   def test_instance_update_destroyed_state(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -582,6 +586,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
     self.check_instance_movement(update_line, instance, subscription, 1)
     self.check_instance_movement(destroy_line, instance, subscription, 1)
 
+  @withAbort
   def test_instance_update_already_destroyed(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
