@@ -31,6 +31,7 @@ import zc.buildout
 import filecmp
 import urlparse
 import shutil
+import re
 
 class Recipe(GenericBaseRecipe):
   """Deploy a fully operational condor architecture."""
@@ -60,7 +61,6 @@ class Recipe(GenericBaseRecipe):
     self.package = options['package'].strip()
     self.rootdir = options['rootdirectory'].strip()
     #Other condor dependances
-    self.perlbin = options['perl-bin'].strip()
     self.javabin = options['java-bin'].strip()
     self.dash = options['dash'].strip()
     #Directory to deploy condor
@@ -73,7 +73,9 @@ class Recipe(GenericBaseRecipe):
     self.diskspace = options['disk-space'].strip()
     self.ipv6 = options['ip'].strip()
     self.condor_host = options['condor_host'].strip()
-    self.collector = options['collector_name'].strip()
+    self.collector_name = options['collector_name'].strip()
+    self.host_list = self.options.get('allowed-write', '*')
+    self.email = self.options.get('admin-email', "root@$(FULL_HOSTNAME)")
 
   def install(self):
     path_list = []
@@ -106,15 +108,24 @@ class Recipe(GenericBaseRecipe):
                   localdir=self.localdir, config_local=config_local,
                   slapuser=slapuser, ipv6=self.ipv6,
                   diskspace=self.diskspace, javabin=self.javabin,
-                  domain_name=domain_name)
+                  host_list=self.host_list, collector_name=self.collector_name,
+                  email=self.email, domain_name=domain_name)
     destination = os.path.join(condor_config)
     config = self.createFile(destination,
       self.substituteTemplate(self.getTemplateFilename('condor_config.generic'),
       condor_configure))
     path_list.append(config)
-    #update condor_config.local
-    with open(config_local, 'a') as f:
-      f.write("\nSTART = TRUE")
+
+    #Search if is needed to update condor_config.local file
+    find = re.search('NETWORK_INTERFACE[\s]*=[\s]*(%s)' % self.ipv6,
+                                              open(config_local, 'r').read())
+    if not find:
+      #update condor_config.local
+      with open(config_local, 'a') as f:
+        if self.role == "execute":
+          f.write("\nSTART = TRUE")
+        f.write("\nCOLLECTOR_NAME = %s\n \nNETWORK_INTERFACE=%s" %
+                  (self.collector_name, self.ipv6))
 
     #create condor binary launcher for slapos
     if not os.path.exists(self.wrapper_bin):
@@ -133,11 +144,10 @@ class Recipe(GenericBaseRecipe):
       export CONDOR_LOCATION=%s
       export CONDOR_IDS=%s
       export HOME=%s
-      export HOSTNAME=%s
       exec %s $*""" % (self.dash,
               self.environ['LD_LIBRARY_PATH'], self.environ['PATH'],
-              condor_config, self.prefix, slapuser, self.localdir,
-              self.condor_host, current_exe)
+              condor_config, self.prefix, slapuser, self.environ['HOME'],
+              current_exe)
       wrapper.write(content)
       wrapper.close()
       path_list.append(wrapper_location)
@@ -155,19 +165,14 @@ class Recipe(GenericBaseRecipe):
       export CONDOR_LOCATION=%s
       export CONDOR_IDS=%s
       export HOME=%s
-      export HOSTNAME=%s
       exec %s $*""" % (self.dash,
               self.environ['LD_LIBRARY_PATH'], self.environ['PATH'],
-              condor_config, self.prefix, slapuser, self.localdir,
-              self.condor_host, current_exe)
+              condor_config, self.prefix, slapuser, self.environ['HOME'],
+              current_exe)
       wrapper.write(content)
       wrapper.close()
       path_list.append(wrapper_location)
       os.chmod(wrapper_location, 0744)
-    #update environment variable
-    self.environ['CONDOR_CONFIG'] = condor_config
-    self.environ['CONDOR_LOCATION'] = self.prefix
-    self.environ['CONDOR_IDS'] = slapuser
 
     #generate script for start condor
     start_condor = os.path.join(self.wrapperdir, 'start_condor')

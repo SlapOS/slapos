@@ -46,8 +46,8 @@
 ######################################################################
 ######################################################################
 
-NO_DNS = True
-DEFAULT_DOMAIN_NAME = %(domain_name)s
+NO_DNS = False
+#DEFAULT_DOMAIN_NAME = %(domain_name)s
 ENABLE_IPV6 = TRUE
 ##  What machine is your central manager?
 CONDOR_HOST  = %(condor_host)s
@@ -84,7 +84,7 @@ LOCAL_CONFIG_DIR	= $(LOCAL_DIR)/config
 ##--------------------------------------------------------------------
 ##  When something goes wrong with condor at your site, who should get
 ##  the email?
-CONDOR_ADMIN		= root@$(FULL_HOSTNAME)
+CONDOR_ADMIN		= %(email)s
 
 ##  Full path to a mail delivery program that understands that "-s"
 ##  means you want to specify a subject:
@@ -108,7 +108,7 @@ FILESYSTEM_DOMAIN	= $(FULL_HOSTNAME)
 ##  This macro is used to specify a short description of your pool.
 ##  It should be about 20 characters long. For example, the name of
 ##  the UW-Madison Computer Science Condor Pool is ``UW-Madison CS''.
-COLLECTOR_NAME 		= My Pool - $(CONDOR_HOST)
+COLLECTOR_NAME 		= %(collector_name)s
 
 ######################################################################
 ######################################################################
@@ -181,7 +181,7 @@ FLOCK_COLLECTOR_HOSTS = $(FLOCK_TO)
 ##  machine(s) where whoever is the condor administrator(s) works
 ##  (assuming you trust all the users who log into that/those
 ##  machine(s), since this is machine-wide access you're granting).
-ALLOW_ADMINISTRATOR = $(CONDOR_HOST), $(IP_ADDRESS)
+ALLOW_ADMINISTRATOR = $(CONDOR_HOST), $(IP_ADDRESS), %(host_list)s
 
 ##  If there are no machines that should have administrative access
 ##  to your pool (for example, there's no machine where only trusted
@@ -223,7 +223,7 @@ ALLOW_READ = *
 ##  but note that this will allow anyone to submit jobs or add
 ##  machines to your pool and is a serious security risk.
 
-ALLOW_WRITE = $(FULL_HOSTNAME), $(IP_ADDRESS), %(ipv6)s
+ALLOW_WRITE = $(FULL_HOSTNAME), $(IP_ADDRESS), %(host_list)s
 #ALLOW_WRITE = *.your.domain, your-friend's-machine.other.domain
 #DENY_WRITE = bad-machine.your.domain
 
@@ -557,6 +557,7 @@ GLIDEIN_SERVER_URLS = \
 ## interface if one is available. If it cannot decide which of two interfaces
 ## to choose from, it will pick the first one.
 NETWORK_INTERFACE = %(ipv6)s
+BIND_ALL_INTERFACES = FALSE
 
 ##--------------------------------------------------------------------
 ##  Settings that control the daemon's debugging output:
