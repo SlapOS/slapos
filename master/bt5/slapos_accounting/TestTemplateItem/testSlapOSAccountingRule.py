@@ -69,10 +69,9 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
           use='trade/sale',
           trade_phase='slapos/invoicing',
           quantity_unit='unit/piece',
-          specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
-          causality_list=['business_process_module/slapos_sale_business_p'
-          'rocess/invoice_path', 'business_process_module/slapos_sale_b'
-          'usiness_process/invoice'],
+          specialise=
+              'sale_trade_condition_module/slapos_aggregated_trade_condition',
+          causality_list=['business_process_module/slapos_aggregated_business_process/invoice_path', 'business_process_module/slapos_aggregated_business_process/invoice'],
           delivery_value=self.portal.accounting_module.newContent(
               portal_type='Sale Invoice Transaction').newContent(
                   portal_type='Invoice Line')
@@ -105,11 +104,9 @@ class TestDefaultInvoiceTransactionRule(testSlapOSMixin):
           portal_type='Simulation Movement')
       self.assertEqual(2, len(simulation_movement_list))
       debit_movement_list = [q for q in simulation_movement_list if \
-          q.getCausality() == 'business_process_module/slapos_sale_busines'
-              's_process/account_debit_path']
+          q.getCausality() == 'business_process_module/slapos_aggregated_business_process/account_debit_path']
       credit_movement_list = [q for q in simulation_movement_list if \
-          q.getCausality() == 'business_process_module/slapos_sale_busines'
-              's_process/account_credit_path']
+          q.getCausality() == 'business_process_module/slapos_aggregated_business_process/account_credit_path']
       self.assertEqual(1, len(debit_movement_list))
       self.assertEqual(1, len(credit_movement_list))
       debit_movement = debit_movement_list[0]
@@ -204,9 +201,7 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
           trade_phase='slapos/delivery',
           quantity_unit='unit/piece',
           specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
-          causality_list=['business_process_module/slapos_sale_business_p'
-              'rocess/delivery_path', 'business_process_module/slapos_sale_'
-              'business_process/deliver'])
+          causality_list=['business_process_module/slapos_aggregated_business_process/delivery_path', 'business_process_module/slapos_aggregated_business_process/deliver'])
 
       self.assertEqual('planned',
           root_simulation_movement.getSimulationState())
@@ -266,9 +261,7 @@ class TestDefaultInvoicingRule(testSlapOSMixin):
           simulation_movement.getQuantityUnit())
       self.assertEqual(root_simulation_movement.getSpecialise(),
           simulation_movement.getSpecialise())
-      self.assertEqual(['business_process_module/slapos_sale_business_p'
-          'rocess/invoice_path', 'business_process_module/slapos_sale_b'
-          'usiness_process/invoice'], simulation_movement.getCausalityList())
+      self.assertEqual(['business_process_module/slapos_aggregated_business_process/invoice_path', 'business_process_module/slapos_aggregated_business_process/invoice'], simulation_movement.getCausalityList())
       # check children rules' type
       child_applied_rule_type_list = [q.getSpecialiseReference() for q in \
           simulation_movement.contentValues(portal_type='Applied Rule')]
@@ -322,8 +315,7 @@ class TestDefaultPaymentRule(testSlapOSMixin):
           trade_phase='slapos/accounting',
           quantity_unit='unit/piece',
           specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
-          causality_list=['business_process_module/slapos_sale_busines'
-              's_process/account'],
+          causality_list=['business_process_module/slapos_aggregated_business_process/account'],
           delivery_value=self.portal.accounting_module.newContent(
               portal_type='Sale Invoice Transaction').newContent(
                   portal_type='Invoice Line')
@@ -355,11 +347,9 @@ class TestDefaultPaymentRule(testSlapOSMixin):
           portal_type='Simulation Movement')
       self.assertEqual(2, len(simulation_movement_list))
       debit_movement_list = [q for q in simulation_movement_list if \
-          q.getCausality() == 'business_process_module/slapos_sale_busines'
-              's_process/payment_debit_path']
+          q.getCausality() == 'business_process_module/slapos_aggregated_business_process/payment_debit_path']
       credit_movement_list = [q for q in simulation_movement_list if \
-          q.getCausality() == 'business_process_module/slapos_sale_busines'
-              's_process/payment_credit_path']
+          q.getCausality() == 'business_process_module/slapos_aggregated_business_process/payment_credit_path']
       self.assertEqual(1, len(debit_movement_list))
       self.assertEqual(1, len(credit_movement_list))
       debit_movement = debit_movement_list[0]
@@ -694,9 +684,7 @@ class TestDefaultTradeModelRule(testSlapOSMixin):
           trade_phase='slapos/invoicing',
           quantity_unit='unit/piece',
           specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
-          causality_list=['business_process_module/slapos_sale_business_p'
-          'rocess/invoice_path', 'business_process_module/slapos_sale_b'
-          'usiness_process/invoice'],
+          causality_list=['business_process_module/slapos_aggregated_business_process/invoice_path', 'business_process_module/slapos_aggregated_business_process/invoice'],
           delivery_value=self.portal.accounting_module.newContent(
               portal_type='Sale Invoice Transaction').newContent(
                   portal_type='Invoice Line')
