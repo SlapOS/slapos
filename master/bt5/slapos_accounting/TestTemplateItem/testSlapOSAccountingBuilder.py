@@ -1056,6 +1056,20 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
       quantity=invoice_movement_1.getTotalPrice(),
       **model_movement_kw
     )
+    model_movement_1_tax_2 = model_rule_1.newContent(
+      destination=invoice_movement_1.getDestination(),
+      destination_section=invoice_movement_1.getDestinationSection(),
+      destination_decision=invoice_movement_1.getDestinationDecision(),
+      resource='service_module/slapos_tax',
+      trade_phase='slapos/tax',
+      causality=['business_process_module/slapos_aggregated_business_process/tax',
+          'business_process_module/slapos_aggregated_business_process/trade_model_path',
+          'sale_trade_condition_module/slapos_aggregated_trade_condition/1',
+      ],
+      price=.196,
+      quantity=.0,
+      **model_movement_kw
+    )
 
     model_rule_2 = invoice_movement_2.newContent(
         portal_type='Applied Rule',
@@ -1086,9 +1100,14 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     self.tic()
 
     self.checkSimulationMovement(model_movement_1_tax)
+    self.assertEqual(0.0, model_movement_1_tax_2.getDeliveryRatio())
+    self.assertEqual(0.0, model_movement_1_tax_2.getDeliveryError())
+    self.assertNotEqual(None, model_movement_1_tax_2.getDeliveryValue())
     self.checkSimulationMovement(model_movement_2_tax)
 
     model_line_1_tax = model_movement_1_tax.getDeliveryValue()
+    model_line_1_tax_2 = model_movement_1_tax_2.getDeliveryValue()
+    self.assertEqual(model_line_1_tax, model_line_1_tax_2)
     model_line_2_tax = model_movement_2_tax.getDeliveryValue()
 
     def checkModelLine(simulation_movement, transaction_line, category_list):
@@ -1153,6 +1172,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     self.tic()
 
     self.checkSimulationMovement(model_movement_1_tax_bis)
+
     model_line_1_tax_bis = model_movement_1_tax_bis.getDeliveryValue()
     checkModelLine(model_movement_1_tax_bis, model_line_1_tax_bis, [
         'base_application/base_amount/invoicing/taxable',
@@ -1160,6 +1180,35 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
          'use/trade/tax'])
     self.assertEqual(invoice_1.getRelativeUrl(),
         model_line_1_tax_bis.getParentValue().getRelativeUrl())
+
+    model_movement_2_tax_bis = model_movement_2_tax.Base_createCloneDocument(
+        batch_mode=1)
+    model_movement_2_tax_bis.edit(delivery=None, delivery_ratio=1.0,
+        quantity=.0)
+    self.tic()
+    self.portal.portal_deliveries\
+        .slapos_sale_invoice_transaction_trade_model_builder.build(
+        path='%s/%%' % applied_rule_1.getPath())
+    self.portal.portal_deliveries\
+        .slapos_sale_invoice_transaction_trade_model_builder.build(
+        path='%s/%%' % applied_rule_2.getPath())
+    self.tic()
+
+    # as invoice_2 has been updated it is time to update its causality
+    # with automatic solving
+    invoice_2.updateCausalityState(solve_automatically=True)
+    self.tic()
+
+    self.assertEqual(0.0, model_movement_2_tax_bis.getDeliveryRatio())
+    self.assertEqual(0.0, model_movement_2_tax_bis.getDeliveryError())
+    self.assertNotEqual(None, model_movement_2_tax_bis.getDeliveryValue())
+    model_line_2_tax_bis = model_movement_2_tax_bis.getDeliveryValue()
+    checkModelLine(model_movement_2_tax_bis, model_line_2_tax_bis, [
+        'base_application/base_amount/invoicing/taxable',
+        'resource/service_module/slapos_tax',
+         'use/trade/tax'])
+    self.assertEqual(invoice_2.getRelativeUrl(),
+        model_line_2_tax_bis.getParentValue().getRelativeUrl())
 
 class TestSlapOSPaymentTransactionOrderBuilder(testSlapOSMixin):
   def sumReceivable(self, transaction):

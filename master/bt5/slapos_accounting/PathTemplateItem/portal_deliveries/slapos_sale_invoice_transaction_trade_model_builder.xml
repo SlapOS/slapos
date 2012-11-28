@@ -86,7 +86,7 @@
             <value>
               <tuple>
                 <string>calculateAddQuantity</string>
-                <string>calculateSeparatePrice</string>
+                <string>calculateAveragePrice</string>
               </tuple>
             </value>
         </item>
