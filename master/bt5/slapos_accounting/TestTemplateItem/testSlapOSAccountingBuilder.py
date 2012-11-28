@@ -23,13 +23,14 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
       line_portal_type, cell_portal_type):
     self.assertEqual(line_portal_type, delivery_line.getPortalType())
     self.assertSameSet([
-        'resource/service_module/slapos_instance_subscription',
         'use/trade/sale',
         'quantity_unit/unit/piece',
         'base_contribution/base_amount/invoicing/discounted',
         'base_contribution/base_amount/invoicing/taxable'] \
           + convertCategoryList('aggregate',
-            simulation_movement.getAggregateList()),
+            simulation_movement.getAggregateList())
+          + convertCategoryList('resource',
+            simulation_movement.getResourceList()),
       delivery_line.getCategoryList()
     )
     self.assertEqual(simulation_movement.getQuantity(),
@@ -183,6 +184,12 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         price=3.4,
         **delivery_line_kw
     )
+    delivery_line_1_bis = delivery_line_1.Base_createCloneDocument(
+        batch_mode=1)
+    delivery_line_1_bis.edit(
+        price=0.0,
+        resource='service_module/slapos_instance_setup'
+    )
     delivery_2 = self.portal.sale_packing_list_module.newContent(
         destination=person.getRelativeUrl(),
         destination_decision=person.getRelativeUrl(),
@@ -226,6 +233,15 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         delivery=delivery_line_1.getRelativeUrl(),
         **simulation_movement_kw
     )
+    simulation_movement_1_bis = applied_rule.newContent(
+        quantity=delivery_line_1_bis.getQuantity(),
+        price=delivery_line_1_bis.getPrice(),
+        start_date=delivery_1.getStartDate(),
+        stop_date=delivery_1.getStopDate(),
+        delivery=delivery_line_1_bis.getRelativeUrl(),
+        **simulation_movement_kw
+    )
+    simulation_movement_1_bis.edit(resource=delivery_line_1_bis.getResource())
     simulation_movement_2 = applied_rule.newContent(
         quantity=delivery_line_2.getQuantity(),
         price=delivery_line_2.getPrice(),
@@ -263,6 +279,17 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         price=delivery_line_1.getPrice(),
         **invoice_movement_kw)
 
+    invoice_rule_1_bis = simulation_movement_1_bis.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_simulation_rule')
+    invoice_movement_1_bis = invoice_rule_1_bis.newContent(
+        start_date=delivery_1.getStartDate(),
+        stop_date=delivery_1.getStopDate(),
+        quantity=delivery_line_1_bis.getQuantity(),
+        price=delivery_line_1_bis.getPrice(),
+        **invoice_movement_kw)
+    invoice_movement_1_bis.edit(resource=delivery_line_1_bis.getResource())
+
     invoice_rule_2 = simulation_movement_2.newContent(
         portal_type='Applied Rule',
         specialise='portal_rules/slapos_invoice_simulation_rule')
@@ -279,16 +306,23 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
     self.tic()
 
     self.checkSimulationMovement(invoice_movement_1)
+    self.checkSimulationMovement(invoice_movement_1_bis)
     self.checkSimulationMovement(invoice_movement_2)
 
     invoice_line_1 = invoice_movement_1.getDeliveryValue()
+    invoice_line_1_bis = invoice_movement_1_bis.getDeliveryValue()
     invoice_line_2 = invoice_movement_2.getDeliveryValue()
     self.assertNotEqual(invoice_line_1.getRelativeUrl(),
         invoice_line_2.getRelativeUrl())
+    self.assertNotEqual(invoice_line_1, invoice_line_1_bis)
+    self.assertEqual(invoice_line_1.getParentValue(),
+        invoice_line_1_bis.getParentValue())
 
     line_kw = dict(line_portal_type='Invoice Line',
         cell_portal_type='Invoice Cell')
     self.checkDeliveryLine(invoice_movement_1, invoice_line_1, **line_kw)
+    self.checkDeliveryLine(invoice_movement_1_bis, invoice_line_1_bis,
+        **line_kw)
     self.checkDeliveryLine(invoice_movement_2, invoice_line_2, **line_kw)
 
     invoice_1 = invoice_line_1.getParentValue()
