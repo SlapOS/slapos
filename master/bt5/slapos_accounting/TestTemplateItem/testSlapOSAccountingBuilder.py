@@ -1301,6 +1301,7 @@ class TestSlapOSAggregatedDeliveryBuilder(testSlapOSMixin):
     self.assertEqual('building', built_delivery.getCausalityState())
     self.assertEqual(delivery.getPriceCurrency(),
         built_delivery.getPriceCurrency())
+    self.assertEqual(DateTime().earliestTime(), built_delivery.getStartDate())
     delivery_line_list = built_delivery.contentValues(
         portal_type='Sale Packing List Line')
     self.assertEqual(1, len(delivery_line_list))

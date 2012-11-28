@@ -50,7 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>restrictedTraverse = context.getPortalObject().restrictedTraverse\n
+            <value> <string>from DateTime import DateTime\n
+restrictedTraverse = context.getPortalObject().restrictedTraverse\n
 person = context.getDestination()\n
 reference = context.getReference()\n
 input_movement_list = [restrictedTraverse(q) for q in\n
@@ -62,6 +63,9 @@ for delivery_line in input_movement_list:\n
   delivery_line.setGroupingReference(reference)\n
 if context.getCausalityState() == \'draft\':\n
   context.startBuilding()\n
+\n
+if context.getStartDate() is None:\n
+  context.setStartDate(DateTime().earliestTime())\n
 </string> </value>
         </item>
         <item>
