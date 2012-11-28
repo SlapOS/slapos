@@ -45,6 +45,8 @@ notifier-callbacks = $${basedirectory:notifier}/callbacks
 # If false, they can be run with bin/bullly for all the PBSReady instances.
 enable-bully-service = False
 recipe = slapos.cookbook:addresiliency
+wrapper-bully = bully
+wrapper-takeover = takeover
 services = $${basedirectory:services}
 bin = $${rootdirectory:bin}
 etc = $${rootdirectory:etc}

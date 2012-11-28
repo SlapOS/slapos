@@ -31,7 +31,10 @@ import os
 
 class Recipe(GenericSlapRecipe):
     """ This class provides the installation of the resilience
-        script on the partition.
+        scripts on the partition.
+
+        bin/takeover will perform a rename (must be run manually).
+        bin/bully will monitor, run elections and perform renames when needed.
     """
 
     def _install(self):
@@ -55,12 +58,12 @@ class Recipe(GenericSlapRecipe):
         slap_connection = self.buildout['slap-connection']
 
         if self.optionIsTrue('enable-bully-service', default=False):
-            wrapper_dir = self.options['services']
+            bully_dir = self.options['services']
         else:
-            wrapper_dir = self.options['bin']
+            bully_dir = self.options['bin']
 
-        wrapper = self.createPythonScript(
-            name=os.path.join(wrapper_dir, self.parameter_dict['wrapper']),
+        bully_wrapper = self.createPythonScript(
+            name=os.path.join(bully_dir, self.options['wrapper-bully']),
             absolute_function='slapos.recipe.addresiliency.bully.run',
             arguments={
                 'confpath': confpath,
@@ -73,7 +76,22 @@ class Recipe(GenericSlapRecipe):
                 'namebase': self.parameter_dict['namebase'],
             })
 
-        path_list.append(wrapper)
+        path_list.append(bully_wrapper)
+
+        takeover_wrapper = self.createPythonScript(
+            name=os.path.join(self.options['bin'], self.options['wrapper-takeover']),
+            absolute_function='slapos.recipe.addresiliency.takeover.run',
+            arguments={
+                'server_url': slap_connection['server-url'],
+                'key_file': slap_connection.get('key-file'),
+                'cert_file': slap_connection.get('cert-file'),
+                'computer_id': slap_connection['computer-id'],
+                'partition_id': slap_connection['partition-id'],
+                'software': slap_connection['software-release-url'],
+                'namebase': self.parameter_dict['namebase'],
+            })
+
+        path_list.append(takeover_wrapper)
 
         return path_list
 
