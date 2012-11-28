@@ -1144,7 +1144,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
         path='%s/%%' % applied_rule_1.getPath())
     self.portal.portal_deliveries\
         .slapos_sale_invoice_transaction_trade_model_builder.build(
-        path='%s/%%' % applied_rule_1.getPath())
+        path='%s/%%' % applied_rule_2.getPath())
     self.tic()
 
     # as invoice_1 has been updated it is time to update its causality
