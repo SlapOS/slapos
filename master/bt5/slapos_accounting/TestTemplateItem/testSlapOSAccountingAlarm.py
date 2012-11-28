@@ -35,26 +35,50 @@ class Simulator:
     open(self.outfile, 'w').write(repr(l))
     return self.to_return
 
-def simulateInstance_solveInvoicingGeneration(func):
-  @functools.wraps(func)
-  def wrapped(self, *args, **kwargs):
-    script_name = 'Instance_solveInvoicingGeneration'
-    if script_name in self.portal.portal_skins.custom.objectIds():
-      raise ValueError('Precondition failed: %s exists in custom' % script_name)
-    createZODBPythonScript(self.portal.portal_skins.custom,
-                        script_name,
-                        '*args, **kwargs',
-                        '# Script body\n'
-"""portal_workflow = context.portal_workflow
-portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Instance_solveInvoicingGeneration') """ )
-    transaction.commit()
-    try:
-      func(self, *args, **kwargs)
-    finally:
+def simulateByEditWorkflowMark(script_name):
+  def wrapper(func):
+    @functools.wraps(func)
+    def wrapped(self, *args, **kwargs):
       if script_name in self.portal.portal_skins.custom.objectIds():
-        self.portal.portal_skins.custom.manage_delObjects(script_name)
+        raise ValueError('Precondition failed: %s exists in custom' % script_name)
+      createZODBPythonScript(self.portal.portal_skins.custom,
+                          script_name,
+                          '*args, **kwargs',
+                          '# Script body\n'
+  """context.portal_workflow.doActionFor(context, action='edit_action', comment='Visited by %s') """%script_name )
       transaction.commit()
-  return wrapped
+      try:
+        func(self, *args, **kwargs)
+      finally:
+        if script_name in self.portal.portal_skins.custom.objectIds():
+          self.portal.portal_skins.custom.manage_delObjects(script_name)
+        transaction.commit()
+    return wrapped
+  return wrapper
+
+def simulateByTitlewMark(script_name):
+  def wrapper(func):
+    @functools.wraps(func)
+    def wrapped(self, *args, **kwargs):
+      if script_name in self.portal.portal_skins.custom.objectIds():
+        raise ValueError('Precondition failed: %s exists in custom' % script_name)
+      createZODBPythonScript(self.portal.portal_skins.custom,
+                          script_name,
+                          '*args, **kwargs',
+                          '# Script body\n'
+"""
+if context.getTitle() == 'Not visited by %s':
+  context.setTitle('Visited by %s')
+""" %(script_name, script_name))
+      transaction.commit()
+      try:
+        func(self, *args, **kwargs)
+      finally:
+        if script_name in self.portal.portal_skins.custom.objectIds():
+          self.portal.portal_skins.custom.manage_delObjects(script_name)
+        transaction.commit()
+    return wrapped
+  return wrapper
 
 class TestInstanceInvoicingAlarm(testSlapOSMixin):
   def afterSetUp(self):
@@ -102,7 +126,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
 
     self.assertEqual(None, instance.getCausalityValue())
 
-  @simulateInstance_solveInvoicingGeneration
+  @simulateByEditWorkflowMark('Instance_solveInvoicingGeneration')
   def test_alarm_findSoftwareInstance(self):
     new_id = self.generateNewId()
     instance = self.portal.software_instance_module.newContent(
@@ -124,7 +148,7 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
         'Visited by Instance_solveInvoicingGeneration',
         instance.workflow_history['edit_workflow'][-1]['comment'])
 
-  @simulateInstance_solveInvoicingGeneration
+  @simulateByEditWorkflowMark('Instance_solveInvoicingGeneration')
   def test_alarm_findSlaveInstance(self):
     new_id = self.generateNewId()
     instance = self.portal.software_instance_module.newContent(
@@ -617,28 +641,6 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
       self.check_instance_delivery(delivery, start_date, stop_date, person, 1)
     self.check_instance_movement(update_line, instance, subscription, 2)
 
-def simulateHostingSubscription_requestUpdateOpenSaleOrder(func):
-  @functools.wraps(func)
-  def wrapped(self, *args, **kwargs):
-    script_name = 'HostingSubscription_requestUpdateOpenSaleOrder'
-    if script_name in self.portal.portal_skins.custom.objectIds():
-      raise ValueError('Precondition failed: %s exists in custom' % script_name)
-    createZODBPythonScript(self.portal.portal_skins.custom,
-                        script_name,
-                        '*args, **kwargs',
-                        '# Script body\n'
-"""portal_workflow = context.portal_workflow
-portal_workflow.doActionFor(context, action='edit_action', comment='Visited by HostingSubscription_requestUpdateOpenSaleOrder') """ )
-    transaction.commit()
-    try:
-      func(self, *args, **kwargs)
-    finally:
-      transaction.abort()
-      if script_name in self.portal.portal_skins.custom.objectIds():
-        self.portal.portal_skins.custom.manage_delObjects(script_name)
-      transaction.commit()
-  return wrapped
-
 class TestOpenSaleOrderAlarm(testSlapOSMixin):
   def test_noOSO_newPerson(self):
     person = self.portal.person_module.template_member\
@@ -686,7 +688,7 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
     self.assertTrue(all([q in open_sale_order.getCategoryList() \
         for q in open_sale_order_template.getCategoryList()]))
 
-  @simulateHostingSubscription_requestUpdateOpenSaleOrder
+  @simulateByEditWorkflowMark('HostingSubscription_requestUpdateOpenSaleOrder')
   def test_alarm_HS_diverged(self):
     subscription = self.portal.hosting_subscription_module\
         .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
@@ -1092,31 +1094,8 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(request_time_2, validated_line_2.getStartDate())
     self.assertEqual(stop_date_2, validated_line_2.getStopDate())
 
-def simulateSimulationMovement_buildSlapOS(func):
-  @functools.wraps(func)
-  def wrapped(self, *args, **kwargs):
-    script_name = 'SimulationMovement_buildSlapOS'
-    if script_name in self.portal.portal_skins.custom.objectIds():
-      raise ValueError('Precondition failed: %s exists in custom' % script_name)
-    createZODBPythonScript(self.portal.portal_skins.custom,
-                        script_name,
-                        '*args, **kwargs',
-                        '# Script body\n'
-"""portal_workflow = context.portal_workflow
-if context.getTitle() == 'Not visited by SimulationMovement_buildSlapOS':
-  context.setTitle('Visited by SimulationMovement_buildSlapOS')
-""" )
-    transaction.commit()
-    try:
-      func(self, *args, **kwargs)
-    finally:
-      if script_name in self.portal.portal_skins.custom.objectIds():
-        self.portal.portal_skins.custom.manage_delObjects(script_name)
-      transaction.commit()
-  return wrapped
-
 class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
-  @simulateSimulationMovement_buildSlapOS
+  @simulateByTitlewMark('SimulationMovement_buildSlapOS')
   def test_SimulationMovement_withoutDelivery(self):
     applied_rule = self.portal.portal_simulation.newContent(
         portal_type='Applied Rule')
@@ -1132,7 +1111,7 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
         'Visited by SimulationMovement_buildSlapOS',
         simulation_movement.getTitle())
 
-  @simulateSimulationMovement_buildSlapOS
+  @simulateByTitlewMark('SimulationMovement_buildSlapOS')
   def test_SimulationMovement_withDelivery(self):
     delivery = self.portal.sale_packing_list_module.newContent(
         portal_type='Sale Packing List')
@@ -1297,31 +1276,8 @@ class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
       if os.path.exists(activate_simulator):
         os.unlink(activate_simulator)
 
-def simulateDelivery_manageBuildingCalculatingDelivery(func):
-  @functools.wraps(func)
-  def wrapped(self, *args, **kwargs):
-    script_name = 'Delivery_manageBuildingCalculatingDelivery'
-    if script_name in self.portal.portal_skins.custom.objectIds():
-      raise ValueError('Precondition failed: %s exists in custom' % script_name)
-    createZODBPythonScript(self.portal.portal_skins.custom,
-                        script_name,
-                        '*args, **kwargs',
-                        '# Script body\n'
-"""portal_workflow = context.portal_workflow
-if context.getTitle() == 'Not visited by Delivery_manageBuildingCalculatingDelivery':
-  context.setTitle('Visited by Delivery_manageBuildingCalculatingDelivery')
-""" )
-    transaction.commit()
-    try:
-      func(self, *args, **kwargs)
-    finally:
-      if script_name in self.portal.portal_skins.custom.objectIds():
-        self.portal.portal_skins.custom.manage_delObjects(script_name)
-      transaction.commit()
-  return wrapped
-
 class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
-  @simulateDelivery_manageBuildingCalculatingDelivery
+  @simulateByTitlewMark('Delivery_manageBuildingCalculatingDelivery')
   def _test(self, state, message):
     delivery = self.portal.sale_packing_list_module.newContent(
         title='Not visited by Delivery_manageBuildingCalculatingDelivery',
