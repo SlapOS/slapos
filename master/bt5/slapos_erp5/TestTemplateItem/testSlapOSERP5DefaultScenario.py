@@ -44,6 +44,8 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     request = web_site.ERP5Site_newCredentialRequest(
       reference=reference,
+      first_name='Joe',
+      last_name=reference,
       default_email_text=email
     )
 
