@@ -46,7 +46,7 @@ class TestSlapOSSalePackingListBuilder(testSlapOSMixin):
             portal_type='Simulation Movement'))
 
   def checkDelivery(self, simulation_movement, delivery, delivery_portal_type,
-        category_list, simulation_state='delivered'):
+        category_list, simulation_state='delivered', already_solved=False):
     self.assertEqual(delivery_portal_type, delivery.getPortalType())
     self.assertEqual(simulation_state, delivery.getSimulationState())
     self.assertEqual('building', delivery.getCausalityState())
@@ -346,6 +346,55 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
         category_list=category_list + convertCategoryList('causality',
           [delivery_1.getRelativeUrl()]), **invoice_kw)
     self.checkDelivery(invoice_movement_2, invoice_2,
+        category_list=category_list + convertCategoryList('causality',
+          [delivery_2.getRelativeUrl()]), **invoice_kw)
+
+    # check delivering of movement later
+    delivery_line_2_bis = delivery_line_2.Base_createCloneDocument(
+        batch_mode=1)
+    delivery_line_2_bis.edit(
+        price=0.0,
+        resource='service_module/slapos_instance_setup'
+    )
+    simulation_movement_2_bis = applied_rule_2.newContent(
+        quantity=delivery_line_2_bis.getQuantity(),
+        price=delivery_line_2_bis.getPrice(),
+        start_date=delivery_2.getStartDate(),
+        stop_date=delivery_2.getStopDate(),
+        delivery=delivery_line_2_bis.getRelativeUrl(),
+        **simulation_movement_kw
+    )
+    simulation_movement_2_bis.edit(resource=delivery_line_2_bis.getResource())
+    invoice_rule_2_bis = simulation_movement_2_bis.newContent(
+        portal_type='Applied Rule',
+        specialise='portal_rules/slapos_invoice_simulation_rule')
+    invoice_movement_2_bis = invoice_rule_2_bis.newContent(
+        start_date=delivery_2.getStartDate(),
+        stop_date=delivery_2.getStopDate(),
+        quantity=delivery_line_2_bis.getQuantity(),
+        price=delivery_line_2_bis.getPrice(),
+        **invoice_movement_kw)
+    invoice_movement_2_bis.edit(resource=delivery_line_2_bis.getResource())
+    self.tic()
+    # test the test
+    delivery_2.updateCausalityState(solve_automatically=False)
+    self.tic()
+    self.assertEqual('solved', delivery_2.getCausalityState())
+
+    self.portal.portal_deliveries.slapos_sale_invoice_builder.build(
+        path='%s/%%' % applied_rule_1.getPath())
+    self.portal.portal_deliveries.slapos_sale_invoice_builder.build(
+        path='%s/%%' % applied_rule_2.getPath())
+    self.tic()
+
+    self.checkSimulationMovement(invoice_movement_2_bis)
+    invoice_line_2_bis = invoice_movement_2_bis.getDeliveryValue()
+    self.assertNotEqual(invoice_line_2, invoice_line_2_bis)
+    self.assertEqual(invoice_line_2.getParentValue(),
+        invoice_line_2_bis.getParentValue())
+    self.checkDeliveryLine(invoice_movement_2_bis, invoice_line_2_bis,
+        **line_kw)
+    self.checkDelivery(invoice_movement_2_bis, invoice_2,
         category_list=category_list + convertCategoryList('causality',
           [delivery_2.getRelativeUrl()]), **invoice_kw)
 
