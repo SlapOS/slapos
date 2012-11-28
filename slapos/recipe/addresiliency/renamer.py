@@ -61,7 +61,7 @@ class Renamer(object):
 
         cp_broken.stopped()
 
-        log.debug("Renaming {}: {}".format(cp_broken.getId(), cp_exporter_ref))
+        log.debug("Renaming {}: {}".format(cp_winner.getId(), cp_exporter_ref))
 
         # update name (and later, software type) for the partition that will take over
 
