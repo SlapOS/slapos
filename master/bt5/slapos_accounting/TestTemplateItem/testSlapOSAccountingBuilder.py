@@ -152,7 +152,7 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
     applied_rule = self.portal.portal_simulation.newContent(
       portal_type='Applied Rule',
       causality=hosting_subscription.getRelativeUrl(),
-      specialise='portal_rules/slapos_subscription_item_rule'
+      specialise='portal_rules/slapos_delivery_root_simulation_rule'
     )
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -325,7 +325,7 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     applied_rule = self.portal.portal_simulation.newContent(
       portal_type='Applied Rule',
       causality=hosting_subscription.getRelativeUrl(),
-      specialise='portal_rules/slapos_subscription_item_rule'
+      specialise='portal_rules/slapos_delivery_root_simulation_rule'
     )
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
@@ -826,7 +826,7 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     applied_rule = self.portal.portal_simulation.newContent(
       portal_type='Applied Rule',
       causality=hosting_subscription.getRelativeUrl(),
-      specialise='portal_rules/slapos_subscription_item_rule'
+      specialise='portal_rules/slapos_delivery_root_simulation_rule'
     )
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
