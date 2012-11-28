@@ -405,16 +405,20 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     self.assertNotEqual(None, simulation_movement.getDeliveryValue())
 
   def test(self):
-    applied_rule = self.portal.portal_simulation.newContent(
+    applied_rule_1 = self.portal.portal_simulation.newContent(
+      portal_type='Applied Rule',
+      specialise='portal_rules/slapos_delivery_root_simulation_rule'
+    )
+    applied_rule_2 = self.portal.portal_simulation.newContent(
       portal_type='Applied Rule',
       specialise='portal_rules/slapos_delivery_root_simulation_rule'
     )
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
-    simulation_movement_1 = applied_rule.newContent(
+    simulation_movement_1 = applied_rule_1.newContent(
         portal_type='Simulation Movement'
     )
-    simulation_movement_2 = applied_rule.newContent(
+    simulation_movement_2 = applied_rule_2.newContent(
         portal_type='Simulation Movement'
     )
 
@@ -739,7 +743,9 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     self.tic()
 
     self.portal.portal_deliveries.slapos_sale_invoice_transaction_builder.build(
-        path='%s/%%' % applied_rule.getPath())
+        path='%s/%%' % applied_rule_1.getPath())
+    self.portal.portal_deliveries.slapos_sale_invoice_transaction_builder.build(
+        path='%s/%%' % applied_rule_2.getPath())
     self.tic()
 
     self.checkSimulationMovement(transaction_movement_1_rec)
@@ -860,7 +866,9 @@ class TestSlapOSSaleInvoiceTransactionBuilder(TestSlapOSSalePackingListBuilder):
     transation_model_movement_1_rec_bis2.edit(delivery=None, delivery_ratio=1.0)
     self.tic()
     self.portal.portal_deliveries.slapos_sale_invoice_transaction_builder.build(
-        path='%s/%%' % applied_rule.getPath())
+        path='%s/%%' % applied_rule_1.getPath())
+    self.portal.portal_deliveries.slapos_sale_invoice_transaction_builder.build(
+        path='%s/%%' % applied_rule_2.getPath())
     self.tic()
 
     # as invoice_1 has been updated it is time to update its causality
@@ -900,16 +908,20 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     self.assertNotEqual(None, simulation_movement.getDeliveryValue())
 
   def test(self):
-    applied_rule = self.portal.portal_simulation.newContent(
+    applied_rule_1 = self.portal.portal_simulation.newContent(
+      portal_type='Applied Rule',
+      specialise='portal_rules/slapos_delivery_root_simulation_rule'
+    )
+    applied_rule_2 = self.portal.portal_simulation.newContent(
       portal_type='Applied Rule',
       specialise='portal_rules/slapos_delivery_root_simulation_rule'
     )
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
-    simulation_movement_1 = applied_rule.newContent(
+    simulation_movement_1 = applied_rule_1.newContent(
         portal_type='Simulation Movement'
     )
-    simulation_movement_2 = applied_rule.newContent(
+    simulation_movement_2 = applied_rule_2.newContent(
         portal_type='Simulation Movement'
     )
 
@@ -1067,7 +1079,10 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
 
     self.portal.portal_deliveries\
         .slapos_sale_invoice_transaction_trade_model_builder.build(
-        path='%s/%%' % applied_rule.getPath())
+        path='%s/%%' % applied_rule_1.getPath())
+    self.portal.portal_deliveries\
+        .slapos_sale_invoice_transaction_trade_model_builder.build(
+        path='%s/%%' % applied_rule_2.getPath())
     self.tic()
 
     self.checkSimulationMovement(model_movement_1_tax)
@@ -1126,7 +1141,10 @@ class TestSlapOSSaleInvoiceTransactionTradeModelBuilder(TestSlapOSSalePackingLis
     self.tic()
     self.portal.portal_deliveries\
         .slapos_sale_invoice_transaction_trade_model_builder.build(
-        path='%s/%%' % applied_rule.getPath())
+        path='%s/%%' % applied_rule_1.getPath())
+    self.portal.portal_deliveries\
+        .slapos_sale_invoice_transaction_trade_model_builder.build(
+        path='%s/%%' % applied_rule_1.getPath())
     self.tic()
 
     # as invoice_1 has been updated it is time to update its causality
