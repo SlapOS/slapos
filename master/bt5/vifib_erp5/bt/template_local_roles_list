@@ -35,7 +35,6 @@ purchase_packing_list_module
 purchase_trade_condition_module
 query_module
 sale_opportunity_module
-sale_trade_condition_module/vifib_simple_trade_condition
 service_module/computer_registration
 service_module/vifib_registration
 software_product_module/test_software_product
