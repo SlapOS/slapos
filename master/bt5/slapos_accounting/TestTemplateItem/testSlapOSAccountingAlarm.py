@@ -1410,11 +1410,57 @@ class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(testSlapOSMixin):
     self._test('confirmed', 'calculating',
         'sale_trade_condition_module/slapos_aggregated_trade_condition', False)
 
-  def test(self):
-    raise NotImplementedError
+  destination_state = 'delivered'
+  @withAbort
+  def _test_script(self, simulation_state, causality_state, specialise,
+        destination_state, consistency_failure=False):
+    module = self.portal.getDefaultModule(portal_type=self.portal_type)
+    delivery = module.newContent(portal_type=self.portal_type,
+        specialise=specialise, start_date=DateTime())
+    _jumpToStateFor = self.portal.portal_workflow._jumpToStateFor
+    _jumpToStateFor(delivery, simulation_state)
+    _jumpToStateFor(delivery, causality_state)
+    def checkConsistency(*args, **kwargs):
+      if consistency_failure:
+        return ['bad']
+      else:
+        return []
+    try:
+      from Products.ERP5Type.Core.Folder import Folder
+      Folder.original_checkConsistency = Folder.checkConsistency
+      Folder.checkConsistency = checkConsistency
+      getattr(delivery, self.script)()
+    finally:
+      Folder.checkConsistency = Folder.original_checkConsistency
+      delattr(Folder, 'original_checkConsistency')
+    self.assertEqual(destination_state, delivery.getSimulationState())
+
+  def test_script_typical(self):
+    self._test_script('confirmed', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        self.destination_state)
+
+  def test_script_bad_specialise(self):
+    self._test_script('confirmed', 'solved', None, 'confirmed')
+
+  def test_script_bad_simulation_state(self):
+    self._test_script('started', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        'started')
+
+  def test_script_bad_causality_state(self):
+    self._test_script('confirmed', 'building',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        'confirmed')
+
+  def test_script_bad_consistency(self):
+    self._test_script('confirmed', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        'confirmed', True)
 
 class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(
       TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm):
+  destination_state = 'stopped'
   script = 'Delivery_stopConfirmedAggregatedSaleInvoiceTransaction'
   portal_type = 'Sale Invoice Transaction'
   alarm = 'slapos_stop_confirmed_aggregated_sale_invoice_transaction'
