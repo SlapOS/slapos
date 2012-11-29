@@ -1378,7 +1378,9 @@ class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(testSlapOSMixin):
       not_visited = 'Not visited by %s' % self.script
       visited = 'Visited by %s' % self.script
       module = self.portal.getDefaultModule(portal_type=self.portal_type)
-      delivery = module.newContent(title=not_visited,
+      delivery_date = DateTime('2012/04/22')
+      accounting_date = DateTime('2012/04/28')
+      delivery = module.newContent(title=not_visited, start_date=delivery_date,
           portal_type=self.portal_type, specialise=specialise)
       _jumpToStateFor = self.portal.portal_workflow._jumpToStateFor
       _jumpToStateFor(delivery, simulation_state)
@@ -1386,7 +1388,7 @@ class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(testSlapOSMixin):
       self.tic()
 
       alarm = getattr(self.portal.portal_alarms, self.alarm)
-      alarm.activeSense()
+      alarm.activeSense(params=dict(accounting_date=accounting_date))
       self.tic()
 
       if positive:
