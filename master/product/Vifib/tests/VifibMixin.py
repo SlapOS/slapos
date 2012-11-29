@@ -181,7 +181,7 @@ class testVifibMixin(ERP5TypeTestCase):
         sm = getSecurityManager()
         self.login()
         try:
-          alarm.activeSense(*args, **kwargs)
+          alarm.activeSense(params=kwargs)
           transaction.commit()
         finally:
           setSecurityManager(sm)
