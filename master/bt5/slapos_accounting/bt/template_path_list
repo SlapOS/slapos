@@ -35,6 +35,7 @@ portal_alarms/slapos_trigger_build
 portal_alarms/slapos_trigger_payment_transaction_order_builder
 portal_categories/trade_phase/slapos
 portal_categories/trade_phase/slapos/**
+portal_categories/trade_state/**
 portal_deliveries/slapos_sale_invoice_builder
 portal_deliveries/slapos_sale_invoice_builder/**
 portal_deliveries/slapos_sale_invoice_transaction_builder
