@@ -1367,11 +1367,7 @@ class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
   def test_Delivery_manageBuildingCalculatingDelivery_diverged(self):
     self._test_Delivery_manageBuildingCalculatingDelivery('diverged', True)
 
-class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(testSlapOSMixin):
-  script = 'Delivery_deliverConfirmedAggregatedSalePackingList'
-  portal_type = 'Sale Packing List'
-  alarm = 'slapos_deliver_confirmed_aggregated_sale_packing_list'
-
+class TestSlapOSConfirmedDeliveryMixin(testSlapOSMixin):
   def _test(self, simulation_state, causality_state, specialise, positive):
     @simulateByTitlewMark(self.script)
     def _real(self, simulation_state, causality_state, specialise, positive):
@@ -1412,7 +1408,6 @@ class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(testSlapOSMixin):
     self._test('confirmed', 'calculating',
         'sale_trade_condition_module/slapos_aggregated_trade_condition', False)
 
-  destination_state = 'delivered'
   @withAbort
   def _test_script(self, simulation_state, causality_state, specialise,
         destination_state, consistency_failure=False):
@@ -1460,8 +1455,16 @@ class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(testSlapOSMixin):
         'sale_trade_condition_module/slapos_aggregated_trade_condition',
         'confirmed', True)
 
+class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(
+      TestSlapOSConfirmedDeliveryMixin):
+  destination_state = 'delivered'
+  script = 'Delivery_deliverConfirmedAggregatedSalePackingList'
+  portal_type = 'Sale Packing List'
+  alarm = 'slapos_deliver_confirmed_aggregated_sale_packing_list'
+
+
 class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(
-      TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm):
+      TestSlapOSConfirmedDeliveryMixin):
   destination_state = 'stopped'
   script = 'Delivery_stopConfirmedAggregatedSaleInvoiceTransaction'
   portal_type = 'Sale Invoice Transaction'
