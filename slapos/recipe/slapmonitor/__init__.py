@@ -24,31 +24,18 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
-  """
-  Slapmonitor instance configuration.
-  """
-
-  def __init__(self, buildout, name, options):
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
 
   def install(self):
-    config = dict(
-      pid_file_path=self.options['pid-file'],
-      database_path=self.options['database-path'],
-      slapmonitor_path = self.options['slapmonitor-path'],
-      shell_path=self.options['shell-path'],
-    )
+    options = self.options
+    script = self.createWrapper(name=options['path'],
+                                command=options['slapmonitor-path'],
+                                parameters=[
+                                    options['pid-file'],
+                                    options['database-path'],
+                                    ])
+    return [script]
 
-    # Runners
-    runner_path = self.createExecutable(
-      self.options['path'],
-      self.substituteTemplate(self.getTemplateFilename('slapmonitor_run.in'),
-                              config))
-
-    return [runner_path]
-
-  def update(self):
-    pass
