@@ -56,7 +56,7 @@ if context.getPortalType() != \'Sale Invoice Transaction\' \\\n
   raise TypeError(\'Incorrect delivery.\')\n
 isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
 if context.getSimulationState() == \'confirmed\' and len(context.checkConsistency()) == 0 and context.getCausalityState() == \'solved\':\n
-  comment = \'Delivered by alarm as all actions in confirmed state are ready.\'\n
+  comment = \'Stopped by alarm as all actions in confirmed state are ready.\'\n
   if isTransitionPossible(context, \'start\'):\n
     context.start(comment=comment)\n
   if isTransitionPossible(context, \'stop\'):\n
