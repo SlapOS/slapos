@@ -10,7 +10,7 @@ import re
 import xml_marshaller
 from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager
-
+from DateTime import DateTime
 
 def changeSkin(skin_name):
   def decorator(func):
@@ -627,7 +627,8 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.tic()
 
     # deliver aggregated deliveries
-    self.stepCallSlaposDeliverConfirmedAggregatedSalePackingListAlarm()
+    self.stepCallSlaposDeliverConfirmedAggregatedSalePackingListAlarm(
+        accounting_date=DateTime('2222/01/01'))
     self.tic()
 
     # stabilise aggregated deliveries and expand them
