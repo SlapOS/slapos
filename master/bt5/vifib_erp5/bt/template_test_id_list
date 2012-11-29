@@ -1,7 +1,6 @@
 testVifibPersonSecurity
 testVifibCRMSecurity
 testVifibModuleSecurity
-testVifibUserCustomer
 testVifibUserDeveloper
 testVifibComputerNetworkSecurity
 testVifibComputerModelSecurity
