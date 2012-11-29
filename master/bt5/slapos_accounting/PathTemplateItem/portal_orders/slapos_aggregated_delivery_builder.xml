@@ -32,7 +32,7 @@
         </item>
         <item>
             <key> <string>delivery_after_generation_script_id</string> </key>
-            <value> <string>SalePackingList_postSlapOSaggregatedDeliveryBuilder</string> </value>
+            <value> <string>SalePackingList_postSlapOSAggregatedDeliveryBuilder</string> </value>
         </item>
         <item>
             <key> <string>delivery_cell_portal_type</string> </key>

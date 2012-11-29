@@ -74,7 +74,7 @@ if context.getStartDate() is None:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SalePackingList_postSlapOSaggregatedDeliveryBuilder</string> </value>
+            <value> <string>SalePackingList_postSlapOSAggregatedDeliveryBuilder</string> </value>
         </item>
       </dictionary>
     </pickle>
