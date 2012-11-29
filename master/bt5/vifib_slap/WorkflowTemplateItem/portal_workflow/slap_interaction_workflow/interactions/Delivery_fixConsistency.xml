@@ -68,7 +68,6 @@
             <key> <string>portal_type_filter</string> </key>
             <value>
               <list>
-                <string>Internal Packing List</string>
                 <string>Purchase Packing List</string>
                 <string>Sale Invoice Transaction</string>
                 <string>Sale Packing List</string>

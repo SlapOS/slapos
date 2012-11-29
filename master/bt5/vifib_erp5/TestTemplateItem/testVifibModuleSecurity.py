@@ -44,7 +44,6 @@ class TestVifibModuleSecurity(testVifibMixin):
     'document_module',
     'event_module',
     'image_module',
-    'internal_packing_list_module',
     'inventory_module',
     'knowledge_pad_module',
     'meeting_module',

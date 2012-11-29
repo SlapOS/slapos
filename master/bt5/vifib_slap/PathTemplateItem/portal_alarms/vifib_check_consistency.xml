@@ -110,7 +110,6 @@
                 <string>business_process_module</string>
                 <string>sale_order_module</string>
                 <string>sale_packing_list_module</string>
-                <string>internal_packing_list_module</string>
                 <string>purchase_order_module</string>
                 <string>inventory_module</string>
                 <string>sale_trade_condition_module</string>

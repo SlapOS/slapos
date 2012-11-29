@@ -2,7 +2,6 @@ campaign_module
 component_module
 document_ingestion_module
 event_module
-internal_packing_list_module
 inventory_module
 knowledge_pad_module
 meeting_module

@@ -1,9 +1,5 @@
 <workflow_chain>
  <chain>
-  <type>Internal Packing List</type>
-  <workflow>local_permission_vifib_interaction_workflow</workflow>
- </chain>
- <chain>
   <type>Open Sale Order</type>
   <workflow>local_permission_vifib_interaction_workflow</workflow>
  </chain>

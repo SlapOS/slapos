@@ -105,7 +105,6 @@ active_process.postResult(active_result)
       'hosting_subscription_module',
       'image_module',
       'internal_order_module',
-      'internal_packing_list_module',
       'internal_supply_module',
       'internal_trade_condition_module',
       'inventory_module',

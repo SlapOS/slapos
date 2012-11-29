@@ -1,5 +1,3 @@
-VifibInternalPackingListConstraint
-VifibInternalPackingListLineConstraint
 VifibPurchasePackingListLineConstraint
 VifibPurchasePackingListConstraint
 VifibSaleOrderConstraint

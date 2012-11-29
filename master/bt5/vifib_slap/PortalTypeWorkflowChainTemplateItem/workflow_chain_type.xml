@@ -8,10 +8,6 @@
   <workflow>slap_interaction_workflow</workflow>
  </chain>
  <chain>
-  <type>Internal Packing List</type>
-  <workflow>slap_interaction_workflow</workflow>
- </chain>
- <chain>
   <type>Open Sale Order</type>
   <workflow>slap_interaction_workflow</workflow>
  </chain>
