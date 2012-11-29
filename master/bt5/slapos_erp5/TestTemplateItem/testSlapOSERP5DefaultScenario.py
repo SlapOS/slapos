@@ -386,43 +386,61 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       causality_state = packing_list.getCausalityState()
       self.assertEqual('solved', causality_state)
 
-#      invoice_list = packing_list.getCausalityRelatedValueList(
-#          portal_type='Sale Invoice Transaction')
-#      self.assertEqual(1, len(invoice_list))
-#      invoice = invoice_list[0]
-#      self.assertEqual('Sale Invoice Transaction',
-#          invoice.getPortalType())
-#      self.assertEqual('delivered', invoice.getSimulationState())
-#      causality_state = invoice.getCausalityState()
-#      self.assertEqual('solved', causality_state)
-#      self.assertEqual(0, len(invoice.checkConsistency()))
-#      self.assertSameSet([packing_list.getRelativeUrl()],
-#          invoice.getCausalityList(
-#              portal_type=self.portal.getPortalDeliveryTypeList()))
-#      self.assertSameSet([invoice.getRelativeUrl()],
-#          packing_list.getCausalityRelatedList(
-#              portal_type=self.portal.getPortalDeliveryTypeList()))
-#      payment_list = invoice.getCausalityRelatedValueList(
-#          portal_type=self.portal.getPortalDeliveryTypeList())
-#      if invoice.getTotalPrice() == 0:
-#        self.assertEqual(0, len(payment_list))
-#      else:
-#        self.assertEqual(1, len(payment_list))
-#        payment = payment_list[0]
-#        self.assertEqual('Payment Transaction',
-#            payment.getPortalType())
-#        self.assertEqual('delivered', payment.getSimulationState())
-#        causality_state = payment.getCausalityState()
-#        self.assertEqual('solved', causality_state)
-#        self.assertEqual(0, len(payment.checkConsistency()))
-#        self.assertSameSet([invoice.getRelativeUrl()],
-#            payment.getCausalityList(
-#                portal_type=self.portal.getPortalDeliveryTypeList()))
-#        self.assertSameSet([payment.getRelativeUrl()],
-#            invoice.getCausalityRelatedList(
-#                portal_type=self.portal.getPortalDeliveryTypeList()))
-#        self.assertEqual(-1 * payment.PaymentTransaction_getTotalPayablePrice(),
-#            invoice.getTotalPrice())
+  def assertAggregatedSalePackingList(self, delivery):
+    self.assertEqual('delivered', delivery.getSimulationState())
+    self.assertEqual('solved', delivery.getCausalityState())
+
+    invoice_list= delivery.getCausalityRelatedValueList(
+        portal_type='Sale Invoice Transaction')
+    self.assertEqual(1, len(invoice_list))
+    invoice = invoice_list[0].getObject()
+
+    causality_list = invoice.getCausalityValueList()
+
+    self.assertSameSet([delivery], causality_list)
+
+    self.assertEqual('stopped', invoice.getSimulationState())
+    self.assertEqual('solved', invoice.getCausalityState())
+
+    payment_list = invoice.getCausalityRelatedValueList(
+        portal_type='Payment Transaction')
+    self.assertEqual(1, len(payment_list))
+
+    payment = payment_list[0].getObject()
+
+    causality_list = payment.getCausalityValueList()
+    self.assertSameSet([invoice], causality_list)
+
+    self.assertEqual('auto_planned', payment.getSimulationState())
+    self.assertEqual('draft', payment.getCausalityState())
+
+    self.assertEqual(-1 * payment.PaymentTransaction_getTotalPayablePrice(),
+        invoice.getTotalPrice())
+
+  def assertPersonDocumentCoverage(self, person):
+    self.login()
+    subscription_list = self.portal.portal_catalog(
+        portal_type='Hosting Subscription',
+        default_destination_section_uid=person.getUid())
+    for subscription in subscription_list:
+      self.assertHostingSubscriptionSimulationCoverage(
+          subscription.getObject())
+
+    aggregated_delivery_list = self.portal.portal_catalog(
+        portal_type='Sale Packing List',
+        default_destination_section_uid=person.getUid(),
+        specialise_uid=self.portal.restrictedTraverse(self.portal\
+          .portal_preferences.getPreferredAggregatedSaleTradeCondition()\
+          ).getUid()
+    )
+
+    if len(subscription_list) == 0:
+      self.assertEqual(0, len(aggregated_delivery_list))
+      return
+
+    self.assertNotEqual(0, len(aggregated_delivery_list))
+    for aggregated_delivery in aggregated_delivery_list:
+      self.assertAggregatedSalePackingList(aggregated_delivery.getObject())
 
   def assertOpenSaleOrderCoverage(self, person_reference):
     self.login()
@@ -650,15 +668,9 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.stepCallSlaposManageBuildingCalculatingDeliveryAlarm()
     self.tic()
 
-    # check final simulation state
+    # check final document state
     for person_reference in (owner_reference, friend_reference,
         public_reference):
       person = self.portal.portal_catalog.getResultValue(portal_type='Person',
           reference=person_reference)
-      for subscription in self.portal.portal_catalog(
-          portal_type='Hosting Subscription',
-          default_destination_section_uid=person.getUid()):
-        self.assertHostingSubscriptionSimulationCoverage(
-            subscription.getObject())
-
-    self.assertTrue(False, 'Update to aggregated accoounting')
+      self.assertPersonDocumentCoverage(person)
