@@ -1368,9 +1368,53 @@ class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
     self._test_Delivery_manageBuildingCalculatingDelivery('diverged', True)
 
 class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(testSlapOSMixin):
+  script = 'Delivery_deliverConfirmedAggregatedSalePackingList'
+  portal_type = 'Sale Packing List'
+  alarm = 'slapos_deliver_confirmed_aggregated_sale_packing_list'
+
+  def _test(self, simulation_state, causality_state, specialise, positive):
+    @simulateByTitlewMark(self.script)
+    def _real(self, simulation_state, causality_state, specialise, positive):
+      not_visited = 'Not visited by %s' % self.script
+      visited = 'Visited by %s' % self.script
+      module = self.portal.getDefaultModule(portal_type=self.portal_type)
+      delivery = module.newContent(title=not_visited,
+          portal_type=self.portal_type, specialise=specialise)
+      _jumpToStateFor = self.portal.portal_workflow._jumpToStateFor
+      _jumpToStateFor(delivery, simulation_state)
+      _jumpToStateFor(delivery, causality_state)
+      self.tic()
+
+      alarm = getattr(self.portal.portal_alarms, self.alarm)
+      alarm.activeSense()
+      self.tic()
+
+      if positive:
+        self.assertEqual(visited, delivery.getTitle())
+      else:
+        self.assertEqual(not_visited, delivery.getTitle())
+    _real(self, simulation_state, causality_state, specialise, positive)
+
+  def test_typical(self):
+    self._test('confirmed', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition', True)
+
+  def test_bad_specialise(self):
+    self._test('confirmed', 'solved', None, False)
+
+  def test_bad_simulation_state(self):
+    self._test('started', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition', False)
+
+  def test_bad_causality_state(self):
+    self._test('confirmed', 'calculating',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition', False)
+
   def test(self):
     raise NotImplementedError
 
-class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(testSlapOSMixin):
-  def test(self):
-    raise NotImplementedError
+class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(
+      TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm):
+  script = 'Delivery_stopConfirmedAggregatedSaleInvoiceTransaction'
+  portal_type = 'Sale Invoice Transaction'
+  alarm = 'slapos_stop_confirmed_aggregated_sale_invoice_transaction'
