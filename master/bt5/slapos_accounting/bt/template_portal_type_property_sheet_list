@@ -1,4 +1,5 @@
 Hosting Subscription | SlapOSAccountingHostingSubscriptionConstraint
 Sale Invoice Transaction | SlapOSAccountingSaleInvoiceTransactionConstraint
+Sale Packing List | SlapOSAccountingSalePackingListConstraint
 Slave Instance | InstanceAccountingSynchronisation
 Software Instance | InstanceAccountingSynchronisation

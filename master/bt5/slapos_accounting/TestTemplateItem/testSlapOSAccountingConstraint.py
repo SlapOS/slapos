@@ -219,3 +219,122 @@ class TestSaleInvoiceTransaction(TestSlapOSConstraintMixin):
     invoice.newContent(portal_type='Invoice Line', quantity=2.,
         price=1.)
     self.assertFalse(message in self.getMessageList(invoice))
+
+class TestSalePackingList(TestSlapOSConstraintMixin):
+  @withAbort
+  def test_lines(self):
+    message = 'Sale Packing List Line is not defined'
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List')
+
+    self.assertTrue(message in self.getMessageList(delivery))
+    delivery.newContent(portal_type='Sale Packing List Line')
+    self.assertFalse(message in self.getMessageList(delivery))
+
+  @withAbort
+  def test_reference_not_empty(self):
+    message = 'Reference must be defined'
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List')
+
+    self.assertFalse(message in self.getMessageList(delivery))
+    delivery.setReference(None)
+    self.assertTrue(message in self.getMessageList(delivery))
+
+  @withAbort
+  def test_price_currency(self):
+    message = 'Exactly one Currency shall be selected'
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List')
+    self.assertTrue(message in self.getMessageList(delivery))
+
+    resource = self.portal.service_module.newContent(portal_type='Service')
+    delivery.setPriceCurrency(resource.getRelativeUrl())
+    self.assertTrue(message in self.getMessageList(delivery))
+
+    currency_1 = self.portal.currency_module.newContent(portal_type='Currency')
+    currency_2 = self.portal.currency_module.newContent(portal_type='Currency')
+    delivery.setPriceCurrencyList([currency_1.getRelativeUrl(),
+      currency_2.getRelativeUrl()])
+    self.assertTrue(message in self.getMessageList(delivery))
+
+    delivery.setPriceCurrency(currency_1.getRelativeUrl())
+    self.assertFalse(message in self.getMessageList(delivery))
+
+  @withAbort
+  def _test_category_arrow(self, category):
+    message = "Arity Error for Relation ['%s'], arity is equal to "\
+        "0 but should be between 1 and 1" % category
+    message_2 = "Arity Error for Relation ['%s'], arity is equal to "\
+        "2 but should be between 1 and 1" % category
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List')
+    resource = self.portal.service_module.newContent(
+        portal_type='Service').getRelativeUrl()
+    person = self.portal.person_module.newContent(
+        portal_type='Person').getRelativeUrl()
+    organisation = self.portal.organisation_module.newContent(
+        portal_type='Organisation').getRelativeUrl()
+
+    key = '%s_list' % category
+    self.assertTrue(message in self.getMessageList(delivery))
+    delivery.edit(**{key: [resource]})
+    self.assertTrue(message in self.getMessageList(delivery))
+    delivery.edit(**{key: [person, organisation]})
+    self.assertTrue(message_2 in self.getMessageList(delivery))
+    delivery.edit(**{key: [person]})
+    self.assertFalse(message in self.getMessageList(delivery))
+    self.assertFalse(message_2 in self.getMessageList(delivery))
+    delivery.edit(**{key: [organisation]})
+    self.assertFalse(message in self.getMessageList(delivery))
+    self.assertFalse(message_2 in self.getMessageList(delivery))
+
+  def test_destination(self):
+    self._test_category_arrow('destination')
+
+  def test_destination_section(self):
+    self._test_category_arrow('destination_section')
+
+  def test_destination_decision(self):
+    self._test_category_arrow('destination_decision')
+
+  def test_source(self):
+    self._test_category_arrow('source')
+
+  def test_source_section(self):
+    self._test_category_arrow('source_section')
+
+  @withAbort
+  def test_specialise(self):
+    category = 'specialise'
+    message = "Arity Error for Relation ['%s'], arity is equal to "\
+        "0 but should be between 1 and 1" % category
+    message_2 = "Arity Error for Relation ['%s'], arity is equal to "\
+        "2 but should be between 1 and 1" % category
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List')
+    resource = self.portal.service_module.newContent(
+        portal_type='Service').getRelativeUrl()
+    stc_1 = self.portal.sale_trade_condition_module.newContent(
+        portal_type='Sale Trade Condition').getRelativeUrl()
+    stc_2 = self.portal.sale_trade_condition_module.newContent(
+        portal_type='Sale Trade Condition').getRelativeUrl()
+
+    key = '%s_list' % category
+    self.assertTrue(message in self.getMessageList(delivery))
+    delivery.edit(**{key: [resource]})
+    self.assertTrue(message in self.getMessageList(delivery))
+    delivery.edit(**{key: [stc_1, stc_2]})
+    self.assertTrue(message_2 in self.getMessageList(delivery))
+    delivery.edit(**{key: [stc_1]})
+    self.assertFalse(message in self.getMessageList(delivery))
+    self.assertFalse(message_2 in self.getMessageList(delivery))
+
+  @withAbort
+  def test_start_date(self):
+    message = 'Property start_date must be defined'
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List')
+    self.assertTrue(message in self.getMessageList(delivery))
+    delivery.setStartDate('2012/01/01')
+    self.assertFalse(message in self.getMessageList(delivery))
