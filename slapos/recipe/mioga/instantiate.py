@@ -39,6 +39,7 @@ class Recipe(GenericBaseRecipe):
   """\
   Configure a Mioga instance:
 
+  - copy over /var and /buildinst directories
   - call "make install-all"
   """
 
@@ -47,11 +48,9 @@ class Recipe(GenericBaseRecipe):
       os.remove(filepath)
 
   def install(self):
-    print "This is a FRESH INSTALLATION."
     self.instantiate(True)
 
   def update(self):
-    print "This is an update."
     self.instantiate(False)
 
   def instantiate(self, isNewInstall):
@@ -68,22 +67,23 @@ class Recipe(GenericBaseRecipe):
     vardir = self.options['var_directory']
     mioga_base = os.path.join(vardir, 'lib', 'Mioga2')
     fm = FileModifier('conf/Config.xml')
-    fm.modify('init_sql', 'yes' if isNewInstall else 'no')
-    fm.modify('install_dir', mioga_base)
-    fm.modify('tmp_dir', os.path.join(mioga_base, 'tmp'))
-    fm.modify('search_tmp_dir', os.path.join(mioga_base, 'mioga_search'))
-    fm.modify('maildir', os.path.join(vardir, 'spool', 'mioga', 'maildir'))
-    fm.modify('maildirerror', os.path.join(vardir, 'spool', 'mioga', 'error'))
-    fm.modify('mailfifo', os.path.join(vardir, 'spool', 'mioga', 'fifo'))
+    fm.modifyParameter('init_sql', 'yes' if isNewInstall else 'no')
+    fm.modifyParameter('install_dir', mioga_base)
+    fm.modifyParameter('tmp_dir', os.path.join(mioga_base, 'tmp'))
+    fm.modifyParameter('search_tmp_dir', os.path.join(mioga_base, 'mioga_search'))
+    fm.modifyParameter('maildir', os.path.join(vardir, 'spool', 'mioga', 'maildir'))
+    fm.modifyParameter('maildirerror', os.path.join(vardir, 'spool', 'mioga', 'error'))
+    fm.modifyParameter('mailfifo', os.path.join(vardir, 'spool', 'mioga', 'fifo'))
     notifier_fifo = os.path.join(vardir, 'spool', 'mioga', 'notifier')
-    fm.modify('notifierfifo', notifier_fifo)
+    fm.modifyParameter('notifierfifo', notifier_fifo)
     searchengine_fifo = os.path.join(vardir, 'spool', 'mioga', 'searchengine')
-    fm.modify('searchenginefifo', searchengine_fifo)
-    fm.modify('dbi_passwd', self.options['db_password'])
-    fm.modify('db_host', self.options['db_host'])
-    fm.modify('db_port', self.options['db_port'])
-    fm.modify('dav_host', self.options['public_ipv6'])
-    fm.modify('dav_port', self.options['public_ipv6_port'])
+    fm.modifyParameter('searchenginefifo', searchengine_fifo)
+    fm.modifyParameter('dbi_passwd', self.options['db_password'])
+    fm.modifyParameter('db_host', self.options['db_host'])
+    fm.modifyParameter('db_port', self.options['db_port'])
+    fm.modifyParameter('dav_host', self.options['public_ipv6'])
+    fm.modifyParameter('dav_port', self.options['public_ipv6_port'])
+    fm.modifyParameter('bin_dir', self.options['bin_dir'])
     # db_name, dbi_login are standard
     fm.save()
     # Ensure no old data is kept
@@ -94,6 +94,8 @@ class Recipe(GenericBaseRecipe):
 
     environ = os.environ
     environ['PATH'] = ':'.join([self.options['perl_bin'],           # priority!
+                                # Mioga scripts in Makefiles and shell scripts
+                                self.options['bin_dir'],            
                                 self.options['mioga_add_to_path'],
                                 self.options['postgres_bin'],
                                 environ['PATH'] ])
@@ -116,8 +118,8 @@ class Recipe(GenericBaseRecipe):
     # We must call "make installall" in the SAME environment that
     # "perl Makefile.PL" left!
 
-    cmd = subprocess.Popen(self.options['perl_bin'] + '/perl Makefile.PL'
-                           + ' && make installall',
+    cmd = subprocess.Popen(self.options['perl_bin'] + '/perl Makefile.PL disable_check'
+                           + ' && make slapos-instantiation',
                            env=environ, shell=True)
     cmd.communicate()
 
@@ -209,13 +211,33 @@ Include conf/extra/httpd-autoindex.conf
       else:
         os.mkfifo(fifo, 0600)
 
+    mioga_conf_path = os.path.join(mioga_base, 'conf', 'Mioga.conf')
     notifier_wrapper = self.createPythonScript(
-      os.path.join(services_dir, 'notifier_wrapper'),
+      os.path.join(services_dir, 'notifier'),
       'slapos.recipe.librecipe.execute.execute',
       [ os.path.join(self.options['mioga_compile_dir'], 'bin', 'notifier', 'notifier.pl'),
-        os.path.join(mioga_base, 'conf', 'Mioga.conf') ]
+        mioga_conf_path ]
     )
     path_list.append(notifier_wrapper)
+
+    searchengine_wrapper = self.createPythonScript(
+      os.path.join(services_dir, 'searchengine'),
+      'slapos.recipe.librecipe.execute.execute',
+      [ os.path.join(self.options['mioga_compile_dir'], 'bin', 'notifier', 'searchengine.pl'),
+        mioga_conf_path ]
+    )
+    path_list.append(searchengine_wrapper)
+
+    crawl_fm = FileModifier(
+      os.path.join(self.options['mioga_compile_dir'], 'bin', 'search', 'crawl_sample.sh') )
+    # TODO: The crawl script will still call the shell command "date"
+    crawl_fm.modify(r'/var/tmp/crawl', self.options['log_dir'] + '/crawl')
+    crawl_fm.modify(r'/var/lib/Mioga2/conf', mioga_base + '/conf')
+    crawl_fm.modify(r'/usr/local/bin/(mioga2_(?:info|crawl|index).pl)', 
+                    self.options['site_perl'] + '/bin/' + r"\g<1>")
+    crawl_path = os.path.join(self.options['bin_dir'], 'crawl.sh')
+    crawl_fm.save(crawl_path)
+    os.chmod(crawl_path, stat.S_IRWXU)
 
     if os.path.exists(self.options['pid_file']):
       # Reload apache configuration
@@ -232,7 +254,7 @@ Include conf/extra/httpd-autoindex.conf
 
 
 
-# Copied verbatim from mioga-hooks.py - how to reuse code?
+# Copied and adapted from mioga-hooks.py - how to reuse code?
 class FileModifier:
   def __init__(self, filename):
     self.filename = filename
@@ -240,14 +262,20 @@ class FileModifier:
     self.content = f.read()
     f.close()
   
-  def modify(self, key, value):
+  def modifyParameter(self, key, value):
     (self.content, count) = re.subn(
       r'(<parameter[^>]*\sname\s*=\s*"' + re.escape(key) + r'"[^>]*\sdefault\s*=\s*")[^"]*',
       r"\g<1>" + value,
       self.content)
     return count
+
+  def modify(self, pattern, replacement):
+    (self.content, count) = re.subn(pattern, replacement, self.content)
+    return count
       
-  def save(self):
-    f = open(self.filename, 'w')
+  def save(self, output=""):
+    if output == "":
+      output = self.filename
+    f = open(output, 'w')
     f.write(self.content)
     f.close()

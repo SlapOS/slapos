@@ -1,7 +1,21 @@
-diff -r c0f4c1b8b448 Makefile.PL
---- a/Makefile.PL	Sat Oct 06 16:15:43 2012 +0200
-+++ b/Makefile.PL	Mon Oct 22 19:07:32 2012 +0200
-@@ -115,7 +115,7 @@
+diff --git a/INSTALL b/INSTALL
+index ef0f369..b275a48 100644
+--- a/INSTALL
++++ b/INSTALL
+@@ -382,6 +382,8 @@ A default init script is provided in file web/conf/mioga2.init.d. This script wo
+ Additional configuration for the Search engine
+ ----------------------------------------------
+ 
++The default init script starts the search engine daemon.
++
+ You must edit the crawl_sample.sh to specify default location for configuration files and rename it to crawl.sh.
+ This script must be run by cron in a day basis with apache user (www-data for Debian)
+ 
+diff --git a/Makefile.PL b/Makefile.PL
+index 3582d20..0d9ef77 100644
+--- a/Makefile.PL
++++ b/Makefile.PL
+@@ -115,7 +115,7 @@ my $docsubdirs = "docs";
  # ----------------------------------------------------------------------------
  sub MY::processPL {
  return '
@@ -10,7 +24,7 @@ diff -r c0f4c1b8b448 Makefile.PL
  # between "all" and next "tardist"
  
  include config.mk
-@@ -124,10 +124,7 @@
+@@ -124,10 +124,7 @@ tardist: doc
  dist: doc
  install ::
  	if test -e $(TMP_DIR) ; then \
@@ -22,10 +36,41 @@ diff -r c0f4c1b8b448 Makefile.PL
                  echo "===> File $(TMP_DIR) exists but is not a directory ..." ; \
                  exit 1 ; \
              fi \
-diff -r c0f4c1b8b448 bin/mailinglist/miogamailinglist.pl
---- a/bin/mailinglist/miogamailinglist.pl	Sat Oct 06 16:15:43 2012 +0200
-+++ b/bin/mailinglist/miogamailinglist.pl	Mon Oct 22 19:07:32 2012 +0200
-@@ -205,11 +205,11 @@
+@@ -156,6 +153,29 @@ install-all ::
+ 
+ 	(cd web && $(MAKE) setperms) || exit 1;
+ 
++slapos-compilation :: install
++	for i in bin locales web ; \
++	do \
++		(cd $$i && $(MAKE) install) || exit 1;\
++	done
++	# Create symlinks for static content that can be shared among all SlapOS instances	
++	for i in var/lib/Mioga2/static var/lib/Mioga2/conf/themes/default var/lib/Mioga2/conf/xsl; do \
++		mkdir -p `dirname "$(MIOGA_STATIC)/$$i"` && \
++		mv "$(MIOGA_BASE)/$$i" "$(MIOGA_STATIC)/$$i" && \
++		ln -s "$(MIOGA_STATIC)/$$i" "$(MIOGA_BASE)/$$i"; \
++	done
++	# copy a minimal build system into mioga/build
++	mkdir -p "$(MIOGA_BUILDINST)"
++	cp -R --parents Makefile.PL sql web/conf conf "$(MIOGA_BUILDINST)"
++
++slapos-instantiation ::
++	for i in web/conf conf sql ; \
++	do \
++		(cd $$i && $(MAKE) install) || exit 1;\
++	done
++
++	(cd web && $(MAKE) setperms) || exit 1;
++
+ doc:
+ 	for i in ' . $docsubdirs . ' ; \
+ 	do \
+diff --git a/bin/mailinglist/miogamailinglist.pl b/bin/mailinglist/miogamailinglist.pl
+index 80668e2..fa1603a 100755
+--- a/bin/mailinglist/miogamailinglist.pl
++++ b/bin/mailinglist/miogamailinglist.pl
+@@ -205,11 +205,11 @@ sub MsgSendStock
  sub CheckUTF8 {
      my ($str) = @_;
      
@@ -39,9 +84,33 @@ diff -r c0f4c1b8b448 bin/mailinglist/miogamailinglist.pl
          $str  = $conv->convert($str);
      }
      return $str;
-diff -r c0f4c1b8b448 conf/Config.xml
---- a/conf/Config.xml	Sat Oct 06 16:15:43 2012 +0200
-+++ b/conf/Config.xml	Mon Oct 22 19:07:32 2012 +0200
+diff --git a/bin/notifier/searchengine.pl b/bin/notifier/searchengine.pl
+index efd1ca2..fc5ba67 100755
+--- a/bin/notifier/searchengine.pl
++++ b/bin/notifier/searchengine.pl
+@@ -39,8 +39,7 @@ if (!open(FIFO, "+>$fifo")) {
+     syslog('err', "Can't open fifo: $!. Exiting...");
+ }
+ my $flags   = fcntl(FIFO, F_GETFL, 0);
+-
+-
++my $crawler = $config->GetBinariesDir()."/crawl.sh";
+ # MAIN LOOP
+ 
+ my %instances;
+@@ -53,7 +52,7 @@ while (1) {
+ 		$instances{$line} += 1;
+     }
+ 	foreach my $inst (keys(%instances)) {
+-		system("/usr/local/bin/crawl.sh $inst");
++		system("$crawler $inst");
+ 	}
+     fcntl(FIFO, F_SETFL, $flags);
+ }
+diff --git a/conf/Config.xml b/conf/Config.xml
+index e614cda..3dcccf5 100644
+--- a/conf/Config.xml
++++ b/conf/Config.xml
 @@ -3,6 +3,9 @@
    <version module="Mioga2"/>
  
@@ -52,9 +121,16 @@ diff -r c0f4c1b8b448 conf/Config.xml
      <parameter name="instance_ident" question="First Mioga instance Identifier ?"
                 type="text" default="Mioga"
                 xpath="/instance_ident"/>
-@@ -37,6 +40,12 @@
+@@ -35,8 +38,18 @@
+     <parameter name="authentication" question="Authentification method ?" 
+                type="enum" default="Mioga2" values="Mioga2"
                 xpath="/authentication"/>
-     
+-    
++
++    <parameter name="bin_dir" question="Directory for helper scripts and binaries ?" 
++               type="text" default="/usr/local/bin"
++               xpath="/bin_dir"/>
++
      <parameter name="Database settings" type="submenu">
 +      <parameter name="db_host" question=" Mioga database server name or address ?" 
 +                 type="text" default="localhost"
@@ -65,51 +141,11 @@ diff -r c0f4c1b8b448 conf/Config.xml
        <parameter name="db_name" question=" Name of Mioga database ?" 
                   type="text" default="mioga2"
                   xpath="/database/DBname"/>              
-diff -r c0f4c1b8b448 lib/Mioga2/Authen.pm
---- a/lib/Mioga2/Authen.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Authen.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -87,7 +87,7 @@
- use Mioga2::GroupList;
- use Mioga2::InstanceList;
- 
--my $debug = 0;
-+my $debug = 5;
- 
- # ============================================================================
- 
-@@ -131,11 +131,16 @@
- 	if($args ne '') {
- 		$real_uri .= "?$args";
- 	}
-+    print STDERR "VHH DEBUG: t_uri = $t_uri , real_uri = $real_uri\n";
- 
- 	try {
- 		$miogaconf = new Mioga2::MiogaConf($config_file);
-+        print STDERR "VHH DEBUG: after miogaconf\n";
- 		$uri_obj    = new Mioga2::URI($miogaconf, uri => $real_uri);
-+        print STDERR "VHH DEBUG: after uri_obj\n";
-+        print STDERR "VHH DEBUG: mioga-ident: ".$uri_obj->GetMiogaIdent()."\n";
- 		$config = new Mioga2::Config($miogaconf, $uri_obj->GetMiogaIdent());
-+        print STDERR "VHH DEBUG: after config\n";
- 	}
- 	catch Mioga2::Exception::Simple with {
- 		my $err = shift;
-diff -r c0f4c1b8b448 lib/Mioga2/Authz.pm
---- a/lib/Mioga2/Authz.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Authz.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -118,7 +118,7 @@
- use Mioga2::tools::string_utils;
- use Mioga2::Constants;
- 
--my $debug = 0;
-+my $debug = 5;
- my $timer = 0;
- 
- # ============================================================================
-diff -r c0f4c1b8b448 lib/Mioga2/Bottin.pm
---- a/lib/Mioga2/Bottin.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Bottin.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -1742,11 +1742,11 @@
+diff --git a/lib/Mioga2/Bottin.pm b/lib/Mioga2/Bottin.pm
+index ba4cd8d..0db5651 100644
+--- a/lib/Mioga2/Bottin.pm
++++ b/lib/Mioga2/Bottin.pm
+@@ -1742,11 +1742,11 @@ sub InitSuperAdminMode {
  sub CheckUTF8 {
      my ($str) = @_;
      
@@ -124,10 +160,11 @@ diff -r c0f4c1b8b448 lib/Mioga2/Bottin.pm
          $str  = $conv->convert($str);
      }
      return $str;
-diff -r c0f4c1b8b448 lib/Mioga2/Classes/URI.pm
---- a/lib/Mioga2/Classes/URI.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Classes/URI.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -75,15 +75,16 @@
+diff --git a/lib/Mioga2/Classes/URI.pm b/lib/Mioga2/Classes/URI.pm
+index 8678b33..bf97e71 100644
+--- a/lib/Mioga2/Classes/URI.pm
++++ b/lib/Mioga2/Classes/URI.pm
+@@ -75,15 +75,16 @@ sub new {
    
    # convert uri to UTF-8
    my $uri     = uri_unescape($options{uri});
@@ -148,17 +185,24 @@ diff -r c0f4c1b8b448 lib/Mioga2/Classes/URI.pm
      $uri  = $conv->convert($uri);
      warn "==> converted uri = '$uri'" if $debug;
    }
-@@ -211,4 +212,4 @@
+diff --git a/lib/Mioga2/Config.pm b/lib/Mioga2/Config.pm
+index b088823..4edac62 100644
+--- a/lib/Mioga2/Config.pm
++++ b/lib/Mioga2/Config.pm
+@@ -28,7 +28,7 @@ Config.pm: Access class to the current Mioga instance configuration.
+ This module permits to access to the current Mioga instance
+ configuration parameters.
  
- # ============================================================================
- 1;
--__END__
-\ No newline at end of file
-+__END__
-diff -r c0f4c1b8b448 lib/Mioga2/DAVFS.pm
---- a/lib/Mioga2/DAVFS.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/DAVFS.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -141,10 +141,11 @@
+-=head1 METHODS DESRIPTION
++=head1 METHODS DESCRIPTION
+ 
+ =cut
+ 
+diff --git a/lib/Mioga2/DAVFS.pm b/lib/Mioga2/DAVFS.pm
+index b56c4ad..7810f82 100644
+--- a/lib/Mioga2/DAVFS.pm
++++ b/lib/Mioga2/DAVFS.pm
+@@ -141,10 +141,11 @@ use Mioga2::tools::APIAuthz;
  use Mioga2::tools::database;
  use Mioga2::tools::string_utils;
  use Mioga2::tools::Convert;
@@ -171,7 +215,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/DAVFS.pm
  
  my $MULTI_STATUS	= 207;	# code DAV for the Multi-status response
  
-@@ -749,13 +750,17 @@
+@@ -756,13 +757,17 @@ sub make_request {
  	my $host = $self->{host};
  	my $port = $self->{port};
  
@@ -190,7 +234,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/DAVFS.pm
  	  ->as_string;
  	print STDERR "[Mioga2::DAVFS::make_request] uri = $uri\n" if $debug;
  
-@@ -767,7 +772,7 @@
+@@ -774,7 +779,7 @@ sub make_request {
  
  		# process headers
  		if ( $header =~ /^destination/i && $value !~ $dav_uri ) {
@@ -199,22 +243,11 @@ diff -r c0f4c1b8b448 lib/Mioga2/DAVFS.pm
  			$value = Mioga2::Classes::URI->new( uri => $value )->as_string;
  			$value = $self->escapeSpecialChars($value);
  		}
-diff -r c0f4c1b8b448 lib/Mioga2/DAVProxy.pm
---- a/lib/Mioga2/DAVProxy.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/DAVProxy.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -47,7 +47,7 @@
- use Mioga2::MiogaConf;
- 
- 
--my $debug = 0;
-+my $debug = 5;
- 
- # ============================================================================
- 
-diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
---- a/lib/Mioga2/Database.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Database.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -61,7 +61,7 @@
+diff --git a/lib/Mioga2/Database.pm b/lib/Mioga2/Database.pm
+index 4afa54b..ca8368c 100644
+--- a/lib/Mioga2/Database.pm
++++ b/lib/Mioga2/Database.pm
+@@ -61,7 +61,7 @@ sub new {
  	my $self = { };
  	bless($self, $class);
  
@@ -223,7 +256,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
  		if (!defined ($attributes{$attr})) {
  			throw Mioga2::Exception::DB ("[Mioga2::Database::new]", "Cannot connect to database: " . $DBI::errstr);
  		}
-@@ -72,8 +72,10 @@
+@@ -72,8 +72,10 @@ sub new {
  	my $dbiPassword = $self->{database}->{DBIpasswd};
  	my $dbDriver = $self->{database}->{DBIdriver};
  	my $dbName = $self->{database}->{DBname};
@@ -235,45 +268,48 @@ diff -r c0f4c1b8b448 lib/Mioga2/Database.pm
  
  	$self->{dbh} = DBI->connect($datasource, $dbiUser, $dbiPassword);
  
-diff -r c0f4c1b8b448 lib/Mioga2/Dispatch.pm
---- a/lib/Mioga2/Dispatch.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Dispatch.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -96,7 +96,7 @@
+diff --git a/lib/Mioga2/Exception/DB.pm b/lib/Mioga2/Exception/DB.pm
+index 7ce5020..bee00ca 100644
+--- a/lib/Mioga2/Exception/DB.pm
++++ b/lib/Mioga2/Exception/DB.pm
+@@ -76,6 +76,17 @@ sub as_string
+ 	return $string;
+ }
  
- use Mioga2::Apache;
++# ----------------------------------------------------------------------------
++=head2 getDBerror ()
++Return the error as sent by the database connector.
++=cut 
++# ----------------------------------------------------------------------------
++sub getDBerror {
++    my ($self) = @_;
++    return $self->{errDB}
++}
++
++
+ # ============================================================================
  
--my $debug = 0;
-+my $debug = 5;
- my $timer = 0;
- 
- $Error::Debug = 1;
-diff -r c0f4c1b8b448 lib/Mioga2/InstanceList.pm
---- a/lib/Mioga2/InstanceList.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/InstanceList.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -423,7 +423,9 @@
+ =head1 PRIVATE METHODS DESCRIPTION
+diff --git a/lib/Mioga2/InstanceList.pm b/lib/Mioga2/InstanceList.pm
+index 3e2cf7a..a676a1b 100644
+--- a/lib/Mioga2/InstanceList.pm
++++ b/lib/Mioga2/InstanceList.pm
+@@ -423,7 +423,9 @@ sub Store {
  		$conf->RunHooks($self->{config}->{miogaconf});
  
  		# Run crawl.sh to initialize search engine database
--		my $crawlcmd = $self->{config}->{miogaconf}->GetMiogaPrefix () . "/bin/mioga2_index.pl --conf=" . $self->{config}->GetMiogaConfPath () . ' ' . $self->Get ('ident');
+-		my $crawlcmd = $self->{config}->{miogaconf}->GetMiogaPrefix () . "/bin/mioga2_index.pl --conf=" . $self->{config}->GetMiogaConfPath () . ' --search_conf=' . $self->{config}->GetInstallPath . "/conf/search_conf.xml" . ' ' . $self->Get ('ident');
 +		my $crawlcmd = $self->{config}->{miogaconf}->GetMiogaPrefix () . "/bin/mioga2_index.pl --conf=" . $self->{config}->GetMiogaConfPath () 
-+            . ' --search_conf=' . $self->{config}->{miogaconf}->GetInstallDir()."/conf/search_conf.xml"
-+            . ' '. $self->Get ('ident');
++			. ' --search_conf=' . $self->{config}->{miogaconf}->GetInstallDir()."/conf/search_conf.xml" 
++                	. ' '. $self->Get ('ident');
  		system ("$crawlcmd");
  	}
  	elsif (scalar (keys (%{$self->{update}}))) {
-diff -r c0f4c1b8b448 lib/Mioga2/Magellan.pm
---- a/lib/Mioga2/Magellan.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Magellan.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -70,7 +70,7 @@
- require Mioga2::Magellan::Database;
- require Mioga2::Magellan::Properties;
- 
--my $debug = 0;
-+my $debug = 5;
- 
- # ============================================================================
- # CheckUserAccessOnMethod ($context, $user, $group, $method_ident)
-@@ -327,10 +327,13 @@
+diff --git a/lib/Mioga2/Magellan.pm b/lib/Mioga2/Magellan.pm
+index 86e2e42..4b3814a 100644
+--- a/lib/Mioga2/Magellan.pm
++++ b/lib/Mioga2/Magellan.pm
+@@ -327,10 +327,13 @@ sub GetNodes {
  			$mygroup = $group;
  		}
  
@@ -288,7 +324,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/Magellan.pm
          );
  
  		$inconsistent = pop (@$resources);
-@@ -853,7 +856,7 @@
+@@ -853,7 +856,7 @@ sub GetResource {
  			);
  			print STDERR "mime = $mime\n content= $content\n" if ($debug);
  			if ($mime) {
@@ -297,10 +333,11 @@ diff -r c0f4c1b8b448 lib/Mioga2/Magellan.pm
  				#my $encoding = $conv->convert($content);
  				#if ($encoding) {
  				if ($mime =~ /(application\/xml)|(text\/)|(application\/xsl)/)
-diff -r c0f4c1b8b448 lib/Mioga2/Magellan/Archive.pm
---- a/lib/Mioga2/Magellan/Archive.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Magellan/Archive.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -163,7 +163,7 @@
+diff --git a/lib/Mioga2/Magellan/Archive.pm b/lib/Mioga2/Magellan/Archive.pm
+index 842ae90..3b9e7f7 100644
+--- a/lib/Mioga2/Magellan/Archive.pm
++++ b/lib/Mioga2/Magellan/Archive.pm
+@@ -163,7 +163,7 @@ sub Content
          return undef;
      }
  
@@ -309,32 +346,11 @@ diff -r c0f4c1b8b448 lib/Mioga2/Magellan/Archive.pm
      my %folders;
      while(my $file = <PRG>) {
        chomp($file);
-diff -r c0f4c1b8b448 lib/Mioga2/Magellan/DAV.pm
---- a/lib/Mioga2/Magellan/DAV.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Magellan/DAV.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -52,7 +52,7 @@
- use Mioga2::XML::Simple;
- use Mioga2::Constants;
- 
--my $debug = 0;
-+my $debug = 5;
- 
- my $MULTI_STATUS	= 207;	# code DAV for the Multi-status response
- my $CREATED		= 201;	# code DAV for the created mkcol response
-@@ -79,9 +79,11 @@
- 	my $user_agent;
- 	my $request;
- 	
-+	print STDERR "VHH DEBUG: ExecuteRequest original URL: $url\n";
- 	# Escape URL for request
- 	$url = st_URIEscape($url);
--
-+	print STDERR "VHH DEBUG: ExecuteRequest request  URL: $url\n";
-+	
- 	$user_agent = new LWP::UserAgent(keep_alive => 0);
- 	$request = new HTTP::Request($method, $url);
- 
-@@ -106,7 +108,7 @@
+diff --git a/lib/Mioga2/Magellan/DAV.pm b/lib/Mioga2/Magellan/DAV.pm
+index cdf77f1..116ebf4 100644
+--- a/lib/Mioga2/Magellan/DAV.pm
++++ b/lib/Mioga2/Magellan/DAV.pm
+@@ -106,7 +106,7 @@ sub ExecuteRequest
  	}
  
  	if ($response->code >= 500) {
@@ -343,10 +359,11 @@ diff -r c0f4c1b8b448 lib/Mioga2/Magellan/DAV.pm
  	}
  
  	return  $response;
-diff -r c0f4c1b8b448 lib/Mioga2/MailingList.pm
---- a/lib/Mioga2/MailingList.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/MailingList.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -749,11 +749,11 @@
+diff --git a/lib/Mioga2/MailingList.pm b/lib/Mioga2/MailingList.pm
+index c7d631c..3a92466 100644
+--- a/lib/Mioga2/MailingList.pm
++++ b/lib/Mioga2/MailingList.pm
+@@ -749,11 +749,11 @@ sub MailDeleteMsg
  sub CheckUTF8 {
      my ($str) = @_;
      
@@ -361,22 +378,24 @@ diff -r c0f4c1b8b448 lib/Mioga2/MailingList.pm
          $str  = $conv->convert($str);
      }
      return $str;
-diff -r c0f4c1b8b448 lib/Mioga2/Router.pm
---- a/lib/Mioga2/Router.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Router.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -45,7 +45,7 @@
- use Apache2::RequestUtil;
- use Data::Dumper;
+diff --git a/lib/Mioga2/MiogaConf.pm b/lib/Mioga2/MiogaConf.pm
+index 5b74a96..a46e27c 100644
+--- a/lib/Mioga2/MiogaConf.pm
++++ b/lib/Mioga2/MiogaConf.pm
+@@ -258,7 +258,7 @@ sub GetFilenameEncoding {
+ sub GetBinariesDir {
+ 	my ($self) = @_;
  
--my $debug = 0;
-+my $debug = 5;
+-	return $self->{binaries_dir};
++	return $self->{bin_dir};
+ }
  
- #-------------------------------------------------------------------------------
- # If the URI contains a single member, it can be:
-diff -r c0f4c1b8b448 lib/Mioga2/Search.pm
---- a/lib/Mioga2/Search.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/Search.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -447,13 +447,13 @@
+ # ============================================================================
+diff --git a/lib/Mioga2/Search.pm b/lib/Mioga2/Search.pm
+index 2c20259..292f864 100644
+--- a/lib/Mioga2/Search.pm
++++ b/lib/Mioga2/Search.pm
+@@ -447,13 +447,13 @@ sub CheckArgs
  	elsif (exists($context->{args}->{query})) {
  		$query_string = $context->{args}->{query};
  	}
@@ -393,33 +412,11 @@ diff -r c0f4c1b8b448 lib/Mioga2/Search.pm
  		$query_string  = $conv->convert($query_string);
  		warn "==> converted query_string = '$query_string'" if $debug;
  	}
-diff -r c0f4c1b8b448 lib/Mioga2/URI.pm
---- a/lib/Mioga2/URI.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/URI.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -812,7 +812,7 @@
- 	my ($self) = @_;
- 
- 	my $uri = $self->{uri};
--
-+    print STDERR "VHH DEBUG: original URI is $uri\n";
- 	my $base_uri = $self->{miogaconf}->GetBasePath();
- 
- 	# Check base URI
-@@ -820,8 +820,10 @@
- 		throw Mioga2::Exception::Simple("Mioga2::URI::CheckURI", 
-         __x("URI does not begin with {pattern}.", pattern => $base_uri));
- 	}
-+    print STDERR "VHH DEBUG: cutting away base URI: ${base_uri}\n";
- 
- 	$uri =~ s/^$base_uri([$|\/])//;
-+    print STDERR "VHH DEBUG: now matching ident on ${uri}\n";
- 
- 	# Retrieve Mioga Ident
- 	my ($mioga_ident) = split(/[\/\?]/, $uri);
-diff -r c0f4c1b8b448 lib/Mioga2/tools/string_utils.pm
---- a/lib/Mioga2/tools/string_utils.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/Mioga2/tools/string_utils.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -46,6 +46,7 @@
+diff --git a/lib/Mioga2/tools/string_utils.pm b/lib/Mioga2/tools/string_utils.pm
+index c56cc3b..36bfa5a 100644
+--- a/lib/Mioga2/tools/string_utils.pm
++++ b/lib/Mioga2/tools/string_utils.pm
+@@ -46,6 +46,7 @@ use Mioga2::Content::XSLT;
  use Mioga2::XML::Simple;
  use Exporter;
  use Text::Iconv;
@@ -427,7 +424,7 @@ diff -r c0f4c1b8b448 lib/Mioga2/tools/string_utils.pm
  use Encode::Detect::Detector;
  use Data::Dumper;
  use HTML::TokeParser::Simple;
-@@ -715,14 +716,15 @@
+@@ -715,11 +716,11 @@ Check if string is UTF8 and convert it if needed
  sub st_CheckUTF8 {
      my ($str) = @_;
      
@@ -442,14 +439,11 @@ diff -r c0f4c1b8b448 lib/Mioga2/tools/string_utils.pm
          $str  = $conv->convert($str);
  		utf8::decode ($str);
      }
-+
-     return ($str);
- }	# ----------  end of subroutine st_CheckUTF8  ----------
- 
-diff -r c0f4c1b8b448 lib/MiogaConf.pm
---- a/lib/MiogaConf.pm	Sat Oct 06 16:15:43 2012 +0200
-+++ b/lib/MiogaConf.pm	Mon Oct 22 19:07:32 2012 +0200
-@@ -811,6 +811,10 @@
+diff --git a/lib/MiogaConf.pm b/lib/MiogaConf.pm
+index 0870174..bbcc80a 100644
+--- a/lib/MiogaConf.pm
++++ b/lib/MiogaConf.pm
+@@ -836,6 +836,10 @@ sub CheckDepends
  	my @missing;
  	my @missing_clib;
  
@@ -460,7 +454,7 @@ diff -r c0f4c1b8b448 lib/MiogaConf.pm
  	foreach my $dep (@{$self->{CONFIG}->{dependencies}->[0]->{dep}}) {
  		my $version;
  		if(exists $dep->{version}) {
-@@ -833,6 +837,7 @@
+@@ -858,6 +862,7 @@ sub CheckDepends
  		}
  	}
  	
@@ -468,26 +462,49 @@ diff -r c0f4c1b8b448 lib/MiogaConf.pm
  
  	foreach my $dep (@{$self->{CONFIG}->{dependencies}->[0]->{clib}}) {
  		my $version;
-diff -r c0f4c1b8b448 sql/Makefile
---- a/sql/Makefile	Sat Oct 06 16:15:43 2012 +0200
-+++ b/sql/Makefile	Mon Oct 22 19:07:32 2012 +0200
-@@ -18,9 +18,9 @@
- 	if [ $(INIT_SQL) = 'yes' ] ; \
+diff --git a/sql/Makefile b/sql/Makefile
+index 07b26f5..f6b6c0f 100644
+--- a/sql/Makefile
++++ b/sql/Makefile
+@@ -1,4 +1,5 @@
+ include ../config.mk
++DB_STATE=`perl -w testdb.pl`
+ 
+ all:
+ 
+@@ -15,19 +16,20 @@ install:
+ 	cp upgradeMiogletDesc.pl $(DESTDIR)$(INSTALL_DIR)/conf/Config.hook.d
+ 	chmod a+x $(DESTDIR)$(INSTALL_DIR)/conf/Config.hook.d/upgradeMiogletDesc.pl
+ 
+-	if [ $(INIT_SQL) = 'yes' ] ; \
++	if [ $(DB_STATE) = 'nodb' ] ; \
  	then \
  		echo "Initialize database"; \
 -		su - $(POSTGRES_USER) -c "dropdb $(DB_NAME)" ; \
 -		su - $(POSTGRES_USER) -c "createdb --encoding UTF8 $(DB_NAME)" && \
 -		su $(POSTGRES_USER) -c "psql $(DB_NAME) < create_lang.sql" && \
+-		perl -w -I../lib initdb.pl ; \
+-	elif [ $(INIT_SQL) != 'noupdate' ]; then \
 +        dropdb -h $(DB_HOST) -p $(DB_PORT) -U $(DBI_LOGIN) $(DB_NAME) ; \
 +		createdb --encoding UTF8 -h $(DB_HOST) -p $(DB_PORT) -U $(DBI_LOGIN) $(DB_NAME) && \
 +		psql -h $(DB_HOST) -p $(DB_PORT) -U $(DBI_LOGIN) $(DB_NAME) < create_lang.sql && \
- 		perl -w -I../lib initdb.pl ; \
- 	elif [ $(INIT_SQL) != 'noupdate' ]; then \
++		perl -w -I../lib initdb.pl force_init_sql=1; \
++	elif [ $(DB_STATE) = 'present' ]; then \
  		echo "Update database"; \
-diff -r c0f4c1b8b448 sql/schema_base.sql
---- a/sql/schema_base.sql	Sat Oct 06 16:15:43 2012 +0200
-+++ b/sql/schema_base.sql	Mon Oct 22 19:07:32 2012 +0200
-@@ -429,10 +429,6 @@
+ 		perl -w -I../lib updatedb.pl configxml=$(DESTDIR)$(INSTALL_DIR)/conf/Config.xml; \
++	elif [ $(DB_STATE) = 'noserver' ]; then \
++		echo "ERROR: Cannot connect to the database server!"; \
+ 	fi
+ 
+-
+ clean:
+ 	rm -f *~
+ 
+diff --git a/sql/schema_base.sql b/sql/schema_base.sql
+index b7d8cc2..88d5e2d 100644
+--- a/sql/schema_base.sql
++++ b/sql/schema_base.sql
+@@ -429,10 +429,6 @@ CREATE OR REPLACE FUNCTION check_group_base_default_profile_id () RETURNS trigge
      END;
  ' LANGUAGE 'plpgsql';
  
@@ -498,7 +515,7 @@ diff -r c0f4c1b8b448 sql/schema_base.sql
  
  CREATE OR REPLACE FUNCTION check_group_base_mioga_id () RETURNS trigger AS '
      DECLARE
-@@ -839,6 +835,10 @@
+@@ -839,6 +835,10 @@ create table m_profile (
  );
  create unique index m_profile_ident_group_index on m_profile (ident, group_id);
  
@@ -509,10 +526,75 @@ diff -r c0f4c1b8b448 sql/schema_base.sql
  
  --
  -- Add referencial integrity on default_profile_id in m_group_base
-diff -r c0f4c1b8b448 web/conf/startup.pl
---- a/web/conf/startup.pl	Sat Oct 06 16:15:43 2012 +0200
-+++ b/web/conf/startup.pl	Mon Oct 22 19:07:32 2012 +0200
-@@ -29,6 +29,7 @@
+diff --git a/sql/testdb.pl b/sql/testdb.pl
+new file mode 100755
+index 0000000..2fa3fe7
+--- /dev/null
++++ b/sql/testdb.pl
+@@ -0,0 +1,37 @@
++#!/usr/bin/perl -w
++
++# Tests the availability of the Mioga2 database.
++# Returns on stdout one of:
++# 'present'  - The Mioga2 database has been found.
++# 'nodb'     - There is no Mioga2 database but the database server is working fine
++#              (i.e. one can try to create the database)
++# 'noserver' - Connection to the database server failed.
++
++# This has been written for Mioga2/SlapOS, to avoid overwriting the database
++# when re-instantiating the Apache/mod_perl partition.
++
++use strict;
++use lib "../lib";
++
++use Data::Dumper;
++use Error qw(:try);
++use Mioga2::Exception::DB;
++use Mioga2::MiogaConf;
++
++# TODO: get this through a parameter?
++# my $configxml = "../conf/Config.xml";
++my $miogaconf = "../web/conf/Mioga.conf";
++
++try {
++    my $config = new Mioga2::MiogaConf($miogaconf);
++    print 'present';
++} catch Mioga2::Exception::DB with {
++    my $err = shift;
++    if ($err->getDBerror() =~ m#database "mioga2" does not exist#) {
++        print 'nodb';
++    } else {
++        print 'noserver';
++    }
++} otherwise {
++    print 'noserver';
++}
+diff --git a/web/Makefile b/web/Makefile
+index 66af45f..9649a02 100644
+--- a/web/Makefile
++++ b/web/Makefile
+@@ -16,11 +16,11 @@ all ::
+ 
+ 
+ install ::
+-	if [ $(INIT_SQL) = 'yes' -a -d $(INSTALL_DIR) ] ; \
+-	then \
+-	     su - $(POSTGRES_USER) -c "pg_dump -b -Ft --column-inserts $(DB_NAME) | gzip" > ${INSTALL_DIR}/db_dump.tar.gz ; \
+-	     mv $(INSTALL_DIR) $(BACKUP_DIR) ; \
+-        fi
++#	if [ $(INIT_SQL) = 'yes' -a -d $(INSTALL_DIR) ] ; \
++#	then \
++#	     su - $(POSTGRES_USER) -c "pg_dump -b -Ft --column-inserts $(DB_NAME) | gzip" > ${INSTALL_DIR}/db_dump.tar.gz ; \
++#	     mv $(INSTALL_DIR) $(BACKUP_DIR) ; \
++#       fi
+ 
+ 	mkdir -p $(TMP_DIR)
+ 	mkdir -p $(DESTDIR)$(INSTALL_DIR)/$(INSTANCE_IDENT)/$(MIOGA_FILES)
+diff --git a/web/conf/startup.pl b/web/conf/startup.pl
+index a9dc968..6558061 100644
+--- a/web/conf/startup.pl
++++ b/web/conf/startup.pl
+@@ -29,6 +29,7 @@ use MIME::Entity ();
  use MIME::Parser ();
  use MIME::QuotedPrint ();
  use MiogaConf ();
@@ -520,3 +602,16 @@ diff -r c0f4c1b8b448 web/conf/startup.pl
  use Net::LDAP ();
  use Parse::Yapp::Driver ();
  use Storable ();
+diff --git a/web/skel/Makefile b/web/skel/Makefile
+index e604e7d..fbaad2d 100644
+--- a/web/skel/Makefile
++++ b/web/skel/Makefile
+@@ -33,7 +33,7 @@ fr_FR : $(SRC_FR_FILES)
+ install:
+ 	rsync $(RSYNC_OPTS) $(SUBDIRS) $(DESTDIR)$(INSTALL_DIR)/conf/skel/
+ 	# Update instance default skeletons
+-	for i in `mioga2_info.pl --conf=$(DESTDIR)$(INSTALL_DIR)/conf/Mioga.conf instances`; do if [ ! -d /var/lib/Mioga2/$$i/MiogaFiles/skel/ ]; then mkdir $(DESTDIR)$(INSTALL_DIR)/$$i/MiogaFiles/skel/; fi; cp -R $(DESTDIR)$(INSTALL_DIR)/conf/skel/* $(DESTDIR)$(INSTALL_DIR)/$$i/MiogaFiles/skel/; done
++#	for i in `mioga2_info.pl --conf=$(DESTDIR)$(INSTALL_DIR)/conf/Mioga.conf instances`; do if [ ! -d /var/lib/Mioga2/$$i/MiogaFiles/skel/ ]; then mkdir $(DESTDIR)$(INSTALL_DIR)/$$i/MiogaFiles/skel/; fi; cp -R $(DESTDIR)$(INSTALL_DIR)/conf/skel/* $(DESTDIR)$(INSTALL_DIR)/$$i/MiogaFiles/skel/; done
+ 
+ clean:
+ 	rm -rf $(SUBDIRS)
