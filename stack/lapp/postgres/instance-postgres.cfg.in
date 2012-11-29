@@ -214,7 +214,7 @@ path = $${basedirectory:services}/slapmonitor
 
 [slapreport]
 recipe = slapos.cookbook:slapreport
-pid-file = $${basedirectory:run}/mariadb.pid
+pid-file = $${postgres-instance:pgdata-directory}/postmaster.pid
 database-path = $${basedirectory:log}/slapmonitor.db
 consumption-log-path = $${basedirectory:log}/instance_consumption.log
 logbox-ip = 87.98.152.12
