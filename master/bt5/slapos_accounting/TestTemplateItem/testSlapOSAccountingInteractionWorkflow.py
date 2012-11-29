@@ -158,7 +158,10 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
     import datetime
     self.assertEqual(item.getPeriodicityHourList(), [0])
     self.assertEqual(item.getPeriodicityMinuteList(), [0])
-    self.assertEqual(item.getPeriodicityMonthDay(), datetime.datetime.today().day)
+    day = datetime.datetime.today().day
+    if day > 28:
+      day = 28
+    self.assertEqual(item.getPeriodicityMonthDay(), day)
 
   def test_HostingSubscription_manageAfter(self):
     class DummyTestException(Exception):
