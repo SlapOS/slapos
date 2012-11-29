@@ -1368,14 +1368,16 @@ class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
     self._test_Delivery_manageBuildingCalculatingDelivery('diverged', True)
 
 class TestSlapOSConfirmedDeliveryMixin(testSlapOSMixin):
-  def _test(self, simulation_state, causality_state, specialise, positive):
+  def _test(self, simulation_state, causality_state, specialise, positive,
+      delivery_date=DateTime('2012/04/22'),
+      accounting_date=DateTime('2012/04/28')):
     @simulateByTitlewMark(self.script)
-    def _real(self, simulation_state, causality_state, specialise, positive):
+    def _real(self, simulation_state, causality_state, specialise, positive,
+          delivery_date,
+          accounting_date):
       not_visited = 'Not visited by %s' % self.script
       visited = 'Visited by %s' % self.script
       module = self.portal.getDefaultModule(portal_type=self.portal_type)
-      delivery_date = DateTime('2012/04/22')
-      accounting_date = DateTime('2012/04/28')
       delivery = module.newContent(title=not_visited, start_date=delivery_date,
           portal_type=self.portal_type, specialise=specialise)
       _jumpToStateFor = self.portal.portal_workflow._jumpToStateFor
@@ -1391,7 +1393,8 @@ class TestSlapOSConfirmedDeliveryMixin(testSlapOSMixin):
         self.assertEqual(visited, delivery.getTitle())
       else:
         self.assertEqual(not_visited, delivery.getTitle())
-    _real(self, simulation_state, causality_state, specialise, positive)
+    _real(self, simulation_state, causality_state, specialise, positive,
+        delivery_date, accounting_date)
 
   def test_typical(self):
     self._test('confirmed', 'solved',
@@ -1462,6 +1465,23 @@ class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(
   portal_type = 'Sale Packing List'
   alarm = 'slapos_deliver_confirmed_aggregated_sale_packing_list'
 
+  def test_previous_month(self):
+    self._test('confirmed', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        True, delivery_date=DateTime("2012/03/22"),
+        accounting_date=DateTime('2012/04/28'))
+
+  def test_next_month(self):
+    self._test('confirmed', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        False, delivery_date=DateTime("2012/05/22"),
+        accounting_date=DateTime('2012/04/28'))
+
+  def test_same_month_early(self):
+    self._test('confirmed', 'solved',
+        'sale_trade_condition_module/slapos_aggregated_trade_condition',
+        False, delivery_date=DateTime("2012/04/22"),
+        accounting_date=DateTime('2012/04/23'))
 
 class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(
       TestSlapOSConfirmedDeliveryMixin):
