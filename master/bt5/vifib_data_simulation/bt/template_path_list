@@ -5,32 +5,4 @@ business_process_module/vifib_simple_sale_business_process/**
 portal_categories/trade_state/**
 portal_deliveries/vifib_purchase_packing_list_builder
 portal_deliveries/vifib_purchase_packing_list_builder/**
-portal_rules/vifib_accounting_transaction_root_simulation_rule
-portal_rules/vifib_accounting_transaction_root_simulation_rule/**
-portal_rules/vifib_delivery_simulation_rule
-portal_rules/vifib_delivery_simulation_rule/**
-portal_rules/vifib_invoice_root_simulation_rule
-portal_rules/vifib_invoice_root_simulation_rule/**
-portal_rules/vifib_order_root_simulation_rule
-portal_rules/vifib_order_root_simulation_rule/**
-portal_solvers/Accept Solver
-portal_solvers/Accept Solver/*
-portal_solvers/Adopt Solver
-portal_solvers/Adopt Solver/*
-portal_solvers/FIFO Delivery Solver
-portal_solvers/FIFO Delivery Solver/*
-portal_solvers/LIFO Delivery Solver
-portal_solvers/LIFO Delivery Solver/*
-portal_solvers/Minimise Price Delivery Solver
-portal_solvers/Minimise Price Delivery Solver/*
-portal_solvers/Production Reduction Solver
-portal_solvers/Production Reduction Solver/*
-portal_solvers/Quantity Cancel Solver
-portal_solvers/Quantity Cancel Solver/*
-portal_solvers/Quantity Split Solver
-portal_solvers/Quantity Split Solver/*
-portal_solvers/Trade Model Solver
-portal_solvers/Trade Model Solver/*
-portal_solvers/Unify Solver
-portal_solvers/Unify Solver/*
 sale_trade_condition_module/vifib_simple_trade_condition
