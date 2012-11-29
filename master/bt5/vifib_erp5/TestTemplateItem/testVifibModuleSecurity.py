@@ -53,7 +53,6 @@ class TestVifibModuleSecurity(testVifibMixin):
     'person_module',
     'product_module',
     'purchase_order_module',
-    'purchase_packing_list_module',
     'purchase_trade_condition_module',
     'query_module',
     'sale_opportunity_module',

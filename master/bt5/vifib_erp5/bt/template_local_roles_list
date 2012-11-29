@@ -30,7 +30,6 @@ portal_integrations
 portal_integrations/slapos_payzen_test_integration
 product_module
 purchase_order_module
-purchase_packing_list_module
 purchase_trade_condition_module
 query_module
 sale_opportunity_module

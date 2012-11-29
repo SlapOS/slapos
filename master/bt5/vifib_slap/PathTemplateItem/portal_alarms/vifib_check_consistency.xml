@@ -106,7 +106,6 @@
                 <string>returned_sale_packing_list_module</string>
                 <string>internal_order_module</string>
                 <string>returned_purchase_packing_list_module</string>
-                <string>purchase_packing_list_module</string>
                 <string>business_process_module</string>
                 <string>sale_order_module</string>
                 <string>sale_packing_list_module</string>

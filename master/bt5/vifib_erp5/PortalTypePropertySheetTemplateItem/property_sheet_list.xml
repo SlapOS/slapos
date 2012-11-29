@@ -8,12 +8,6 @@
  <portal_type id="Person">
   <item>VifibPersonConstraint</item>
  </portal_type>
- <portal_type id="Purchase Packing List">
-  <item>VifibPurchasePackingListConstraint</item>
- </portal_type>
- <portal_type id="Purchase Packing List Line">
-  <item>VifibPurchasePackingListLineConstraint</item>
- </portal_type>
  <portal_type id="Sale Order">
   <item>VifibSaleOrderConstraint</item>
  </portal_type>

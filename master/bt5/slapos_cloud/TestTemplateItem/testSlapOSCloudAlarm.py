@@ -121,7 +121,6 @@ active_process.postResult(active_result)
       'portal_simulation',
       'product_module',
       'purchase_order_module',
-      'purchase_packing_list_module',
       'purchase_supply_module',
       'purchase_trade_condition_module',
       'quantity_unit_conversion_module',

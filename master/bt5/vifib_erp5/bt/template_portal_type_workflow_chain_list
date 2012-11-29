@@ -1,7 +1,6 @@
 Open Sale Order Module | init_vifib_interaction_workflow
 Open Sale Order | local_permission_vifib_interaction_workflow
 Payment Transaction | local_permission_vifib_interaction_workflow
-Purchase Packing List | local_permission_vifib_interaction_workflow
 Sale Invoice Transaction | local_permission_vifib_interaction_workflow
 Sale Order Line | local_permission_vifib_interaction_workflow
 Sale Order | local_permission_vifib_interaction_workflow
