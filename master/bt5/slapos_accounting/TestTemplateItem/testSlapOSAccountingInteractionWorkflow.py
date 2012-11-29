@@ -163,6 +163,9 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
       day = 28
     self.assertEqual(item.getPeriodicityMonthDay(), day)
 
+  def test_HostingSubscription_fixConsistency_today_after_28(self):
+    raise NotImplementedError('Test missing.')
+
   def test_HostingSubscription_manageAfter(self):
     class DummyTestException(Exception):
       pass
