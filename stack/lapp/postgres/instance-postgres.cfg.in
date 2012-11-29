@@ -206,7 +206,7 @@ symlink_base = ${postgresql:location}/bin
 
 [slapmonitor]
 recipe = slapos.cookbook:slapmonitor
-pid-file = $${basedirectory:run}/mariadb.pid
+pid-file = $${postgres-instance:pgdata-directory}/postmaster.pid
 database-path = $${basedirectory:log}/slapmonitor.db
 shell-path = ${dash:location}/bin/dash
 slapmonitor-path = ${buildout:bin-directory}/slapmonitor
