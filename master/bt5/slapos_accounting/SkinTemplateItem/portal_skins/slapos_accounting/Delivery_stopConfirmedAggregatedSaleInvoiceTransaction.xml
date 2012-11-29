@@ -51,11 +51,13 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
-if context.getPortalType() != \'Sale Invoice Transaction\' \\\n
-  and context.getSpecialise() != portal.portal_preferences.getPreferredAggregatedSaleTradeCondition():\n
+if context.getPortalType() != \'Sale Invoice Transaction\':\n
   raise TypeError(\'Incorrect delivery.\')\n
 isTransitionPossible = portal.portal_workflow.isTransitionPossible\n
-if context.getSimulationState() == \'confirmed\' and len(context.checkConsistency()) == 0 and context.getCausalityState() == \'solved\':\n
+if context.getSimulationState() == \'confirmed\'\\\n
+  and len(context.checkConsistency()) == 0\\\n
+  and context.getCausalityState() == \'solved\'\\\n
+  and context.getSpecialise() == portal.portal_preferences.getPreferredAggregatedSaleTradeCondition():\n
   comment = \'Stopped by alarm as all actions in confirmed state are ready.\'\n
   if isTransitionPossible(context, \'start\'):\n
     context.start(comment=comment)\n
