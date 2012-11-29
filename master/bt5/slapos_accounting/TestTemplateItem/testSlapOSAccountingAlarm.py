@@ -1367,7 +1367,7 @@ class TestSlapOSManageBuildingCalculatingDeliveryAlarm(testSlapOSMixin):
   def test_Delivery_manageBuildingCalculatingDelivery_diverged(self):
     self._test_Delivery_manageBuildingCalculatingDelivery('diverged', True)
 
-class TestSlapOSConfirmedDeliveryMixin(testSlapOSMixin):
+class TestSlapOSConfirmedDeliveryMixin:
   def _test(self, simulation_state, causality_state, specialise, positive,
       delivery_date=DateTime('2012/04/22'),
       accounting_date=DateTime('2012/04/28')):
@@ -1459,7 +1459,7 @@ class TestSlapOSConfirmedDeliveryMixin(testSlapOSMixin):
         'confirmed', True)
 
 class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(
-      TestSlapOSConfirmedDeliveryMixin):
+      testSlapOSMixin, TestSlapOSConfirmedDeliveryMixin):
   destination_state = 'delivered'
   script = 'Delivery_deliverConfirmedAggregatedSalePackingList'
   portal_type = 'Sale Packing List'
@@ -1484,7 +1484,7 @@ class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(
         accounting_date=DateTime('2012/04/23'))
 
 class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(
-      TestSlapOSConfirmedDeliveryMixin):
+      testSlapOSMixin, TestSlapOSConfirmedDeliveryMixin):
   destination_state = 'stopped'
   script = 'Delivery_stopConfirmedAggregatedSaleInvoiceTransaction'
   portal_type = 'Sale Invoice Transaction'
