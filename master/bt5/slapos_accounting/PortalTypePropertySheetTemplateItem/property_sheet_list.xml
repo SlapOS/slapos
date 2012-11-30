@@ -8,6 +8,9 @@
  <portal_type id="Sale Packing List">
   <item>SlapOSAccountingSalePackingListConstraint</item>
  </portal_type>
+ <portal_type id="Sale Packing List Line">
+  <item>SlapOSAccountingSalePackingListLineConstraint</item>
+ </portal_type>
  <portal_type id="Slave Instance">
   <item>InstanceAccountingSynchronisation</item>
  </portal_type>

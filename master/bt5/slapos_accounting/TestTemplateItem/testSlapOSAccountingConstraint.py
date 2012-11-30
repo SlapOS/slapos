@@ -338,3 +338,48 @@ class TestSalePackingList(TestSlapOSConstraintMixin):
     self.assertTrue(message in self.getMessageList(delivery))
     delivery.setStartDate('2012/01/01')
     self.assertFalse(message in self.getMessageList(delivery))
+
+class TestSalePackingListLine(TestSlapOSConstraintMixin):
+  @withAbort
+  def test_property_existence(self):
+    message = 'Property existence error for property %s, this document has '\
+        'no such property or the property has never been set'
+    message_price = message % 'price'
+    message_quantity = message % 'quantity'
+    delivery_line = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List').newContent(
+        portal_type='Sale Packing List Line')
+    self.assertTrue(message_price in self.getMessageList(delivery_line))
+    self.assertTrue(message_quantity in self.getMessageList(delivery_line))
+    delivery_line.setQuantity(1.0)
+    self.assertTrue(message_price in self.getMessageList(delivery_line))
+    self.assertFalse(message_quantity in self.getMessageList(delivery_line))
+    delivery_line.setPrice(1.0)
+    self.assertFalse(message_price in self.getMessageList(delivery_line))
+    self.assertFalse(message_quantity in self.getMessageList(delivery_line))
+
+  def test_resource_arity(self):
+    category = 'resource'
+    message = "Arity Error for Relation ['%s'], arity is equal to "\
+        "0 but should be between 1 and 1" % category
+    message_2 = "Arity Error for Relation ['%s'], arity is equal to "\
+        "2 but should be between 1 and 1" % category
+    delivery_line = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List').newContent(
+        portal_type='Sale Packing List Line')
+    product = self.portal.product_module.newContent(
+        portal_type='Product').getRelativeUrl()
+    service_1 = self.portal.service_module.newContent(
+        portal_type='Service').getRelativeUrl()
+    service_2 = self.portal.service_module.newContent(
+        portal_type='Service').getRelativeUrl()
+
+    key = '%s_list' % category
+    self.assertTrue(message in self.getMessageList(delivery_line))
+    delivery_line.edit(**{key: [product]})
+    self.assertTrue(message in self.getMessageList(delivery_line))
+    delivery_line.edit(**{key: [service_1, service_2]})
+    self.assertTrue(message_2 in self.getMessageList(delivery_line))
+    delivery_line.edit(**{key: [service_1]})
+    self.assertFalse(message in self.getMessageList(delivery_line))
+    self.assertFalse(message_2 in self.getMessageList(delivery_line))
