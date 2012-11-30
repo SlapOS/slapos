@@ -424,3 +424,23 @@ class TestSalePackingListLineConsumption(TestSlapOSConstraintMixin):
         portal_type='Slave Instance').getRelativeUrl(),
       self.portal.software_instance_module.newContent(
         portal_type='Slave Instance').getRelativeUrl())
+
+class TestSalePackingListConsumption(TestSlapOSConstraintMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSalePackingListLineSubscription(TestSlapOSConstraintMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSalePackingListLineAggregated(TestSlapOSConstraintMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSalePackingListSubscription(TestSlapOSConstraintMixin):
+  def test(self):
+    raise NotImplementedError
+
+class TestSalePackingListAggregated(TestSlapOSConstraintMixin):
+  def test(self):
+    raise NotImplementedError
