@@ -37,6 +37,7 @@
             <value>
               <tuple>
                 <string>destination</string>
+                <string>destination_decision</string>
                 <string>destination_section</string>
                 <string>price_currency</string>
                 <string>source</string>

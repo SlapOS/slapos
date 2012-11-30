@@ -87,6 +87,7 @@ for movement in movement_list:\n
     destination=movement.getDestination(),\n
     source_section=movement.getSourceSection(),\n
     destination_section=movement.getDestination(),\n
+    destination_decision=movement.getDestination(),\n
     specialise=specialise,\n
     price_currency=movement.getPriceCurrency()\n
   )\n
