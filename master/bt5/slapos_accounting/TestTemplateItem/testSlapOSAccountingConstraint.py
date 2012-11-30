@@ -358,6 +358,7 @@ class TestSalePackingListLine(TestSlapOSConstraintMixin):
     self.assertFalse(message_price in self.getMessageList(delivery_line))
     self.assertFalse(message_quantity in self.getMessageList(delivery_line))
 
+  @withAbort
   def test_resource_arity(self):
     category = 'resource'
     message = "Arity Error for Relation ['%s'], arity is equal to "\
@@ -383,3 +384,42 @@ class TestSalePackingListLine(TestSlapOSConstraintMixin):
     delivery_line.edit(**{key: [service_1]})
     self.assertFalse(message in self.getMessageList(delivery_line))
     self.assertFalse(message_2 in self.getMessageList(delivery_line))
+
+  @withAbort
+  def _test_aggregate(self, message, aggregate_1, aggregate_2):
+    category = 'aggregate'
+    delivery = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List')
+    delivery_line = delivery.newContent(portal_type='Sale Packing List Line')
+    product = self.portal.product_module.newContent(
+        portal_type='Product').getRelativeUrl()
+
+    key = '%s_list' % category
+    self.assertFalse(message in self.getMessageList(delivery_line))
+    delivery.edit(specialise='sale_trade_condition_module/slapos_consumption_trade_condition')
+    self.assertTrue(message in self.getMessageList(delivery_line))
+    delivery_line.edit(**{key: [product]})
+    self.assertTrue(message in self.getMessageList(delivery_line))
+    delivery_line.edit(**{key: [aggregate_1, aggregate_2]})
+    self.assertTrue(message in self.getMessageList(delivery_line))
+    delivery_line.edit(**{key: [aggregate_1]})
+    self.assertFalse(message in self.getMessageList(delivery_line))
+
+  def test_aggregate_hosting_subscription(self):
+    self._test_aggregate("There should be one Hosting Subscription related",
+      self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription').getRelativeUrl(),
+      self.portal.hosting_subscription_module.newContent(
+        portal_type='Hosting Subscription').getRelativeUrl())
+
+  def test_aggregate_software_instance(self):
+    self._test_aggregate("There should be one Software or Slave Instance related",
+      self.portal.software_instance_module.newContent(
+        portal_type='Software Instance').getRelativeUrl(),
+      self.portal.software_instance_module.newContent(
+        portal_type='Software Instance').getRelativeUrl())
+    self._test_aggregate("There should be one Software or Slave Instance related",
+      self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance').getRelativeUrl(),
+      self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance').getRelativeUrl())

@@ -1,5 +1,4 @@
 Open Sale Order Line | VifibOpenSaleOrderLineConstraint
 Open Sale Order | VifibOpenSaleOrderConstraint
 Person | VifibPersonConstraint
-Sale Packing List Line | VifibSalePackingListLineConstraint
 Sale Packing List | VifibSalePackingListConstraint
