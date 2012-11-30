@@ -23,6 +23,7 @@
             <value>
               <tuple>
                 <string>price</string>
+                <string>quantity</string>
               </tuple>
             </value>
         </item>
