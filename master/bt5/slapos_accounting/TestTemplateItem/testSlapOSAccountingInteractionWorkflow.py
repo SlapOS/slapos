@@ -3,6 +3,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 import transaction
 from Products.ERP5Type.tests.utils import createZODBPythonScript
+from DateTime import DateTime
 
 class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
   def beforeTearDown(self):
@@ -138,7 +139,8 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
     instance.requestStop(**request_kw)
     self.assertEqual(instance.getCausalityState(), 'diverged')
 
-  def test_HostingSubscription_fixConsistency(self):
+  def test_HostingSubscription_fixConsistency(self,
+        date=DateTime('2012/01/15'), day=15):
     new_id = self.generateNewId()
     item = self.portal.hosting_subscription_module.newContent(
       portal_type='Hosting Subscription',
@@ -153,18 +155,23 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
     self.assertEqual(item.getPeriodicityMinute(), None)
     self.assertEqual(item.getPeriodicityMonthDay(), None)
 
-    item.fixConsistency()
+    try:
+      from Products.ERP5Type.Base import Base
+      Base.original_getCreationDate = Base.getCreationDate
+      def getCreationDate(*args, **kwargs):
+        return date
+      Base.getCreationDate = getCreationDate
+      item.fixConsistency()
+    finally:
+      Base.getCreationDate = Base.original_getCreationDate
+      delattr(Base, 'original_getCreationDate')
 
-    import datetime
     self.assertEqual(item.getPeriodicityHourList(), [0])
     self.assertEqual(item.getPeriodicityMinuteList(), [0])
-    day = datetime.datetime.today().day
-    if day > 28:
-      day = 28
     self.assertEqual(item.getPeriodicityMonthDay(), day)
 
   def test_HostingSubscription_fixConsistency_today_after_28(self):
-    raise NotImplementedError('Test missing.')
+    self.test_HostingSubscription_fixConsistency(DateTime('2012/01/30'), 28)
 
   def test_HostingSubscription_manageAfter(self):
     class DummyTestException(Exception):
