@@ -385,6 +385,7 @@ class TestSalePackingListLine(TestSlapOSConstraintMixin):
     self.assertFalse(message in self.getMessageList(delivery_line))
     self.assertFalse(message_2 in self.getMessageList(delivery_line))
 
+class TestSalePackingListLineConsumption(TestSlapOSConstraintMixin):
   @withAbort
   def _test_aggregate(self, message, aggregate_1, aggregate_2):
     category = 'aggregate'
