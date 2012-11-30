@@ -1463,8 +1463,16 @@ class TestSlapOSAggregatedDeliveryBuilder(testSlapOSMixin):
         built_delivery.getReference())
     self.assertEqual('confirmed', built_delivery.getSimulationState())
     self.assertEqual('building', built_delivery.getCausalityState())
-    self.assertEqual(delivery.getPriceCurrency(),
-        built_delivery.getPriceCurrency())
+    self.assertSameSet([
+        'destination/%s' % person.getRelativeUrl(),
+        'destination_decision/%s' % person.getRelativeUrl(),
+        'destination_section/%s' % person.getRelativeUrl(),
+        'price_currency/currency_module/EUR',
+        'source/%s' % person.getRelativeUrl(),
+        'source_section/organisation_module/slapos',
+        'specialise/sale_trade_condition_module/'
+            'slapos_aggregated_trade_condition'],
+        built_delivery.getCategoryList())
     self.assertEqual(DateTime().earliestTime(), built_delivery.getStartDate())
     delivery_line_list = built_delivery.contentValues(
         portal_type='Sale Packing List Line')
