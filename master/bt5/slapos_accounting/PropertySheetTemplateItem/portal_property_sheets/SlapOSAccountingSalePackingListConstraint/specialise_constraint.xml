@@ -38,7 +38,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>sale_order_specialise_sale_trade_condition_constraint_constraint</string> </value>
+            <value> <string>specialise_constraint</string> </value>
         </item>
         <item>
             <key> <string>max_arity</string> </key>
