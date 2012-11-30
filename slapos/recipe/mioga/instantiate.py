@@ -54,15 +54,14 @@ class Recipe(GenericBaseRecipe):
     self.instantiate(False)
 
   def instantiate(self, isNewInstall):
-    print "This is the Mioga recipe"
-    print "Looking for compile folder:"
-    print self.options['mioga_compile_dir']
-
-    # TODO: this will only work for a SINGLE instance in the Slaprunner.
-    # In a real environment we cannot mess around with the compile directory
-    # like that.    
+    # Copy the build/ and var/lib/Mioga2 folders into the instance
+    mioga_location = self.options['mioga_location']
+    var_dir = self.options['var_directory']
+    if not os.path.exists(var_dir):
+      shutil.copytree(os.path.join(mioga_location, 'var'), var_dir, True)
+      
     former_directory = os.getcwd()
-    os.chdir(self.options['mioga_compile_dir'])
+    os.chdir(self.options['mioga_buildinst'])
 
     vardir = self.options['var_directory']
     mioga_base = os.path.join(vardir, 'lib', 'Mioga2')
@@ -91,12 +90,15 @@ class Recipe(GenericBaseRecipe):
     if os.path.isdir('web/conf/apache'):
       shutil.rmtree('web/conf/apache')
 
+    for key in self.options.keys():
+      print "Found option: "+key
 
     environ = os.environ
     environ['PATH'] = ':'.join([self.options['perl_bin'],           # priority!
                                 # Mioga scripts in Makefiles and shell scripts
                                 self.options['bin_dir'],            
-                                self.options['mioga_add_to_path'],
+                                self.options['libxslt_bin'],
+                                self.options['libxml2_bin'],
                                 self.options['postgres_bin'],
                                 environ['PATH'] ])
     
@@ -115,7 +117,7 @@ class Recipe(GenericBaseRecipe):
     # environ = self.options['mioga_compile_env']
     print pprint.pformat(environ)
 
-    # We must call "make installall" in the SAME environment that
+    # We must call "make" in the SAME environment that
     # "perl Makefile.PL" left!
 
     cmd = subprocess.Popen(self.options['perl_bin'] + '/perl Makefile.PL disable_check'
@@ -211,11 +213,12 @@ Include conf/extra/httpd-autoindex.conf
       else:
         os.mkfifo(fifo, 0600)
 
+    site_perl_bin = os.path.join(self.options['site_perl'], 'bin')
     mioga_conf_path = os.path.join(mioga_base, 'conf', 'Mioga.conf')
     notifier_wrapper = self.createPythonScript(
       os.path.join(services_dir, 'notifier'),
       'slapos.recipe.librecipe.execute.execute',
-      [ os.path.join(self.options['mioga_compile_dir'], 'bin', 'notifier', 'notifier.pl'),
+      [ os.path.join(site_perl_bin, 'notifier.pl'),
         mioga_conf_path ]
     )
     path_list.append(notifier_wrapper)
@@ -223,18 +226,17 @@ Include conf/extra/httpd-autoindex.conf
     searchengine_wrapper = self.createPythonScript(
       os.path.join(services_dir, 'searchengine'),
       'slapos.recipe.librecipe.execute.execute',
-      [ os.path.join(self.options['mioga_compile_dir'], 'bin', 'notifier', 'searchengine.pl'),
+      [ os.path.join(site_perl_bin, 'searchengine.pl'),
         mioga_conf_path ]
     )
     path_list.append(searchengine_wrapper)
 
-    crawl_fm = FileModifier(
-      os.path.join(self.options['mioga_compile_dir'], 'bin', 'search', 'crawl_sample.sh') )
+    crawl_fm = FileModifier( os.path.join('bin', 'search', 'crawl_sample.sh') )
     # TODO: The crawl script will still call the shell command "date"
     crawl_fm.modify(r'/var/tmp/crawl', self.options['log_dir'] + '/crawl')
     crawl_fm.modify(r'/var/lib/Mioga2/conf', mioga_base + '/conf')
     crawl_fm.modify(r'/usr/local/bin/(mioga2_(?:info|crawl|index).pl)', 
-                    self.options['site_perl'] + '/bin/' + r"\g<1>")
+                    site_perl_bin + r"/\g<1>")
     crawl_path = os.path.join(self.options['bin_dir'], 'crawl.sh')
     crawl_fm.save(crawl_path)
     os.chmod(crawl_path, stat.S_IRWXU)

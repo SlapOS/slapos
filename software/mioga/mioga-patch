@@ -12,10 +12,36 @@ index ef0f369..b275a48 100644
  This script must be run by cron in a day basis with apache user (www-data for Debian)
  
 diff --git a/Makefile.PL b/Makefile.PL
-index 3582d20..0d9ef77 100644
+index 3582d20..262e2c2 100644
 --- a/Makefile.PL
 +++ b/Makefile.PL
-@@ -115,7 +115,7 @@ my $docsubdirs = "docs";
+@@ -22,6 +22,7 @@
+ 
+ use ExtUtils::MakeMaker;
+ use ExtUtils::MakeMaker::Config;
++use File::Find;
+ 
+ # ****************************************************************************
+ # 
+@@ -67,6 +68,7 @@ sub CheckPreDepends {
+ 
+ my $disable_check = grep {lc($_) eq 'disable_check'} @ARGV;
+ 
++if (! $disable_check) {
+ CheckPreDepends({ # 'Data::Dumper' => '2.101',
+ 		  # 'DBI'          => '1.13',
+ 		  # 'DBD::Pg'      => '1.01',
+@@ -75,7 +77,8 @@ CheckPreDepends({ # 'Data::Dumper' => '2.101',
+ 		  'Error'        => '0.15',
+ 		  # 'Net::LDAP'    => '0.25',
+ 		  # 'Unicode::String' => '2.06',
+-	      });
++          })
++}
+     
+ require MiogaConf;
+     
+@@ -115,7 +118,7 @@ my $docsubdirs = "docs";
  # ----------------------------------------------------------------------------
  sub MY::processPL {
  return '
@@ -24,7 +50,7 @@ index 3582d20..0d9ef77 100644
  # between "all" and next "tardist"
  
  include config.mk
-@@ -124,10 +124,7 @@ tardist: doc
+@@ -124,10 +127,7 @@ tardist: doc
  dist: doc
  install ::
  	if test -e $(TMP_DIR) ; then \
@@ -36,7 +62,7 @@ index 3582d20..0d9ef77 100644
                  echo "===> File $(TMP_DIR) exists but is not a directory ..." ; \
                  exit 1 ; \
              fi \
-@@ -156,6 +153,29 @@ install-all ::
+@@ -156,6 +156,31 @@ install-all ::
  
  	(cd web && $(MAKE) setperms) || exit 1;
  
@@ -53,7 +79,9 @@ index 3582d20..0d9ef77 100644
 +	done
 +	# copy a minimal build system into mioga/build
 +	mkdir -p "$(MIOGA_BUILDINST)"
-+	cp -R --parents Makefile.PL sql web/conf conf "$(MIOGA_BUILDINST)"
++	cp -R --parents \
++		Makefile.PL sql web/conf conf bin/search/crawl_sample.sh \
++		"$(MIOGA_BUILDINST)"
 +
 +slapos-instantiation ::
 +	for i in web/conf conf sql ; \
@@ -66,6 +94,25 @@ index 3582d20..0d9ef77 100644
  doc:
  	for i in ' . $docsubdirs . ' ; \
  	do \
+@@ -176,9 +201,17 @@ installall: install install-all
+ # 
+ # ----------------------------------------------------------------------------
+ 
++my $Mioga2_pm = 'lib/Mioga2.pm';
++if ((not -e $lib_Mioga2_pm) and exists($ENV{MIOGA_SITEPERL})) {
++    my $findfile = sub {
++        $Mioga2_pm = $File::Find::name if $_ eq 'Mioga2.pm';
++    };
++    find($findfile, $ENV{MIOGA_SITEPERL});
++}; 
++
+ WriteMakefile(
+    'NAME'  => 'Mioga',
+    'DIR'   => ['bin', 'web',  'locales', 'docs', 'sql'],
+-   'VERSION_FROM' => 'lib/Mioga2.pm',
++   'VERSION_FROM' => $Mioga2_pm,
+ );
+ 
 diff --git a/bin/mailinglist/miogamailinglist.pl b/bin/mailinglist/miogamailinglist.pl
 index 80668e2..fa1603a 100755
 --- a/bin/mailinglist/miogamailinglist.pl
