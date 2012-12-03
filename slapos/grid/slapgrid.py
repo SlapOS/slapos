@@ -276,7 +276,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
     maximal_delay = int(option_dict.get("maximal_delay", "0"))
   if maximal_delay > 0:
     duration = int(maximal_delay * random())
-    logging.info("Sleeping for %s seconds. To disable this feature, "
+    logging.info("Sleeping for %s seconds. To disable this feature, " \
                     "check --now parameter in slapgrid help." % duration)
     time.sleep(duration)
 
@@ -975,10 +975,9 @@ class Slapgrid(object):
     try:
       document = etree.parse(string_to_validate)
     except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
-      logger.info('Failed to parse this XML report :  %s' % to_be_validated)
-      # XXX-Cedric: _formatXMLError has never been commited.
-      #logger.error(_formatXMLError(e))
-      logger.error(e)
+      logger.info('Failed to parse this XML report :  %s\n%s' % \
+        (to_be_validated, _formatXMLError(e)))
+      logger.error(_formatXMLError(e))
       return False
 
     if xmlschema.validate(document):
@@ -1022,9 +1021,7 @@ class Slapgrid(object):
       except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
         self.logger.info("Failed to parse %s." % (usage_string))
         self.logger.error(e)
-        # XXX-Cedric: _formatXMLError has never been commited.
-        #raise _formatXMLError(e)
-        raise
+        raise _formatXMLError(e)
       except Exception:
         raise "Failed to generate XML report."
 
