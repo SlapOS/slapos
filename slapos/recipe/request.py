@@ -123,16 +123,16 @@ class Recipe(object):
 
     isSlave = options.get('slave', '').lower() in \
         librecipe.GenericBaseRecipe.TRUE_VALUES
-    self.instance = request(software_url, software_type,
-      name, partition_parameter_kw=partition_parameter_kw,
-      filter_kw=filter_kw, shared=isSlave)
 
-    self._raise_resource_not_ready = None
+    self._raise_request_exception = None
     try:
-        # XXX what is the right way to get a global id?
-        options['instance_guid'] = self.instance.getId()
-    except slapmodule.ResourceNotReady as exc:
-        self._raise_resource_not_ready = exc
+      self.instance = request(software_url, software_type,
+          name, partition_parameter_kw=partition_parameter_kw,
+          filter_kw=filter_kw, shared=isSlave)
+      # XXX what is the right way to get a global id?
+      options['instance_guid'] = self.instance.getId()
+    except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
+      self._raise_request_exception = exc
 
     for param in return_parameters:
       try:
@@ -144,8 +144,8 @@ class Recipe(object):
           self.failed = param
 
   def install(self):
-    if self._raise_resource_not_ready:
-      raise slapmodule.ResourceNotReady(self._resource_not_ready)
+    if self._raise_request_exception:
+      raise self._raise_request_exception
 
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
@@ -169,11 +169,14 @@ class Recipe(object):
 
 class RequestOptional(Recipe):
   """
-  Request a SlapOS instance. Won't fail if instance is not ready.
+  Request a SlapOS instance. Won't fail if request failed or is not ready.
   Same as slapos.cookbook:request, but won't raise in case of problem.
   """
   def install(self):
-    if self.failed is not None:
+    if self._raise_request_exception:
+      self.logger.warning('Optional request failed:')
+      self.logger.warning(self._raise_request_exception)
+    elif self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
         if self.instance._computer_id is not None:
