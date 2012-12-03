@@ -10,7 +10,8 @@ parts =
   cron-entry-logrotate
   promise
   slapmonitor
-  slapreport
+  slapmonitor-xml
+
   frontend-promise
   content-promise
   publish-connection-informations
@@ -42,16 +43,18 @@ promises = $${rootdirectory:etc}/promise
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
+cron-entries = $${rootdirectory:etc}/cron.d
+crontabs = $${rootdirectory:etc}/crontabs
+cronstamps = $${rootdirectory:etc}/cronstamps
 ca-dir = $${rootdirectory:srv}/ssl
 httpd-log = $${basedirectory:log}/apache
 php-ini-dir = $${rootdirectory:etc}/php
 tmp-php = $${rootdirectory:tmp}/php
 logrotate-entries = $${rootdirectory:etc}/logrotate.d
 logrotate-backup = $${basedirectory:backup}/logrotate
+report = $${rootdirectory:etc}/report
 stunnel-conf = $${rootdirectory:etc}/stunnel
-cronstamps = $${rootdirectory:etc}/cronstamps
-cron-entries = $${rootdirectory:etc}/cron.d
-crontabs = $${rootdirectory:etc}/crontabs
+xml-report = $${rootdirectory:var}/xml_report
 
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -249,27 +252,19 @@ config-custom_domain = $${slap-parameter:domain}
 recipe = slapos.cookbook:slapmonitor
 pid-file = $${basedirectory:run}/apache.pid
 database-path = $${basedirectory:log}/slapmonitor.db
-shell-path = ${dash:location}/bin/dash
 slapmonitor-path = ${buildout:bin-directory}/slapmonitor
 path = $${basedirectory:services}/slapmonitor
 
-[slapreport]
-recipe = slapos.cookbook:slapreport
-pid-file = $${basedirectory:run}/apache.pid
+[slapmonitor-xml]
+recipe = slapos.cookbook:slapmonitor-xml
 database-path = $${basedirectory:log}/slapmonitor.db
-consumption-log-path = $${basedirectory:log}/instance_consumption.log
-logbox-ip = 87.98.152.12
-logbox-port = 5122
-logbox-user = admin
-logbox-passwd = passer
-shell-path = ${dash:location}/bin/dash
-slapreport-path = ${buildout:bin-directory}/slapreport
-path = $${basedirectory:services}/slapreport
+slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
+path = $${directory:report}/slapmonitor-xml
 
 
 #----------------
 #--
-#-- Publish all instance parameters (url of instance).
+#-- Publish instance parameters.
 
 [publish-connection-informations]
 recipe = slapos.cookbook:publish

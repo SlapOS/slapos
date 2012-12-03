@@ -6,7 +6,7 @@
 extends =
    {{templateapache}}
 
-# += because we need to take up parts (like instance-custom) from the profile we extended
+# += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
 parts +=
   {{ parts.replicate("postgres","3") }}
   request-apache-backup-1

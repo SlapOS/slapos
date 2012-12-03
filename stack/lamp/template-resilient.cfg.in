@@ -6,7 +6,8 @@
 extends =
    {{templateapache}}
 
-parts =
+# += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
+parts +=
   {{ parts.replicate("mariadb","3") }}
   request-apache-backup-1
   request-apache-backup-2

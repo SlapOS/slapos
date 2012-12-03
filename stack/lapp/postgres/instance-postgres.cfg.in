@@ -12,7 +12,7 @@ parts =
   cron
   cron-entry-logrotate
   slapmonitor
-  slapreport
+  slapmonitor-xml
 
 gzip-binary = ${gzip:location}/bin/gzip
 
@@ -50,8 +50,10 @@ crontabs = $${rootdirectory:etc}/crontabs
 cronstamps = $${rootdirectory:etc}/cronstamps
 ca-dir = $${rootdirectory:srv}/ssl
 logrotate-backup = $${basedirectory:backup}/logrotate
+report = $${rootdirectory:etc}/report
 stunnel-conf = $${rootdirectory:etc}/stunnel
 logrotate-entries = $${rootdirectory:etc}/logrotate.d
+xml-report = $${rootdirectory:var}/xml_report
 
 
 #----------------
@@ -208,22 +210,14 @@ symlink_base = ${postgresql:location}/bin
 recipe = slapos.cookbook:slapmonitor
 pid-file = $${postgres-instance:pgdata-directory}/postmaster.pid
 database-path = $${basedirectory:log}/slapmonitor.db
-shell-path = ${dash:location}/bin/dash
 slapmonitor-path = ${buildout:bin-directory}/slapmonitor
 path = $${basedirectory:services}/slapmonitor
 
-[slapreport]
-recipe = slapos.cookbook:slapreport
-pid-file = $${postgres-instance:pgdata-directory}/postmaster.pid
+[slapmonitor-xml]
+recipe = slapos.cookbook:slapmonitor-xml
 database-path = $${basedirectory:log}/slapmonitor.db
-consumption-log-path = $${basedirectory:log}/instance_consumption.log
-logbox-ip = 87.98.152.12
-logbox-port = 5122
-logbox-user = admin
-logbox-passwd = passer
-shell-path = ${dash:location}/bin/dash
-slapreport-path = ${buildout:bin-directory}/slapreport
-path = $${basedirectory:services}/slapreport
+slapmonitor-xml-path = ${buildout:bin-directory}/slapmonitor-xml
+path = $${directory:report}/slapmonitor-xml
 
 
 #----------------
