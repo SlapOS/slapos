@@ -50,26 +50,41 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-      portal_type="Payment Transaction", \n
-      simulation_state=["started"],\n
-      causality_state=["solved"],\n
-      payment_mode_uid=portal.portal_categories.payment_mode.payzen.getUid(),\n
-      method_id=\'PaymentTransaction_updateStatus\',\n
-      packet_size=1, # just one to minimise errors\n
-      activate_kw={\'tag\': tag}\n
-      )\n
-context.activate(after_tag=tag).getId()\n
+            <value> <string># TODO: Return configured web page in case of system issues.\n
+from ZTUtils import make_query\n
+portal = context.getPortalObject()\n
+\n
+transaction_date, transaction_id = payment.PaymentTransaction_getPayzenId()\n
+if transaction_id is not None:\n
+  message = context.Base_translateString("Payment already registered.")\n
+  return context.getWebSiteValue().Base_redirect(keep_items={\'portal_status_message\': message})\n
+\n
+callback_websection = context.getWebSiteValue().payzen_callback\n
+query = make_query(dict(transaction=context.getRelativeUrl()))\n
+\n
+system_event = context.PaymentTransaction_createPayzenEvent(\n
+  title=\'User navigation script for %s\' % context.getTitle()\n
+)\n
+system_event.generateManualPaymentPage(\n
+  vads_url_cancel=\'%s?%s\' % (callback_websection.cancel.absolute_url(), query),\n
+  vads_url_error=\'%s?%s\' % (callback_websection.error.absolute_url(), query),\n
+  vads_url_referral=\'%s?%s\' % (callback_websection.referral.absolute_url(), query),\n
+  vads_url_refused=\'%s?%s\' % (callback_websection.refused.absolute_url(), query),\n
+  vads_url_success=\'%s?%s\' % (callback_websection.success.absolute_url(), query),\n
+  vads_url_return=\'%s?%s\' % (getattr(callback_websection, \'return\').absolute_url(), query),\n
+)\n
+\n
+return system_event.contentValues(\n
+  portal_type="Payzen Event Message")[0].getTextContent()\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_updatePayzenStartedPaymentTransaction</string> </value>
+            <value> <string>PaymentTransaction_redirectToManualPayzenPayment</string> </value>
         </item>
       </dictionary>
     </pickle>

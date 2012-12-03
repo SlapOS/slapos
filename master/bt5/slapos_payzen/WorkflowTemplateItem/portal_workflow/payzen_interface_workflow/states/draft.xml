@@ -22,10 +22,7 @@
             <key> <string>transitions</string> </key>
             <value>
               <tuple>
-                <string>register_payzen</string>
-                <string>report_error</string>
-                <string>report_success</string>
-                <string>start_payment</string>
+                <string>generate_manual_payment_page</string>
                 <string>update_status</string>
               </tuple>
             </value>

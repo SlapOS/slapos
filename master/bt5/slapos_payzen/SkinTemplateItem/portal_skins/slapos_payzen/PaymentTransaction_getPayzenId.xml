@@ -50,26 +50,28 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-portal.portal_catalog.searchAndActivate(\n
-      portal_type="Payment Transaction", \n
-      simulation_state=["started"],\n
-      causality_state=["solved"],\n
-      payment_mode_uid=portal.portal_categories.payment_mode.payzen.getUid(),\n
-      method_id=\'PaymentTransaction_updateStatus\',\n
-      packet_size=1, # just one to minimise errors\n
-      activate_kw={\'tag\': tag}\n
-      )\n
-context.activate(after_tag=tag).getId()\n
+            <value> <string>from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+portal = context.getPortalObject()\n
+integration_site = portal.restrictedTraverse(portal.portal_preferences.getPreferredPayzenIntegrationSite())\n
+\n
+payzen_id = integration_site.getCategoryFromMapping(\'Causality/%s\' % context.getId().replace(\'-\', \'_\'))\n
+if payzen_id != \'causality/%s\' % context.getId().replace(\'-\', \'_\'):\n
+  date, payzen_id = payzen_id.split(\'_\', 1)\n
+  return DateTime(date).toZone(\'UTC\'), payzen_id\n
+else:\n
+  return None, None\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>tag, fixit, params</string> </value>
+            <value> <string>REQUEST=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_updatePayzenStartedPaymentTransaction</string> </value>
+            <value> <string>PaymentTransaction_getPayzenId</string> </value>
         </item>
       </dictionary>
     </pickle>
