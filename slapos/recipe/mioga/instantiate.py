@@ -101,6 +101,7 @@ class Recipe(GenericBaseRecipe):
                                 self.options['libxml2_bin'],
                                 self.options['postgres_bin'],
                                 environ['PATH'] ])
+    environ['MIOGA_SITEPERL'] = self.options['mioga_siteperl']
     
     # Write the Postgres password file
     pgpassfilepath = os.path.join(self.options['instance_root'], '.pgpass')

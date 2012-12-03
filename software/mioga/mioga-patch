@@ -12,18 +12,21 @@ index ef0f369..b275a48 100644
  This script must be run by cron in a day basis with apache user (www-data for Debian)
  
 diff --git a/Makefile.PL b/Makefile.PL
-index 3582d20..262e2c2 100644
+index 3582d20..46608ca 100644
 --- a/Makefile.PL
 +++ b/Makefile.PL
-@@ -22,6 +22,7 @@
+@@ -20,8 +20,10 @@
+ # ============================================================================
  
+ 
++use Cwd;
  use ExtUtils::MakeMaker;
  use ExtUtils::MakeMaker::Config;
 +use File::Find;
  
  # ****************************************************************************
  # 
-@@ -67,6 +68,7 @@ sub CheckPreDepends {
+@@ -67,6 +69,7 @@ sub CheckPreDepends {
  
  my $disable_check = grep {lc($_) eq 'disable_check'} @ARGV;
  
@@ -31,7 +34,7 @@ index 3582d20..262e2c2 100644
  CheckPreDepends({ # 'Data::Dumper' => '2.101',
  		  # 'DBI'          => '1.13',
  		  # 'DBD::Pg'      => '1.01',
-@@ -75,7 +77,8 @@ CheckPreDepends({ # 'Data::Dumper' => '2.101',
+@@ -75,7 +78,8 @@ CheckPreDepends({ # 'Data::Dumper' => '2.101',
  		  'Error'        => '0.15',
  		  # 'Net::LDAP'    => '0.25',
  		  # 'Unicode::String' => '2.06',
@@ -41,7 +44,7 @@ index 3582d20..262e2c2 100644
      
  require MiogaConf;
      
-@@ -115,7 +118,7 @@ my $docsubdirs = "docs";
+@@ -115,7 +119,7 @@ my $docsubdirs = "docs";
  # ----------------------------------------------------------------------------
  sub MY::processPL {
  return '
@@ -50,7 +53,7 @@ index 3582d20..262e2c2 100644
  # between "all" and next "tardist"
  
  include config.mk
-@@ -124,10 +127,7 @@ tardist: doc
+@@ -124,10 +128,7 @@ tardist: doc
  dist: doc
  install ::
  	if test -e $(TMP_DIR) ; then \
@@ -62,7 +65,7 @@ index 3582d20..262e2c2 100644
                  echo "===> File $(TMP_DIR) exists but is not a directory ..." ; \
                  exit 1 ; \
              fi \
-@@ -156,6 +156,31 @@ install-all ::
+@@ -156,6 +157,31 @@ install-all ::
  
  	(cd web && $(MAKE) setperms) || exit 1;
  
@@ -94,18 +97,27 @@ index 3582d20..262e2c2 100644
  doc:
  	for i in ' . $docsubdirs . ' ; \
  	do \
-@@ -176,9 +201,17 @@ installall: install install-all
+@@ -176,9 +202,26 @@ installall: install install-all
  # 
  # ----------------------------------------------------------------------------
  
 +my $Mioga2_pm = 'lib/Mioga2.pm';
-+if ((not -e $lib_Mioga2_pm) and exists($ENV{MIOGA_SITEPERL})) {
++foreach my $envkey (keys %ENV) {
++    print "VHH DEBUG: found envvar $envkey\n";
++}
++if ((not -e $Mioga2_pm) and exists($ENV{MIOGA_SITEPERL})) {
++    print "VHH DEBUG: looking into SITEPERL\n";
 +    my $findfile = sub {
-+        $Mioga2_pm = $File::Find::name if $_ eq 'Mioga2.pm';
++        if ($_ eq 'Mioga2.pm') {
++            $Mioga2_pm = $File::Find::name;
++            print "VHH DEBUG: Found Mioga2.pm in $Mioga2_pm\n";
++        }
 +    };
 +    find($findfile, $ENV{MIOGA_SITEPERL});
 +}; 
-+
++print "VHH DEBUG: Found finally: $Mioga2_pm\n";
++print 'VHH DEBUG: SIZE = ' . ( stat($Mioga2_pm) )[8] . "\n";
++print "VHH DEBUG: Current directory is ".getcwd."\n";
  WriteMakefile(
     'NAME'  => 'Mioga',
     'DIR'   => ['bin', 'web',  'locales', 'docs', 'sql'],
