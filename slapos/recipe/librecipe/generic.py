@@ -127,7 +127,7 @@ class GenericBaseRecipe(object):
       path, arguments=arguments)[0]
     return script
 
-  def createWrapper(self, name, command, parameters, comments=[]):
+  def createWrapper(self, name, command, parameters, comments=[], parameters_extra=False):
     """
     Creates a very simple (one command) shell script for process replacement.
     Takes care of quoting.
@@ -141,11 +141,16 @@ class GenericBaseRecipe(object):
     lines.append('exec %s' % shlex.quote(command))
 
     for param in parameters:
-      if len(lines[-1]) < 30:
+      if len(lines[-1]) < 40:
         lines[-1] += ' ' + shlex.quote(param)
       else:
         lines[-1] += ' \\'
         lines.append('\t' + shlex.quote(param))
+
+    if parameters_extra:
+        # pass-through further parameters
+        lines[-1] += ' \\'
+        lines.append('\t$@')
 
     content = '\n'.join(lines) + '\n'
     return self.createFile(name, content, 0700)

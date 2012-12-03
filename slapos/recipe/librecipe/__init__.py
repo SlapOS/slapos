@@ -154,6 +154,7 @@ class BaseSlapRecipe:
     self._writeExecutable(wrapper_path, file_content)
     return wrapper_path
 
+  # XXX methinks the following method is unused / obsolete.
   def createReportRunningWrapper(self, file_content):
     """Creates report runnig wrapper and returns its path"""
     report_wrapper_path = os.path.join(self.wrapper_report_directory,
