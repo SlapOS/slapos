@@ -125,6 +125,7 @@ class Recipe(object):
         librecipe.GenericBaseRecipe.TRUE_VALUES
 
     self._raise_request_exception = None
+    self.instance = None
     try:
       self.instance = request(software_url, software_type,
           name, partition_parameter_kw=partition_parameter_kw,
@@ -135,11 +136,13 @@ class Recipe(object):
       self._raise_request_exception = exc
 
     for param in return_parameters:
+      options['connection-%s' % param] = ''
+      if not self.instance:
+        continue
       try:
         options['connection-%s' % param] = str(
           self.instance.getConnectionParameter(param))
       except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
-        options['connection-%s' % param] = ''
         if self.failed is None:
           self.failed = param
 
