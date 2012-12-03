@@ -11,6 +11,7 @@ slapos_bt_list = [
     'slapos_rest_api',
     'slapos_slap_tool',
     'slapos_web',
+    'slapos_payzen',
   ]
 
 class VIFIB(SavedTestSuite, ProjectTestSuite):
