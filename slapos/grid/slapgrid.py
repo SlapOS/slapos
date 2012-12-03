@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
@@ -35,10 +36,10 @@ from lxml import etree
 import logging
 import os
 import pkg_resources
-from random import random
+import random
 import socket
-import subprocess
 import StringIO
+import subprocess
 import sys
 import tempfile
 import time
@@ -81,6 +82,11 @@ SLAPGRID_PROMISE_FAIL = 2
 
 # XXX hardcoded watchdog_path
 WATCHDOG_PATH = '/opt/slapos/bin/slapos-watchdog'
+
+
+class _formatXMLError(Exception):
+  pass
+
 
 def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   """Parses arguments either from command line, from method parameters or from
@@ -275,7 +281,7 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
   else:
     maximal_delay = int(option_dict.get("maximal_delay", "0"))
   if maximal_delay > 0:
-    duration = int(maximal_delay * random())
+    duration = random.randint(1, maximal_delay)
     logging.info("Sleeping for %s seconds. To disable this feature, " \
                     "check --now parameter in slapgrid help." % duration)
     time.sleep(duration)
@@ -970,10 +976,8 @@ class Slapgrid(object):
     xmlschema_doc = etree.parse(xsd_model)
     xmlschema = etree.XMLSchema(xmlschema_doc)
 
-    string_to_validate = StringIO.StringIO(to_be_validated)
-
     try:
-      document = etree.parse(string_to_validate)
+      document = etree.fromstring(to_be_validated)
     except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
       logger.info('Failed to parse this XML report :  %s\n%s' % \
         (to_be_validated, _formatXMLError(e)))
@@ -988,59 +992,50 @@ class Slapgrid(object):
   def asXML(self, computer_partition_usage_list):
     """Generates a XML report from computer partition usage list
     """
-    xml_head = ""
-    xml_movements = ""
-    xml_foot = ""
+    # XXX TODO rewrite without string composition...
 
-    xml_head = "<?xml version='1.0' encoding='utf-8'?>" \
-               "<journal>" \
-               "<transaction type=\"Sale Packing List\">" \
-               "<title>Resource consumptions</title>" \
-               "<start_date></start_date>" \
-               "<stop_date>%s</stop_date>" \
-               "<reference>%s</reference>" \
-               "<currency></currency>" \
-               "<payment_mode></payment_mode>" \
-               "<category></category>" \
-               "<arrow type=\"Administration\">" \
-               "<source></source>" \
-               "<destination></destination>" \
-               "</arrow>" \
-               % (time.strftime("%Y-%m-%d at %H:%M:%S"),
-                  self.computer_id)
+    xml = ['<?xml version="1.0"?>',
+           '<journal>',
+           '<transaction type="Sale Packing List">',
+           '<title>Resource consumptions</title>',
+           '<start_date></start_date>',
+           '<stop_date>%s</stop_date>' % time.strftime("%Y-%m-%d at %H:%M:%S"),
+           '<reference>%s</reference>' % self.computer_id,
+           '<currency></currency>',
+           '<payment_mode></payment_mode>',
+           '<category></category>',
+           '<arrow type="Administration">',
+           '<source></source>',
+           '<destination></destination>',
+           '</arrow>']
 
     for computer_partition_usage in computer_partition_usage_list:
       try:
-        usage_string = StringIO.StringIO(computer_partition_usage.usage)
-        root = etree.parse(usage_string)
+        root = etree.fromstring(computer_partition_usage.usage)
       except UnicodeError:
         self.logger.info("Failed to read %s." % (
             computer_partition_usage.usage))
         self.logger.error(UnicodeError)
         raise "Failed to read %s." % (computer_partition_usage.usage)
       except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
-        self.logger.info("Failed to parse %s." % (usage_string))
+        self.logger.info("Failed to parse %s." % (computer_parition_usage.usage))
         self.logger.error(e)
         raise _formatXMLError(e)
       except Exception:
         raise "Failed to generate XML report."
 
       for movement in root.findall('movement'):
-        xml_movements += "<movement>"
-        for children in movement.getchildren():
-          if children.tag == "reference":
-            xml_movements += "<%s>%s</%s>" % (children.tag,
-                computer_partition_usage.getId(), children.tag)
+        xml.append('<movement>')
+        for child in movement.getchildren():
+          if child.tag == "reference":
+            xml.append('<%s>%s</%s>' % (child.tag, computer_partition_usage.getId(), child.tag))
           else:
-            xml_movements += "<%s>%s</%s>" % (children.tag, children.text,
-                children.tag)
-        xml_movements += "</movement>"
+            xml.append('<%s>%s</%s>' % (child.tag, child.text, child.tag))
+        xml.append('</movement>')
 
-    xml_foot = "</transaction>" \
-               "</journal>"
+    xml.append('</transaction></journal>')
 
-    xml = xml_head + xml_movements + xml_foot
-    return xml
+    return ''.join(xml)
 
   def agregateAndSendUsage(self):
     """Will agregate usage from each Computer Partition.
@@ -1081,6 +1076,7 @@ class Slapgrid(object):
     # Loop on the different computer partitions
     computer_partition_list = self.FilterComputerPartitionList(
        slap_computer_usage.getComputerPartitionList())
+
     for computer_partition in computer_partition_list:
       try:
         computer_partition_id = computer_partition.getId()
