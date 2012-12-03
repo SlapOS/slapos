@@ -107,10 +107,12 @@ Header append Vary User-Agent
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
   RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
-  RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:%%{SERVER_PORT}/VirtualHostRoot/$1 [L,P]
+  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
+  RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:443/VirtualHostRoot/$1 [L,P]
 
   # If we have generic backend server, let's rewrite without virtual host daemon
   RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
+  # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
   RewriteRule ^/(.*)$ ${apachemapgeneric:%%{SERVER_NAME}}/$1 [L,P]
 
   # If nothing exist : put a nice error
