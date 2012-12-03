@@ -125,6 +125,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_ingestion_mysql_innodb_catalog',
       'erp5_ingestion',
       'erp5_crm',
+      'erp5_system_event',
       'erp5_jquery',
       'erp5_jquery_ui',
       'erp5_dhtml_style',
