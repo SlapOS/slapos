@@ -27,7 +27,7 @@
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
-class Recipe(GenericBaseRecipe):
+class MonitorRecipe(GenericBaseRecipe):
 
   def install(self):
     options = self.options
@@ -37,5 +37,18 @@ class Recipe(GenericBaseRecipe):
                                     options['pid-file'],
                                     options['database-path'],
                                     ])
+    return [script]
+
+
+class MonitorXMLRecipe(GenericBaseRecipe):
+
+  def install(self):
+    options = self.options
+    script = self.createWrapper(name=options['path'],
+                                command=options['slapmonitor-xml-path'],
+                                parameters=[
+                                    options['database-path'],
+                                    ],
+                                parameters_extra=True)
     return [script]
 
