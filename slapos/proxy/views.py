@@ -326,7 +326,7 @@ def request_not_shared():
         'SELECT * FROM %s WHERE slap_state="free"', (), one=True)
     if partition is None:
       app.logger.warning('No more free computer partition')
-      abort(408)
+      abort(404)
     q += ' ,software_release=?'
     a(software_release)
     if partition_reference:
@@ -417,7 +417,7 @@ def request_slave():
   if partition is None:
     app.logger.warning('No partition corresponding to slave request: %s' % \
         args)
-    abort(408)
+    abort(404)
 
   # We set slave dictionnary as described in docstring
   new_slave = {}
