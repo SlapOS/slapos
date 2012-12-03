@@ -372,8 +372,6 @@ def request_not_shared():
                             instance_guid=partition['reference'],
                             ip_list=address_list
                             ))
-  abort(408)
-  raise NotImplementedError
 
 
 def request_slave():
