@@ -51,9 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>"""Dirty script to return Software Instance state"""\n
-if context.getPortalType() == "Sale Order Line":\n
-  return "Under Approval"\n
-elif context.getPortalType() == "Hosting Subscription":\n
+if context.getPortalType() == "Hosting Subscription":\n
   return context.getSlapStateTitle()\n
 else:\n
   state = context.getSlapState()\n
@@ -62,18 +60,10 @@ else:\n
     if not has_partition:\n
       return \'Looking for a free partition\'\n
     else:\n
-      delivery = context.getCausalityValue()\n
-      delivery_state = delivery is not None and delivery.getSimulationState() or None\n
       if state == "start_requested":\n
-        if delivery_state is not None and delivery_state == "started":\n
-          return \'Started\'\n
-        else:\n
-          return \'Start in progress\'        \n
+        return \'Start in progress\'        \n
       elif state == "stop_requested":\n
-        if delivery_state is not None and delivery_state == "delivered" or (delivery.getPortalType() == \'Sale Order\' and delivery.getSimulationState() == \'confirmed\'):\n
-          return \'Stopped\'\n
-        else:\n
-          return \'Stop in progress\'\n
+        return \'Stop in progress\'\n
 \n
   elif state in ["destroy_requested"]:\n
     if has_partition:\n
