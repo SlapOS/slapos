@@ -118,6 +118,7 @@ slapos_pdm
 slapos_rest_api
 slapos_simulation
 slapos_slap_tool
+slapos_web
 vifib_hosting_theme
 vifib_jauks_theme
 vifib_jauks_widget_library
@@ -205,6 +206,7 @@ slapos_pdm
 slapos_rest_api
 slapos_simulation
 slapos_slap_tool
+slapos_web
 slapos_configurator
 erp5_km
 erp5_knowledge_pad
@@ -288,6 +290,7 @@ slapos_pdm
 slapos_rest_api
 slapos_simulation
 slapos_slap_tool
+slapos_web
 slapos_configurator
 erp5_km
 erp5_km_theme
@@ -372,6 +375,7 @@ slapos_pdm
 slapos_rest_api
 slapos_simulation
 slapos_slap_tool
+slapos_web
 slapos_configurator
 erp5_commerce_multiflex_layout
 erp5_km
@@ -453,6 +457,7 @@ slapos_pdm
 slapos_rest_api
 slapos_simulation
 slapos_slap_tool
+slapos_web
 slapos_configurator
 erp5_km
 erp5_web_download_theme
