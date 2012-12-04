@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>active_sense_method_id</string> </key>
-            <value> <string>Alarm_checkPromiseVifibExternalPAS</string> </value>
+            <value> <string>Alarm_checkPromiseSlapOSExternalPAS</string> </value>
         </item>
         <item>
             <key> <string>alarm_notification_mode</string> </key>
@@ -93,7 +93,7 @@
         </item>
         <item>
             <key> <string>solve_method_id</string> </key>
-            <value> <string>Alarm_fixPromiseVifibExternalPAS</string> </value>
+            <value> <string>Alarm_fixPromiseSlapOSExternalPAS</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
