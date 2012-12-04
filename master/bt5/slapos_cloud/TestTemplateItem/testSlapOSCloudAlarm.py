@@ -149,7 +149,13 @@ active_process.postResult(active_result)
       'workflow_module',
     ])
 
-    self.assertSameSet(expected_list, visited_list)
+    diff = lambda l1,l2: [x for x in l1 if x not in l2]
+    result = ""
+    for x in diff(expected_list, visited_list):
+      result += "- %s\n" % x
+    for x in diff(visited_list, expected_list):
+      result += "+ %s\n" % x
+    self.assertSameSet(expected_list, visited_list, result)
 
 class TestSlapOSAllocation(testSlapOSMixin):
 
