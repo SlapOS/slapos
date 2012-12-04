@@ -143,6 +143,7 @@ active_process.postResult(active_result)
       'software_publication_module',
       'software_release_module',
       'support_request_module',
+      'system_event_module',
       'transformation_module',
       'web_page_module',
       'web_site_module',
