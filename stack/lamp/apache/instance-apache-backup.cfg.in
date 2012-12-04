@@ -1,8 +1,7 @@
 [buildout]
-extends = ${instance-apache-php:output}
-          ${pbsready-export:output}
 
 parts =
+  urls
   apache-proxy
   logrotate
   logrotate-entry-apache
@@ -13,22 +12,9 @@ parts =
   dropbear-server
   dropbear-server-pbs-authorized-key
 
-
-[apache-proxy]
-recipe = slapos.cookbook:apacheproxy
-url = $${slap-parameter:proxy-url}
-pid-file = $${basedirectory:run}/apache.pid
-lock-file = $${basedirectory:run}/apache.lock
-ip = $${slap-network-information:global-ipv6}
-port = 8080
-error-log = $${directory:httpd-log}/error.log
-access-log = $${directory:httpd-log}/access.log
-httpd-conf = $${rootdirectory:etc}/apache.conf
-wrapper = $${basedirectory:services}/apache
-
-promise = $${basedirectory:promises}/apache
-
-httpd-binary = ${apache:location}/bin/httpd
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
 
 
 #----------------
@@ -107,17 +93,6 @@ logrotate-entries = $${directory:logrotate-entries}
 backup = $${directory:logrotate-backup}
 state-file = $${rootdirectory:srv}/logrotate.status
 
-[logrotate-entry-apache]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
-name = apache
-log = $${apache-proxy:error-log} $${apache-proxy:access-log}
-frequency = daily
-rotate-num = 30
-sharedscripts = true
-notifempty = true
-create = true
-
 
 #----------------
 #--
@@ -176,4 +151,47 @@ client = false
 path = $${directory:htdocs}
 wrapper = $${rootdirectory:bin}/rdiffbackup-server
 rdiffbackup-binary = ${buildout:bin-directory}/rdiff-backup
+
+
+#----------------
+#--
+#-- Apache Proxy.
+
+[apache-proxy]
+recipe = slapos.cookbook:apacheproxy
+url = $${slap-parameter:proxy-url}
+pid-file = $${basedirectory:run}/apache.pid
+lock-file = $${basedirectory:run}/apache.lock
+ip = $${slap-network-information:global-ipv6}
+port = 8080
+error-log = $${directory:httpd-log}/error.log
+access-log = $${directory:httpd-log}/access.log
+httpd-conf = $${rootdirectory:etc}/apache.conf
+wrapper = $${basedirectory:services}/apache
+
+promise = $${basedirectory:promises}/apache
+
+httpd-binary = ${apache:location}/bin/httpd
+
+[logrotate-entry-apache]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = apache
+log = $${apache-proxy:error-log} $${apache-proxy:access-log}
+frequency = daily
+rotate-num = 30
+sharedscripts = true
+notifempty = true
+create = true
+
+
+#----------------
+#--
+#-- Publish instance parameters.
+
+[urls]
+recipe = slapos.cookbook:publish
+url = http://[$${apache-proxy:ip}]:$${apache-proxy:port}/
+ssh-public-key = $${sshkeys-dropbear:public-key-value}
+ssh-url = ssh://nobody@[$${dropbear-server:host}]:$${dropbear-server:port}/$${rdiff-backup-server:path}
 

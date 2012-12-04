@@ -26,56 +26,73 @@
 ##############################################################################
 from slapos.recipe.librecipe import GenericSlapRecipe
 
-import sys
 import os
 
 
 class Recipe(GenericSlapRecipe):
-  """ This class provides the installation of the resilience
-      script on the partition.
-  """
+    """ This class provides the installation of the resilience
+        scripts on the partition.
 
-  def _install(self):
-    path_list = []
-    self_id = int(self.parameter_dict['number'])
-    ip = self.parameter_dict['ip-list'].split(' ')
-    print 'Creating bully script with  ips : %s\n' % ip
-    slap_connection = self.buildout['slap-connection']
+        bin/takeover will perform a rename (must be run manually).
+        bin/bully will monitor, run elections and perform renames when needed.
+    """
 
-    path_conf = os.path.join(self.options['script'], 'conf.in')
-    path_bully = os.path.join(self.options['script'], self.parameter_dict['script'])
-    path_bully_new = os.path.join(self.options['script'], 'new.py')
-    path_run = os.path.join(self.options['run'], self.parameter_dict['wrapper'])
-    print 'paths: %s\n%s\n' % (path_run, path_bully)
-    bully_conf = dict(self_id=self_id,
-                      ip_list=ip,
-                      executable=sys.executable,
-                      syspath=sys.path,
-                      server_url=slap_connection['server-url'],
-                      key_file=slap_connection.get('key-file'),
-                      cert_file=slap_connection.get('cert-file'),
-                      computer_id=slap_connection['computer-id'],
-                      partition_id=slap_connection['partition-id'],
-                      software=slap_connection['software-release-url'],
-                      namebase=self.parameter_dict['namebase'],
-                      confpath=path_conf)
-    try:
-      conf = self.createFile(path_conf,
-                             self.substituteTemplate(
-                             self.getTemplateFilename('conf.in.in'),
-                             bully_conf))
-      path_list.append(conf)
-      script = self.createExecutable(path_bully,
-                                     self.substituteTemplate(
-                                     self.getTemplateFilename('bully.py.in'),
-                                     bully_conf))
-      path_list.append(script)
+    def _install(self):
+        path_list = []
 
-      wrapper = self.createPythonScript(
-          path_run,
-          'slapos.recipe.librecipe.execute.execute',
-          [path_bully])
-      path_list.append(wrapper)
-    except IOError:
-      pass
-    return path_list
+        confpath = os.path.join(self.options['etc'], 'bully.conf')
+
+        ip_list = self.parameter_dict['ip-list']
+        print 'Creating bully configuration with ips : %s\n' % ip_list
+
+        conf = self.createFile(confpath,
+                               self.substituteTemplate(
+                               self.getTemplateFilename('bully.conf.in'),
+                               {
+                                   'self_id': int(self.parameter_dict['number']),
+                                   'ip_list': ip_list
+                                   }
+                               ))
+        path_list.append(conf)
+
+        slap_connection = self.buildout['slap-connection']
+
+        if self.optionIsTrue('enable-bully-service', default=False):
+            bully_dir = self.options['services']
+        else:
+            bully_dir = self.options['bin']
+
+        bully_wrapper = self.createPythonScript(
+            name=os.path.join(bully_dir, self.options['wrapper-bully']),
+            absolute_function='slapos.recipe.addresiliency.bully.run',
+            arguments={
+                'confpath': confpath,
+                'server_url': slap_connection['server-url'],
+                'key_file': slap_connection.get('key-file'),
+                'cert_file': slap_connection.get('cert-file'),
+                'computer_id': slap_connection['computer-id'],
+                'partition_id': slap_connection['partition-id'],
+                'software': slap_connection['software-release-url'],
+                'namebase': self.parameter_dict['namebase'],
+            })
+
+        path_list.append(bully_wrapper)
+
+        takeover_wrapper = self.createPythonScript(
+            name=os.path.join(self.options['bin'], self.options['wrapper-takeover']),
+            absolute_function='slapos.recipe.addresiliency.takeover.run',
+            arguments={
+                'server_url': slap_connection['server-url'],
+                'key_file': slap_connection.get('key-file'),
+                'cert_file': slap_connection.get('cert-file'),
+                'computer_id': slap_connection['computer-id'],
+                'partition_id': slap_connection['partition-id'],
+                'software': slap_connection['software-release-url'],
+                'namebase': self.parameter_dict['namebase'],
+            })
+
+        path_list.append(takeover_wrapper)
+
+        return path_list
+
+
