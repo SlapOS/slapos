@@ -30,7 +30,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>promise_vifib_pas_external</string> </value>
+            <value> <string>promise_slapos_pas_external</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>
@@ -97,7 +97,7 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Pluggable Auth Service Vifib Promise For Facebook, Google, Browser ID</string> </value>
+            <value> <string>Pluggable Auth Service SlapOS Promise For Facebook, Google, Browser ID</string> </value>
         </item>
       </dictionary>
     </pickle>

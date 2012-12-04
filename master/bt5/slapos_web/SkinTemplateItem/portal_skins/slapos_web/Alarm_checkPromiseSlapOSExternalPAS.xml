@@ -50,16 +50,26 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.activeSense(fixit=1)\n
+            <value> <string>promise_dict = {\n
+  \'IExtractionPlugin\': [\n
+    \'Vifib Browser ID Extraction Plugin\',\n
+    \'Vifib Facebook Server Extraction Plugin\',\n
+    \'Vifib Google Server Extraction Plugin\',\n
+#   \'ERP5 Bearer Extraction Plugin\',\n
+    \'ERP5 Facebook Extraction Plugin\',\n
+    \'ERP5 Google Extraction Plugin\',\n
+  ],\n
+}\n
+context.Alarm_checkPromiseSlapOSPASBase(promise_dict, tag, fixit=fixit, **kw)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>tag, fixit=False, **kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Alarm_fixPromiseVifibExternalPAS</string> </value>
+            <value> <string>Alarm_checkPromiseSlapOSExternalPAS</string> </value>
         </item>
       </dictionary>
     </pickle>

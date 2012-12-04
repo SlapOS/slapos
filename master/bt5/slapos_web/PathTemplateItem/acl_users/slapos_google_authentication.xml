@@ -8,7 +8,7 @@
       <dictionary>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_google_authentication</string> </value>
+            <value> <string>slapos_google_authentication</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>

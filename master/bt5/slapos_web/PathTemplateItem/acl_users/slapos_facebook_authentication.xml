@@ -2,13 +2,13 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="VifibBrowserIDExtractionPlugin" module="Products.Vifib.VifibCookieHashExtractionPlugin"/>
+      <global name="VifibFacebookServerExtractionPlugin" module="Products.Vifib.VifibCookieHashExtractionPlugin"/>
     </pickle>
     <pickle>
       <dictionary>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>vifib_browser_id_authentication</string> </value>
+            <value> <string>slapos_facebook_authentication</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
