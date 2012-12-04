@@ -25,9 +25,9 @@
 #
 ##############################################################################
 import logging
-
 from slapos import slap as slapmodule
 import slapos.recipe.librecipe.generic as librecipe
+import traceback
 
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
@@ -125,6 +125,7 @@ class Recipe(object):
         librecipe.GenericBaseRecipe.TRUE_VALUES
 
     self._raise_request_exception = None
+    self._raise_request_exception_formatted = None
     self.instance = None
     try:
       self.instance = request(software_url, software_type,
@@ -134,6 +135,7 @@ class Recipe(object):
       options['instance_guid'] = self.instance.getId()
     except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
       self._raise_request_exception = exc
+      self._raise_request_exception_formatted = traceback.format_exc()
 
     for param in return_parameters:
       options['connection-%s' % param] = ''
@@ -176,9 +178,9 @@ class RequestOptional(Recipe):
   Same as slapos.cookbook:request, but won't raise in case of problem.
   """
   def install(self):
-    if self._raise_request_exception:
+    if self._raise_request_exception_formatted:
       self.logger.warning('Optional request failed:')
-      self.logger.warning(self._raise_request_exception)
+      self.logger.warning(self._raise_request_exception_formatted)
     elif self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
