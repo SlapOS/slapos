@@ -54,15 +54,11 @@
         </item>
         <item>
             <key> <string>service_password</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>bar</string> </value>
         </item>
         <item>
             <key> <string>service_username</string> </key>
-            <value>
-              <none/>
-            </value>
+            <value> <string>foo</string> </value>
         </item>
         <item>
             <key> <string>title</string> </key>
