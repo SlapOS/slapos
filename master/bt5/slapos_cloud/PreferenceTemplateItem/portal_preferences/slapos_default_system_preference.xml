@@ -162,6 +162,10 @@
             <value> <string>portal_integrations/slapos_payzen_test_integration</string> </value>
         </item>
         <item>
+            <key> <string>preferred_payzen_payment_service_reference</string> </key>
+            <value> <string>PSERV-Payzen-Test</string> </value>
+        </item>
+        <item>
             <key> <string>preferred_registration_resource</string> </key>
             <value> <string>service_module/vifib_registration</string> </value>
         </item>
