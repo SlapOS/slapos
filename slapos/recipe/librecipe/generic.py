@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
@@ -24,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import io
 import logging
 import os
 import sys
@@ -90,6 +93,21 @@ class GenericBaseRecipe(object):
   def createExecutable(self, name, content, mode=0700):
     return self.createFile(name, content, mode)
 
+  def addLineToFile(self, filepath, line, encoding='utf8'):
+    """Append a single line to a text file, if the line does not exist yet.
+
+    line must be unicode."""
+
+    try:
+      lines = io.open(filepath, 'r', encoding=encoding).readlines()
+    except IOError:
+      lines = []
+
+    if not line in lines:
+      lines.append(line)
+      with io.open(filepath, 'w+', encoding=encoding) as f:
+        f.write(u'\n'.join(lines))
+
   def createPythonScript(self, name, absolute_function, arguments=''):
     """Create a python script using zc.buildout.easy_install.scripts
 
@@ -109,24 +127,30 @@ class GenericBaseRecipe(object):
       path, arguments=arguments)[0]
     return script
 
-  def createWrapper(self, name, command, parameters):
+  def createWrapper(self, name, command, parameters, comments=[], parameters_extra=False):
     """
     Creates a very simple (one command) shell script for process replacement.
     Takes care of quoting.
     """
 
-    q = shlex.quote
-    lines = [
-            '#!/bin/sh',
-            'exec %s' % shlex.quote(command)
-            ]
+    lines = [ '#!/bin/sh' ]
+
+    for comment in comments:
+      lines.append('# %s' % comment)
+
+    lines.append('exec %s' % shlex.quote(command))
 
     for param in parameters:
-      if len(lines[-1]) < 30:
+      if len(lines[-1]) < 40:
         lines[-1] += ' ' + shlex.quote(param)
       else:
         lines[-1] += ' \\'
         lines.append('\t' + shlex.quote(param))
+
+    if parameters_extra:
+        # pass-through further parameters
+        lines[-1] += ' \\'
+        lines.append('\t$@')
 
     content = '\n'.join(lines) + '\n'
     return self.createFile(name, content, 0700)

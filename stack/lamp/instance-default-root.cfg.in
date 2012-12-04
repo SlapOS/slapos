@@ -1,0 +1,10 @@
+[buildout]
+parts = request-apache
+
+[request-apache]
+<= slap-connection
+recipe = slapos.cookbook:request
+software-url = $${slap-connection:software-release-url}
+software-type = apache
+name = Apache
+

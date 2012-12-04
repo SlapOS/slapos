@@ -30,17 +30,19 @@ class Recipe(GenericBaseRecipe):
 
   def install(self):
 
-    commandline = [self.options['equeue-binary']]
-    commandline.extend(['--database', self.options['database']])
-    commandline.extend(['-l', self.options['log']])
+    parameters = [
+      '--database', self.options['database'],
+      '-l', self.options['log'],
+    ]
 
     if 'loglevel' in self.options:
-      commandline.extend(['--loglevel', self.options['loglevel']])
+      parameters.extend(['--loglevel', self.options['loglevel']])
 
-    commandline.append(self.options['socket'])
+    parameters.append(self.options['socket'])
 
-    return [self.createPythonScript(
-      self.options['wrapper'],
-      'slapos.recipe.librecipe.execute.execute',
-      commandline,
-    )]
+    wrapper = self.createWrapper(name=self.options['wrapper'],
+                                 command=self.options['equeue-binary'],
+                                 parameters=parameters)
+
+    return [wrapper]
+
