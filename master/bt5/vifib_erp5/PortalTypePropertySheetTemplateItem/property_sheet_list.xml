@@ -5,9 +5,6 @@
  <portal_type id="Open Sale Order Line">
   <item>VifibOpenSaleOrderLineConstraint</item>
  </portal_type>
- <portal_type id="Person">
-  <item>VifibPersonConstraint</item>
- </portal_type>
  <portal_type id="Sale Packing List">
   <item>VifibSalePackingListConstraint</item>
  </portal_type>
