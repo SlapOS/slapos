@@ -1,24 +1,24 @@
 from Products.ERP5Type.Base import WorkflowMethod
 
-def Instance_migrateUrlString(obj):
+def Instance_migrateUrlString(self):
   @WorkflowMethod.disable
-  def real(obj):
+  def real(self):
     property_id = 'root_software_release_url'
-    if obj.getPortalType() not in ('Hosting Subscription', 'Software Instance', 'Slave Instance'):
-      raise TypeError(obj.getPortalType())
+    if self.getPortalType() not in ('Hosting Subscription', 'Software Instance', 'Slave Instance'):
+      raise TypeError(self.getPortalType())
     
-    old_url = getattr(obj.aq_base, property_id, None)
-    new_url = obj.getUrlString()
+    old_url = getattr(self.aq_base, property_id, None)
+    new_url = self.getUrlString()
     
     if not old_url and not new_url:
-      raise ValueError('%s has no url defined at all' % obj.getPath())
+      raise ValueError('%s has no url defined at all' % self.getPath())
     
     if old_url:
-      obj.setUrlString(old_url)
-      assert(obj.getUrlString() == old_url)
-      delattr(obj.aq_base, property_id)
-  if type(obj) == type([]):
-    for o in obj:
+      self.setUrlString(old_url)
+      assert(self.getUrlString() == old_url)
+      delattr(self.aq_base, property_id)
+  if type(self) == type([]):
+    for o in self:
       real(o[0])
   else:
-    real(obj)
+    real(self)

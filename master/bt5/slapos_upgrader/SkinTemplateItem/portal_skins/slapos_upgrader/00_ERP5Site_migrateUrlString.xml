@@ -62,12 +62,7 @@ for module in (\n
     max_depth=1,\n
     min_depth=1,\n
     max_retry=0,\n
-    activity_count=50,\n
-    activate_kw={\n
-      \'tag\': script.id,\n
-      \'group_method_id\': method_id,\n
-      \'group_method_cost\': 1./50, # fire up 50 activities in same transaction\n
-      }\n
+    activate_kw={\'tag\': script.id}\n
   )\n
 \n
 return \'Done.\'\n
