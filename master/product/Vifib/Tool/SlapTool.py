@@ -427,7 +427,6 @@ class SlapTool(BaseTool):
     user = self.getPortalObject().portal_membership.getAuthenticatedMember()\
                                                    .getUserName()
     self._logAccess(user, computer_id, '#error while installing %s' % url)
-    #return self._softwareReleaseError(url, computer_id, error_log)
 
   security.declareProtected(Permissions.AccessContentsInformation,
     'buildingComputerPartition')
@@ -859,16 +858,6 @@ class SlapTool(BaseTool):
     if portal.portal_workflow.isTransitionPossible(software_installation,
         'invalidate'):
       software_installation.invalidate(comment=comment)
-
-  @convertToREST
-  def _softwareReleaseError(self, url, computer_id, error_log):
-    """
-    Add an error for a software Release workflow
-    """
-    computer_document = self._getComputerDocument(computer_id)
-    software_installation = self._getSoftwareInstallationForComputer(url,
-      computer_document)
-    software_installation.reportError()
 
   @convertToREST
   def _buildingComputerPartition(self, computer_id, computer_partition_id):
