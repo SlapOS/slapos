@@ -5,3 +5,5 @@ portal_alarms/vifib_request_destruction_selenium_tester_instance
 portal_alarms/vifib_set_priority_one_message_table
 portal_alarms/vifib_unlock_person
 portal_alarms/vifib_unlock_software_instance
+portal_tests/vifib_web_zuite
+portal_tests/vifib_web_zuite/**
