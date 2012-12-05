@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+portal = context.getPortalObject()\n
+tag = script.id\n
+if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+  raise TypeError(\'Already running\')\n
+method_id = \'Base_updateSlapOSLocalRoles\'\n
+for module_id in portal.objectIds(("ERP5 Folder",)):\n
+  # not for commit\n
+  if module_id in (\'accounting_module\', \'internal_packing_list_module\', \'open_sale_order_module\', \'portal_simulation\', \'purchase_packing_list_module\', \'sale_order_module\', \'sale_packing_list_module\', \'sale_trade_condition_module\'):\n
+    continue\n
+  # not for commit\n
+  if module_id.endswith("_module"):\n
+    portal[module_id].activate().recurseCallMethod(\n
+    method_id,\n
+    max_depth=1,\n
+    min_depth=0,\n
+    max_retry=0,\n
+    activate_kw={\'tag\': tag,}\n
+  )\n
+\n
+return \'Done.\'\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>04_ERP5Site_updateLocalRoles</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

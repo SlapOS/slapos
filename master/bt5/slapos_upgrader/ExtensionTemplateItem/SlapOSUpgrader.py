@@ -67,3 +67,14 @@ def Computer_migrateCategory(self):
     Computer_updateDestinationSection(self)
     
   real(self)
+
+def Base_updateSlapOSLocalRoles(self):
+  @WorkflowMethod.disable
+  def real(self):
+    self.updateLocalRolesOnSecurityGroups(reindex=False)
+    self.immediateReindexObject()
+  if type(self) == type([]):
+    for o in self:
+      real(o[0])
+  else:
+    real(self)
