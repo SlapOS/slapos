@@ -52,9 +52,10 @@
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
 tag = script.id\n
-method_id = \'Computer_migrateCategory\'\n
+method_id = \'Instance_migrateData\'\n
 for module in (\n
-  portal.computer_module,\n
+  portal.hosting_subscription_module,\n
+  portal.software_instance_module,\n
   ):\n
   module.recurseCallMethod(\n
     method_id,\n
@@ -73,7 +74,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>01_ERP5Site_migrateComputerCategory</string> </value>
+            <value> <string>01_ERP5Site_migrateInstanceData</string> </value>
         </item>
       </dictionary>
     </pickle>
