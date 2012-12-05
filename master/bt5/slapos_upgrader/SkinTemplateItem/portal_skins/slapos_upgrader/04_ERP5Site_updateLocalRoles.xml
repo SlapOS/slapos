@@ -58,10 +58,6 @@ if portal.portal_activities.countMessageWithTag(tag) > 0:\n
   raise TypeError(\'Already running\')\n
 method_id = \'Base_updateSlapOSLocalRoles\'\n
 for module_id in portal.objectIds(("ERP5 Folder",)):\n
-  # not for commit\n
-  if module_id in (\'accounting_module\', \'internal_packing_list_module\', \'open_sale_order_module\', \'portal_simulation\', \'purchase_packing_list_module\', \'sale_order_module\', \'sale_packing_list_module\', \'sale_trade_condition_module\'):\n
-    continue\n
-  # not for commit\n
   if module_id.endswith("_module"):\n
     portal[module_id].activate().recurseCallMethod(\n
     method_id,\n
