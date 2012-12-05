@@ -2,6 +2,8 @@ SoftwareInstanceConstraint
 SlaposComputerPartitionConstraint
 SlaposHostingSubscriptionConstraint
 SlaveInstanceConstraint
+InternetProtocolAddress
+ComputerPartition
 SoftwareInstance
 HostingSubscription
 SlaposCapacity
