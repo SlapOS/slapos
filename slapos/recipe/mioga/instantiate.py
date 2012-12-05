@@ -53,15 +53,27 @@ class Recipe(GenericBaseRecipe):
   def update(self):
     self.instantiate(False)
 
+  def rsync_dir(self, src, target):
+    if os.path.isdir(src) and not src.endswith('/'):
+      src += '/'
+    cmd = subprocess.Popen(self.options['rsync_bin'] + '/rsync -a --specials '
+                           + src + ' ' + target, 
+                           env=os.environ, shell=True)
+    cmd.communicate()
+    
+
   def instantiate(self, isNewInstall):
     # Copy the build/ and var/lib/Mioga2 folders into the instance
     mioga_location = self.options['mioga_location']
+
     var_dir = self.options['var_directory']
-    if not os.path.exists(var_dir):
-      shutil.copytree(os.path.join(mioga_location, 'var'), var_dir, True)
-      
+    self.rsync_dir(os.path.join(mioga_location, 'var'), var_dir)
+    
+    buildinst_dir = self.options['buildinst_directory']
+    self.rsync_dir(self.options['mioga_buildinst'], buildinst_dir)
+    
     former_directory = os.getcwd()
-    os.chdir(self.options['mioga_buildinst'])
+    os.chdir(buildinst_dir)
 
     vardir = self.options['var_directory']
     mioga_base = os.path.join(vardir, 'lib', 'Mioga2')
@@ -87,11 +99,8 @@ class Recipe(GenericBaseRecipe):
     fm.save()
     # Ensure no old data is kept
     self.removeIfExisting('config.mk')
-    if os.path.isdir('web/conf/apache'):
-      shutil.rmtree('web/conf/apache')
-
-    for key in self.options.keys():
-      print "Found option: "+key
+    # if os.path.isdir('web/conf/apache'):
+    #   shutil.rmtree('web/conf/apache')
 
     environ = os.environ
     environ['PATH'] = ':'.join([self.options['perl_bin'],           # priority!
@@ -100,6 +109,7 @@ class Recipe(GenericBaseRecipe):
                                 self.options['libxslt_bin'],
                                 self.options['libxml2_bin'],
                                 self.options['postgres_bin'],
+                                self.options['rsync_bin'],
                                 environ['PATH'] ])
     environ['MIOGA_SITEPERL'] = self.options['mioga_siteperl']
     
@@ -115,9 +125,6 @@ class Recipe(GenericBaseRecipe):
     os.chmod(pgpassfilepath, stat.S_IRUSR | stat.S_IWUSR)
     environ['PGPASSFILE'] = pgpassfilepath
     
-    # environ = self.options['mioga_compile_env']
-    print pprint.pformat(environ)
-
     # We must call "make" in the SAME environment that
     # "perl Makefile.PL" left!
 

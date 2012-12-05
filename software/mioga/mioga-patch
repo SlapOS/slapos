@@ -12,7 +12,7 @@ index ef0f369..b275a48 100644
  This script must be run by cron in a day basis with apache user (www-data for Debian)
  
 diff --git a/Makefile.PL b/Makefile.PL
-index 3582d20..46608ca 100644
+index 3582d20..80ea444 100644
 --- a/Makefile.PL
 +++ b/Makefile.PL
 @@ -20,8 +20,10 @@
@@ -87,7 +87,7 @@ index 3582d20..46608ca 100644
 +		"$(MIOGA_BUILDINST)"
 +
 +slapos-instantiation ::
-+	for i in web/conf conf sql ; \
++	for i in web/conf conf web/skel sql ; \
 +	do \
 +		(cd $$i && $(MAKE) install) || exit 1;\
 +	done
@@ -97,27 +97,19 @@ index 3582d20..46608ca 100644
  doc:
  	for i in ' . $docsubdirs . ' ; \
  	do \
-@@ -176,9 +202,26 @@ installall: install install-all
+@@ -176,9 +202,18 @@ installall: install install-all
  # 
  # ----------------------------------------------------------------------------
  
 +my $Mioga2_pm = 'lib/Mioga2.pm';
-+foreach my $envkey (keys %ENV) {
-+    print "VHH DEBUG: found envvar $envkey\n";
-+}
 +if ((not -e $Mioga2_pm) and exists($ENV{MIOGA_SITEPERL})) {
-+    print "VHH DEBUG: looking into SITEPERL\n";
 +    my $findfile = sub {
 +        if ($_ eq 'Mioga2.pm') {
 +            $Mioga2_pm = $File::Find::name;
-+            print "VHH DEBUG: Found Mioga2.pm in $Mioga2_pm\n";
 +        }
 +    };
 +    find($findfile, $ENV{MIOGA_SITEPERL});
 +}; 
-+print "VHH DEBUG: Found finally: $Mioga2_pm\n";
-+print 'VHH DEBUG: SIZE = ' . ( stat($Mioga2_pm) )[8] . "\n";
-+print "VHH DEBUG: Current directory is ".getcwd."\n";
  WriteMakefile(
     'NAME'  => 'Mioga',
     'DIR'   => ['bin', 'web',  'locales', 'docs', 'sql'],
@@ -649,6 +641,17 @@ index 66af45f..9649a02 100644
  
  	mkdir -p $(TMP_DIR)
  	mkdir -p $(DESTDIR)$(INSTALL_DIR)/$(INSTANCE_IDENT)/$(MIOGA_FILES)
+diff --git a/web/conf/Makefile b/web/conf/Makefile
+index 1573e5c..189f2fd 100644
+--- a/web/conf/Makefile
++++ b/web/conf/Makefile
+@@ -14,5 +14,6 @@ install:
+ # is done in ../Makefile
+ 
+ clean:
++	echo "VHH DEBUG: web/conf make clean, deleting apache/ !"
+ 	rm -Rf apache Mioga.conf .memdump
+ 
 diff --git a/web/conf/startup.pl b/web/conf/startup.pl
 index a9dc968..6558061 100644
 --- a/web/conf/startup.pl
