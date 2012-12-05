@@ -91,7 +91,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>ERP5Site_deleteVifibAccounting</string> </value>
+            <value> <string>XX_ERP5Site_deleteVifibAccounting</string> </value>
         </item>
       </dictionary>
     </pickle>
