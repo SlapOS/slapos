@@ -1,9 +1,18 @@
 Account
 Account Module
+Accounting Period
+Visit
 Accounting Transaction
 Accounting Transaction Module
+Acknowledgement
 Assignment
 Balance Transaction
+Bank Account
+Campaign
+Campaign Module
+Cash Register
+Component
+Component Module
 Computer
 Computer Model
 Computer Model Module
@@ -13,17 +22,33 @@ Computer Network Module
 Computer Partition
 Contribution Tool
 Credential Update Module
+Credit Card
 Currency
 Currency Module
 Data Set
 Data Set Module
+Document Ingestion Module
 Document Module
 Drawing
+Event Module
+Fax Message
 File
+Gadget
+Gadget Tool
 Hosting Subscription
 Hosting Subscription Module
 Image
 Image Module
+Inventory
+Inventory Module
+Knowledge Box
+Knowledge Pad
+Knowledge Pad Module
+Letter
+Mail Message
+Meeting
+Meeting Module
+Note
 Open Sale Order
 Open Sale Order Module
 Organisation
@@ -32,6 +57,7 @@ PDF
 Payment Transaction
 Person
 Person Module
+Phone Call
 Presentation
 Purchase Invoice Transaction
 Sale Invoice Transaction

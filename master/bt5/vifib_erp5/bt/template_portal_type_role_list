@@ -1,35 +1,10 @@
-Accounting Period
-Acknowledgement
-Bank Account
 Business Process
 Business Process Module
-Campaign
-Campaign Module
-Cash Register
-Component
-Component Module
-Credit Card
-Document Ingestion Module
-Event Module
-Fax Message
-Gadget
-Gadget Tool
 Integration Site
 Integration Tool
-Inventory
-Inventory Module
-Knowledge Box
-Knowledge Pad
-Knowledge Pad Module
-Letter
-Mail Message
-Meeting
-Meeting Module
-Note
 Notification Message
 Notification Message Module
 Payzen Event
-Phone Call
 Product
 Product Module
 Purchase Order
@@ -49,7 +24,6 @@ Tax
 Tax Module
 Transformation
 Transformation Module
-Visit
 Web Message
 Web Page
 Web Page Module

@@ -1,12 +1,4 @@
-campaign_module
-component_module
-document_ingestion_module
-event_module
-inventory_module
-knowledge_pad_module
-meeting_module
 notification_message_module
-portal_gadgets
 portal_integrations
 portal_integrations/slapos_payzen_test_integration
 product_module
