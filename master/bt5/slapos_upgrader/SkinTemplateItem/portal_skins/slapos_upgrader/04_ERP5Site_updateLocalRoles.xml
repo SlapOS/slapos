@@ -59,9 +59,10 @@ if portal.portal_activities.countMessageWithTag(tag) > 0:\n
 method_id = \'Base_updateSlapOSLocalRoles\'\n
 for module_id in portal.objectIds(("ERP5 Folder",)):\n
   if module_id.endswith("_module"):\n
-    portal[module_id].activate().recurseCallMethod(\n
+    portal[module_id].activate(tag=tag).recurseCallMethod(\n
     method_id,\n
     max_retry=0,\n
+    max_depth=5,\n
     activate_kw={\'tag\': tag,}\n
   )\n
 \n
