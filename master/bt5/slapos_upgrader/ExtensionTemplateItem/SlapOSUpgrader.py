@@ -1,6 +1,6 @@
 from Products.ERP5Type.Base import WorkflowMethod
 
-def Instance_migrateUrlString(self):
+def Instance_migrateData(self):
   BLACKLIST_RELATIVE_URL_LIST = (
     'software_instance_module/template_slave_instance',
     'software_instance_module/template_software_instance',
@@ -24,6 +24,8 @@ def Instance_migrateUrlString(self):
       self.setUrlString(old_url)
       assert(self.getUrlString() == old_url)
       delattr(self.aq_base, property_id)
+    if self.getCausality() is not None:
+      self.setCausality(None)
   if type(self) == type([]):
     for o in self:
       real(o[0])
