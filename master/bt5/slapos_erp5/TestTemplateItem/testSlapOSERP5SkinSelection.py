@@ -109,6 +109,7 @@ class TestSlaposSkinSelection(testSlapOSMixin):
 custom
 vifib_hosting
 slapos_accounting
+slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
@@ -197,6 +198,7 @@ zpt_generic
 """
 custom
 slapos_accounting
+slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
@@ -281,6 +283,7 @@ zpt_generic
 """
 custom
 slapos_accounting
+slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
@@ -366,6 +369,7 @@ zpt_generic
 """
 custom
 slapos_accounting
+slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise
@@ -448,6 +452,7 @@ zpt_generic
 """
 custom
 slapos_accounting
+slapos_administration
 slapos_cache
 slapos_cloud
 slapos_cloud_promise

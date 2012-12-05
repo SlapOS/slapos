@@ -20,7 +20,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>cleanup_active_process</string> </value>
+            <value> <string>slapos_erp5_cleanup_active_process</string> </value>
         </item>
         <item>
             <key> <string>periodicity_day_frequency</string> </key>

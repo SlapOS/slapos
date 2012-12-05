@@ -2,3 +2,4 @@ testSlapOSERP5DefaultScenario
 testSlapOSERP5GroupRoleSecurity
 testSlapOSERP5LocalPermissionSlapOSInteractionWorkflow
 testSlapOSERP5SkinSelection
+testSlapOSERP5Alarm
