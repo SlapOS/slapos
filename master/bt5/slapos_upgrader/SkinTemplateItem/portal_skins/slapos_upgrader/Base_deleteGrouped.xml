@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>BLACKLIST_RELATIVE_URL_LIST = (\n
+  \'accounting_module/template_sale_invoice_transaction\',\n
+  \'open_sale_order_module/slapos_accounting_open_sale_order_line_template\',\n
+  \'open_sale_order_module/slapos_accounting_open_sale_order_template\',\n
+  \'sale_packing_list_module/slapos_accounting_instance_delivery_line_template\',\n
+  \'sale_packing_list_module/slapos_accounting_instance_delivery_template\',\n
+  \'sale_trade_condition_module/payzen_sale_trade_condition\',\n
+  \'sale_trade_condition_module/slapos_aggregated_trade_condition\',\n
+  \'sale_trade_condition_module/slapos_consumption_trade_condition\',\n
+  \'sale_trade_condition_module/slapos_subscription_trade_condition\',\n
+)\n
+\n
+for document in object_list:\n
+  document = document[0]\n
+  if document.getRelativeUrl() in BLACKLIST_RELATIVE_URL_LIST:\n
+    script.log(\'Not deleted blacklisted %s\' % document.getRelativeUrl())\n
+    continue\n
+  document.getParentValue().deleteContent(document.getId())\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>object_list</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Base_deleteGrouped</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
