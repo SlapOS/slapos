@@ -1,3 +1,4 @@
+portal_alarms/promise_vifib_*
 portal_alarms/vifib_check_consistency
 portal_alarms/vifib_lock_person
 portal_alarms/vifib_lock_software_instance
