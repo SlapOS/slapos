@@ -105,7 +105,7 @@
         </item>
         <item>
             <key> <string>description</string> </key>
-            <value> <string>This is your personal area. You can manage your services, your account, your informations. A Help section is available to lead you if needed.</string> </value>
+            <value> <string>This is your personal area. You can manage your services, your account, your information. A Help section is available to lead you if needed.</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
