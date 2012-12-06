@@ -76,7 +76,8 @@ if portal_workflow.isTransitionPossible(instance, \'converge\'):\n
     history_entry = history_list[previous_length-1]\n
 \n
     # no divergence if no new history entry\n
-    assert previous_length != history_length\n
+    if (history_length != 1):\n
+      assert previous_length != history_length\n
 \n
     setup_quantity = 0\n
     update_quantity = 0\n

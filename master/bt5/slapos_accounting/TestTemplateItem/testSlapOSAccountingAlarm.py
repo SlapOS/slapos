@@ -646,6 +646,45 @@ class TestInstanceInvoicingAlarm(testSlapOSMixin):
       self.check_instance_delivery(delivery, start_date, stop_date, person, 1)
     self.check_instance_movement(update_line, instance, subscription, 2)
 
+  @withAbort
+  def test_instance_in_only_destroyed_state(self):
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    subscription.edit(
+      reference='TESTHS-%s' % self.generateNewId(),
+      destination_section_value=person)
+    instance = self.portal.software_instance_module\
+        .template_slave_instance.Base_createCloneDocument(batch_mode=1)
+    new_id = self.generateNewId()
+    instance.edit(
+      title="Instance %s" % new_id,
+      reference="TESTINST-%s" % new_id,
+      destination_reference="TESTINST-%s" % new_id,
+      specialise_value=subscription,
+    )
+    self.portal.portal_workflow._jumpToStateFor(instance, 'diverged')
+    stop_date = DateTime('2222/11/15')
+    instance.workflow_history['instance_slap_interface_workflow'] = [{
+        'comment':'Directly in destroyed state',
+        'error_message': '',
+        'actor': 'ERP5TypeTestCase',
+        'slap_state': 'destroy_requested',
+        'time': stop_date,
+        'action': 'foo_transition'
+    }]
+
+    instance.Instance_solveInvoicingGeneration()
+    self.assertEqual(instance.getCausalityState(), 'solved')
+    self.assertNotEqual(None, instance.getCausalityValue())
+    self.assertEqual(1, instance.getInvoicingSynchronizationPointer())
+    delivery = instance.getCausalityValue()
+
+    setup_line, update_line, destroy_line =\
+      self.check_instance_delivery(delivery, stop_date, stop_date, person, 1)
+    self.check_instance_movement(update_line, instance, subscription, 1)
+
 class TestOpenSaleOrderAlarm(testSlapOSMixin):
   def test_noOSO_newPerson(self):
     person = self.portal.person_module.template_member\
