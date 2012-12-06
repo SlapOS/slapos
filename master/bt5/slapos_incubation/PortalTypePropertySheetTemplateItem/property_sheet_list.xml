@@ -1,4 +1,10 @@
 <property_sheet_list>
+ <portal_type id="Open Sale Order">
+  <item>VifibOpenSaleOrderConstraint</item>
+ </portal_type>
+ <portal_type id="Open Sale Order Line">
+  <item>VifibOpenSaleOrderLineConstraint</item>
+ </portal_type>
  <portal_type id="System Preference">
   <item>VifibSystemPreference</item>
  </portal_type>
