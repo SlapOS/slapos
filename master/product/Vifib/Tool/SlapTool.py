@@ -191,10 +191,12 @@ class SlapTool(BaseTool):
             .getRamCacheRoot().get('computer_information_cache_factory'\
               ).cache_duration
         )
-    except Unauthorized:
-      # XXX: Hack. Race condition of not ready setup delivery which provides
+    except (Unauthorized, IndexError):
+      # XXX: Unauthorized hack. Race condition of not ready setup delivery which provides
       # security information shall not make this method fail, as it will be
       # called later anyway
+      # Note: IndexError ignored, as it happend in case if full reindex is
+      # called on site
       pass
 
   def _storeLastData(self, key, value):
