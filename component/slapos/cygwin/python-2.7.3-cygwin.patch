@@ -1,0 +1,34 @@
+--- Python-2.7.3.org/Lib/plat-generic/regen~	2011-09-10 22:39:45.536625000 +0800
++++ Python-2.7.3/Lib/plat-generic/regen	2011-09-10 22:36:43.302250000 +0800
+@@ -1,3 +1,3 @@
+ #! /bin/sh
+ set -v
+-python$EXE ../../Tools/scripts/h2py.py -i '(u_long)' /usr/include/netinet/in.h
++python$EXE -S ../../Tools/scripts/h2py.py -i '(u_long)' /usr/include/netinet/in.h
+--- Python-2.7.3.org/Modules/_io/_iomodule.h	2012-11-04 23:59:16.140625000 +0800
++++ Python-2.7.3/Modules/_io/_iomodule.h	2012-11-04 23:59:49.109375000 +0800
+@@ -72,7 +72,7 @@
+     PyObject *filename; /* Not used, but part of the IOError object */
+     Py_ssize_t written;
+ } PyBlockingIOErrorObject;
+-PyAPI_DATA(PyObject *) PyExc_BlockingIOError;
++PyObject * PyExc_BlockingIOError;
+ 
+ /*
+  * Offset type for positioning.
+--- Python-2.7.3.org/Include/py_curses.h	2009-09-06 16:23:05.000000000 -0500
++++ Python-2.7.3/Include/py_curses.h	2010-04-14 15:21:23.008971400 -0500
+@@ -17,6 +17,13 @@
+ #define NCURSES_OPAQUE 0
+ #endif /* __APPLE__ */
+ 
++#ifdef __CYGWIN__
++/* the following define is necessary for Cygwin; without it, the
++   Cygwin-supplied ncurses.h sets NCURSES_OPAQUE to 1, and then Python
++   can't get at the WINDOW flags field. */
++#define NCURSES_INTERNALS
++#endif /* __CYGWIN__ */
++
+ #ifdef __FreeBSD__
+ /*
+ ** On FreeBSD, [n]curses.h and stdlib.h/wchar.h use different guards

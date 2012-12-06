@@ -1,0 +1,92 @@
+--- gettext-tools/woe32dll/gettextlib-exports.c.orig	2012-02-09 20:18:39.108129400 -0800
++++ gettext-tools/woe32dll/gettextlib-exports.c	2012-02-09 20:19:17.197629400 -0800
+@@ -18,9 +18,11 @@
+ #include "woe32dll/export.h"
+ 
+ VARIABLE(argmatch_die)
++#if 0
+ VARIABLE(error_message_count)
+ VARIABLE(error_one_per_line)
+ VARIABLE(error_print_progname)
++#endif
+ VARIABLE(error_with_progname)
+ VARIABLE(exit_failure)
+ VARIABLE(gl_array_list_implementation)
+--- m4/woe32-dll.m4.bak	2010-06-06 05:49:58.000000000 -0700
++++ m4/woe32-dll.m4	1969-12-31 16:00:00.000000000 -0800
+@@ -1,45 +0,0 @@
+-# woe32-dll.m4 serial 2
+-dnl Copyright (C) 2005-2006 Free Software Foundation, Inc.
+-dnl This file is free software; the Free Software Foundation
+-dnl gives unlimited permission to copy and/or distribute it,
+-dnl with or without modifications, as long as this notice is preserved.
+-
+-dnl From Bruno Haible.
+-
+-# Add --disable-auto-import to the LDFLAGS if the linker supports it.
+-# GNU ld has an --enable-auto-import option, and it is the default on Cygwin
+-# since July 2005. But it has three fatal drawbacks:
+-#   - It produces executables and shared libraries with relocations in the
+-#     .text segment, defeating the principles of virtual memory.
+-#   - For some constructs such as
+-#         extern int var;
+-#         int * const b = &var;
+-#     it creates an executable that will give an error at runtime, rather
+-#     than either a compile-time or link-time error or a working executable.
+-#     (This is with both gcc and g++.) Whereas this code, not relying on
+-#     auto-import:
+-#         extern __declspec (dllimport) int var;
+-#         int * const b = &var;
+-#     gives a compile-time error with gcc and works with g++.
+-#   - It doesn't work in some cases (references to a member field of an
+-#     exported struct variable, or to a particular element of an exported
+-#     array variable), requiring code modifications.  One platform
+-#     dictates code modifications on all platforms.
+-AC_DEFUN([gl_WOE32_DLL],
+-[
+-  AC_REQUIRE([AC_CANONICAL_HOST])
+-  case "$host_os" in
+-    mingw* | cygwin*)
+-      AC_MSG_CHECKING([for auto-import of symbols])
+-      AC_CACHE_VAL([gl_cv_ld_autoimport], [
+-        gl_save_LDFLAGS="$LDFLAGS"
+-        LDFLAGS="$LDFLAGS -Wl,--disable-auto-import"
+-        AC_TRY_LINK([], [], [gl_cv_ld_autoimport=yes], [gl_cv_ld_autoimport=no])
+-        LDFLAGS="$gl_save_LDFLAGS"])
+-      AC_MSG_RESULT([$gl_cv_ld_autoimport])
+-      if test $gl_cv_ld_autoimport = yes; then
+-        LDFLAGS="$LDFLAGS -Wl,--disable-auto-import"
+-      fi
+-      ;;
+-  esac
+-])
+--- ./gettext-runtime/configure.ac.bak	2012-02-09 22:05:07.737629400 -0800
++++ ./gettext-runtime/configure.ac	2012-02-09 22:05:20.077129400 -0800
+@@ -64,7 +64,6 @@
+ 
+ dnl Check for build configuration.
+ 
+-gl_WOE32_DLL
+ 
+ LT_INIT([win32-dll])
+ 
+--- ./gettext-runtime/libasprintf/configure.ac.bak	2012-02-09 22:05:07.759629400 -0800
++++ ./gettext-runtime/libasprintf/configure.ac	2012-02-09 22:05:30.749629400 -0800
+@@ -39,7 +39,6 @@
+ gl_EARLY
+ 
+ dnl Check for build configuration.
+-gl_WOE32_DLL
+ LT_INIT([win32-dll])
+ case "$host_os" in
+   # On Cygwin, without -no-undefined, a warning is emitted and only a static
+--- ./gettext-tools/configure.ac.bak	2012-02-09 22:05:07.782129400 -0800
++++ ./gettext-tools/configure.ac	2012-02-09 22:05:41.661629400 -0800
+@@ -89,7 +89,6 @@
+ 
+ dnl Check for build configuration.
+ 
+-gl_WOE32_DLL
+ 
+ LT_INIT([win32-dll])
+

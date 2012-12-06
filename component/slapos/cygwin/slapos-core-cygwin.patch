@@ -1,0 +1,65 @@
+--- slapos.core-0.33-py2.6.egg/slapos/format.py	2012-11-08 09:45:24.718750000 +0800
++++ slapos.core-0.33-py2.7.egg/slapos/format.py	2012-11-21 19:20:09.593750000 +0800
+@@ -460,9 +460,9 @@
+     #      This method shall check if all is correctly done
+     #      This method shall not reset groups, just add them
+     try:
+-      grp.getgrnam(self.name)
++      grp.getgrnam('grp_' + self.name)
+     except KeyError:
+-      callAndRead(['groupadd', self.name])
++      callAndRead(['groupadd', 'grp_' + self.name])
+ 
+     user_parameter_list = ['-d', self.path, '-g', self.name, '-s',
+       '/bin/false']
+@@ -637,6 +637,8 @@
+     except KeyError:
+       raise ValueError("%s must have at least one IPv6 address assigned" % \
+                          interface_name)
++    for q in address_list:
++      q.setdefault('netmask', 'FFFF:FFFF:FFFF:FFFF::')
+     # XXX: Missing implementation of Unique Local IPv6 Unicast Addresses as
+     # defined in http://www.rfc-editor.org/rfc/rfc4193.txt
+     # XXX: XXX: XXX: IT IS DISALLOWED TO IMPLEMENT link-local addresses as
+@@ -746,7 +748,7 @@
+ 
+   def addIPv4LocalAddress(self, addr=None):
+     """Adds local IPv4 address in ipv4_local_network"""
+-    netmask = '255.255.255.255'
++    netmask = '255.255.255.254'
+     local_address_list = self.getIPv4LocalAddressList()
+     if addr is None:
+       return self._generateRandomIPv4Address(netmask)
+@@ -1047,7 +1049,7 @@
+       except ValueError:
+         pass
+       except OSError:
+-        missing_binary_list.append(b)
++        missing_binary_list.append(b[0])
+     if missing_binary_list:
+       raise UsageError('Some required binaries are missing or not '
+           'functional: %s' % (','.join(missing_binary_list), ))
+@@ -1142,7 +1144,7 @@
+       root_needed = False
+ 
+     # check root
+-    if root_needed and os.getuid() != 0:
++    if root_needed and os.getuid() != 500 if sys.platform in ['cygwin'] else 0:
+       message = "Root rights are needed"
+       self.logger.error(message)
+       raise UsageError(message)
+@@ -1195,6 +1197,14 @@
+   real_callAndRead = callAndRead
+   usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
+ 
++  if sys.platform in ('cygwin',):
++    callAndRead = lambda args, flag=True : args.insert(0, '/bin/sh') \
++                  or real_callAndRead(args, flag)
++    f = netifaces.ifaddresses
++    netifaces.ifaddresses = lambda s,f=f:reduce( \
++      lambda x,y:[x.__setitem__(k,v + x.get(k,[])) for k,v in y.iteritems()] and x, \
++      filter(None, [f(i) for i in netifaces.interfaces() if i.startswith(s)]),{})
++
+   # Parse arguments
+   options, configuration_file_path = Parser(usage=usage).check_args(args)
+   config = Config()
