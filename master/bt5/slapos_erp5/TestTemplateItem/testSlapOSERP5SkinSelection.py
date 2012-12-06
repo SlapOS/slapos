@@ -60,6 +60,9 @@ class TestSlaposSkinSelection(testSlapOSMixin):
           'Hosting',
           'KM',
           'Multiflex',
+          'ODS',
+          'ODT',
+          'RSS',
           'SHACACHE',
           'SHADIR',
           'View',
@@ -131,10 +134,12 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
+erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -144,6 +149,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_data_set
 erp5_dhtml_style
@@ -160,10 +166,16 @@ erp5_invoicing
 erp5_item
 erp5_item_trade
 erp5_jquery
+erp5_ods_core
+erp5_odt_core
+erp5_ooo_import
 erp5_open_trade
 erp5_payzen_secure_payment
 erp5_pdm
+erp5_project
+erp5_project_trade
 erp5_promise
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -215,10 +227,12 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
+erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -228,6 +242,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_data_set
 erp5_dhtml_style
@@ -245,10 +260,16 @@ erp5_invoicing
 erp5_item
 erp5_item_trade
 erp5_jquery
+erp5_ods_core
+erp5_odt_core
+erp5_ooo_import
 erp5_open_trade
 erp5_payzen_secure_payment
 erp5_pdm
+erp5_project
+erp5_project_trade
 erp5_promise
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -301,10 +322,12 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
+erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -314,6 +337,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_data_set
 erp5_dhtml_style
@@ -330,11 +354,17 @@ erp5_invoicing
 erp5_item
 erp5_item_trade
 erp5_jquery
+erp5_ods_core
+erp5_odt_core
+erp5_ooo_import
 erp5_km_widget_library
 erp5_open_trade
 erp5_payzen_secure_payment
 erp5_pdm
+erp5_project
+erp5_project_trade
 erp5_promise
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -387,10 +417,12 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
+erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -400,6 +432,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_data_set
 erp5_dhtml_style
@@ -418,7 +451,10 @@ erp5_item_trade
 erp5_open_trade
 erp5_payzen_secure_payment
 erp5_pdm
+erp5_project
+erp5_project_trade
 erp5_promise
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
@@ -470,10 +506,12 @@ erp5_knowledge_pad
 erp5_simulation
 erp5_dms_base
 erp5_dms_web
+erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
 erp5_base
+erp5_bearer_token
 erp5_commerce
 erp5_commerce_widget_library
 erp5_computer_immobilisation
@@ -483,6 +521,7 @@ erp5_content_translation
 erp5_core
 erp5_core_proxy_field_legacy
 erp5_credential
+erp5_credential_oauth2
 erp5_crm
 erp5_data_set
 erp5_dhtml_style
@@ -501,7 +540,10 @@ erp5_item_trade
 erp5_open_trade
 erp5_payzen_secure_payment
 erp5_pdm
+erp5_project
+erp5_project_trade
 erp5_promise
+erp5_rss_core
 erp5_secure_payment
 erp5_simplified_invoicing
 erp5_software_pdm
