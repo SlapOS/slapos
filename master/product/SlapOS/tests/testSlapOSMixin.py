@@ -113,6 +113,7 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
       'erp5_full_text_myisam_catalog',
       'erp5_core_proxy_field_legacy',
       'erp5_base',
+      'erp5_administration',
       'erp5_workflow',
       'erp5_configurator',
       'slapos_configurator',
