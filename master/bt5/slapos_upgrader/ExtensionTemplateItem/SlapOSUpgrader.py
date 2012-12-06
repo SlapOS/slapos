@@ -72,7 +72,6 @@ def Base_updateSlapOSLocalRoles(self):
   @WorkflowMethod.disable
   def real(self):
     self.updateLocalRolesOnSecurityGroups(reindex=False)
-    self.immediateReindexObject()
   if type(self) == type([]):
     for o in self:
       real(o[0])

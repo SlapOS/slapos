@@ -53,19 +53,21 @@
             <value> <string encoding="cdata"><![CDATA[
 
 portal = context.getPortalObject()\n
+\n
+portal_type_list = []\n
+for portal_type in portal.portal_types.contentValues():\n
+  if len(portal_type.contentValues(portal_type=\'Role Information\')) > 0:\n
+    portal_type_list.append(portal_type.getId())\n
+\n
 tag = script.id\n
 if portal.portal_activities.countMessageWithTag(tag) > 0:\n
   raise TypeError(\'Already running\')\n
 method_id = \'Base_updateSlapOSLocalRoles\'\n
-for module_id in portal.objectIds(("ERP5 Folder",)):\n
-  if module_id.endswith("_module"):\n
-    portal[module_id].activate(tag=tag).recurseCallMethod(\n
-    method_id,\n
-    max_retry=0,\n
-    max_depth=5,\n
-    activate_kw={\'tag\': tag,}\n
-  )\n
-\n
+portal.portal_catalog.searchAndActivate(\n
+  portal_type=portal_type_list,\n
+  method_id=method_id,\n
+  activate_kw={\'tag\': tag,}\n
+)\n
 return \'Done.\'\n
 
 
@@ -77,7 +79,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>04_ERP5Site_updateLocalRoles</string> </value>
+            <value> <string>05_ERP5Site_updateLocalRoles</string> </value>
         </item>
       </dictionary>
     </pickle>
