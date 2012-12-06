@@ -53,13 +53,11 @@
             <value> <string>from Products.ZSQLCatalog.SQLCatalog import NegatedQuery, Query\n
 \n
 portal = context.getPortalObject()\n
-person_reference = portal.ERP5Site_getPropertyFromAuthenticatedMemberPersonValue(\'reference\')\n
+person_uid = portal.ERP5Site_getPropertyFromAuthenticatedMemberPersonValue(\'uid\')\n
 \n
-# XXX Owner column should not be used to fetch the list!\n
-# Data model of hosting subscription should be fixed to allow direct query\n
 return portal.portal_catalog(\n
   portal_type="Hosting Subscription",\n
-  owner=person_reference,\n
+  default_destination_section_uid=person_uid,\n
   validation_state=\'validated\'\n
   )\n
 </string> </value>
