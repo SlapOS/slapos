@@ -16,11 +16,17 @@ image_module
 inventory_module
 knowledge_pad_module
 meeting_module
+notification_message_module
 open_sale_order_module
 organisation_module
 person_module
 portal_contributions
 portal_gadgets
+product_module
+purchase_order_module
+purchase_trade_condition_module
+query_module
+sale_opportunity_module
 sale_order_module
 sale_packing_list_module
 sale_trade_condition_module
@@ -29,3 +35,6 @@ software_installation_module
 software_instance_module
 software_product_module
 software_release_module
+support_request_module
+transformation_module
+web_page_module

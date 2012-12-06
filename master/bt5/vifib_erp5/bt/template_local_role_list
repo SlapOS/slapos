@@ -1,13 +1,4 @@
-notification_message_module
 portal_integrations
 portal_integrations/slapos_payzen_test_integration
-product_module
-purchase_order_module
-purchase_trade_condition_module
-query_module
-sale_opportunity_module
-support_request_module
 system_event_module
 tax_module
-transformation_module
-web_page_module

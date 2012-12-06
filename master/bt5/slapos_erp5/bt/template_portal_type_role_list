@@ -48,6 +48,8 @@ Mail Message
 Meeting
 Meeting Module
 Note
+Notification Message
+Notification Message Module
 Open Sale Order
 Open Sale Order Module
 Organisation
@@ -58,8 +60,18 @@ Person
 Person Module
 Phone Call
 Presentation
+Product
+Product Module
 Purchase Invoice Transaction
+Purchase Order
+Purchase Order Module
+Purchase Trade Condition
+Purchase Trade Condition Module
+Query
+Query Module
 Sale Invoice Transaction
+Sale Opportunity
+Sale Opportunity Module
 Sale Order
 Sale Order Module
 Sale Packing List
@@ -68,6 +80,8 @@ Sale Trade Condition
 Sale Trade Condition Module
 Service
 Service Module
+Short Message
+Site Message
 Slave Instance
 Software Installation
 Software Installation Module
@@ -78,5 +92,12 @@ Software Product Module
 Software Release
 Software Release Module
 Spreadsheet
+Support Request
+Support Request Module
 Text
+Transformation
+Transformation Module
 Visit
+Web Message
+Web Page
+Web Page Module
