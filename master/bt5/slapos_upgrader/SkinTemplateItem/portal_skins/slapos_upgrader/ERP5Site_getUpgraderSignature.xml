@@ -70,10 +70,12 @@ ALARM_DICT = {\n
 \n
 REQUIRED_BT5_ID_LIST = (\n
 # core of core\n
+  \'erp5_mysql_innodb_catalog\',\n
   \'erp5_core\',\n
   \'erp5_xhtml_style\',\n
 # erp5\n
   \'erp5_base\',\n
+  \'erp5_administration\',\n
   \'erp5_simulation\',\n
   \'erp5_trade\',\n
   \'erp5_open_trade\',\n
