@@ -567,6 +567,66 @@ zpt_generic
 """
     self.assertSameSkinSelection(skin_name, selection_string_list)
 
+  def test_13_ODS_selection(self, quiet=0, run=run_all_test):
+    """
+    Check the skin folder order
+    """
+    if not run: return
+
+    skin_name = 'ODS'
+    selection_string_list = \
+"""
+"""
+    self.assertSameSkinSelection(skin_name, selection_string_list)
+
+  def test_14_ODT_selection(self, quiet=0, run=run_all_test):
+    """
+    Check the skin folder order
+    """
+    if not run: return
+
+    skin_name = 'ODT'
+    selection_string_list = \
+"""
+"""
+    self.assertSameSkinSelection(skin_name, selection_string_list)
+
+  def test_15_RSS_selection(self, quiet=0, run=run_all_test):
+    """
+    Check the skin folder order
+    """
+    if not run: return
+
+    skin_name = 'RSS'
+    selection_string_list = \
+"""
+"""
+    self.assertSameSkinSelection(skin_name, selection_string_list)
+
+  def test_16_SHACACHE_selection(self, quiet=0, run=run_all_test):
+    """
+    Check the skin folder order
+    """
+    if not run: return
+
+    skin_name = 'SHACACHE'
+    selection_string_list = \
+"""
+"""
+    self.assertSameSkinSelection(skin_name, selection_string_list)
+
+  def test_17_SHADIR_selection(self, quiet=0, run=run_all_test):
+    """
+    Check the skin folder order
+    """
+    if not run: return
+
+    skin_name = 'SHADIR'
+    selection_string_list = \
+"""
+"""
+    self.assertSameSkinSelection(skin_name, selection_string_list)
+
 def test_suite():
   suite = unittest.TestSuite()
   suite.addTest(unittest.makeSuite(TestSlaposSkinSelection))
