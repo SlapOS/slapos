@@ -110,6 +110,8 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     """
     result = [
       'erp5_promise',
+      'erp5_upgrader',
+      'slapos_upgrader',
       'erp5_full_text_myisam_catalog',
       'erp5_core_proxy_field_legacy',
       'erp5_base',
