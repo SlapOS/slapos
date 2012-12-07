@@ -68,58 +68,72 @@ ALARM_DICT = {\n
 }\n
 \n
 REQUIRED_BT5_ID_LIST = (\n
-## core of core upgrade\n
-#  \'erp5_core\',\n
-#  \'erp5_xhtml_style\',\n
-## erp5 upgrade\n
-#  \'erp5_base\',\n
-#  \'erp5_simulation\',\n
-#  \'erp5_trade\',\n
-#  \'erp5_open_trade\',\n
-#  \'erp5_accounting\',\n
-#  \'erp5_invoicing\',\n
-#  \'erp5_dms\',\n
-#  \'erp5_km\'\n
-#  \'erp5_knowledge_pad\',\n
-#  \'erp5_project\',\n
-#  \'erp5_web\',\n
-#  \'erp5_secure_payment\',\n
-#  \'erp5_forge\',\n
-#  \'erp5_ui_test\',\n
-## vifib deinstallation\n
-#  \'vifib_web_ui_test\',\n
-#  \'vifib_test\',\n
-#  \'vifib_erp5\',\n
-##  \'vifib_configurator\', # not used\n
-#  \'vifib_slapos_accounting\',\n
-#  \'vifib_upgrader\',\n
-#  \'vifib_data_web\',\n
-#  \'vifib_data_simulation\',\n
-#  \'vifib_data_payzen\',\n
-#  \'vifib_data_category\',\n
-#  \'vifib_data\',\n
-#  \'vifib_slapos_rest_api\',\n
-#  \'vifib_slapos_rest_api_v1\',\n
-#  \'vifib_slapos_rest_api_tool_portal_type\',\n
-#  \'vifib_web\',\n
-#  \'vifib_agent\',\n
-#  \'vifib_l10n_fr\',\n
-#  \'vifib_slapos_capacity\',\n
-#  \'vifib_slapos_core\',\n
-#  \'vifib_software_pdm\',\n
-#  \'vifib_forge_release\',\n
-#  \'vifib_open_trade\',\n
-#  \'vifib_payzen\',\n
-#  \'vifib_crm\',\n
-#  \'vifib_invoicing\',\n
-#  \'vifib_core\'\n
-#  \'vifib_slap\',\n
-#  \'vifib_base\',\n
-#  \'vifib_mysql_innodb_catalog\',\n
+# core of core\n
+  \'erp5_mysql_innodb_catalog\',\n
+  \'erp5_core\',\n
+  \'erp5_property_sheets\',\n
+  \'erp5_xhtml_style\',\n
+# erp5\n
+  \'erp5_base\',\n
+  \'erp5_accounting\',\n
+  \'erp5_crm\',\n
+  \'erp5_accounting_l10n_fr\',\n
+  \'erp5_dms\',\n
+  \'erp5_computer_immobilisation\',\n
+  \'erp5_credential\',\n
+  \'erp5_discount_resource\',\n
+  \'erp5_commerce\',\n
+  \'erp5_pdm\',\n
+  \'erp5_knowledge_pad\',\n
+  \'erp5_forge\',\n
+  \'erp5_invoicing\',\n
+  \'erp5_ingestion\',\n
+  \'erp5_item\',\n
+  \'erp5_km\'\n
+  \'erp5_simulation\',\n
+  \'erp5_trade\',\n
+  \'erp5_ui_test_core\',\n
+  \'erp5_tax_resource\',\n
+  \'erp5_system_event\',\n
+  \'erp5_ui_test\',\n
+  \'erp5_secure_payment\',\n
+  \'erp5_web\',\n
+  \'erp5_project\',\n
+  \'erp5_credential_oauth2\',\n
+# vifib deinstallation\n
+  \'vifib_web_ui_test\',\n
+  \'vifib_test\',\n
+  \'vifib_erp5\',\n
+#  \'vifib_configurator\', # not used\n
+  \'vifib_slapos_accounting\',\n
+  \'vifib_upgrader\',\n
+  \'vifib_data_web\',\n
+  \'vifib_data_simulation\',\n
+  \'vifib_data_payzen\',\n
+  \'vifib_data_category\',\n
+  \'vifib_data\',\n
+  \'vifib_slapos_rest_api\',\n
+  \'vifib_slapos_rest_api_v1\',\n
+  \'vifib_slapos_rest_api_tool_portal_type\',\n
+  \'vifib_web\',\n
+  \'vifib_agent\',\n
+  \'vifib_l10n_fr\',\n
+  \'vifib_slapos_capacity\',\n
+  \'vifib_slapos_core\',\n
+  \'vifib_software_pdm\',\n
+  \'vifib_forge_release\',\n
+  \'vifib_open_trade\',\n
+  \'vifib_payzen\',\n
+  \'vifib_crm\',\n
+  \'vifib_invoicing\',\n
+  \'vifib_core\'\n
+  \'vifib_slap\',\n
+  \'vifib_base\',\n
+  \'vifib_mysql_innodb_catalog\',\n
 # new erp5 business templates\n
   \'erp5_promise\',\n
   \'erp5_workflow\',\n
-#  \'erp5_configurator\', # not used\n
+# \'erp5_configurator\', # not used\n
 # \'slapos_configurator\', # not used\n
   \'erp5_web_shacache\',\n
   \'erp5_data_set\',\n
