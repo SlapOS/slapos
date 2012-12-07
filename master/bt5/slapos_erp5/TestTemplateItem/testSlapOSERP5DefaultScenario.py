@@ -411,7 +411,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     causality_list = payment.getCausalityValueList()
     self.assertSameSet([invoice], causality_list)
 
-    self.assertEqual('auto_planned', payment.getSimulationState())
+    self.assertEqual('started', payment.getSimulationState())
     self.assertEqual('draft', payment.getCausalityState())
 
     self.assertEqual(-1 * payment.PaymentTransaction_getTotalPayablePrice(),
@@ -663,6 +663,10 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     # build the aggregated payment
     self.stepCallSlaposTriggerPaymentTransactionOrderBuilderAlarm()
+    self.tic()
+
+    # start the payzen payment
+    self.stepCallSlaposPayzenUpdateConfirmedPaymentAlarm()
     self.tic()
 
     # stabilise the payment deliveries and expand them
