@@ -1018,7 +1018,7 @@ class Slapgrid(object):
         self.logger.error(UnicodeError)
         raise "Failed to read %s." % (computer_partition_usage.usage)
       except (etree.XMLSyntaxError, etree.DocumentInvalid) as e:
-        self.logger.info("Failed to parse %s." % (computer_parition_usage.usage))
+        self.logger.info("Failed to parse %s." % (computer_partition_usage.usage))
         self.logger.error(e)
         raise _formatXMLError(e)
       except Exception:
