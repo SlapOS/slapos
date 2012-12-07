@@ -85,6 +85,7 @@ for invoice in portal.portal_catalog(**select_kw):\n
     start_date=invoice.getStartDate(),\n
     stop_date=invoice.getStopDate(),\n
     specialise=invoice.getSpecialise(),\n
+    payment_mode=\'payzen\',\n
     source_payment=\'organisation_module/slapos/bank_account\', # the other place defnied: business process\n
   )\n
   temp_movement_rec = newTempSimulationMovement(\n

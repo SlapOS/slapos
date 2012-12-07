@@ -44,6 +44,7 @@
                 <string>source_payment</string>
                 <string>source_section</string>
                 <string>specialise</string>
+                <string>payment_mode</string>
               </tuple>
             </value>
         </item>

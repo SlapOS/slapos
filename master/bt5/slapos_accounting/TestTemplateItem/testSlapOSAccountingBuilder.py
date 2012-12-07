@@ -1235,6 +1235,7 @@ class TestSlapOSPaymentTransactionOrderBuilder(testSlapOSMixin):
       'price_currency/%s' % invoice.getPriceCurrency(),
       'resource/%s' % invoice.getResource(),
       'source_payment/organisation_module/slapos/bank_account',
+      'payment_mode/payzen',
       'source_section/%s' % invoice.getSourceSection(),
     ]
     self.assertSameSet(expected_set, payment.getCategoryList())
