@@ -92,7 +92,7 @@ for movement in movement_list:\n
     price_currency=movement.getPriceCurrency()\n
   )\n
   if movement.getResource() == \'service_module/slapos_instance_subscription\':\n
-     temp_movement.edit(price=1.0)\n
+     temp_movement.edit(price=0.84)\n
   else:\n
      temp_movement.edit(price=0.0)\n
   temp_movement_list.append(temp_movement)\n
