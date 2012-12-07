@@ -50,7 +50,31 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>raise NotImplementedError\n
+            <value> <string>portal = context.getPortalObject()\n
+\n
+# drop not needed builders\n
+for builder_id in [\n
+  \'purchase_invoice_tax_builder\',\n
+  \'sale_invoice_tax_builder\',\n
+]:\n
+  if builder_id in portal.portal_deliveries.objectIds():\n
+    portal.portal_deliveries.deleteContent(builder_id)\n
+\n
+# uninstall not needed Business Templates\n
+unwanted_business_template_list = [\n
+  \'erp5_ui_test\',\n
+  \'erp5_discount_resource\',\n
+  \'erp5_tax_resource\',\n
+  \'erp5_legacy_tax_system\',\n
+]\n
+\n
+for bt5 in portal.portal_templates.contentValues(portal_type=\'Business Template\'):\n
+  if bt5.getTitle() in unwanted_business_template_list:\n
+    if bt5.getInstallationState() == \'installed\':\n
+      bt5.uninstall()\n
+\n
+raise NotImplementedError\n
+return \'Done.\'\n
 </string> </value>
         </item>
         <item>
