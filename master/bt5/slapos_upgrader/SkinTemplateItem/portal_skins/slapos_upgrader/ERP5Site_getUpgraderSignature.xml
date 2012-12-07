@@ -75,6 +75,7 @@ REQUIRED_BT5_ID_LIST = (\n
   \'erp5_xhtml_style\',\n
 # erp5\n
   \'erp5_base\',\n
+  \'erp5_administration\',\n
   \'erp5_accounting\',\n
   \'erp5_crm\',\n
   \'erp5_accounting_l10n_fr\',\n
