@@ -147,9 +147,9 @@ REQUIRED_BT5_ID_LIST = [\n
   \'slapos_rest_api_tool_portal_type\',\n
   \'slapos_rest_api\',\n
   \'slapos_pdm\',\n
+  \'slapos_accounting\',\n
   \'slapos_payzen\',\n
   \'slapos_web\',\n
-  \'slapos_accounting\',\n
   \'slapos_erp5\',\n
 ]\n
 \n
