@@ -110,6 +110,7 @@ class TestSlaposSkinSelection(testSlapOSMixin):
     selection_string_list = \
 """
 custom
+slapos_upgrader
 vifib_hosting
 slapos_accounting
 slapos_administration
@@ -135,6 +136,7 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
@@ -210,6 +212,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_upgrader
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -229,6 +232,7 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
@@ -305,6 +309,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_upgrader
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -325,6 +330,7 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
@@ -401,6 +407,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_upgrader
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -421,6 +428,7 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
@@ -494,6 +502,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_upgrader
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -514,6 +523,7 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
@@ -588,6 +598,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_upgrader
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -608,6 +619,7 @@ erp5_dms_base
 erp5_dms_web
 erp5_ods_style
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
@@ -681,6 +693,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_upgrader
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -701,6 +714,7 @@ erp5_dms_base
 erp5_dms_web
 erp5_odt_style
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
@@ -774,6 +788,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_upgrader
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -794,6 +809,7 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
@@ -867,6 +883,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_upgrader
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -888,6 +905,7 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
@@ -962,6 +980,7 @@ zpt_generic
     selection_string_list = \
 """
 custom
+slapos_upgrader
 slapos_accounting
 slapos_administration
 slapos_cache
@@ -983,6 +1002,7 @@ erp5_simulation
 erp5_dms_base
 erp5_dms_web
 erp5_accounting_l10n_fr
+erp5_upgrader
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
