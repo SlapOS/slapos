@@ -50,17 +50,18 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
-\n
-portal.ERP5Site_postUpgradeFixUpPortalDeliveries()\n
-portal.ERP5Site_postUpgradeFixUpPortalTemplates()\n
-portal.ERP5Site_postUpgradeFixUpPortalTypes()\n
-portal.ERP5Site_postUpgradeFixUpPortalPropertySheets()\n
-portal.ERP5Site_postUpgradeFixUpPortalRules()\n
-portal.ERP5Site_postUpgradeFixUpPortalSkins()\n
-\n
-raise NotImplementedError\n
-return \'Done.\'\n
+            <value> <string>portal_skins = context.getPortalObject().portal_skins\n
+for name, layers in portal_skins.getSkinPaths():\n
+  layer_list = layers.split(\',\')\n
+  if \'garbage_collection_201112\' in layer_list:\n
+    layer_list = [q for q in layer_list if q != \'garbage_collection_201112\']\n
+    portal_skins.manage_skinLayers(skinpath=layer_list, skinname=name, add_skin=1)\n
+    portal_skins.getPortalObject().changeSkin(None)\n
+  if name == \'ODS\':\n
+    if \'erp5_ooo_import\' not in layer_list:\n
+      layer_list.insert(layer_list.index(\'erp5_open_trade\'), \'erp5_ooo_import\')\n
+      portal_skins.manage_skinLayers(skinpath=layer_list, skinname=name, add_skin=1)\n
+      portal_skins.getPortalObject().changeSkin(None)\n
 </string> </value>
         </item>
         <item>
@@ -69,7 +70,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>00_ERP5Site_postUpgradeFixUp</string> </value>
+            <value> <string>ERP5Site_postUpgradeFixUpPortalSkins</string> </value>
         </item>
       </dictionary>
     </pickle>

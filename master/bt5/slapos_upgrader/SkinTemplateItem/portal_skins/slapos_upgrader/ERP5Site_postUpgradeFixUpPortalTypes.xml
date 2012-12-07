@@ -50,17 +50,46 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>portal_types = context.getPortalObject().portal_types\n
+def getPortalType(portal_type):\n
+  return portal_types.restrictedTraverse(portal_type)\n
 \n
-portal.ERP5Site_postUpgradeFixUpPortalDeliveries()\n
-portal.ERP5Site_postUpgradeFixUpPortalTemplates()\n
-portal.ERP5Site_postUpgradeFixUpPortalTypes()\n
-portal.ERP5Site_postUpgradeFixUpPortalPropertySheets()\n
-portal.ERP5Site_postUpgradeFixUpPortalRules()\n
-portal.ERP5Site_postUpgradeFixUpPortalSkins()\n
+# fix Delivery Simulation Rule portal type\n
+getPortalType(\'Delivery Simulation Rule\').setTypeAllowedContentTypeList((\n
+    \'Category Membership Divergence Tester\', \'DateTime Divergence Tester\',\n
+    \'Float Divergence Tester\', \'Net Converted Quantity Divergence Tester\',\n
+    \'Specialise Divergence Tester\', \'String Divergence Tester\',\n
+    \'Variation Divergence Tester\'\n
+))\n
 \n
-raise NotImplementedError\n
-return \'Done.\'\n
+# fix Hosting Subscription\n
+getPortalType(\'Hosting Subscription\').setTypeBaseCategoryList((\n
+    \'destination_section\'\n
+))\n
+\n
+# fix Item\n
+getPortalType(\'Item\').setTypePropertySheetList([ ])\n
+getPortalType(\'Item\').setTypeBaseCategoryList([ ])\n
+\n
+# fix Preference\n
+# property sheets have to be removed\n
+# fix Preference Tool\n
+# property sheets have to be removed\n
+\n
+# fix Slave Instance\n
+getPortalType(\'Slave Instance\').setTypeBaseCategoryList((\n
+    \'aggregate\', \'causality\', \'specialise\'\n
+))\n
+\n
+# fix Software Instance\n
+getPortalType(\'Software Instance\').setTypeBaseCategoryList((\n
+    \'aggregate\', \'causality\', \'specialise\'\n
+))\n
+\n
+# fix Types Tool\n
+getPortalType(\'Types Tool\').setTypeAllowedContentTypeList((\n
+    \'Base Type\', \'Gadget Type\'\n
+))\n
 </string> </value>
         </item>
         <item>
@@ -69,7 +98,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>00_ERP5Site_postUpgradeFixUp</string> </value>
+            <value> <string>ERP5Site_postUpgradeFixUpPortalTypes</string> </value>
         </item>
       </dictionary>
     </pickle>

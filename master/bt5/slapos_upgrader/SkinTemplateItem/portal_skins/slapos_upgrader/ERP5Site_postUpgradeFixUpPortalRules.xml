@@ -50,17 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>portal_rules = context.getPortalObject().portal_rules\n
 \n
-portal.ERP5Site_postUpgradeFixUpPortalDeliveries()\n
-portal.ERP5Site_postUpgradeFixUpPortalTemplates()\n
-portal.ERP5Site_postUpgradeFixUpPortalTypes()\n
-portal.ERP5Site_postUpgradeFixUpPortalPropertySheets()\n
-portal.ERP5Site_postUpgradeFixUpPortalRules()\n
-portal.ERP5Site_postUpgradeFixUpPortalSkins()\n
-\n
-raise NotImplementedError\n
-return \'Done.\'\n
+portal_rules.fixConsistency()\n
 </string> </value>
         </item>
         <item>
@@ -69,7 +61,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>00_ERP5Site_postUpgradeFixUp</string> </value>
+            <value> <string>ERP5Site_postUpgradeFixUpPortalRules</string> </value>
         </item>
       </dictionary>
     </pickle>

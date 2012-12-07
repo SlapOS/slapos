@@ -50,17 +50,21 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string>portal_templates = context.getPortalObject().portal_templates\n
+# uninstall not needed Business Templates\n
+unwanted_business_template_list = [\n
+  \'erp5_ui_test\',\n
+  \'erp5_ui_test_core\',\n
+  \'erp5_discount_resource\',\n
+  \'erp5_tax_resource\',\n
+  \'erp5_legacy_tax_system\',\n
+  \'vifib_software_pdm\',\n
+]\n
 \n
-portal.ERP5Site_postUpgradeFixUpPortalDeliveries()\n
-portal.ERP5Site_postUpgradeFixUpPortalTemplates()\n
-portal.ERP5Site_postUpgradeFixUpPortalTypes()\n
-portal.ERP5Site_postUpgradeFixUpPortalPropertySheets()\n
-portal.ERP5Site_postUpgradeFixUpPortalRules()\n
-portal.ERP5Site_postUpgradeFixUpPortalSkins()\n
-\n
-raise NotImplementedError\n
-return \'Done.\'\n
+for bt5 in portal_templates.contentValues(portal_type=\'Business Template\'):\n
+  if bt5.getTitle() in unwanted_business_template_list:\n
+    if bt5.getInstallationState() == \'installed\':\n
+      bt5.uninstall()\n
 </string> </value>
         </item>
         <item>
@@ -69,7 +73,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>00_ERP5Site_postUpgradeFixUp</string> </value>
+            <value> <string>ERP5Site_postUpgradeFixUpPortalTemplates</string> </value>
         </item>
       </dictionary>
     </pickle>
