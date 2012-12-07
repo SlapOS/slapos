@@ -18,6 +18,7 @@ class TestSlapOSDump(testSlapOSMixin):
     return path
 
   def test(self):
+    issue_count = 0
     for dump in [
         'ERP5Site_dumpAlarmToolConfiguration',
         'ERP5Site_dumpBuilderList',
@@ -34,5 +35,7 @@ class TestSlapOSDump(testSlapOSMixin):
         location = self.write('%s.txt' % dump, getattr(self.portal, dump)())
       except Exception:
         ZopeTestCase._print('Problem with %s\n' % dump)
+        issue_count += 1
       else:
         ZopeTestCase._print('Stored dump %s in %s\n' % (dump, location))
+    self.assertEqual(0, issue_count)
