@@ -72,11 +72,11 @@ for module in (\n
     max_depth=1,\n
     min_depth=1,\n
     max_retry=0,\n
-    activity_count=50,\n
+    activity_count=20,\n
     activate_kw={\n
       \'tag\': tag,\n
       \'group_method_id\': method_id,\n
-      \'group_method_cost\': 1./50, # fire up 50 activities in same transaction\n
+      \'group_method_cost\': 1./20, # fire up 20 jobs in same transaction\n
       }\n
   )\n
 \n
