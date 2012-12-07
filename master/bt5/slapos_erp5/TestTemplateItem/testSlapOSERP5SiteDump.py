@@ -22,13 +22,14 @@ class TestSlapOSDump(testSlapOSMixin):
     for dump in [
         'ERP5Site_dumpAlarmToolConfiguration',
         'ERP5Site_dumpBuilderList',
+        'ERP5Site_dumpInstalledBusinessTemplateList',
         'ERP5Site_dumpPortalTypeActionList',
         'ERP5Site_dumpPortalTypeList',
         'ERP5Site_dumpPortalTypeRoleList',
         'ERP5Site_dumpPropertySheetList',
         'ERP5Site_dumpRuleTesterList',
         'ERP5Site_dumpSkinProperty',
-        'ERP5Site_dumpWorkflowChain'
+        'ERP5Site_dumpWorkflowChain',
       ]:
       ZopeTestCase._print('\n')
       try:
