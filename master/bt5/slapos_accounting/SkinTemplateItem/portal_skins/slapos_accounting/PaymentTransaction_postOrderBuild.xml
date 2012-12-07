@@ -54,7 +54,7 @@
 payment_transaction = context\n
 payment_transaction.immediateReindexObject() # in order to avoid selection in OrderBuilder_getAccountingTransactionLineListSlapOS\n
 comment = translateString("Initialised by Order Builder.")\n
-payment_transaction.autoPlan(comment=comment)\n
+payment_transaction.confirm(comment=comment)\n
 </string> </value>
         </item>
         <item>

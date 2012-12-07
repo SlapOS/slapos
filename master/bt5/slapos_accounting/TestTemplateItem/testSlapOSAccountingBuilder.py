@@ -1224,7 +1224,7 @@ class TestSlapOSPaymentTransactionOrderBuilder(testSlapOSMixin):
   def assertPayment(self, payment, invoice):
     self.assertEqual(self.sumReceivable(invoice), payment\
         .PaymentTransaction_getTotalPayablePrice())
-    self.assertEqual('auto_planned', payment.getSimulationState())
+    self.assertEqual('confirmed', payment.getSimulationState())
     self.assertSameSet([], payment.checkConsistency())
     self.assertSameSet([invoice], payment.getCausalityValueList())
     self.assertSameSet([], payment.getCausalityRelatedValueList(
