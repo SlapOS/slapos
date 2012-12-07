@@ -70,6 +70,7 @@ MANDATORY_PARAMETER_LIST = [
     'software_root',
 ]
 
+# XXX: should be moved to SLAP library
 COMPUTER_PARTITION_DESTROYED_STATE = 'destroyed'
 COMPUTER_PARTITION_STARTED_STATE = 'started'
 COMPUTER_PARTITION_STOPPED_STATE = 'stopped'
