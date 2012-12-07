@@ -138,6 +138,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -231,6 +232,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -326,6 +328,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -421,6 +424,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -513,6 +517,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -606,6 +611,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -698,6 +704,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -790,6 +797,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -883,6 +891,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
@@ -977,6 +986,7 @@ erp5_accounting_l10n_fr
 erp5_access_tab
 erp5_accounting
 erp5_accounting_bbb
+erp5_administration
 erp5_base
 erp5_bearer_token
 erp5_commerce
