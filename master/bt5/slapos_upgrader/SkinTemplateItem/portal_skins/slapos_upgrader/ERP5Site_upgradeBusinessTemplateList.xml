@@ -68,24 +68,32 @@ bt5_counter = 0\n
 available_bt5_list = portal_templates.getRepositoryBusinessTemplateList(newest_only=True)\n
 available_bt5_id_list = [x.title for x in available_bt5_list]\n
 required_bt5_id_list = signature.get(\'required_bt5_id_list\', [])\n
+\n
 upgradable_bt5_id_list = signature.get(\'upgradable_bt5_id_list\', [])\n
-if len(upgradable_bt5_id_list) == 0:\n
-  # by default, we try to upgrade all installed business templates.\n
-  upgradable_bt5_id_list = portal_templates.getInstalledBusinessTemplateTitleList()\n
+if len(upgradable_bt5_id_list) > 0:\n
+  raise NotImplementedError\n
+\n
 reinstallable_bt5_id_list = signature.get(\'reinstallable_bt5_id_list\', signature.get(\'reinstalable_bt5_id_list\', []))\n
+if len(reinstallable_bt5_id_list) > 0:\n
+  raise NotImplementedError\n
+\n
 before_triggered_bt5_id_dict = signature.get(\'before_triggered_bt5_id_dict\', {})\n
 after_triggered_bt5_id_dict = signature.get(\'after_triggered_bt5_id_dict\', {})\n
 update_catalog_bt5_id_list = signature.get(\'update_catalog_bt5_id_list\', [])\n
+if len(update_catalog_bt5_id_list) > 0:\n
+  raise NotImplementedError\n
 \n
-bt5_id_list = dict([(x, True) for x in list(required_bt5_id_list) + \\\n
-                                       list(upgradable_bt5_id_list) + \\\n
-                                       list(reinstallable_bt5_id_list) \\\n
-                    if x in available_bt5_id_list]).keys()\n
+missing_id_list = [q for q in required_bt5_id_list if q not in available_bt5_id_list]\n
+if len(missing_id_list) > 0:\n
+  script.log(\'Missing Business Templates: %s\' % (\', \'.join(missing_id_list),))\n
+  return message_list\n
 \n
-# sort by dependencies\n
-bt5_list = [portal_templates.decodeRepositoryBusinessTemplateUid(x.uid) for x in \\\n
-           available_bt5_list if x.title in bt5_id_list]\n
-bt5_list = portal_templates.sortBusinessTemplateList(bt5_list)\n
+bt5_id_list = required_bt5_id_list\n
+\n
+bt5_list = []\n
+for bt5_id in bt5_id_list:\n
+  available_bt5 = [q for q in available_bt5_list if q.title == bt5_id][0]\n
+  bt5_list.append(portal_templates.decodeRepositoryBusinessTemplateUid(available_bt5.uid))\n
 \n
 installed_bt5_title_list = [o.getTitle() for o in portal_templates.getInstalledBusinessTemplateList()]\n
 \n
