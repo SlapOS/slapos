@@ -59,7 +59,6 @@ portal.ERP5Site_postUpgradeFixUpPortalPropertySheets()\n
 portal.ERP5Site_postUpgradeFixUpPortalRules()\n
 portal.ERP5Site_postUpgradeFixUpPortalSkins()\n
 \n
-raise NotImplementedError\n
 return \'Done.\'\n
 </string> </value>
         </item>
