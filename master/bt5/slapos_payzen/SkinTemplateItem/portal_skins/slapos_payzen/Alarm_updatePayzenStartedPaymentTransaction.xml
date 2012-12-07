@@ -54,7 +54,7 @@
 portal.portal_catalog.searchAndActivate(\n
       portal_type="Payment Transaction", \n
       simulation_state=["started"],\n
-      causality_state=["solved"],\n
+      causality_state=["draft"],\n
       payment_mode_uid=portal.portal_categories.payment_mode.payzen.getUid(),\n
       method_id=\'PaymentTransaction_updateStatus\',\n
       packet_size=1, # just one to minimise errors\n

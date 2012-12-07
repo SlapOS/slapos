@@ -30,7 +30,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
 
-  def test_alarm_confirmed_solved_payzen(self):
+  def test_alarm_confirmed_draft_payzen(self):
     new_id = self.generateNewId()
     transaction = self.portal.accounting_module.newContent(
       portal_type='Payment Transaction',
@@ -39,7 +39,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       payment_mode="payzen",
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'confirmed')
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
     self.tic()
 
     self._simulatePaymentTransaction_startPayzenPayment()
@@ -61,7 +60,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       reference="TESTTRANS-%s" % new_id,
       payment_mode="payzen",
       )
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
     self.tic()
 
     self._simulatePaymentTransaction_startPayzenPayment()
@@ -75,7 +73,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
         'Visited by PaymentTransaction_startPayzenPayment',
         transaction.workflow_history['edit_workflow'][-1]['comment'])
 
-  def test_alarm_not_solved(self):
+  def test_alarm_not_draft(self):
     new_id = self.generateNewId()
     transaction = self.portal.accounting_module.newContent(
       portal_type='Payment Transaction',
@@ -84,6 +82,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       payment_mode="payzen",
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'confirmed')
+    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
     self.tic()
 
     self._simulatePaymentTransaction_startPayzenPayment()
@@ -105,7 +104,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       reference="TESTTRANS-%s" % new_id,
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'confirmed')
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
     self.tic()
 
     self._simulatePaymentTransaction_startPayzenPayment()
@@ -174,7 +172,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       payment_mode="payzen",
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'confirmed')
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
 
     self._simulatePaymentTransaction_sendManualPayzenPaymentUrl()
     try:
@@ -247,7 +244,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       payment_mode="payzen",
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'started')
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
 
     self._simulatePaymentTransaction_addPayzenTicket()
     try:
@@ -311,7 +307,6 @@ return Foo()
       start_date=DateTime(),
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'started')
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
 
     # Manually generate mapping
     transaction.PaymentTransaction_generatePayzenId()
@@ -341,7 +336,6 @@ return Foo()
       start_date=DateTime(),
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'started')
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
 
     # Manually generate mapping
     transaction.PaymentTransaction_generatePayzenId()
@@ -379,7 +373,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       self.portal.portal_skins.custom.manage_delObjects(script_name)
     transaction.commit()
 
-  def test_alarm_started_solved_payzen(self):
+  def test_alarm_started_draft_payzen(self):
     new_id = self.generateNewId()
     transaction = self.portal.accounting_module.newContent(
       portal_type='Payment Transaction',
@@ -388,7 +382,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       payment_mode="payzen",
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'started')
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
     self.tic()
 
     self._simulatePaymentTransaction_updateStatus()
@@ -410,7 +403,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       reference="TESTTRANS-%s" % new_id,
       payment_mode="payzen",
       )
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
     self.tic()
 
     self._simulatePaymentTransaction_updateStatus()
@@ -424,7 +416,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
         'Visited by PaymentTransaction_updateStatus',
         transaction.workflow_history['edit_workflow'][-1]['comment'])
 
-  def test_alarm_not_solved(self):
+  def test_alarm_not_draft(self):
     new_id = self.generateNewId()
     transaction = self.portal.accounting_module.newContent(
       portal_type='Payment Transaction',
@@ -433,6 +425,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       payment_mode="payzen",
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'started')
+    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
     self.tic()
 
     self._simulatePaymentTransaction_updateStatus()
@@ -454,7 +447,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       reference="TESTTRANS-%s" % new_id,
       )
     self.portal.portal_workflow._jumpToStateFor(transaction, 'started')
-    self.portal.portal_workflow._jumpToStateFor(transaction, 'solved')
     self.tic()
 
     self._simulatePaymentTransaction_updateStatus()
