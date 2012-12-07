@@ -67,7 +67,7 @@ ALARM_DICT = {\n
  "finalize_upgrader" : True\n
 }\n
 \n
-REQUIRED_BT5_ID_LIST = (\n
+REQUIRED_BT5_ID_LIST = [\n
 # core of core\n
   \'erp5_mysql_innodb_catalog\',\n
   \'erp5_core\',\n
@@ -151,7 +151,7 @@ REQUIRED_BT5_ID_LIST = (\n
   \'slapos_web\',\n
   \'slapos_accounting\',\n
   \'slapos_erp5\',\n
-)\n
+]\n
 \n
 REINSTALLABLE_BT5_ID_LIST = ()\n
 \n
