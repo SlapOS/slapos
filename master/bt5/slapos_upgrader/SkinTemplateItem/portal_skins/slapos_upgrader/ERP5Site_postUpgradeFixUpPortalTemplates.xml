@@ -59,6 +59,7 @@ unwanted_business_template_list = [\n
   \'erp5_tax_resource\',\n
   \'erp5_legacy_tax_system\',\n
   \'vifib_software_pdm\',\n
+  \'erp5_l10n_fr\',  \n
 ]\n
 \n
 for bt5 in portal_templates.contentValues(portal_type=\'Business Template\'):\n
