@@ -50,40 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-portal = context.getPortalObject()\n
-tag = script.id\n
-if portal.portal_activities.countMessageWithTag(tag) > 0:\n
-  raise TypeError(\'Already running\')\n
-for module in (\n
-  portal.accounting_module,\n
-  portal.internal_packing_list_module,\n
-  portal.open_sale_order_module,\n
-  portal.portal_simulation,\n
-  portal.purchase_packing_list_module,\n
-  portal.sale_order_module,\n
-  portal.sale_packing_list_module,\n
-  portal.sale_trade_condition_module,\n
-  ):\n
-  method_id = \'Base_deleteGrouped_%s\'  % module.getId()\n
-  module.recurseCallMethod(\n
-    method_id,\n
-    max_depth=1,\n
-    min_depth=1,\n
-    max_retry=0,\n
-    activity_count=20,\n
-    activate_kw={\n
-      \'tag\': tag,\n
-      \'group_method_id\': method_id,\n
-      \'group_method_cost\': 1./20, # fire up 20 jobs in same transaction\n
-      }\n
-  )\n
-\n
+            <value> <string>context.getPortalObject().ERP5Site_reindexAll()\n
 return \'Done.\'\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -91,7 +60,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>03_ERP5Site_deleteVifibAccounting</string> </value>
+            <value> <string>03_ERP5Site_reindex</string> </value>
         </item>
       </dictionary>
     </pickle>
