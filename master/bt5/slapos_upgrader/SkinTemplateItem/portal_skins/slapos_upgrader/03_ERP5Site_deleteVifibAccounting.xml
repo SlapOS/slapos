@@ -87,7 +87,7 @@ deleted = False\n
 if context in module_list:\n
   b = DateTime().timeTime()\n
   id_list = [q.getId() for q in \\\n
-     portal.portal_catalog(parent_uid=context.getUid(), limit=20) if q.getRelativeUrl() not in BLACKLIST_RELATIVE_URL_LIST]\n
+     portal.portal_catalog(parent_uid=context.getUid(), limit=100) if q.getRelativeUrl() not in BLACKLIST_RELATIVE_URL_LIST]\n
   if id_list:\n
     deleted = True\n
     context.deleteContent(id_list)\n
