@@ -52,17 +52,20 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-portal = context.getPortalObject()\n
+portal_activities = context.getPortalObject().portal_activities\n
 tag = script.id\n
-if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+if bg==1 and portal_activities.countMessageWithTag(tag) > 0:\n
   raise TypeError(\'Already running\')\n
 \n
-portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalDeliveries()\n
-portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalTemplates()\n
-portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalTypes()\n
-portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalPropertySheets()\n
-portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalRules()\n
-portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalSkins()\n
+if bg:\n
+  getattr(portal_activities.activate(tag=tag), \'00_ERP5Site_postUpgradeFixUp\')(bg=0)\n
+else:\n
+  portal_activities.ERP5Site_postUpgradeFixUpPortalDeliveries()\n
+  portal_activities.ERP5Site_postUpgradeFixUpPortalTemplates()\n
+  portal_activities.ERP5Site_postUpgradeFixUpPortalTypes()\n
+  portal_activities.ERP5Site_postUpgradeFixUpPortalPropertySheets()\n
+  portal_activities.ERP5Site_postUpgradeFixUpPortalRules()\n
+  portal_activities.ERP5Site_postUpgradeFixUpPortalSkins()\n
 \n
 return \'Done.\'\n
 
@@ -71,7 +74,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>bg=1</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
