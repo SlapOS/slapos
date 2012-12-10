@@ -74,6 +74,7 @@ REQUIRED_BT5_ID_LIST = [\n
   \'erp5_property_sheets\',\n
   \'erp5_xhtml_style\',\n
 # erp5\n
+  \'erp5_workflow\',\n
   \'erp5_configurator\',\n
   \'erp5_base\',\n
   \'erp5_administration\',\n
@@ -132,9 +133,6 @@ REQUIRED_BT5_ID_LIST = [\n
   \'vifib_mysql_innodb_catalog\',\n
 # new erp5 business templates\n
   \'erp5_promise\',\n
-  \'erp5_workflow\',\n
-# \'erp5_configurator\', # not used\n
-# \'slapos_configurator\', # not used\n
   \'erp5_web_shacache\',\n
   \'erp5_data_set\',\n
   \'erp5_web_shadir\',\n
