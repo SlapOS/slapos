@@ -36,6 +36,7 @@ setup(name=name,
       'lxml', # needed to play with XML trees
       'netaddr>=0.7.5', # to play safely with IPv6 prefixes
       'netifaces', # to fetch information about network devices
+      'pyflakes', # For testing purposes
       'setuptools', # namespaces
       'supervisor', # slapgrid uses supervisor to manage processes
       'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
