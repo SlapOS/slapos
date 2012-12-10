@@ -77,3 +77,38 @@ def Base_updateSlapOSLocalRoles(self):
       real(o[0])
   else:
     real(self)
+
+def delIt(container, oid):
+  ob = container._getOb(oid)
+  container._objects = tuple([i for i in container._objects if i['id'] != oid])
+  container._delOb(oid)
+  try:
+    ob._v__object_deleted__ = 1
+  except Exception:
+    pass
+
+from Products.ERP5.ERP5Site import addERP5Tool
+def ERP5Site_deleteVifibAccounting(self):
+  portal = self.getPortalObject()
+  delIt(portal, 'portal_simulation')
+  addERP5Tool(portal, 'portal_simulation', 'Simulation Tool')
+
+  module_id_list = ('accounting_module', 'internal_packing_list_module',
+      'open_sale_order_module', 'purchase_packing_list_module',
+      'sale_order_module', 'sale_packing_list_module',
+      'sale_trade_condition_module')
+  for module_id in module_id_list:
+    module = getattr(portal, module_id)
+    portal_type = module.getPortalType()
+    title = module.getTitle()
+    id_generator = module.getIdGenerator()
+    delIt(portal, module_id)
+    portal.newContent(portal_type=portal_type, title=title, id=module_id,
+        id_generator=id_generator)
+  bt5_id_list = ['slapos_accounting', 'slapos_payzen']
+  for bt5_id in bt5_id_list:
+    bt5 = [q for q in portal.portal_templates.contentValues()
+        if q.getTitle() == bt5_id and q.getInstallationState() == 'installed'
+          ][0].Base_createCloneDocument(batch_mode=1)
+    bt5.activate().install(force=1, update_catalog=0)
+  return 'Done.'

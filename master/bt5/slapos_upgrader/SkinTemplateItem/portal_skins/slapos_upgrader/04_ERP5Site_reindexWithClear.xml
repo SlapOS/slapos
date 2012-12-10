@@ -50,7 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().ERP5Site_reindexAll()\n
+            <value> <string>context.getPortalObject().ERP5Site_reindexAll(clear_catalog=1)\n
 return \'Done.\'\n
 </string> </value>
         </item>
@@ -60,7 +60,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>04_ERP5Site_reindex</string> </value>
+            <value> <string>04_ERP5Site_reindexWithClear</string> </value>
         </item>
       </dictionary>
     </pickle>

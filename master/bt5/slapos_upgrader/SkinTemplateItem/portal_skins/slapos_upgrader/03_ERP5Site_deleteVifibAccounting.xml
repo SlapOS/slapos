@@ -2,113 +2,25 @@
 <ZopeData>
   <record id="1" aka="AAAAAAAAAAE=">
     <pickle>
-      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+      <global name="ExternalMethod" module="Products.ExternalMethod.ExternalMethod"/>
     </pickle>
     <pickle>
       <dictionary>
         <item>
-            <key> <string>Script_magic</string> </key>
-            <value> <int>3</int> </value>
+            <key> <string>_function</string> </key>
+            <value> <string>ERP5Site_deleteVifibAccounting</string> </value>
         </item>
         <item>
-            <key> <string>_bind_names</string> </key>
-            <value>
-              <object>
-                <klass>
-                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
-                </klass>
-                <tuple/>
-                <state>
-                  <dictionary>
-                    <item>
-                        <key> <string>_asgns</string> </key>
-                        <value>
-                          <dictionary>
-                            <item>
-                                <key> <string>name_container</string> </key>
-                                <value> <string>container</string> </value>
-                            </item>
-                            <item>
-                                <key> <string>name_context</string> </key>
-                                <value> <string>context</string> </value>
-                            </item>
-                            <item>
-                                <key> <string>name_m_self</string> </key>
-                                <value> <string>script</string> </value>
-                            </item>
-                            <item>
-                                <key> <string>name_subpath</string> </key>
-                                <value> <string>traverse_subpath</string> </value>
-                            </item>
-                          </dictionary>
-                        </value>
-                    </item>
-                  </dictionary>
-                </state>
-              </object>
-            </value>
-        </item>
-        <item>
-            <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-from DateTime import DateTime\n
-b = DateTime().timeTime()\n
-BLACKLIST_RELATIVE_URL_LIST = (\n
-  \'accounting_module/template_sale_invoice_transaction\',\n
-  \'open_sale_order_module/slapos_accounting_open_sale_order_line_template\',\n
-  \'open_sale_order_module/slapos_accounting_open_sale_order_template\',\n
-  \'sale_packing_list_module/slapos_accounting_instance_delivery_line_template\',\n
-  \'sale_packing_list_module/slapos_accounting_instance_delivery_template\',\n
-  \'sale_trade_condition_module/payzen_sale_trade_condition\',\n
-  \'sale_trade_condition_module/slapos_aggregated_trade_condition\',\n
-  \'sale_trade_condition_module/slapos_consumption_trade_condition\',\n
-  \'sale_trade_condition_module/slapos_subscription_trade_condition\',\n
-)\n
-portal = context.getPortalObject()\n
-module_list = (\n
-    portal.accounting_module,\n
-    portal.internal_packing_list_module,\n
-    portal.open_sale_order_module,\n
-    portal.portal_simulation,\n
-    portal.purchase_packing_list_module,\n
-    portal.sale_order_module,\n
-    portal.sale_packing_list_module,\n
-    portal.sale_trade_condition_module,\n
-  )\n
-tag = script.id\n
-if bg:\n
-  if portal.portal_activities.countMessageWithTag(tag) > 0:\n
-    raise TypeError(\'Already running\')\n
-  for module in module_list:\n
-    getattr(module.activate(tag=tag), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
-  return \'Done.\'\n
-\n
-deleted = False\n
-if context in module_list:\n
-  id_list = [q.getId() for q in \\\n
-     portal.portal_catalog(parent_uid=context.getUid(), limit=100) if q.getRelativeUrl() not in BLACKLIST_RELATIVE_URL_LIST]\n
-  if id_list:\n
-    deleted = True\n
-    context.deleteContent(id_list)\n
-    e = DateTime().timeTime() - b\n
-    script.log(\'Deleted %s from %s in %.3ss, so %.3s/s\' % (len(id_list), context.getId(), e, len(id_list)/e))\n
-\n
-if deleted:\n
-  getattr(context.activate(tag=tag), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
-else:\n
-  script.log(\'Finished module %s\' % context.getPath())\n
-
-
-]]></string> </value>
-        </item>
-        <item>
-            <key> <string>_params</string> </key>
-            <value> <string>bg=1</string> </value>
+            <key> <string>_module</string> </key>
+            <value> <string>SlapOSUpgrader</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
             <value> <string>03_ERP5Site_deleteVifibAccounting</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <string></string> </value>
         </item>
       </dictionary>
     </pickle>
