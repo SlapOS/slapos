@@ -1,7 +1,7 @@
 <type_roles>
   <role id='Auditor; Author'>
-   <property id='title'>Member</property>
-   <multi_property id='category'>role/member</multi_property>
+   <property id='title'>Person Shadow</property>
+   <multi_property id='category'>role/shadow/person</multi_property>
    <multi_property id='base_category'>role</multi_property>
   </role>
 </type_roles>

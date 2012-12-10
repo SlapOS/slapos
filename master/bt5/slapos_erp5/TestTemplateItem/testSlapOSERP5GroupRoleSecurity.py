@@ -1373,3 +1373,21 @@ class TestWebPage(TestSlapOSGroupRoleSecurityMixin):
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
+
+class TestIntegrationTool(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.portal_integrations
+    self.assertSecurityGroup(module,
+        ['R-SHADOW-PERSON', 'ERP5TypeTestCase'], False)
+    self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
+    self.assertRoles(module, 'ERP5TypeTestCase', ['Owner'])
+
+class TestIntegrationSite(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.portal_integrations
+    product = module.newContent(
+        portal_type='Integration Site')
+    self.assertSecurityGroup(product,
+        ['R-SHADOW-PERSON', self.user_id], False)
+    self.assertRoles(product, 'R-SHADOW-PERSON', ['Auditor', 'Author'])
+    self.assertRoles(product, self.user_id, ['Owner'])

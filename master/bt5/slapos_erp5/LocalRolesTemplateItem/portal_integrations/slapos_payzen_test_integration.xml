@@ -1,5 +1,9 @@
 <local_roles_item>
  <local_roles>
+  <role id='R-SHADOW-PERSON'>
+   <item>Auditor</item>
+   <item>Author</item>
+  </role>
   <role id='zope'>
    <item>Owner</item>
   </role>
