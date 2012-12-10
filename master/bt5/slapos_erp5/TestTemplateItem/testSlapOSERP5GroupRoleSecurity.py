@@ -841,6 +841,23 @@ class TestPaymentTransaction(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+  def test_ShadowUser(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.accounting_module.newContent(
+        portal_type='Payment Transaction')
+    product.edit(
+        destination_section_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    shadow_reference = 'SHADOW-%s' % reference
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id, shadow_reference], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, shadow_reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
 class TestPurchaseInvoiceTransaction(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
     product = self.portal.accounting_module.newContent(

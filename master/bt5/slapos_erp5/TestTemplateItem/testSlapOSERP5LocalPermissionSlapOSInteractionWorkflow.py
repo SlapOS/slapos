@@ -261,3 +261,19 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     self.assertSecurityGroup(slave_instance, [self.user_id, 'G-COMPANY',
         software_instance.getReference(), computer.getReference(),
         hosting_subscription.getReference()], False)
+
+  def test_PaymentTransaction_setDestinationSection(self):
+    self._makePerson()
+    payment_transaction = self.portal.accounting_module.newContent(
+        portal_type='Payment Transaction')
+    self.assertSecurityGroup(payment_transaction, [self.user_id,
+        'G-COMPANY'],
+        False)
+
+    payment_transaction.edit(
+        destination_section=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(payment_transaction, [self.user_id,
+        'G-COMPANY', 'SHADOW-%s' % self.person_user.getReference()],
+        False)
