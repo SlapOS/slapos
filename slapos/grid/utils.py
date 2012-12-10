@@ -254,7 +254,7 @@ def bootstrapBuildout(path, buildout=None,
     invocation_list.extend(additional_buildout_parametr_list)
   else:
     try:
-      import zc.buildout
+      __import__('zc.buildout')
     except ImportError:
       logger.warning('Using old style bootstrap of included bootstrap file. '
         'Consider having zc.buildout available in search path.')
