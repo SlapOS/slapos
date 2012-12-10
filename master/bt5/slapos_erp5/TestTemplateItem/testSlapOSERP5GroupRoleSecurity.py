@@ -1417,3 +1417,30 @@ class TestSystemEventModule(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Author'])
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
     self.assertRoles(module, 'ERP5TypeTestCase', ['Owner'])
+
+class TestPayzenEvent(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    product = self.portal.system_event_module.newContent(
+        portal_type='Payzen Event')
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_ShadowUser(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.system_event_module.newContent(
+        portal_type='Payzen Event')
+    product.edit(
+        destination_section_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    shadow_reference = 'SHADOW-%s' % reference
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id, shadow_reference], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, shadow_reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
