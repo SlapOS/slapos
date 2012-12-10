@@ -80,7 +80,7 @@ if bg:\n
   if portal.portal_activities.countMessageWithTag(tag) > 0:\n
     raise TypeError(\'Already running\')\n
   for module in module_list:\n
-    getattr(module.activate(tag=tag, priority=2), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
+    getattr(module.activate(tag=tag), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
   return \'Done.\'\n
 \n
 deleted = False\n
@@ -95,7 +95,7 @@ if context in module_list:\n
     script.log(\'Deleted %s from %s in %.3ss, so %.3s/s\' % (len(id_list), context.getId(), e, len(id_list)/e))\n
 \n
 if deleted:\n
-  getattr(context.activate(tag=tag, priority=2), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
+  getattr(context.activate(tag=tag), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
 else:\n
   script.log(\'Finished module %s\' % context.getPath())\n
 
