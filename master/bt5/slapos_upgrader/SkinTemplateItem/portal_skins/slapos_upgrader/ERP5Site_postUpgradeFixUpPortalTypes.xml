@@ -86,6 +86,14 @@ getPortalType(\'Software Instance\').setTypeBaseCategoryList((\n
     \'aggregate\', \'causality\', \'specialise\'\n
 ))\n
 \n
+# fix Software Product\n
+getPortalType(\'Software Product\').setTypePropertySheetList((\n
+    \'DefaultImage\', \'SlapOSSoftwareProductConstraint\'\n
+))\n
+getPortalType(\'Software Product\').setTypeAllowedContentTypeList((\n
+    \'Embedded File\', \'Purchase Supply Line\', \'Sale Supply Line\'\n
+))\n
+\n
 # fix Types Tool\n
 getPortalType(\'Types Tool\').setTypeAllowedContentTypeList((\n
     \'Base Type\', \'Gadget Type\'\n
