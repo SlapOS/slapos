@@ -50,17 +50,24 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string encoding="cdata"><![CDATA[
+
+portal = context.getPortalObject()\n
+tag = script.id\n
+if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+  raise TypeError(\'Already running\')\n
 \n
-portal.ERP5Site_postUpgradeFixUpPortalDeliveries()\n
-portal.ERP5Site_postUpgradeFixUpPortalTemplates()\n
-portal.ERP5Site_postUpgradeFixUpPortalTypes()\n
-portal.ERP5Site_postUpgradeFixUpPortalPropertySheets()\n
-portal.ERP5Site_postUpgradeFixUpPortalRules()\n
-portal.ERP5Site_postUpgradeFixUpPortalSkins()\n
+portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalDeliveries()\n
+portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalTemplates()\n
+portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalTypes()\n
+portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalPropertySheets()\n
+portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalRules()\n
+portal.activate(tag=tag).ERP5Site_postUpgradeFixUpPortalSkins()\n
 \n
 return \'Done.\'\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
