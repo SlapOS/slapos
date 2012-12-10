@@ -91,6 +91,8 @@ if context in module_list:\n
 \n
 if deleted:\n
   getattr(context.activate(tag=tag), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
+else:\n
+  script.log(\'Finished module %s\' % context.getPath())\n
 
 
 ]]></string> </value>
