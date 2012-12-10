@@ -1408,3 +1408,12 @@ class TestIntegrationSite(TestSlapOSGroupRoleSecurityMixin):
         ['R-SHADOW-PERSON', self.user_id], False)
     self.assertRoles(product, 'R-SHADOW-PERSON', ['Auditor', 'Author'])
     self.assertRoles(product, self.user_id, ['Owner'])
+
+class TestSystemEventModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.system_event_module
+    self.assertSecurityGroup(module,
+        ['R-SHADOW-PERSON', 'ERP5TypeTestCase', 'G-COMPANY'], False)
+    self.assertRoles(module, 'R-SHADOW-PERSON', ['Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'ERP5TypeTestCase', ['Owner'])

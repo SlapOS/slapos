@@ -38,5 +38,6 @@ software_instance_module
 software_product_module
 software_release_module
 support_request_module
+system_event_module
 transformation_module
 web_page_module
