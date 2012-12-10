@@ -807,8 +807,9 @@ class TestAccountingTransactionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.accounting_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'zope'], True)
+        ['G-COMPANY', 'zope', 'R-SHADOW-PERSON'], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestAccountingTransaction(TestSlapOSGroupRoleSecurityMixin):
