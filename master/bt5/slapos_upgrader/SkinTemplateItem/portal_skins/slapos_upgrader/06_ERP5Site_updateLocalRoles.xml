@@ -50,9 +50,28 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>context.getPortalObject().ERP5Site_reindexAll()\n
+            <value> <string encoding="cdata"><![CDATA[
+
+portal = context.getPortalObject()\n
+\n
+portal_type_list = []\n
+for portal_type in portal.portal_types.contentValues():\n
+  if len(portal_type.contentValues(portal_type=\'Role Information\')) > 0:\n
+    portal_type_list.append(portal_type.getId())\n
+\n
+tag = script.id\n
+if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+  raise TypeError(\'Already running\')\n
+method_id = \'Base_updateSlapOSLocalRoles\'\n
+portal.portal_catalog.searchAndActivate(\n
+  portal_type=portal_type_list,\n
+  method_id=method_id,\n
+  activate_kw={\'tag\': tag,}\n
+)\n
 return \'Done.\'\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -60,7 +79,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>03_ERP5Site_reindex</string> </value>
+            <value> <string>06_ERP5Site_updateLocalRoles</string> </value>
         </item>
       </dictionary>
     </pickle>

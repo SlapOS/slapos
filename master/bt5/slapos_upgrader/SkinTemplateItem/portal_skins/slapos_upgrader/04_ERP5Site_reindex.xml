@@ -50,34 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
-portal = context.getPortalObject()\n
-tag = script.id\n
-if portal.portal_activities.countMessageWithTag(tag) > 0:\n
-  raise TypeError(\'Already running\')\n
-method_id = \'Base_deleteGrouped\'\n
-for module in (\n
-  portal.accounting_module,\n
-  portal.internal_packing_list_module,\n
-  portal.open_sale_order_module,\n
-  portal.portal_simulation,\n
-  portal.purchase_packing_list_module,\n
-  portal.sale_order_module,\n
-  portal.sale_packing_list_module,\n
-  portal.sale_trade_condition_module,\n
-  ):\n
-  portal.portal_catalog.searchAndActivate(\n
-    parent_uid=module.getUid(),\n
-    method_id=method_id,\n
-    packet_size=20,\n
-    activity_count=1,\n
-    activate_kw={\'tag\': tag}\n
-  )\n
+            <value> <string>context.getPortalObject().ERP5Site_reindexAll()\n
 return \'Done.\'\n
-
-
-]]></string> </value>
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
@@ -85,7 +60,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>04_ERP5Site_deleteVifibAccounting</string> </value>
+            <value> <string>04_ERP5Site_reindex</string> </value>
         </item>
       </dictionary>
     </pickle>

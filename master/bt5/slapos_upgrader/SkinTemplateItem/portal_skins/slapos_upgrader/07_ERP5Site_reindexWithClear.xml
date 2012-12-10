@@ -60,7 +60,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>06_ERP5Site_reindexWithClear</string> </value>
+            <value> <string>07_ERP5Site_reindexWithClear</string> </value>
         </item>
       </dictionary>
     </pickle>

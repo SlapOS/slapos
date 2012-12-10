@@ -53,21 +53,27 @@
             <value> <string encoding="cdata"><![CDATA[
 
 portal = context.getPortalObject()\n
-\n
-portal_type_list = []\n
-for portal_type in portal.portal_types.contentValues():\n
-  if len(portal_type.contentValues(portal_type=\'Role Information\')) > 0:\n
-    portal_type_list.append(portal_type.getId())\n
-\n
 tag = script.id\n
 if portal.portal_activities.countMessageWithTag(tag) > 0:\n
   raise TypeError(\'Already running\')\n
-method_id = \'Base_updateSlapOSLocalRoles\'\n
-portal.portal_catalog.searchAndActivate(\n
-  portal_type=portal_type_list,\n
-  method_id=method_id,\n
-  activate_kw={\'tag\': tag,}\n
-)\n
+method_id = \'Base_deleteGrouped\'\n
+for module in (\n
+  portal.accounting_module,\n
+  portal.internal_packing_list_module,\n
+  portal.open_sale_order_module,\n
+  portal.portal_simulation,\n
+  portal.purchase_packing_list_module,\n
+  portal.sale_order_module,\n
+  portal.sale_packing_list_module,\n
+  portal.sale_trade_condition_module,\n
+  ):\n
+  portal.portal_catalog.searchAndActivate(\n
+    parent_uid=module.getUid(),\n
+    method_id=method_id,\n
+    packet_size=20,\n
+    activity_count=1,\n
+    activate_kw={\'tag\': tag}\n
+  )\n
 return \'Done.\'\n
 
 
@@ -79,7 +85,7 @@ return \'Done.\'\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>05_ERP5Site_updateLocalRoles</string> </value>
+            <value> <string>03_ERP5Site_deleteVifibAccounting</string> </value>
         </item>
       </dictionary>
     </pickle>
