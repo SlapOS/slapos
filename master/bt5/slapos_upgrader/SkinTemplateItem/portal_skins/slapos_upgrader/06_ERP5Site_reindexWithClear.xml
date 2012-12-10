@@ -50,23 +50,8 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>BLACKLIST_RELATIVE_URL_LIST = (\n
-  \'accounting_module/template_sale_invoice_transaction\',\n
-  \'open_sale_order_module/slapos_accounting_open_sale_order_line_template\',\n
-  \'open_sale_order_module/slapos_accounting_open_sale_order_template\',\n
-  \'sale_packing_list_module/slapos_accounting_instance_delivery_line_template\',\n
-  \'sale_packing_list_module/slapos_accounting_instance_delivery_template\',\n
-  \'sale_trade_condition_module/payzen_sale_trade_condition\',\n
-  \'sale_trade_condition_module/slapos_aggregated_trade_condition\',\n
-  \'sale_trade_condition_module/slapos_consumption_trade_condition\',\n
-  \'sale_trade_condition_module/slapos_subscription_trade_condition\',\n
-)\n
-\n
-document = context\n
-if document.getRelativeUrl() in BLACKLIST_RELATIVE_URL_LIST:\n
-  script.log(\'Not deleted blacklisted %s\' % document.getRelativeUrl())\n
-  return\n
-document.getParentValue().deleteContent(document.getId())\n
+            <value> <string>context.getPortalObject().ERP5Site_reindexAll(clear_catalog=1)\n
+return \'Done.\'\n
 </string> </value>
         </item>
         <item>
@@ -75,7 +60,7 @@ document.getParentValue().deleteContent(document.getId())\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>Base_deleteGrouped</string> </value>
+            <value> <string>06_ERP5Site_reindexWithClear</string> </value>
         </item>
       </dictionary>
     </pickle>

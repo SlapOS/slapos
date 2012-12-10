@@ -52,36 +52,52 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
+BLACKLIST_RELATIVE_URL_LIST = (\n
+  \'accounting_module/template_sale_invoice_transaction\',\n
+  \'open_sale_order_module/slapos_accounting_open_sale_order_line_template\',\n
+  \'open_sale_order_module/slapos_accounting_open_sale_order_template\',\n
+  \'sale_packing_list_module/slapos_accounting_instance_delivery_line_template\',\n
+  \'sale_packing_list_module/slapos_accounting_instance_delivery_template\',\n
+  \'sale_trade_condition_module/payzen_sale_trade_condition\',\n
+  \'sale_trade_condition_module/slapos_aggregated_trade_condition\',\n
+  \'sale_trade_condition_module/slapos_consumption_trade_condition\',\n
+  \'sale_trade_condition_module/slapos_subscription_trade_condition\',\n
+)\n
 portal = context.getPortalObject()\n
-tag = script.id\n
-if portal.portal_activities.countMessageWithTag(tag) > 0:\n
-  raise TypeError(\'Already running\')\n
-method_id = \'Base_deleteGrouped\'\n
-for module in (\n
-  portal.accounting_module,\n
-  portal.internal_packing_list_module,\n
-  portal.open_sale_order_module,\n
-  portal.portal_simulation,\n
-  portal.purchase_packing_list_module,\n
-  portal.sale_order_module,\n
-  portal.sale_packing_list_module,\n
-  portal.sale_trade_condition_module,\n
-  ):\n
-  portal.portal_catalog.searchAndActivate(\n
-    parent_uid=module.getUid(),\n
-    method_id=method_id,\n
-    packet_size=20,\n
-    activity_count=1,\n
-    activate_kw={\'tag\': tag}\n
+module_list = (\n
+    portal.accounting_module,\n
+    portal.internal_packing_list_module,\n
+    portal.open_sale_order_module,\n
+    portal.portal_simulation,\n
+    portal.purchase_packing_list_module,\n
+    portal.sale_order_module,\n
+    portal.sale_packing_list_module,\n
+    portal.sale_trade_condition_module,\n
   )\n
-return \'Done.\'\n
+tag = script.id\n
+if bg:\n
+  if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+    raise TypeError(\'Already running\')\n
+  for module in module_list:\n
+    getattr(module.activate(tag=tag), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
+  return \'Done.\'\n
+\n
+deleted = False\n
+if context in module_list:\n
+  id_list = [q.getId() for q in context.contentValues()[:20] if q.getRelativeUrl() not in BLACKLIST_RELATIVE_URL_LIST]\n
+  if id_list:\n
+    deleted = True\n
+    context.deleteContent(id_list)\n
+\n
+if deleted:\n
+  getattr(context.activate(tag=tag), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
 
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>bg=1</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

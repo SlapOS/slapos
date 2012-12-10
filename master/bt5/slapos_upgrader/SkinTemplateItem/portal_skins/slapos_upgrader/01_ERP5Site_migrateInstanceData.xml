@@ -50,8 +50,12 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string encoding="cdata"><![CDATA[
+
+portal = context.getPortalObject()\n
 tag = script.id\n
+if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+  raise TypeError(\'Already running\')\n
 method_id = \'Instance_migrateData\'\n
 for module in (\n
   portal.hosting_subscription_module,\n
@@ -66,7 +70,9 @@ for module in (\n
   )\n
 \n
 return \'Done.\'\n
-</string> </value>
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
