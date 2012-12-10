@@ -52,6 +52,7 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
+from DateTime import DateTime\n
 BLACKLIST_RELATIVE_URL_LIST = (\n
   \'accounting_module/template_sale_invoice_transaction\',\n
   \'open_sale_order_module/slapos_accounting_open_sale_order_line_template\',\n
@@ -84,10 +85,14 @@ if bg:\n
 \n
 deleted = False\n
 if context in module_list:\n
-  id_list = [q.getId() for q in context.contentValues()[:20] if q.getRelativeUrl() not in BLACKLIST_RELATIVE_URL_LIST]\n
+  b = DateTime().timeTime()\n
+  id_list = [q.getId() for q in \\\n
+     portal.portal_catalog(parent_uid=context.getUid(), limit=20) if q.getRelativeUrl() not in BLACKLIST_RELATIVE_URL_LIST]\n
   if id_list:\n
     deleted = True\n
     context.deleteContent(id_list)\n
+    e = DateTime().timeTime() - b\n
+    script.log(\'Deleted %s from %s in %.3ss, so %.3s/s\' % (len(id_list), context.getId(), e, len(id_list)/e))\n
 \n
 if deleted:\n
   getattr(context.activate(tag=tag), \'03_ERP5Site_deleteVifibAccounting\')(bg=0)\n
