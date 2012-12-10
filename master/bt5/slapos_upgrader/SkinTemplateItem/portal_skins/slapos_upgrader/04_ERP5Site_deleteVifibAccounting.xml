@@ -52,11 +52,11 @@
             <key> <string>_body</string> </key>
             <value> <string encoding="cdata"><![CDATA[
 
-raise NotImplementedError(\'Use catalog\')\n
 portal = context.getPortalObject()\n
 tag = script.id\n
 if portal.portal_activities.countMessageWithTag(tag) > 0:\n
   raise TypeError(\'Already running\')\n
+method_id = \'Base_deleteGrouped\'\n
 for module in (\n
   portal.accounting_module,\n
   portal.internal_packing_list_module,\n
@@ -67,20 +67,13 @@ for module in (\n
   portal.sale_packing_list_module,\n
   portal.sale_trade_condition_module,\n
   ):\n
-  method_id = \'Base_deleteGrouped_%s\'  % module.getId()\n
-  module.recurseCallMethod(\n
-    method_id,\n
-    max_depth=1,\n
-    min_depth=1,\n
-    max_retry=0,\n
-    activity_count=20,\n
-    activate_kw={\n
-      \'tag\': tag,\n
-      \'group_method_id\': method_id,\n
-      \'group_method_cost\': 1./20, # fire up 20 jobs in same transaction\n
-      }\n
+  portal.portal_catalog.searchAndActivate(\n
+    parent_uid=module.getUid(),\n
+    method_id=method_id,\n
+    packet_size=20,\n
+    activity_count=1,\n
+    activate_kw={\'tag\': tag}\n
   )\n
-\n
 return \'Done.\'\n
 
 

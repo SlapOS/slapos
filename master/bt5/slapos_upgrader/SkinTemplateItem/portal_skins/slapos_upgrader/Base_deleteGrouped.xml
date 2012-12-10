@@ -62,17 +62,16 @@
   \'sale_trade_condition_module/slapos_subscription_trade_condition\',\n
 )\n
 \n
-for document in object_list:\n
-  document = document[0]\n
-  if document.getRelativeUrl() in BLACKLIST_RELATIVE_URL_LIST:\n
-    script.log(\'Not deleted blacklisted %s\' % document.getRelativeUrl())\n
-    continue\n
-  document.getParentValue().deleteContent(document.getId())\n
+document = context\n
+if document.getRelativeUrl() in BLACKLIST_RELATIVE_URL_LIST:\n
+  script.log(\'Not deleted blacklisted %s\' % document.getRelativeUrl())\n
+  return\n
+document.getParentValue().deleteContent(document.getId())\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>object_list</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
