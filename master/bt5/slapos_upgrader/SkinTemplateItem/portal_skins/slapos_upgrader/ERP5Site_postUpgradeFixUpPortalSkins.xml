@@ -62,6 +62,11 @@ for name, layers in portal_skins.getSkinPaths():\n
       layer_list.insert(layer_list.index(\'erp5_open_trade\'), \'erp5_ooo_import\')\n
       portal_skins.manage_skinLayers(skinpath=layer_list, skinname=name, add_skin=1)\n
       portal_skins.getPortalObject().changeSkin(None)\n
+\n
+# drop not needed custom\n
+id = \'SQLBase_reserveMessageList\'\n
+if id in portal_skins.custom.objectIds():\n
+  portal_skins.custom.manage_delObjects([id])\n
 </string> </value>
         </item>
         <item>
