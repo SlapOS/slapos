@@ -53,6 +53,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 from DateTime import DateTime\n
+b = DateTime().timeTime()\n
 BLACKLIST_RELATIVE_URL_LIST = (\n
   \'accounting_module/template_sale_invoice_transaction\',\n
   \'open_sale_order_module/slapos_accounting_open_sale_order_line_template\',\n
@@ -85,7 +86,6 @@ if bg:\n
 \n
 deleted = False\n
 if context in module_list:\n
-  b = DateTime().timeTime()\n
   id_list = [q.getId() for q in \\\n
      portal.portal_catalog(parent_uid=context.getUid(), limit=100) if q.getRelativeUrl() not in BLACKLIST_RELATIVE_URL_LIST]\n
   if id_list:\n
