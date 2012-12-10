@@ -919,8 +919,9 @@ class TestCurrencyModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.currency_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'admin'], True)
+        ['G-COMPANY', 'admin', 'R-SHADOW-PERSON'], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
     self.assertRoles(module, 'admin', ['Owner'])
 
 class TestCurrency(TestSlapOSGroupRoleSecurityMixin):
@@ -929,8 +930,9 @@ class TestCurrency(TestSlapOSGroupRoleSecurityMixin):
         portal_type='Currency')
     product.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(product,
-        ['G-COMPANY', self.user_id], False)
+        ['G-COMPANY', self.user_id, 'R-SHADOW-PERSON'], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, 'R-SHADOW-PERSON', ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestSaleTradeConditionModule(TestSlapOSGroupRoleSecurityMixin):
