@@ -91,6 +91,7 @@ REQUIRED_BT5_ID_LIST = [\n
   \'erp5_invoicing\',\n
   \'erp5_ingestion\',\n
   \'erp5_item\',\n
+  \'erp5_open_trade\',\n
   \'erp5_km\',\n
   \'erp5_simulation\',\n
   \'erp5_trade\',\n
