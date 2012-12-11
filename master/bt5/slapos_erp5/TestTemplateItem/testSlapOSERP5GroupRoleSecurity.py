@@ -1452,5 +1452,5 @@ class TestPayzenEvent(TestSlapOSGroupRoleSecurityMixin):
     self.assertSecurityGroup(product,
         ['G-COMPANY', self.user_id, shadow_reference], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
-    self.assertRoles(product, shadow_reference, ['Auditor'])
+    self.assertRoles(product, shadow_reference, ['Assignee'])
     self.assertRoles(product, self.user_id, ['Owner'])
