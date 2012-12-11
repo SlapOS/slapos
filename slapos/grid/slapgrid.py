@@ -622,7 +622,7 @@ class Slapgrid(object):
             software_release.destroyed()
           except NotFoundError:
             pass
-    logger.info("Finished software releases...")
+    logger.info("Finished software releases.")
 
     # Return success value
     if not clean_run:
@@ -957,7 +957,7 @@ class Slapgrid(object):
           logger.error('Problem during reporting error, continuing:\n' +
             exception)
 
-    logger.info("Finished computer partitions...")
+    logger.info("Finished computer partitions.")
 
     # Return success value
     if not clean_run:
@@ -1278,7 +1278,7 @@ class Slapgrid(object):
               'destroying Computer Partition %r. Error is :\n%r' %
                   (computer_partition.getId(), server_error.args[0]))
 
-    logger.info("Finished usage reports...")
+    logger.info("Finished usage reports.")
 
     # Return success value
     if not clean_run:
