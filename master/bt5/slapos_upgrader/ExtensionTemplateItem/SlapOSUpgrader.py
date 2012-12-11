@@ -96,7 +96,7 @@ def ERP5Site_deleteVifibAccounting(self):
   module_id_list = ('accounting_module', 'internal_packing_list_module',
       'open_sale_order_module', 'purchase_packing_list_module',
       'sale_order_module', 'sale_packing_list_module',
-      'sale_trade_condition_module')
+      'sale_trade_condition_module', 'system_event_module')
   for module_id in module_id_list:
     module = getattr(portal, module_id)
     portal_type = module.getPortalType()
