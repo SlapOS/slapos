@@ -85,9 +85,6 @@ LOCALE_ENVIRONMENT_REMOVE_LIST = [
   'LC_TIME',
 ]
 
-class AlreadyRunning(Exception):
-  pass
-
 
 class SlapPopen(subprocess.Popen):
   """
@@ -141,7 +138,6 @@ def setRunning(pid_file):
   logger = logging.getLogger('Slapgrid')
   if os.path.exists(pid_file):
     # Pid file is present
-    logger.warning('pid file already exists : %s' % (pid_file))
     try:
       pid = int(open(pid_file, 'r').readline())
     except ValueError:
@@ -152,8 +148,10 @@ def setRunning(pid_file):
       process_name = os.path.basename(sys.argv[0])
       if process_name in open('/proc/%s/cmdline' % pid, 'r').readline():
         # In case process is present, ignore.
-        raise AlreadyRunning('A slapgrid process is running with pid %s' % pid)
-    logger.info('Pid file %r was stale one, overwritten' % pid_file)
+        logger.warning('New slapos process started, but another slapgrid '
+                    'process is aleady running with pid %s, exiting.' % pid)
+        sys.exit(10)
+    logger.info('Existing pid file %r was stale one, overwritten' % pid_file)
   # Start new process
   write_pid(pid_file)
 
