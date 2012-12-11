@@ -83,6 +83,58 @@ class TestSlapOSComputerPartitionConstraint(TestSlapOSConstraintMixin):
     self.assertFalse(consistency_message in self.getMessageList(partition))
     self.portal.portal_workflow._jumpToStateFor(partition, 'free')
 
+  def test_busy_partition_has_one_related_instance(self):
+    computer = self.portal.computer_module.template_computer\
+        .Base_createCloneDocument(batch_mode=1)
+    partition = computer.newContent(portal_type='Computer Partition')
+    self.portal.portal_workflow._jumpToStateFor(partition, 'busy')
+    software_instance = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+    software_instance.edit(aggregate=partition.getRelativeUrl())
+    software_instance_2 = self.portal.software_instance_module\
+        .template_software_instance.Base_createCloneDocument(batch_mode=1)
+    slave_instance = self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance')
+    slave_instance_2 = self.portal.software_instance_module.newContent(
+        portal_type='Slave Instance')
+
+    partition.immediateReindexObject()
+    software_instance.immediateReindexObject()
+    software_instance_2.immediateReindexObject()
+    slave_instance.immediateReindexObject()
+    slave_instance_2.immediateReindexObject()
+
+    consistency_message = "Arity Error for Relation ['default_aggregate'], " \
+        "arity is equal to 0 but should be between 1 and 1"
+
+    # test the test: no expected message found
+    current_message_list = self.getMessageList(partition)
+    self.assertFalse(consistency_message in current_message_list)
+
+    # check case for Software Instance
+    software_instance.edit(aggregate=None)
+    software_instance.immediateReindexObject()
+    self.assertTrue(consistency_message in self.getMessageList(partition))
+
+    # check case for many Software Instance
+    software_instance.edit(aggregate=partition.getRelativeUrl())
+    software_instance_2.edit(aggregate=partition.getRelativeUrl())
+    software_instance.immediateReindexObject()
+    software_instance_2.immediateReindexObject()
+    consistency_message_2 = "Arity Error for Relation ['default_aggregate'], " \
+        "arity is equal to 2 but should be between 1 and 1"
+    self.assertTrue(consistency_message_2 in self.getMessageList(partition))
+
+    # check case for many Slave Instane
+    software_instance_2.edit(aggregate=None)
+    software_instance_2.immediateReindexObject()
+    slave_instance.edit(aggregate=partition.getRelativeUrl())
+    slave_instance_2.edit(aggregate=partition.getRelativeUrl())
+    slave_instance.immediateReindexObject()
+    slave_instance_2.immediateReindexObject()
+    self.assertFalse(consistency_message in self.getMessageList(partition))
+    self.assertFalse(consistency_message_2 in self.getMessageList(partition))
+
 class TestSlapOSSoftwareInstanceConstraint(TestSlapOSConstraintMixin):
   def afterSetUp(self):
     self.software_instance = self.portal.software_instance_module.newContent(
