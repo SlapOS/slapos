@@ -1,4 +1,15 @@
 account_module
+account_module/bank
+account_module/capital
+account_module/coll_vat
+account_module/equipments
+account_module/inventories
+account_module/payable
+account_module/profit_loss
+account_module/purchase
+account_module/receivable
+account_module/refundable_vat
+account_module/sales
 accounting_module
 campaign_module
 component_module
