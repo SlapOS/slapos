@@ -14,6 +14,7 @@ import os
 import tempfile
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
+from zExceptions import Unauthorized
 
 class Simulator:
   def __init__(self, outfile, method, to_return=None):
@@ -748,6 +749,14 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
         subscription.workflow_history['edit_workflow'][-1]['comment'])
 
 class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
+  def test_REQUEST_disallowed(self):
+    subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    self.assertRaises(
+      Unauthorized,
+      subscription.HostingSubscription_requestUpdateOpenSaleOrder,
+      REQUEST={})
+
   def test_empty_HostingSubscription(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
