@@ -430,7 +430,7 @@ class TestSlapgridCPWithMaster(MasterMixin, unittest.TestCase):
 
   def test_nothing_to_do(self):
 
-    computer = ComputerForTest(self.software_root,self.instance_root,0,0)
+    ComputerForTest(self.software_root,self.instance_root, 0, 0)
 
     self.assertEqual(self.grid.processComputerPartitionList(), slapgrid.SLAPGRID_SUCCESS)
     self.assertSortedListEqual(os.listdir(self.instance_root), ['etc', 'var'])

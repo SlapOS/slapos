@@ -209,8 +209,7 @@ class TestSlap(SlapMixin):
       if parsed_url.path == 'registerComputerPartition' and \
          parsed_qs['computer_reference'][0] == computer_guid and \
          parsed_qs['computer_partition_reference'][0] == partition_id:
-        partition = slapos.slap.ComputerPartition(
-            computer_guid, partition_id)
+        slapos.slap.ComputerPartition(computer_guid, partition_id)
         return (404, {}, '')
       else:
         return (0, {}, '')
@@ -299,7 +298,6 @@ class TestComputer(SlapMixin):
     slap = self.slap
     slap.initializeConnection(self.server_url)
 
-    partition_id = 'PARTITION_01'
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
@@ -419,7 +417,6 @@ class TestComputerPartition(SlapMixin):
 
   def test_request_sends_request(self):
     partition_id = 'PARTITION_01'
-    request_called_amount = 0
     def server_response(self, path, method, body, header):
       parsed_url = urlparse.urlparse(path.lstrip('/'))
       parsed_qs = urlparse.parse_qs(parsed_url.query)
@@ -775,7 +772,6 @@ class TestOpenOrder(SlapMixin):
     computer_guid = self._getTestComputerId()
     requested_partition_id = 'PARTITION_01'
     def server_response(self, path, method, body, header):
-      parsed_url = urlparse.urlparse(path.lstrip('/'))
       from slapos.slap.slap import SoftwareInstance
       slap_partition = SoftwareInstance(
         slap_computer_id=computer_guid,

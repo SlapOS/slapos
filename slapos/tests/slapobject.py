@@ -173,7 +173,7 @@ class TestSoftwareSlapObject(BasicMixin, unittest.TestCase):
     )
     software.install()
 
-  def test_software_install_networkcache_upload_blacklist(self):
+  def test_software_install_networkcache_upload_blacklist_side_effect(self):
     """
       Check if the networkcache upload blacklist parameters only prevent
       blacklisted Software Release to be uploaded.
