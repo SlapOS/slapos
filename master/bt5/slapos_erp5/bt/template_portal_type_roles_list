@@ -1,6 +1,5 @@
 Account
 Account Module
-Payzen Event
 Accounting Period
 Accounting Transaction
 Accounting Transaction Module
@@ -59,6 +58,7 @@ Organisation
 Organisation Module
 PDF
 Payment Transaction
+Payzen Event
 Person
 Person Module
 Phone Call

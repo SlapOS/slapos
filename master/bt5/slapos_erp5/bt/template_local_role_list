@@ -7,6 +7,7 @@ computer_module
 computer_network_module
 credential_update_module
 currency_module
+currency_module/EUR
 data_set_module
 document_ingestion_module
 document_module
