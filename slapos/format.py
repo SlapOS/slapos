@@ -231,8 +231,7 @@ class Computer(object):
     if config.dry_run:
       return
     try:
-      response = slap_computer.updateConfiguration(
-          xml_marshaller.dumps(_getDict(self)))
+      slap_computer.updateConfiguration(xml_marshaller.dumps(_getDict(self)))
     except slap.NotFoundError as error:
       raise slap.NotFoundError("%s\nERROR : This SlapOS node is not recognised by "
           "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
