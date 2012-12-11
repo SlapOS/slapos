@@ -293,3 +293,28 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     self.assertSecurityGroup(payment_transaction, [self.user_id,
         'G-COMPANY', 'SHADOW-%s' % self.person_user.getReference()],
         False)
+
+  def test_IntegrationSite_reindexObject(self):
+    integration_site = self.portal.portal_integrations.newContent(
+        portal_type="Integration Site")
+    self.tic()
+    comment = 'recursiveReindexObject triggered on reindexObject'
+    def verify_recursiveReindexObject_call(self, *args, **kw):
+      if self.getRelativeUrl() == integration_site.getRelativeUrl():
+        if integration_site.workflow_history['edit_workflow'][-1]['comment'] != comment:
+          integration_site.portal_workflow.doActionFor(integration_site, action='edit_action',
+          comment=comment)
+      else:
+        return self.recursiveReindexObject_call(*args, **kw)
+
+    # Replace recursiveReindexObject by a dummy method
+    from Products.ERP5Type.Core.Folder import Folder
+    Folder.recursiveReindexObject_call = Folder.recursiveReindexObject
+    Folder.recursiveReindexObject = verify_recursiveReindexObject_call
+    try:
+      integration_site.reindexObject()
+      self.tic()
+    finally:
+      Folder.recursiveReindexObject = Folder.recursiveReindexObject_call
+    self.assertEqual(comment,
+        integration_site.workflow_history['edit_workflow'][-1]['comment'])

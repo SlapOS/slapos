@@ -16,6 +16,10 @@
   <workflow>local_permission_slapos_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Integration Site</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Payment Transaction</type>
   <workflow>local_permission_slapos_interaction_workflow</workflow>
  </chain>
