@@ -23,6 +23,7 @@ class TestSlapOSDump(testSlapOSMixin):
         'ERP5Site_dumpAlarmToolConfiguration',
         'ERP5Site_dumpBuilderList',
         'ERP5Site_dumpInstalledBusinessTemplateList',
+        'ERP5Site_dumpOrderBuilderList',
         'ERP5Site_dumpPortalTypeActionList',
         'ERP5Site_dumpPortalTypeList',
         'ERP5Site_dumpPortalTypeRoleList',
