@@ -53,29 +53,39 @@
             <value> <string># TODO: Return configured web page in case of system issues.\n
 from ZTUtils import make_query\n
 portal = context.getPortalObject()\n
+person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
-transaction_date, transaction_id = context.PaymentTransaction_getPayzenId()\n
-if transaction_id is not None:\n
-  message = context.Base_translateString("Payment already registered.")\n
-  return context.getWebSiteValue().Base_redirect(keep_items={\'portal_status_message\': message})\n
+def wrapWithShadow(payment_transaction, person_relative_url):\n
+  transaction_date, transaction_id = payment_transaction.PaymentTransaction_getPayzenId()\n
+  if transaction_id is not None:\n
+    message = payment_transaction.Base_translateString("Payment already registered.")\n
+    return web_site.Base_redirect(keep_items={\'portal_status_message\': message})\n
 \n
-callback_websection = context.getWebSiteValue().payzen_callback\n
-query = make_query(dict(transaction=context.getRelativeUrl()))\n
+  system_event = payment_transaction.PaymentTransaction_createPayzenEvent(\n
+    title=\'User navigation script for %s\' % payment_transaction.getTitle(),\n
+    destination_section=person_relative_url,\n
+  )\n
 \n
-system_event = context.PaymentTransaction_createPayzenEvent(\n
-  title=\'User navigation script for %s\' % context.getTitle()\n
-)\n
-system_event.generateManualPaymentPage(\n
-  vads_url_cancel=\'%s?%s\' % (callback_websection.cancel.absolute_url(), query),\n
-  vads_url_error=\'%s?%s\' % (callback_websection.error.absolute_url(), query),\n
-  vads_url_referral=\'%s?%s\' % (callback_websection.referral.absolute_url(), query),\n
-  vads_url_refused=\'%s?%s\' % (callback_websection.refused.absolute_url(), query),\n
-  vads_url_success=\'%s?%s\' % (callback_websection.success.absolute_url(), query),\n
-  vads_url_return=\'%s?%s\' % (getattr(callback_websection, \'return\').absolute_url(), query),\n
-)\n
+  web_site = context.getWebSiteValue()\n
+  callback_websection = web_site.payzen_callback\n
+  query = make_query(dict(transaction=payment_transaction.getRelativeUrl()))\n
+  system_event.generateManualPaymentPage(\n
+    vads_url_cancel=\'%s?%s\' % (callback_websection.cancel.absolute_url(), query),\n
+    vads_url_error=\'%s?%s\' % (callback_websection.error.absolute_url(), query),\n
+    vads_url_referral=\'%s?%s\' % (callback_websection.referral.absolute_url(), query),\n
+    vads_url_refused=\'%s?%s\' % (callback_websection.refused.absolute_url(), query),\n
+    vads_url_success=\'%s?%s\' % (callback_websection.success.absolute_url(), query),\n
+    vads_url_return=\'%s?%s\' % (getattr(callback_websection, \'return\').absolute_url(), query),\n
+  )\n
 \n
-return system_event.contentValues(\n
-  portal_type="Payzen Event Message")[0].getTextContent()\n
+  return system_event.contentValues(\n
+    portal_type="Payzen Event Message")[0].getTextContent()\n
+\n
+\n
+return person.Person_restrictMethodAsShadowUser(\n
+  shadow_document=person,\n
+  callable_object=wrapWithShadow,\n
+  argument_list=[context, person.getRelativeUrl()])\n
 </string> </value>
         </item>
         <item>
