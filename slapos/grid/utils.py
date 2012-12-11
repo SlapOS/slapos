@@ -144,13 +144,10 @@ def setRunning(pid_file):
       pid = None
     # XXX This could use psutil library.
     if pid is not None and os.path.exists("/proc/%s" % pid):
-      #XXX: can we trust sys.argv?
-      process_name = os.path.basename(sys.argv[0])
-      if process_name in open('/proc/%s/cmdline' % pid, 'r').readline():
-        # In case process is present, ignore.
-        logger.warning('New slapos process started, but another slapgrid '
-                    'process is aleady running with pid %s, exiting.' % pid)
-        sys.exit(10)
+      # In case process is present, ignore.
+      logger.warning('New slapos process started, but another slapgrid '
+                  'process is aleady running with pid %s, exiting.' % pid)
+      sys.exit(10)
     logger.info('Existing pid file %r was stale one, overwritten' % pid_file)
   # Start new process
   write_pid(pid_file)
