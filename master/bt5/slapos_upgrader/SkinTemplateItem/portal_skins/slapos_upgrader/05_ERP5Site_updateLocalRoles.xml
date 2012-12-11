@@ -54,14 +54,15 @@
 
 portal = context.getPortalObject()\n
 \n
+tag = script.id\n
+if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+  raise TypeError(\'Already running\')\n
+\n
 portal_type_list = []\n
 for portal_type in portal.portal_types.contentValues():\n
   if len(portal_type.contentValues(portal_type=\'Role Information\')) > 0:\n
     portal_type_list.append(portal_type.getId())\n
 \n
-tag = script.id\n
-if portal.portal_activities.countMessageWithTag(tag) > 0:\n
-  raise TypeError(\'Already running\')\n
 method_id = \'Base_updateSlapOSLocalRoles\'\n
 portal.portal_catalog.searchAndActivate(\n
   portal_type=portal_type_list,\n
