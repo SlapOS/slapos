@@ -146,7 +146,7 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(person, [self.user_id, 'G-COMPANY',
-        person.getReference()], False)
+        person.getReference(), 'SHADOW-%s' % person.getReference()], False)
 
   def test_SoftwareInstallation_setAggregate(self):
     installation = self.portal.software_installation_module.newContent(
