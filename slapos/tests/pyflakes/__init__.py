@@ -32,12 +32,12 @@ import sys
 import unittest
 
 class CheckCodeConsistency(unittest.TestCase):
-  """Lints all SlapOS Node code base."""
+  """Lints all SlapOS Node and SLAP library code base."""
   def setUp(self):
     self._original_argv = sys.argv
     sys.argv = [sys.argv[0],
                 os.path.join(
-                    pkg_resources.get_distribution("slapos.core").location,
+                    pkg_resources.get_distribution('slapos.core').location,
                     'slapos',
                 )
                ]
