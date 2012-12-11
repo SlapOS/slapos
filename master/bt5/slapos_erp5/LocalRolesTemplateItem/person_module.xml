@@ -7,6 +7,9 @@
   <role id='R-MEMBER'>
    <item>Auditor</item>
   </role>
+  <role id='R-SHADOW-PERSON'>
+   <item>Auditor</item>
+  </role>
   <role id='zope'>
    <item>Owner</item>
   </role>

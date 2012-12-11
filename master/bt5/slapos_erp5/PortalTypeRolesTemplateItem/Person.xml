@@ -4,9 +4,17 @@
    <multi_property id='category'>group/company</multi_property>
    <multi_property id='base_category'>group</multi_property>
   </role>
+  <role id='Auditor'>
+   <property id='title'>The Shadow User Himself</property>
+   <property id='description'>Monovalued role</property>
+   <property id='condition'>python: here.getReference('') != ''</property>
+   <property id='base_category_script'>PersonType_getSecurityCategoryFromSelfShadow</property>
+   <multi_property id='base_category'>group</multi_property>
+  </role>
   <role id='Associate'>
    <property id='title'>The User Himself</property>
    <property id='description'>Monovalued role</property>
+   <property id='condition'>python: here.getReference('') != ''</property>
    <property id='base_category_script'>ERP5Type_getSecurityCategoryFromSelf</property>
    <multi_property id='base_category'>group</multi_property>
   </role>

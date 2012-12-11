@@ -440,19 +440,22 @@ class TestPerson(TestSlapOSGroupRoleSecurityMixin):
         reference=reference)
     person.updateLocalRolesOnSecurityGroups()
 
+    shadow_reference = 'SHADOW-%s' % reference
     self.assertSecurityGroup(person,
-        ['G-COMPANY', self.user_id, reference], False)
+        ['G-COMPANY', self.user_id, reference, shadow_reference], False)
     self.assertRoles(person, 'G-COMPANY', ['Assignor'])
     self.assertRoles(person, reference, ['Associate'])
+    self.assertRoles(person, shadow_reference, ['Auditor'])
     self.assertRoles(person, self.user_id, ['Owner'])
 
 class TestPersonModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.person_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'R-MEMBER', 'zope'], False)
+        ['G-COMPANY', 'R-MEMBER', 'zope', 'R-SHADOW-PERSON'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor'])
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestPresentation(TestSlapOSGroupRoleSecurityMixin):
