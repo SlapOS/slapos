@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>person = context.getDestinationSectionValue()\n
+            <value> <string>if context.getCausalityState() != \'diverged\':\n
+  return\n
+person = context.getDestinationSectionValue()\n
 if person is not None:\n
   person.Person_storeOpenSaleOrderJournal()\n
 context.converge()\n
