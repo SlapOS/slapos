@@ -757,6 +757,13 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
       subscription.HostingSubscription_requestUpdateOpenSaleOrder,
       REQUEST={})
 
+  def test_solved_HostingSubscription(self):
+    subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    self.portal.portal_workflow._jumpToStateFor(subscription, 'solved')
+    subscription.HostingSubscription_requestUpdateOpenSaleOrder()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
+
   def test_empty_HostingSubscription(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
