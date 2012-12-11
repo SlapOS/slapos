@@ -336,13 +336,13 @@ def updateFile(file_path, content, mode='0600'):
   """Creates an executable with "content" as content."""
   altered = False
   if not (os.path.isfile(file_path)) or \
-    not(hashlib.md5(open(file_path).read()).digest() ==\
-        hashlib.md5(content).digest()):
-      altered = True
-      file_file = open(file_path, 'w')
-      file_file.write(content)
-      file_file.flush()
-      file_file.close()
+     not(hashlib.md5(open(file_path).read()).digest() ==\
+         hashlib.md5(content).digest()):
+    altered = True
+    file_file = open(file_path, 'w')
+    file_file.write(content)
+    file_file.flush()
+    file_file.close()
   os.chmod(file_path, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
   if oct(stat.S_IMODE(os.stat(file_path).st_mode)) != mode:
     os.chmod(file_path, int(mode, 8))
