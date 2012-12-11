@@ -1,11 +1,7 @@
 <local_roles_item>
  <local_roles>
   <role id='G-COMPANY'>
-   <item>Auditor</item>
-   <item>Author</item>
-  </role>
-  <role id='R-COMPUTER'>
-   <item>Auditor</item>
+   <item>Assignor</item>
   </role>
   <role id='R-MEMBER'>
    <item>Auditor</item>
@@ -13,7 +9,7 @@
   <role id='R-SHADOW-PERSON'>
    <item>Auditor</item>
   </role>
-  <role id='zope'>
+  <role id='admin'>
    <item>Owner</item>
   </role>
  </local_roles>

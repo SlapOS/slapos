@@ -20,6 +20,7 @@ meeting_module
 notification_message_module
 open_sale_order_module
 organisation_module
+organisation_module/slapos
 person_module
 portal_contributions
 portal_gadgets

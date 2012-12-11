@@ -389,9 +389,10 @@ class TestOrganisation(TestSlapOSGroupRoleSecurityMixin):
         portal_type='Organisation')
     organisation.updateLocalRolesOnSecurityGroups()
     self.assertSecurityGroup(organisation,
-        ['G-COMPANY', self.user_id, 'R-MEMBER'], False)
+        ['G-COMPANY', self.user_id, 'R-MEMBER', 'R-SHADOW-PERSON'], False)
     self.assertRoles(organisation, 'G-COMPANY', ['Assignor'])
     self.assertRoles(organisation, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(organisation, 'R-SHADOW-PERSON', ['Auditor'])
     self.assertRoles(organisation, self.user_id, ['Owner'])
 
   test_Member = test_GroupCompany
@@ -400,10 +401,11 @@ class TestOrganisationModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.organisation_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', 'zope'], False)
+        ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', 'zope', 'R-SHADOW-PERSON'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor'])
     self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestPDF(TestSlapOSGroupRoleSecurityMixin):
