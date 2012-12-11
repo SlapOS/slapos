@@ -11,6 +11,7 @@ import xml_marshaller
 from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager
 from DateTime import DateTime
+import json
 
 def changeSkin(skin_name):
   def decorator(func):
@@ -473,6 +474,45 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
         [q.getAggregate() for q in line_list]
     )
 
+  @changeSkin('Hosting')
+  def usePayzenManually(self, web_site):
+    acknowledgement_json = \
+      web_site.AcknowledgementTool_getUserUnreadAcknowledgementJSON()
+    acknowledgement_dict = json.loads(acknowledgement_json)
+    self.assertTrue('result' in acknowledgement_dict, "%s" % acknowledgement_dict)
+
+    message_list = acknowledgement_dict['result']
+    self.assertEquals(len(message_list), 1, "%s" % message_list)
+    message = message_list[0]
+
+    self.assertTrue('acknowledge_url' in message, "%s" % message)
+    self.assertTrue('text_content' in message, "%s" % message)
+
+    acknowledge_url = message['acknowledge_url']
+    text_content = message['text_content']
+
+    self.assertTrue(acknowledge_url.startswith(
+      'AcknowledgementTool_acknowledge?acknowledgement_url=event_module/'),
+      "%s" % acknowledge_url)
+
+    self.assertTrue(text_content.startswith(
+      'Please pay your payment by clicking <a href="accounting_module/'),
+      "%s" % text_content)
+    self.assertTrue(text_content.endswith(
+      '/PaymentTransaction_redirectToManualPayzenPayment">here</a>.'),
+      "%s" % text_content)
+
+    # Pay to payzen
+    to_click_url = re.search('href="(.+?)"', text_content).group(1)
+    module, document_id, skin = to_click_url.split('/')
+    click_result = \
+      web_site.accounting_module[document_id].\
+      PaymentTransaction_redirectToManualPayzenPayment()
+
+    # Acknowledge
+    event_url = str(acknowledge_url.split('=')[-1])
+    web_site.AcknowledgementTool_acknowledge(acknowledgement_url=event_url)
+
 
   def test(self):
     # some preparation
@@ -679,3 +719,10 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       person = self.portal.portal_catalog.getResultValue(portal_type='Person',
           reference=person_reference)
       self.assertPersonDocumentCoverage(person)
+
+    self.login(public_reference)
+    self.usePayzenManually(self.web_site)
+
+    self.login(friend_reference)
+    self.usePayzenManually(self.web_site)
+
