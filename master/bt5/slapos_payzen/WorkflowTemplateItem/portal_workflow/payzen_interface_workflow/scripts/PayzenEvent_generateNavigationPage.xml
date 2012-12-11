@@ -76,9 +76,6 @@ transaction_date, transaction_id = payment_transaction.PaymentTransaction_genera
 if transaction_id is None:\n
   raise ValueError, "Transaction already registered"\n
 \n
-payzen_event.confirm()\n
-payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
-\n
 today = now.toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d\')\n
 payzen_dict = {\n
   \'vads_currency\': payment_transaction.getResourceValue().Currency_getIntegrationMapping(),\n
@@ -105,6 +102,9 @@ payzen_event.newContent(\n
   portal_type=\'Payzen Event Message\',\n
   text_content=html_document,\n
 )\n
+\n
+payzen_event.confirm()\n
+payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
 </string> </value>
         </item>
         <item>
