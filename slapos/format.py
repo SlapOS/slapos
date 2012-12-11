@@ -1225,6 +1225,8 @@ def main(*args):
       return dry_callAndRead(argument_list, raise_on_error)
     callAndRead = logging_callAndRead
   # Add delay between 0 and 1 hour
+  # XXX should be the contrary: now by default, and cron should have
+  # --maximal-delay=3600
   if not config.now:
     duration = float(60*60) * random.random()
     print("Sleeping for %s seconds. To disable this feature, " \
