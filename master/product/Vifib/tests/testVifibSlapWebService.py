@@ -109,6 +109,128 @@ class TestVifibSlapWebServiceMixin(testVifibMixin):
   assertUserCanAccessDocument =\
       AssertPermissionMethod(Permissions.AccessContentsInformation)
 
+  def stepTic(self, **kw):
+    def activateAlarm():
+      sm = getSecurityManager()
+      self.login()
+      try:
+        for alarm in self.portal.portal_alarms.contentValues():
+          if alarm.isEnabled() and (alarm.getId() not in \
+              ('vifib_check_consistency',)):
+            alarm.activeSense()
+      finally:
+        setSecurityManager(sm)
+
+    if kw.get('sequence', None) is None:
+      # in case of using not in sequence commit transaction
+      transaction.commit()
+    # trigger activateAlarm before tic
+    activateAlarm()
+    transaction.commit()
+
+    self.tic()
+
+    # retrigger activateAlarm after tic
+    activateAlarm()
+    transaction.commit()
+
+    # tic after activateAlarm
+    self.tic()
+
+    try:
+      self.checkDivergency()
+    except AssertionError:
+      # try last time to solve deliveries
+      sm = getSecurityManager()
+      self.login()
+      try:
+        self.portal.portal_alarms.vifib_update_delivery_causality_state\
+          .activeSense()
+        transaction.commit()
+        self.tic()
+        self.portal.portal_alarms.vifib_solve_automatically.activeSense()
+        transaction.commit()
+        self.tic()
+      finally:
+        setSecurityManager(sm)
+      self.checkDivergency()
+
+  def stepCleanTic(self, **kw):
+    self.tic()
+
+  def stepLogout(self, **kw):
+    self.logout()
+
+  # access related steps
+  def stepLoginDefaultUser(self, **kw):
+    self.login('default_user')
+
+  def stepLoginTestHrAdmin(self, **kw):
+    self.login('test_hr_admin')
+
+  def stepLoginTestUpdatedVifibUser(self, **kw):
+    self.login('test_updated_vifib_user')
+
+  def stepLoginTestVifibAdmin(self, **kw):
+    self.login('test_vifib_admin')
+
+  def stepLoginTestVifibCustomer(self, **kw):
+    self.login('test_vifib_customer')
+
+  def stepLoginTestVifibCustomerA(self, **kw):
+    self.login('test_vifib_customer_a')
+
+  def stepLoginTestVifibDeveloper(self, **kw):
+    self.login('test_vifib_developer')
+
+  def stepLoginTestVifibMember(self, **kw):
+    self.login('test_vifib_member')
+
+  def stepLoginTestVifibUserAdmin(self, **kw):
+    self.login('test_vifib_user_admin')
+
+  def stepLoginTestVifibUserDeveloper(self, **kw):
+    self.login('test_vifib_user_developer')
+
+  def stepLoginERP5TypeTestCase(self, **kw):
+    self.login('ERP5TypeTestCase')
+
+  def clearCache(self):
+    self.portal.portal_caches.clearAllCache()
+    self.portal.portal_workflow.refreshWorklistCache()
+
+  def checkDivergency(self):
+    # there shall be no divergency
+    current_skin = self.app.REQUEST.get('portal_skin', 'View')
+    try:
+      # Note: Worklists are cached, so in order to have next correct result
+      # clear cache
+      self.clearCache()
+      self.changeSkin('RSS')
+      diverged_document_list = self.portal.portal_catalog(
+        portal_type=self.portal.getPortalDeliveryTypeList(),
+        causality_state='!= solved'
+      )
+      self.assertFalse('to Solve' in self.portal.ERP5Site_viewWorklist(),
+        'There are unsolved deliveries: %s' % ','.join([
+          ' '.join((q.getTitle(), q.getPath(), q.getCausalityState())) \
+          for q in diverged_document_list]))
+    finally:
+      self.changeSkin(current_skin)
+
+  def stepCheckSiteConsistency(self, **kw):
+    self.portal.portal_alarms.vifib_check_consistency.activeSense()
+    transaction.commit()
+    self.tic()
+    self.assertEqual([], self.portal.portal_alarms.vifib_check_consistency\
+        .Alarm_getConsistencyCheckReportLineList())
+    self.assertFalse(self.portal.portal_alarms.vifib_check_consistency.sense())
+    self.checkDivergency()
+
+  def markManualCreation(self, document):
+    self.portal.portal_workflow.doActionFor(document, 'edit_action',
+      comment='Manually created by test.')
+
   def fakeSlapAuth(self):
     fakeSlapAuth()
 

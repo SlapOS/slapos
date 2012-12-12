@@ -29,9 +29,14 @@
 import random
 import transaction
 import unittest
-import Products.Vifib.tests.VifibMixin
+from Products.ERP5Type.tests.ERP5TypeTestCase import ERP5TypeTestCase
 import functools
 from Products.ERP5Type.tests.utils import DummyMailHost
+from Products.ERP5Type.Utils import convertToUpperCase
+import os
+from AccessControl.SecurityManagement import getSecurityManager, \
+    setSecurityManager
+
 
 def withAbort(func):
   @functools.wraps(func)
@@ -42,7 +47,67 @@ def withAbort(func):
       transaction.abort()
   return wrapped
 
-class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
+class testSlapOSMixin(ERP5TypeTestCase):
+
+  def clearCache(self):
+    self.portal.portal_caches.clearAllCache()
+    self.portal.portal_workflow.refreshWorklistCache()
+
+  def getDefaultSitePreferenceId(self):
+    """Default id, usefull method to override
+    """
+    return "slapos_default_system_preference"
+
+  def setUpMemcached(self):
+    from Products.ERP5Type.tests.ERP5TypeTestCase import\
+           _getVolatileMemcachedServerDict, _getPersistentMemcachedServerDict
+    memcached_tool = self.getPortal().portal_memcached
+    # setup default volatile distributed memcached
+    connection_dict = _getVolatileMemcachedServerDict()
+    url_string = '%(hostname)s:%(port)s' % connection_dict
+    memcached_tool.default_memcached_plugin.setUrlString(url_string)
+    # setup default persistent distributed memcached
+    connection_dict = _getPersistentMemcachedServerDict()
+    url_string = '%(hostname)s:%(port)s' % connection_dict
+    memcached_tool.persistent_memcached_plugin.setUrlString(url_string)
+
+  def createAlarmStep(self):
+    def makeCallAlarm(alarm):
+      def callAlarm(*args, **kwargs):
+        sm = getSecurityManager()
+        self.login()
+        try:
+          alarm.activeSense(params=kwargs)
+          transaction.commit()
+        finally:
+          setSecurityManager(sm)
+      return callAlarm
+    for alarm in self.portal.portal_alarms.contentValues():
+      if alarm.isEnabled():
+        setattr(self, 'stepCall' + convertToUpperCase(alarm.getId()) \
+          + 'Alarm', makeCallAlarm(alarm))
+
+  def setupPortalCertificateAuthority(self):
+    """Sets up portal_certificate_authority"""
+    if not self.portal.hasObject('portal_certificate_authority'):
+      self.portal.manage_addProduct['ERP5'].manage_addTool(
+        'ERP5 Certificate Authority Tool', None)
+    self.portal.portal_certificate_authority.certificate_authority_path = \
+        os.environ['TEST_CA_PATH']
+    transaction.commit()
+    # reset test CA to have it always count from 0
+    open(os.path.join(os.environ['TEST_CA_PATH'], 'serial'), 'w').write('01')
+    open(os.path.join(os.environ['TEST_CA_PATH'], 'crlnumber'), 'w').write(
+        '01')
+    open(os.path.join(os.environ['TEST_CA_PATH'], 'index.txt'), 'w').write('')
+
+  def setupPortalAlarms(self):
+    if not self.portal.portal_alarms.isSubscribed():
+      self.portal.portal_alarms.subscribe()
+    self.assertTrue(self.portal.portal_alarms.isSubscribed())
+
+  def isLiveTest(self):
+    return 'ERP5TypeLiveTestCase' in [q.__name__ for q in self.__class__.mro()]
 
   def _setUpDummyMailHost(self):
     """Do not play with NON persistent replacement of MailHost"""
@@ -58,6 +123,12 @@ class testSlapOSMixin(Products.Vifib.tests.VifibMixin.testVifibMixin):
     if self.isLiveTest():
       self.deSetUpPersistentDummyMailHost()
       return
+
+  def getUserFolder(self):
+    """
+    Return the user folder
+    """
+    return getattr(self.getPortal(), 'acl_users', None)
 
   def afterSetUp(self):
     self.login()
