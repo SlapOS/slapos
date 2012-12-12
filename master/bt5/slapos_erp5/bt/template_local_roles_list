@@ -11,6 +11,8 @@ account_module/receivable
 account_module/refundable_vat
 account_module/sales
 accounting_module
+business_process_module
+business_process_module/slapos_aggregated_business_process
 campaign_module
 component_module
 computer_model_module
@@ -32,6 +34,7 @@ notification_message_module
 open_sale_order_module
 organisation_module
 organisation_module/slapos
+organisation_module/slapos/bank_account
 person_module
 portal_contributions
 portal_gadgets
@@ -46,6 +49,9 @@ sale_order_module
 sale_packing_list_module
 sale_trade_condition_module
 service_module
+service_module/slapos_discount
+service_module/slapos_instance_subscription
+service_module/slapos_tax
 software_installation_module
 software_instance_module
 software_product_module
