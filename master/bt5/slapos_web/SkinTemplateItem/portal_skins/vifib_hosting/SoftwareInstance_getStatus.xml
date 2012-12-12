@@ -61,13 +61,13 @@ else:\n
       return \'Looking for a free partition\'\n
     else:\n
       if state == "start_requested":\n
-        return \'Start in progress\'        \n
+        return \'Start requested\'        \n
       elif state == "stop_requested":\n
-        return \'Stop in progress\'\n
+        return \'Stop requested\'\n
 \n
   elif state in ["destroy_requested"]:\n
     if has_partition:\n
-      return \'Destruction in progress\'\n
+      return \'Destruction requested\'\n
     else:\n
       return \'Destroyed\'\n
 \n
