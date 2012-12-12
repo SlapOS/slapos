@@ -28,6 +28,7 @@
 ##############################################################################
 
 import argparse
+import os.path
 import slapos.slap.slap
 import sys
 
@@ -47,11 +48,8 @@ def parseArgumentTuple():
   parser.add_argument("--computer-id",
                       help="The computer id defined in the server.",
                       required=True)
-  parser.add_argument("--key-file",
-                      help="SSL Authorisation key file.",
-                      default=None)
-  parser.add_argument("--cert-file",
-                      help="SSL Authorisation certificate file.",
+  parser.add_argument("--certificate-repository-path",
+                      help="Path to partition certificates.",
                       default=None)
   option = parser.parse_args()
 
@@ -75,9 +73,17 @@ class Watchdog():
     self.stdout = sys.stdout
     self.stderr = sys.stderr
     self.slap = slapos.slap.slap()
+
+  def initialize_connection(self, partition_id):
+    cert_file = None
+    key_file = None
+    if self.certificate_repository_path is not None:
+      cert_file = os.path.join(self.certificate_repository_path,
+                              "%s.crt" % partition_id)
+      key_file = os.path.join(self.certificate_repository_path,
+                             "%s.key" % partition_id)
     self.slap.initializeConnection(
-      slapgrid_uri=self.master_url, key_file=self.key_file,
-      cert_file=self.cert_file)
+      slapgrid_uri=self.master_url, key_file=key_file, cert_file=cert_file)
 
   def write_stdout(self, s):
     self.stdout.write(s)
@@ -91,23 +97,24 @@ class Watchdog():
     while 1:
       self.write_stdout('READY\n')
       line = self.stdin.readline()  # read header line from stdin
-      headers = dict([ x.split(':') for x in line.split() ])
+      headers = dict([x.split(':') for x in line.split()])
       data = sys.stdin.read(int(headers['len'])) # read the event payload
       self.handle_event(headers, data)
       self.write_stdout('RESULT 2\nOK') # transition from READY to ACKNOWLEDGED
 
   def handle_event(self, headers, payload):
     if headers['eventname'] in self.process_state_events:
-      payload_dict = dict([ x.split(':') for x in payload.split() ])
+      payload_dict = dict([x.split(':') for x in payload.split()])
       if getWatchdogID() in payload_dict['processname']:
         self.handle_process_state_change_event(headers, payload_dict)
 
   def handle_process_state_change_event(self, headers, payload_dict):
     partition_id = payload_dict['groupname']
+    self.initialize_connection(partition_id)
     partition = slapos.slap.ComputerPartition(
-      computer_id = self.computer_id,
-      connection_helper = self.slap._connection_helper ,
-      partition_id = partition_id)
+      computer_id=self.computer_id,
+      connection_helper=self.slap._connection_helper,
+      partition_id=partition_id)
     partition.bang("%s process in partition %s encountered a problem"
                    % (payload_dict['processname'], partition_id))
 
