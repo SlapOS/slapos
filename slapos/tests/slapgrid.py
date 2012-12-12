@@ -29,6 +29,7 @@ from slapos.grid import slapgrid
 import httplib
 import logging
 import os
+from random import random
 import shutil
 import signal
 import slapos.slap.slap
@@ -262,6 +263,7 @@ class ComputerForTest:
 
   def setServerResponse(self):
     httplib.HTTPConnection._callback = self.getServerResponse()
+    httplib.HTTPSConnection._callback = self.getServerResponse()
 
   def getServerResponse(self):
     """
@@ -283,6 +285,7 @@ class ComputerForTest:
       if method == 'POST' and 'computer_partition_id' in parsed_qs:
         instance = self.instance_list[int(parsed_qs['computer_partition_id'][0])]
         instance.sequence.append(parsed_url.path)
+        instance.header_list.append(header)
         if parsed_url.path == 'availableComputerPartition':
           return (200, {}, '')
         if parsed_url.path == 'startedComputerPartition':
@@ -333,6 +336,7 @@ class InstanceForTest:
     self.error = False
     self.error_log = None
     self.sequence = []
+    self.header_list = []
     self.name = name
     self.partition_path = os.path.join(self.instance_root, self.name)
     os.mkdir(self.partition_path, 0750)
@@ -367,10 +371,21 @@ class InstanceForTest:
     promise_path = os.path.join(self.partition_path, 'etc', 'promise')
     if not os.path.isdir(promise_path):
       os.makedirs(promise_path)
-    promise = os.path.join(promise_path,promise_name)
+    promise = os.path.join(promise_path, promise_name)
     open(promise, 'w').write(promise_content)
     os.chmod(promise, 0777)
 
+  def setCertificate(self, certificate_repository_path):
+    if not os.path.exists(certificate_repository_path):
+      os.mkdir(certificate_repository_path)
+    self.cert_file = os.path.join(certificate_repository_path,
+                                  "%s.crt" % self.name)
+    self.certificate = str(random())
+    open(self.cert_file, 'w').write(self.certificate)
+    self.key_file = os.path.join(certificate_repository_path,
+                                  "%s.key" % self.name)
+    self.key = str(random())
+    open(self.key_file, 'w').write(self.key)
 
 class SoftwareForTest:
   """
@@ -831,22 +846,27 @@ touch worked
     """
     Test that a process going to fatal or exited mode in supervisord
     is banged if watched by watchdog
+    Certificates used for the bang are also checked
     (ie: watchdog id in process name)
     """
     computer = ComputerForTest(self.software_root,self.instance_root)
     instance = computer.instance_list[0]
+    certificate_repository_path = os.path.join(self._tempdir, 'partition_pki')
+    instance.setCertificate(certificate_repository_path)
 
-    watchdog = Watchdog(dict(master_url=self.master_url,
+    watchdog = Watchdog(dict(master_url='https://127.0.0.1/',
                              computer_id=self.computer_id,
-                             key_file=None,
-                             cert_file=None))
+                             certificate_repository_path=certificate_repository_path))
     for event in watchdog.process_state_events:
       instance.sequence = []
+      instance.header_list = []
       headers = dict(eventname=event)
       payload = "processname:%s groupname:%s from_state:RUNNING"\
           % ('daemon'+getWatchdogID(),instance.name)
       watchdog.handle_event(headers,payload)
       self.assertEqual(instance.sequence,['softwareInstanceBang'])
+      self.assertEqual(instance.header_list[0]['key'], instance.key)
+      self.assertEqual(instance.header_list[0]['certificate'], instance.certificate)
 
   def test_unwanted_events_will_not_bang(self):
     """
@@ -858,8 +878,7 @@ touch worked
 
     watchdog = Watchdog(dict(master_url=self.master_url,
                              computer_id=self.computer_id,
-                             key_file=None,
-                             cert_file=None))
+                             certificate_repository_path=None))
     for event in ['EVENT', 'PROCESS_STATE', 'PROCESS_STATE_RUNNING',
                   'PROCESS_STATE_BACKOFF', 'PROCESS_STATE_STOPPED']:
       computer.sequence = []
@@ -881,8 +900,7 @@ touch worked
 
     watchdog = Watchdog(dict(master_url=self.master_url,
                              computer_id=self.computer_id,
-                             key_file=None,
-                             cert_file=None))
+                             certificate_repository_path=None))
     for event in watchdog.process_state_events:
       computer.sequence = []
       headers = dict(eventname=event)
@@ -1524,7 +1542,7 @@ class TestSlapgridArgumentTuple(SlapgridInitialization):
     self.assertTrue(slapgrid_object.force_periodicity)
 
 class TestSlapgridConfigurationFile(SlapgridInitialization):
-  
+
   def test_upload_binary_cache_blacklist(self):
     """
       Check if giving --upload-to-binary-cache-url-blacklist triggers option.

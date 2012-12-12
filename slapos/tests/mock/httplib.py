@@ -79,8 +79,22 @@ class HTTPSConnection(HTTPConnection):
   def __init__(self, host, port=None, key_file=None,
                cert_file=None, strict=None, timeout=None,
                source_address=None):
-    super().__init__(self, host, port, strict, timeout,
+    super(HTTPSConnection, self).__init__(host, port, strict, timeout,
                      source_address)
+    self.certificate = open(cert_file, 'r').read()
+    self.key = open(key_file, 'r').read()
+
+  def request(self, method, url, body=None, headers=None):
+    headers['certificate'] = self.certificate
+    headers['key'] = self.key
+    status, headers, body = self._callback(url, method, body, headers)
+    self.__response = HTTPResponse('HTTP/1.1', status, 'OK', body, headers)
+
+  def getresponse(self):
+    response = self.__response
+    self.__response = None
+    return response
+
 
 class HTTPResponse(object):
 
