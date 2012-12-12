@@ -56,7 +56,8 @@ portal.portal_catalog.searchAndActivate(\n
   method_id=\'HostingSubscription_requestUpdateOpenSaleOrder\',\n
   portal_type="Hosting Subscription",\n
   causality_state="diverged",\n
-  activate_kw={\'tag\': tag},\n
+  activate_kw={\'tag\': tag, \'priority\': 2},\n
+  activity_count=10,\n
   packet_size=1, # HostingSubscription_trigger_Person_storeOpenSaleOrderJournal\n
 )\n
 \n
