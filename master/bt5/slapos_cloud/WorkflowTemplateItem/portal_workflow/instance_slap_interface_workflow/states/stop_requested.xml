@@ -30,6 +30,7 @@
                 <string>request_instance</string>
                 <string>request_start</string>
                 <string>request_stop</string>
+                <string>update_connection</string>
               </tuple>
             </value>
         </item>

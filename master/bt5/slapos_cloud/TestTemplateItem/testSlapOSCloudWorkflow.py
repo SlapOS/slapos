@@ -4,6 +4,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 import transaction
 from Products.ERP5Type.tests.backportUnittest import expectedFailure
 from Products.ERP5Type.Errors import UnsupportedWorkflowMethod
+from Products.DCWorkflow.DCWorkflow import ValidationFailed
 from AccessControl.SecurityManagement import getSecurityManager, \
              setSecurityManager
 
@@ -1063,6 +1064,37 @@ class TestSlapOSCoreInstanceSlapInterfaceWorkflow(testSlapOSMixin):
       instance_xml=instance_xml,
       shared=shared,
     )
+    transaction.abort()
+
+  def test_updateConnection(self):
+    self.login(self.instance.getReference())
+
+    request_kw = self.request_kw.copy()
+    self.instance.requestStop(**request_kw)
+    connection_xml = self.generateSafeXml()
+    self.instance.updateConnection(connection_xml=connection_xml)
+    self.assertEquals(self.instance.getConnectionXml(), connection_xml)
+    transaction.abort()
+
+  def test_updateConnectionRequired(self):
+    self.login(self.instance.getReference())
+
+    request_kw = self.request_kw.copy()
+    self.instance.requestStop(**request_kw)
+
+    # No connection_xml
+    self.assertRaises(TypeError, self.instance.updateConnection)
+    transaction.abort()
+
+  def test_updateConnectionBrokenXml(self):
+    self.login(self.instance.getReference())
+
+    request_kw = self.request_kw.copy()
+    self.instance.requestStop(**request_kw)
+
+    # No connection_xml
+    self.assertRaises(ValidationFailed, self.instance.updateConnection,
+        connection_xml="<foo bar /<>")
     transaction.abort()
 
 class TestSlapOSCoreSoftwareInstanceRequest(testSlapOSMixin):

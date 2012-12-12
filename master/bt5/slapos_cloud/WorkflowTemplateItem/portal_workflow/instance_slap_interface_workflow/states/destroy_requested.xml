@@ -26,6 +26,7 @@
                 <string>report_computer_partition_error</string>
                 <string>request_instance</string>
                 <string>unallocate_partition</string>
+                <string>update_connection</string>
               </tuple>
             </value>
         </item>
