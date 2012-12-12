@@ -1023,7 +1023,7 @@ class SlapTool(BaseTool):
                                   xml_declaration=True, encoding='utf-8')
     reference = software_instance.getReference()
     if self._getLastData(reference) != connection_xml:
-      software_instance.edit(
+      software_instance.updateConnection(
         connection_xml=connection_xml,
       )
       self._storeLastData(reference, connection_xml)

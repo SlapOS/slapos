@@ -1006,6 +1006,14 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     self.assertEqual(expected_xml, got_xml,
         '\n'.join([q for q in difflib.unified_diff(expected_xml.split('\n'), got_xml.split('\n'))]))
 
+  def assertInstanceUpdateConnectionSimulator(self, args, kwargs):
+    stored = eval(open(self.instance_update_connection_simulator).read())
+    # do the same translation magic as in workflow
+    kwargs['connection_xml'] = kwargs.pop('connection_xml')
+    self.assertEqual(stored,
+      [{'recargs': args, 'reckwargs': kwargs,
+      'recmethod': 'updateConnection'}])
+
   def test_setConnectionXml_withSlave(self):
     self._makeComplexComputer(with_slave=True)
     partition_id = self.start_requested_software_instance.getAggregateValue(
@@ -1019,13 +1027,26 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     <string>v2</string>
   </dictionary>
 </marshal>"""
+    stored_xml = """<?xml version='1.0' encoding='utf-8'?>
+<instance>
+  <parameter id="p2">v2</parameter>
+  <parameter id="p1">v1</parameter>
+</instance>
+"""
     self.login(self.start_requested_software_instance.getReference())
-    response = self.portal_slap.setComputerPartitionConnectionXml(self.computer_id,
-      partition_id, connection_xml, slave_reference)
-    self.assertEqual('None', response)
-    self.assertEqual({'p2': 'v2', 'p1': 'v1'},
-      self.start_requested_slave_instance.getConnectionXmlAsDict()
-    )
+
+    self.instance_update_connection_simulator = tempfile.mkstemp()[1]
+    try:
+      self.start_requested_slave_instance.updateConnection = Simulator(
+        self.instance_update_connection_simulator, 'updateConnection')
+      response = self.portal_slap.setComputerPartitionConnectionXml(
+        self.computer_id, partition_id, connection_xml, slave_reference)
+      self.assertEqual('None', response)
+      self.assertInstanceUpdateConnectionSimulator((),
+          {'connection_xml': stored_xml})
+    finally:
+      if os.path.exists(self.instance_update_connection_simulator):
+        os.unlink(self.instance_update_connection_simulator)
 
   def test_setConnectionXml(self):
     self._makeComplexComputer()
@@ -1039,13 +1060,26 @@ class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
     <string>v2</string>
   </dictionary>
 </marshal>"""
+    stored_xml = """<?xml version='1.0' encoding='utf-8'?>
+<instance>
+  <parameter id="p2">v2</parameter>
+  <parameter id="p1">v1</parameter>
+</instance>
+"""
     self.login(self.start_requested_software_instance.getReference())
-    response = self.portal_slap.setComputerPartitionConnectionXml(self.computer_id,
-      partition_id, connection_xml)
-    self.assertEqual('None', response)
-    self.assertEqual({'p2': 'v2', 'p1': 'v1'},
-      self.start_requested_software_instance.getConnectionXmlAsDict()
-    )
+
+    self.instance_update_connection_simulator = tempfile.mkstemp()[1]
+    try:
+      self.start_requested_software_instance.updateConnection = Simulator(
+        self.instance_update_connection_simulator, 'updateConnection')
+      response = self.portal_slap.setComputerPartitionConnectionXml(
+          self.computer_id, partition_id, connection_xml)
+      self.assertEqual('None', response)
+      self.assertInstanceUpdateConnectionSimulator((),
+          {'connection_xml': stored_xml})
+    finally:
+      if os.path.exists(self.instance_update_connection_simulator):
+        os.unlink(self.instance_update_connection_simulator)
 
   def test_softwareInstanceError(self):
     self._makeComplexComputer()
