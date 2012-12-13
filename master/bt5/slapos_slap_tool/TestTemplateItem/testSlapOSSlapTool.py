@@ -14,6 +14,7 @@ import xml.dom.ext
 import StringIO
 import difflib
 import transaction
+from OFS.Traversable import NotFound
 
 class Simulator:
   def __init__(self, outfile, method):
@@ -541,6 +542,29 @@ class TestSlapOSSlapToolComputerAccess(TestSlapOSSlapToolMixin):
     finally:
       if os.path.exists(self.computer_load_configuration_simulator):
         os.unlink(self.computer_load_configuration_simulator)
+
+  def test_destroyedSoftwareRelease_noSoftwareInstallation(self):
+    self.login(self.computer_id)
+    self.assertRaises(NotFound,
+        self.portal_slap.destroyedSoftwareRelease,
+        "http://example.org/foo", self.computer_id)
+
+  def test_destroyedSoftwareRelease_noDestroyRequested(self):
+    self._makeComplexComputer()
+    self.login(self.computer_id)
+    self.assertRaises(NotFound,
+        self.portal_slap.destroyedSoftwareRelease,
+        self.start_requested_software_installation.getUrlString(),
+        self.computer_id)
+
+  def test_destroyedSoftwareRelease_destroyRequested(self):
+    self._makeComplexComputer()
+    self.login(self.computer_id)
+    destroy_requested = self.destroy_requested_software_installation
+    self.assertEquals(destroy_requested.getValidationState(), "validated")
+    self.portal_slap.destroyedSoftwareRelease(
+        destroy_requested.getUrlString(), self.computer_id)
+    self.assertEquals(destroy_requested.getValidationState(), "invalidated")
 
 class TestSlapOSSlapToolInstanceAccess(TestSlapOSSlapToolMixin):
   def test_getComputerPartitionCertificate(self):

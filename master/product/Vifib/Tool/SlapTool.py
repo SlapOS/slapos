@@ -857,9 +857,10 @@ class SlapTool(BaseTool):
       computer_document)
     if software_installation.getSlapState() != 'destroy_requested':
       raise NotFound
-    if portal.portal_workflow.isTransitionPossible(software_installation,
+    if self.getPortalObject().portal_workflow.isTransitionPossible(software_installation,
         'invalidate'):
-      software_installation.invalidate(comment=comment)
+      software_installation.invalidate(
+        comment="Software Release destroyed report.")
 
   @convertToREST
   def _buildingComputerPartition(self, computer_id, computer_partition_id):
