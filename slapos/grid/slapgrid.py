@@ -594,7 +594,7 @@ class Slapgrid(object):
         raise
 
       # Buildout failed: send log but don't print it to output (already done)
-      except BuildoutFailedError, exception:
+      except BuildoutFailedError as exception:
         clean_run = False
         try:
           software_release.error(exception)
@@ -620,8 +620,8 @@ class Slapgrid(object):
         elif state == 'destroyed':
           try:
             software_release.destroyed()
-          except NotFoundError:
-            pass
+          except (NotFoundError, ServerError):
+            print traceback.format_exc()
     logger.info("Finished software releases.")
 
     # Return success value
