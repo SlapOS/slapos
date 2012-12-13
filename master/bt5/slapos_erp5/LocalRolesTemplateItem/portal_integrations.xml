@@ -3,6 +3,10 @@
   <role id='ERP5TypeTestCase'>
    <item>Owner</item>
   </role>
+  <role id='G-COMPANY'>
+   <item>Auditor</item>
+   <item>Author</item>
+  </role>
   <role id='R-SHADOW-PERSON'>
    <item>Auditor</item>
   </role>

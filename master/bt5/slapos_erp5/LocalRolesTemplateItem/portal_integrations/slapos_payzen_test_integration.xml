@@ -1,5 +1,8 @@
 <local_roles_item>
  <local_roles>
+  <role id='G-COMPANY'>
+   <item>Assignor</item>
+  </role>
   <role id='R-SHADOW-PERSON'>
    <item>Auditor</item>
    <item>Author</item>

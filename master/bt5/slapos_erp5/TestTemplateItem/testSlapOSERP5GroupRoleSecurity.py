@@ -147,16 +147,19 @@ class TestComputerModelModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.computer_model_module
     self.assertSecurityGroup(module,
-        ['R-MEMBER', 'zope'], False)
+        ['G-COMPANY', 'R-MEMBER', 'zope'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestComputerModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.computer_module
     self.assertSecurityGroup(module,
-        ['R-COMPUTER', 'R-MEMBER', 'R-SHADOW-PERSON', 'zope'], False)
+        ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', 'R-SHADOW-PERSON', 'zope'],
+        False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
     self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
@@ -191,8 +194,9 @@ class TestComputerNetworkModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.computer_network_module
     self.assertSecurityGroup(module,
-        ['R-MEMBER', 'R-SHADOW-PERSON', 'zope'], False)
+        ['G-COMPANY', 'R-MEMBER', 'R-SHADOW-PERSON', 'zope'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
 
@@ -250,30 +254,34 @@ class TestCredentialUpdateModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.credential_update_module
     self.assertSecurityGroup(module,
-        ['zope', 'R-MEMBER'], False)
+        ['zope', 'R-MEMBER', 'G-COMPANY'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestDataSet(TestSlapOSGroupRoleSecurityMixin):
-  def test_AnyFromShadirGroup(self):
+  def test(self):
     data_set = self.portal.data_set_module.newContent(portal_type='Data Set')
     data_set.updateLocalRolesOnSecurityGroups()
 
     self.assertSecurityGroup(data_set,
-        [self.user_id, 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'], False)
+        [self.user_id, 'G-COMPANY', 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER'],
+        False)
     self.assertRoles(data_set, 'R-COMPUTER', ['Auditor'])
     self.assertRoles(data_set, 'R-INSTANCE', ['Auditor'])
     self.assertRoles(data_set, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(data_set, 'G-COMPANY', ['Assignor'])
     self.assertRoles(data_set, self.user_id, ['Owner'])
 
 class TestDataSetModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.data_set_module
     self.assertSecurityGroup(module,
-        ['R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', 'zope'], False)
+        ['G-COMPANY', 'R-COMPUTER', 'R-INSTANCE', 'R-MEMBER', 'zope'], False)
     self.assertRoles(module, 'R-COMPUTER', ['Author'])
     self.assertRoles(module, 'R-INSTANCE', ['Author'])
     self.assertRoles(module, 'R-MEMBER', ['Author'])
+    self.assertRoles(module, 'G-COMPANY', ['Author', 'Auditor'])
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestDocumentModule(TestSlapOSGroupRoleSecurityMixin):
@@ -326,9 +334,11 @@ class TestHostingSubscription(TestSlapOSGroupRoleSecurityMixin):
         portal_type='Hosting Subscription', reference=reference)
     subscription.updateLocalRolesOnSecurityGroups()
 
-    self.assertSecurityGroup(subscription, [self.user_id, reference], False)
+    self.assertSecurityGroup(subscription, [self.user_id, reference,
+        'G-COMPANY'], False)
     self.assertRoles(subscription, reference, ['Assignor'])
     self.assertRoles(subscription, self.user_id, ['Owner'])
+    self.assertRoles(subscription, 'G-COMPANY', ['Assignor'])
 
   def test_CustomOfTheHostingSubscription(self):
     customer_reference = 'TESTPERSON-%s' % self.generateNewId()
@@ -341,19 +351,21 @@ class TestHostingSubscription(TestSlapOSGroupRoleSecurityMixin):
     subscription.updateLocalRolesOnSecurityGroups()
 
     self.assertSecurityGroup(subscription, [self.user_id, reference,
-        customer_reference], False)
+        customer_reference, 'G-COMPANY'], False)
     self.assertRoles(subscription, reference, ['Assignor'])
     self.assertRoles(subscription, customer_reference, ['Assignee'])
     self.assertRoles(subscription, self.user_id, ['Owner'])
+    self.assertRoles(subscription, 'G-COMPANY', ['Assignor'])
 
 class TestHostingSubscriptionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.hosting_subscription_module
     self.assertSecurityGroup(module,
-        ['R-COMPUTER', 'R-MEMBER', 'R-INSTANCE', 'zope'], False)
+        ['G-COMPANY', 'R-COMPUTER', 'R-MEMBER', 'R-INSTANCE', 'zope'], False)
     self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
     self.assertRoles(module, 'R-COMPUTER', ['Auditor'])
     self.assertRoles(module, 'R-INSTANCE', ['Auditor'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestImage(TestSlapOSGroupRoleSecurityMixin):
@@ -776,9 +788,9 @@ class TestSaleOrderModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.sale_order_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'admin'], True)
+        ['G-COMPANY', 'zope'], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
-    self.assertRoles(module, 'admin', ['Owner'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestSaleOrder(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
@@ -794,9 +806,9 @@ class TestSalePackingListModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.sale_packing_list_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'admin'], False)
+        ['G-COMPANY', 'zope'], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
-    self.assertRoles(module, 'admin', ['Owner'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestSalePackingList(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
@@ -946,9 +958,9 @@ class TestSaleTradeConditionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.sale_trade_condition_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'admin'], False)
+        ['G-COMPANY', 'zope'], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
-    self.assertRoles(module, 'admin', ['Owner'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestSaleTradeCondition(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
@@ -1405,8 +1417,9 @@ class TestIntegrationTool(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.portal_integrations
     self.assertSecurityGroup(module,
-        ['R-SHADOW-PERSON', 'ERP5TypeTestCase'], False)
+        ['R-SHADOW-PERSON', 'ERP5TypeTestCase', 'G-COMPANY'], False)
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Auditor'])
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
     self.assertRoles(module, 'ERP5TypeTestCase', ['Owner'])
 
 class TestIntegrationSite(TestSlapOSGroupRoleSecurityMixin):
@@ -1415,18 +1428,19 @@ class TestIntegrationSite(TestSlapOSGroupRoleSecurityMixin):
     product = module.newContent(
         portal_type='Integration Site')
     self.assertSecurityGroup(product,
-        ['R-SHADOW-PERSON', self.user_id], False)
+        ['R-SHADOW-PERSON', self.user_id, 'G-COMPANY'], False)
     self.assertRoles(product, 'R-SHADOW-PERSON', ['Auditor', 'Author'])
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestSystemEventModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.system_event_module
     self.assertSecurityGroup(module,
-        ['R-SHADOW-PERSON', 'ERP5TypeTestCase', 'G-COMPANY'], False)
+        ['R-SHADOW-PERSON', 'zope', 'G-COMPANY'], False)
     self.assertRoles(module, 'R-SHADOW-PERSON', ['Author'])
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
-    self.assertRoles(module, 'ERP5TypeTestCase', ['Owner'])
+    self.assertRoles(module, 'zope', ['Owner'])
 
 class TestPayzenEvent(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
