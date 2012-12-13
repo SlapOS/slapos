@@ -1154,6 +1154,11 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(request_time_2, validated_line_2.getStartDate())
     self.assertEqual(stop_date_2, validated_line_2.getStopDate())
 
+  def test_hosting_subscription_start_date_not_changed(self):
+    # if there was no request_instance the getCreationDate has been used
+    # but if request_instance appeared start_date is not changed
+    raise NotImplementedError
+
 class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
   @simulateByTitlewMark('SimulationMovement_buildSlapOS')
   def test_SimulationMovement_withoutDelivery(self):
