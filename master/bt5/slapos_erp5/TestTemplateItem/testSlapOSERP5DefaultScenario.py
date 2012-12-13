@@ -159,6 +159,26 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     finally:
       setSecurityManager(sm)
 
+  def simulateSlapgridSR(self, computer):
+    sm = getSecurityManager()
+    computer_reference = computer.getReference()
+    try:
+      self.login(computer_reference)
+      computer_xml = self.portal.portal_slap.getFullComputerInformation(
+          computer_id=computer.getReference())
+      slap_computer = xml_marshaller.xml_marshaller.loads(computer_xml)
+      self.assertEqual('Computer', slap_computer.__class__.__name__)
+      for software_release in slap_computer._software_release_list:
+        if software_release._requested_state == 'destroyed':
+          self.portal.portal_slap.destroyedSoftwareRelease(
+            software_release._software_release, computer.getReference())
+        else:
+          self.portal.portal_slap.availableSoftwareRelease(
+            software_release._software_release, computer.getReference())
+    finally:
+      setSecurityManager(sm)
+    self.tic()
+
   def simulateSlapgridUR(self, computer):
     sm = getSecurityManager()
     computer_reference = computer.getReference()
@@ -630,6 +650,23 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
 
     self.checkInstanceUnallocation(friend_reference, friend_instance_title,
         friend_server_software, friend_instance_type, friend_server)
+
+    # and uninstall some software on them
+    self.logout()
+    self.login(owner_reference)
+    self.supplySoftware(public_server, public_server_software,
+                        state='destroyed')
+    self.supplySoftware(personal_server, personal_server_software,
+                        state='destroyed')
+    self.supplySoftware(friend_server, friend_server_software,
+                        state='destroyed')
+
+    self.logout()
+    # Uninstall from computer
+    self.login()
+    self.simulateSlapgridSR(public_server)
+    self.simulateSlapgridSR(personal_server)
+    self.simulateSlapgridSR(friend_server)
 
     # check the Open Sale Order coverage
     self.stepCallSlaposRequestUpdateHostingSubscriptionOpenSaleOrderAlarm()
