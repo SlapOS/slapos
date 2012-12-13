@@ -58,7 +58,6 @@ input_movement_list = [restrictedTraverse(q) for q in\n
     related_simulation_movement_path_list\n
     if restrictedTraverse(q).getDestination() == person]\n
 \n
-script.log([q.getDeliveryRatio() for q in input_movement_list])\n
 for delivery_line in input_movement_list:\n
   delivery_line.setGroupingReference(reference)\n
 if context.getCausalityState() == \'draft\':\n
