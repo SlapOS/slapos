@@ -93,7 +93,7 @@ class Recipe:
     # Raise if request software_type does not exist ...
     if software_type not in self.options:
       # ... Except for backward compatibility. Then use "default".
-      if software_type in ['RootSoftwareType']:
+      if software_type in ['RootSoftwareInstance']:
         software_type = 'default'
       else:
         raise zc.buildout.UserError("This software type (%s) isn't mapped." % \
