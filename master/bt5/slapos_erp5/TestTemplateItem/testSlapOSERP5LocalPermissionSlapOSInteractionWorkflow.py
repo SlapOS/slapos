@@ -113,21 +113,21 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     hosting_subscription = self.portal.hosting_subscription_module.newContent(
         portal_type='Hosting Subscription')
     self.assertSecurityGroup(hosting_subscription, [self.user_id,
-        hosting_subscription.getId()],
+        hosting_subscription.getId(), 'G-COMPANY'],
         False)
 
     hosting_subscription.edit(reference='TESTHS-%s' % self.generateNewId())
     transaction.commit()
 
     self.assertSecurityGroup(hosting_subscription, [self.user_id,
-        hosting_subscription.getReference()], False)
+        hosting_subscription.getReference(), 'G-COMPANY'], False)
 
   def test_HostingSubscription_setDestinationSection(self):
     self._makePerson()
     hosting_subscription = self.portal.hosting_subscription_module.newContent(
         portal_type='Hosting Subscription')
     self.assertSecurityGroup(hosting_subscription, [self.user_id,
-        hosting_subscription.getId()],
+        hosting_subscription.getId(), 'G-COMPANY'],
         False)
 
     hosting_subscription.edit(
@@ -135,7 +135,8 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(hosting_subscription, [self.user_id,
-        hosting_subscription.getId(), self.person_user.getReference()],
+        hosting_subscription.getId(), self.person_user.getReference(),
+        'G-COMPANY'],
         False)
 
   def test_Person_setReference(self):
