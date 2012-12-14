@@ -66,11 +66,13 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(httpd_conf)
 
-    wrapper = self.createPythonScript(self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.execute',
-        [self.options['httpd-binary'], '-f', self.options['httpd-conf'],
-         '-DFOREGROUND']
-    )
+    wrapper = self.createWrapper(name=self.options['wrapper'],
+                                 command=self.options['httpd-binary'],
+                                 parameters=[
+                                     '-f',
+                                     self.options['httpd-conf'],
+                                     '-DFOREGROUND'
+                                     ])
     path_list.append(wrapper)
 
     secret_key_filename = os.path.join(self.buildout['buildout']['directory'],
