@@ -98,7 +98,7 @@ return pformat(result)\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>src__=0, modification_date=None, tag=None, stop_date=None</string> </value>
+            <value> <string>src__=0, modification_date=None, stop_date=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
