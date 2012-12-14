@@ -54,16 +54,9 @@
 from Products.ERP5Type.DateUtils import addToDate\n
 portal = context.getPortalObject()\n
 \n
-kw = {}\n
-if modification_date is not None:\n
-  kw[\'modification_date\'] = Query(modification_date=addToDate(modification_date, to_add={\'hour\': -1}), range="min")\n
 remove_hosting_list = []\n
 add_kw_list = []\n
 start_date_tuple_list = []\n
-\n
-hosting_kw = kw.copy()\n
-\n
-hosting_kw[\'default_destination_section_uid\'] = context.getUid()\n
 \n
 def getWorkflowDate(document, action):\n
   workflow_item_list = portal.portal_workflow.getInfoFor(ob=document, name=\'history\', wf_id=\'instance_slap_interface_workflow\')\n
@@ -74,7 +67,7 @@ def getWorkflowDate(document, action):\n
 \n
 for hosting_subscription in portal.portal_catalog(\n
   portal_type=\'Hosting Subscription\',\n
-  **hosting_kw\n
+  default_destination_section_uid=context.getUid(),\n
   ):\n
   add_kw = dict(\n
     title=hosting_subscription.getTitle(),\n
@@ -98,7 +91,7 @@ return pformat(result)\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>src__=0, modification_date=None, stop_date=None</string> </value>
+            <value> <string>src__=0, stop_date=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
