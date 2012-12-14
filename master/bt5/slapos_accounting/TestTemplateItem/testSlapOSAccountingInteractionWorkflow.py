@@ -321,16 +321,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
 
     subscription.converge()
     self.assertEqual(subscription.getCausalityState(), 'solved')
-    subscription.requestStop(**request_kw)
-    self.assertEqual(subscription.getCausalityState(), 'diverged')
-
-    subscription.converge()
-    self.assertEqual(subscription.getCausalityState(), 'solved')
-    subscription.requestStart(**request_kw)
-    self.assertEqual(subscription.getCausalityState(), 'diverged')
-
-    subscription.converge()
-    self.assertEqual(subscription.getCausalityState(), 'solved')
     subscription.requestDestroy(**request_kw)
     self.assertEqual(subscription.getCausalityState(), 'diverged')
 
@@ -353,5 +343,5 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
       shared=False,
     )
 
-    subscription.requestStop(**request_kw)
+    subscription.requestDestroy(**request_kw)
     self.assertEqual(subscription.getCausalityState(), 'diverged')

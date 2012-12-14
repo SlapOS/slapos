@@ -56,8 +56,6 @@
             <key> <string>method_id</string> </key>
             <value>
               <list>
-                <string>requestStart</string>
-                <string>requestStop</string>
                 <string>requestDestroy</string>
               </list>
             </value>
