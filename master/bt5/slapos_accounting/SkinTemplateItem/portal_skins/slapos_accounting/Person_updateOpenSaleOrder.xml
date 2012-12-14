@@ -90,12 +90,11 @@ if previous_open_sale_order is None:\n
   open_sale_order_template = portal.restrictedTraverse(\n
       portal.portal_preferences.getPreferredOpenSaleOrderTemplate())\n
   open_sale_order = open_sale_order_template.Base_createCloneDocument(batch_mode=1)\n
-  open_sale_order.edit(\n
   open_order_edit_kw.update({\n
     \'destination\': person.getRelativeUrl(),\n
     \'destination_decision\': person.getRelativeUrl(),\n
     \'title\': "SlapOS Subscription Open Sale Order",\n
-  }))\n
+  })\n
 else:\n
   open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
 open_sale_order.edit(**open_order_edit_kw)\n
