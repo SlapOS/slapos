@@ -81,7 +81,10 @@ now = DateTime()\n
 \n
 add_kw_kw = {}\n
 for (add_kw, explanation) in add_kw_list:\n
-  existing = portal.portal_catalog.countResults(portal_type=\'Open Sale Order Line\', default_aggregate_uid=portal.restrictedTraverse(add_kw[\'aggregate\']).getUid())[0][0] > 0\n
+  existing = portal.portal_catalog.countResults(\n
+    portal_type=\'Open Sale Order Line\',\n
+    default_aggregate_uid=portal.restrictedTraverse(add_kw[\'aggregate\']).getUid()\n
+    )[0][0] > 0\n
   if add_kw[\'aggregate\'] not in hosting_subscription_mapping and not existing:\n
     add_kw_kw[add_kw[\'aggregate\']] = add_kw.copy()\n
     add_kw_kw[add_kw[\'aggregate\']][\'explanation\'] = [\'Added because of %s \' % explanation]\n

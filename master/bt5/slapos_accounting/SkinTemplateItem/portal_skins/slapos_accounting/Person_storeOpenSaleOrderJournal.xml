@@ -57,11 +57,15 @@ add_kw_list = []\n
 start_date_tuple_list = []\n
 \n
 def getWorkflowDate(document, action):\n
-  workflow_item_list = portal.portal_workflow.getInfoFor(ob=document, name=\'history\', wf_id=\'instance_slap_interface_workflow\')\n
+  workflow_item_list = portal.portal_workflow.getInfoFor(\n
+    ob=document,\n
+    name=\'history\',\n
+    wf_id=\'instance_slap_interface_workflow\')\n
   for item in workflow_item_list:\n
     if item.get(\'action\') == action:\n
       return item.get(\'time\')\n
-  raise ValueError(\'Document %s has no action %s\' % (document.getPath(), action))\n
+  raise ValueError(\'Document %s has no action %s\' % (document.getPath(),\n
+                                                     action))\n
 \n
 for hosting_subscription in portal.portal_catalog(\n
   portal_type=\'Hosting Subscription\',\n
@@ -74,15 +78,23 @@ for hosting_subscription in portal.portal_catalog(\n
   hosting_subscription = hosting_subscription.getObject()\n
   add_kw_list.append((add_kw, hosting_subscription.getPath()))\n
   if hosting_subscription.getSlapState() == \'destroy_requested\':\n
-    remove_hosting_list.append((hosting_subscription.getRelativeUrl(), hosting_subscription.getPath()))\n
+    remove_hosting_list.append((hosting_subscription.getRelativeUrl(),\n
+                                hosting_subscription.getPath()))\n
   try:\n
     start_date = getWorkflowDate(hosting_subscription, \'request_instance\')\n
   except ValueError:\n
     start_date = hosting_subscription.getCreationDate()\n
-  start_date_tuple_list.append((hosting_subscription.getRelativeUrl(), start_date, hosting_subscription.getPath()))\n
+  start_date_tuple_list.append((hosting_subscription.getRelativeUrl(),\n
+                                start_date,\n
+                                hosting_subscription.getPath()))\n
 \n
 \n
-result = context.Person_updateOpenSaleOrder(src__=src__, remove_hosting_list=remove_hosting_list, add_kw_list=add_kw_list, start_date_tuple_list=start_date_tuple_list, stop_date=stop_date)\n
+result = context.Person_updateOpenSaleOrder(\n
+  src__=src__,\n
+  remove_hosting_list=remove_hosting_list,\n
+  add_kw_list=add_kw_list,\n
+  start_date_tuple_list=start_date_tuple_list,\n
+  stop_date=stop_date)\n
 from pprint import pformat\n
 return pformat(result)\n
 </string> </value>
