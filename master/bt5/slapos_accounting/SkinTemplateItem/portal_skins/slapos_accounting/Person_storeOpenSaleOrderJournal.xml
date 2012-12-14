@@ -50,9 +50,7 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from Products.ZSQLCatalog.SQLCatalog import Query\n
-from Products.ERP5Type.DateUtils import addToDate\n
-portal = context.getPortalObject()\n
+            <value> <string>portal = context.getPortalObject()\n
 \n
 remove_hosting_list = []\n
 add_kw_list = []\n
