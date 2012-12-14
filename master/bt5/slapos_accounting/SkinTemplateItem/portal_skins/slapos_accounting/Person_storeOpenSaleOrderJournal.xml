@@ -85,19 +85,15 @@ for hosting_subscription in portal.portal_catalog(\n
   start_date_tuple_list.append((hosting_subscription.getRelativeUrl(),\n
                                 start_date))\n
 \n
-\n
-result = context.Person_updateOpenSaleOrder(\n
+context.Person_updateOpenSaleOrder(\n
   remove_hosting_list,\n
   add_kw_list,\n
-  start_date_tuple_list,\n
-  src__=src__)\n
-from pprint import pformat\n
-return pformat(result)\n
+  start_date_tuple_list)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>src__=0</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

@@ -70,9 +70,6 @@ add_kw_kw, modify_kw_kw, remove_id_list = context.Person_getOpenSaleOrderDiffere
   add_kw_list,\n
   start_date_tuple_list)\n
 \n
-if src__== 1:\n
-  return add_kw_kw, modify_kw_kw, remove_id_list\n
-\n
 now = DateTime()\n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n
       default_destination_uid=person.getUid(),\n
@@ -122,15 +119,13 @@ for hs, kw in modify_kw_kw.iteritems():\n
 open_sale_order.deleteContent([q[0] for q in remove_id_list])\n
 for explanation in remove_id_list:\n
   storeWorkflowComment(open_sale_order, explanation[1])\n
-\n
-return add_kw_kw, modify_kw_kw, remove_id_list\n
 
 
 ]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>remove_hosting_list, add_kw_list, start_date_tuple_list, src__</string> </value>
+            <value> <string>remove_hosting_list, add_kw_list, start_date_tuple_list</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
