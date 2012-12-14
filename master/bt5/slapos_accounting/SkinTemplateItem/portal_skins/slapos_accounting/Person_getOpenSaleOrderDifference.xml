@@ -95,18 +95,15 @@ for hosting_url, start_date in start_date_tuple_list:\n
   start_date = getClosestDate(target_date=start_date, precision=\'day\')\n
   while start_date.day() >= 29:\n
     start_date = addToDate(start_date, to_add={\'day\': -1})\n
-  start_date_modified = False\n
   if hosting_url in hosting_subscription_mapping:\n
     line_id = hosting_subscription_mapping[hosting_url]\n
     line = previous_open_sale_order[line_id]\n
     if line.getStartDate() is None:\n
       modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')] = {\'start_date\': start_date}\n
       modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'explanation\'] = [\'Set start date because of %s\' % hosting_url]\n
-      start_date_modified = True\n
   elif hosting_url in add_kw_kw:\n
     add_kw_kw[hosting_url][\'start_date\'] = start_date\n
     add_kw_kw[hosting_url][\'explanation\'].append(\'Added start date because of %s\' % hosting_url)\n
-    start_date_modified = True\n
 \n
 if previous_open_sale_order is not None:\n
   for line in previous_open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
