@@ -72,21 +72,18 @@ for hosting_subscription in portal.portal_catalog(\n
   default_destination_section_uid=context.getUid(),\n
   ):\n
   hosting_subscription = hosting_subscription.getObject()\n
-  add_kw = dict(\n
-    title=hosting_subscription.getTitle(),\n
-    aggregate=hosting_subscription.getRelativeUrl()\n
-  )\n
-  add_kw_list.append((add_kw, hosting_subscription.getPath()))\n
+  add_kw_list.append({\n
+    \'title\': hosting_subscription.getTitle(),\n
+    \'aggregate\': hosting_subscription.getRelativeUrl(),\n
+  })\n
   if hosting_subscription.getSlapState() == \'destroy_requested\':\n
-    remove_hosting_list.append((hosting_subscription.getRelativeUrl(),\n
-                                hosting_subscription.getPath()))\n
+    remove_hosting_list.append(hosting_subscription.getRelativeUrl())\n
   try:\n
     start_date = getWorkflowDate(hosting_subscription, \'request_instance\')\n
   except ValueError:\n
     start_date = hosting_subscription.getCreationDate()\n
   start_date_tuple_list.append((hosting_subscription.getRelativeUrl(),\n
-                                start_date,\n
-                                hosting_subscription.getPath()))\n
+                                start_date))\n
 \n
 \n
 result = context.Person_updateOpenSaleOrder(\n

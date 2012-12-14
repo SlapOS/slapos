@@ -80,32 +80,32 @@ if previous_open_sale_order is not None:\n
 now = DateTime()\n
 \n
 add_kw_kw = {}\n
-for (add_kw, explanation) in add_kw_list:\n
+for add_kw in add_kw_list:\n
+  hosting_url = add_kw[\'aggregate\']\n
   existing = portal.portal_catalog.countResults(\n
     portal_type=\'Open Sale Order Line\',\n
-    default_aggregate_uid=portal.restrictedTraverse(add_kw[\'aggregate\']).getUid()\n
+    default_aggregate_uid=portal.restrictedTraverse(hosting_url).getUid()\n
     )[0][0] > 0\n
-  if add_kw[\'aggregate\'] not in hosting_subscription_mapping and not existing:\n
-    add_kw_kw[add_kw[\'aggregate\']] = add_kw.copy()\n
-    add_kw_kw[add_kw[\'aggregate\']][\'explanation\'] = [\'Added because of %s \' % explanation]\n
+  if hosting_url not in hosting_subscription_mapping and not existing:\n
+    add_kw_kw[hosting_url] = add_kw.copy()\n
+    add_kw_kw[hosting_url][\'explanation\'] = [\'Added because of %s \' % hosting_url]\n
 \n
 modify_kw_kw = {}\n
-for start_date_tuple in start_date_tuple_list:\n
-  start_date_tuple, explanation = start_date_tuple[0:2], start_date_tuple[2]\n
-  start_date = getClosestDate(target_date=start_date_tuple[1], precision=\'day\')\n
+for hosting_url, start_date in start_date_tuple_list:\n
+  start_date = getClosestDate(target_date=start_date, precision=\'day\')\n
   while start_date.day() >= 29:\n
     start_date = addToDate(start_date, to_add={\'day\': -1})\n
   start_date_modified = False\n
-  if start_date_tuple[0] in hosting_subscription_mapping:\n
-    line_id = hosting_subscription_mapping[start_date_tuple[0]]\n
+  if hosting_url in hosting_subscription_mapping:\n
+    line_id = hosting_subscription_mapping[hosting_url]\n
     line = previous_open_sale_order[line_id]\n
     if line.getStartDate() is None:\n
       modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')] = {\'start_date\': start_date}\n
-      modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'explanation\'] = [\'Set start date because of %s\' % explanation]\n
+      modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'explanation\'] = [\'Set start date because of %s\' % hosting_url]\n
       start_date_modified = True\n
-  elif start_date_tuple[0] in add_kw_kw:\n
-    add_kw_kw[start_date_tuple[0]][\'start_date\'] = start_date\n
-    add_kw_kw[start_date_tuple[0]][\'explanation\'].append(\'Added start date beacuse of %s\' % explanation)\n
+  elif hosting_url in add_kw_kw:\n
+    add_kw_kw[hosting_url][\'start_date\'] = start_date\n
+    add_kw_kw[hosting_url][\'explanation\'].append(\'Added start date because of %s\' % hosting_url)\n
     start_date_modified = True\n
 \n
 if previous_open_sale_order is not None:\n
@@ -155,7 +155,7 @@ for (key, value) in modify_kw_kw.copy().iteritems():\n
 \n
 remove_id_list = set()\n
 if previous_open_sale_order is not None:\n
-  for (remove_hosting, explanation) in remove_hosting_list:\n
+  for remove_hosting in remove_hosting_list:\n
     if remove_hosting in add_kw_kw:\n
       add_kw_kw[remove_hosting][\'explanation\'].append(\'Not removed because just added\')\n
       continue\n
