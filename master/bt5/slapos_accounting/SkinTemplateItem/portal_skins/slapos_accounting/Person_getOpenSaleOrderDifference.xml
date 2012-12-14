@@ -58,13 +58,6 @@ from DateTime import DateTime\n
 person = context\n
 portal = person.getPortalObject()\n
 \n
-if remove_hosting_list is None:\n
-  remove_hosting_list = []\n
-if add_kw_list is None:\n
-  add_kw_list = []\n
-if start_date_tuple_list is None:\n
-  start_date_tuple_list = []\n
-\n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n
       default_destination_uid=person.getUid(),\n
       portal_type="Open Sale Order",\n
@@ -168,7 +161,7 @@ return add_kw_kw, modify_kw_kw, list(remove_id_list)\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>remove_hosting_list=None, add_kw_list=None, start_date_tuple_list=None</string> </value>
+            <value> <string>remove_hosting_list, add_kw_list, start_date_tuple_list</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
