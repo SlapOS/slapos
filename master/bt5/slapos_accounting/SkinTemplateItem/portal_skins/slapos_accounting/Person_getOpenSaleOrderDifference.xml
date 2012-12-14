@@ -164,12 +164,7 @@ if previous_open_sale_order is not None:\n
       continue\n
     if remove_hosting in hosting_subscription_mapping:\n
       line = previous_open_sale_order[hosting_subscription_mapping.get(remove_hosting)]\n
-      order_line_cancelled = False\n
-      order_line = line.getAggregateValue(portal_type=\'Hosting Subscription\').getAggregateRelatedValue(portal_type=\'Sale Order Line\')\n
-      if order_line is not None:\n
-        if order_line.getSimulationState() == \'cancelled\':\n
-          order_line_cancelled = True\n
-      if order_line_cancelled or (line.getStartDate() is not None and line.getStopDate() is not None and line.getStartDate() < line.getStopDate()):\n
+      if (line.getStartDate() is not None and line.getStopDate() is not None and line.getStartDate() < line.getStopDate()):\n
         remove_id_list.add((line.getId(), \'Removed %s\' % line.getPath()))\n
 return add_kw_kw, modify_kw_kw, list(remove_id_list)\n
 
