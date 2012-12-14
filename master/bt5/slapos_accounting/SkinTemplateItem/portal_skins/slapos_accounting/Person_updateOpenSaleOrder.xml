@@ -79,27 +79,28 @@ previous_open_sale_order = portal.portal_catalog.getResultValue(\n
       portal_type="Open Sale Order",\n
       validation_state="validated")\n
 \n
+if not(add_kw_kw or modify_kw_kw or remove_id_list):\n
+  return # nothing to do\n
+\n
+open_order_edit_kw = {\n
+  \'effective_date\': now,\n
+  \'activate_kw\': activate_kw,\n
+}\n
 if previous_open_sale_order is None:\n
   open_sale_order_template = portal.restrictedTraverse(\n
       portal.portal_preferences.getPreferredOpenSaleOrderTemplate())\n
   open_sale_order = open_sale_order_template.Base_createCloneDocument(batch_mode=1)\n
   open_sale_order.edit(\n
-        destination=person.getRelativeUrl(),\n
-        destination_decision=person.getRelativeUrl(),\n
-        title="SlapOS Subscription Open Sale Order",\n
-        effective_date=now,\n
-        activate_kw=activate_kw)\n
-  open_sale_order.order(activate_kw=activate_kw)\n
-  open_sale_order.validate(activate_kw=activate_kw)\n
-\n
-if not(add_kw_kw or modify_kw_kw or remove_id_list):\n
-  return # nothing to do\n
-\n
-if previous_open_sale_order is not None:\n
+  open_order_edit_kw.update({\n
+    \'destination\': person.getRelativeUrl(),\n
+    \'destination_decision\': person.getRelativeUrl(),\n
+    \'title\': "SlapOS Subscription Open Sale Order",\n
+  }))\n
+else:\n
   open_sale_order = previous_open_sale_order.Base_createCloneDocument(batch_mode=1)\n
-  open_sale_order.edit(effective_date=now, activate_kw=activate_kw)\n
-  open_sale_order.order(activate_kw=activate_kw)\n
-  open_sale_order.validate(activate_kw=activate_kw)\n
+open_sale_order.edit(**open_order_edit_kw)\n
+open_sale_order.order(activate_kw=activate_kw)\n
+open_sale_order.validate(activate_kw=activate_kw)\n
 \n
 open_sale_order_line_template = portal.restrictedTraverse(\n
     portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())\n
