@@ -73,13 +73,16 @@ now = DateTime()\n
 add_kw_kw = {}\n
 for add_kw in add_kw_list:\n
   hosting_url = add_kw[\'aggregate\']\n
-  existing = portal.portal_catalog.countResults(\n
-    portal_type=\'Open Sale Order Line\',\n
-    default_aggregate_uid=portal.restrictedTraverse(hosting_url).getUid()\n
-    )[0][0] > 0\n
-  if hosting_url not in hosting_subscription_mapping and not existing:\n
-    add_kw_kw[hosting_url] = add_kw.copy()\n
-    add_kw_kw[hosting_url][\'explanation\'] = [\'Added because of %s \' % hosting_url]\n
+  if hosting_url not in hosting_subscription_mapping:\n
+    existing = len(portal.portal_catalog(\n
+      portal_type=\'Open Sale Order Line\',\n
+      default_aggregate_uid=portal.restrictedTraverse(hosting_url).getUid(),\n
+      limit=1,\n
+      )) > 0\n
+    if not existing:\n
+      # Hosting Subscription has never been related to any open order\n
+      add_kw_kw[hosting_url] = add_kw.copy()\n
+      add_kw_kw[hosting_url][\'explanation\'] = [\'Added because of %s \' % hosting_url]\n
 \n
 modify_kw_kw = {}\n
 for hosting_url, start_date in start_date_tuple_list:\n
