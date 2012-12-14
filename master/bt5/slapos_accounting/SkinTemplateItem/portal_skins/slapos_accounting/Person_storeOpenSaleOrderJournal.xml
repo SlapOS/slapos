@@ -71,11 +71,11 @@ for hosting_subscription in portal.portal_catalog(\n
   portal_type=\'Hosting Subscription\',\n
   default_destination_section_uid=context.getUid(),\n
   ):\n
+  hosting_subscription = hosting_subscription.getObject()\n
   add_kw = dict(\n
     title=hosting_subscription.getTitle(),\n
     aggregate=hosting_subscription.getRelativeUrl()\n
   )\n
-  hosting_subscription = hosting_subscription.getObject()\n
   add_kw_list.append((add_kw, hosting_subscription.getPath()))\n
   if hosting_subscription.getSlapState() == \'destroy_requested\':\n
     remove_hosting_list.append((hosting_subscription.getRelativeUrl(),\n
