@@ -68,7 +68,6 @@ def storeWorkflowComment(document, comment):\n
 add_kw_kw, modify_kw_kw, remove_id_list = context.Person_getOpenSaleOrderDifference(\n
   remove_hosting_list=remove_hosting_list,\n
   add_kw_list=add_kw_list,\n
-  stop_date=stop_date,\n
   start_date_tuple_list=start_date_tuple_list)\n
 \n
 if src__== 1:\n
@@ -133,7 +132,7 @@ return add_kw_kw, modify_kw_kw, remove_id_list\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>src__=0, remove_hosting_list=None, add_kw_list=None, stop_date=None, start_date_tuple_list=None</string> </value>
+            <value> <string>src__=0, remove_hosting_list=None, add_kw_list=None, start_date_tuple_list=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

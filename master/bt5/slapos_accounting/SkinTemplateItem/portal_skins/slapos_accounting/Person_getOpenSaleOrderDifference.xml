@@ -64,8 +64,6 @@ if add_kw_list is None:\n
   add_kw_list = []\n
 if start_date_tuple_list is None:\n
   start_date_tuple_list = []\n
-if stop_date is not None:\n
-  stop_date = DateTime(stop_date)\n
 \n
 previous_open_sale_order = portal.portal_catalog.getResultValue(\n
       default_destination_uid=person.getUid(),\n
@@ -109,12 +107,12 @@ if previous_open_sale_order is not None:\n
   for line in previous_open_sale_order.contentValues(portal_type=\'Open Sale Order Line\'):\n
     old_stop_date = line.getStopDate()\n
     if old_stop_date is not None:\n
-      if stop_date is not None and old_stop_date < stop_date:\n
-        modify_kw_kw.setdefault(line.getAggregate(portal_type=\'Hosting Subscription\'), {})\n
-        modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')].setdefault(\'explanation\', [])\n
-        modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'stop_date\'] = stop_date\n
-        modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'explanation\'].append(\'Set stop date because of stop_date %s\' % stop_date)\n
-      elif old_stop_date < now:\n
+#       if stop_date is not None and old_stop_date < stop_date:\n
+#         modify_kw_kw.setdefault(line.getAggregate(portal_type=\'Hosting Subscription\'), {})\n
+#         modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')].setdefault(\'explanation\', [])\n
+#         modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'stop_date\'] = stop_date\n
+#         modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'explanation\'].append(\'Set stop date because of stop_date %s\' % stop_date)\n
+      if old_stop_date < now:\n
         new_stop_date = addToDate(old_stop_date, to_add={\'month\': 1})\n
         while new_stop_date < now:\n
           new_stop_date = addToDate(new_stop_date, to_add={\'month\': 1})\n
@@ -125,30 +123,30 @@ if previous_open_sale_order is not None:\n
         modify_kw_kw[line.getAggregate(portal_type=\'Hosting Subscription\')][\'explanation\'].append(\'Set stop date becase of new_stop_date %s\' % new_stop_date)\n
 \n
 for (key, value) in add_kw_kw.copy().iteritems():\n
-  if stop_date is not None:\n
-    add_kw_kw[key][\'stop_date\'] = stop_date\n
-    add_kw_kw[key][\'explanation\'].append(\'Set stop date beacuse of stop_date %s \' % stop_date)\n
-  else:\n
-    start_date = add_kw_kw[key].get(\'start_date\')\n
-    if start_date is not None:\n
-      new_stop_date = addToDate(start_date, to_add={\'month\': 1})\n
-      while new_stop_date < now:\n
-        new_stop_date = addToDate(new_stop_date, to_add={\'month\': 1})\n
-      add_kw_kw[key][\'stop_date\'] = new_stop_date\n
-      add_kw_kw[key][\'explanation\'].append(\'Set stop date because of new_stop_date %s\' % new_stop_date)\n
+#   if stop_date is not None:\n
+#     add_kw_kw[key][\'stop_date\'] = stop_date\n
+#     add_kw_kw[key][\'explanation\'].append(\'Set stop date beacuse of stop_date %s \' % stop_date)\n
+#   else:\n
+  start_date = add_kw_kw[key].get(\'start_date\')\n
+  if start_date is not None:\n
+    new_stop_date = addToDate(start_date, to_add={\'month\': 1})\n
+    while new_stop_date < now:\n
+      new_stop_date = addToDate(new_stop_date, to_add={\'month\': 1})\n
+    add_kw_kw[key][\'stop_date\'] = new_stop_date\n
+    add_kw_kw[key][\'explanation\'].append(\'Set stop date because of new_stop_date %s\' % new_stop_date)\n
 \n
 for (key, value) in modify_kw_kw.copy().iteritems():\n
-  if stop_date is not None:\n
-    modify_kw_kw[key][\'stop_date\'] = stop_date\n
-    modify_kw_kw[key][\'explanation\'].append(\'Set stop date because of stop_date %s\' % stop_date)\n
-  else:\n
-    start_date = modify_kw_kw[key].get(\'start_date\')\n
-    if start_date is not None:\n
-      new_stop_date = addToDate(start_date, to_add={\'month\': 1})\n
-      while new_stop_date < now:\n
-        new_stop_date = addToDate(new_stop_date, to_add={\'month\': 1})\n
-      modify_kw_kw[key][\'stop_date\'] = new_stop_date\n
-      modify_kw_kw[key][\'explanation\'].append(\'Set stop date because of new_stop_date %s\' % new_stop_date)\n
+#   if stop_date is not None:\n
+#     modify_kw_kw[key][\'stop_date\'] = stop_date\n
+#     modify_kw_kw[key][\'explanation\'].append(\'Set stop date because of stop_date %s\' % stop_date)\n
+#   else:\n
+  start_date = modify_kw_kw[key].get(\'start_date\')\n
+  if start_date is not None:\n
+    new_stop_date = addToDate(start_date, to_add={\'month\': 1})\n
+    while new_stop_date < now:\n
+      new_stop_date = addToDate(new_stop_date, to_add={\'month\': 1})\n
+    modify_kw_kw[key][\'stop_date\'] = new_stop_date\n
+    modify_kw_kw[key][\'explanation\'].append(\'Set stop date because of new_stop_date %s\' % new_stop_date)\n
 \n
 remove_id_list = set()\n
 if previous_open_sale_order is not None:\n
@@ -170,7 +168,7 @@ return add_kw_kw, modify_kw_kw, list(remove_id_list)\n
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>remove_hosting_list=None, add_kw_list=None, stop_date=None, start_date_tuple_list=None</string> </value>
+            <value> <string>remove_hosting_list=None, add_kw_list=None, start_date_tuple_list=None</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>

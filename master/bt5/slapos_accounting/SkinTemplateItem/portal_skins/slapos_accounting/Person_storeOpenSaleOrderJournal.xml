@@ -90,15 +90,14 @@ result = context.Person_updateOpenSaleOrder(\n
   src__=src__,\n
   remove_hosting_list=remove_hosting_list,\n
   add_kw_list=add_kw_list,\n
-  start_date_tuple_list=start_date_tuple_list,\n
-  stop_date=stop_date)\n
+  start_date_tuple_list=start_date_tuple_list)\n
 from pprint import pformat\n
 return pformat(result)\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>src__=0, stop_date=None</string> </value>
+            <value> <string>src__=0</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
