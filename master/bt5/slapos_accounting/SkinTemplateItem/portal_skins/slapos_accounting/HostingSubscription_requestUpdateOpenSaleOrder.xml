@@ -55,7 +55,7 @@ if REQUEST is not None:\n
   raise Unauthorized\n
 \n
 if context.getCausalityState() == \'diverged\':\n
-  person = context.getDestinationSectionValue(portal_type="Person").Person_storeOpenSaleOrderJournal()\n
+  context.getDestinationSectionValue(portal_type="Person").Person_storeOpenSaleOrderJournal()\n
   context.converge()\n
 </string> </value>
         </item>
