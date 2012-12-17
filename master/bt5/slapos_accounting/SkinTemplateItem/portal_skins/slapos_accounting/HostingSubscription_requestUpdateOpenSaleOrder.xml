@@ -56,7 +56,9 @@ if REQUEST is not None:\n
 \n
 if context.getCausalityState() == \'diverged\':\n
   context.getDestinationSectionValue(portal_type="Person").Person_storeOpenSaleOrderJournal()\n
-  context.converge()\n
+\n
+# Person_storeOpenSaleOrderJournal should fix all divergent Hosting Subscription in one run\n
+assert context.getCausalityState() == \'solved\'\n
 </string> </value>
         </item>
         <item>

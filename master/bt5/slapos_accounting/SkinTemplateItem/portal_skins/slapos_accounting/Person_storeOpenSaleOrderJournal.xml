@@ -50,46 +50,213 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>portal = context.getPortalObject()\n
+            <value> <string encoding="cdata"><![CDATA[
+
+from Products.ERP5Type.DateUtils import addToDate, getClosestDate\n
+from DateTime import DateTime\n
 \n
-remove_hosting_list = []\n
-add_kw_list = []\n
-start_date_tuple_list = []\n
+portal = context.getPortalObject()\n
+now = DateTime()\n
+person = context\n
+tag = \'%s_%s\' % (person.getUid(), script.id)\n
+activate_kw = {\'tag\': tag}\n
+if portal.portal_activities.countMessageWithTag(tag) > 0:\n
+  # nothing to do\n
+  return\n
 \n
-def getWorkflowDate(document, action):\n
+def newOpenOrder(open_sale_order):\n
+  open_order_edit_kw = {\n
+    \'effective_date\': now,\n
+    \'activate_kw\': activate_kw,\n
+  }\n
+  if open_sale_order is None:\n
+    open_sale_order_template = portal.restrictedTraverse(\n
+        portal.portal_preferences.getPreferredOpenSaleOrderTemplate())\n
+    new_open_sale_order = open_sale_order_template.Base_createCloneDocument(batch_mode=1)\n
+    open_order_edit_kw.update({\n
+      \'destination\': person.getRelativeUrl(),\n
+      \'destination_decision\': person.getRelativeUrl(),\n
+      \'title\': "%s SlapOS Subscription" % person.getTitle(),\n
+    })\n
+  else:\n
+    new_open_sale_order = open_sale_order.Base_createCloneDocument(batch_mode=1)\n
+    open_sale_order.setExpirationDate(now, activate_kw=activate_kw)\n
+  new_open_sale_order.edit(**open_order_edit_kw)\n
+  new_open_sale_order.order(activate_kw=activate_kw)\n
+  new_open_sale_order.validate(activate_kw=activate_kw)\n
+  return new_open_sale_order\n
+\n
+def storeWorkflowComment(document, comment):\n
+  portal.portal_workflow.doActionFor(document, \'edit_action\', comment=comment)\n
+\n
+def getHostingSubscriptionSimulationStartDate(hosting_subscription):\n
   workflow_item_list = portal.portal_workflow.getInfoFor(\n
-    ob=document,\n
+    ob=hosting_subscription,\n
     name=\'history\',\n
     wf_id=\'instance_slap_interface_workflow\')\n
+  start_date = None\n
   for item in workflow_item_list:\n
-    if item.get(\'action\') == action:\n
-      return item.get(\'time\')\n
-  raise ValueError(\'Document %s has no action %s\' % (document.getPath(),\n
-                                                     action))\n
-\n
-for hosting_subscription in portal.portal_catalog(\n
-  portal_type=\'Hosting Subscription\',\n
-  default_destination_section_uid=context.getUid(),\n
-  ):\n
-  hosting_subscription = hosting_subscription.getObject()\n
-  add_kw_list.append({\n
-    \'title\': hosting_subscription.getTitle(),\n
-    \'aggregate\': hosting_subscription.getRelativeUrl(),\n
-  })\n
-  if hosting_subscription.getSlapState() == \'destroy_requested\':\n
-    remove_hosting_list.append(hosting_subscription.getRelativeUrl())\n
-  try:\n
-    start_date = getWorkflowDate(hosting_subscription, \'request_instance\')\n
-  except ValueError:\n
+    if item.get(\'action\') == \'request_instance\':\n
+      start_date = item.get(\'time\')\n
+      break\n
+  if start_date is None:\n
+    # Compatibility with old Hosting subscription\n
     start_date = hosting_subscription.getCreationDate()\n
-  start_date_tuple_list.append((hosting_subscription.getRelativeUrl(),\n
-                                start_date))\n
 \n
-context.Person_updateOpenSaleOrder(\n
-  remove_hosting_list,\n
-  add_kw_list,\n
-  start_date_tuple_list)\n
-</string> </value>
+  start_date = getClosestDate(target_date=start_date, precision=\'day\')\n
+  while start_date.day() >= 29:\n
+    start_date = addToDate(start_date, to_add={\'day\': -1})\n
+\n
+  return start_date\n
+\n
+def getHostingSubscriptionSimulationStopDate(hosting_subscription, start_date):\n
+  workflow_item_list = portal.portal_workflow.getInfoFor(\n
+    ob=hosting_subscription,\n
+    name=\'history\',\n
+    wf_id=\'instance_slap_interface_workflow\')\n
+  end_date = now\n
+  for item in workflow_item_list:\n
+    if item.get(\'action\') == \'request_destroy\':\n
+      end_date = item.get(\'time\')\n
+      break\n
+  \n
+  stop_date = start_date\n
+  while stop_date <= end_date:\n
+    stop_date = addToDate(stop_date, to_add={\'month\': 1})\n
+  return stop_date\n
+\n
+# Prevent concurrent transaction to update the open order\n
+context.serialize()\n
+\n
+# First, check the existing open order. Does some lines need to be removed, updated?\n
+open_sale_order_list = portal.portal_catalog(\n
+  default_destination_uid=person.getUid(),\n
+  portal_type="Open Sale Order",\n
+  validation_state="validated",\n
+  limit=2,\n
+)\n
+open_sale_order_count = len(open_sale_order_list)\n
+if open_sale_order_count == 0:\n
+  open_sale_order = None\n
+elif open_sale_order_count == 1:\n
+  open_sale_order = open_sale_order_list[0].getObject()\n
+else:\n
+  raise ValueError, "Too many open order \'%s\' found: %s" % (person.getRelativeUrl(), [x.path for x in open_sale_order_list])\n
+\n
+delete_line_list = []\n
+add_line_list = []\n
+\n
+updated_hosting_subscription_dict = {}\n
+deleted_hosting_subscription_dict = {}\n
+\n
+if open_sale_order is not None:\n
+  for open_order_line in open_sale_order.contentValues(\n
+                           portal_type=\'Open Sale Order Line\'):\n
+    current_start_date = open_order_line.getStartDate()\n
+    current_stop_date = open_order_line.getStopDate()\n
+\n
+    # Prevent mistakes\n
+    assert current_start_date is not None\n
+    assert current_stop_date is not None\n
+    assert current_start_date < current_stop_date\n
+\n
+    hosting_subscription = open_order_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
+    assert current_start_date == getHostingSubscriptionSimulationStartDate(hosting_subscription)\n
+\n
+    # First check if the hosting subscription has been correctly simulated (this script may run only once per year...)\n
+    stop_date = getHostingSubscriptionSimulationStopDate(hosting_subscription, current_start_date)\n
+    if current_stop_date != stop_date:\n
+      # Bingo, new subscription to generate\n
+      try:\n
+        assert stop_date == getHostingSubscriptionSimulationStopDate(hosting_subscription, current_stop_date)\n
+      except:\n
+        raise ValueError, "%s (%s) != %s (%s)" % (stop_date,\n
+                    current_start_date,\n
+                    getHostingSubscriptionSimulationStopDate(hosting_subscription,\n
+                                                             current_stop_date),\n
+                    current_stop_date)\n
+      open_order_line.edit(\n
+        stop_date=stop_date,\n
+        activate_kw=activate_kw)\n
+      storeWorkflowComment(open_order_line,\n
+                           \'Stop date updated to %s\' % stop_date)\n
+\n
+    if hosting_subscription.getSlapState() == \'destroy_requested\':\n
+      # Line should be deleted\n
+      assert hosting_subscription.getCausalityState() == \'diverged\'\n
+      delete_line_list.append(open_order_line.getId())\n
+      hosting_subscription.converge(comment="Last open order: %s" % open_order_line.getRelativeUrl())\n
+      deleted_hosting_subscription_dict[hosting_subscription.getRelativeUrl()] = None\n
+      updated_hosting_subscription_dict[hosting_subscription.getRelativeUrl()] = None\n
+\n
+    if hosting_subscription.getCausalityState() == \'diverged\':\n
+      hosting_subscription.converge(comment="Nothing to do on open order.")\n
+      updated_hosting_subscription_dict[hosting_subscription.getRelativeUrl()] = None\n
+\n
+# Time to check the open order line to add (remaining diverged Hosting\n
+# Subscription normally)\n
+for hosting_subscription in portal.portal_catalog(\n
+    portal_type=\'Hosting Subscription\',\n
+    default_destination_section_uid=context.getUid(),\n
+    causality_state="diverged"):\n
+  hosting_subscription = hosting_subscription.getObject()\n
+  if hosting_subscription.getCausalityState() == \'diverged\':\n
+    # Simply check that it has never been simulated\n
+    assert len(portal.portal_catalog(\n
+      portal_type=\'Open Sale Order Line\',\n
+      default_aggregate_uid=hosting_subscription.getUid(),\n
+      limit=1)) == 0\n
+\n
+    # Let\'s add\n
+    add_line_list.append(hosting_subscription)\n
+  else:\n
+    # Should be in the list of lines to remove\n
+    assert (hosting_subscription.getRelativeUrl() in deleted_hosting_subscription_dict) or \\\n
+      (hosting_subscription.getRelativeUrl() in updated_hosting_subscription_dict)\n
+\n
+new_open_sale_order = None\n
+if (delete_line_list):\n
+  # All Verifications done. Time to clone/create open order\n
+  new_open_sale_order = newOpenOrder(open_sale_order)\n
+\n
+  open_order_explanation = ""\n
+  # Remove lines\n
+  new_open_sale_order.deleteContent(delete_line_list)\n
+  open_order_explanation += "Removed %s." % str(delete_line_list)\n
+\n
+  storeWorkflowComment(new_open_sale_order, open_order_explanation)\n
+\n
+if (add_line_list):\n
+  # No need to create a new open order to add lines\n
+  if (new_open_sale_order) is None:\n
+    if open_sale_order is None:\n
+      new_open_sale_order = newOpenOrder(None)\n
+    else:\n
+      new_open_sale_order = open_sale_order\n
+\n
+  open_order_explanation = ""\n
+  # Add lines\n
+  added_line_list = []\n
+  open_sale_order_line_template = portal.restrictedTraverse(\n
+      portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())\n
+  for hosting_subscription in add_line_list:\n
+    open_sale_order_line = open_sale_order_line_template.Base_createCloneDocument(batch_mode=1,\n
+        destination=new_open_sale_order)\n
+    start_date = getHostingSubscriptionSimulationStartDate(hosting_subscription)\n
+    open_sale_order_line.edit(\n
+      activate_kw=activate_kw,\n
+      title=hosting_subscription.getTitle(),\n
+      start_date=start_date,\n
+      stop_date=getHostingSubscriptionSimulationStopDate(hosting_subscription, start_date),\n
+      aggregate_value=hosting_subscription,\n
+      )\n
+    storeWorkflowComment(open_sale_order_line, "Created for %s" % hosting_subscription.getRelativeUrl())\n
+    hosting_subscription.converge(comment="First open order: %s" % open_sale_order_line.getRelativeUrl())\n
+    added_line_list.append(open_sale_order_line.getId())\n
+  open_order_explanation += "Added %s." % str(added_line_list)\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>

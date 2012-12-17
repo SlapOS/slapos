@@ -714,7 +714,7 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
         .Base_createCloneDocument(batch_mode=1)
     self.tic()
 
-    person.Person_updateOpenSaleOrder()
+    person.Person_storeOpenSaleOrderJournal()
     self.tic()
 
     open_sale_order_list = self.portal.portal_catalog(
@@ -722,16 +722,8 @@ class TestOpenSaleOrderAlarm(testSlapOSMixin):
         portal_type='Open Sale Order',
         default_destination_uid=person.getUid()
     )
-    self.assertEqual(1, len(open_sale_order_list))
-    open_sale_order = open_sale_order_list[0]
-
-    self.assertEqual('SlapOS Subscription Open Sale Order',
-        open_sale_order.getTitle())
-    self.assertEqual(0, len(open_sale_order.contentValues()))
-    open_sale_order_template = self.portal.restrictedTraverse(
-        self.portal.portal_preferences.getPreferredOpenSaleOrderTemplate())
-    self.assertTrue(all([q in open_sale_order.getCategoryList() \
-        for q in open_sale_order_template.getCategoryList()]))
+    # No need to create any open order without hosting subscription
+    self.assertEqual(0, len(open_sale_order_list))
 
   @simulateByEditWorkflowMark('HostingSubscription_requestUpdateOpenSaleOrder')
   def test_alarm_HS_diverged(self):
@@ -805,7 +797,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         line.getQuantity())
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
-    self.assertEqual(None, line.getStartDate())
+    self.assertEqual(DateTime().earliestTime(), line.getStartDate())
 
   def test_usualLifetime_HostingSubscription(self):
     person = self.portal.person_module.template_member\
@@ -870,7 +862,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(request_time, line.getStartDate())
     self.assertEqual(stop_date, line.getStopDate())
 
-    destroy_time = DateTime('2012/02/01')
+    destroy_time = DateTime('2112/02/01')
     subscription.workflow_history['instance_slap_interface_workflow'].append({
         'comment':'Simulated request instance',
         'error_message': '',
@@ -926,6 +918,9 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
     self.assertEqual(request_time, archived_line.getStartDate())
+    now = DateTime()
+    while stop_date <= destroy_time:
+      stop_date = addToDate(stop_date, to_add={'month': 1})
     self.assertEqual(stop_date, line.getStopDate())
 
   def test_lateAnalysed_HostingSubscription(self):
@@ -993,8 +988,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(request_time, line.getStartDate())
 
     stop_date = request_time
-    now = DateTime()
-    while stop_date < now:
+    while stop_date <= destroy_time:
       stop_date = addToDate(stop_date, to_add={'month': 1})
     self.assertEqual(stop_date, line.getStopDate())
 
@@ -1085,42 +1079,23 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         default_destination_uid=person.getUid()
     )
 
-    self.assertEqual(2, len(open_sale_order_list))
+    self.assertEqual(1, len(open_sale_order_list))
     validated_open_sale_order_list = [q for q in open_sale_order_list
         if q.getValidationState() == 'validated']
     archived_open_sale_order_list = [q for q in open_sale_order_list
         if q.getValidationState() == 'archived']
     self.assertEqual(1, len(validated_open_sale_order_list))
-    self.assertEqual(1, len(archived_open_sale_order_list))
+    self.assertEqual(0, len(archived_open_sale_order_list))
     validated_open_sale_order = validated_open_sale_order_list[0].getObject()
-    archived_open_sale_order = archived_open_sale_order_list[0]\
-        .getObject()
-    self.assertEqual(open_sale_order.getRelativeUrl(),
-        archived_open_sale_order.getRelativeUrl())
 
     validated_line_list = validated_open_sale_order.contentValues(
         portal_type='Open Sale Order Line')
-    archived_line_list = archived_open_sale_order.contentValues(
-        portal_type='Open Sale Order Line')
     self.assertEqual(2, len(validated_line_list))
-    self.assertEqual(1, len(archived_line_list))
 
-    archived_line = archived_line_list[0].getObject()
-
-    self.assertEqual(line.getRelativeUrl(), archived_line.getRelativeUrl())
-
-    self.assertEqual(subscription.getRelativeUrl(),
-        archived_line.getAggregate())
-    self.assertTrue(all([q in archived_line.getCategoryList() \
-        for q in open_sale_order_line_template.getCategoryList()]))
-    self.assertEqual(open_sale_order_line_template.getResource(),
-        archived_line.getResource())
     self.assertEqual(open_sale_order_line_template.getQuantity(),
         line.getQuantity())
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
-    self.assertEqual(request_time, archived_line.getStartDate())
-    self.assertEqual(stop_date, archived_line.getStopDate())
 
     stop_date_2 = request_time_2
     now = DateTime()
@@ -1157,7 +1132,79 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
   def test_hosting_subscription_start_date_not_changed(self):
     # if there was no request_instance the getCreationDate has been used
     # but if request_instance appeared start_date is not changed
-    raise NotImplementedError
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    self.tic()
+    subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    subscription.edit(reference='TESTHS-%s' % self.generateNewId(),
+        destination_section=person.getRelativeUrl())
+    self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
+    self.tic()
+
+    subscription.HostingSubscription_requestUpdateOpenSaleOrder()
+    self.tic()
+
+    request_time = DateTime('2112/01/01')
+    subscription.workflow_history['instance_slap_interface_workflow'].append({
+        'comment':'Simulated request instance',
+        'error_message': '',
+        'actor': 'ERP5TypeTestCase',
+        'slap_state': 'start_requested',
+        'time': request_time,
+        'action': 'request_instance'
+    })
+    self.tic()
+
+    subscription.HostingSubscription_requestUpdateOpenSaleOrder()
+    self.tic()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
+
+    open_sale_order_list = self.portal.portal_catalog(
+        portal_type='Open Sale Order',
+        default_destination_uid=person.getUid()
+    )
+
+    self.assertEqual(1, len(open_sale_order_list))
+    open_sale_order = open_sale_order_list[0].getObject()
+    self.assertEqual('validated', open_sale_order.getValidationState())
+
+    open_sale_order_line_list = open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+
+    self.assertEqual(1, len(open_sale_order_line_list))
+    line = open_sale_order_line_list[0].getObject()
+    self.assertEqual(subscription.getCreationDate().earliestTime(),
+                     line.getStartDate())
+
+  def test_hosting_subscription_diverged_to_solve(self):
+    # check that HS becomes solved even if not modification is needed on open
+    # order
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    self.tic()
+    subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    subscription.edit(reference='TESTHS-%s' % self.generateNewId(),
+        destination_section=person.getRelativeUrl())
+    self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
+    self.assertEqual(subscription.getCausalityState(), 'diverged')
+    self.tic()
+
+    subscription.HostingSubscription_requestUpdateOpenSaleOrder()
+    self.tic()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
+
+    self.portal.portal_workflow._jumpToStateFor(subscription, 'diverged')
+    subscription.reindexObject()
+    self.assertEqual(subscription.getCausalityState(), 'diverged')
+    self.assertEqual(subscription.getSlapState(), 'draft')
+    self.tic()
+
+    subscription.HostingSubscription_requestUpdateOpenSaleOrder()
+    self.tic()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
+
 
 class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
   @simulateByTitlewMark('SimulationMovement_buildSlapOS')
