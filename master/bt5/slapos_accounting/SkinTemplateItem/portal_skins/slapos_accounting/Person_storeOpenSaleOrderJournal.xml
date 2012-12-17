@@ -116,7 +116,7 @@ def getHostingSubscriptionSimulationStopDate(hosting_subscription, start_date):\
     wf_id=\'instance_slap_interface_workflow\')\n
   end_date = now\n
   for item in workflow_item_list:\n
-    if item.get(\'action\') == \'request_destroy\':\n
+    if item.get(\'slap_state\') == \'destroy_requested\':\n
       end_date = item.get(\'time\')\n
       break\n
   \n
@@ -189,7 +189,7 @@ if open_sale_order is not None:\n
       deleted_hosting_subscription_dict[hosting_subscription.getRelativeUrl()] = None\n
       updated_hosting_subscription_dict[hosting_subscription.getRelativeUrl()] = None\n
 \n
-    if hosting_subscription.getCausalityState() == \'diverged\':\n
+    elif (hosting_subscription.getCausalityState() == \'diverged\'):\n
       hosting_subscription.converge(comment="Nothing to do on open order.")\n
       updated_hosting_subscription_dict[hosting_subscription.getRelativeUrl()] = None\n
 \n
@@ -214,25 +214,12 @@ for hosting_subscription in portal.portal_catalog(\n
     assert (hosting_subscription.getRelativeUrl() in deleted_hosting_subscription_dict) or \\\n
       (hosting_subscription.getRelativeUrl() in updated_hosting_subscription_dict)\n
 \n
-new_open_sale_order = None\n
-if (delete_line_list):\n
-  # All Verifications done. Time to clone/create open order\n
-  new_open_sale_order = newOpenOrder(open_sale_order)\n
-\n
-  open_order_explanation = ""\n
-  # Remove lines\n
-  new_open_sale_order.deleteContent(delete_line_list)\n
-  open_order_explanation += "Removed %s." % str(delete_line_list)\n
-\n
-  storeWorkflowComment(new_open_sale_order, open_order_explanation)\n
-\n
+manual_archive = False\n
 if (add_line_list):\n
   # No need to create a new open order to add lines\n
-  if (new_open_sale_order) is None:\n
-    if open_sale_order is None:\n
-      new_open_sale_order = newOpenOrder(None)\n
-    else:\n
-      new_open_sale_order = open_sale_order\n
+  if open_sale_order is None:\n
+    open_sale_order = newOpenOrder(None)\n
+    manual_archive = True\n
 \n
   open_order_explanation = ""\n
   # Add lines\n
@@ -241,7 +228,7 @@ if (add_line_list):\n
       portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())\n
   for hosting_subscription in add_line_list:\n
     open_sale_order_line = open_sale_order_line_template.Base_createCloneDocument(batch_mode=1,\n
-        destination=new_open_sale_order)\n
+        destination=open_sale_order)\n
     start_date = getHostingSubscriptionSimulationStartDate(hosting_subscription)\n
     open_sale_order_line.edit(\n
       activate_kw=activate_kw,\n
@@ -251,9 +238,28 @@ if (add_line_list):\n
       aggregate_value=hosting_subscription,\n
       )\n
     storeWorkflowComment(open_sale_order_line, "Created for %s" % hosting_subscription.getRelativeUrl())\n
-    hosting_subscription.converge(comment="First open order: %s" % open_sale_order_line.getRelativeUrl())\n
+    if (hosting_subscription.getSlapState() == \'destroy_requested\'):\n
+      # Added line to delete immediately\n
+      delete_line_list.append(open_sale_order_line.getId())\n
+      hosting_subscription.converge(comment="Last open order: %s" % open_sale_order_line.getRelativeUrl())\n
+    else:\n
+      hosting_subscription.converge(comment="First open order: %s" % open_sale_order_line.getRelativeUrl())\n
     added_line_list.append(open_sale_order_line.getId())\n
   open_order_explanation += "Added %s." % str(added_line_list)\n
+\n
+new_open_sale_order = None\n
+if (delete_line_list):\n
+  # All Verifications done. Time to clone/create open order\n
+  new_open_sale_order = newOpenOrder(open_sale_order)\n
+  if manual_archive == True:\n
+    open_sale_order.archive()\n
+\n
+  open_order_explanation = ""\n
+  # Remove lines\n
+  new_open_sale_order.deleteContent(delete_line_list)\n
+  open_order_explanation += "Removed %s." % str(delete_line_list)\n
+\n
+  storeWorkflowComment(new_open_sale_order, open_order_explanation)\n
 
 
 ]]></string> </value>

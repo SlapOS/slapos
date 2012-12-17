@@ -964,9 +964,10 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         default_destination_uid=person.getUid()
     )
 
-    self.assertEqual(1, len(open_sale_order_list))
-    open_sale_order = open_sale_order_list[0].getObject()
-    self.assertEqual('validated', open_sale_order.getValidationState())
+    self.assertEqual(2, len(open_sale_order_list))
+    open_sale_order = [x for x in open_sale_order_list \
+                       if x.getValidationState() != 'validated'][0].getObject()
+    self.assertEqual('archived', open_sale_order.getValidationState())
 
     open_sale_order_line_list = open_sale_order.contentValues(
         portal_type='Open Sale Order Line')
@@ -991,6 +992,13 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     while stop_date <= destroy_time:
       stop_date = addToDate(stop_date, to_add={'month': 1})
     self.assertEqual(stop_date, line.getStopDate())
+
+    new_open_sale_order = [x for x in open_sale_order_list \
+                           if x.getValidationState() == 'validated'][0].getObject()
+    self.assertEqual('validated', new_open_sale_order.getValidationState())
+    open_sale_order_line_list = new_open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+    self.assertEqual(0, len(open_sale_order_line_list))
 
   def test_two_HostingSubscription(self):
     person = self.portal.person_module.template_member\
@@ -1205,6 +1213,59 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.tic()
     self.assertEqual(subscription.getCausalityState(), 'solved')
 
+  def test_empty_destroyed_HostingSubscription(self):
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    self.tic()
+    subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    subscription.edit(reference='TESTHS-%s' % self.generateNewId(),
+        destination_section=person.getRelativeUrl())
+    self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
+    self.portal.portal_workflow._jumpToStateFor(subscription, 'destroy_requested')
+    self.tic()
+
+    subscription.HostingSubscription_requestUpdateOpenSaleOrder()
+    self.tic()
+    self.assertEqual(subscription.getCausalityState(), 'solved')
+
+    open_sale_order_list = self.portal.portal_catalog(
+        portal_type='Open Sale Order',
+        default_destination_uid=person.getUid()
+    )
+
+    self.assertEqual(2,len(open_sale_order_list))
+    open_sale_order = [x for x in open_sale_order_list \
+                       if x.getValidationState() != 'validated'][0].getObject()
+    self.assertEqual('archived', open_sale_order.getValidationState())
+
+    open_sale_order_line_list = open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+
+    self.assertEqual(1, len(open_sale_order_line_list))
+    line = open_sale_order_line_list[0].getObject()
+
+    self.assertEqual(subscription.getRelativeUrl(), line.getAggregate())
+    open_sale_order_line_template = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredOpenSaleOrderLineTemplate())
+    self.assertEqual(open_sale_order_line_template.getResource(),
+        line.getResource())
+    self.assertTrue(all([q in line.getCategoryList() \
+        for q in open_sale_order_line_template.getCategoryList()]))
+    self.assertEqual(open_sale_order_line_template.getQuantity(),
+        line.getQuantity())
+    self.assertEqual(open_sale_order_line_template.getPrice(),
+        line.getPrice())
+    self.assertEqual(DateTime().earliestTime(), line.getStartDate())
+    self.assertEqual(addToDate(line.getStartDate(), to_add={'month': 1}),
+                     line.getStopDate())
+
+    new_open_sale_order = [x for x in open_sale_order_list \
+                           if x.getValidationState() == 'validated'][0].getObject()
+    self.assertEqual('validated', new_open_sale_order.getValidationState())
+    open_sale_order_line_list = new_open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+    self.assertEqual(0, len(open_sale_order_line_list))
 
 class TestSlapOSTriggerBuildAlarm(testSlapOSMixin):
   @simulateByTitlewMark('SimulationMovement_buildSlapOS')
