@@ -1200,8 +1200,8 @@ def main(*args):
   try:
     config.setConfig(options, configuration_file_path)
   except UsageError, err:
-    print >>sys.stderr, err.message
-    print >>sys.stderr, "For help use --help"
+    print >> sys.stderr, err.message
+    print >> sys.stderr, "For help use --help"
     sys.exit(1)
   os = OS(config)
   if config.dry_run:
