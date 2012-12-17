@@ -346,6 +346,9 @@ class Recipe(BaseSlapRecipe):
     )
     self._writeFile(openssl_configuration, pkg_resources.resource_string(
       __name__, 'template/openssl.cnf.ca.in') % config)
+
+    # XXX-Cedric: Don't use this, but use slapos.recipe.certificate_authority
+    #             from the instance profile.
     self.path_list.extend(zc.buildout.easy_install.scripts([
       ('certificate_authority', __name__ + '.certificate_authority',
          'runCertificateAuthority')],
