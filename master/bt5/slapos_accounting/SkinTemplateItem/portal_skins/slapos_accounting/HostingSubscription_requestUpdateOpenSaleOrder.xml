@@ -60,9 +60,8 @@ if context.getCausalityState() == \'diverged\':\n
   # Template document does not have person relation\n
   if person is not None:\n
     person.Person_storeOpenSaleOrderJournal()\n
-\n
-# Person_storeOpenSaleOrderJournal should fix all divergent Hosting Subscription in one run\n
-assert context.getCausalityState() == \'solved\'\n
+    # Person_storeOpenSaleOrderJournal should fix all divergent Hosting Subscription in one run\n
+    assert context.getCausalityState() == \'solved\'\n
 </string> </value>
         </item>
         <item>
