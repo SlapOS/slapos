@@ -319,6 +319,7 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
       shared=False,
     )
 
+    subscription.requestStart(**request_kw)
     subscription.converge()
     self.assertEqual(subscription.getCausalityState(), 'solved')
     subscription.requestDestroy(**request_kw)
@@ -333,7 +334,6 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
       )
     subscription.validate()
 
-    self.assertEqual(subscription.getCausalityState(), 'diverged')
 
     request_kw = dict(
       software_release='http://example.org',
@@ -342,6 +342,9 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by D
       sla_xml=self.generateSafeXml(),
       shared=False,
     )
+
+    subscription.requestStart(**request_kw)
+    self.assertEqual(subscription.getCausalityState(), 'diverged')
 
     subscription.requestDestroy(**request_kw)
     self.assertEqual(subscription.getCausalityState(), 'diverged')
