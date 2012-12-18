@@ -18,7 +18,7 @@ daemonize no
 
 # When running daemonized, Redis writes a pid file in /var/run/redis.pid by
 # default. You can specify a custom pid file location here.
-pidfile /var/run/redis.pid
+pidfile %(pid_file)s
 
 # Accept connections on the specified port, default is 6379.
 # If port 0 is specified Redis will not listen on a TCP socket.
@@ -29,7 +29,7 @@ port %(port)s
 # Bind can also be an IPv6 address
 # bind 127.0.0.1
 # bind ::1
-bind %(ipv6)s
+bind6 %(ipv6)s
 
 # Specify the path for the unix socket that will be used to listen for
 # incoming connections. There is no default, so Redis will not listen
