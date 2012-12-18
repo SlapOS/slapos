@@ -475,24 +475,29 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     open_sale_order_list = self.portal.portal_catalog(
         portal_type='Open Sale Order',
         default_destination_uid=person.getUid(),
-        validation_state='validated'
     )
 
     if len(hosting_subscription_list) == 0:
       self.assertEqual(0, len(open_sale_order_list))
       return
 
-    self.assertEqual(1, len(open_sale_order_list))
-    open_sale_order = open_sale_order_list[0]
+    self.assertEqual(2, len(open_sale_order_list))
+
+    open_sale_order = [q for q in open_sale_order_list
+                       if q.getValidationState() == 'archived'][0]
     line_list = open_sale_order.contentValues(
         portal_type='Open Sale Order Line')
-
     self.assertEqual(len(hosting_subscription_list), len(line_list))
-
     self.assertSameSet(
         [q.getRelativeUrl() for q in hosting_subscription_list],
         [q.getAggregate() for q in line_list]
     )
+
+    validated_open_sale_order = [q for q in open_sale_order_list
+                                 if q.getValidationState() == 'validated'][0]
+    line_list = validated_open_sale_order.contentValues(
+        portal_type='Open Sale Order Line')
+    self.assertEqual(len(line_list), 0)
 
   @changeSkin('Hosting')
   def usePayzenManually(self, web_site):
