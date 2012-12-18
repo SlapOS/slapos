@@ -69,6 +69,7 @@ class Recipe(BaseSlapRecipe):
 
     rewrite_rule_list = []
     rewrite_rule_zope_list = []
+    rewrite_rule_zope_path_list = []
     slave_dict = {}
     service_dict = {}
 
@@ -118,6 +119,9 @@ class Recipe(BaseSlapRecipe):
         # RewriteMap for Zope Virtual Host Monster websites.
         if slave_instance.get("type", "").lower() in ['zope']:
           rewrite_rule_zope_list.append(rewrite_rule)
+          # For Zope, we have another dict containing the path e.g '/erp5/...
+          rewrite_rule_path = "%s %s" % (domain, slave_instance.get('path', ''))
+          rewrite_rule_zope_path_list.append(rewrite_rule_path)
         else:
           rewrite_rule_list.append(rewrite_rule)
 
@@ -152,6 +156,7 @@ class Recipe(BaseSlapRecipe):
         name=frontend_domain_name,
         rewrite_rule_list=rewrite_rule_list,
         rewrite_rule_zope_list=rewrite_rule_zope_list,
+        rewrite_rule_zope_path_list=rewrite_rule_zope_path_list,
         key=key, certificate=certificate)
 
     # Send connection informations about each slave
@@ -475,8 +480,13 @@ class Recipe(BaseSlapRecipe):
 
   def installFrontendApache(self, ip_list, key, certificate, name,
                             port=4443, plain_http_port=8080,
-                            rewrite_rule_list=[], rewrite_rule_zope_list=[],
+                            rewrite_rule_list=[],
+                            rewrite_rule_zope_list=[],
+                            rewrite_rule_zope_path_list=None,
                             access_control_string=None):
+    if rewrite_rule_zope_path_list is None:
+      rewrite_rule_zope_path_list = []
+
     # Create htdocs, populate it with default 404 document
     htdocs_location = os.path.join(self.data_root_directory, 'htdocs')
     self._createDirectory(htdocs_location)
@@ -517,9 +527,14 @@ class Recipe(BaseSlapRecipe):
     # Create configuration file and rewritemaps
     apachemap_name = "apachemap.txt"
     apachemapzope_name = "apachemapzope.txt"
+    apachemapzopepath_name = "apachemapzopepath.txt"
+
     self.createConfigurationFile(apachemap_name, "\n".join(rewrite_rule_list))
     self.createConfigurationFile(apachemapzope_name,
         "\n".join(rewrite_rule_zope_list))
+    self.createConfigurationFile(apachemapzopepath_name,
+        "\n".join(rewrite_rule_zope_path_list))
+
     apache_conf = self._getApacheConfigurationDict(name, ip_list, port)
     apache_conf['ssl_snippet'] = self.substituteTemplate(
         self.getTemplateFilename('apache.ssl-snippet.conf.in'),
@@ -543,6 +558,7 @@ class Recipe(BaseSlapRecipe):
       path_enable=path,
       apachemap_path=os.path.join(self.etc_directory, apachemap_name),
       apachemapzope_path=os.path.join(self.etc_directory, apachemapzope_name),
+      apachemapzopepath_path=os.path.join(self.etc_directory, apachemapzopepath_name),
       apache_domain=name,
       https_port=port,
       plain_http_port=plain_http_port,

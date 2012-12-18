@@ -100,15 +100,20 @@ Header append Vary User-Agent
   ProxyTimeout 600
   RewriteEngine On
 
-  # Define the two rewritemaps : one for zope, one generic
+  # Define the two RewriteMaps (key -> value store): one for Zope, one generic
+  # containing: rewritten URL -> original URL (a.k.a VirtualHostBase in Zope)
   RewriteMap apachemapzope txt:%(apachemapzope_path)s
   RewriteMap apachemapgeneric txt:%(apachemap_path)s
+
+  # Define another RewriteMap for Zope, containing:
+  # rewritten URL -> VirtualHostRoot
+  RewriteMap apachemapzopepath txt:%(apachemapzopepath_path)s
 
   # First, we check if we have a zope backend server
   # If so, let's use Virtual Host Daemon rewrite
   RewriteCond ${apachemapzope:%%{SERVER_NAME}} >""
   # We suppose that Apache listens to 443 (even indirectly thanks to things like iptables)
-  RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:443/VirtualHostRoot/$1 [L,P]
+  RewriteRule ^/(.*)$ ${apachemapzope:%%{SERVER_NAME}}/VirtualHostBase/https/%%{SERVER_NAME}:443/${apachemapzopepath:%%{SERVER_NAME}}/VirtualHostRoot/$1 [L,P]
 
   # If we have generic backend server, let's rewrite without virtual host daemon
   RewriteCond ${apachemapgeneric:%%{SERVER_NAME}} >""
