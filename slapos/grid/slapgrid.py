@@ -993,8 +993,6 @@ class Slapgrid(object):
   def asXML(self, computer_partition_usage_list):
     """Generates a XML report from computer partition usage list
     """
-    # XXX TODO rewrite without string composition...
-
     xml = ['<?xml version="1.0"?>',
            '<journal>',
            '<transaction type="Sale Packing List">',
