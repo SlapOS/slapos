@@ -13,7 +13,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 import os
 import tempfile
 from DateTime import DateTime
-from Products.ERP5Type.DateUtils import addToDate
+from Products.ERP5Type.DateUtils import addToDate, getClosestDate
 from zExceptions import Unauthorized
 
 class Simulator:
@@ -798,6 +798,11 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
     self.assertEqual(DateTime().earliestTime(), line.getStartDate())
+    self.assertEqual(DateTime().day(),
+                     subscription.getPeriodicityMonthDay())
+    start_date = addToDate(line.getStartDate(), to_add={'month': 1})
+    start_date = addToDate(start_date, to_add={'second': -1})
+    self.assertEqual(start_date, line.getStopDate())
 
   def test_usualLifetime_HostingSubscription(self):
     person = self.portal.person_module.template_member\
@@ -811,14 +816,17 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
 
     request_time = DateTime('2012/01/01')
-    subscription.workflow_history['instance_slap_interface_workflow'].append({
+    subscription.workflow_history['instance_slap_interface_workflow'] = [{
         'comment':'Simulated request instance',
         'error_message': '',
         'actor': 'ERP5TypeTestCase',
         'slap_state': 'start_requested',
         'time': request_time,
         'action': 'request_instance'
-    })
+    }]
+    subscription.edit(periodicity_month_day_list=[])
+    subscription.fixConsistency()
+    self.assertEqual(subscription.getPeriodicityMonthDay(), 1)
     self.tic()
 
     subscription.HostingSubscription_requestUpdateOpenSaleOrder()
@@ -842,10 +850,9 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
 
     # calculate stop date to be after now, begin with start date with precision
     # of month
-    stop_date = request_time
     now = DateTime()
-    while stop_date < now:
-      stop_date = addToDate(stop_date, to_add={'month': 1})
+    stop_date = getClosestDate(target_date=now, precision='month')
+    stop_date = addToDate(stop_date, to_add={'second': -1})
     self.assertEqual(stop_date, line.getStopDate())
 
     self.assertEqual(subscription.getRelativeUrl(), line.getAggregate())
@@ -918,10 +925,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
     self.assertEqual(request_time, archived_line.getStartDate())
-    now = DateTime()
-    while stop_date <= destroy_time:
-      stop_date = addToDate(stop_date, to_add={'month': 1})
-    self.assertEqual(stop_date, line.getStopDate())
+    self.assertEqual(DateTime('2112/02/02'), line.getStopDate())
 
   def test_lateAnalysed_HostingSubscription(self):
     person = self.portal.person_module.template_member\
@@ -934,6 +938,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         destination_section=person.getRelativeUrl())
     self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
 
+    subscription.workflow_history['instance_slap_interface_workflow'] = []
     request_time = DateTime('2012/01/01')
     subscription.workflow_history['instance_slap_interface_workflow'].append({
         'comment':'Simulated request instance',
@@ -953,6 +958,8 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         'time': destroy_time,
         'action': 'request_destroy'
     })
+    subscription.edit(periodicity_month_day_list=[])
+    subscription.fixConsistency()
     self.tic()
 
     subscription.HostingSubscription_requestUpdateOpenSaleOrder()
@@ -988,10 +995,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         line.getPrice())
     self.assertEqual(request_time, line.getStartDate())
 
-    stop_date = request_time
-    while stop_date <= destroy_time:
-      stop_date = addToDate(stop_date, to_add={'month': 1})
-    self.assertEqual(stop_date, line.getStopDate())
+    self.assertEqual(DateTime('2012/02/02'), line.getStopDate())
 
     new_open_sale_order = [x for x in open_sale_order_list \
                            if x.getValidationState() == 'validated'][0].getObject()
@@ -1012,14 +1016,16 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.portal.portal_workflow._jumpToStateFor(subscription, 'validated')
 
     request_time = DateTime('2012/01/01')
-    subscription.workflow_history['instance_slap_interface_workflow'].append({
+    subscription.workflow_history['instance_slap_interface_workflow'] = [{
         'comment':'Simulated request instance',
         'error_message': '',
         'actor': 'ERP5TypeTestCase',
         'slap_state': 'start_requested',
         'time': request_time,
         'action': 'request_instance'
-    })
+    }]
+    subscription.edit(periodicity_month_day_list=[])
+    subscription.fixConsistency()
     self.tic()
 
     subscription.HostingSubscription_requestUpdateOpenSaleOrder()
@@ -1056,9 +1062,12 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     # calculate stop date to be after now, begin with start date with precision
     # of month
     stop_date = request_time
+    next_stop_date = stop_date
     now = DateTime()
-    while stop_date < now:
-      stop_date = addToDate(stop_date, to_add={'month': 1})
+    while next_stop_date < now:
+      stop_date = next_stop_date
+      next_stop_date = addToDate(stop_date, to_add={'month': 1})
+    stop_date = addToDate(stop_date, to_add={'second': -1})
     self.assertEqual(stop_date, line.getStopDate())
 
     subscription2 = self.portal.hosting_subscription_module\
@@ -1069,14 +1078,16 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.portal.portal_workflow._jumpToStateFor(subscription2, 'validated')
 
     request_time_2 = DateTime('2012/08/01')
-    subscription2.workflow_history['instance_slap_interface_workflow'].append({
+    subscription2.workflow_history['instance_slap_interface_workflow'] = [{
         'comment':'Simulated request instance',
         'error_message': '',
         'actor': 'ERP5TypeTestCase',
         'slap_state': 'start_requested',
         'time': request_time_2,
         'action': 'request_instance'
-    })
+    }]
+    subscription2.edit(periodicity_month_day_list=[])
+    subscription2.fixConsistency()
     self.tic()
 
     subscription2.HostingSubscription_requestUpdateOpenSaleOrder()
@@ -1106,9 +1117,12 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
         line.getPrice())
 
     stop_date_2 = request_time_2
+    next_stop_date_2 = stop_date_2
     now = DateTime()
-    while stop_date_2 < now:
-      stop_date_2 = addToDate(stop_date_2, to_add={'month': 1})
+    while next_stop_date_2 < now:
+      stop_date_2 = next_stop_date_2
+      next_stop_date_2 = addToDate(stop_date_2, to_add={'month': 1})
+    stop_date_2 = addToDate(stop_date_2, to_add={'second': -1})
 
     validated_line_1 = [q for q in validated_line_list if q.getAggregate() == \
         subscription.getRelativeUrl()][0]
@@ -1257,7 +1271,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
     self.assertEqual(DateTime().earliestTime(), line.getStartDate())
-    self.assertEqual(addToDate(line.getStartDate(), to_add={'month': 1}),
+    self.assertEqual(addToDate(line.getStartDate(), to_add={'day': 1}),
                      line.getStopDate())
 
     new_open_sale_order = [x for x in open_sale_order_list \

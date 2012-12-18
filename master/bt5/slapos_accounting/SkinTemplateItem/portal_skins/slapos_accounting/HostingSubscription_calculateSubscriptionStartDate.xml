@@ -50,33 +50,37 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string encoding="cdata"><![CDATA[
-
+            <value> <string>from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
 from Products.ERP5Type.DateUtils import addToDate, getClosestDate\n
-hosting_subscription = state_change[\'object\']\n
 \n
-edit_kw = {}\n
+hosting_subscription = context\n
+portal = context.getPortalObject()\n
 \n
-if hosting_subscription.getPeriodicityHour() is None:\n
-  edit_kw[\'periodicity_hour_list\'] = [0]\n
-if hosting_subscription.getPeriodicityMinute() is None:\n
-  edit_kw[\'periodicity_minute_list\'] = [0]\n
-if hosting_subscription.getPeriodicityMonthDay() is None:\n
-  start_date = hosting_subscription.HostingSubscription_calculateSubscriptionStartDate()\n
-  start_date = getClosestDate(target_date=start_date, precision=\'day\')\n
-  while start_date.day() >= 29:\n
-    start_date = addToDate(start_date, to_add={\'day\': -1})\n
-  edit_kw[\'periodicity_month_day_list\'] = [start_date.day()]\n
+workflow_item_list = portal.portal_workflow.getInfoFor(\n
+  ob=hosting_subscription,\n
+  name=\'history\',\n
+  wf_id=\'instance_slap_interface_workflow\')\n
+start_date = None\n
+for item in workflow_item_list:\n
+  start_date = item.get(\'time\')\n
+  if start_date:\n
+    break\n
 \n
-if edit_kw:\n
-  hosting_subscription.edit(**edit_kw)\n
-
-
-]]></string> </value>
+if start_date is None:\n
+  # Compatibility with old Hosting subscription\n
+  start_date = hosting_subscription.getCreationDate()\n
+\n
+start_date = getClosestDate(target_date=start_date, precision=\'day\')\n
+\n
+return start_date\n
+</string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string>REQUEST=None</string> </value>
         </item>
         <item>
             <key> <string>_proxy_roles</string> </key>
@@ -88,7 +92,7 @@ if edit_kw:\n
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>HostingSubscription_fixPeriodicity</string> </value>
+            <value> <string>HostingSubscription_calculateSubscriptionStartDate</string> </value>
         </item>
       </dictionary>
     </pickle>

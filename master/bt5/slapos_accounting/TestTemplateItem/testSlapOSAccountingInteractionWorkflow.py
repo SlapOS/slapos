@@ -4,6 +4,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 import transaction
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from DateTime import DateTime
+from Products.ERP5Type.DateUtils import addToDate
 
 class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
   def beforeTearDown(self):
@@ -139,6 +140,24 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
     instance.requestStop(**request_kw)
     self.assertEqual(instance.getCausalityState(), 'diverged')
 
+  def _simulateHostingSubscription_calculateSubscriptionStartDate(self, date):
+    script_name = 'HostingSubscription_calculateSubscriptionStartDate'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""from DateTime import DateTime
+return DateTime('%s') """ % date.ISO())
+    transaction.commit()
+
+  def _dropHostingSubscription_calculateSubscriptionStartDate(self):
+    script_name = 'HostingSubscription_calculateSubscriptionStartDate'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
   def test_HostingSubscription_fixConsistency(self,
         date=DateTime('2012/01/15'), day=15):
     new_id = self.generateNewId()
@@ -155,23 +174,18 @@ class TestSlapOSAccountingInteractionWorkflow(testSlapOSMixin):
     self.assertEqual(item.getPeriodicityMinute(), None)
     self.assertEqual(item.getPeriodicityMonthDay(), None)
 
+    self._simulateHostingSubscription_calculateSubscriptionStartDate(date)
     try:
-      from Products.ERP5Type.Base import Base
-      Base.original_getCreationDate = Base.getCreationDate
-      def getCreationDate(*args, **kwargs):
-        return date
-      Base.getCreationDate = getCreationDate
       item.fixConsistency()
     finally:
-      Base.getCreationDate = Base.original_getCreationDate
-      delattr(Base, 'original_getCreationDate')
+      self._dropHostingSubscription_calculateSubscriptionStartDate()
 
     self.assertEqual(item.getPeriodicityHourList(), [0])
     self.assertEqual(item.getPeriodicityMinuteList(), [0])
     self.assertEqual(item.getPeriodicityMonthDay(), day)
 
   def test_HostingSubscription_fixConsistency_today_after_28(self):
-    self.test_HostingSubscription_fixConsistency(DateTime('2012/01/30'), 28)
+    self.test_HostingSubscription_fixConsistency(DateTime('2012/01/29'), 28)
 
   def test_HostingSubscription_manageAfter(self):
     class DummyTestException(Exception):

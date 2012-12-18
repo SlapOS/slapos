@@ -108,25 +108,31 @@
         <item>
             <key> <string>periodicity_hour</string> </key>
             <value>
-              <tuple>
-                <int>0</int>
-              </tuple>
+              <tuple/>
             </value>
         </item>
         <item>
             <key> <string>periodicity_minute</string> </key>
             <value>
-              <tuple>
-                <int>0</int>
-              </tuple>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_month</string> </key>
+            <value>
+              <tuple/>
             </value>
         </item>
         <item>
             <key> <string>periodicity_month_day</string> </key>
             <value>
-              <tuple>
-                <int>28</int>
-              </tuple>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>periodicity_week</string> </key>
+            <value>
+              <tuple/>
             </value>
         </item>
         <item>

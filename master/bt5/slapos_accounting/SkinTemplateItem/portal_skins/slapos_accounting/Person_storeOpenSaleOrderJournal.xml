@@ -89,40 +89,20 @@ def newOpenOrder(open_sale_order):\n
 def storeWorkflowComment(document, comment):\n
   portal.portal_workflow.doActionFor(document, \'edit_action\', comment=comment)\n
 \n
-def getHostingSubscriptionSimulationStartDate(hosting_subscription):\n
-  workflow_item_list = portal.portal_workflow.getInfoFor(\n
-    ob=hosting_subscription,\n
-    name=\'history\',\n
-    wf_id=\'instance_slap_interface_workflow\')\n
-  start_date = None\n
-  for item in workflow_item_list:\n
-    if item.get(\'action\') == \'request_instance\':\n
-      start_date = item.get(\'time\')\n
-      break\n
-  if start_date is None:\n
-    # Compatibility with old Hosting subscription\n
-    start_date = hosting_subscription.getCreationDate()\n
-\n
-  start_date = getClosestDate(target_date=start_date, precision=\'day\')\n
-  while start_date.day() >= 29:\n
-    start_date = addToDate(start_date, to_add={\'day\': -1})\n
-\n
-  return start_date\n
-\n
-def getHostingSubscriptionSimulationStopDate(hosting_subscription, start_date):\n
-  workflow_item_list = portal.portal_workflow.getInfoFor(\n
-    ob=hosting_subscription,\n
-    name=\'history\',\n
-    wf_id=\'instance_slap_interface_workflow\')\n
-  end_date = now\n
-  for item in workflow_item_list:\n
-    if item.get(\'slap_state\') == \'destroy_requested\':\n
-      end_date = item.get(\'time\')\n
-      break\n
-  \n
-  stop_date = start_date\n
-  while stop_date <= end_date:\n
-    stop_date = addToDate(stop_date, to_add={\'month\': 1})\n
+def calculateOpenOrderLineStopDate(open_order_line, hosting_subscription):\n
+  end_date = hosting_subscription.HostingSubscription_calculateSubscriptionStopDate()\n
+  if end_date is None: \n
+    # Be sure that start date is different from stop date\n
+    next_stop_date = hosting_subscription.getNextPeriodicalDate(hosting_subscription.HostingSubscription_calculateSubscriptionStartDate())\n
+    current_stop_date = next_stop_date\n
+    while next_stop_date < now:\n
+      # Return result should be < now, it order to provide stability in simulation (destruction if it happen should be >= now)\n
+      current_stop_date = next_stop_date\n
+      next_stop_date = \\\n
+         hosting_subscription.getNextPeriodicalDate(current_stop_date)\n
+    return addToDate(current_stop_date, to_add={\'second\': -1})\n
+  else:\n
+    stop_date = end_date\n
   return stop_date\n
 \n
 # Prevent concurrent transaction to update the open order\n
@@ -161,20 +141,12 @@ if open_sale_order is not None:\n
     assert current_start_date < current_stop_date\n
 \n
     hosting_subscription = open_order_line.getAggregateValue(portal_type=\'Hosting Subscription\')\n
-    assert current_start_date == getHostingSubscriptionSimulationStartDate(hosting_subscription)\n
+    assert current_start_date == hosting_subscription.HostingSubscription_calculateSubscriptionStartDate()\n
 \n
     # First check if the hosting subscription has been correctly simulated (this script may run only once per year...)\n
-    stop_date = getHostingSubscriptionSimulationStopDate(hosting_subscription, current_start_date)\n
+    stop_date = calculateOpenOrderLineStopDate(open_order_line, hosting_subscription)\n
     if current_stop_date != stop_date:\n
       # Bingo, new subscription to generate\n
-      try:\n
-        assert stop_date == getHostingSubscriptionSimulationStopDate(hosting_subscription, current_stop_date)\n
-      except:\n
-        raise ValueError, "%s (%s) != %s (%s)" % (stop_date,\n
-                    current_start_date,\n
-                    getHostingSubscriptionSimulationStopDate(hosting_subscription,\n
-                                                             current_stop_date),\n
-                    current_stop_date)\n
       open_order_line.edit(\n
         stop_date=stop_date,\n
         activate_kw=activate_kw)\n
@@ -229,12 +201,12 @@ if (add_line_list):\n
   for hosting_subscription in add_line_list:\n
     open_sale_order_line = open_sale_order_line_template.Base_createCloneDocument(batch_mode=1,\n
         destination=open_sale_order)\n
-    start_date = getHostingSubscriptionSimulationStartDate(hosting_subscription)\n
+    start_date = hosting_subscription.HostingSubscription_calculateSubscriptionStartDate()\n
     open_sale_order_line.edit(\n
       activate_kw=activate_kw,\n
       title=hosting_subscription.getTitle(),\n
       start_date=start_date,\n
-      stop_date=getHostingSubscriptionSimulationStopDate(hosting_subscription, start_date),\n
+      stop_date=calculateOpenOrderLineStopDate(open_sale_order_line, hosting_subscription),\n
       aggregate_value=hosting_subscription,\n
       )\n
     storeWorkflowComment(open_sale_order_line, "Created for %s" % hosting_subscription.getRelativeUrl())\n
