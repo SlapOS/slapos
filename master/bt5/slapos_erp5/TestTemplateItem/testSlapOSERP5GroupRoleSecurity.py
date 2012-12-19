@@ -22,10 +22,19 @@ class TestSlapOSGroupRoleSecurityMixin(testSlapOSMixin):
     return [x['name'] for x in context.permissionsOfRole(role) \
           if x['selected'] == 'SELECTED']
 
+  def _acquirePermissions(self, context):
+    return [x['name'] for x in context.permission_settings() \
+          if x['acquire'] == 'CHECKED']
+
   def assertPermissionsOfRole(self, context, role, permission_list):
     self.assertSameSet(
       permission_list,
       self._permissionsOfRole(context, role))
+
+  def assertAcquiredPermissions(self, context, permission_list):
+    self.assertSameSet(
+      permission_list,
+      self._acquirePermissions(context))
 
   def assertSecurityGroup(self, context, security_group_list, acquired):
     self.assertEquals(acquired, context._getAcquireLocalRoles())
@@ -1468,3 +1477,19 @@ class TestPayzenEvent(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, shadow_reference, ['Assignee'])
     self.assertRoles(product, self.user_id, ['Owner'])
+
+class TestSecurePaymentTool(TestSlapOSGroupRoleSecurityMixin):
+  def test_no_permissions_for_users(self):
+    tool = self.portal.portal_secure_payments
+    self.assertPermissionsOfRole(tool, 'Anonymous', [])
+    self.assertPermissionsOfRole(tool, 'Assignee', [])
+    self.assertPermissionsOfRole(tool, 'Assignor', [])
+    self.assertPermissionsOfRole(tool, 'Associate', [])
+    self.assertPermissionsOfRole(tool, 'Auditor', [])
+    self.assertPermissionsOfRole(tool, 'Authenticated', [])
+    self.assertPermissionsOfRole(tool, 'Author', [])
+    self.assertPermissionsOfRole(tool, 'Member', [])
+    self.assertPermissionsOfRole(tool, 'Owner', [])
+    self.assertPermissionsOfRole(tool, 'Reviewer', [])
+
+    self.assertAcquiredPermissions(tool, [])
