@@ -480,10 +480,14 @@ class Recipe(BaseSlapRecipe):
 
   def installFrontendApache(self, ip_list, key, certificate, name,
                             port=4443, plain_http_port=8080,
-                            rewrite_rule_list=[],
-                            rewrite_rule_zope_list=[],
+                            rewrite_rule_list=None,
+                            rewrite_rule_zope_list=None,
                             rewrite_rule_zope_path_list=None,
                             access_control_string=None):
+    if rewrite_rule_list is None:
+      rewrite_rule_list = []
+    if rewrite_rule_zope_list is None:
+      rewrite_rule_zope_list = []
     if rewrite_rule_zope_path_list is None:
       rewrite_rule_zope_path_list = []
 
