@@ -552,7 +552,11 @@ class Recipe(BaseSlapRecipe):
 
     path = self.substituteTemplate(
         self.getTemplateFilename('apache.conf.path-protected.in'),
-        dict(path='/', access_control_string='none'))
+        dict(path='/',
+             access_control_string='none',
+             document_root=apache_conf['document_root'],
+        )
+    )
 
     apache_conf.update(**dict(
       path_enable=path,
