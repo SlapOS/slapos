@@ -101,6 +101,7 @@
                     <value>
                       <list>
                         <string>my_title</string>
+                        <string>your_ad</string>
                         <string>my_url_string</string>
                         <string>my_source_reference</string>
                         <string>last_event_listbox</string>
