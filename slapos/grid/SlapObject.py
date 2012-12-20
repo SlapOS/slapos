@@ -205,7 +205,7 @@ class Software(object):
       if func == os.path.islink:
         os.unlink(path)
       else:
-        os.chmod (path, 0600)
+        os.chmod(path, 0600)
         func(path)
     try:
       if os.path.exists(self.software_path):
@@ -304,6 +304,15 @@ class Partition(object):
         USER=pwd.getpwuid(uid).pw_name,
       )
 
+  def updateSymlink(self, sr_symlink, software_path):
+    if os.path.exists(sr_symlink):
+      if not os.path.islink(sr_symlink):
+        self.logger.debug('Not a symlink: %s, has been ignored' % (sr_symlink))
+        return
+      os.unlink(sr_symlink)
+    os.symlink(software_path, sr_symlink)
+    os.lchown(sr_symlink, *self.getUserGroupId())
+
   def install(self):
     """ Creates configuration file from template in software_path, then
     installs the software partition with the help of buildout
@@ -315,6 +324,10 @@ class Partition(object):
     if not os.path.isdir(self.instance_path):
       raise PathDoesNotExistError('Please create partition directory %s'
                                            % self.instance_path)
+
+    sr_symlink = os.path.join(self.instance_path, 'software_release')
+    self.updateSymlink(sr_symlink, self.software_path)
+
     instance_stat_info = os.stat(self.instance_path)
     permission = oct(stat.S_IMODE(instance_stat_info.st_mode))
     if permission != REQUIRED_COMPUTER_PARTITION_PERMISSION:
