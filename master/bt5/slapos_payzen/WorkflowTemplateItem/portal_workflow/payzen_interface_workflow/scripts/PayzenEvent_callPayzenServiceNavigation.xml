@@ -53,62 +53,29 @@
             <value> <string>from DateTime import DateTime\n
 payzen_event = state_change[\'object\']\n
 \n
-# Get required arguments\n
-kwargs = state_change.kwargs\n
-\n
-# Required args\n
-# Raise TypeError if all parameters are not provided\n
-try:\n
-  vads_url_cancel = kwargs[\'vads_url_cancel\']\n
-  vads_url_error = kwargs[\'vads_url_error\']\n
-  vads_url_referral = kwargs[\'vads_url_referral\']\n
-  vads_url_refused = kwargs[\'vads_url_refused\']\n
-  vads_url_success = kwargs[\'vads_url_success\']\n
-  vads_url_return = kwargs[\'vads_url_return\']\n
-except KeyError:\n
-  raise TypeError, "PayzenEvent_generateNavigationPage takes exactly 6 arguments"\n
-\n
-payment_transaction = payzen_event.getDestinationValue(portal_type="Payment Transaction")\n
-now = DateTime()\n
-payment_transaction.AccountingTransaction_updateStartDate(now)\n
-\n
-transaction_date, transaction_id = payment_transaction.PaymentTransaction_generatePayzenId()\n
-if transaction_id is None:\n
-  raise ValueError, "Transaction already registered"\n
-\n
-today = now.toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d\')\n
-payzen_dict = {\n
-  \'vads_currency\': payment_transaction.getResourceValue().Currency_getIntegrationMapping(),\n
-  \'vads_amount\': str(int(round((payment_transaction.PaymentTransaction_getTotalPayablePrice() * -100), 0))),\n
-  \'vads_trans_date\': now.toZone(\'UTC\').asdatetime().strftime(\'%Y%m%d%H%M%S\'),\n
-  \'vads_trans_id\': transaction_id,\n
-  \'vads_language\': \'en\',\n
-  \'vads_url_cancel\': vads_url_cancel,\n
-  \'vads_url_error\': vads_url_error,\n
-  \'vads_url_referral\': vads_url_referral,\n
-  \'vads_url_refused\': vads_url_refused,\n
-  \'vads_url_success\': vads_url_success,\n
-  \'vads_url_return\': vads_url_return,\n
-}\n
-\n
-html_document = context.PayzenEvent_callPayzenServiceNavigation(state_change, payzen_dict)\n
-payzen_event.newContent(\n
-  title=\'Shown Page\',\n
-  portal_type=\'Payzen Event Message\',\n
-  text_content=html_document,\n
+payment_service = payzen_event.getSourceValue(portal_type="Payzen Service")\n
+return payment_service.navigate(\n
+  page_template=\'payzen_payment\',\n
+  pay=\'Click to pay\',\n
+  payzen_dict=payzen_dict,\n
 )\n
-\n
-payzen_event.confirm()\n
-payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>state_change</string> </value>
+            <value> <string>state_change, payzen_dict</string> </value>
+        </item>
+        <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>PayzenEvent_generateNavigationPage</string> </value>
+            <value> <string>PayzenEvent_callPayzenServiceNavigation</string> </value>
         </item>
       </dictionary>
     </pickle>
