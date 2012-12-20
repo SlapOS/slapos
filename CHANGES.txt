@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.71 (2012-12-20)
+-----------------
+
+ * frontend: Add "path" parameter for Zope instances. [Cedric de Saint Martin]
+
 0.70 (2012-11-05)
 -----------------
 
