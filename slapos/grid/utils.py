@@ -101,15 +101,16 @@ class SlapPopen(subprocess.Popen):
 
     logger = logging.getLogger('SlapProcessManager')
     # XXX-Cedric: this algorithm looks overkill for simple logging.
-    self.output = ''
+    output_lines = []
     while True:
       line = self.stdout.readline()
       if line == '' and self.poll() != None:
         break
-      self.output = self.output + line
+      output_lines.append(line)
       if line[-1:] == '\n':
         line = line[:-1]
       logger.info(line)
+    self.output = ''.join(output_lines)
 
 def getSoftwareUrlHash(url):
   return md5(url).hexdigest()
