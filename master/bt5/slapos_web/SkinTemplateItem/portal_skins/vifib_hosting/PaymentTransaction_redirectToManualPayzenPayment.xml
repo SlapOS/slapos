@@ -56,6 +56,8 @@ portal = context.getPortalObject()\n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
 def wrapWithShadow(payment_transaction, person_relative_url):\n
+  web_site = context.getWebSiteValue()\n
+\n
   transaction_date, transaction_id = payment_transaction.PaymentTransaction_getPayzenId()\n
   if transaction_id is not None:\n
     message = payment_transaction.Base_translateString("Payment already registered.")\n
@@ -66,7 +68,6 @@ def wrapWithShadow(payment_transaction, person_relative_url):\n
     destination_section=person_relative_url,\n
   )\n
 \n
-  web_site = context.getWebSiteValue()\n
   callback_websection = web_site.payzen_callback\n
   query = make_query(dict(transaction=payment_transaction.getRelativeUrl()))\n
   system_event.generateManualPaymentPage(\n
