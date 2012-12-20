@@ -59,7 +59,7 @@ from DateTime import DateTime\n
 payzen_event = state_change[\'object\']\n
 transaction = payzen_event.getDestinationValue()\n
 portal = transaction.getPortalObject()\n
-service = portal.portal_secure_payments.find()\n
+payment_service = payzen_event.getSourceValue(portal_type="Payzen Service")\n
 \n
 previous_id = transaction.PaymentTransaction_getPreviousPayzenId()\n
 if previous_id is None:\n
@@ -81,7 +81,7 @@ payzen_dict.update(\n
   transactionId=previous_id\n
 )\n
 \n
-data_kw, signature, sent_text, received_text = service.soap_duplicate(**payzen_dict)\n
+data_kw, signature, sent_text, received_text = payment_service.soap_duplicate(**payzen_dict)\n
 \n
 sent = payzen_event.newContent(title=\'Sent SOAP\', portal_type=\'Payzen Event Message\', text_content=sent_text)\n
 received = payzen_event.newContent(title=\'Received SOAP\', text_content=received_text, predecessor_value=sent, portal_type=\'Payzen Event Message\')\n
