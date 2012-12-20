@@ -1492,4 +1492,4 @@ class TestSecurePaymentTool(TestSlapOSGroupRoleSecurityMixin):
     self.assertPermissionsOfRole(tool, 'Owner', [])
     self.assertPermissionsOfRole(tool, 'Reviewer', [])
 
-    self.assertAcquiredPermissions(tool, [])
+    self.assertAcquiredPermissions(tool, ['Add SlapOS Tools', 'Add Vifib Tools'])
