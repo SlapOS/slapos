@@ -127,8 +127,9 @@ Notes
 It is not possible with slapos to listen to port <= 1024, because process are
 not run as root. It is a good idea then to go on the node where the instance is
 and set some iptables rules like (if using default ports)::
-  iptables -t nat -A PREROUTING -p tcp -d {public ip} --dport 443 -j DNAT --to-destination {listening ip}:4443
-  iptables -t nat -A PREROUTING -p tcp -d {public_ip} --dport 80 -j DNAT --to-destination {listening ip}:8080
+
+  iptables -t nat -A PREROUTING -p tcp -d {public_ipv4} --dport 443 -j DNAT --to-destination {listening_ipv4}:4443
+  iptables -t nat -A PREROUTING -p tcp -d {public_ipv4} --dport 80 -j DNAT --to-destination {listening_ipv4}:8080
 
 Where {public ip} is the public IP of your server, or at least the LAN IP to where your NAT will forward to.
 {listening ip} is the private ipv4 (like 10.0.34.123) that the instance is using and sending as connection parameter.
