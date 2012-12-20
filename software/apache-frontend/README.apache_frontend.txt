@@ -73,7 +73,7 @@ cache
 ~~~~~
 Specify if slave instance should use a varnish / stunnel to connect to backend.
 Possible values: "true", "false".
-"cache" is an optional parameter. Defaults to "false". 
+"cache" is an optional parameter. Defaults to "false".
 Example: true
 
 type
@@ -81,22 +81,33 @@ type
 Specify if slave instance will redirect to a zope backend. If specified, Apache
 RewriteRule will use Zope's Virtual Host Daemon.
 Possible values: "zope", "default".
-"type" is an optional parameter. Defaults to "default". 
+"type" is an optional parameter. Defaults to "default".
 Example: zope
 
 custom_domain
 ~~~~~~~~~~~~~
 Domain name to use as frontend. The frontend will be accessible from this domain.
 "custom_domain" is an optional parameter. Defaults to
-[instancereference].[masterdomain]. 
+[instancereference].[masterdomain].
 Example: www.mycustomdomain.com
+
+
+path
+~~~~
+Only used if type is "zope".
+
+Will append the specified path to the "VirtualHostRoot" of the zope's
+VirtualHostMonster.
+
+"path" is an optional parameter, ignored if not specified.
+Example of value: "/erp5/web_site_module/hosting/"
 
 
 Advanced example
 ================
 
 Request slave frontend instance using a Zope backend, with Varnish activated,
-listening to a custom domain::
+listening to a custom domain and redirecting to /erp5/::
   instance = request(
     software_release=apache_frontend,
     partition_reference='frontend2',
@@ -105,6 +116,7 @@ listening to a custom domain::
         "url":"https://[1:2:3:4]:1234/someresource",
         "cache":"true",
         "type":"zope",
+        "path":"/erp5",
         "custom_domain":"mycustomdomain.com",
     }
   )
