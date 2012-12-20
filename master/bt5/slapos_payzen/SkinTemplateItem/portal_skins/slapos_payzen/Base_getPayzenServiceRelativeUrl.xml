@@ -55,14 +55,10 @@ if REQUEST is not None:\n
   raise Unauthorized\n
 \n
 portal = context.getPortalObject()\n
+payment_service = portal.portal_secure_payments.find(\n
+  service_reference=portal.portal_preferences.getPreferredPayzenPaymentServiceReference())\n
 \n
-kw.update({\n
-  \'portal_type\': \'Payzen Event\',\n
-  \'source\': portal.Base_getPayzenServiceRelativeUrl(),\n
-  \'destination_value\': context,\n
-})\n
-\n
-return portal.system_event_module.newContent(**kw)\n
+return payment_service.getRelativeUrl()\n
 </string> </value>
         </item>
         <item>
@@ -70,8 +66,16 @@ return portal.system_event_module.newContent(**kw)\n
             <value> <string>REQUEST=None, **kw</string> </value>
         </item>
         <item>
+            <key> <string>_proxy_roles</string> </key>
+            <value>
+              <tuple>
+                <string>Manager</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>id</string> </key>
-            <value> <string>PaymentTransaction_createPayzenEvent</string> </value>
+            <value> <string>Base_getPayzenServiceRelativeUrl</string> </value>
         </item>
       </dictionary>
     </pickle>

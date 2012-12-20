@@ -573,3 +573,17 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         event.workflow_history['system_event_workflow'][-1]['comment'])
 
 
+class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(testSlapOSMixin):
+
+  def beforeTearDown(self):
+    transaction.abort()
+
+  def test_getPayzenServiceRelativeUrl_REQUEST_disallowed(self):
+    self.assertRaises(
+      Unauthorized,
+      self.portal.Base_getPayzenServiceRelativeUrl,
+      REQUEST={})
+
+  def test_getPayzenServiceRelativeUrl_REQUEST_disallowed(self):
+    result = self.portal.Base_getPayzenServiceRelativeUrl()
+    self.assertEquals(result, 'portal_secure_payments/slapos_payzen_test')
