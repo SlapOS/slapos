@@ -43,6 +43,9 @@ class Recipe(BaseSlapRecipe):
         'template/%s' % template_name)
 
   def _install(self):
+    # Define directory not defined in deprecated lib
+    self.service_directory = os.path.join(self.etc_directory, 'service')
+
     # Check for mandatory arguments
     frontend_domain_name = self.parameter_dict.get("domain")
     if frontend_domain_name is None:
@@ -294,7 +297,7 @@ class Recipe(BaseSlapRecipe):
    self._createDirectory(crontabs)
    wrapper = zc.buildout.easy_install.scripts([('crond',
      'slapos.recipe.librecipe.execute', 'execute')], self.ws, sys.executable,
-     self.wrapper_directory, arguments=[
+     self.service_directory, arguments=[
        self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
        '-t', timestamps, '-f', '-l', '5', '-M', catcher]
      )[0]
@@ -357,7 +360,7 @@ class Recipe(BaseSlapRecipe):
     self.path_list.extend(zc.buildout.easy_install.scripts([
       ('certificate_authority', __name__ + '.certificate_authority',
          'runCertificateAuthority')],
-        self.ws, sys.executable, self.wrapper_directory, arguments=[dict(
+        self.ws, sys.executable, self.service_directory, arguments=[dict(
           openssl_configuration=openssl_configuration,
           openssl_binary=self.options['openssl_binary'],
           certificate=os.path.join(self.ca_dir, 'cacert.pem'),
@@ -432,7 +435,7 @@ class Recipe(BaseSlapRecipe):
     environment = dict(PATH=self.options["binutils_directory"])
     wrapper = zc.buildout.easy_install.scripts([(name,
       'slapos.recipe.librecipe.execute', 'executee')], self.ws,
-      sys.executable, self.wrapper_directory, arguments=[varnish_argument_list,
+      sys.executable, self.service_directory, arguments=[varnish_argument_list,
       environment])[0]
     self.path_list.append(wrapper)
 
@@ -471,7 +474,7 @@ class Recipe(BaseSlapRecipe):
           stunnel_conf))
     wrapper = zc.buildout.easy_install.scripts([('stunnel',
       'slapos.recipe.librecipe.execute', 'execute_wait')], self.ws,
-      sys.executable, self.wrapper_directory, arguments=[
+      sys.executable, self.service_directory, arguments=[
         [self.options['stunnel_binary'].strip(), stunnel_conf_path],
         [certificate, key]]
       )[0]
@@ -582,7 +585,7 @@ class Recipe(BaseSlapRecipe):
 
     self.path_list.extend(zc.buildout.easy_install.scripts([(
       'frontend_apache', 'slapos.recipe.erp5.apache', 'runApache')], self.ws,
-          sys.executable, self.wrapper_directory, arguments=[
+          sys.executable, self.service_directory, arguments=[
             dict(
               required_path_list=[key, certificate],
               binary=self.options['httpd_binary'],
