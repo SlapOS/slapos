@@ -4,4 +4,10 @@
    <multi_property id='category'>group/company</multi_property>
    <multi_property id='base_category'>group</multi_property>
   </role>
+  <role id='Auditor'>
+   <property id='title'>User</property>
+   <property id='condition'>python: here.getDestinationSection('', portal_type='Person') != ''</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
+   <multi_property id='base_category'>destination_section</multi_property>
+  </role>
 </type_roles>

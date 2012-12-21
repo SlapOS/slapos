@@ -319,3 +319,19 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
       Folder.recursiveReindexObject = Folder.recursiveReindexObject_call
     self.assertEqual(comment,
         integration_site.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_SaleInvoiceTransaction_setDestinationSection(self):
+    self._makePerson()
+    sale_invoice_transaction = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction')
+    self.assertSecurityGroup(sale_invoice_transaction, [self.user_id,
+        'G-COMPANY'],
+        False)
+
+    sale_invoice_transaction.edit(
+        destination_section=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(sale_invoice_transaction, [self.user_id,
+        'G-COMPANY', self.person_user.getReference()],
+        False)

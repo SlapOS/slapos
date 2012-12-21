@@ -32,6 +32,10 @@
   <workflow>local_permission_slapos_interaction_workflow</workflow>
  </chain>
  <chain>
+  <type>Sale Invoice Transaction</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Slave Instance</type>
   <workflow>local_permission_slapos_interaction_workflow</workflow>
  </chain>

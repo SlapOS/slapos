@@ -905,6 +905,22 @@ class TestSaleInvoiceTransaction(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+  def test_User(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.accounting_module.newContent(
+        portal_type='Sale Invoice Transaction')
+    product.edit(
+        destination_section_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id, reference], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
 class TestServiceModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.service_module
