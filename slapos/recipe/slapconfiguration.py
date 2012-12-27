@@ -92,9 +92,21 @@ class Recipe(object):
           options['partition'],
       ).getInstanceParameterDict()
       # XXX: those are not partition parameters, strictly speaking.
-      # Discard them, and make them available as separate section keys.
-      options['slap-software-type'] = parameter_dict.pop(
-          'slap_software_type')
+      # Make them available as individual section keys.
+      for his_key in (
+                  'slap_software_type',
+                  'slap_computer_partition_id',
+                  'slap_computer_id',
+                  'slap_software_release_url',
+                  'slave_instance_list',
+                  'timestamp',
+              ):
+          try:
+              value = parameter_dict.pop(his_key)
+          except KeyError:
+              pass
+          else:
+              options[his_key.replace('_', '-')] = value
       ipv4_set = set()
       v4_add = ipv4_set.add
       ipv6_set = set()
