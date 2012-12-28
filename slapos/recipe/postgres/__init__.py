@@ -50,7 +50,7 @@ class Recipe(GenericBaseRecipe):
     """
 
     def fetch_ipv6_host(self, options):
-        """
+        """\
         Returns a string represtation of ipv6_host.
         May receive a regular string, a set or a string serialized by buildout.
         """
@@ -70,6 +70,8 @@ class Recipe(GenericBaseRecipe):
     def install(self):
         pgdata = self.options['pgdata-directory']
 
+        # if the pgdata already exists, skip all steps, we don't need to do anything.
+
         if not os.path.exists(pgdata):
             self.createCluster()
             self.createConfig()
@@ -77,10 +79,12 @@ class Recipe(GenericBaseRecipe):
             self.createSuperuser()
             self.createRunScript()
 
-        return [
-                # XXX should we really return something here?
-                # os.path.join(pgdata, 'postgresql.conf')
-                ]
+        # install() methods usually return the pathnames of managed files.
+        # If they are missing, they will be rebuilt.
+        # In this case, we already check for the existence of pgdata,
+        # so we don't need to return anything here.
+
+        return []
 
 
     def check_exists(self, path):
@@ -89,6 +93,13 @@ class Recipe(GenericBaseRecipe):
 
 
     def createCluster(self):
+        """\
+        A Postgres cluster is "a collection of databases that is managed
+        by a single instance of a running database server".
+
+        Here we create an empty cluster. The authentication for this
+        command is through the unix socket.
+        """
         initdb_binary = os.path.join(self.options['bin'], 'initdb')
         self.check_exists(initdb_binary)
 
@@ -150,7 +161,7 @@ class Recipe(GenericBaseRecipe):
 
 
     def createSuperuser(self):
-        """
+        """\
         Creates a Postgres superuser - other than "slapuser#" for use by the application.
         """
 
@@ -166,7 +177,7 @@ class Recipe(GenericBaseRecipe):
 
 
     def runPostgresCommand(self, cmd):
-        """
+        """\
         Executes a command in single-user mode, with no daemon running.
 
         Multiple commands can be executed by providing newlines,
@@ -190,7 +201,7 @@ class Recipe(GenericBaseRecipe):
 
 
     def createRunScript(self):
-        """
+        """\
         Creates a script that runs postgres in the foreground.
         'exec' is used to allow easy control by supervisor.
         """
@@ -207,14 +218,13 @@ class Recipe(GenericBaseRecipe):
 class ExportRecipe(GenericBaseRecipe):
 
     def install(self):
-        pgdata = self.options['pgdata-directory']
         wrapper = self.options['wrapper']
         self.createBackupScript(wrapper)
         return [wrapper]
 
 
     def createBackupScript(self, wrapper):
-        """
+        """\
         Create a script to backup the database in 'custom' format.
         """
         content = textwrap.dedent("""\
@@ -233,14 +243,13 @@ class ExportRecipe(GenericBaseRecipe):
 class ImportRecipe(GenericBaseRecipe):
 
     def install(self):
-        pgdata = self.options['pgdata-directory']
         wrapper = self.options['wrapper']
         self.createRestoreScript(wrapper)
         return [wrapper]
 
 
     def createRestoreScript(self, wrapper):
-        """
+        """\
         Create a script to restore the database from 'custom' format.
         """
         content = textwrap.dedent("""\
@@ -254,7 +263,5 @@ class ImportRecipe(GenericBaseRecipe):
                         %(backup-directory)s/database.dump
                 """ % self.options)
         self.createExecutable(wrapper, content=content)
-
-
 
 
