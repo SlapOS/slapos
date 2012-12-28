@@ -171,19 +171,19 @@ crl = $${directory:ca-dir}/crl/
 
 [postgres-instance]
 recipe = slapos.cookbook:postgres
-ipv6_host = $${slap-network-information:global-ipv6}
+bin = $${rootdirectory:bin}
+services = $${basedirectory:services}
 user = postgres
 port = 5432
 dbname = db
+ipv6_host = $${slap-network-information:global-ipv6}
 # XXX the next line is required by stunnel, not by us
 ipv4_host = $${slap-network-information:local-ipv4}
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${rootdirectory:var}/data
 backup-directory = $${basedirectory:backup}/postgres
-services = $${basedirectory:services}
-bin = $${rootdirectory:bin}
-
 dependency-symlinks = $${symlinks:recipe}
+
 [ca-stunnel]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
