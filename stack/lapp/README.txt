@@ -12,5 +12,5 @@ This fork of the LAMP stack provides:
 
  - a psycopg2 (postgres driver) egg
 
- - configuration for a maarch instance (this part should be brought outside the stack)
+ - a hook (custom-application-deployment) for configuring the PHP application
 
