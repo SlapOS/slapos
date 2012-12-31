@@ -798,7 +798,7 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
     self.assertEqual(open_sale_order_line_template.getPrice(),
         line.getPrice())
     self.assertEqual(DateTime().earliestTime(), line.getStartDate())
-    self.assertEqual(DateTime().day(),
+    self.assertEqual(min(DateTime().day(), 28),
                      subscription.getPeriodicityMonthDay())
     start_date = addToDate(line.getStartDate(), to_add={'month': 1})
     start_date = addToDate(start_date, to_add={'second': -1})
