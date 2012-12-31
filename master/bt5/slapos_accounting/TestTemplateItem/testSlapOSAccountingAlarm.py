@@ -802,6 +802,8 @@ class TestHostingSubscription_requestUpdateOpenSaleOrder(testSlapOSMixin):
                      subscription.getPeriodicityMonthDay())
     start_date = addToDate(line.getStartDate(), to_add={'month': 1})
     start_date = addToDate(start_date, to_add={'second': -1})
+    while start_date.day() >= 28:
+      start_date = addToDate(start_date, to_add={'day': -1})
     self.assertEqual(start_date, line.getStopDate())
 
   def test_usualLifetime_HostingSubscription(self):
