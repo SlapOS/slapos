@@ -146,7 +146,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>instance_cleanup</string> </value>
+            <value> <string>ICLEANUP</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>

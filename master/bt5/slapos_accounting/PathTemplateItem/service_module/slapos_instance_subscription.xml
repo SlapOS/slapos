@@ -101,7 +101,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>instance_subscription</string> </value>
+            <value> <string>IMONTHLY</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>

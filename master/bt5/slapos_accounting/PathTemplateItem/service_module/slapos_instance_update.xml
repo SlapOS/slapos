@@ -100,7 +100,7 @@
         </item>
         <item>
             <key> <string>default_reference</string> </key>
-            <value> <string>instance_update</string> </value>
+            <value> <string>IUPDATE</string> </value>
         </item>
         <item>
             <key> <string>description</string> </key>
