@@ -95,8 +95,8 @@
                     <value>
                       <list>
                         <tuple>
-                          <string>reference</string>
-                          <string>Invoice Number</string>
+                          <string>start_date</string>
+                          <string>Date</string>
                         </tuple>
                         <tuple>
                           <string>total_price</string>
@@ -109,6 +109,10 @@
                         <tuple>
                           <string>AccountingTransaction_getPaymentState</string>
                           <string>Payment</string>
+                        </tuple>
+                        <tuple>
+                          <string>download</string>
+                          <string>Download</string>
                         </tuple>
                       </list>
                     </value>
@@ -163,8 +167,8 @@
                     <value>
                       <list>
                         <tuple>
-                          <string>reference</string>
-                          <string>SaleInvoiceTransaction_getDefaultPrintUrl</string>
+                          <string>start_date</string>
+                          <string></string>
                         </tuple>
                         <tuple>
                           <string>total_price</string>
@@ -177,6 +181,10 @@
                         <tuple>
                           <string>AccountingTransaction_getPaymentState</string>
                           <string></string>
+                        </tuple>
+                        <tuple>
+                          <string>download</string>
+                          <string>SaleInvoiceTransaction_getDefaultPrintUrl</string>
                         </tuple>
                       </list>
                     </value>
