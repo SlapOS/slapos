@@ -106,7 +106,8 @@ Example of value: "/erp5/web_site_module/hosting/"
 Simple Example
 ==============
 
-Request slave frontend instance::
+Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
+redirected and accessible from the proxy::
   instance = request(
     software_release=apache_frontend,
     partition_reference='my frontend',
@@ -120,7 +121,9 @@ Request slave frontend instance::
 Zope Example
 ============
 
-Request slave frontend instance using a Zope backend::
+Request slave frontend instance using a Zope backend so that
+https://[1:2:3:4:5:6:7:8]:1234 will be redirected and accessible from the
+proxy::
   instance = request(
     software_release=apache_frontend,
     partition_reference='my frontend',
@@ -136,7 +139,9 @@ Advanced example
 ================
 
 Request slave frontend instance using a Zope backend, with Varnish activated,
-listening to a custom domain and redirecting to /erp5/::
+listening to a custom domain and redirecting to /erp5/ so that
+https://[1:2:3:4:5:6:7:8]:1234/erp5/ will be redirected and accessible from
+the proxy::
   instance = request(
     software_release=apache_frontend,
     partition_reference='my frontend',
