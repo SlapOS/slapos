@@ -276,7 +276,8 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     transaction.commit()
 
     self.assertSecurityGroup(payment_transaction, [self.user_id,
-        'G-COMPANY', 'SHADOW-%s' % self.person_user.getReference()],
+        'G-COMPANY', 'SHADOW-%s' % self.person_user.getReference(),
+        self.person_user.getReference()],
         False)
 
   def test_PayzenEvent_setDestinationSection(self):
