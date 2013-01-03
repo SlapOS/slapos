@@ -180,7 +180,7 @@
                         </tuple>
                         <tuple>
                           <string>AccountingTransaction_getPaymentState</string>
-                          <string></string>
+                          <string>SaleInvoiceTransaction_getPayzenPaymentLink</string>
                         </tuple>
                         <tuple>
                           <string>download</string>

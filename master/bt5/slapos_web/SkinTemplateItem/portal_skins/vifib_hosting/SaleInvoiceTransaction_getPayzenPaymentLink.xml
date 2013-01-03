@@ -50,61 +50,28 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>simulation_state = context.getSimulationState() \n
-\n
-if simulation_state in ("cancelled", "deleted", "draft"):\n
-  result = "Cancelled"\n
-\n
-elif simulation_state in ("planned", "confirmed", "ordered", "started"):\n
-  result = "Ongoing"\n
-\n
-else:\n
+            <value> <string>result = None\n
+if context.AccountingTransaction_getPaymentState() == "Pay now":\n
   portal = context.getPortalObject()\n
-\n
-  paid = True\n
-  for line in context.getMovementList(portal.getPortalAccountingMovementTypeList()):\n
-    node_value = line.getSourceValue(portal_type=\'Account\')\n
-    if node_value.getAccountType() == \'asset/receivable\':\n
-      if not line.hasGroupingReference():\n
-        paid = False\n
-        break\n
-\n
-  if paid:\n
-    result = "Paid"\n
-  elif context.getTotalPrice() == 0:\n
-    result = "Free!"\n
-  else:\n
-    # Check if there is an ongoing payzen payment\n
-    payment = portal.portal_catalog.getResultValue(\n
-      portal_type="Payment Transaction",\n
-      simulation_state="started",\n
-      default_causality_uid=context.getUid(),\n
-      default_payment_mode_uid=portal.portal_categories.payment_mode.payzen.getUid(),\n
-    )\n
-    if payment is None:\n
-      result = "Unpaid"\n
-    else:\n
-      # Check if mapping exists\n
-      person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
-      payzen_id = person.Person_restrictMethodAsShadowUser(\n
-        shadow_document=person,\n
-        callable_object=payment.PaymentTransaction_getPayzenId,\n
-        argument_list=[])[0]\n
-      if payzen_id is None:\n
-        result = "Pay now"\n
-      else:\n
-        result = "Waiting for payment confirmation"\n
-\n
+  payment = portal.portal_catalog.getResultValue(\n
+    portal_type="Payment Transaction",\n
+    simulation_state="started",\n
+    default_causality_uid=context.getUid(),\n
+    default_payment_mode_uid=portal.portal_categories.payment_mode.payzen.getUid(),\n
+  )\n
+  if payment is not None:\n
+    result = "%s/PaymentTransaction_redirectToManualPayzenPayment" % payment.absolute_url()\n
+  \n
 return result\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string></string> </value>
+            <value> <string>**kw</string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>AccountingTransaction_getPaymentState</string> </value>
+            <value> <string>SaleInvoiceTransaction_getPayzenPaymentLink</string> </value>
         </item>
       </dictionary>
     </pickle>
