@@ -103,6 +103,35 @@ VirtualHostMonster.
 Example of value: "/erp5/web_site_module/hosting/"
 
 
+Simple Example
+==============
+
+Request slave frontend instance::
+  instance = request(
+    software_release=apache_frontend,
+    partition_reference='my frontend',
+    shared=True,
+    partition_parameter_kw={
+        "url":"https://[1:2:3:4:5:6:7:8]:1234",
+    }
+  )
+
+
+Zope Example
+============
+
+Request slave frontend instance using a Zope backend::
+  instance = request(
+    software_release=apache_frontend,
+    partition_reference='my frontend',
+    shared=True,
+    partition_parameter_kw={
+        "url":"https://[1:2:3:4:5:6:7:8]:1234",
+        "type":"zope",
+    }
+  )
+
+
 Advanced example
 ================
 
@@ -110,10 +139,10 @@ Request slave frontend instance using a Zope backend, with Varnish activated,
 listening to a custom domain and redirecting to /erp5/::
   instance = request(
     software_release=apache_frontend,
-    partition_reference='frontend2',
+    partition_reference='my frontend',
     shared=True,
     partition_parameter_kw={
-        "url":"https://[1:2:3:4]:1234/someresource",
+        "url":"https://[1:2:3:4:5:6:7:8]:1234",
         "cache":"true",
         "type":"zope",
         "path":"/erp5",
