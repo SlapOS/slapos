@@ -54,7 +54,7 @@
 if person:\n
 \n
   return context.getPortalObject().portal_catalog(\n
-    destination_section=person.getRelativeUrl(),\n
+    default_destination_section_uid=person.getUid(),\n
     **kw\n
     )\n
 \n
