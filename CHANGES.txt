@@ -1,6 +1,17 @@
 Changes
 =======
 
+0.71.1 (2013-01-04)
+-------------------
+
+ * Frontend: Sort instances by reference to avoid attacks. [Cedric de Saint
+   Martin]
+ * Frontend: Add public_ipv4 parameter support to ease deployment of slave
+   frontend. [Cedric de Saint Martin]
+ * Frontend: Move apache_frontend wrappers to watched directory (etc/service).
+   [Cedric de Saint Martin]
+ * Frontend: Add native path to varnish environment. [Cedric de Saint Martin]
+
 0.71 (2012-12-20)
 -----------------
 
