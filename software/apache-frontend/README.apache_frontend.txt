@@ -118,6 +118,7 @@ Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
 redirected and accessible from the proxy::
   instance = request(
     software_release=apache_frontend,
+    software_type="RootSoftwareInstance",
     partition_reference='my frontend',
     shared=True,
     partition_parameter_kw={
@@ -134,6 +135,7 @@ https://[1:2:3:4:5:6:7:8]:1234 will be redirected and accessible from the
 proxy::
   instance = request(
     software_release=apache_frontend,
+    software_type="RootSoftwareInstance",
     partition_reference='my frontend',
     shared=True,
     partition_parameter_kw={
@@ -152,6 +154,7 @@ https://[1:2:3:4:5:6:7:8]:1234/erp5/ will be redirected and accessible from
 the proxy::
   instance = request(
     software_release=apache_frontend,
+    software_type="RootSoftwareInstance",
     partition_reference='my frontend',
     shared=True,
     partition_parameter_kw={
