@@ -30,7 +30,7 @@ var = $${buildout:directory}/var
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 log = $${rootdirectory:var}/log
-services = $${rootdirectory:etc}/run
+services = $${rootdirectory:etc}/service
 run = $${rootdirectory:var}/run
 backup = $${rootdirectory:srv}/backup
 promises = $${rootdirectory:etc}/promise
