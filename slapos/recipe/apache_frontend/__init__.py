@@ -168,9 +168,12 @@ class Recipe(BaseSlapRecipe):
           "instance: %s" % reference)
       try:
         connection_dict = {
-           'frontend_ipv6_address': self.getGlobalIPv6Address(),
-           'frontend_ipv4_address': self.getLocalIPv4Address(),
-           'site_url': url
+            # Send the public IPs (if possible) so that user knows what IP
+            # to bind to its domain name
+            'frontend_ipv6_address': self.getGlobalIPv6Address(),
+            'frontend_ipv4_address': self.parameter_dict.get("public-ipv4",
+                self.getLocalIPv4Address()),
+            'site_url': url,
         }
         self.setConnectionDict(connection_dict, reference)
       except:
