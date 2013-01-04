@@ -28,6 +28,7 @@ from slapos.recipe.librecipe import BaseSlapRecipe
 import os
 import pkg_resources
 import hashlib
+import operator
 import sys
 import zc.buildout
 import zc.recipe.egg
@@ -75,6 +76,10 @@ class Recipe(BaseSlapRecipe):
     rewrite_rule_zope_path_list = []
     slave_dict = {}
     service_dict = {}
+
+    # Sort slave instance by reference to avoid most security issues
+    slave_instance_list = sorted(slave_instance_list,
+                                 key=operator.itemgetter('slave_reference'))
 
     for slave_instance in slave_instance_list:
       backend_url = slave_instance.get("url", None)
