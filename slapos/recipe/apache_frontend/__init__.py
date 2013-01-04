@@ -81,6 +81,9 @@ class Recipe(BaseSlapRecipe):
     slave_instance_list = sorted(slave_instance_list,
                                  key=operator.itemgetter('slave_reference'))
 
+    # dict of used domains, only used to track duplicates
+    domain_dict = {}
+
     for slave_instance in slave_instance_list:
       backend_url = slave_instance.get("url", None)
       reference = slave_instance.get("slave_reference")
@@ -105,6 +108,12 @@ class Recipe(BaseSlapRecipe):
       if domain is None or domain.strip() == '':
         domain = "%s.%s" % (reference.replace("-", "").lower(),
             frontend_domain_name)
+
+      if domain_dict.get(domain):
+        # This domain already has been processed, skip this new one
+        continue
+      else:
+        domain_dict[domain] = True
 
       # Define the URL where the instance will be available
       # WARNING: we use default ports (443, 80) here.
