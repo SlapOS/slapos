@@ -10,7 +10,7 @@ cert_file = certificate file location coming from your slapos master account
 key_file = key file location coming from your slapos master account
 # Below are softwares supported by Vifib
 alias =
-  apache_frontend http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.74:/software/apache-frontend/software.cfg
+  apache_frontend http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD:/software/apache-frontend/software.cfg
   drupal http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.134:/software/erp5/software.cfg
   erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.117:/software/erp5/software.cfg
   erp5scalabilitytestbed http://git.erp5.org/gitweb/slapos.git/blob_plain/erp5scalabilitytestbed:/software/erp5scalabilitytestbed/software.cfg
