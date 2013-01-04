@@ -9,8 +9,12 @@ It means that a single main instance of Apache will be used to act as frontend
 for many slaves.
 
 
-How to use
-==========
+How to deploy a frontend server
+===============================
+
+This is to deploy an entire frontend server with a public IPv4.
+If you want to use an already deployed frontend to make your service avilable
+via ipv4, switch to the "Example" parts.
 
 First, you will need to request a "master" instance of Apache Frontend with
 "domain" parameter, like::
@@ -91,7 +95,6 @@ Domain name to use as frontend. The frontend will be accessible from this domain
 [instancereference].[masterdomain].
 Example: www.mycustomdomain.com
 
-
 path
 ~~~~
 Only used if type is "zope".
@@ -102,9 +105,14 @@ VirtualHostMonster.
 "path" is an optional parameter, ignored if not specified.
 Example of value: "/erp5/web_site_module/hosting/"
 
+Examples
+========
+
+Here are some example of how to make your SlapOS service available through
+an already deployed frontend.
 
 Simple Example
-==============
+--------------
 
 Request slave frontend instance so that https://[1:2:3:4:5:6:7:8]:1234 will be
 redirected and accessible from the proxy::
@@ -119,7 +127,7 @@ redirected and accessible from the proxy::
 
 
 Zope Example
-============
+------------
 
 Request slave frontend instance using a Zope backend so that
 https://[1:2:3:4:5:6:7:8]:1234 will be redirected and accessible from the
@@ -136,7 +144,7 @@ proxy::
 
 
 Advanced example
-================
+----------------
 
 Request slave frontend instance using a Zope backend, with Varnish activated,
 listening to a custom domain and redirecting to /erp5/ so that
