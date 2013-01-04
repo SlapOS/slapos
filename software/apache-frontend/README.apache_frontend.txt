@@ -76,11 +76,11 @@ url of backend to use.
 "url" is a mandatory parameter.
 Example: http://mybackend.com/myresource
 
-cache
+enable_cache
 ~~~~~
 Specify if slave instance should use a varnish / stunnel to connect to backend.
 Possible values: "true", "false".
-"cache" is an optional parameter. Defaults to "false".
+"enable_cache" is an optional parameter. Defaults to "false".
 Example: true
 
 type
@@ -162,7 +162,7 @@ the proxy::
     shared=True,
     partition_parameter_kw={
         "url":"https://[1:2:3:4:5:6:7:8]:1234",
-        "cache":"true",
+        "enable_cache":"true",
         "type":"zope",
         "path":"/erp5",
         "custom_domain":"mycustomdomain.com",
