@@ -13,15 +13,18 @@ How to deploy a frontend server
 ===============================
 
 This is to deploy an entire frontend server with a public IPv4.
-If you want to use an already deployed frontend to make your service avilable
+If you want to use an already deployed frontend to make your service available
 via ipv4, switch to the "Example" parts.
 
-First, you will need to request a "master" instance of Apache Frontend with
-"domain" parameter, like::
+First, you will need to request a "master" instance of Apache Frontend with:
+  * A "domain" parameter where the frontend will be available
+  * A "public-ipv4" parameter to state which public IPv4 will be used
+
+like::
   <?xml version='1.0' encoding='utf-8'?>
   <instance>
    <parameter id="domain">moulefrite.org</parameter>
-   <parameter id="port">443</parameter>
+   <parameter id="public-ipv4">xxx.xxx.xxx.xxx</parameter>
   </instance>
 
 Then, it is possible to request many slave instances
