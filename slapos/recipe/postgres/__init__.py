@@ -40,7 +40,7 @@ class Recipe(GenericBaseRecipe):
     This recipe creates:
 
         - a Postgres cluster
-        - configuration to allow connections from IPV6 only (or unix socket)
+        - configuration to allow connections from IPv4, IPv6 or unix socket.
         - a superuser with provided name and generated password
         - a database with provided name
         - a foreground start script in the services directory
@@ -49,22 +49,9 @@ class Recipe(GenericBaseRecipe):
     The URL can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
     """
 
-    def fetch_ipv6_host(self, options):
-        """\
-        Returns a string represtation of ipv6_host.
-        May receive a regular string, a set or a string serialized by buildout.
-        """
-        ipv6_host = options['ipv6_host']
-
-        if isinstance(ipv6_host, set):
-            return ipv6_host.pop()
-        else:
-            return ipv6_host
-
-
     def _options(self, options):
         options['password'] = self.generatePassword()
-        options['url'] = 'postgresql://%(user)s:%(password)s@[%(ipv4_host)s]:%(port)s/%(dbname)s' % options
+        options['url'] = 'postgresql://%(user)s:%(password)s@[%(ipv6_random)s]:%(port)s/%(dbname)s' % options
 
 
     def install(self):
@@ -117,10 +104,12 @@ class Recipe(GenericBaseRecipe):
 
     def createConfig(self):
         pgdata = self.options['pgdata-directory']
+        ipv4 = self.options['ipv4']
+        ipv6 = self.options['ipv6']
 
         with open(os.path.join(pgdata, 'postgresql.conf'), 'wb') as cfg:
             cfg.write(textwrap.dedent("""\
-                    listen_addresses = '%s,%s'
+                    listen_addresses = '%s'
                     logging_collector = on
                     log_rotation_size = 50MB
                     max_connections = 100
@@ -135,25 +124,29 @@ class Recipe(GenericBaseRecipe):
                     unix_socket_directory = '%s'
                     unix_socket_permissions = 0700
                     """ % (
-                        self.options['ipv4_host'],
-                        self.fetch_ipv6_host(self.options),
+                        ','.join(ipv4.union(ipv6)),
                         pgdata,
                         )))
-
 
         with open(os.path.join(pgdata, 'pg_hba.conf'), 'wb') as cfg:
             # see http://www.postgresql.org/docs/9.1/static/auth-pg-hba-conf.html
 
-            cfg.write(textwrap.dedent("""\
-                    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+            cfg_lines = [
+                '# TYPE  DATABASE        USER            ADDRESS                 METHOD',
+                '',
+                '# "local" is for Unix domain socket connections only (check unix_socket_permissions!)',
+                'local   all             all                                     ident',
+                'host    all             all             127.0.0.1/32            md5',
+                'host    all             all             ::1/128                 md5',
+            ]
 
-                    # "local" is for Unix domain socket connections only (check unix_socket_permissions!)
-                    local   all             all                                     ident
-                    host    all             all             127.0.0.1/32            md5
-                    host    all             all             %s/32                   md5
-                    host    all             all             ::1/128                 md5
-                    host    all             all             %s/128                  md5
-                    """ % (self.options['ipv4_host'], self.fetch_ipv6_host(self.options))))
+            for ip in ipv4:
+                cfg_lines.append('host    all             all             %s/32                   md5' % ip)
+
+            for ip in ipv6:
+                cfg_lines.append('host    all             all             %s/128                   md5' % ip)
+
+            cfg.write('\n'.join(cfg_lines))
 
 
     def createDatabase(self):
