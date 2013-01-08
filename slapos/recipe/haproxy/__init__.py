@@ -73,7 +73,11 @@ class Recipe(GenericBaseRecipe):
     server_snippet = ""
     i = 0
     name = self.options['name']
-    for address in self.options['backend-list'].split():
+    backend_list = self.options['backend-list']
+    if isinstance(backend_list, str):
+      # BBB
+      backend_list = backend_list.split()
+    for address in backend_list:
       i += 1
       server_snippet += self.substituteTemplate(
           snippet_filename, dict(

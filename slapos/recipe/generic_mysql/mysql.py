@@ -2,6 +2,7 @@ import os
 import subprocess
 import time
 import sys
+import pytz
 
 
 def runMysql(args):
@@ -41,32 +42,50 @@ def updateMysql(args):
   sleep = 30
   is_succeed = False
   while True:
-    if not is_succeed:
-      mysql_upgrade_list = [conf['mysql_upgrade_binary'], '--no-defaults', '--user=root', '--socket=%s' % conf['socket']]
-      mysql_upgrade = subprocess.Popen(mysql_upgrade_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-      result = mysql_upgrade.communicate()[0]
-      if mysql_upgrade.returncode is None:
-        mysql_upgrade.kill()
-      if mysql_upgrade.returncode != 0 and not 'is already upgraded' in result:
-        print "Command %r failed with result:\n%s" % (mysql_upgrade_list, result)
-        print 'Sleeping for %ss and retrying' % sleep
+    mysql_upgrade_list = [conf['mysql_upgrade_binary'], '--no-defaults', '--user=root', '--socket=%s' % conf['socket']]
+    mysql_upgrade = subprocess.Popen(mysql_upgrade_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    result = mysql_upgrade.communicate()[0]
+    if mysql_upgrade.returncode is None:
+      mysql_upgrade.kill()
+    if mysql_upgrade.returncode != 0 and not 'is already upgraded' in result:
+      print "Command %r failed with result:\n%s" % (mysql_upgrade_list, result)
+    else:
+      if mysql_upgrade.returncode == 0:
+        print "MySQL database upgraded with result:\n%s" % result
       else:
-        if mysql_upgrade.returncode == 0:
-          print "MySQL database upgraded with result:\n%s" % result
-        else:
-          print "No need to upgrade MySQL database"
-        mysql_list = [conf['mysql_binary'].strip(), '--no-defaults', '-B', '--user=root', '--socket=%s' % conf['socket']]
-        mysql = subprocess.Popen(mysql_list, stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        result = mysql.communicate(conf['mysql_script'])[0]
-        if mysql.returncode is None:
-          mysql.kill()
+        print "No need to upgrade MySQL database"
+      mysql_list = [conf['mysql_binary'].strip(), '--no-defaults', '-B', '--user=root', '--socket=%s' % conf['socket']]
+      mysql = subprocess.Popen(mysql_list, stdin=subprocess.PIPE,
+          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+      result = mysql.communicate(conf['mysql_script'])[0]
+      if mysql.returncode is None:
+        mysql.kill()
+      if mysql.returncode != 0:
+        print 'Command %r failed with:\n%s' % (mysql_list, result)
+      else:
+        # import timezone database
+        mysql_tzinfo_to_sql_binary = os.path.join(
+          os.path.dirname(conf['mysql_binary'].strip()), 'mysql_tzinfo_to_sql')
+        zoneinfo_directory = '%s/zoneinfo' % os.path.dirname(pytz.__file__)
+        mysql_tzinfo_to_sql_list = [mysql_tzinfo_to_sql_binary, zoneinfo_directory]
+        mysql_tzinfo_to_sql = subprocess.Popen(mysql_tzinfo_to_sql_list, stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        timezone_sql = mysql_tzinfo_to_sql.communicate()[0]
         if mysql.returncode != 0:
-          print 'Command %r failed with:\n%s' % (mysql_list, result)
-          print 'Sleeping for %ss and retrying' % sleep
+          print 'Command %r failed with:\n%s' % (mysql_tzinfo_to_sql_list, result)
         else:
+          mysql = subprocess.Popen(mysql_list + ['mysql',], stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+          result = mysql.communicate(timezone_sql)[0]
+          if mysql.returncode is None:
+            mysql.kill()
+          if mysql.returncode != 0:
+            print 'Command %r failed with:\n%s' % (mysql_list, result)
           is_succeed = True
-          print 'SlapOS initialisation script succesfully applied on database.'
+    if is_succeed:
+      print 'SlapOS initialisation script succesfully applied on database.'
+      break
+    print 'Sleeping for %ss and retrying' % sleep
     sys.stdout.flush()
     sys.stderr.flush()
     time.sleep(sleep)

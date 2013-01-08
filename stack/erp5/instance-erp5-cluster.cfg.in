@@ -24,13 +24,6 @@ cert-file = ${slap-connection:cert-file}
 computer-id = ${slap-connection:computer-id}
 partition-id = ${slap-connection:partition-id}
 
-[request-sphinx]
-<=request-common
-name = Sphinx Search Engine
-software-type = sphinx
-sla-computer_guid = ${slap-parameter:sphinx-computer-guid}
-return = url-sphinx url-sphinx-sql
-
 [request-mariadb]
 <=request-common
 name = MariaDB DataBase
@@ -67,8 +60,6 @@ config =
   memcached-url
   cloudooo-url
   kumofs-url
-  sphinx-url-sphinx
-  sphinx-url-sphinx-sql
   smtp-url
   bt5
   bt5-repository-url
@@ -77,8 +68,6 @@ config-mysql-url = ${request-mariadb:connection-url}
 config-memcached-url = ${request-memcached:connection-url}
 config-cloudooo-url = ${request-cloudooo:connection-url}
 config-kumofs-url = ${request-kumofs:connection-url}
-config-sphinx-url-sphinx = ${request-sphinx:connection-url-sphinx}
-config-sphinx-url-sphinx-sql = ${request-sphinx:connection-url-sphinx-sql}
 config-bt5 = ${slap-parameter:bt5}
 config-bt5-repository-url = ${slap-parameter:bt5-repository-url}
 config-smtp-url = ${slap-parameter:smtp-url}
@@ -97,7 +86,6 @@ sla-computer_guid = ${slap-parameter:varnish-computer-guid}
 
 [slap-parameter]
 # Default value if no computer_guid is specified for each type
-sphinx-computer-guid = ${slap-connection:computer-id}
 mariadb-computer-guid = ${slap-connection:computer-id}
 cloudooo-computer-guid = ${slap-connection:computer-id}
 memcached-computer-guid = ${slap-connection:computer-id}

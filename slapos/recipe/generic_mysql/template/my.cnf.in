@@ -24,7 +24,7 @@ long_query_time = 1
 max_allowed_packet = 128M
 query_cache_size = 32M
 
-plugin-load = ha_mroonga.so;ha_sphinx.so;handlersocket.so
+plugin-load = ha_mroonga.so;handlersocket.so
 
 # By default only 100 connections are allowed, when using zeo
 # we may have much more connections

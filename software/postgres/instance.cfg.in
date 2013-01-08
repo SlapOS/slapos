@@ -1,0 +1,69 @@
+[buildout]
+parts =
+  symlinks
+  publish
+  postgres-instance
+
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+[instance-parameters]
+# Fetches parameters defined in SlapOS Master for this instance
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+
+[directories]
+recipe = slapos.cookbook:mkdirectory
+bin = $${buildout:directory}/bin
+etc = $${buildout:directory}/etc
+services = $${directories:etc}/run/
+promises = $${directories:etc}/promise/
+var = $${buildout:directory}/var
+
+
+[symlinks]
+recipe = cns.recipe.symlink
+symlink_target = $${directories:bin}
+symlink_base = ${postgresql:location}/bin
+
+
+[postgres-instance]
+# create cluster, configuration files and a database
+recipe = slapos.cookbook:postgres
+
+# Options
+ipv6_host = $${instance-parameters:ipv6}
+ipv4_host = $${slap-network-information:local-ipv4}
+user = user
+port = 5432
+dbname = db
+# pgdata_directory is created by initdb, and should not exist beforehand.
+pgdata-directory = $${directories:var}/data
+services = $${directories:services}
+bin = $${directories:bin}
+
+
+[publish]
+recipe = slapos.cookbook:publishurl
+url = $${postgres-instance:url}
+
+
+[slap-connection]
+# part to migrate to new - separated words
+computer-id = $${slap_connection:computer_id}
+partition-id = $${slap_connection:partition_id}
+server-url = $${slap_connection:server_url}
+software-release-url = $${slap_connection:software_release_url}
+key-file = $${slap_connection:key_file}
+cert-file = $${slap_connection:cert_file}
+

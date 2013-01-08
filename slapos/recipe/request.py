@@ -25,8 +25,11 @@
 #
 ##############################################################################
 import logging
-
 from slapos import slap as slapmodule
+import slapos.recipe.librecipe.generic as librecipe
+import traceback
+
+DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
 class Recipe(object):
   """
@@ -97,17 +100,15 @@ class Recipe(object):
     request = slap.registerComputerPartition(
       options['computer-id'], options['partition-id']).request
 
-    isSlave = options.get('slave', '').lower() in ['y', 'yes', 'true', '1']
-
     return_parameters = []
     if 'return' in options:
       return_parameters = [str(parameter).strip()
-        for parameter in options['return'].split()]
+                          for parameter in options['return'].split()]
     else:
       self.logger.debug("No parameter to return to main instance."
         "Be careful about that...")
 
-    software_type = options.get('software-type', 'RootInstanceSoftware')
+    software_type = options.get('software-type', DEFAULT_SOFTWARE_TYPE)
 
     filter_kw = {}
     if 'sla' in options:
@@ -120,26 +121,46 @@ class Recipe(object):
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
 
-    self.instance = instance = request(software_url, software_type,
-      name, partition_parameter_kw=partition_parameter_kw,
-      filter_kw=filter_kw, shared=isSlave)
+    isSlave = options.get('slave', '').lower() in \
+        librecipe.GenericBaseRecipe.TRUE_VALUES
+
+    self._raise_request_exception = None
+    self._raise_request_exception_formatted = None
+    self.instance = None
+    try:
+      self.instance = request(software_url, software_type,
+          name, partition_parameter_kw=partition_parameter_kw,
+          filter_kw=filter_kw, shared=isSlave)
+      # XXX what is the right way to get a global id?
+      options['instance_guid'] = self.instance.getId()
+    except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
+      self._raise_request_exception = exc
+      self._raise_request_exception_formatted = traceback.format_exc()
 
     for param in return_parameters:
+      options['connection-%s' % param] = ''
+      if not self.instance:
+        continue
       try:
         options['connection-%s' % param] = str(
-          instance.getConnectionParameter(param))
-      except slapmodule.NotFoundError:
-        options['connection-%s' % param] = ''
+          self.instance.getConnectionParameter(param))
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         if self.failed is None:
           self.failed = param
 
   def install(self):
+    if self._raise_request_exception:
+      raise self._raise_request_exception
+
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        status = self.instance.getState()
-      except slapmodule.NotFoundError:
-        status = 'not ready yet, please try again'
+        if self.instance._computer_id is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
+        status = 'not ready yet'
       except AttributeError:
         status = 'unknown'
       error_message = 'Connection parameter %s not found. '\
@@ -147,6 +168,34 @@ class Recipe(object):
           'check status of this instance.' % (self.failed, status)
       self.logger.error(error_message)
       raise KeyError(error_message)
+    return []
+
+  update = install
+
+class RequestOptional(Recipe):
+  """
+  Request a SlapOS instance. Won't fail if request failed or is not ready.
+  Same as slapos.cookbook:request, but won't raise in case of problem.
+  """
+  def install(self):
+    if self._raise_request_exception_formatted:
+      self.logger.warning('Optional request failed:')
+      self.logger.warning(self._raise_request_exception_formatted)
+    elif self.failed is not None:
+      # Check instance status to know if instance has been deployed
+      try:
+        if self.instance._computer_id is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
+      except (slapmodule.NotFoundError, slapmodule.ServerError):
+        status = 'not ready yet'
+      except AttributeError:
+        status = 'unknown'
+      error_message = 'Connection parameter %s not found. '\
+          'Requested instance is currently %s. If this error persists, '\
+          'check status of this instance.' % (self.failed, status)
+      self.logger.warning(error_message)
     return []
 
   update = install

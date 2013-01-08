@@ -1,5 +1,4 @@
 known_tid_storage_identifier_dict = %(known-tid-storage-identifier-dict)s
-base_url = '%(base-url)s'
 address = '%(ip)s'
 port = %(port)s
 

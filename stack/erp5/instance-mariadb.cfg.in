@@ -30,7 +30,7 @@ recipe = slapos.cookbook:generic.mysql
 
 # Options
 user = user
-parallel-test-database-amount = 100
+parallel-test-database-amount = ${slap-parameter:test-database-amount}
 port = 45678
 ip = ${slap-network-information:local-ipv4}
 database = erp5
@@ -178,3 +178,6 @@ recipe = slapos.cookbook:check_port_listening
 path = ${basedirectory:promise}/mariadb
 hostname = ${mariadb-instance:ip}
 port = ${mariadb-instance:port}
+
+[slap-parameter]
+test-database-amount = 100
