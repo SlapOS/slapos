@@ -1,0 +1,240 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="ZopePageTemplate" module="Products.PageTemplates.ZopePageTemplate"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_local_properties</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <unicode encoding="cdata"><![CDATA[
+
+<!doctype html>\n
+<html tal:define="quantity_renderer nocall:here/portal_skins/erp5_trade/Base_viewTradeFieldLibrary/my_view_mode_quantity/render_pdf;\n
+                  price_renderer nocall:here/portal_skins/erp5_trade/Base_viewTradeFieldLibrary/my_view_mode_total_price/render_pdf;\n
+                  total_not_tax_price_list python: [];">\n
+  <head>\n
+    <meta charset="utf-8">\n
+    <title>Invoice</title>\n
+    <link rel="stylesheet" href="SaleInvoiceTransaction_getSlapOSPrintout.css">\n
+    <link rel="license" href="http://www.opensource.org/licenses/mit-license/">\n
+  </head>\n
+  <body>\n
+    <header>\n
+      <h1>Invoice</h1>\n
+      <address>\n
+        <p tal:content="python: context.getSourceSectionTitle(\'SlapOS Company\')"></p>\n
+        <tal:block tal:define="source_section_organisation python: context.getSourceSectionValue()">\n
+          <p tal:condition="python: source_section_organisation is not None">\n
+            <tal:block tal:repeat="line python: source_section_organisation.getDescription(\'\').split(\'\\n\')">\n
+              <tal:block tal:content="line"></tal:block><br/>\n
+            </tal:block>\n
+          </p>\n
+          <p tal:condition="python: source_section_organisation is not None">\n
+            <tal:block tal:repeat="line python: source_section_organisation.getDefaultAddressText(\'\').split(\'\\n\')">\n
+              <tal:block tal:content="line"></tal:block><br/>\n
+            </tal:block>\n
+            <tal:block tal:content="python: source_section_organisation.getDefaultRegionTitle()"></tal:block>\n
+          </p>\n
+          <p tal:content="python: \'Corporate Registration Code: %s\' % source_section_organisation.getCorporateRegistrationCode()"></p>\n
+          <p tal:content="python: \'VAT Code: %s\' % source_section_organisation.getVatCode()"></p>\n
+        </tal:block>\n
+      </address>\n
+      <span><img alt="" src="http://www.vifib.com/legal/VIFIB-Legal/vifib_image/LogoVifib-H100.png"></span>\n
+    </header>\n
+    <article>\n
+      <h2>Client</h2>\n
+      <address>\n
+        <p tal:content="python: context.getDestinationSectionTitle(\'\')"></p>\n
+        <tal:block tal:define="destination_section_organisation python: context.getDestinationSectionValue()">\n
+          <p tal:condition="python: destination_section_organisation is not None">\n
+            <tal:block tal:content="python: destination_section_organisation.getDefaultEmailText(\'\')"></tal:block>\n
+          </p>\n
+        </tal:block>\n
+      </address>\n
+      <table class="meta">\n
+        <tr>\n
+          <th><span>Invoice #</span></th>\n
+          <td><span tal:content="python: context.getReference()"></span></td>\n
+        </tr>\n
+        <tr>\n
+          <th><span>Date</span></th>\n
+          <td><span tal:content="python: context.getStartDate(DateTime()).strftime(\'%B %e, %G\')"></span></td>\n
+        </tr>\n
+        <tr>\n
+          <th><span>Currency</span></th>\n
+          <td><span tal:content="python: context.getPriceCurrencyReference()"></span></td>\n
+        </tr>\n
+      </table>\n
+      <table class="inventory">\n
+        <thead>\n
+          <tr>\n
+            <th><span>Line</span></th>\n
+            <th><span>Item</span></th>\n
+            <th><span>Description</span></th>\n
+            <th><span>Quantity</span></th>\n
+            <th><span>Unit</span></th>\n
+            <th><span>Unit Price</span></th>\n
+            <th><span>Total Price</span></th>\n
+          </tr>\n
+        </thead>\n
+        <tbody>\n
+          <tal:block tal:repeat="line python: context.contentValues(portal_type=context.getPortalInvoiceMovementTypeList(),\n
+                                                                    sort_on=[(\'int_index\', \'ascending\'), (\'reference\', \'ascending\')])">\n
+            <tr tal:condition="python: line.getUse(\'\') != \'trade/tax\'">\n
+              <td><span tal:content="python: line.getReference() or line.getIntIndex()"></span></td>\n
+              <td><span tal:content="python: line.getResourceReference(\'\')"></span></td>\n
+              <td><span tal:content="python: line.getResourceTitle(\'\')"></span></td>\n
+              <td><span tal:content="python: quantity_renderer(line.getQuantity())"></span></td>\n
+              <td><span tal:content="python: line.getQuantityUnitTitle()"></span></td>\n
+              <td><span tal:content="python: price_renderer(line.getPrice())"></span></td>\n
+              <td><span tal:content="python: price_renderer(line.getTotalPrice())"></span></td>\n
+              <tal:block tal:define="dummy python: total_not_tax_price_list.append(line.getTotalPrice())"></tal:block>\n
+            </tr>\n
+          </tal:block>\n
+        </tbody>\n
+      </table>\n
+      <table class="balance">\n
+        <tr>\n
+          <th><span>Total Excluding Tax</span></th>\n
+          <td><span tal:content="python: price_renderer(sum(total_not_tax_price_list))"></span></td>\n
+        </tr>\n
+      </table>\n
+      <table class="tax">\n
+        <thead>\n
+          <tr>\n
+            <th><span>Amount</span></th>\n
+            <th><span>Rate</span></th>\n
+            <th><span>Tax Price</span></th>\n
+          </tr>\n
+        </thead>\n
+        <tbody>\n
+          <tal:block tal:repeat="line python: context.contentValues(portal_type=context.getPortalInvoiceMovementTypeList(),\n
+                                                                    sort_on=[(\'int_index\', \'ascending\'), (\'reference\', \'ascending\')])">\n
+            <tr tal:condition="python: line.getUse(\'\') == \'trade/tax\'">\n
+              <td><span tal:content="python: price_renderer(line.getQuantity())"></span></td>\n
+              <td><span tal:content="python: \'%s%%\' % quantity_renderer(quantity_renderer(line.getPrice()*100))"></span></td>\n
+              <td><span tal:content="python: price_renderer(line.getTotalPrice())"></span></td>\n
+            </tr>\n
+          </tal:block>\n
+        </tbody>\n
+      </table>\n
+      <table class="balance">\n
+        <tr>\n
+          <th><span>Total Including Tax</span></th>\n
+          <td><span tal:content="python: price_renderer(here.getTotalPrice())"></span></td>\n
+        </tr>\n
+      </table>\n
+    </article>\n
+    <!--aside>\n
+      <h1><span>Additional Notes</span></h1>\n
+      <div>\n
+        <p>A finance charge of 1.5% will be made on unpaid balances after 30 days.</p>\n
+      </div>\n
+    </aside-->\n
+\n
+    <tal:block tal:define="aggregated_reference python: context.getCausalityReference(portal_type=\'Sale Packing List\', checked_permission=\'View\');\n
+                           item_dict python: {}">\n
+      <aside tal:condition="python: aggregated_reference">\n
+        <h1><span>Subscription Details</span></h1>\n
+        <tal:block tal:repeat="line python: context.portal_catalog(\n
+                                              portal_type=\'Sale Packing List Line\',\n
+                                              grouping_reference=aggregated_reference,\n
+                                              default_resource_uid=context.service_module.slapos_instance_subscription.getUid(),\n
+                                              sort_on=[(\'default_aggregate_uid\', \'ASC\'), (\'movement.start_date\', \'ASC\')])">\n
+          <tal:block tal:define="item_uid python: line.getAggregateUid(portal_type=\'Hosting Subscription\');\n
+                                 item_title python: line.getAggregateTitle(portal_type=\'Hosting Subscription\');\n
+                                 start_date python: line.getStartDate();\n
+                                 stop_date python: line.getStopDate();\n
+                                 quantity python: line.getQuantity();\n
+                                 dummy_init python: item_dict.setdefault(item_uid, [item_title, start_date, stop_date, 0]);\n
+                                 dummy_update python: item_dict.update({item_uid: [item_title, \n
+                                   min(item_dict[item_uid][1], start_date), \n
+                                   max(item_dict[item_uid][2], stop_date), \n
+                                   sum([item_dict[item_uid][3], quantity])]});">\n
+          </tal:block>\n
+        </tal:block>\n
+        <table>\n
+          <thead>\n
+            <tr>\n
+              <th><span>Instance</span></th>\n
+              <th><span>From</span></th>\n
+              <th><span>To</span></th>\n
+              <th><span>Quantity</span></th>\n
+            </tr>\n
+          </thead>\n
+          <tbody>\n
+            <tr tal:repeat="item_tuple python: item_dict.values()">\n
+              <td tal:content="python: item_tuple[0]"></td>\n
+              <td tal:content="python: item_tuple[1].strftime(\'%B %e, %G\')"></td>\n
+              <td tal:content="python: item_tuple[2].strftime(\'%B %e, %G\')"></td>\n
+              <td tal:content="python: quantity_renderer(item_tuple[3])"></td>\n
+            </tr>\n
+          </tbody>\n
+        </table>\n
+      </aside>\n
+    </tal:block>\n
+\n
+    <footer>Generated with ERP5 - Open Source ERP suite (www.erp5.org)</footer>\n
+  </body>\n
+</html>
+
+]]></unicode> </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>expand</string> </key>
+            <value> <int>0</int> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SaleInvoiceTransaction_viewSlapOSPrintout</string> </value>
+        </item>
+        <item>
+            <key> <string>output_encoding</string> </key>
+            <value> <string>utf-8</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <unicode></unicode> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

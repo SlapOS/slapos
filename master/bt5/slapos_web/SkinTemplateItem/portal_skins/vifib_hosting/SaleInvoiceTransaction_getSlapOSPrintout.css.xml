@@ -1,0 +1,195 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="ZopePageTemplate" module="Products.PageTemplates.ZopePageTemplate"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>_Cacheable__manager_id</string> </key>
+            <value> <string>http_cache</string> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_text</string> </key>
+            <value> <unicode encoding="cdata"><![CDATA[
+
+<tal:block define="dummy python: request.RESPONSE.setHeader(\'Content-Type\', \'text/css;; charset=utf-8\')"/>\n
+/* From http://www.jonathantneal.com/examples/invoice/style.css */\n
+/* reset */\n
+\n
+*\n
+{\n
+  border: 0;\n
+  box-sizing: content-box;\n
+  color: inherit;\n
+  font-family: inherit;\n
+  font-size: inherit;\n
+  font-style: inherit;\n
+  font-weight: inherit;\n
+  line-height: inherit;\n
+  list-style: none;\n
+  margin: 0;\n
+  padding: 0;\n
+  text-decoration: none;\n
+  vertical-align: top;\n
+}\n
+\n
+/* heading */\n
+\n
+h1 { font: bold 100% sans-serif; letter-spacing: 0.5em; text-align: center; text-transform: uppercase; }\n
+\n
+/* table */\n
+\n
+table { font-size: 75%; table-layout: fixed; width: 100%; }\n
+table { border-collapse: separate; border-spacing: 2px; }\n
+th, td { border-width: 1px; padding: 0.5em; position: relative; text-align: left; }\n
+th, td { border-radius: 0.25em; border-style: solid; }\n
+th { background: #EEE; border-color: #BBB; }\n
+td { border-color: #DDD; }\n
+\n
+/* page */\n
+\n
+html { font: 16px/1 \'Open Sans\', sans-serif; overflow: auto; padding: 0.5in; }\n
+html { background: #999; cursor: default; }\n
+\n
+body { box-sizing: border-box; min-height: 11in; margin: 0 auto; overflow: hidden; padding: 0.5in; width: 8.5in; }\n
+body { background: #FFF; border-radius: 1px; box-shadow: 0 0 1in -0.25in rgba(0, 0, 0, 0.5); }\n
+\n
+/* header */\n
+\n
+header { margin: 0 0 3em; }\n
+header:after { clear: both; content: ""; display: table; }\n
+\n
+header h1 { background: #000; border-radius: 0.25em; color: #FFF; margin: 0 0 1em; padding: 0.5em 0; }\n
+header address { float: left; font-size: 75%; font-style: normal; line-height: 1.25; margin: 0 1em 1em 0; }\n
+header address p { margin: 0 0 0.25em; }\n
+header span, header img { display: block; float: right; }\n
+header span { margin: 0 0 1em 1em; max-height: 25%; max-width: 60%; position: relative; }\n
+header img { max-height: 100%; max-width: 100%; }\n
+header input { cursor: pointer; -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)"; height: 100%; left: 0; opacity: 0; position: absolute; top: 0; width: 100%; }\n
+\n
+/* article */\n
+\n
+article, article address, table.meta { margin: 0 0 3em; }\n
+article:after { clear: both; content: ""; display: table; }\n
+/* article h1 { clip: rect(0 0 0 0); position: absolute; } */\n
+article h2:after { \n
+  content: ":";\n
+  font-size: 1em;\n
+}\n
+\n
+article address { float: left; font-size: 125%; font-weight: bold; }\n
+\n
+/* table meta & balance */\n
+\n
+table.meta, table.balance { float: right; width: 46%; }\n
+\n
+/* table meta */\n
+\n
+table.meta th { width: 40%; }\n
+table.meta td { width: 60%; }\n
+table.meta:after, { clear: both; content: ""; display: table; }\n
+\n
+/* table items */\n
+\n
+table.inventory { clear: both; width: 100%; margin: 0 0 2em; }\n
+table.inventory th { font-weight: bold; text-align: center; }\n
+\n
+table.inventory td:nth-child(1) { text-align: left; width: 26%; }\n
+table.inventory td:nth-child(2) { text-align: right; width: 38%; }\n
+table.inventory td:nth-child(3) { text-align: left; width: 12%; }\n
+table.inventory td:nth-child(4) { text-align: right; width: 12%; }\n
+table.inventory td:nth-child(5) { text-align: left; width: 12%; }\n
+table.inventory td:nth-child(6) { text-align: right; width: 12%; }\n
+table.inventory td:nth-child(7) { text-align: right; width: 12%; }\n
+\n
+/* table balance */\n
+\n
+table.balance th, table.balance td { width: 50%; }\n
+table.balance td { text-align: right; }\n
+table.balance{ clear: both; }\n
+\n
+/* table tax */\n
+\n
+table.tax { float: right; clear: both; width: 50%; }\n
+table.tax th { font-weight: bold; text-align: center; }\n
+table.tax td { text-align: right; }\n
+table.tax { margin: 2em 0 2em 0; }\n
+\n
+/* aside */\n
+\n
+aside h1 { border: none; border-width: 0 0 1px; margin: 0 0 1em; }\n
+aside h1 { border-color: #999; border-bottom-style: solid; }\n
+\n
+/* bottom */\n
+\n
+footer {\n
+  font-size: 0.50em;\n
+  width: 100%;\n
+  clear: both;\n
+  text-align: right;\n
+  margin-top: 3em;\n
+}\n
+\n
+@media print {\n
+  * { -webkit-print-color-adjust: exact; }\n
+  html { background: none; padding: 0; }\n
+  body { box-shadow: none; margin: 0; }\n
+  span:empty { display: none; }\n
+}\n
+\n
+@page { margin: 0; }
+
+]]></unicode> </value>
+        </item>
+        <item>
+            <key> <string>content_type</string> </key>
+            <value> <string>text/html</string> </value>
+        </item>
+        <item>
+            <key> <string>expand</string> </key>
+            <value> <int>0</int> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>SaleInvoiceTransaction_getSlapOSPrintout.css</string> </value>
+        </item>
+        <item>
+            <key> <string>output_encoding</string> </key>
+            <value> <string>utf-8</string> </value>
+        </item>
+        <item>
+            <key> <string>title</string> </key>
+            <value> <unicode></unicode> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
