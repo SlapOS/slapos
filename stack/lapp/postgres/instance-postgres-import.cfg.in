@@ -4,7 +4,10 @@ extends = ${instance-postgres:output}
 
 
 parts +=
-  postgres-instance
+    postgres-instance
+
+# have to repeat the next one, as it's not inherited from pbsready-import
+    import-on-notification
 
 [importer]
 recipe = slapos.cookbook:postgres.import

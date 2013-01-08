@@ -24,12 +24,16 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
 import shutil
 import os
 import signal
+import subprocess
+
 from binascii import b2a_uu as uuencode
 
 from slapos.recipe.librecipe import GenericBaseRecipe
+
 
 class Recipe(GenericBaseRecipe):
 
@@ -66,11 +70,13 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(httpd_conf)
 
-    wrapper = self.createPythonScript(self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.execute',
-        [self.options['httpd-binary'], '-f', self.options['httpd-conf'],
-         '-DFOREGROUND']
-    )
+    wrapper = self.createWrapper(name=self.options['wrapper'],
+                                 command=self.options['httpd-binary'],
+                                 parameters=[
+                                     '-f',
+                                     self.options['httpd-conf'],
+                                     '-DFOREGROUND'
+                                     ])
     path_list.append(wrapper)
 
     secret_key_filename = os.path.join(self.buildout['buildout']['directory'],
@@ -110,12 +116,16 @@ class Recipe(GenericBaseRecipe):
         self.substituteTemplate(self.options['template'], application_conf))
       path_list.append(config)
 
-    if os.path.exists(self.options['pid-file']):
-      # Reload apache configuration
-      with open(self.options['pid-file']) as pid_file:
-        pid = int(pid_file.read().strip(), 10)
-      try:
-        os.kill(pid, signal.SIGUSR1) # Graceful restart
-      except OSError:
-        pass
+    # Reload apache configuration.
+    # notez-bien: a graceful restart or a SIGUSR1 can somehow hang the apache threads.
+
+    subprocess.call([
+                        self.options['httpd-binary'],
+                        '-f',
+                        self.options['httpd-conf'],
+                        '-k',
+                        'graceful'
+                    ])
+
     return path_list
+

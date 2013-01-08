@@ -37,7 +37,7 @@ bin = $${buildout:directory}/bin
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 log = $${rootdirectory:var}/log
-services = $${rootdirectory:etc}/run
+services = $${rootdirectory:etc}/service
 run = $${rootdirectory:var}/run
 script = $${rootdirectory:etc}/script
 backup = $${rootdirectory:srv}/backup
@@ -134,9 +134,9 @@ config-file = $${directory:stunnel-conf}/stunnel.conf
 key-file = $${directory:stunnel-conf}/stunnel.key
 cert-file = $${directory:stunnel-conf}/stunnel.crt
 pid-file = $${basedirectory:run}/stunnel.pid
-local-host = $${postgres-instance:ipv4_host}
+local-host = $${instance-parameters:ipv4_random}
 local-port = $${postgres-instance:port}
-remote-host = $${slap-network-information:global-ipv6}
+remote-host = $${instance-parameters:ipv6_random}
 remote-port = 6446
 client = false
 post-rotate-script = $${rootdirectory:bin}/stunnel_post_rotate
@@ -171,19 +171,19 @@ crl = $${directory:ca-dir}/crl/
 
 [postgres-instance]
 recipe = slapos.cookbook:postgres
-ipv6_host = $${slap-network-information:global-ipv6}
+ipv6 = $${instance-parameters:ipv6}
+ipv4 = $${instance-parameters:ipv4}
+ipv6_random = $${instance-parameters:ipv6_random}
 user = postgres
 port = 5432
 dbname = db
-# XXX the next line is required by stunnel, not by us
-ipv4_host = $${slap-network-information:local-ipv4}
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${rootdirectory:var}/data
 backup-directory = $${basedirectory:backup}/postgres
-services = $${basedirectory:services}
 bin = $${rootdirectory:bin}
-
+services = $${basedirectory:services}
 dependency-symlinks = $${symlinks:recipe}
+
 [ca-stunnel]
 <= certificate-authority
 recipe = slapos.cookbook:certificate_authority.request
@@ -227,7 +227,7 @@ path = $${directory:report}/slapmonitor-xml
 [postgres-promise]
 recipe = slapos.cookbook:check_port_listening
 path = $${basedirectory:promises}/postgres
-hostname = $${slap-network-information:global-ipv6}
+hostname = $${instance-parameters:ipv6_random}
 port = $${postgres-instance:port}
 
 
@@ -238,7 +238,7 @@ port = $${postgres-instance:port}
 [urls]
 recipe = slapos.cookbook:publish
 url = $${postgres-instance:url}
-ip = $${slap-network-information:global-ipv6}
+ip = $${instance-parameters:ipv6_random}
 
 #----------------
 #--

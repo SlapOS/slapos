@@ -8,9 +8,9 @@ This fork of the LAMP stack provides:
    Log rotation is handled by Postgres itself.
 
  - symlinks to all the postgres binaries, usable through unix socket
-   with no further authentication, or through ipv6
+   with no further authentication, or through ipv4/ipv6 with password
 
- - a psycopg2 (postgres driver) egg
+ - a psycopg2 (postgres driver) egg to be used by further configuration recipes
 
- - configuration for a maarch instance (this part should be brought outside the stack)
+ - a hook (custom-application-deployment) for configuring the PHP application
 

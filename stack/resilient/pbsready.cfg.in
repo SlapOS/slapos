@@ -24,7 +24,7 @@ parts +=
 #-- Creation of all needed directories.
 
 [basedirectory]
-services = $${rootdirectory:etc}/run
+services = $${rootdirectory:etc}/service
 cache = $${rootdirectory:var}/cache
 notifier = $${rootdirectory:etc}/notifier
 
