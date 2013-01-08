@@ -32,25 +32,26 @@ import os
 import shutil
 import subprocess
 import pkg_resources
-import stat
-import tempfile
-from supervisor import xmlrpc
-import xmlrpclib
 import pwd
+import stat
+import tarfile
+import tempfile
 import utils
+import xmlrpclib
+
+from supervisor import xmlrpc
 from slapos.slap.slap import NotFoundError
 from svcbackend import getSupervisorRPC
 from exception import BuildoutFailedError, WrongPermissionError, \
     PathDoesNotExistError
 from networkcache import download_network_cached, upload_network_cached
-import tarfile
 from watchdog import getWatchdogID
 
 REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 
 
 class Software(object):
-  """This class is responsible of installing a software release"""
+  """This class is responsible for installing a software release"""
   def __init__(self, url, software_root, buildout,
       signature_private_key_file=None, signature_certificate_list=None,
       upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
@@ -201,7 +202,7 @@ class Software(object):
   def destroy(self):
     """Removes software release."""
     def retry(func, path, exc):
-      # inspired on slapos.buildout hard remover
+      # inspired by slapos.buildout hard remover
       if func == os.path.islink:
         os.unlink(path)
       else:
@@ -299,7 +300,7 @@ class Partition(object):
         instance_path=self.instance_path,
         user_id=uid,
         group_id=gid,
-        # As supervisord has no environment to inherit setup minimalistic one
+        # As supervisord has no environment to inherit, setup a minimalistic one
         HOME=pwd.getpwuid(uid).pw_dir,
         USER=pwd.getpwuid(uid).pw_name,
       )
@@ -383,7 +384,7 @@ class Partition(object):
         buildout_binary)
     else:
       if len(bootstrap_candidate_list) != 1:
-        raise ValueError('More then one bootstrap candidate found.')
+        raise ValueError('More than one bootstrap candidate found.')
       # Reads uid/gid of path, launches buildout with thoses privileges
       bootstrap_file = os.path.abspath(os.path.join(bootstrap_candidate_dir,
         bootstrap_candidate_list[0]))
