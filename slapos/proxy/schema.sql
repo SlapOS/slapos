@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS partition%(version)s (
   slave_instance_list TEXT,
   software_type VARCHAR(255),
   partition_reference VARCHAR(255),
-  requested_by VARCHAR(255),
+  requested_by VARCHAR(255), -- only used for debugging,
+                             -- slapproxy does not support proper scope
   requested_state VARCHAR(255) NOT NULL DEFAULT 'started'
 );
 
@@ -22,7 +23,8 @@ CREATE TABLE IF NOT EXISTS slave%(version)s (
   reference VARCHAR(255) UNIQUE,
   connection_xml TEXT,
   hosted_by VARCHAR(255),
-  asked_by VARCHAR(255)
+  asked_by VARCHAR(255) -- only used for debugging,
+                        -- slapproxy does not support proper scope
 );
 
 CREATE TABLE IF NOT EXISTS partition_network%(version)s (
