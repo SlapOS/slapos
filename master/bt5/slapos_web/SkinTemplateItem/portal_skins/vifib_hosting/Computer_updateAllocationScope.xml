@@ -67,7 +67,7 @@ edit_kw = {\n
   \'capacity_scope\': capacity_scope,\n
 }\n
 \n
-self_person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
+self_person = computer.getSourceAdministrationValue(portal_type="Person")\n
 self_email = self_person.getDefaultEmailCoordinateText()\n
 if allocation_scope == \'open/public\':\n
   # reset friends and update in place\n
