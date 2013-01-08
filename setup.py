@@ -39,6 +39,7 @@ setup(name=name,
       'pyflakes', # For testing purposes
       'setuptools', # namespaces
       'supervisor', # slapgrid uses supervisor to manage processes
+      'unittest2',
       'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
                                # XML
       'zope.interface', # slap library implementes interfaces

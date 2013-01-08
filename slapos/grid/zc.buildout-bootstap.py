@@ -18,7 +18,7 @@ The script accepts buildout command-line options, so you can
 use the -c option to specify an alternate configuration file.
 """
 
-import os, shutil, sys, tempfile, textwrap, urllib, urllib2, subprocess
+import os, shutil, sys, tempfile, urllib, urllib2, subprocess
 from optparse import OptionParser
 
 if sys.platform == 'win32':
@@ -57,7 +57,6 @@ if not has_broken_dash_S and 'site' in sys.modules:
 # out any namespace packages from site-packages that might have been
 # loaded by .pth files.
 clean_path = sys.path[:]
-import site
 sys.path[:] = clean_path
 for k, v in sys.modules.items():
     if k in ('setuptools', 'pkg_resources') or (

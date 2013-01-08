@@ -508,6 +508,12 @@ class Partition(object):
         if f:
           if os.path.exists(f):
             os.unlink(f)
+
+      # better to manually remove symlinks because rmtree might choke on them
+      sr_symlink = os.path.join(self.instance_path, 'software_release')
+      if os.path.islink(sr_symlink):
+        os.unlink(sr_symlink)
+
       for root, dirs, file_list in os.walk(self.instance_path):
         for directory in dirs:
           shutil.rmtree(os.path.join(self.instance_path, directory))

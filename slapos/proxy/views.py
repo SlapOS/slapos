@@ -303,13 +303,6 @@ def request_not_shared():
   q = 'SELECT * FROM %s WHERE partition_reference=?'
   a(partition_reference)
 
-#
-#  XXX the following filter breaks renaming asked by the bully script
-#
-#  if partition_id:
-#    q += ' AND requested_by=?'
-#    a(partition_id)
-
   partition = execute_db('partition', q, args, one=True)
 
   args = []
@@ -392,7 +385,7 @@ def request_slave():
   partition_id = request.form.get('computer_partition_id', '').encode()
   # Contain slave parameters to be given to slave master
   partition_parameter_kw = request.form.get('partition_parameter_xml', None)
-  if partition_parameter_kw :
+  if partition_parameter_kw:
     partition_parameter_kw = xml_marshaller.xml_marshaller.loads(
                                               partition_parameter_kw.encode())
   else:
@@ -419,7 +412,7 @@ def request_slave():
         args)
     abort(404)
 
-  # We set slave dictionnary as described in docstring
+  # We set slave dictionary as described in docstring
   new_slave = {}
   slave_reference = partition_id + '_' + partition_reference
   new_slave['slave_title'] = slave_reference
@@ -481,3 +474,4 @@ def request_slave():
                                 slap_software_type=partition['software_type'],
                                 ip_list=address_list
                                 ))
+

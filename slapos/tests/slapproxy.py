@@ -256,15 +256,16 @@ class TestRequest (MasterMixin, unittest.TestCase):
   """
   def test_two_request_one_partition_free (self):
     """
-    If only one partition is available and two different request are made
-    first will succeed second will fail
+    Since slapproxy does not implement scope, providing two partition_id
+    values will still succeed, even if only one partition is available.
     """
     self.add_free_partition(1)
     self.assertIsInstance(self.request('http://sr//', None,
                                        'Maria', 'slappart2'),
                           slapos.slap.ComputerPartition)
-    with self.assertRaises(WrongFormat):
-      self.request('http://sr//', None, 'Maria', 'slappart3')
+    self.assertIsInstance(self.request('http://sr//', None,
+                                       'Maria', 'slappart3'),
+                          slapos.slap.ComputerPartition)
 
   def test_two_request_two_partition_free (self):
     """
@@ -327,11 +328,11 @@ class TestRequest (MasterMixin, unittest.TestCase):
 
   def test_two_different_request_from_two_partition (self):
     """
-    Two request from different partitions
-    will return two differents partitions
+    Since slapproxy does not implement scope, two request with
+    different partition_id will still return the same partition.
     """
     self.add_free_partition(2)
-    self.assertNotEqual(
+    self.assertEqual(
       self.request('http://sr//', None, 'Maria', 'slappart2').__dict__,
       self.request('http://sr//', None, 'Maria', 'slappart3').__dict__)
 
