@@ -1,0 +1,99 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+instance = context\n
+\n
+if (instance.getSlapState() == "start_requested"):\n
+  hosting_subscription = instance.getSpecialiseValue(portal_type="Hosting Subscription")\n
+  if (hosting_subscription.getSlapState() == "stop_requested"):\n
+    # Buildout may not propagate the stop request\n
+    requester = instance.getPredecessorRelatedValue()\n
+    if (instance.getRelativeUrl() in requester.getPredecessorList()) and \\\n
+      (requester.getSlapState() == "stop_requested"):\n
+      # For security, only stop if parent is also stopped\n
+\n
+      if instance.getPortalType() == \'Software Instance\':\n
+        is_slave = False\n
+      elif instance.getPortalType() == \'Slave Instance\':\n
+        is_slave = True\n
+      else:\n
+        raise NotImplementedError, "Unknown portal type %s of %s" % \\\n
+          (instance.getPortalType(), instance.getRelativeUrl())\n
+\n
+      requester.requestInstance(\n
+        software_release=instance.getUrlString(),\n
+        software_title=instance.getTitle(),\n
+        software_type=instance.getSourceReference(),\n
+        instance_xml=instance.getTextContent(),\n
+        sla_xml=instance.getSlaXml(),\n
+        shared=is_slave,\n
+        state="stopped",\n
+        comment="Stop collect %s" % instance.getRelativeUrl()\n
+      )\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Instance_tryToStopCollect</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>

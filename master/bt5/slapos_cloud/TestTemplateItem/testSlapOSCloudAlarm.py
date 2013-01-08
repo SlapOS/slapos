@@ -5,6 +5,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 from Products.ERP5Type.tests.utils import createZODBPythonScript
 from Products.ERP5Type.tests.backportUnittest import skip
 import json
+from zExceptions import Unauthorized
 
 class TestSlapOSCorePromiseSlapOSModuleIdGeneratorAlarm(testSlapOSMixin):
   def test_Module_assertIdGenerator(self):
@@ -1177,3 +1178,127 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by C
     self.assertNotEqual(
         'Visited by Computer_checkAndUpdateCapacityScope',
         self.computer.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSGarbageCollectStoppedRootTreeAlarm(testSlapOSMixin):
+
+  def createInstance(self):
+    hosting_subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.edit(
+    )
+    hosting_subscription.validate()
+    hosting_subscription.edit(
+        title=self.generateNewSoftwareTitle(),
+        reference="TESTHS-%s" % self.generateNewId(),
+    )
+    request_kw = dict(
+      software_release=\
+          self.generateNewSoftwareReleaseUrl(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title=hosting_subscription.getTitle(),
+      state='started'
+    )
+    hosting_subscription.requestStart(**request_kw)
+    hosting_subscription.requestInstance(**request_kw)
+
+    instance = hosting_subscription.getPredecessorValue()
+    self.tic()
+    return instance
+
+  def test_Instance_tryToStopCollect_REQUEST_disallowed(self):
+    self.assertRaises(
+      Unauthorized,
+      self.portal.Instance_tryToStopCollect,
+      REQUEST={})
+
+  def test_Instance_tryToStopCollect_started_instance(self):
+    instance = self.createInstance()
+    hosting_subscription = instance.getSpecialiseValue()
+
+    self.portal.portal_workflow._jumpToStateFor(hosting_subscription,
+        'stop_requested')
+    self.assertEqual('start_requested', instance.getSlapState())
+
+    instance.Instance_tryToStopCollect()
+    self.assertEqual('stop_requested', instance.getSlapState())
+
+  def test_Instance_tryToStopCollect_started_instance(self):
+    instance = self.createInstance()
+    hosting_subscription = instance.getSpecialiseValue()
+
+    self.portal.portal_workflow._jumpToStateFor(hosting_subscription,
+        'stop_requested')
+    self.assertEqual('start_requested', instance.getSlapState())
+
+    instance.Instance_tryToStopCollect()
+    self.assertEqual('stop_requested', instance.getSlapState())
+
+  def test_Instance_tryToStopCollect_destroyed_instance(self):
+    instance = self.createInstance()
+    hosting_subscription = instance.getSpecialiseValue()
+
+    self.portal.portal_workflow._jumpToStateFor(hosting_subscription,
+        'stop_requested')
+    self.portal.portal_workflow._jumpToStateFor(instance,
+        'destroy_requested')
+
+    instance.Instance_tryToStopCollect()
+    self.assertEqual('destroy_requested', instance.getSlapState())
+
+  def test_Instance_tryToStopCollect_started_subscription(self):
+    instance = self.createInstance()
+    hosting_subscription = instance.getSpecialiseValue()
+
+    self.assertEqual('start_requested', hosting_subscription.getSlapState())
+    self.assertEqual('start_requested', instance.getSlapState())
+
+    instance.Instance_tryToStopCollect()
+    self.assertEqual('start_requested', instance.getSlapState())
+
+  def _simulateInstance_tryToStopCollect(self):
+    script_name = 'Instance_tryToStopCollect'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Instance_tryToStopCollect') """ )
+    transaction.commit()
+
+  def _dropInstance_tryToStopCollect(self):
+    script_name = 'Instance_tryToStopCollect'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm(self):
+    instance = self.createInstance()
+    self._simulateInstance_tryToStopCollect()
+    try:
+      self.portal.portal_alarms.slapos_stop_collect_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToStopCollect()
+    self.assertEqual(
+        'Visited by Instance_tryToStopCollect',
+        instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_invalidated(self):
+    instance = self.createInstance()
+    instance.invalidate()
+    self.tic()
+    self._simulateInstance_tryToStopCollect()
+    try:
+      self.portal.portal_alarms.slapos_stop_collect_instance.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToStopCollect()
+    self.assertNotEqual(
+        'Visited by Instance_tryToStopCollect',
+        instance.workflow_history['edit_workflow'][-1]['comment'])
+
