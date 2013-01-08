@@ -37,6 +37,7 @@ import pwd
 import stat
 import tarfile
 import tempfile
+import textwrap
 import utils
 import xmlrpclib
 
@@ -169,7 +170,10 @@ class Software(object):
           buildout_parameter_list.append( \
               buildout_option % ('networkcache:', value))
 
-      buildout_parameter_list.extend(['-c', self.url])
+      buildout_cfg = os.path.join(self.software_path, 'buildout.cfg')
+      self.createProfileIfMissing(buildout_cfg, self.url)
+
+      buildout_parameter_list.extend(['-c', buildout_cfg])
       utils.bootstrapBuildout(self.software_path, self.buildout,
           additional_buildout_parametr_list=buildout_parameter_list)
       utils.launchBuildout(self.software_path,
@@ -177,6 +181,19 @@ class Software(object):
                      additional_buildout_parametr_list=buildout_parameter_list)
     finally:
       shutil.rmtree(extends_cache)
+
+  def createProfileIfMissing(self, buildout_cfg, url):
+    root_stat_info = os.stat(self.software_root)
+    if not os.path.exists(buildout_cfg):
+      with open(buildout_cfg, 'wb') as fout:
+        fout.write(textwrap.dedent("""\
+            # Created by slapgrid. extends {url}
+            # but you can change it for development purposes.
+
+            [buildout]
+            extends = {url}
+            """.format(url=url)))
+        os.chown(buildout_cfg, root_stat_info.st_uid, root_stat_info.st_gid)
 
   def uploadSoftwareRelease(self, tarpath):
     """
