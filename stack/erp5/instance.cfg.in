@@ -6,8 +6,8 @@ eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
-[slap-parameters]
-recipe = slapos.cookbook:slapconfiguration
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
 computer = ${slap-connection:computer-id}
 partition = ${slap-connection:partition-id}
 url = ${slap-connection:server-url}
@@ -19,52 +19,14 @@ recipe = slapos.recipe.template:jinja2
 rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
 extra-context =
 context =
+    key ipv4_set slap-configuration:ipv4
+    key ipv6_set slap-configuration:ipv6
     key eggs_directory buildout:eggs-directory
     key develop_eggs_directory buildout:develop-eggs-directory
-    key slap_software_type slap-parameters:slap-software-type
-    key slapparameter_dict slap-parameters:configuration
+    key slap_software_type slap-configuration:slap-software-type
+    key slapparameter_dict slap-configuration:configuration
+    key computer_id slap-configuration:computer
     ${:extra-context}
-
-[dynamic-template-tidstorage-parameters]
-apache = {{ apache_location }}
-haproxy = {{ haproxy_location }}
-dcron = {{ dcron_location }}
-logrotate = {{ logrotate_location }}
-gzip = {{ gzip_location }}
-openssl = {{ openssl_location }}
-coreutils = {{ coreutils_location }}
-git = {{ git_location }}
-graphviz = {{ graphviz_location }}
-grep = {{ grep_location }}
-imagemagick = {{ imagemagick_location }}
-librsvg = {{ librsvg_location }}
-mariadb = {{ mariadb_location }}
-pdftk = {{ pdftk_location }}
-sed = {{ sed_location }}
-tesseract = {{ tesseract_location }}
-w3m = {{ w3m_location }}
-aspell = {{ aspell_location }}
-poppler = {{ poppler_location }}
-dmtx-utils = {{ dmtx_utils_location }}
-buildout-bin-directory = {{ buildout_bin_directory }}
-zope-conf-template = {{ template_zope_conf }}
-
-[dynamic-template-tidstorage]
-< = jinja2-template-base
-template = {{ template_tidstorage }}
-filename = instance-tidstorage.cfg
-extensions = jinja2.ext.do
-extra-context =
-    section parameter_dict dynamic-template-tidstorage-parameters
-    import json_module json
-    raw zope_port_base 12000
-    raw zeo_port_base 15000
-    raw haproxy_port_base 11000
-    raw apache_port_base 10000
-    key ipv4_set slap-parameters:ipv4
-    key ipv6_set slap-parameters:ipv6
-# Must match the key id in [switch-softwaretype] which uses this section.
-    raw software_type tidstorage
 
 [dynamic-template-cloudooo-parameters]
 file = {{ file_location }}
@@ -83,6 +45,8 @@ zlib = {{ zlib_location }}
 libreoffice-bin = {{ libreoffice_bin_location }}
 fonts = {{ fonts_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
+6tunnel = {{ sixtunnel_location }}
+dash = {{ dash_location }}
 
 [dynamic-template-cloudooo]
 < = jinja2-template-base
@@ -187,19 +151,150 @@ extra-context =
     key template_zope dynamic-template-zope:rendered
     key local_bt5_repository template-erp5-single-parameters:local_bt5_repository
 
+[dynamic-template-cluster-erp5-parameters]
+local-bt5-repository = {{ local_bt5_repository }}
+
+[dynamic-template-cluster-erp5]
+< = jinja2-template-base
+template = {{ template_erp5_cluster }}
+filename = instance-cluster-erp5.cfg
+extensions = jinja2.ext.do
+extra-context =
+    key local_bt5_repository dynamic-template-cluster-erp5-parameters:local-bt5-repository
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type cluster
+
+[dynamic-template-balancer-parameters]
+apache = {{ apache_location }}
+openssl = {{ openssl_location }}
+haproxy = {{ haproxy_location }}
+instance-logrotate-cfg = {{ template_logrotate_base }}
+bin-directory = {{ bin_directory }}
+6tunnel = {{ sixtunnel_location }}
+dash = {{ dash_location }}
+
+[dynamic-template-balancer]
+< = jinja2-template-base
+template = {{ template_balancer }}
+extensions = jinja2.ext.do
+filename = instance-balancer.cfg
+extra-context =
+    section parameter_dict dynamic-template-balancer-parameters
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type balancer
+
+[dynamic-template-zeo-parameters]
+buildout-bin-directory = {{ buildout_bin_directory }}
+instance-logrotate-cfg = {{ template_logrotate_base }}
+6tunnel = {{ sixtunnel_location }}
+dash = {{ dash_location }}
+
+[dynamic-template-zeo]
+< = jinja2-template-base
+template = {{ template_zeo }}
+filename = instance-zeo.cfg
+extensions = jinja2.ext.do
+extra-context =
+    key buildout_directory buildout:directory
+    section parameter_dict dynamic-template-zeo-parameters
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type zodb-zeo
+
+[dynamic-template-cluster-zope-parameters]
+zope-conf-template = {{ template_zope_conf }}
+instance-logrotate-cfg = {{ template_logrotate_base }}
+git = {{ git_location }}
+graphviz = {{ graphviz_location }}
+buildout-bin-directory = {{ buildout_bin_directory }}
+coreutils = {{ coreutils_location }}
+grep = {{ grep_location }}
+imagemagick = {{ imagemagick_location }}
+pdftk = {{ pdftk_location }}
+sed = {{ sed_location }}
+tesseract = {{ tesseract_location }}
+w3m = {{ w3m_location }}
+poppler = {{ poppler_location }}
+dmtx-utils = {{ dmtx_utils_location }}
+openssl = {{ openssl_location }}
+6tunnel = {{ sixtunnel_location }}
+dash = {{ dash_location }}
+
+[dynamic-template-cluster-zope]
+< = jinja2-template-base
+template = {{ template_cluster_zope }}
+filename = instance-cluster-zope.cfg
+extensions = jinja2.ext.do
+extra-context =
+    key buildout_directory buildout:directory
+    section parameter_dict dynamic-template-cluster-zope-parameters
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type cluster-zope
+
+[dynamic-template-kumofs-parameters]
+dash-location = {{ dash_location }}
+dcron-location = {{ dcron_location }}
+gzip-location = {{ gzip_location }}
+kumo-location = {{ kumo_location }}
+logrotate-location = {{ logrotate_location }}
+
+[dynamic-template-kumofs]
+< = jinja2-template-base
+template = {{ template_kumofs }}
+filename = instance-kumofs.cfg
+extra-context =
+    section parameter_dict dynamic-template-kumofs-parameters
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type kumofs
+
+[dynamic-template-mariadb-parameters]
+coreutils-location = {{ coreutils_location }}
+dcron-location = {{ dcron_location }}
+gettext-location = {{ gettext_location }}
+grep-location = {{ grep_location }}
+gzip-location = {{ gzip_location }}
+logrotate-location = {{ logrotate_location }}
+mariadb-location = {{ mariadb_location }}
+perl-location = {{ perl_location }}
+perl-siteprefix = {{ perl_siteprefix }}
+sed-location = {{ sed_location }}
+xtrabackup-location = {{ xtrabackup_location }}
+
+[dynamic-template-mariadb]
+< = jinja2-template-base
+template = {{ template_mariadb }}
+filename = instance-mariadb.cfg
+extra-context =
+    section parameter_dict dynamic-template-mariadb-parameters
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type mariadb
+
+[dynamic-template-memcached-parameters]
+dash-location = {{ dash_location }}
+6tunnel-location = {{ sixtunnel_location }}
+memcached-location = {{ memcached_location }}
+
+[dynamic-template-memcached]
+< = jinja2-template-base
+template = {{ template_memcached }}
+filename = instance-memcached.cfg
+extra-context =
+    section parameter_dict dynamic-template-memcached-parameters
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type memcached
+
 [switch-softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = ${template-erp5-single:rendered}
-production = {{ template_erp5_cluster }}
-cluster = {{ template_erp5_cluster }}
-kumofs = {{ template_kumofs }}
-memcached = {{ template_memcached }}
+cluster = ${dynamic-template-cluster-erp5:rendered}
+kumofs = ${dynamic-template-kumofs:rendered}
+memcached = ${dynamic-template-memcached:rendered}
 cloudooo = ${dynamic-template-cloudooo:rendered}
 zope = ${dynamic-template-zope:rendered}
-mariadb = {{ template_mariadb }}
-sphinx = {{ template_sphinx }}
-tidstorage = ${dynamic-template-tidstorage:rendered}
+mariadb = ${dynamic-template-mariadb:rendered}
 varnish = ${dynamic-template-varnish:rendered}
+balancer = ${dynamic-template-balancer:rendered}
+zodb-zeo = ${dynamic-template-zeo:rendered}
+cluster-zope = ${dynamic-template-cluster-zope:rendered}
 
 [slap-connection]
 # part to migrate to new - separated words

@@ -25,7 +25,8 @@
 #
 ##############################################################################
 import logging
-
+from slapos.recipe.librecipe import wrap, JSON_SERIALISED_MAGIC_KEY
+import json
 from slapos import slap as slapmodule
 
 class Recipe(object):
@@ -119,19 +120,33 @@ class Recipe(object):
       for config_parameter in options['config'].split():
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
+    partition_parameter_kw = self._filterForStorage(partition_parameter_kw)
 
     self.instance = instance = request(software_url, software_type,
       name, partition_parameter_kw=partition_parameter_kw,
       filter_kw=filter_kw, shared=isSlave)
-
+    return_parameter_dict = self._getReturnParameterDict(instance,
+      return_parameters)
     for param in return_parameters:
       try:
-        options['connection-%s' % param] = str(
-          instance.getConnectionParameter(param))
-      except slapmodule.NotFoundError:
-        options['connection-%s' % param] = ''
+        value = return_parameter_dict[param]
+      except KeyError:
+        value = ''
         if self.failed is None:
           self.failed = param
+      options['connection-%s' % param] = value
+
+  def _filterForStorage(self, partition_parameter_kw):
+    return partition_parameter_kw
+
+  def _getReturnParameterDict(self, instance, return_parameter_list):
+    result = {}
+    for param in return_parameter_list:
+      try:
+        result[param] = str(instance.getConnectionParameter(param))
+      except slapmodule.NotFoundError:
+        pass
+    return result
 
   def install(self):
     if self.failed is not None:
@@ -150,3 +165,13 @@ class Recipe(object):
     return []
 
   update = install
+
+class Serialised(Recipe):
+  def _filterForStorage(self, partition_parameter_kw):
+    return wrap(partition_parameter_kw)
+
+  def _getReturnParameterDict(self, instance, return_parameter_list):
+    try:
+      return json.loads(instance.getConnectionParameter(JSON_SERIALISED_MAGIC_KEY))
+    except slapmodule.NotFoundError:
+      return {}

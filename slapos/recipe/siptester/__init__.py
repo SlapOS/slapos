@@ -11,7 +11,7 @@ class SipTesterRecipe(BaseSlapRecipe):
   def _createPJSUAConfiguration(self, template_name):
     pjsua_input = pkg_resources.resource_string(__name__, os.path.join(
                                                   'template', template_name))
-    if self._writeFile(self.pjsua_configuration_file, 
+    if self._writeFile(self.pjsua_configuration_file,
                        pjsua_input % self.options):
       # XXX: How to inform slap/slapgrid that something changed and it might
       #      be not bad idea to restart CP?
@@ -30,7 +30,7 @@ class SipTesterRecipe(BaseSlapRecipe):
     d['siptester_binary'] = os.path.join(self.buildout['software_definition'
           ]['software_home'].strip(), 'bin', 'siptester')
     self.running_wrapper_location = pkg_resources.resource_filename(__name__, os.path.join(
-                                                  'template', 
+                                                  'template',
                                                   self.wrapper_template))
     self._createRunningWrapper(d)
     return [path, wrapper_path]

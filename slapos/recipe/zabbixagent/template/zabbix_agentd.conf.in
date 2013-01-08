@@ -229,5 +229,13 @@ ListenIP=%(ip)s
 # Mandatory: no
 # Default:
 # UserParameter=
+UserParameter=custom_sensor.temp1,sensors | grep "temp1" | sed -e "s/.*  +//" | sed -e "s/.C.*//"
+UserParameter=custom_sensor.temp2,sensors | grep "temp2" | sed -e "s/.*  +//" | sed -e "s/.C.*//"
+UserParameter=custom_sensor.core0,sensors | grep "Core 0" | sed -e "s/.*  +//" | sed -e "s/.C.*//"
+UserParameter=custom_sensor.core1,sensors | grep "Core 1" | sed -e "s/.*  +//" | sed -e "s/.C.*//"
+UserParameter=custom_sensor.core2,sensors | grep "Core 2" | sed -e "s/.*  +//" | sed -e "s/.C.*//"
+UserParameter=custom_sensor.core3,sensors | grep "Core 3" | sed -e "s/.*  +//" | sed -e "s/.C.*//"
+UserParameter=custom_sensor.fan1,sensors | grep "fan1" | sed -e "s/.*  //" | sed -e "s/ .*//"
+UserParameter=custom_sensor.fan2,sensors | grep "fan2" | sed -e "s/.*  //" | sed -e "s/ .*//"
 
 %(user_parameter_string)s

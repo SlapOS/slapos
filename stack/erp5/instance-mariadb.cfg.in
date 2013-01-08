@@ -1,3 +1,5 @@
+{% if software_type == slap_software_type -%}
+{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 [buildout]
 parts =
   publish-mariadb-url
@@ -15,8 +17,12 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [publish-mariadb-url]
-recipe = slapos.cookbook:publishurl
+recipe = slapos.cookbook:publish.serialised
+{% if use_ipv6 -%}
+url = mysql://${mariadb-instance:user}:${mariadb-instance:password}@[${mariadb-instance:ip}]:${mariadb-instance:port}/${mariadb-instance:database}
+{% else -%}
 url = mysql://${mariadb-instance:user}:${mariadb-instance:password}@${mariadb-instance:ip}:${mariadb-instance:port}/${mariadb-instance:database}
+{% endif -%}
 
 [cron-entry-mariadb-backup]
 <= cron
@@ -30,9 +36,13 @@ recipe = slapos.cookbook:generic.mysql
 
 # Options
 user = user
-parallel-test-database-amount = 100
+parallel-test-database-amount = {{ slapparameter_dict.get('test-database-amount', 100) }}
 port = 45678
-ip = ${slap-network-information:local-ipv4}
+{% if use_ipv6 -%}
+ip = {{ (ipv6_set | list)[0] }}
+{% else -%}
+ip = {{ (ipv4_set | list)[0] }}
+{% endif -%}
 database = erp5
 test-user = erp5_test
 test-database = erp5_test
@@ -56,46 +66,46 @@ innobackupex-incremental = ${rootdirectory:bin}/innobackupex-incremental
 innobackupex-full = ${rootdirectory:bin}/innobackupex-full
 
 # Binary information
-innobackupex-binary = {{ xtrabackup_location }}/bin/innobackupex
-mysql-base-directory = {{ mariadb_location }}
-mysql-binary = {{ mariadb_location }}/bin/mysql
-mysql-install-binary = {{ mariadb_location }}/scripts/mysql_install_db
-mysql-upgrade-binary = {{ mariadb_location }}/bin/mysql_upgrade
-mysqld-binary = {{ mariadb_location }}/bin/mysqld
-pt-archiver-binary = {{ perl_siteprefix }}/bin/pt-archiver
-pt-config-diff-binary = {{ perl_siteprefix }}/bin/pt-config-diff
-pt-deadlock-logger-binary = {{ perl_siteprefix }}/bin/pt-deadlock-logger
-pt-duplicate-key-checker-binary = {{ perl_siteprefix }}/bin/pt-duplicate-key-checker
-pt-fifo-split-binary = {{ perl_siteprefix }}/bin/pt-fifo-split
-pt-find-binary = {{ perl_siteprefix }}/bin/pt-find
-pt-fk-error-logger-binary = {{ perl_siteprefix }}/bin/pt-fk-error-logger
-pt-heartbeat-binary = {{ perl_siteprefix }}/bin/pt-heartbeat
-pt-index-usage-binary = {{ perl_siteprefix }}/bin/pt-index-usage
-pt-kill-binary = {{ perl_siteprefix }}/bin/pt-kill
-pt-log-player-binary = {{ perl_siteprefix }}/bin/pt-log-player
-pt-online-schema-change-binary = {{ perl_siteprefix }}/bin/pt-online-schema-change
-pt-query-advisor-binary = {{ perl_siteprefix }}/bin/pt-query-advisor
-pt-query-digest-binary = {{ perl_siteprefix }}/bin/pt-query-digest
-pt-show-grants-binary = {{ perl_siteprefix }}/bin/pt-show-grants
-pt-slave-delay-binary = {{ perl_siteprefix }}/bin/pt-slave-delay
-pt-slave-find-binary = {{ perl_siteprefix }}/bin/pt-slave-find
-pt-slave-restart-binary = {{ perl_siteprefix }}/bin/pt-slave-restart
-pt-table-checksum-binary = {{ perl_siteprefix }}/bin/pt-table-checksum
-pt-table-sync-binary = {{ perl_siteprefix }}/bin/pt-table-sync
-pt-tcp-model-binary = {{ perl_siteprefix }}/bin/pt-tcp-model
-pt-trend-binary = {{ perl_siteprefix }}/bin/pt-trend
-pt-upgrade-binary = {{ perl_siteprefix }}/bin/pt-upgrade
-pt-variable-advisor-binary = {{ perl_siteprefix }}/bin/pt-variable-advisor
-pt-visual-explain-binary = {{ perl_siteprefix }}/bin/pt-visual-explain
-xtrabackup-binary = {{ xtrabackup_location }}/bin/xtrabackup_51
-perl-binary = {{ perl_location }}/bin/perl
+innobackupex-binary = {{ parameter_dict['xtrabackup-location'] }}/bin/innobackupex
+mysql-base-directory = {{ parameter_dict['mariadb-location'] }}
+mysql-binary = {{ parameter_dict['mariadb-location'] }}/bin/mysql
+mysql-install-binary = {{ parameter_dict['mariadb-location'] }}/scripts/mysql_install_db
+mysql-upgrade-binary = {{ parameter_dict['mariadb-location'] }}/bin/mysql_upgrade
+mysqld-binary = {{ parameter_dict['mariadb-location'] }}/bin/mysqld
+pt-archiver-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-archiver
+pt-config-diff-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-config-diff
+pt-deadlock-logger-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-deadlock-logger
+pt-duplicate-key-checker-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-duplicate-key-checker
+pt-fifo-split-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-fifo-split
+pt-find-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-find
+pt-fk-error-logger-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-fk-error-logger
+pt-heartbeat-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-heartbeat
+pt-index-usage-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-index-usage
+pt-kill-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-kill
+pt-log-player-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-log-player
+pt-online-schema-change-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-online-schema-change
+pt-query-advisor-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-query-advisor
+pt-query-digest-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-query-digest
+pt-show-grants-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-show-grants
+pt-slave-delay-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-slave-delay
+pt-slave-find-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-slave-find
+pt-slave-restart-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-slave-restart
+pt-table-checksum-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-table-checksum
+pt-table-sync-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-table-sync
+pt-tcp-model-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-tcp-model
+pt-trend-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-trend
+pt-upgrade-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-upgrade
+pt-variable-advisor-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-variable-advisor
+pt-visual-explain-binary = {{ parameter_dict['perl-siteprefix'] }}/bin/pt-visual-explain
+xtrabackup-binary = {{ parameter_dict['xtrabackup-location'] }}/bin/xtrabackup_51
+perl-binary = {{ parameter_dict['perl-location'] }}/bin/perl
 
 [logrotate]
 recipe = slapos.cookbook:logrotate
 # Binaries
-logrotate-binary = {{ logrotate_location }}/usr/sbin/logrotate
-gzip-binary = {{ gzip_location }}/bin/gzip
-gunzip-binary = {{ gzip_location }}/bin/gunzip
+logrotate-binary = {{ parameter_dict['logrotate-location'] }}/usr/sbin/logrotate
+gzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gzip
+gunzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gunzip
 # Directories
 wrapper = ${rootdirectory:bin}/logrotate
 conf = ${rootdirectory:etc}/logrotate.conf
@@ -112,7 +122,7 @@ post = ${mariadb-instance:mysql-binary} --no-defaults -B --socket=${mariadb-inst
 
 [cron]
 recipe = slapos.cookbook:cron
-dcrond-binary = {{ dcron_location }}/sbin/crond
+dcrond-binary = {{ parameter_dict['dcron-location'] }}/sbin/crond
 cron-entries = ${directory:cron-entries}
 crontabs = ${directory:crontabs}
 cronstamps = ${directory:cronstamps}
@@ -135,16 +145,16 @@ command = ${logrotate:wrapper}
 recipe = slapos.cookbook:symbolic.link
 target-directory = ${rootdirectory:bin}
 link-binary =
-  {{ coreutils_location }}/bin/basename
-  {{ coreutils_location }}/bin/cat
-  {{ coreutils_location }}/bin/cp
-  {{ coreutils_location }}/bin/ls
-  {{ coreutils_location }}/bin/tr
-  {{ coreutils_location }}/bin/uname
-  {{ gettext_location }}/lib/gettext/hostname
-  {{ grep_location }}/bin/grep
-  {{ sed_location }}/bin/sed
-  {{ mariadb_location }}/bin/mysql
+  {{ parameter_dict['coreutils-location'] }}/bin/basename
+  {{ parameter_dict['coreutils-location'] }}/bin/cat
+  {{ parameter_dict['coreutils-location'] }}/bin/cp
+  {{ parameter_dict['coreutils-location'] }}/bin/ls
+  {{ parameter_dict['coreutils-location'] }}/bin/tr
+  {{ parameter_dict['coreutils-location'] }}/bin/uname
+  {{ parameter_dict['gettext-location'] }}/lib/gettext/hostname
+  {{ parameter_dict['grep-location'] }}/bin/grep
+  {{ parameter_dict['sed-location'] }}/bin/sed
+  {{ parameter_dict['mariadb-location'] }}/bin/mysql
 
 [rootdirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -178,3 +188,4 @@ recipe = slapos.cookbook:check_port_listening
 path = ${basedirectory:promise}/mariadb
 hostname = ${mariadb-instance:ip}
 port = ${mariadb-instance:port}
+{% endif %}

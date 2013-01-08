@@ -107,6 +107,7 @@ class Recipe(GenericBaseRecipe):
         mysql_binary=mysql_binary,
         socket=socket,
         configuration_file=mysql_conf_file,
+        cwd=self.options['mysql-base-directory'],
        )
     )
     path_list.append(mysqld)

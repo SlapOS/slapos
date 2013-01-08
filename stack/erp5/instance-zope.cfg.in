@@ -21,7 +21,7 @@ offline = true
 
 {% if 'frontend-software-url' in slapparameter_dict -%}
 [request-slave-frontend]
-recipe = slapos.cookbook:request
+recipe = slapos.cookbook:request.serialised
 software-url = {{ slapparameter_dict['frontend-software-url'] }}
 software-type = {{ slapparameter_dict.get('frontend-software-type', 'RootSoftwareInstance') }}
 sla = instance_guid
@@ -47,14 +47,14 @@ config-{{ name }} = {{ value }}
 return = site_url
 
 [publish-apache-zope-backend-connection-string]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 url = ${request-slave-frontend:connection-site_url}
 login = ${zope-instance:user}
 password = ${zope-instance:password}
 url-deadlock = ${:url}/${zope-instance:deadlock-path}?${zope-instance:deadlock-password}
 {% else %}
 [publish-apache-zope-backend-connection-string]
-recipe = slapos.cookbook:publish
+recipe = slapos.cookbook:publish.serialised
 url = https://${zope-instance:user}:${zope-instance:password}@[${apache-zope-backend-instance:ip}]:${apache-zope-backend-instance:port}
 url-deadlock = ${:url}/${zope-instance:deadlock-path}?${zope-instance:deadlock-password}
 {% endif %}
@@ -200,6 +200,7 @@ link-binary =
   {{ sed_location }}/bin/sed
   {{ tesseract_location }}/bin/tesseract
   {{ w3m_location }}/bin/w3m
+  {{ openssl_location }}/bin/openssl
   {{ poppler_location }}/bin/pdfinfo
   {{ poppler_location }}/bin/pdfseparate
   {{ poppler_location }}/bin/pdftotext

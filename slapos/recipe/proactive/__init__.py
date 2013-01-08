@@ -36,7 +36,7 @@ class Recipe(BaseSlapRecipe):
     #ipv6 = self.getGlobalIPv6Address(parameter_dict)
 
     proactive_home = self.options['proactive_location']
-    
+
     # ProActive parameters
     proactive_rmUrl = parameter_dict.get('rmURL')
     proactive_credential = parameter_dict.get('credentials')
@@ -55,7 +55,7 @@ class Recipe(BaseSlapRecipe):
         )
     self._writeFile(proactive_configuration_file, pkg_resources.resource_string(
       __name__, 'template/ProActiveConfiguration.xml.in') % proactive_dict)
-      
+
     # ProActive wrapper
     #proactive = os.path.join(proactive_home, 'bin', 'unix', 'rm-start-node')
     proactive_pa_bundle = os.path.join(proactive_home, 'PABundle')

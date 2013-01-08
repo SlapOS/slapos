@@ -58,6 +58,7 @@ class Recipe(GenericBaseRecipe):
         supervisord_config=os.path.join(self.instance_directory, 'etc',
           'supervisord.conf'),
         runner_workdir=self.workdir,
+        etc_dir=self.options['etc_dir'],
         runner_host=self.ipv6,
         runner_port=self.runner_port,
         ipv4_address=self.ipv4,
@@ -71,7 +72,7 @@ class Recipe(GenericBaseRecipe):
         private_key=self.options['private_key'],
         cloud9_url=self.cloud9_url
     )
-    
+
     config_file = self.createFile(self.options['slapos.cfg'],
         self.substituteTemplate(self.getTemplateFilename('slapos.cfg.in'),
         configuration))
@@ -81,8 +82,9 @@ class Recipe(GenericBaseRecipe):
         PATH=os.path.dirname(self.options['git-binary']) + ':' + os.environ['PATH'],
         GIT_SSH=self.options['ssh_client']
     )
-
-    launch_args = [self.options['slaprunner'].strip(), config_file, '--debug']
+    launch_args = [self.options['slaprunner'].strip(), config_file]
+    if self.optionIsTrue('debug', default=False):
+      launch_args.append('--debug')
 
     wrapper = self.createPythonScript(self.options['wrapper'],
         'slapos.recipe.librecipe.execute.executee',

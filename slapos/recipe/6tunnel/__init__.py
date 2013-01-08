@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
+# Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsibility of assessing all potential
@@ -25,27 +25,34 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
-import urlparse
 
 class Recipe(GenericBaseRecipe):
+  """
+  ipv4toipv6 tunnel configuration.
+  """
+  # Override in subclasses
+  template_name = None
+
   def install(self):
-    path_list = []
-    common_dict = dict(
-        prepend_path=self.options['prepend-path'],
-    )
-    common_list = [
-           "--paster_path", self.options['ooo-paster'],
-           self.options['configuration-file']
-          ]
-    run_unit_test_path = self.createPythonScript(self.options['run-unit-test'],
-        __name__ + '.test.runUnitTest', [dict(
-        call_list=[self.options['run-unit-test-binary'],
-          ] + common_list, **common_dict)])
+    return [
+      self.createExecutable(
+        self.options['runner-path'],
+        self.substituteTemplate(
+          self.getTemplateFilename(self.template_name),
+          {
+            'ipv6': self.options['ipv6'],
+            'ipv6_port': self.options['ipv6-port'],
+            'ipv4': self.options['ipv4'],
+            'ipv4_port': self.options['ipv4-port'],
+            'shell_path': self.options['shell-path'],
+            '6tunnel_path': self.options['6tunnel-path'],
+          },
+        ),
+      )
+    ]
 
-    path_list.append(run_unit_test_path)
-    path_list.append(self.createPythonScript(self.options['run-test-suite'],
-        __name__ + '.test.runTestSuite', [dict(
-        call_list=[self.options['run-test-suite-binary'],
-          ], **common_dict)]))
+class SixToFour(Recipe):
+    template_name = '6to4.in'
 
-    return path_list
+class FourToSix(Recipe):
+    template_name = '4to6.in'

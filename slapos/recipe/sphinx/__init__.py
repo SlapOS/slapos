@@ -42,15 +42,15 @@ class Recipe(GenericBaseRecipe):
       pid=self.options['pid'],
       )
     sphinx_conf_path = self.createFile(
-        self.options['configuration-file'], 
+        self.options['configuration-file'],
         self.substituteTemplate(self.getTemplateFilename('sphinx.conf.in'),
           config)
     )
 
     # Create init script
     wrapper = self.createPythonScript(
-        self.options['wrapper'], 
-        'slapos.recipe.librecipe.execute.execute', 
+        self.options['wrapper'],
+        'slapos.recipe.librecipe.execute.execute',
         [self.options['sphinx-searchd-binary'].strip(), '-c',
          sphinx_conf_path, '--nodetach'],
         )
