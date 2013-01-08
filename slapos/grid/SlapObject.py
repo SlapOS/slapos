@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
@@ -52,6 +53,7 @@ REQUIRED_COMPUTER_PARTITION_PERMISSION = '0750'
 
 class Software(object):
   """This class is responsible for installing a software release"""
+
   def __init__(self, url, software_root, buildout,
       signature_private_key_file=None, signature_certificate_list=None,
       upload_cache_url=None, upload_dir_url=None, shacache_cert_file=None,
@@ -222,8 +224,9 @@ class Software(object):
 
 
 class Partition(object):
-  """This class is responsible of the installation of a instance
+  """This class is responsible of the installation of an instance
   """
+
   def __init__(self,
                software_path,
                instance_path,
@@ -389,19 +392,20 @@ class Partition(object):
       bootstrap_file = os.path.abspath(os.path.join(bootstrap_candidate_dir,
         bootstrap_candidate_list[0]))
 
-      file = open(bootstrap_file, 'r')
-      line = file.readline()
-      file.close()
+      first_line = open(bootstrap_file, 'r').readline()
       invocation_list = []
-      if line.startswith('#!'):
-        invocation_list = line[2:].split()
+      if first_line.startswith('#!'):
+        invocation_list = first_line[2:].split()
       invocation_list.append(bootstrap_file)
+
       self.logger.debug('Invoking %r in %r' % (' '.join(invocation_list),
         self.instance_path))
-      kw = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
       process_handler = utils.SlapPopen(invocation_list,
-        preexec_fn=lambda: utils.dropPrivileges(uid, gid), cwd=self.instance_path,
-        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
+                                        preexec_fn=lambda: utils.dropPrivileges(uid, gid),
+                                        cwd=self.instance_path,
+                                        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT)
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to bootstrap buildout in %r.' % (self.instance_path)
         self.logger.error(message)
@@ -487,17 +491,14 @@ class Partition(object):
     destroy_executable_location = os.path.join(self.instance_path, 'sbin',
         'destroy')
     if os.path.exists(destroy_executable_location):
-      # XXX: we should factorize this code
-      uid, gid = None, None
-      stat_info = os.stat(self.instance_path)
-      uid = stat_info.st_uid
-      gid = stat_info.st_gid
+      uid, gid = self.getUserGroupId()
       self.logger.debug('Invoking %r' % destroy_executable_location)
-      kw = dict()
-      kw.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
       process_handler = utils.SlapPopen([destroy_executable_location],
-        preexec_fn=lambda: utils.dropPrivileges(uid, gid), cwd=self.instance_path,
-        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir), **kw)
+                                        preexec_fn=lambda: utils.dropPrivileges(uid, gid),
+                                        cwd=self.instance_path,
+                                        env=utils.getCleanEnvironment(pwd.getpwuid(uid).pw_dir),
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT)
       if process_handler.returncode is None or process_handler.returncode != 0:
         message = 'Failed to destroy Computer Partition in %r.' % \
             self.instance_path
