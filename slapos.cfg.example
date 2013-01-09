@@ -164,11 +164,11 @@ signature-certificate-list =
 # Any URL beginning by a blacklisted URL will be blacklisted as well.
 download-from-binary-cache-url-blacklist =
   http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD
-  http://git.erp5.org/gitweb/slapos.core.git/blob_plain/refs/heads
+  http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads
   /
 # List of URL(s) which shouldn't be uploaded into binary cache.
 # Any URL beginning by a blacklisted URL will be blacklisted as well.
 upload-to-binary-cache-url-blacklist =
   http://git.erp5.org/gitweb/slapos.git/blob_plain/HEAD
-  http://git.erp5.org/gitweb/slapos.core.git/blob_plain/refs/heads
+  http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads
   /
