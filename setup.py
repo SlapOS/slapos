@@ -31,6 +31,7 @@ setup(name=name,
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
         'inotifyx', # to watch filesystem changes (used in lockfile)
+        'lock_file', #another lockfile implementation for multiprocess
         'slapos.core', # uses internally
 #        'slapos.toolbox', # needed for libcloud, cloudmgr, disabled for now
         'xml_marshaller', # need to communication with slapgrid

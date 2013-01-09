@@ -305,6 +305,10 @@ class App(GenericBaseRecipe):
     application = os.path.join(apps_dir, self.appname, self.version, platform)
     wrapperdir = self.options['wrapper-dir'].strip()
     project = self.options['project'].strip()
+    lockfile = os.path.join(self.options['home'].strip(), 'app_install.lock')
+    
+    fd = os.open(lockfile, os.O_RDWR|os.O_CREAT)
+    os.close( fd )
 
     parameter = dict(installroot=installroot, project=project,
             appname=self.appname, binary_name=bin_name,
@@ -317,9 +321,10 @@ class App(GenericBaseRecipe):
             t_input=self.options['input-file'].strip(),
             binary=self.options['binary'].strip(),
             bash=bash, home_dir=home,
+            lockfile=lockfile,
     )
     deploy_app = self.createPythonScript(
-      os.path.join(wrapperdir, 'boinc_app'),
+      os.path.join(wrapperdir, 'boinc_%s' % self.appname),
       '%s.configure.deployApp' % __name__, parameter
     )
     path_list.append(deploy_app)

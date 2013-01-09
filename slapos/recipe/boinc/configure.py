@@ -33,6 +33,8 @@ import shutil
 import re
 import filecmp
 
+from lock_file import LockFile
+
 def checkMysql(args):
   sys.path += args['environment']['PYTHONPATH'].split(':')
   import MySQLdb
@@ -170,8 +172,15 @@ def services(args):
 
   writeFile(args['service_status'], "started")
 
-
 def deployApp(args):
+  """Deploy Boinc App with lock"""  
+  print "Asking to enter in execution with lock mode..."
+  with LockFile(args['lockfile'], wait=True):
+    print "acquire the lock file..."
+    deployManagement(args)
+  print "Exit execution with lock..."
+
+def deployManagement(args):
   """Fully deploy or redeploy or update a BOINC application using existing BOINC instance"""
   if not check_installRequest(args):
     return
