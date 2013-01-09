@@ -6,6 +6,8 @@ from Products.ERP5Type.tests.utils import createZODBPythonScript
 from Products.ERP5Type.tests.backportUnittest import skip
 import json
 from zExceptions import Unauthorized
+from DateTime import DateTime
+from Products.ERP5Type.DateUtils import addToDate
 
 class TestSlapOSCorePromiseSlapOSModuleIdGeneratorAlarm(testSlapOSMixin):
   def test_Module_assertIdGenerator(self):
@@ -1302,3 +1304,206 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by I
         'Visited by Instance_tryToStopCollect',
         instance.workflow_history['edit_workflow'][-1]['comment'])
 
+class TestSlapOSGarbageCollectNonAllocatedRootTreeAlarm(testSlapOSMixin):
+
+  def createInstance(self):
+    hosting_subscription = self.portal.hosting_subscription_module\
+        .template_hosting_subscription.Base_createCloneDocument(batch_mode=1)
+    hosting_subscription.validate()
+    hosting_subscription.edit(
+        title=self.generateNewSoftwareTitle(),
+        reference="TESTHS-%s" % self.generateNewId(),
+    )
+    request_kw = dict(
+      software_release=\
+          self.generateNewSoftwareReleaseUrl(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title=hosting_subscription.getTitle(),
+      state='started'
+    )
+    hosting_subscription.requestStart(**request_kw)
+    hosting_subscription.requestInstance(**request_kw)
+
+    instance = hosting_subscription.getPredecessorValue()
+    return instance
+
+  def createComputerPartition(self):
+    computer = self.portal.computer_module\
+        .template_computer.Base_createCloneDocument(batch_mode=1)
+    computer.validate()
+    computer.edit(
+        title=self.generateNewSoftwareTitle(),
+        reference="TESTCOMP-%s" % self.generateNewId(),
+    )
+    partition = computer.newContent(portal_type="Computer Partition")
+    return partition
+
+  def test_tryToGarbageCollect_REQUEST_disallowed(self):
+    self.assertRaises(
+      Unauthorized,
+      self.portal.Instance_tryToGarbageCollectNonAllocatedRootTree,
+      REQUEST={})
+
+  def test_tryToGarbageCollect_invalidated_instance(self):
+    instance = self.createInstance()
+    instance.invalidate()
+    self.tic()
+
+    instance.Instance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertEqual('start_requested', instance.getSlapState())
+    hosting_subscription = instance.getSpecialiseValue()
+    self.assertEqual('start_requested', hosting_subscription.getSlapState())
+
+  def test_tryToGarbageCollect_destroyed_instance(self):
+    instance = self.createInstance()
+    self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
+    self.tic()
+
+    instance.Instance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertEqual('destroy_requested', instance.getSlapState())
+    hosting_subscription = instance.getSpecialiseValue()
+    self.assertEqual('start_requested', hosting_subscription.getSlapState())
+
+  def test_tryToGarbageCollect_allocated_instance(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+
+    instance.Instance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertEqual('start_requested', instance.getSlapState())
+    hosting_subscription = instance.getSpecialiseValue()
+    self.assertEqual('start_requested', hosting_subscription.getSlapState())
+
+  def test_tryToGarbageCollect_no_allocation_try_found(self):
+    instance = self.createInstance()
+    self.tic()
+
+    instance.Instance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertEqual('start_requested', instance.getSlapState())
+    hosting_subscription = instance.getSpecialiseValue()
+    self.assertEqual('start_requested', hosting_subscription.getSlapState())
+
+  def test_tryToGarbageCollect_recent_allocation_try_found(self):
+    instance = self.createInstance()
+    self.tic()
+    instance.workflow_history['edit_workflow'].append({
+        'comment':'Allocation failed: no free Computer Partition',
+        'error_message': '',
+        'actor': 'ERP5TypeTestCase',
+        'slap_state': '',
+        'time': addToDate(DateTime(), to_add={'day': -6}),
+        'action': 'edit'
+    })
+
+    instance.Instance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertEqual('start_requested', instance.getSlapState())
+    hosting_subscription = instance.getSpecialiseValue()
+    self.assertEqual('start_requested', hosting_subscription.getSlapState())
+
+  def test_tryToGarbageCollect_complex_tree(self):
+    instance = self.createInstance()
+    hosting_subscription = instance.getSpecialiseValue()
+    request_kw = dict(
+      software_release=\
+          self.generateNewSoftwareReleaseUrl(),
+      software_type=self.generateNewSoftwareType(),
+      instance_xml=self.generateSafeXml(),
+      sla_xml=self.generateSafeXml(),
+      shared=False,
+      software_title="another %s" % hosting_subscription.getTitle(),
+      state='started'
+    )
+    instance.requestInstance(**request_kw)
+    sub_instance = instance.getPredecessorValue()
+    self.tic()
+    sub_instance.workflow_history['edit_workflow'].append({
+        'comment':'Allocation failed: no free Computer Partition',
+        'error_message': '',
+        'actor': 'ERP5TypeTestCase',
+        'slap_state': '',
+        'time': addToDate(DateTime(), to_add={'day': -8}),
+        'action': 'edit'
+    })
+
+    sub_instance.Instance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertEqual('start_requested', hosting_subscription.getSlapState())
+
+  def test_tryToGarbageCollect_old_allocation_try_found(self):
+    instance = self.createInstance()
+    hosting_subscription = instance.getSpecialiseValue()
+    self.tic()
+    instance.workflow_history['edit_workflow'].append({
+        'comment':'Allocation failed: no free Computer Partition',
+        'error_message': '',
+        'actor': 'ERP5TypeTestCase',
+        'slap_state': '',
+        'time': addToDate(DateTime(), to_add={'day': -8}),
+        'action': 'edit'
+    })
+
+    instance.Instance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertEqual('destroy_requested', hosting_subscription.getSlapState())
+
+  def _simulateInstance_tryToGarbageCollectNonAllocatedRootTree(self):
+    script_name = 'Instance_tryToGarbageCollectNonAllocatedRootTree'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Instance_tryToGarbageCollectNonAllocatedRootTree') """ )
+    transaction.commit()
+
+  def _dropInstance_tryToGarbageCollectNonAllocatedRootTree(self):
+    script_name = 'Instance_tryToGarbageCollectNonAllocatedRootTree'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm(self):
+    instance = self.createInstance()
+    self.tic()
+    self._simulateInstance_tryToGarbageCollectNonAllocatedRootTree()
+    try:
+      self.portal.portal_alarms.slapos_garbage_collect_non_allocated_root_tree.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertEqual(
+        'Visited by Instance_tryToGarbageCollectNonAllocatedRootTree',
+        instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_invalidated(self):
+    instance = self.createInstance()
+    instance.invalidate()
+    self.tic()
+    self._simulateInstance_tryToGarbageCollectNonAllocatedRootTree()
+    try:
+      self.portal.portal_alarms.slapos_garbage_collect_non_allocated_root_tree.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertNotEqual(
+        'Visited by Instance_tryToGarbageCollectNonAllocatedRootTree',
+        instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_allocated(self):
+    instance = self.createInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.tic()
+    self._simulateInstance_tryToGarbageCollectNonAllocatedRootTree()
+    try:
+      self.portal.portal_alarms.slapos_garbage_collect_non_allocated_root_tree.activeSense()
+      self.tic()
+    finally:
+      self._dropInstance_tryToGarbageCollectNonAllocatedRootTree()
+    self.assertNotEqual(
+        'Visited by Instance_tryToGarbageCollectNonAllocatedRootTree',
+        instance.workflow_history['edit_workflow'][-1]['comment'])

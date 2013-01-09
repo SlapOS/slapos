@@ -1,0 +1,116 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string encoding="cdata"><![CDATA[
+
+from zExceptions import Unauthorized\n
+if REQUEST is not None:\n
+  raise Unauthorized\n
+\n
+instance = context\n
+portal = context.getPortalObject()\n
+\n
+if instance.getValidationState() != \'validated\' \\\n
+  or instance.getSlapState() not in (\'start_requested\', \'stop_requested\') \\\n
+  or instance.getAggregateValue(portal_type=\'Computer Partition\') is not None:\n
+  return\n
+\n
+latest_comment = portal.portal_workflow.getInfoFor(instance, \'comment\', wf_id=\'edit_workflow\')\n
+if latest_comment != \'Allocation failed: no free Computer Partition\':\n
+  # No nothing if allocation alarm didn\'t run on it\n
+  return\n
+\n
+latest_edit_time = portal.portal_workflow.getInfoFor(instance, \'time\', wf_id=\'edit_workflow\')\n
+if (int(DateTime()) - int(latest_edit_time)) < 604800:\n
+  # Allow 1 week gap betweeb latest allocation try and deletion\n
+  return\n
+\n
+# Only destroy if the instance is the only one in the tree\n
+hosting_subscription = instance.getSpecialiseValue("Hosting Subscription")\n
+if (hosting_subscription.getPredecessor() != instance.getRelativeUrl()):\n
+  return\n
+if (len(hosting_subscription.getPredecessorList()) != 1):\n
+  return\n
+instance_list = portal.portal_catalog(\n
+  portal_type=["Software Instance", "Slave Instance"],\n
+  default_specialise_uid=hosting_subscription.getUid(),\n
+  limit=2)\n
+if len(instance_list) != 1:\n
+  return\n
+\n
+# OK, destroy hosting subscription\n
+hosting_subscription.requestDestroy(\n
+  software_release=hosting_subscription.getUrlString(),\n
+  software_title=hosting_subscription.getTitle(),\n
+  software_type=hosting_subscription.getSourceReference(),\n
+  instance_xml=hosting_subscription.getTextContent(),\n
+  sla_xml=hosting_subscription.getSlaXml(),\n
+  shared=hosting_subscription.isRootSlave(),\n
+  state=\'destroyed\',\n
+  comment="Garbage collect %s not allocated for more than 1 week" % instance.getRelativeUrl(),\n
+)\n
+
+
+]]></string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>Instance_tryToGarbageCollectNonAllocatedRootTree</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
