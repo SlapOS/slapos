@@ -1,0 +1,302 @@
+diff --git a/Makefile.in b/Makefile.in
+index e548e99..c019753 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -4,8 +4,8 @@ CLEAN_SUBDIRS = test
+ 
+ PROGRAM_NAME         = $(progname)
+ PROGRAM_SOURCES      = modules.c
+-PROGRAM_LDADD        = buildmark.o $(HTTPD_LDFLAGS) $(PROGRAM_DEPENDENCIES) $(PCRE_LIBS) $(EXTRA_LIBS) $(AP_LIBS) $(LIBS)
+-PROGRAM_PRELINK      = $(COMPILE) -c $(top_srcdir)/server/buildmark.c
++PROGRAM_LDADD        = buildmark.lo $(HTTPD_LDFLAGS) $(PROGRAM_DEPENDENCIES) $(PCRE_LIBS) $(EXTRA_LIBS) $(AP_LIBS) $(LIBS)
++PROGRAM_PRELINK      = $(LIBTOOL) --mode=compile $(COMPILE) -c $(top_srcdir)/server/buildmark.c
+ PROGRAM_DEPENDENCIES = \
+   server/libmain.la \
+   $(BUILTIN_LIBS) \
+@@ -16,7 +16,7 @@ sbin_PROGRAMS   = $(PROGRAM_NAME)
+ TARGETS         = $(sbin_PROGRAMS) $(shared_build) $(other_targets)
+ INSTALL_TARGETS = install-conf install-htdocs install-error install-icons \
+ 	install-other install-cgi install-include install-suexec install-build \
+-	install-man
++	install-man install-cygcore
+ 
+ DISTCLEAN_TARGETS  = include/ap_config_auto.h include/ap_config_layout.h \
+ 	include/apache_probes.h \
+@@ -243,6 +243,12 @@ install-suexec:
+             chmod 4755 $(DESTDIR)$(sbindir)/suexec; \
+ 	fi
+ 
++install-cygcore:
++	@if test -n '$(sbin_PROGRAMS)'; then \
++	    test -d $(DESTDIR)$(libdir) || $(MKINSTALLDIRS) $(DESTDIR)$(libdir); \
++	    $(LIBTOOL) --mode=install install $(CORE_IMPLIB) $(DESTDIR)$(libdir); \
++	fi
++
+ suexec:
+ 	cd support && $(MAKE) suexec
+ 
+diff --git a/build/instdso.sh b/build/instdso.sh
+index 3ca5272..8a4f9db 100755
+--- a/build/instdso.sh
++++ b/build/instdso.sh
+@@ -62,13 +62,20 @@ CMD="$SH_LIBTOOL --mode=install $INSTALL_CMD $DSOARCHIVE $TARGETDIR/"
+ echo $CMD
+ $CMD || exit $?
+ 
+-if test "$SYS" = "OS/2"
+-then
++case "$SYS" in
++  OS/2)
+     # on OS/2, aplibtool --install doesn't copy the .la files & we can't
+     # rename DLLs to have a .so extension or they won't load so none of the 
+     # steps below make sense.
+     exit 0
+-fi
++  ;;
++  CYGWIN*)
++    # On Cygwin we can't rename DLLs either. Libtool will install .la files,
++    # but we _need_ them to allow DSOs built by other software packages to link
++    # against installed DSOs - e.g. mod_dav_svn -> mod_dav.
++    exit 0
++  ;;
++esac
+ 
+ if test -s "$TARGETDIR/$DSOARCHIVE_BASENAME"
+ then
+diff --git a/build/program.mk b/build/program.mk
+index 565b51f..7b8043a 100644
+--- a/build/program.mk
++++ b/build/program.mk
+@@ -18,6 +18,13 @@
+ 
+ PROGRAM_OBJECTS = $(PROGRAM_SOURCES:.c=.lo)
+ 
+-$(PROGRAM_NAME): $(PROGRAM_DEPENDENCIES) $(PROGRAM_OBJECTS)
++modules.lo: modules.c
++	$(SH_COMPILE)
++
++$(PROGRAM_NAME): $(CORE_IMPLIB)
++	$(LINK) $(PROGRAM_LDFLAGS) $(HTTPD_LDFLAGS) $(CORE_IMPLIB)
++
++$(CORE_IMPLIB): $(PROGRAM_DEPENDENCIES) $(PROGRAM_OBJECTS)
+ 	$(PROGRAM_PRELINK)
+-	$(LINK) $(PROGRAM_LDFLAGS) $(PROGRAM_OBJECTS) $(PROGRAM_LDADD)
++	$(LINK) -no-undefined -avoid-version -rpath $(exp_libdir) $(PROGRAM_LDFLAGS) $(PROGRAM_OBJECTS) $(PROGRAM_LDADD)
++
+diff --git a/configure b/configure
+index f80f5ea..1c39999 100755
+--- a/configure
++++ b/configure
+@@ -4460,7 +4460,7 @@ rm -f confcache
+ 
+     apr_configure_args="--disable-option-checking $apr_configure_args"
+ 
+-              if eval $SHELL $ac_abs_srcdir/configure $apr_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_abs_srcdir $apache_apr_flags --prefix=$prefix --exec-prefix=$exec_prefix --libdir=$libdir --includedir=$includedir --bindir=$bindir --datadir=$datadir --with-installbuilddir=$installbuilddir
++              if eval $SHELL $ac_abs_srcdir/configure $apr_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_abs_srcdir $apache_apr_flags --prefix=$prefix --exec-prefix=$exec_prefix --libdir=$libdir --includedir=$includedir --bindir=$bindir --datadir=$datadir --with-installbuilddir=$installbuilddir --enable-threads=pthread ac_cv_header_windows_h=no ac_cv_header_winsock2_h=no ac_cv_define_TCP_NOPUSH=no
+   then :
+     echo "srclib/apr configured properly"
+   else
+@@ -6323,6 +6323,13 @@ case $host in
+               LTCFLAGS=""
+               ;;
+       esac
++      case $host in
++          *cygwin*)
++              SH_LIBS="\$(AP_LIBS) \$(EXTRA_LIBS)"
++              SH_LDFLAGS="-no-undefined -shrext .so"
++              CORE_IMPLIB="\$(top_builddir)/libhttpd2core.la"
++              ;;
++      esac
+       ;;
+ esac
+ 
+@@ -11723,8 +11730,8 @@ cache_objs="mod_cache.lo cache_storage.lo cache_util.lo "
+ cache_disk_objs="mod_cache_disk.lo"
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time
+     # and we need some from main cache module
+     cache_disk_objs="$cache_disk_objs mod_cache.la"
+     ;;
+@@ -20924,7 +20931,7 @@ proxy_ajp_objs="mod_proxy_ajp.lo ajp_header.lo ajp_link.lo ajp_msg.lo ajp_utils.
+ proxy_balancer_objs="mod_proxy_balancer.lo"
+ 
+ case "$host" in
+-  *os2*)
++  *os2*|*cygwin*)
+     # OS/2 DLLs must resolve all symbols at build time and
+     # these sub-modules need some from the main proxy module
+     proxy_connect_objs="$proxy_connect_objs mod_proxy.la"
+@@ -22292,7 +22299,7 @@ $as_echo "$enable_proxy_express$_apmod_extra_msg" >&6; }
+ 
+ 
+   if test -z ""; then
+-    objects="mod_proxy_express.lo"
++    objects="mod_proxy_express.lo mod_proxy.la"
+   else
+     objects=""
+   fi
+@@ -22410,8 +22417,8 @@ session_crypto_objects='mod_session_crypto.lo'
+ session_dbd_objects='mod_session_dbd.lo'
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time
+     # and we need some from main session module
+     session_cookie_objects="$session_cookie_objects mod_session.la"
+     session_crypto_objects="$session_crypto_objects mod_session.la"
+@@ -27424,8 +27431,8 @@ EOF
+ heartbeat_objects='mod_heartbeat.lo'
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time
+     # and we need some from the watchdog module
+     heartbeat_objects="$heartbeat_objects ../core/mod_watchdog.la"
+     ;;
+@@ -29442,8 +29449,8 @@ else
+ fi
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time
+     # and we need some from main DAV module
+     dav_fs_objects="$dav_fs_objects ../main/mod_dav.la"
+     ;;
+@@ -29632,8 +29639,8 @@ EOF
+ dav_lock_objects="mod_dav_lock.lo locks.lo"
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time
+     # and we need some from main DAV module
+     dav_lock_objects="$dav_lock_objects ../main/mod_dav.la"
+     ;;
+diff --git a/configure.in b/configure.in
+index 1d65bd3..0c4d944 100644
+--- a/configure.in
++++ b/configure.in
+@@ -111,7 +111,7 @@ fi
+ 
+ if test "$apr_found" = "reconfig"; then
+   APR_SUBDIR_CONFIG(srclib/apr,
+-                    [$apache_apr_flags --prefix=$prefix --exec-prefix=$exec_prefix --libdir=$libdir --includedir=$includedir --bindir=$bindir --datadir=$datadir --with-installbuilddir=$installbuilddir],
++                    [$apache_apr_flags --prefix=$prefix --exec-prefix=$exec_prefix --libdir=$libdir --includedir=$includedir --bindir=$bindir --datadir=$datadir --with-installbuilddir=$installbuilddir --enable-threads=pthread ac_cv_header_windows_h=no ac_cv_header_winsock2_h=no ac_cv_define_TCP_NOPUSH=no],
+                     [--enable-layout=*|\'--enable-layout=*])
+   dnl We must be the first to build and the last to be cleaned
+   AP_BUILD_SRCLIB_DIRS="apr $AP_BUILD_SRCLIB_DIRS"
+@@ -296,6 +296,13 @@ case $host in
+               LTCFLAGS=""
+               ;;
+       esac
++      case $host in
++          *cygwin*)
++              SH_LIBS="\$(AP_LIBS) \$(EXTRA_LIBS)"
++              SH_LDFLAGS="-no-undefined -shrext .so"
++              CORE_IMPLIB="\$(top_builddir)/libhttpd2core.la"
++              ;;
++      esac
+       ;;
+ esac
+ APACHE_SUBST(SHLTCFLAGS)
+diff --git a/modules/cache/config.m4 b/modules/cache/config.m4
+index 2fe41e1..d51384f 100644
+--- a/modules/cache/config.m4
++++ b/modules/cache/config.m4
+@@ -15,8 +15,8 @@ cache_util.lo dnl
+ cache_disk_objs="mod_cache_disk.lo"
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time
+     # and we need some from main cache module
+     cache_disk_objs="$cache_disk_objs mod_cache.la"
+     ;;
+diff --git a/modules/cluster/config5.m4 b/modules/cluster/config5.m4
+index 8667316..3b97db2 100644
+--- a/modules/cluster/config5.m4
++++ b/modules/cluster/config5.m4
+@@ -4,8 +4,8 @@ APACHE_MODPATH_INIT(cluster)
+ heartbeat_objects='mod_heartbeat.lo'
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time
+     # and we need some from the watchdog module
+     heartbeat_objects="$heartbeat_objects ../core/mod_watchdog.la"
+     ;;
+diff --git a/modules/dav/fs/config6.m4 b/modules/dav/fs/config6.m4
+index dd26ec8..3a5f9b2 100644
+--- a/modules/dav/fs/config6.m4
++++ b/modules/dav/fs/config6.m4
+@@ -11,8 +11,8 @@ else
+ fi
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time
+     # and we need some from main DAV module
+     dav_fs_objects="$dav_fs_objects ../main/mod_dav.la"
+     ;;
+diff --git a/modules/dav/lock/config6.m4 b/modules/dav/lock/config6.m4
+index 02a05e5..16d7877 100644
+--- a/modules/dav/lock/config6.m4
++++ b/modules/dav/lock/config6.m4
+@@ -5,8 +5,8 @@ APACHE_MODPATH_INIT(dav/lock)
+ dav_lock_objects="mod_dav_lock.lo locks.lo"
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time and
+     # and we need some from main DAV module
+     dav_lock_objects="$dav_lock_objects ../main/mod_dav.la"
+     ;;
+diff --git a/modules/proxy/config.m4 b/modules/proxy/config.m4
+index e91cbf4..f9e93f9 100644
+--- a/modules/proxy/config.m4
++++ b/modules/proxy/config.m4
+@@ -23,8 +23,8 @@ proxy_ajp_objs="mod_proxy_ajp.lo ajp_header.lo ajp_link.lo ajp_msg.lo ajp_utils.
+ proxy_balancer_objs="mod_proxy_balancer.lo"
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time and
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time and
+     # these sub-modules need some from the main proxy module
+     proxy_connect_objs="$proxy_connect_objs mod_proxy.la"
+     proxy_ftp_objs="$proxy_ftp_objs mod_proxy.la"
+diff --git a/modules/session/config.m4 b/modules/session/config.m4
+index 7a38185..83c8d8d 100644
+--- a/modules/session/config.m4
++++ b/modules/session/config.m4
+@@ -20,8 +20,8 @@ session_crypto_objects='mod_session_crypto.lo'
+ session_dbd_objects='mod_session_dbd.lo'
+ 
+ case "$host" in
+-  *os2*)
+-    # OS/2 DLLs must resolve all symbols at build time
++  *os2*|*cygwin*)
++    # DLLs must resolve all symbols at build time
+     # and we need some from main session module
+     session_cookie_objects="$session_cookie_objects mod_session.la"
+     session_crypto_objects="$session_crypto_objects mod_session.la"

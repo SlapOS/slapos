@@ -1,0 +1,77 @@
+diff --git a/docs/conf/httpd.conf.in b/docs/conf/httpd.conf.in
+index a46499d..f40b84f 100644
+--- a/docs/conf/httpd.conf.in
++++ b/docs/conf/httpd.conf.in
+@@ -74,8 +74,8 @@ Listen @@Port@@
+ # It is usually good practice to create a dedicated user and group for
+ # running httpd, as with most system services.
+ #
+-User daemon
+-Group daemon
++#User daemon
++#Group daemon
+ 
+ </IfModule>
+ 
+@@ -397,6 +397,10 @@ Include @rel_sysconfdir@/extra/proxy-html.conf
+ 
+ # Secure (SSL/TLS) connections
+ #Include @rel_sysconfdir@/extra/httpd-ssl.conf
++
++# Provide a way for additional packages to add configuration fragments
++#Include @rel_sysconfdir@/conf.d/*.conf
++
+ #
+ # Note: The following must must be present to support
+ #       starting without SSL on platforms with no /dev/random equivalent
+diff --git a/support/apxs.in b/support/apxs.in
+index 8bdc2da..ec36d05 100644
+--- a/support/apxs.in
++++ b/support/apxs.in
+@@ -48,6 +48,9 @@ my $libexecdir     = get_vars("libexecdir");
+ my $CFG_LIBEXECDIR = eval qq("$libexecdir");
+ my $sbindir        = get_vars("sbindir");
+ my $CFG_SBINDIR    = eval qq("$sbindir");
++my $libdir         = get_vars("libdir");
++my $CFG_LIBDIR     = eval qq("$libdir");
++my $SH_LDFLAGS     = get_vars("SH_LDFLAGS");
+ my $ltflags        = $ENV{'LTFLAGS'};
+ $ltflags or $ltflags = "--silent";
+ 
+@@ -464,9 +467,14 @@ if ($opt_c) {
+         $opt .= " ".$apu_libs." ".$apr_libs;
+     }
+     else {
+-        my $apr_ldflags=`$apr_config --ldflags`;
+-        chomp($apr_ldflags);
+-        $opt .= " -rpath $CFG_LIBEXECDIR -module -avoid-version $apr_ldflags";
++         my $apr_libs = `$apr_config --ldflags --link-libtool --libs`;
++         chomp($apr_libs);
++         my $apu_libs = `$apu_config --ldflags --link-libtool --libs`;
++         chomp($apu_libs);
++            
++         $opt .= " -rpath $CFG_LIBEXECDIR -module -avoid-version";
++         $opt .= " $SH_LDFLAGS -L$CFG_LIBDIR -lhttpd2core";
++         $opt .= " ".$apu_libs." ".$apr_libs;
+     }
+ 
+     push(@cmds, "$libtool $ltflags --mode=link $CFG_CC $ldflags -o $dso_file $opt $lo");
+diff --git a/build/install.sh b/build/install.sh
+index c5d20da..abf4864 100755
+--- a/build/install.sh
++++ b/build/install.sh
+@@ -102,6 +102,14 @@ fi
+ src="$src$ext"
+ dst="$dst$ext"
+ 
++# Automagically append .exe - this is needed because libtool will not pass
++# unknown options to an install program, so we are unable to use "-e .exe"
++# in this case.
++if [ -f "$src.exe" ]; then
++  src="$src.exe"
++  dst="$dst.exe"
++fi
++
+ #  Make a temp file name in the proper directory.
+ dstdir=`dirname $dst`
+ dsttmp=$dstdir/#inst.$$#

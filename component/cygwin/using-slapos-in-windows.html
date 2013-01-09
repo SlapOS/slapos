@@ -1,0 +1,112 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Using SlapOS in the Windows</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="book" title="Using SlapOS in the Windows"><div class="titlepage"><div><div><h1 class="title"><a name="id9225933"></a>Using SlapOS in the Windows</h1></div><div><div class="author"><h3 class="author"><span class="firstname">Jondy</span> <span class="surname">Zhao</span></h3></div></div><div><div class="revhistory"><table border="1" width="100%" summary="Revision history"><tr><th align="left" valign="top" colspan="3"><b>Revision History</b></th></tr><tr><td align="left">Revision 0.1</td><td align="left">2013-01-06</td><td align="left">Jondy Zhao - jondy.zhao@gmail.com</td></tr><tr><td align="left" colspan="3">Create the document.</td></tr></table></div></div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="chapter"><a href="#ch_introduction">1. Introduction</a></span></dt><dt><span class="chapter"><a href="#ch_register_slapos_org">2. Registering in the slapos.org</a></span></dt><dt><span class="chapter"><a href="#ch_install_slapos">3. Installing SlapOS slave node</a></span></dt><dd><dl><dt><span class="section"><a href="#id9211182">3.1. Installing by MSI Package</a></span></dt><dt><span class="section"><a href="#id9213740">3.2. Installing by sources</a></span></dt><dd><dl><dt><span class="section"><a href="#id9213749">3.2.1. Install Cygwin</a></span></dt><dt><span class="section"><a href="#id9213848">3.2.2. Buildout SlapOS</a></span></dt><dt><span class="section"><a href="#id9213913">3.2.3. IPv6 Support</a></span></dt><dt><span class="section"><a href="#id9213973">3.2.4. Run slapformat</a></span></dt></dl></dd></dl></dd><dt><span class="chapter"><a href="#ch_create_instance_wordpress">4. Creating an instancee of Wordpress in the SlapOS</a></span></dt><dt><span class="appendix"><a href="#appendix_cygwin_packages">A. Cygwin Required Packages List</a></span></dt></dl></div><div class="chapter" title="Chapter 1. Introduction"><div class="titlepage"><div><div><h2 class="title"><a name="ch_introduction"></a>Chapter 1. Introduction</h2></div></div></div><p>SlapOS can be described as a cloud operating system in which "everything is a process" unlike Unix in which "everything is a file". If one has to manage thousands of servers with thousands of processes, hundred different applications in multiple different releases or versions, SlapOS can help you a lot by making the whole management process well specified, automated and under control.</p><p>The goal of this tutorial is to teach how to use SlapOS in the windows.
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>First you need register an account in the slapos.org (refer to <a class="xref" href="#ch_register_slapos_org" title="Chapter 2. Registering in the slapos.org">Chapter 2, <i>Registering in the slapos.org</i></a>)</p></li><li class="listitem"><p>Then install SlapOS slave node in the windows (refer to <a class="xref" href="#ch_install_slapos" title="Chapter 3. Installing SlapOS slave node">Chapter 3, <i>Installing SlapOS slave node</i></a>)</p></li><li class="listitem"><p>Finally release software and create instanace of software in the SlapOS node (refer to <a class="xref" href="#ch_create_instance_wordpress" title="Chapter 4. Creating an instancee of Wordpress in the SlapOS">Chapter 4, <i>Creating an instancee of Wordpress in the SlapOS</i></a>)</p></li></ul></div><p>
+</p></div><div class="chapter" title="Chapter 2. Registering in the slapos.org"><div class="titlepage"><div><div><h2 class="title"><a name="ch_register_slapos_org"></a>Chapter 2. Registering in the slapos.org</h2></div></div></div><p>Before we start, we need to register in VIFIB community Cloud. By doing so, we will obtain X509 certificate and key, make sure you store both of them to your local files. Take also note of the computer id, for example "COMP-161", store it somewhere. All of these are later needed for the installing process.</p><p>Refer to <a class="ulink" href="http://www.slapos.org/wiki/slapos-Wiki.Home/osoe-Lecture.SlapOS.Extended/developer-Installing.SlapOS.Slave.Node.Source" target="_top">http://www.slapos.org/wiki/slapos-Wiki.Home/osoe-Lecture.SlapOS.Extended/developer-Installing.SlapOS.Slave.Node.Source</a> in the section VIFIB Registration.</p></div><div class="chapter" title="Chapter 3. Installing SlapOS slave node"><div class="titlepage"><div><div><h2 class="title"><a name="ch_install_slapos"></a>Chapter 3. Installing SlapOS slave node</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#id9211182">3.1. Installing by MSI Package</a></span></dt><dt><span class="section"><a href="#id9213740">3.2. Installing by sources</a></span></dt><dd><dl><dt><span class="section"><a href="#id9213749">3.2.1. Install Cygwin</a></span></dt><dt><span class="section"><a href="#id9213848">3.2.2. Buildout SlapOS</a></span></dt><dt><span class="section"><a href="#id9213913">3.2.3. IPv6 Support</a></span></dt><dt><span class="section"><a href="#id9213973">3.2.4. Run slapformat</a></span></dt></dl></dd></dl></div><p>There are 2 ways to install SlapOS slave node in the winodws. One is by MSI package, the other is by sources.</p><div class="section" title="3.1. Installing by MSI Package"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id9211182"></a>3.1. Installing by MSI Package</h2></div></div></div><p>Download slapos windows installer: <a class="ulink" href="http://www.slapos.org/slapos-0.135-cygwin.exe" target="_top">http://www.slapos.org/slapos-0.135-cygwin.exe</a></p><p>Run this MSI installer, click Next and type the information: the destination path, startup menu name, etc.</p><p>In the SlapOS Node Information wizard page, type the information got at above chapter.
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>Computer ID</p></li><li class="listitem"><p>Key</p></li><li class="listitem"><p>Certificate</p></li></ul></div><p>
+At the final wizard page, click Install.
+</p><p>Waiting for everything done.</p></div><div class="section" title="3.2. Installing by sources"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id9213740"></a>3.2. Installing by sources</h2></div></div></div><p>We need Cygwin environment in order to install SlapOS slave node from sources in the Windows. </p><div class="section" title="3.2.1. Install Cygwin"><div class="titlepage"><div><div><h3 class="title"><a name="id9213749"></a>3.2.1. Install Cygwin</h3></div></div></div><p>Go to <a class="ulink" href="http://cygwin.com/" target="_top">"http://cygwin.com/"</a> and click on <a class="ulink" href="http://cygwin.com/setup.exe" target="_top">"Install Cygwin Now!"</a>. This will download a GUI installer called setup.exe which can be run to download a complete cygwin installation via the internet. Follow the instructions on each screen to install Cygwin. </p><p>The Root Directory for Cygwin (default C:\cygwin) will become / within your Cygwin installation. You must have write access to the parent directory, and any ACLs on the parent directory will determine access to installed files.</p><p>By default, setup.exe will install only the packages in the Base category and their dependencies, resulting in a minimal Cygwin installation. We need choose the packages required by SlapOS, see <a class="xref" href="#appendix_cygwin_packages" title="Appendix A. Cygwin Required Packages List">Appendix A, <i>Cygwin Required Packages List</i></a>. Since setup.exe automatically selects dependencies, be careful not to unselect any required packages.</p><p>You can install cygwin in the command console either:
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>Click startup menu</p></li><li class="listitem"><p>Click Run, type command: 'cmd', click OK to enter windows console</p></li><li class="listitem"><p>Type the following commands:</p><pre class="programlisting">
+    C:\Documents and Settings\Administrator&gt;D:
+    D:\&gt;MD slapos
+    D:\&gt;cd slapos
+</pre></li><li class="listitem"><p>Download setup.exe to D:\slapos from cygwin.com</p></li><li class="listitem"><p>In the windows console, run:</p><pre class="programlisting">
+    D:\slapos&gt;setup.exe -X -n --site http://mirrors.163.com/cygwin --root D:/slapos/cygwin --quite-mode -P cygrunsrv -P binutils -P gcc4 -P libtool -P make -P autobuild -P autoconf -P automake -P libiconv -P zlib-devel -P patch -P python -P wget -P vim
+</pre><p>
+</p></li></ul></div><p>
+</p></div><div class="section" title="3.2.2. Buildout SlapOS"><div class="titlepage"><div><div><h3 class="title"><a name="id9213848"></a>3.2.2. Buildout SlapOS</h3></div></div></div><p>Double click the desktop icon "Cygwin" or C:\cygwin\Cygwin.bat (Assume the cygwin root directory is C:\cygwin). A cygwin box will open, the following commands are typed in this box.
+</p><pre class="programlisting">
+$ echo "export CYGWIN=server" &gt;&gt; ~/.bash_profile
+$ cygrunsrv --install cygslapos --path /usr/sbin/cygserver
+$ sed -i -e "s/4\.3\.4/4.5.3/g" /usr/bin/libtool
+
+$ mkdir -p /opt/slapos
+$ mkdir -p /opt/download-cache
+$ cd /opt/slapos
+$ echo "[buildout]
+extends = http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/cygwin:/component/slapos/buildout.cfg
+download-cache = /opt/download-cache
+prefix = ${buildout:directory}
+" &gt; buildout.cfg 
+$ python -S -c 'import urllib2;print urllib2.urlopen("http://git.erp5.org/gitweb/slapos.core.git/blob_plain/HEAD:/bootstrap.py").read()' &gt; bootstrap.py
+$ python -S bootstrap.py
+$ bin/buildout
+</pre><p>
+Now we need patch slapos.core for supporting cygwin, after these code are merged, it don't need.
+</p><pre class="programlisting">
+$ wget http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/cygwin:/component/cygwin/cygwin-slapos-core-format.patch
+$ wget http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/cygwin:/component/cygwin/cygwin-slapos-core-env-none.patch
+$ cd eggs/slapos.core-0.33.1-py2.7.egg/slapos
+$ patch -p1 &lt; /opt/slapos/cygwin-slapos-core-format.patch
+$ patch -p1 &lt; /opt/slapos/cygwin-slapos-env-none.patch
+</pre><p>
+</p></div><div class="section" title="3.2.3. IPv6 Support"><div class="titlepage"><div><div><h3 class="title"><a name="id9213913"></a>3.2.3. IPv6 Support</h3></div></div></div><p>If native IPv6 is available, skip this section. Otherwise be sure you have installed IPv6 by the command:
+</p><pre class="programlisting">$ netsh interface ipv6 install</pre><p>
+</p><p>Download openvpn windows installer, for example, openvpn-2.2.1-install.exe, then install openvpn. By default, it installed at <code class="filename">C:\Program Files\OpenVPN</code></p><p>Copy required files of openvpn to /opt/openvpn and edit client.ovpn
+</p><pre class="programlisting">
+$ mkdir -p /opt/openvpn
+$ cd /opt/openvpn
+$ cp "C:/Program Files/OpenVPN/bin/*" /opt/openvpn
+$ cp -a "C:/Program Files/OpenVPN/config" /opt/openvpn
+$ chmod 755 *.exe
+
+$ cd config
+$ wget http://www.slapos.org/vifib-ca.crt/getData  -O ca.crt
+$ http://www.slapos.org/vifib-client.crt/getData -O client-vifib.crt
+$ wget http://www.slapos.org/vifib-client.key/getData -O client-vifib.key
+$ mv client.ovpn vifib.ovpn
+$ vi vifib.ovpn
+# Edit the following options
+dev tap
+proto tcp
+remote 176.31.103.87 443
+ca ca.crt
+cert client-vifib.crt
+key client-vifib.key
+</pre><p>
+</p></div><div class="section" title="3.2.4. Run slapformat"><div class="titlepage"><div><div><h3 class="title"><a name="id9213973"></a>3.2.4. Run slapformat</h3></div></div></div><p>Assume we have registered a server which id is 'COMP-161', and saved its key and certificate files in the home directory. So we can use script 'configure.sh' to do all the configuration.
+</p><pre class="programlisting">
+$ mkdir -p /etc/slapos/ssl
+$ mkdir -p /etc/slapos/ssl/partition_pki
+$ cd /
+$ wget http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/cygwin:/component/cygwin/configure.sh 
+$ /configure.sh COMP-161 ~/computer.key ~/computer.crt
+</pre><p>
+</p><p>Finally, run slapformat
+</p><pre class="programlisting">
+$ cd /opt/slapos
+$ bin/slapformat -c --now /etc/slapos/slapos.cfg
+</pre><p>
+</p></div></div></div><div class="chapter" title="Chapter 4. Creating an instancee of Wordpress in the SlapOS"><div class="titlepage"><div><div><h2 class="title"><a name="ch_create_instance_wordpress"></a>Chapter 4. Creating an instancee of Wordpress in the SlapOS</h2></div></div></div><p>The common way to release a software is to login vifib website. But we haven't integrated this software.cfg into vifib, so we verify it in the local machine. It need a patch:
+</p><pre class="programlisting">
+$ cd /opt/slapos
+$ wget http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/cygwin:/component/slapos/slapgrid-test-local-software.patch
+$ cd /opt/slapos/eggs/slapos.core-0.33.1-py2.7.egg
+$ patch -p1 &lt; /opt/slapos/slapgrid-test-local-software.patch
+</pre><p>
+Release Wordpress:
+</p><pre class="programlisting">
+$ mkdir -p /var/slapgrid/instance
+$ mkdir -p /var/slapgrid/software
+$ bin/slapgrid --only_sr http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/cygwin:/software/wordpress/software.cfg /etc/slapos/slapos.cfg
+</pre><p>
+</p><p>Some dlls need to rebase in order to avoid fork issue in the Cygwin. Refer to <a class="ulink" href="http://cygwin.com/faq.html" target="_top">http://cygwin.com/faq.html</a> question 4.44 or search "rebase" in this page. First, exit all Cygwin processes and stop all Cygwin services.
+</p><pre class="programlisting">
+$ net stop cfgslapos
+$ ps -ef | grep python2.7
+# kill all these process which start by supervisord
+$ exit
+</pre><p>
+If you install SlapOS node by MSI package, Click Start menu, select SlapOS program group, click Run rebaseall. Otherwise, download rebase-software.bat and save it in the cygwin root path.
+</p><pre class="programlisting">
+$ cd /
+$ wget http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/cygwin:/component/cygwin/rebase-software.bat
+$ exit
+</pre><p>
+Double click rebase-software.bat in the windows explorer. The file should be in the directory "C:/cygwin"
+</p><p>Create an instance:
+</p><pre class="programlisting">
+$ net start cygslapos
+$ bin/slapgrid --only_sr http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/cygwin:/software/wordpress/software.cfg /etc/slapos/slapos.cfg
+</pre><p>
+Now wordpress should work. Type "http://localhost:8080/index.php" in your browser to check it.</p></div><div class="appendix" title="Appendix A. Cygwin Required Packages List"><div class="titlepage"><div><div><h2 class="title"><a name="appendix_cygwin_packages"></a>Appendix A. Cygwin Required Packages List</h2></div></div></div><p>The following packages are required when building SlapOS Node
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>Admin/cygrunsrv</p></li><li class="listitem"><p>Devel/autobuild</p></li><li class="listitem"><p>Devel/autoconf</p></li><li class="listitem"><p>Devel/automake</p></li><li class="listitem"><p>Devel/binutils</p></li><li class="listitem"><p>Devel/gcc<sup>4.5.4</sup></p></li><li class="listitem"><p>Devel/libtool</p></li><li class="listitem"><p>Devel/make</p></li><li class="listitem"><p>Devel/libiconv<sup>?</sup></p></li><li class="listitem"><p>Devel/zlib-devel<sup>?</sup></p></li><li class="listitem"><p>Utils/patch<sup>*</sup></p></li><li class="listitem"><p>Python/python<sup>2.6*</sup></p></li><li class="listitem"><p>Web/wget<sup>*</sup></p></li><li class="listitem"><p>Web/git<sup>*</sup></p></li><li class="listitem"><p>Editor/vim<sup>*</sup></p></li></ul></div><p>
+</p></div></div></body></html>

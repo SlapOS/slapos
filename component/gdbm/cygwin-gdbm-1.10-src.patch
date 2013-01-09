@@ -1,0 +1,22 @@
+--- src/Makefile.am.org	2012-11-07 20:42:53.281250000 +0800
++++ src/Makefile.am	2012-11-07 20:43:12.421875000 +0800
+@@ -60,7 +60,7 @@
+  update.c\
+  version.c
+ 
+-libgdbm_la_LDFLAGS = -version-info $(VI_CURRENT):$(VI_REVISION):$(VI_AGE)
++libgdbm_la_LDFLAGS = -version-info $(VI_CURRENT):$(VI_REVISION):$(VI_AGE) -no-undefined
+ 
+ # Programs
+ bin_PROGRAMS = testgdbm 
+--- configure.ac.org    2012-11-07 21:03:20.359375000 +0800
++++ configure.ac        2012-11-07 21:03:45.640625000 +0800
+@@ -87,6 +87,8 @@
+ dnl AC_C_BIGENDIAN([])
+ AC_C_CONST
+
++AC_LIBTOOL_WIN32_DLL
++
+ dnl Internationalization macros.
+ AM_GNU_GETTEXT([external], [need-ngettext])
+ AM_GNU_GETTEXT_VERSION(0.18)

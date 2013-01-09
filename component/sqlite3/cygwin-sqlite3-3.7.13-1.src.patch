@@ -1,0 +1,20 @@
+--- origsrc/sqlite-autoconf-3071300/sqlite3.c	2012-06-11 03:33:44.000000000 -0600
++++ src/sqlite-autoconf-3071300/sqlite3.c	2012-08-08 13:24:18.185000000 -0600
+@@ -36161,7 +36161,7 @@ static int winFullPathname(
+     */
+     char zOut[MAX_PATH+1];
+     memset(zOut, 0, MAX_PATH+1);
+-    cygwin_conv_to_win32_path(zRelative, zOut); /* POSIX to Win32 */
++    cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zOut, sizeof(zOut));
+     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
+                      sqlite3_data_directory, zOut);
+   }else{
+@@ -36170,7 +36170,7 @@ static int winFullPathname(
+     **       for the buffer passed to cygwin_conv_to_full_win32_path
+     **       is MAX_PATH.
+     */
+-    cygwin_conv_to_full_win32_path(zRelative, zFull);
++    cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zFull, nFull);
+   }
+   return SQLITE_OK;
+ #endif

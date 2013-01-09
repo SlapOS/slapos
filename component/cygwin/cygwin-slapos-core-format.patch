@@ -1,5 +1,5 @@
---- slapos.core-0.33-py2.6.egg/slapos/format.py	2012-11-08 09:45:24.718750000 +0800
-+++ slapos.core-0.33-py2.7.egg/slapos/format.py	2012-11-21 19:20:09.593750000 +0800
+--- a/slapos/format.py	2012-11-08 09:45:24.718750000 +0800
++++ b/slapos/format.py	2012-11-21 19:20:09.593750000 +0800
 @@ -460,9 +460,9 @@
      #      This method shall check if all is correctly done
      #      This method shall not reset groups, just add them

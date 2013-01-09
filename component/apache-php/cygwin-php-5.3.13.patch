@@ -1,0 +1,486 @@
+diff --git a/php-5.3.13/Makefile.global b/php-5.3.13/Makefile.global
+index 8dad0e4..707c17d 100644
+--- a/php-5.3.13/Makefile.global
++++ b/php-5.3.13/Makefile.global
+@@ -10,12 +10,12 @@ all: $(all_targets)
+ 	@echo "Build complete."
+ 	@echo "Don't forget to run 'make test'."
+ 	@echo
+-	
++
+ build-modules: $(PHP_MODULES) $(PHP_ZEND_EX)
+ 
+ libphp$(PHP_MAJOR_VERSION).la: $(PHP_GLOBAL_OBJS) $(PHP_SAPI_OBJS)
+-	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(EXTRA_CFLAGS) -rpath $(phptempdir) $(EXTRA_LDFLAGS) $(LDFLAGS) $(PHP_RPATHS) $(PHP_GLOBAL_OBJS) $(PHP_SAPI_OBJS) $(EXTRA_LIBS) $(ZEND_EXTRA_LIBS) -o $@
+-	-@$(LIBTOOL) --silent --mode=install cp $@ $(phptempdir)/$@ >/dev/null 2>&1
++	$(LIBTOOL) --mode=link $(CC) $(CFLAGS) $(EXTRA_CFLAGS) -rpath $(phptempdir) -shrext .so $(EXTRA_LDFLAGS) $(LDFLAGS) $(PHP_RPATHS) $(PHP_GLOBAL_OBJS) $(PHP_SAPI_OBJS) $(EXTRA_LIBS) $(ZEND_EXTRA_LIBS) -o $@
++	-@$(LIBTOOL) --silent --mode=install install $@ $(phptempdir) >/dev/null 2>&1
+ 
+ libs/libphp$(PHP_MAJOR_VERSION).bundle: $(PHP_GLOBAL_OBJS) $(PHP_SAPI_OBJS)
+ 	$(CC) $(MH_BUNDLE_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) $(PHP_GLOBAL_OBJS:.lo=.o) $(PHP_SAPI_OBJS:.lo=.o) $(PHP_FRAMEWORKS) $(EXTRA_LIBS) $(ZEND_EXTRA_LIBS) -o $@ && cp $@ libs/libphp$(PHP_MAJOR_VERSION).so
+@@ -39,8 +39,7 @@ install-modules: build-modules
+ 	@test -d modules && \
+ 	$(mkinstalldirs) $(INSTALL_ROOT)$(EXTENSION_DIR)
+ 	@echo "Installing shared extensions:     $(INSTALL_ROOT)$(EXTENSION_DIR)/"
+-	@rm -f modules/*.la >/dev/null 2>&1
+-	@$(INSTALL) modules/* $(INSTALL_ROOT)$(EXTENSION_DIR)
++	@$(INSTALL) modules/*.$(SHLIB_DL_SUFFIX_NAME) $(INSTALL_ROOT)$(EXTENSION_DIR)
+ 
+ install-headers:
+ 	-@if test "$(INSTALL_HEADERS)"; then \
+@@ -107,7 +106,7 @@ clean:
+ 	find . -name \*.gcno -o -name \*.gcda | xargs rm -f
+ 	find . -name \*.lo -o -name \*.o | xargs rm -f
+ 	find . -name \*.la -o -name \*.a | xargs rm -f 
+-	find . -name \*.so | xargs rm -f
++	find . -name \*.$(SHLIB_DL_SUFFIX_NAME) | xargs rm -f
+ 	find . -name .libs -a -type d|xargs rm -rf
+ 	rm -f libphp$(PHP_MAJOR_VERSION).la $(SAPI_CLI_PATH) $(OVERALL_TARGET) modules/* libs/*
+ 
+diff --git a/php-5.3.13/acinclude.m4 b/php-5.3.13/acinclude.m4
+index 5515b3f..f32378e 100644
+--- a/php-5.3.13/acinclude.m4
++++ b/php-5.3.13/acinclude.m4
+@@ -844,6 +844,10 @@ AC_DEFUN([PHP_SHARED_MODULE],[
+       suffix=so
+       link_cmd='$(LIBTOOL) --mode=link ifelse($4,,[$(CC)],[$(CXX)]) $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) $(LDFLAGS) -Wl,-G -o '$3'/$1.la -export-dynamic -avoid-version -prefer-pic -module -rpath $(phplibdir) $(EXTRA_LDFLAGS) $($2) $(translit($1,a-z_-,A-Z__)_SHARED_LIBADD) && mv -f '$3'/.libs/$1.so '$3'/$1.so'
+       ;;
++    *cygwin*[)]
++      suffix=la
++      link_cmd='$(LIBTOOL) --mode=link ifelse($4,,[$(CC)],[$(CXX)]) $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) $(LDFLAGS) -o [$]@ -shared -export-dynamic -avoid-version -module -no-undefined -rpath $(phplibdir) $(EXTRA_LDFLAGS) $($2) ifelse($1, libphp5, , -lphp5) $(translit($1,a-z_-,A-Z__)_SHARED_LIBADD)'
++      ;;
+     *netware*[)]
+       suffix=nlm
+       link_cmd='$(LIBTOOL) --mode=link ifelse($4,,[$(CC)],[$(CXX)]) $(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) $(LDFLAGS) -o [$]@ -shared -export-dynamic -avoid-version -prefer-pic -module -rpath $(phplibdir) $(EXTRA_LDFLAGS) $($2) ifelse($1, php5lib, , -L$(top_builddir)/netware -lphp5lib) $(translit(ifelse($1, php5lib, $1, m4_substr($1, 3)),a-z_-,A-Z__)_SHARED_LIBADD)'
+@@ -1990,6 +1994,10 @@ AC_DEFUN([PHP_SHLIB_SUFFIX_NAMES],[
+    SHLIB_SUFFIX_NAME=dylib
+    SHLIB_DL_SUFFIX_NAME=so
+    ;;
++ *cygwin*[)]
++   SHLIB_SUFFIX_NAME=dll.a
++   SHLIB_DL_SUFFIX_NAME=dll
++   ;;
+  esac
+ ])
+ 
+diff --git a/php-5.3.13/build/buildcheck.sh b/php-5.3.13/build/buildcheck.sh
+index de16264..8d3e3a1 100755
+--- a/php-5.3.13/build/buildcheck.sh
++++ b/php-5.3.13/build/buildcheck.sh
+@@ -44,7 +44,7 @@ echo "           to build PHP from SVN."
+ exit 1
+ fi
+ 
+-if test "$1" = "2" -a "$2" -gt "59"; then
++if false; then
+   echo "buildconf: You need autoconf 2.59 or lower to build this version of PHP."
+   echo "           You are currently trying to use $ac_version"
+   echo "           Most distros have separate autoconf 2.13 or 2.59 packages."
+diff --git a/php-5.3.13/configure.in b/php-5.3.13/configure.in
+index f8241e6..9ab6e3a 100644
+--- a/php-5.3.13/configure.in
++++ b/php-5.3.13/configure.in
+@@ -1,7 +1,7 @@
+ ## $Id$ -*- autoconf -*-
+ dnl ## Process this file with autoconf to produce a configure script.
+ 
+-divert(1)
++divert(6001)
+ 
+ dnl ## Diversion 1 is the autoconf + automake setup phase. We also
+ dnl ## set the PHP version, deal with platform-specific compile
+@@ -218,7 +218,13 @@ if test "$GCC" = "yes"; then
+     ;;
+   esac
+   if test $GCC_MAJOR_VERSION -ge 4; then
+-    CFLAGS="$CFLAGS -fvisibility=hidden"
++    case $host_alias in
++    *cygwin*|*mingw*)
++      ;;
++    *)
++      CFLAGS="$CFLAGS -fvisibility=hidden"
++      ;;
++    esac
+   fi
+ fi
+ 
+@@ -290,7 +296,7 @@ sinclude(TSRM/threads.m4)
+ sinclude(TSRM/tsrm.m4)
+ 
+ 
+-divert(2)
++divert(6002)
+ 
+ dnl ## Diversion 2 is where we set PHP-specific options and come up
+ dnl ## with reasonable default values for them. We check for pthreads here
+@@ -329,7 +335,7 @@ if test "$enable_maintainer_zts" = "yes"; then
+   PTHREADS_FLAGS
+ fi
+ 
+-divert(3)
++divert(6003)
+ 
+ dnl ## In diversion 3 we check for compile-time options to the PHP
+ dnl ## core and how to deal with different system dependencies. 
+@@ -683,7 +689,7 @@ if test "x$php_crypt_r" = "x1"; then
+   PHP_CRYPT_R_STYLE
+ fi
+ 
+-divert(4)
++divert(6004)
+ 
+ dnl ## In diversion 4 we check user-configurable general settings.
+ 
+@@ -924,7 +930,7 @@ else
+   AC_MSG_RESULT([using system default])
+ fi
+ 
+-divert(5)
++divert(6005)
+ 
+ dnl ## In diversion 5 we check which extensions should be compiled.
+ dnl ## All of these are normally in the extension directories.
+@@ -982,7 +988,7 @@ case $php_build_target in
+         standard_libtool_flag='-prefer-non-pic'
+         ;;
+     esac
+-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -avoid-version -module"
++    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -avoid-version -module -no-undefined"
+     ;;
+ esac
+ 
+@@ -1216,7 +1222,7 @@ case $host_alias in
+ *)
+   PHP_UNAME=`uname -a | xargs`
+   AC_DEFINE_UNQUOTED(PHP_UNAME,"$PHP_UNAME",[uname -a output])
+-  PHP_OS=`uname | xargs`
++  PHP_OS=`uname | xargs | sed -e 's/[[-_ ]].*//'`
+   AC_DEFINE_UNQUOTED(PHP_OS,"$PHP_OS",[uname output])
+   ;;
+ esac
+@@ -1343,14 +1349,8 @@ case $host_alias in
+   ;;
+ esac
+ 
+-dnl Only allow AC_PROG_CXX and AC_PROG_CXXCPP if they are explicitly called (by PHP_REQUIRE_CXX).
+-dnl Otherwise AC_PROG_LIBTOOL fails if there is no working C++ compiler.
+-AC_PROVIDE_IFELSE([PHP_REQUIRE_CXX], [], [
+-  undefine([AC_PROG_CXX])
+-  AC_DEFUN([AC_PROG_CXX], [])
+-  undefine([AC_PROG_CXXCPP])
+-  AC_DEFUN([AC_PROG_CXXCPP], [php_prog_cxxcpp=disabled])
+-])
++AC_PROG_CXX
++AC_PROG_CXXCPP
+ AC_PROG_LIBTOOL
+ 
+ if test "$enable_debug" != "yes"; then
+diff --git a/php-5.3.13/ext/curl/config.m4 b/php-5.3.13/ext/curl/config.m4
+index fbb4f5b..66ab614 100644
+--- a/php-5.3.13/ext/curl/config.m4
++++ b/php-5.3.13/ext/curl/config.m4
+@@ -60,11 +60,14 @@ if test "$PHP_CURL" != "no"; then
+     AC_DEFINE([HAVE_CURL_SSL], [1], [Have cURL with  SSL support])
+    
+     save_CFLAGS="$CFLAGS"
++    save_LIBS="$LIBS"
+     CFLAGS="`$CURL_CONFIG --cflags`"
++    LIBS="`$CURL_CONFIG --libs`"
+    
+     AC_PROG_CPP
+     AC_MSG_CHECKING([for openssl support in libcurl])
+     AC_TRY_RUN([
++#include <string.h>
+ #include <curl/curl.h>
+ 
+ int main(int argc, char *argv[])
+@@ -92,6 +95,7 @@ int main(int argc, char *argv[])
+    
+     AC_MSG_CHECKING([for gnutls support in libcurl])
+     AC_TRY_RUN([
++#include <string.h>
+ #include <curl/curl.h>
+ 
+ int main(int argc, char *argv[])
+@@ -118,6 +122,7 @@ int main(int argc, char *argv[])
+     ])
+    
+     CFLAGS="$save_CFLAGS"
++    LIBS="$save_LIBS"
+   else
+     AC_MSG_RESULT([no])
+   fi
+diff --git a/php-5.3.13/ext/dba/config.m4 b/php-5.3.13/ext/dba/config.m4
+index 4269b1c..2418e2a 100644
+--- a/php-5.3.13/ext/dba/config.m4
++++ b/php-5.3.13/ext/dba/config.m4
+@@ -175,7 +175,7 @@ if test "$PHP_NDBM" != "no"; then
+   done
+   
+   if test -n "$THIS_INCLUDE"; then
+-    for LIB in ndbm db1 c; do
++    for LIB in ndbm db1 gdbm_compat c; do
+       PHP_CHECK_LIBRARY($LIB, dbm_open, [
+         AC_DEFINE_UNQUOTED(NDBM_INCLUDE_FILE, "$THIS_INCLUDE", [ ])
+         AC_DEFINE(DBA_NDBM, 1, [ ]) 
+@@ -483,7 +483,7 @@ if test "$PHP_DBM" != "no"; then
+   done
+ 
+   if test -n "$THIS_INCLUDE"; then
+-    for LIB in dbm c gdbm; do
++    for LIB in dbm c gdbm gdbm_compat; do
+       PHP_CHECK_LIBRARY($LIB, dbminit, [
+         AC_MSG_CHECKING(for DBM using GDBM)
+         AC_DEFINE_UNQUOTED(DBM_INCLUDE_FILE, "$THIS_INCLUDE", [ ])
+diff --git a/php-5.3.13/ext/intl/config.m4 b/php-5.3.13/ext/intl/config.m4
+index dc235db..5481796 100755
+--- a/php-5.3.13/ext/intl/config.m4
++++ b/php-5.3.13/ext/intl/config.m4
+@@ -9,6 +9,7 @@ if test "$PHP_INTL" != "no"; then
+   PHP_SETUP_ICU(INTL_SHARED_LIBADD)
+   PHP_SUBST(INTL_SHARED_LIBADD)
+   PHP_REQUIRE_CXX()
++  PHP_ADD_LIBRARY(stdc++, 1, INTL_SHARED_LIBADD)
+ 
+   PHP_NEW_EXTENSION(intl, php_intl.c \
+     intl_error.c \
+diff --git a/php-5.3.13/ext/mssql/config.m4 b/php-5.3.13/ext/mssql/config.m4
+index 4231bb3..5764500 100644
+--- a/php-5.3.13/ext/mssql/config.m4
++++ b/php-5.3.13/ext/mssql/config.m4
+@@ -38,7 +38,7 @@ if test "$PHP_MSSQL" != "no"; then
+     fi
+   fi  
+ 
+-  if test ! -r "$FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.a" && test ! -r "$FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.so"; then
++  if test ! -r "$FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.a" && test ! -r "$FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.$SHLIB_SUFFIX_NAME"; then
+      AC_MSG_ERROR(Could not find $FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.[a|so])
+   fi
+ 
+diff --git a/php-5.3.13/ext/pdo_dblib/config.m4 b/php-5.3.13/ext/pdo_dblib/config.m4
+index 3410ba9..50a76ca 100644
+--- a/php-5.3.13/ext/pdo_dblib/config.m4
++++ b/php-5.3.13/ext/pdo_dblib/config.m4
+@@ -46,7 +46,7 @@ if test "$PHP_PDO_DBLIB" != "no"; then
+     PHP_LIBDIR=lib
+   fi
+ 
+-  if test ! -r "$PDO_FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.a" && test ! -r "$PDO_FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.so"; then
++  if test ! -r "$PDO_FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.a" && test ! -r "$PDO_FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.$SHLIB_SUFFIX_NAME"; then
+      AC_MSG_ERROR(Could not find $PDO_FREETDS_INSTALLATION_DIR/$PHP_LIBDIR/libsybdb.[a|so])
+   fi
+ 
+diff --git a/php-5.3.13/ext/pspell/config.m4 b/php-5.3.13/ext/pspell/config.m4
+index 67e5b27..175c437 100644
+--- a/php-5.3.13/ext/pspell/config.m4
++++ b/php-5.3.13/ext/pspell/config.m4
+@@ -29,8 +29,6 @@ if test "$PHP_PSPELL" != "no"; then
+ 
+ 	PSPELL_LIBDIR=$PSPELL_DIR/$PHP_LIBDIR
+ 
+-	PHP_ADD_LIBRARY_WITH_PATH(pspell, $PSPELL_LIBDIR, PSPELL_SHARED_LIBADD)
+-
+ 	dnl Add -laspell to LIBS if it exists
+ 	PHP_CHECK_LIBRARY(aspell,new_aspell_config,
+ 	[
+diff --git a/php-5.3.13/ext/readline/config.m4 b/php-5.3.13/ext/readline/config.m4
+index a99262a..e757177 100644
+--- a/php-5.3.13/ext/readline/config.m4
++++ b/php-5.3.13/ext/readline/config.m4
+@@ -53,13 +53,6 @@ if test "$PHP_READLINE" && test "$PHP_READLINE" != "no"; then
+     -L$READLINE_DIR/$PHP_LIBDIR $PHP_READLINE_LIBS
+   ])
+ 
+-  PHP_CHECK_LIBRARY(readline, rl_callback_read_char,
+-  [
+-    AC_DEFINE(HAVE_RL_CALLBACK_READ_CHAR, 1, [ ])
+-  ],[],[
+-    -L$READLINE_DIR/$PHP_LIBDIR $PHP_READLINE_LIBS
+-  ])
+-
+   AC_DEFINE(HAVE_LIBREADLINE, 1, [ ])
+ 
+ elif test "$PHP_LIBEDIT" != "no"; then
+@@ -97,7 +90,12 @@ elif test "$PHP_LIBEDIT" != "no"; then
+ fi
+ 
+ if test "$PHP_READLINE" != "no" || test "$PHP_LIBEDIT" != "no"; then
++  save_LIBS="$LIBS"
++  LIBS="-L$READLINE_DIR/$PHP_LIBDIR $READLINE_SHARED_LIBADD $PHP_READLINE_LIBS"
+   AC_CHECK_FUNCS([rl_completion_matches])
++  AC_CHECK_FUNCS([rl_callback_read_char])
++  AC_CHECK_FUNCS([rl_on_new_line])
++  LIBS="$save_LIBS"
+   PHP_NEW_EXTENSION(readline, readline.c, $ext_shared, cli)
+   PHP_SUBST(READLINE_SHARED_LIBADD)
+ fi
+diff --git a/php-5.3.13/ext/readline/readline.c b/php-5.3.13/ext/readline/readline.c
+index 820e4b4..7da0c37 100644
+--- a/php-5.3.13/ext/readline/readline.c
++++ b/php-5.3.13/ext/readline/readline.c
+@@ -50,13 +50,15 @@ PHP_FUNCTION(readline_list_history);
+ PHP_FUNCTION(readline_read_history);
+ PHP_FUNCTION(readline_write_history);
+ PHP_FUNCTION(readline_completion_function);
++#ifdef HAVE_RL_ON_NEW_LINE
++PHP_FUNCTION(readline_on_new_line);
++#endif
+ 
+ #if HAVE_RL_CALLBACK_READ_CHAR
+ PHP_FUNCTION(readline_callback_handler_install);
+ PHP_FUNCTION(readline_callback_read_char);
+ PHP_FUNCTION(readline_callback_handler_remove);
+ PHP_FUNCTION(readline_redisplay);
+-PHP_FUNCTION(readline_on_new_line);
+ 
+ static zval *_prepped_callback = NULL;
+ 
+@@ -118,7 +120,9 @@ ZEND_END_ARG_INFO()
+ 
+ ZEND_BEGIN_ARG_INFO(arginfo_readline_redisplay, 0)
+ ZEND_END_ARG_INFO()
++#endif
+ 
++#ifdef HAVE_RL_ON_NEW_LINE
+ ZEND_BEGIN_ARG_INFO(arginfo_readline_on_new_line, 0)
+ ZEND_END_ARG_INFO()
+ #endif
+@@ -141,6 +145,8 @@ static const zend_function_entry php_readline_functions[] = {
+ 	PHP_FE(readline_callback_read_char,			arginfo_readline_callback_read_char)
+ 	PHP_FE(readline_callback_handler_remove,	arginfo_readline_callback_handler_remove)
+ 	PHP_FE(readline_redisplay, arginfo_readline_redisplay)
++#endif
++#ifdef HAVE_RL_ON_NEW_LINE
+ 	PHP_FE(readline_on_new_line, arginfo_readline_on_new_line)
+ #endif
+ 	PHP_FE_END
+@@ -611,6 +617,10 @@ PHP_FUNCTION(readline_redisplay)
+ }
+ /* }}} */
+ 
++#endif
++
++#ifdef HAVE_RL_ON_NEW_LINE
++
+ /* {{{ proto void readline_on_new_line(void)
+    Inform readline that the cursor has moved to a new line */
+ PHP_FUNCTION(readline_on_new_line)
+diff --git a/php-5.3.13/ext/standard/config.m4 b/php-5.3.13/ext/standard/config.m4
+index e28c351..70b2a82 100644
+--- a/php-5.3.13/ext/standard/config.m4
++++ b/php-5.3.13/ext/standard/config.m4
+@@ -1,6 +1,6 @@
+ dnl $Id$ -*- autoconf -*-
+ 
+-divert(3)dnl
++divert(6003)dnl
+ 
+ dnl
+ dnl Check if flush should be called explicitly after buffered io
+@@ -342,7 +342,7 @@ dnl
+ AC_CHECK_FUNCS(getcwd getwd asinh acosh atanh log1p hypot glob strfmon nice fpclass isinf isnan mempcpy strpncpy)
+ AC_FUNC_FNMATCH	
+ 
+-divert(5)dnl
++divert(6005)dnl
+ 
+ dnl
+ dnl Check if there is a support means of creating a new process
+diff --git a/php-5.3.13/sapi/apache/config.m4 b/php-5.3.13/sapi/apache/config.m4
+index af83e9b..fbcec33 100644
+--- a/php-5.3.13/sapi/apache/config.m4
++++ b/php-5.3.13/sapi/apache/config.m4
+@@ -75,6 +75,10 @@ if test "$PHP_APXS" != "no"; then
+     PHP_AIX_LDFLAGS="-Wl,-brtl"
+     build_type=shared
+     ;;
++  *cygwin*)
++    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -lhttpd"
++    build_type=shared
++    ;;
+   *darwin*)
+     MH_BUNDLE_FLAGS="-dynamic -twolevel_namespace -bundle -bundle_loader $APXS_HTTPD"
+     PHP_SUBST(MH_BUNDLE_FLAGS)
+diff --git a/php-5.3.13/sapi/apache2handler/config.m4 b/php-5.3.13/sapi/apache2handler/config.m4
+index 702f91f..c1f791a 100644
+--- a/php-5.3.13/sapi/apache2handler/config.m4
++++ b/php-5.3.13/sapi/apache2handler/config.m4
+@@ -48,7 +48,9 @@ if test "$PHP_APXS2" != "no"; then
+     echo $APU_BINDIR/apu-config`
+ 
+   APR_CFLAGS="`$APR_CONFIG --cppflags --includes`"
++  APR_LIBS="`$APR_CONFIG --ldflags --link-ld`"
+   APU_CFLAGS="`$APU_CONFIG --includes`"
++  APU_LIBS="`$APU_CONFIG --ldflags --link-ld`"
+ 
+   for flag in $APXS_CFLAGS; do
+     case $flag in
+@@ -57,6 +59,7 @@ if test "$PHP_APXS2" != "no"; then
+   done
+ 
+   APACHE_CFLAGS="$APACHE_CPPFLAGS -I$APXS_INCLUDEDIR $APR_CFLAGS $APU_CFLAGS"
++  EXTRA_LIBS="$APR_LIBS $APU_LIBS"
+ 
+   # Test that we're trying to configure with apache 2.x
+   PHP_AP_EXTRACT_VERSION($APXS_HTTPD)
+@@ -86,17 +89,12 @@ if test "$PHP_APXS2" != "no"; then
+     PHP_SELECT_SAPI(apache2handler, shared, mod_php5.c sapi_apache2.c apache_config.c php_functions.c, $APACHE_CFLAGS)
+     INSTALL_IT="$INSTALL_IT $SAPI_LIBTOOL" 
+     ;;
++  *cygwin*)
++    EXTRA_LDFLAGS="$EXTRA_LDFLAGS -L`$APXS -q LIBDIR` -lhttpd2core"
++    PHP_SELECT_SAPI(apache2handler, shared, mod_php5.c sapi_apache2.c apache_config.c php_functions.c, $APACHE_CFLAGS) 
++    INSTALL_IT="$INSTALL_IT $SAPI_LIBTOOL"
++    ;;
+   *darwin*)
+-    dnl When using bundles on Darwin, we must resolve all symbols.  However,
+-    dnl the linker does not recursively look at the bundle loader and
+-    dnl pull in its dependencies.  Therefore, we must pull in the APR
+-    dnl and APR-util libraries.
+-    if test -x "$APR_CONFIG"; then
+-        MH_BUNDLE_FLAGS="`$APR_CONFIG --ldflags --link-ld --libs`"
+-    fi
+-    if test -x "$APU_CONFIG"; then
+-        MH_BUNDLE_FLAGS="`$APU_CONFIG --ldflags --link-ld --libs` $MH_BUNDLE_FLAGS"
+-    fi
+     MH_BUNDLE_FLAGS="-bundle -bundle_loader $APXS_HTTPD $MH_BUNDLE_FLAGS"
+     PHP_SUBST(MH_BUNDLE_FLAGS)
+     PHP_SELECT_SAPI(apache2handler, bundle, mod_php5.c sapi_apache2.c apache_config.c php_functions.c, $APACHE_CFLAGS)
+diff --git a/php-5.3.13/sapi/cli/config.m4 b/php-5.3.13/sapi/cli/config.m4
+index 1a6fdbf..856c92d 100644
+--- a/php-5.3.13/sapi/cli/config.m4
++++ b/php-5.3.13/sapi/cli/config.m4
+@@ -9,7 +9,7 @@ PHP_ARG_ENABLE(cli,,
+ AC_MSG_CHECKING(for CLI build)
+ if test "$PHP_CLI" != "no"; then
+   PHP_ADD_MAKEFILE_FRAGMENT($abs_srcdir/sapi/cli/Makefile.frag,$abs_srcdir/sapi/cli,sapi/cli)
+-  SAPI_CLI_PATH=sapi/cli/php
++  SAPI_CLI_PATH=sapi/cli/php$EXEEXT
+   PHP_SUBST(SAPI_CLI_PATH)
+ 
+   case $host_alias in
+diff --git a/php-5.3.13/sapi/fpm/config.m4 b/php-5.3.13/sapi/fpm/config.m4
+index 953fa1f..2609399 100644
+--- a/php-5.3.13/sapi/fpm/config.m4
++++ b/php-5.3.13/sapi/fpm/config.m4
+@@ -585,7 +585,7 @@ if test "$PHP_FPM" != "no"; then
+   PHP_OUTPUT(sapi/fpm/php-fpm.conf sapi/fpm/init.d.php-fpm sapi/fpm/php-fpm.8 sapi/fpm/status.html)
+   PHP_ADD_MAKEFILE_FRAGMENT([$abs_srcdir/sapi/fpm/Makefile.frag], [$abs_srcdir/sapi/fpm], [sapi/fpm])
+ 
+-  SAPI_FPM_PATH=sapi/fpm/php-fpm
++  SAPI_FPM_PATH=sapi/fpm/php-fpm$EXEEXT
+   PHP_SUBST(SAPI_FPM_PATH)
+   
+   if test "$fpm_trace_type" && test -f "$abs_srcdir/sapi/fpm/fpm/fpm_trace_$fpm_trace_type.c"; then
+diff --git a/php-5.3.13/scripts/phpize.m4 b/php-5.3.13/scripts/phpize.m4
+index e3a30a5..373039d 100644
+--- a/php-5.3.13/scripts/phpize.m4
++++ b/php-5.3.13/scripts/phpize.m4
+@@ -1,6 +1,6 @@
+ dnl This file becomes configure.in for self-contained extensions.
+ 
+-divert(1)
++divert(6001)
+ 
+ AC_PREREQ(2.13)
+ AC_INIT(config.m4)

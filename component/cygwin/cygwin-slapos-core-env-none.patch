@@ -1,0 +1,26 @@
+diff --git a/slapos/grid/slapgrid.py b/slapos/grid/slapgrid.py
+index a459639..a5a31f6 100644
+--- a/slapos/grid/slapgrid.py
++++ b/slapos/grid/slapgrid.py
+@@ -659,7 +659,7 @@ class Slapgrid(object):
+         process_handler = subprocess.Popen(command,
+           preexec_fn=lambda: dropPrivileges(uid, gid),
+           cwd=cwd,
+-          env={}, **kw)
++          env=None, **kw)
+         process_handler.stdin.flush()
+         process_handler.stdin.close()
+         process_handler.stdin = None
+diff --git a/slapos/grid/utils.py b/slapos/grid/utils.py
+index c27603e..de10406 100644
+--- a/slapos/grid/utils.py
++++ b/slapos/grid/utils.py
+@@ -97,6 +97,8 @@ class SlapPopen(subprocess.Popen):
+   """
+   def __init__(self, *args, **kwargs):
+     kwargs.update(stdin=subprocess.PIPE)
++    if sys.platform == 'cygwin' and kwargs.get('env') == {}:
++      kwargs['env'] = None
+     subprocess.Popen.__init__(self, *args, **kwargs)
+     self.stdin.flush()
+     self.stdin.close()

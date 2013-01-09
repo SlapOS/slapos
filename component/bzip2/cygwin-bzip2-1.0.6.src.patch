@@ -1,0 +1,511 @@
+diff --git bzip2-1.0.6/bzgrep bzip2-1.0.6/bzgrep
+index 9a04b83..37de592 100644
+--- bzip2-1.0.6/bzgrep
++++ bzip2-1.0.6/bzgrep
+@@ -1,27 +1,75 @@
+ #!/bin/sh
+ 
+-# Bzgrep wrapped for bzip2, 
+-# adapted from zgrep by Philippe Troin <phil@fifi.org> for Debian GNU/Linux.
+-## zgrep notice:
+-## zgrep -- a wrapper around a grep program that decompresses files as needed
+-## Adapted from a version sent by Charles Levert <charles@comm.polymtl.ca>
++# bzgrep -- a wrapper around a grep program that decompresses files as needed
++# Adapted from zgrep of the Debian gzip package by Anibal Monsalve Salazar. 
++# Adapted from a version sent by Charles Levert <charles@comm.polymtl.ca>
++
++# Copyright (C) 1998, 2001, 2002 Free Software Foundation
++# Copyright (C) 1993 Jean-loup Gailly
++
++# This program is free software; you can redistribute it and/or modify
++# it under the terms of the GNU General Public License as published by
++# the Free Software Foundation; either version 2, or (at your option)
++# any later version.
++
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
++# 02111-1307, USA.
+ 
+ PATH="/usr/bin:$PATH"; export PATH
+ 
+-prog=`echo $0 | sed 's|.*/||'`
++prog=`echo "$0" | sed 's|.*/||'`
+ case "$prog" in
+ 	*egrep)	grep=${EGREP-egrep}	;;
+ 	*fgrep)	grep=${FGREP-fgrep}	;;
+ 	*)	grep=${GREP-grep}	;;
+ esac
++
+ pat=""
++after_dash_dash=""
++files_with_matches=0
++files_without_matches=0
++no_filename=0
++with_filename=0
++
+ while test $# -ne 0; do
+-  case "$1" in
+-  -e | -f) opt="$opt $1"; shift; pat="$1"
++  case "$after_dash_dash$1" in
++  --d* | --rec*)	echo >&2 "$0: $1: option not supported"; exit 2;;
++  --files-with-*)	files_with_matches=1;;
++  --files-witho*)	files_without_matches=1;;
++  --no-f*)	no_filename=1;;
++  --wi*)	with_filename=1;;
++  --*)	;;
++  -*)
++	case "$1" in
++	-*[dr]*) echo >&2 "$0: $1: option not supported"; exit 2;;
++	esac
++	case "$1" in
++	-*H*)	with_filename=1;;
++	esac
++	case "$1" in
++	-*h*)	no_filename=1;;
++	esac
++	case "$1" in
++	-*L*)	files_without_matches=1;;
++	esac
++	case "$1" in
++	-*l*)	files_with_matches=1;;
++	esac;;
++  esac
++  case "$after_dash_dash$1" in
++  -[ef])   opt="$opt $1"; shift; pat="$1"
+            if test "$grep" = grep; then  # grep is buggy with -e on SVR4
+              grep=egrep
+            fi;;
+-  -A | -B) opt="$opt $1 $2"; shift;;
++  -[ABCdm])opt="$opt $1 $2"; shift;;
++  --)      opt="$opt $1"; after_dash_dash=1;;
+   -*)	   opt="$opt $1";;
+    *)      if test -z "$pat"; then
+ 	     pat="$1"
+@@ -35,19 +83,9 @@ done
+ if test -z "$pat"; then
+   echo "grep through bzip2 files"
+   echo "usage: $prog [grep_options] pattern [files]"
+-  exit 1
++  exit 2
+ fi
+ 
+-list=0
+-silent=0
+-op=`echo "$opt" | sed -e 's/ //g' -e 's/-//g'`
+-case "$op" in
+-  *l*) list=1
+-esac
+-case "$op" in
+-  *h*) silent=1
+-esac
+-
+ if test $# -eq 0; then
+   bzip2 -cdfq | $grep $opt "$pat"
+   exit $?
+@@ -55,21 +93,40 @@ fi
+ 
+ res=0
+ for i do
+-  if test -f "$i"; then :; else if test -f "$i.bz2"; then i="$i.bz2"; fi; fi
+-  if test $list -eq 1; then
+-    bzip2 -cdfq "$i" | $grep $opt "$pat" 2>&1 > /dev/null && echo $i
+-    r=$?
+-  elif test $# -eq 1 -o $silent -eq 1; then
+-    bzip2 -cdfq "$i" | $grep $opt "$pat"
+-    r=$?
+-  else
+-    j=${i//\\/\\\\}
+-    j=${j//|/\\|}
+-    j=${j//&/\\&}
+-    j=`printf "%s" "$j" | tr '\n' ' '`
+-    bzip2 -cdfq "$i" | $grep $opt "$pat" | sed "s|^|${j}:|"
+-    r=$?
+-  fi
+-  test "$r" -ne 0 && res="$r"
++  bzip2 -cdfq -- "$i" |
++    if test $files_with_matches -eq 1; then
++      $grep $opt "$pat" > /dev/null && printf "%s\n" "$i"
++    elif test $files_without_matches -eq 1; then
++      $grep $opt "$pat" > /dev/null || printf "%s\n" "$i"
++    elif test $with_filename -eq 0 && { test $# -eq 1 || test $no_filename -eq 1; }; then
++      $grep $opt "$pat"
++    else
++      i=$(echo "$i" | sed -e 's/[\\|&]/\\&/g')
++      if test $with_filename -eq 1; then
++	sed_script="s|^[^:]*:|${i}:|"
++      else
++	sed_script="s|^|${i}:|"
++      fi
++      # Hack adapted from GPLed code at
++      # http://home.comcast.net/~j.p.h/cus-faq-2
++      # Has the same effect as the following two lines of bash:
++      #
++      # $grep $opt "$pat" | sed "$sed_script"
++      # exit ${PIPESTATUS[0]}
++      #
++      # Inside the `...`, fd4 goes to the pipe whose other end is read
++      # and passed to eval; fd1 is the normal standard output
++      # preserved the line before with exec 3>&1
++      exec 3>&1
++      eval `
++      exec 4>&1 >&3 3>&-
++      {
++       $grep $opt "$pat" 4>&-; echo "r=$?;" >&4
++      } | sed "$sed_script"
++      `
++      exit $r
++    fi
++  r=$?
++  test $res -lt $r && res=$r
+ done
+ exit $res
+diff --git bzip2-1.0.6/bzip2.1 bzip2-1.0.6/bzip2.1
+index ce3a78e..5302bd7 100644
+--- bzip2-1.0.6/bzip2.1
++++ bzip2-1.0.6/bzip2.1
+@@ -235,6 +235,10 @@ less), use \-s for everything.  See MEMORY MANAGEMENT below.
+ Suppress non-essential warning messages.  Messages pertaining to
+ I/O errors and other critical events will not be suppressed.
+ .TP
++.B \-p \-\-show\-progress
++Show percentage of input\-file done and while compressing show the percentage
++of the original file the new file is.
++.TP
+ .B \-v --verbose
+ Verbose mode -- show the compression ratio for each file processed.
+ Further \-v's increase the verbosity level, spewing out lots of
+diff --git bzip2-1.0.6/bzip2.c bzip2-1.0.6/bzip2.c
+index 6de9d1d..cdda5d2 100644
+--- bzip2-1.0.6/bzip2.c
++++ bzip2-1.0.6/bzip2.c
+@@ -53,6 +53,7 @@
+ #include <signal.h>
+ #include <math.h>
+ #include <errno.h>
++#include <time.h>
+ #include <ctype.h>
+ #include "bzlib.h"
+ 
+@@ -128,7 +129,7 @@
+ #if BZ_LCCWIN32
+ #   include <io.h>
+ #   include <fcntl.h>
+-#   include <sys\stat.h>
++#   include <sys/stat.h>
+ 
+ #   define NORETURN       /**/
+ #   define PATH_SEP       '\\'
+@@ -209,6 +210,7 @@ Char    *progName;
+ Char    progNameReally[FILE_NAME_LEN];
+ FILE    *outputHandleJustInCase;
+ Int32   workFactor;
++Char    showProgress;
+ 
+ static void    panic                 ( const Char* ) NORETURN;
+ static void    ioError               ( void )        NORETURN;
+@@ -334,6 +336,12 @@ void compressStream ( FILE *stream, FILE *zStream )
+    UInt32  nbytes_in_lo32, nbytes_in_hi32;
+    UInt32  nbytes_out_lo32, nbytes_out_hi32;
+    Int32   bzerr, bzerr_dummy, ret;
++   double  fileSize = 0; /* initialized to make the compiler stop crying */
++                         /* double because big files might otherwhise give
++                          * overflows. not long long since not all compilers
++                          * support that one
++                          */
++   time_t  startTime, currentTime;
+ 
+    SET_BINARY_MODE(stream);
+    SET_BINARY_MODE(zStream);
+@@ -341,12 +349,21 @@ void compressStream ( FILE *stream, FILE *zStream )
+    if (ferror(stream)) goto errhandler_io;
+    if (ferror(zStream)) goto errhandler_io;
+ 
++   if ((srcMode == SM_F2F || srcMode == SM_F2O) && showProgress == True) {
++      (void)fseek(stream, 0, SEEK_END);
++      fileSize = ftello(stream);
++      rewind(stream);
++      if (verbosity >= 1)
++         fprintf(stderr, "Input-file size: %ld\n", (long)fileSize);
++   }
++
+    bzf = BZ2_bzWriteOpen ( &bzerr, zStream, 
+                            blockSize100k, verbosity, workFactor );   
+    if (bzerr != BZ_OK) goto errhandler;
+ 
+    if (verbosity >= 2) fprintf ( stderr, "\n" );
+ 
++   time(&startTime);
+    while (True) {
+ 
+       if (myfeof(stream)) break;
+@@ -355,6 +372,22 @@ void compressStream ( FILE *stream, FILE *zStream )
+       if (nIbuf > 0) BZ2_bzWrite ( &bzerr, bzf, (void*)ibuf, nIbuf );
+       if (bzerr != BZ_OK) goto errhandler;
+ 
++      if ((srcMode == SM_F2F || srcMode == SM_F2O) && showProgress == True) {
++         time(&currentTime);
++
++         if ((currentTime - startTime) > 1) { /* show progress every 2 seconds */
++            double curInPos = ftello(stream);
++            double curOutPos = ftello(zStream);
++
++            startTime = currentTime;
++
++            fprintf(stderr, "%.2f%% done", (curInPos * 100.0) / fileSize);
++            if (srcMode == SM_F2F)
++               fprintf(stderr, ", new size: %.2f%%", (curOutPos * 100.0) / curInPos);
++
++            fprintf(stderr, "    \r");
++         }
++      }
+    }
+ 
+    BZ2_bzWriteClose64 ( &bzerr, bzf, 0, 
+@@ -439,6 +472,8 @@ Bool uncompressStream ( FILE *zStream, FILE *stream )
+    Int32   nUnused;
+    void*   unusedTmpV;
+    UChar*  unusedTmp;
++   double  fileSize = 0; /* initialized to make the compiler stop crying */
++   time_t  startTime, currentTime;
+ 
+    nUnused = 0;
+    streamNo = 0;
+@@ -446,9 +481,19 @@ Bool uncompressStream ( FILE *zStream, FILE *stream )
+    SET_BINARY_MODE(stream);
+    SET_BINARY_MODE(zStream);
+ 
++   if ((srcMode == SM_F2F || srcMode == SM_F2O) && showProgress == True) {
++      off_t dummy = ftello(zStream);
++      (void)fseeko(zStream, 0, SEEK_END);
++      fileSize = ftello(zStream);
++      (void)fseeko(zStream, dummy, SEEK_SET);
++      if (verbosity >= 1)
++         fprintf(stderr, "Input-file size: %ld\n", (long)fileSize);
++   }
++
+    if (ferror(stream)) goto errhandler_io;
+    if (ferror(zStream)) goto errhandler_io;
+ 
++   time(&startTime);
+    while (True) {
+ 
+       bzf = BZ2_bzReadOpen ( 
+@@ -464,6 +509,16 @@ Bool uncompressStream ( FILE *zStream, FILE *stream )
+          if ((bzerr == BZ_OK || bzerr == BZ_STREAM_END) && nread > 0)
+             fwrite ( obuf, sizeof(UChar), nread, stream );
+          if (ferror(stream)) goto errhandler_io;
++
++         if ((srcMode == SM_F2F || srcMode == SM_F2O) && showProgress == True) {
++            time(&currentTime);
++            if ((currentTime - startTime) >= 2) {
++               double curInPos = ftello(zStream);
++               startTime = currentTime;
++
++               fprintf(stderr, "%.2f%% done\r", (curInPos * 100.0) / fileSize);
++            }
++         }
+       }
+       if (bzerr != BZ_STREAM_END) goto errhandler;
+ 
+@@ -1132,8 +1187,8 @@ Bool mapSuffix ( Char* name,
+ static 
+ void compress ( Char *name )
+ {
+-   FILE  *inStr;
+-   FILE  *outStr;
++   FILE  *inStr = NULL;
++   FILE  *outStr = NULL;
+    Int32 n, i;
+    struct MY_STAT statBuf;
+ 
+@@ -1313,8 +1368,8 @@ void compress ( Char *name )
+ static 
+ void uncompress ( Char *name )
+ {
+-   FILE  *inStr;
+-   FILE  *outStr;
++   FILE  *inStr = NULL;
++   FILE  *outStr = NULL;
+    Int32 n, i;
+    Bool  magicNumberOK;
+    Bool  cantGuess;
+@@ -1511,7 +1566,7 @@ void uncompress ( Char *name )
+ static 
+ void testf ( Char *name )
+ {
+-   FILE *inStr;
++   FILE *inStr = NULL;
+    Bool allOK;
+    struct MY_STAT statBuf;
+ 
+@@ -1803,6 +1858,7 @@ IntNative main ( IntNative argc, Char *argv[] )
+    deleteOutputOnInterrupt = False;
+    exitValue               = 0;
+    i = j = 0; /* avoid bogus warning from egcs-1.1.X */
++   showProgress            = False;
+ 
+    /*-- Set up signal handlers for mem access errors --*/
+    signal (SIGSEGV, mySIGSEGVorSIGBUScatcher);
+@@ -1880,6 +1936,7 @@ IntNative main ( IntNative argc, Char *argv[] )
+                case 'k': keepInputFiles   = True; break;
+                case 's': smallMode        = True; break;
+                case 'q': noisy            = False; break;
++               case 'p': showProgress     = True; break;
+                case '1': blockSize100k    = 1; break;
+                case '2': blockSize100k    = 2; break;
+                case '3': blockSize100k    = 3; break;
+@@ -1916,6 +1973,7 @@ IntNative main ( IntNative argc, Char *argv[] )
+       if (ISFLAG("--keep"))              keepInputFiles   = True;    else
+       if (ISFLAG("--small"))             smallMode        = True;    else
+       if (ISFLAG("--quiet"))             noisy            = False;   else
++      if (ISFLAG("--show-progress"))     showProgress     = True;    else
+       if (ISFLAG("--version"))           license();                  else
+       if (ISFLAG("--license"))           license();                  else
+       if (ISFLAG("--exponential"))       workFactor = 1;             else 
+diff --git bzip2-1.0.6/bzip2recover.c bzip2-1.0.6/bzip2recover.c
+index f9de049..db688c3 100644
+--- bzip2-1.0.6/bzip2recover.c
++++ bzip2-1.0.6/bzip2recover.c
+@@ -24,6 +24,8 @@
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <fcntl.h>
++#include <unistd.h>
+ 
+ 
+ /* This program records bit locations in the file to be recovered.
+@@ -269,6 +271,19 @@ static Bool endsInBz2 ( Char* name )
+        name[n-1] == '2');
+ }
+ 
++/*---------------------------------------------*/
++/* Open an output file safely with O_EXCL and good permissions */
++FILE* fopen_output( Char* name, const char* mode )
++{
++  FILE *fp;
++  int   fh;
++   
++  fh = open(name, O_WRONLY|O_CREAT|O_EXCL, 0600);
++  if (fh == -1) return NULL;
++  fp = fdopen(fh, mode);
++  if (fp == NULL) close(fh);
++  return fp;
++}
+ 
+ /*---------------------------------------------------*/
+ /*---                                             ---*/
+@@ -306,6 +321,7 @@ Int32 main ( Int32 argc, Char** argv )
+    Int32       b, wrBlock, currBlock, rbCtr;
+    MaybeUInt64 bitsRead;
+ 
++
+    UInt32      buffHi, buffLo, blockCRC;
+    Char*       p;
+ 
+@@ -486,7 +502,7 @@ Int32 main ( Int32 argc, Char** argv )
+          fprintf ( stderr, "   writing block %d to `%s' ...\n",
+                            wrBlock+1, outFileName );
+ 
+-         outFile = fopen ( outFileName, "wb" );
++         outFile = fopen_output ( outFileName, "wb" );
+          if (outFile == NULL) {
+             fprintf ( stderr, "%s: can't write `%s'\n",
+                       progName, outFileName );
+diff --git bzip2-1.0.6/bzlib.c bzip2-1.0.6/bzlib.c
+index bd358a7..6b84c93 100644
+--- bzip2-1.0.6/bzlib.c
++++ bzip2-1.0.6/bzlib.c
+@@ -1372,7 +1372,7 @@ const char * BZ_API(BZ2_bzlibVersion)(void)
+ #ifndef BZ_NO_STDIO
+ /*---------------------------------------------------*/
+ 
+-#if defined(_WIN32) || defined(OS2) || defined(MSDOS)
++#if defined(_WIN32) || defined(OS2) || defined(MSDOS) || defined(__CYGWIN__)
+ #   include <fcntl.h>
+ #   include <io.h>
+ #   define SET_BINARY_MODE(file) setmode(fileno(file),O_BINARY)
+diff --git bzip2-1.0.6/bzlib.h bzip2-1.0.6/bzlib.h
+index 8277123..96fa84f 100644
+--- bzip2-1.0.6/bzlib.h
++++ bzip2-1.0.6/bzlib.h
+@@ -75,21 +75,39 @@ typedef
+ #include <stdio.h>
+ #endif
+ 
+-#ifdef _WIN32
++#if defined(_WIN32) && !defined(__CYGWIN__)
+ #   include <windows.h>
+ #   ifdef small
+       /* windows.h define small to char */
+ #      undef small
+ #   endif
+-#   ifdef BZ_EXPORT
+-#   define BZ_API(func) WINAPI func
+-#   define BZ_EXTERN extern
++#   ifndef __GNUC__
++       /* Use these rules only for non-gcc native win32 */
++#      ifdef BZ_EXPORT
++#      define BZ_API(func) WINAPI func
++#      define BZ_EXTERN extern
++#      else
++       /* import windows dll dynamically */
++#      define BZ_API(func) (WINAPI * func)
++#      define BZ_EXTERN
++#      endif
+ #   else
+-   /* import windows dll dynamically */
+-#   define BZ_API(func) (WINAPI * func)
+-#   define BZ_EXTERN
++       /* For gcc on native win32, use import library trampoline       */
++       /* functions on DLL import.  This avoids requiring clients to   */
++       /* use special compilation flags depending on whether eventual  */
++       /* link will be against static libbz2 or against DLL, at the    */
++       /* expense of a small loss of efficiency. */
++
++       /* Because libbz2 does not export any DATA items, GNU ld's      */
++       /* "auto-import" is not a factor; the MinGW-built DLL can be    */
++       /* used by other compilers, provided an import library suitable */
++       /* for that compiler is (manually) constructed using the .def   */
++       /* file and the appropriate tool. */
++#      define BZ_API(func) func
++#      define BZ_EXTERN extern
+ #   endif
+ #else
++    /* non-win32 platforms, and cygwin */
+ #   define BZ_API(func) func
+ #   define BZ_EXTERN extern
+ #endif
+diff --git bzip2-1.0.6/bzmore bzip2-1.0.6/bzmore
+index d314043..f423ed9 100644
+--- bzip2-1.0.6/bzmore
++++ bzip2-1.0.6/bzmore
+@@ -24,10 +24,10 @@ else
+   # 'stty min 1' resets eof to ^a on both SunOS and SysV!
+   cb='min 1 -icanon'; ncb='icanon eof ^d'
+ fi
+-if test $? -eq 0 -a -n "$oldtty"; then
+-   trap 'stty $oldtty 2>/dev/null; exit' 0 2 3 5 10 13 15
++if test $? -eq 0 && test -n "$oldtty"; then
++   trap 'stty $oldtty 2>/dev/null; exit' 0 INT QUIT TRAP USR1 PIPE TERM
+ else
+-   trap 'stty $ncb echo 2>/dev/null; exit' 0 2 3 5 10 13 15
++   trap 'stty $ncb echo 2>/dev/null; exit' 0 INT QUIT TRAP USR1 PIPE TERM
+ fi
+ 
+ if test $# = 0; then
+@@ -46,7 +46,7 @@ else
+ 		ANS=`dd bs=1 count=1 2>/dev/null` 
+ 		stty $ncb echo 2>/dev/null
+ 		echo " "
+-		if test "$ANS" = 'e' -o "$ANS" = 'q'; then
++		if test "$ANS" = 'e' || test "$ANS" = 'q'; then
+ 			exit
+ 		fi
+ 	fi

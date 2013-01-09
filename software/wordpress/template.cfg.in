@@ -1,0 +1,70 @@
+[buildout]
+parts =
+  instance
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+versions = versions
+offline = true
+
+[layout]
+directory = $${buildout:directory}
+etc = $${:directory}/etc
+run = $${:directory}/etc/run
+service = $${:directory}/etc/service
+data = $${:directory}/etc/data
+logs = $${:directory}/etc/logs
+tmp = $${:directory}/tmp
+
+[apache-config]
+url = ${configure-files:location}/httpd.conf.in
+md5sum = 681f06c59e7bea33c77388bdd9b5ae41
+output = $${layout:etc}/httpd.conf
+mode = 0644
+httpd-base = ${apache:prefix}
+httpd-conf = $${:output}
+httpd-docs = $${layout:etc}/httpdocs
+httpd-port = 8080
+
+[php-config]
+url = ${configure-files:location}/php.ini.in
+output = $${layout:etc}/php.ini
+md5sum = 4282aa1bc6c6ee5946a5b28e0c8ffc9b
+mode = 0644
+
+[mariadb-config]
+url = ${configure-files:location}/my.cnf.in
+output = $${layout:etc}/my.cnf
+md5sum = b454574ddd51570520855107bfde2f22
+mode = 0644
+mysql-base = ${mariadb:prefix}
+mysql-conf = $${:output}
+mysql-datadir = $${layout:data}
+mysql-database = wordpress
+mysql-host = localhost
+mysql-port = 3306
+mysql-user = wordpress
+mysql-password = wordpress
+
+[application-config]
+url = ${configure-files:location}/wp-config.php.in
+md5sum = 18b0be76e4c81c7d83b03543a93c17a5
+output = $${apache-config:httpd-docs}/wp-config.php
+mode = 0644
+
+[instance]
+recipe = slapos.recipe.cmmi:my-php-application
+configure-parts = apache-config php-config mariadb-config application-config
+source = ${wordpress:location}
+install-parts = step-2
+
+[step-2]
+url = http://localhost:$${apache-config:httpd-port}/wp-admin/install.php?step=2
+weblog_title = Demo Wordpress in Windows SlapOS Node
+user_name = admin
+admin_password = admin
+admin_password2 = admin
+admin_email = admin@unknown.com
+
+[versions]
+zc.buildout = 1.6.0-dev-SlapOS-010

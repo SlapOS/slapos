@@ -1,0 +1,177 @@
+diff --git a/wp-includes/load.php b/wp-includes/load.php
+index 7e02620..3672aff 100644
+--- a/wp-includes/load.php
++++ b/wp-includes/load.php
+@@ -109,8 +109,8 @@ function wp_check_php_mysql_versions() {
+ 	}
+ 
+ 	if ( ! extension_loaded( 'mysql' ) && ! file_exists( WP_CONTENT_DIR . '/db.php' ) ) {
+-		wp_load_translations_early();
+-		die( __( 'Your PHP installation appears to be missing the MySQL extension which is required by WordPress.' ) );
++		// wp_load_translations_early();
++		// die( __( 'Your PHP installation appears to be missing the MySQL extension which is required by WordPress.' ) );
+ 	}
+ }
+ 
+diff --git a/wp-includes/wp-db.php b/wp-includes/wp-db.php
+index f418745..d2c2cfb 100644
+--- a/wp-includes/wp-db.php
++++ b/wp-includes/wp-db.php
+@@ -433,7 +433,7 @@ class wpdb {
+ 	var $collate;
+ 
+ 	/**
+-	 * Whether to use mysql_real_escape_string
++	 * Whether to use mysqli_real_escape_string
+ 	 *
+ 	 * @since 2.8.0
+ 	 * @access public
+@@ -540,7 +540,7 @@ class wpdb {
+ 	 *
+ 	 * @since 3.1.0
+ 	 *
+-	 * @param resource $dbh     The resource given by mysql_connect
++	 * @param resource $dbh     The resource given by mysqli_connect
+ 	 * @param string   $charset The character set (optional)
+ 	 * @param string   $collate The collation (optional)
+ 	 */
+@@ -550,15 +550,10 @@ class wpdb {
+ 		if ( !isset($collate) )
+ 			$collate = $this->collate;
+ 		if ( $this->has_cap( 'collation', $dbh ) && !empty( $charset ) ) {
+-			if ( function_exists( 'mysql_set_charset' ) && $this->has_cap( 'set_charset', $dbh ) ) {
+-				mysql_set_charset( $charset, $dbh );
+-				$this->real_escape = true;
+-			} else {
+-				$query = $this->prepare( 'SET NAMES %s', $charset );
+-				if ( ! empty( $collate ) )
+-					$query .= $this->prepare( ' COLLATE %s', $collate );
+-				mysql_query( $query, $dbh );
+-			}
++			$query = $this->prepare( 'SET NAMES %s', $charset );
++			if ( ! empty( $collate ) )
++				$query .= $this->prepare( ' COLLATE %s', $collate );
++			mysqli_query( $dbh, $query );		
+ 		}
+ 	}
+ 
+@@ -774,9 +769,9 @@ class wpdb {
+ 	}
+ 
+ 	/**
+-	 * Real escape, using mysql_real_escape_string() or addslashes()
++	 * Real escape, using mysqli_real_escape_string() or addslashes()
+ 	 *
+-	 * @see mysql_real_escape_string()
++	 * @see mysqli_real_escape_string()
+ 	 * @see addslashes()
+ 	 * @since 2.8.0
+ 	 * @access private
+@@ -786,7 +781,7 @@ class wpdb {
+ 	 */
+ 	function _real_escape( $string ) {
+ 		if ( $this->dbh && $this->real_escape )
+-			return mysql_real_escape_string( $string, $this->dbh );
++			return mysqli_real_escape_string( $this->dbh, $string );
+ 		else
+ 			return addslashes( $string );
+ 	}
+@@ -919,7 +914,7 @@ class wpdb {
+ 		global $EZSQL_ERROR;
+ 
+ 		if ( !$str )
+-			$str = mysql_error( $this->dbh );
++			$str = mysqli_error( $this->dbh );
+ 		$EZSQL_ERROR[] = array( 'query' => $this->last_query, 'error_str' => $str );
+ 
+ 		if ( $this->suppress_errors )
+@@ -1035,9 +1030,9 @@ class wpdb {
+ 		$this->is_mysql = true;
+ 
+ 		if ( WP_DEBUG ) {
+-			$this->dbh = mysql_connect( $this->dbhost, $this->dbuser, $this->dbpassword, true );
++			$this->dbh = mysqli_connect( $this->dbhost, $this->dbuser, $this->dbpassword, $this->dbname);
+ 		} else {
+-			$this->dbh = @mysql_connect( $this->dbhost, $this->dbuser, $this->dbpassword, true );
++			$this->dbh = @mysqli_connect( $this->dbhost, $this->dbuser, $this->dbpassword, $this->dbname);
+ 		}
+ 
+ 		if ( !$this->dbh ) {
+@@ -1059,8 +1054,6 @@ class wpdb {
+ 		$this->set_charset( $this->dbh );
+ 
+ 		$this->ready = true;
+-
+-		$this->select( $this->dbname, $this->dbh );
+ 	}
+ 
+ 	/**
+@@ -1092,14 +1085,14 @@ class wpdb {
+ 		if ( defined( 'SAVEQUERIES' ) && SAVEQUERIES )
+ 			$this->timer_start();
+ 
+-		$this->result = @mysql_query( $query, $this->dbh );
++		$this->result = @mysqli_query( $this->dbh, $query );
+ 		$this->num_queries++;
+ 
+ 		if ( defined( 'SAVEQUERIES' ) && SAVEQUERIES )
+ 			$this->queries[] = array( $query, $this->timer_stop(), $this->get_caller() );
+ 
+ 		// If there is an error then take note of it..
+-		if ( $this->last_error = mysql_error( $this->dbh ) ) {
++		if ( $this->last_error = mysqli_error( $this->dbh ) ) {
+ 			$this->print_error();
+ 			return false;
+ 		}
+@@ -1107,26 +1100,26 @@ class wpdb {
+ 		if ( preg_match( '/^\s*(create|alter|truncate|drop) /i', $query ) ) {
+ 			$return_val = $this->result;
+ 		} elseif ( preg_match( '/^\s*(insert|delete|update|replace) /i', $query ) ) {
+-			$this->rows_affected = mysql_affected_rows( $this->dbh );
++			$this->rows_affected = mysqli_affected_rows( $this->dbh );
+ 			// Take note of the insert_id
+ 			if ( preg_match( '/^\s*(insert|replace) /i', $query ) ) {
+-				$this->insert_id = mysql_insert_id($this->dbh);
++				$this->insert_id = mysqli_insert_id($this->dbh);
+ 			}
+ 			// Return number of rows affected
+ 			$return_val = $this->rows_affected;
+ 		} else {
+ 			$i = 0;
+-			while ( $i < @mysql_num_fields( $this->result ) ) {
+-				$this->col_info[$i] = @mysql_fetch_field( $this->result );
++			while ( $i < @mysqli_num_fields( $this->result ) ) {
++				$this->col_info[$i] = @mysqli_fetch_field( $this->result );
+ 				$i++;
+ 			}
+ 			$num_rows = 0;
+-			while ( $row = @mysql_fetch_object( $this->result ) ) {
++			while ( $row = @mysqli_fetch_object( $this->result ) ) {
+ 				$this->last_result[$num_rows] = $row;
+ 				$num_rows++;
+ 			}
+ 
+-			@mysql_free_result( $this->result );
++			@mysqli_free_result( $this->result );
+ 
+ 			// Log number of rows the query returned
+ 			// and return number of rows selected
+@@ -1537,8 +1530,8 @@ class wpdb {
+ 	function check_database_version() {
+ 		global $wp_version, $required_mysql_version;
+ 		// Make sure the server has the required MySQL version
+-		if ( version_compare($this->db_version(), $required_mysql_version, '<') )
+-			return new WP_Error('database_version', sprintf( __( '<strong>ERROR</strong>: WordPress %1$s requires MySQL %2$s or higher' ), $wp_version, $required_mysql_version ));
++		//if ( version_compare($this->db_version(), $required_mysql_version, '<') )
++		//	return new WP_Error('database_version', sprintf( __( '<strong>ERROR</strong>: WordPress %1$s requires MySQL %2$s or higher' ), $wp_version, $required_mysql_version ));
+ 	}
+ 
+ 	/**
+@@ -1600,6 +1593,6 @@ class wpdb {
+ 	 * @return false|string false on failure, version number on success
+ 	 */
+ 	function db_version() {
+-		return preg_replace( '/[^0-9.].*/', '', mysql_get_server_info( $this->dbh ) );
++		return preg_replace( '/[^0-9.].*/', '', mysqli_get_server_info( $this->dbh ) );
+ 	}
+ }

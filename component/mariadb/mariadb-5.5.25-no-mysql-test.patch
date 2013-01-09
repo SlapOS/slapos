@@ -1,0 +1,11 @@
+--- CMakeLists.txt~	2013-01-05 14:37:13.937500000 +0800
++++ CMakeLists.txt	2013-01-05 14:37:35.906250000 +0800
+@@ -312,8 +312,6 @@
+    ADD_SUBDIRECTORY(libmysqld/examples)
+   ENDIF(WITH_EMBEDDED_SERVER)
+ 
+-  ADD_SUBDIRECTORY(mysql-test)
+-  ADD_SUBDIRECTORY(mysql-test/lib/My/SafeProcess)
+   ADD_SUBDIRECTORY(support-files)
+   ADD_SUBDIRECTORY(scripts)
+   ADD_SUBDIRECTORY(sql-bench)

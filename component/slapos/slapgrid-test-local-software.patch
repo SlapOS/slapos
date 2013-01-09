@@ -1,0 +1,123 @@
+diff --git a/slapos/grid/slapgrid.py b/slapos/grid/slapgrid.py
+index 7d19da6..7c7df51 100644
+--- a/slapos/grid/slapgrid.py
++++ b/slapos/grid/slapgrid.py
+@@ -532,6 +532,32 @@ class Slapgrid(object):
+     self.checkEnvironmentAndCreateStructure()
+     logger = logging.getLogger('SoftwareReleases')
+     logger.info("Processing software releases...")
++    
++    if self.software_release_filter_list:
++      software_release_uri = self.software_release_filter_list[0]
++      url_hash = md5(software_release_uri).hexdigest()
++      software_path = os.path.join(self.software_root, url_hash)
++      software = Software(url=software_release_uri,
++              software_root=self.software_root,
++              buildout=self.buildout,
++              signature_private_key_file=self.signature_private_key_file,
++              signature_certificate_list=self.signature_certificate_list,
++              download_binary_cache_url=self.download_binary_cache_url,
++              upload_binary_cache_url=self.upload_binary_cache_url,
++              download_from_binary_cache_url_blacklist=\
++                  self.download_from_binary_cache_url_blacklist,
++              upload_to_binary_cache_url_blacklist=\
++                  self.upload_to_binary_cache_url_blacklist,
++              upload_cache_url=self.upload_cache_url,
++              download_binary_dir_url=self.download_binary_dir_url,
++              upload_binary_dir_url=self.upload_binary_dir_url,
++              upload_dir_url=self.upload_dir_url,
++              shacache_cert_file=self.shacache_cert_file,
++              shacache_key_file=self.shacache_key_file,
++              shadir_cert_file=self.shadir_cert_file,
++              shadir_key_file=self.shadir_key_file)
++      software.install()
++    
+     # Boolean to know if every instance has correctly been deployed
+     clean_run = True
+     for software_release in self.computer.getSoftwareReleaseList():
+@@ -659,7 +685,7 @@ class Slapgrid(object):
+         process_handler = subprocess.Popen(command,
+           preexec_fn=lambda: dropPrivileges(uid, gid),
+           cwd=cwd,
+-          env={}, **kw)
++          env=None, **kw)
+         process_handler.stdin.flush()
+         process_handler.stdin.close()
+         process_handler.stdin = None
+@@ -697,7 +723,7 @@ class Slapgrid(object):
+     # If so, if current partition not in this list, skip.
+     if len(self.computer_partition_filter_list) > 0 and \
+          (computer_partition_id not in self.computer_partition_filter_list):
+-      return
++      pass # return
+ 
+     logger.info('Processing Computer Partition %s...' % computer_partition_id)
+ 
+@@ -872,11 +898,40 @@ class Slapgrid(object):
+             exception)
+ 
+     return filtered_computer_partition_list
+-
++    
+   def processComputerPartitionList(self):
+     """
+     Will start supervisord and process each Computer Partition.
+     """
++    class PseudoComputerPartition(object):
++      def getId(self):
++        return "slappart0"
++      def getCertificate(self):
++        f = open("/etc/slapos/ssl/computer.key", "rb")
++        key = f.read()
++        f.close()
++        f = open("/etc/slapos/ssl/computer.crt", "rb")
++        crt = f.read()
++        f.close()
++        return { 'key' : key, 'certificate' : crt }
++      def getState(self):
++        return 'started'
++      def started(self):
++        print('instance started!')
++      def available(self):
++        print('instance available!')
++      def getSoftwareRelease(xself):
++        class SoftwareRelease(object):
++          def getURI(xself):
++            return self.computer_partition_filter_list[0]
++        return SoftwareRelease()
++      def getInstanceParameterDict(self):
++        return {'slap_software_type': 'default',
++                'ip_list' : [('ipv6', '2001:380:e0c:155:6046:52ec:32eb:7f96')],
++                }
++      def error(self, exception):
++        print(exception)
++
+     logger = logging.getLogger('ComputerPartitionProcessing')
+     logger.info('Processing computer partitions...')
+     # Prepares environment
+@@ -891,7 +946,8 @@ class Slapgrid(object):
+     # Filter all dummy / empty partitions
+     computer_partition_list = self.FilterComputerPartitionList(
+         self.getComputerPartitionList())
+-
++    if self.computer_partition_filter_list:
++      computer_partition_list = [PseudoComputerPartition()]
+     for computer_partition in computer_partition_list:
+       # Nothing should raise outside of the current loop iteration, so that
+       # even if something is terribly wrong while processing an instance, it
+@@ -1213,12 +1269,13 @@ class Slapgrid(object):
+         computer_partition.error(issue)
+         report_usage_issue_cp_list.append(computer_partition_id)    
+     for computer_partition in computer_partition_list: 
++      break 
+       if computer_partition.getState() == COMPUTER_PARTITION_DESTROYED_STATE:
+         try:
+           computer_partition_id = computer_partition.getId()
+           try:
+-             software_url = computer_partition.getSoftwareRelease().getURI()
+-             software_path = os.path.join(self.software_root,
++            software_url = computer_partition.getSoftwareRelease().getURI()
++            software_path = os.path.join(self.software_root,
+                  getSoftwareUrlHash(software_url))
+           except (NotFoundError, TypeError):
+             software_url = None
