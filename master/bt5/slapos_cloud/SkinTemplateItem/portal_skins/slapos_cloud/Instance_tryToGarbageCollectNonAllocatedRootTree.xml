@@ -98,6 +98,7 @@ hosting_subscription.requestDestroy(\n
   state=\'destroyed\',\n
   comment="Garbage collect %s not allocated for more than 1 week" % instance.getRelativeUrl(),\n
 )\n
+hosting_subscription.archive()\n
 
 
 ]]></string> </value>

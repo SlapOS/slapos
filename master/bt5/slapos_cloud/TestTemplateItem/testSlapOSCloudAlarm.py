@@ -1447,6 +1447,7 @@ class TestSlapOSGarbageCollectNonAllocatedRootTreeAlarm(testSlapOSMixin):
 
     instance.Instance_tryToGarbageCollectNonAllocatedRootTree()
     self.assertEqual('destroy_requested', hosting_subscription.getSlapState())
+    self.assertEqual('archived', hosting_subscription.getValidationState())
 
   def _simulateInstance_tryToGarbageCollectNonAllocatedRootTree(self):
     script_name = 'Instance_tryToGarbageCollectNonAllocatedRootTree'
