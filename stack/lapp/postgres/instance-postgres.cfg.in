@@ -120,10 +120,10 @@ rotate-num = 30
 notifempty = true
 create = true
 
+
 #----------------
 #--
 #-- Deploy stunnel.
-#-- XXX This is actually not needed with Postgres.
 
 [stunnel]
 recipe = slapos.cookbook:stunnel
@@ -165,6 +165,7 @@ certs = $${directory:ca-dir}/certs/
 newcerts = $${directory:ca-dir}/newcerts/
 crl = $${directory:ca-dir}/crl/
 
+
 #----------------
 #--
 #-- Creates a Postgres cluster, configuration files, and a database.
@@ -191,6 +192,7 @@ executable = $${stunnel:wrapper}
 wrapper = $${basedirectory:services}/stunnel
 key-file = $${stunnel:key-file}
 cert-file = $${stunnel:cert-file}
+
 
 #----------------
 #--
@@ -239,6 +241,7 @@ port = $${postgres-instance:port}
 recipe = slapos.cookbook:publish
 url = $${postgres-instance:url}
 ip = $${instance-parameters:ipv6_random}
+
 
 #----------------
 #--

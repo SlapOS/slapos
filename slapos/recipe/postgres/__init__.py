@@ -84,8 +84,7 @@ class Recipe(GenericBaseRecipe):
         A Postgres cluster is "a collection of databases that is managed
         by a single instance of a running database server".
 
-        Here we create an empty cluster. The authentication for this
-        command is through the unix socket.
+        Here we create an empty cluster.
         """
         initdb_binary = os.path.join(self.options['bin'], 'initdb')
         self.check_exists(initdb_binary)
@@ -97,6 +96,7 @@ class Recipe(GenericBaseRecipe):
                                    '-D', pgdata,
                                    '-A', 'ident',
                                    '-E', 'UTF8',
+                                   '-U', self.options['user'],
                                    ])
         except subprocess.CalledProcessError:
             raise UserError('Could not create cluster directory in %s' % pgdata)
@@ -155,7 +155,8 @@ class Recipe(GenericBaseRecipe):
 
     def createSuperuser(self):
         """\
-        Creates a Postgres superuser - other than "slapuser#" for use by the application.
+        Set a password for the Postgres superuser.
+        The application will also use this for its connections.
         """
 
         # http://postgresql.1045698.n5.nabble.com/Algorithm-for-generating-md5-encrypted-password-not-found-in-documentation-td4919082.html
@@ -166,7 +167,7 @@ class Recipe(GenericBaseRecipe):
         # encrypt the password to avoid storing in the logs
         enc_password = 'md5' + md5.md5(password+user).hexdigest()
 
-        self.runPostgresCommand(cmd="""CREATE USER "%s" ENCRYPTED PASSWORD '%s' SUPERUSER""" % (user, enc_password))
+        self.runPostgresCommand(cmd="""ALTER USER "%s" ENCRYPTED PASSWORD '%s'""" % (user, enc_password))
 
 
     def runPostgresCommand(self, cmd):

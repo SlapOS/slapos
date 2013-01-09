@@ -22,12 +22,6 @@ promises = $${directories:etc}/promise
 var = $${buildout:directory}/var
 
 
-[symlinks]
-recipe = cns.recipe.symlink
-symlink_target = $${directories:bin}
-symlink_base = ${postgresql:location}/bin
-
-
 #----------------
 #--
 #-- Creates a Postgres cluster, configuration files, and a database.
@@ -39,13 +33,23 @@ recipe = slapos.cookbook:postgres
 ipv6 = $${instance-parameters:ipv6}
 ipv4 = $${instance-parameters:ipv4}
 ipv6_random = $${instance-parameters:ipv6_random}
-user = user
+user = postgres
 port = 5432
 dbname = db
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${directories:var}/data
 bin = $${directories:bin}
 services = $${directories:services}
+
+
+#----------------
+#--
+#-- Creates symlinks from the instance to the software release.
+
+[symlinks]
+recipe = cns.recipe.symlink
+symlink_target = $${directories:bin}
+symlink_base = ${postgresql:location}/bin
 
 
 #----------------
@@ -73,7 +77,6 @@ url = $${postgres-instance:url}
 #-- Fetches parameters defined in SlapOS Master for this instance
 
 [instance-parameters]
-# Fetches parameters defined in SlapOS Master for this instance
 recipe = slapos.cookbook:slapconfiguration
 computer = $${slap-connection:computer-id}
 partition = $${slap-connection:partition-id}
