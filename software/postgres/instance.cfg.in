@@ -3,6 +3,7 @@ parts =
   symlinks
   publish
   postgres-instance
+  postgres-promise
 
 
 # Define egg directories to be the one from Software Release
@@ -12,22 +13,12 @@ develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
 
-[instance-parameters]
-# Fetches parameters defined in SlapOS Master for this instance
-recipe = slapos.cookbook:slapconfiguration
-computer = $${slap-connection:computer-id}
-partition = $${slap-connection:partition-id}
-url = $${slap-connection:server-url}
-key = $${slap-connection:key-file}
-cert = $${slap-connection:cert-file}
-
-
 [directories]
 recipe = slapos.cookbook:mkdirectory
 bin = $${buildout:directory}/bin
 etc = $${buildout:directory}/etc
-services = $${directories:etc}/run/
-promises = $${directories:etc}/promise/
+services = $${directories:etc}/service
+promises = $${directories:etc}/promise
 var = $${buildout:directory}/var
 
 
@@ -37,8 +28,11 @@ symlink_target = $${directories:bin}
 symlink_base = ${postgresql:location}/bin
 
 
+#----------------
+#--
+#-- Creates a Postgres cluster, configuration files, and a database.
+
 [postgres-instance]
-# create cluster, configuration files and a database
 recipe = slapos.cookbook:postgres
 
 # Options
@@ -54,17 +48,36 @@ bin = $${directories:bin}
 services = $${directories:services}
 
 
+#----------------
+#--
+#-- Deploy promise scripts.
+
+[postgres-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directories:promises}/postgres
+hostname = $${instance-parameters:ipv6_random}
+port = $${postgres-instance:port}
+
+
+#----------------
+#--
+#-- Publish instance parameters.
+
 [publish]
-recipe = slapos.cookbook:publishurl
+recipe = slapos.cookbook:publish
 url = $${postgres-instance:url}
 
 
-[slap-connection]
-# part to migrate to new - separated words
-computer-id = $${slap_connection:computer_id}
-partition-id = $${slap_connection:partition_id}
-server-url = $${slap_connection:server_url}
-software-release-url = $${slap_connection:software_release_url}
-key-file = $${slap_connection:key_file}
-cert-file = $${slap_connection:cert_file}
+#----------------
+#--
+#-- Fetches parameters defined in SlapOS Master for this instance
+
+[instance-parameters]
+# Fetches parameters defined in SlapOS Master for this instance
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
 
