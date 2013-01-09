@@ -408,12 +408,16 @@ class InstancePublisher(GenericPublisher):
           portal_type="Person")
       else:
         raise NotImplementedError, "Can not get Person document"
-      result = user.Person_findPartition(
-        self.jbody['software_release'],
-        self.jbody['software_type'],
-        ('Software Instance', 'Slave Instance')[int(self.jbody['slave'])],
-        self.jbody['sla'],
-        test_mode=True)
+      result = user.Person_restrictMethodAsShadowUser(
+        shadow_document=user,
+        callable_object=user.Person_findPartition,
+        argument_list=[
+          self.jbody['software_release'],
+          self.jbody['software_type'],
+          ('Software Instance', 'Slave Instance')[int(self.jbody['slave'])],
+          self.jbody['sla']],
+        argument_dict={
+          'test_mode': True})
     except Exception:
       transaction.abort()
       LOG('SlapOSRestApiV1', ERROR,
