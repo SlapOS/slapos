@@ -1673,3 +1673,139 @@ class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(
   script = 'Delivery_stopConfirmedAggregatedSaleInvoiceTransaction'
   portal_type = 'Sale Invoice Transaction'
   alarm = 'slapos_stop_confirmed_aggregated_sale_invoice_transaction'
+
+class TestSlapOSUpdateOpenSaleOrderPeriod(testSlapOSMixin):
+
+  def createOpenOrder(self):
+    open_order = self.portal.open_sale_order_module\
+        .template_open_sale_order.Base_createCloneDocument(batch_mode=1)
+    open_order.edit(
+        title=self.generateNewSoftwareTitle(),
+        reference="TESTHS-%s" % self.generateNewId(),
+    )
+    open_order.order()
+    open_order.validate()
+    return open_order
+
+  def test_updatePeriod_REQUEST_disallowed(self):
+    self.assertRaises(
+      Unauthorized,
+      self.portal.OpenSaleOrder_updatePeriod,
+      REQUEST={})
+
+  def _simulatePerson_storeOpenSaleOrderJournal(self):
+    script_name = 'Person_storeOpenSaleOrderJournal'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by Person_storeOpenSaleOrderJournal') """ )
+    transaction.commit()
+
+  def _dropPerson_storeOpenSaleOrderJournal(self):
+    script_name = 'Person_storeOpenSaleOrderJournal'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_updatePeriod_no_person(self):
+    open_order = self.createOpenOrder()
+    open_order.OpenSaleOrder_updatePeriod()
+
+  def test_updatePeriod_validated(self):
+    open_order = self.createOpenOrder()
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    open_order.edit(
+      destination_decision_value=person,
+    )
+
+    self._simulatePerson_storeOpenSaleOrderJournal()
+    try:
+      open_order.OpenSaleOrder_updatePeriod()
+    finally:
+      self._dropPerson_storeOpenSaleOrderJournal()
+    self.assertEqual(
+        'Visited by Person_storeOpenSaleOrderJournal',
+        person.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_updatePeriod_invalidated(self):
+    open_order = self.createOpenOrder()
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    open_order.edit(
+      destination_decision_value=person,
+    )
+    open_order.invalidate()
+
+    self._simulatePerson_storeOpenSaleOrderJournal()
+    try:
+      open_order.OpenSaleOrder_updatePeriod()
+    finally:
+      self._dropPerson_storeOpenSaleOrderJournal()
+    self.assertNotEqual(
+        'Visited by Person_storeOpenSaleOrderJournal',
+        person.workflow_history['edit_workflow'][-1]['comment'])
+
+  def _simulateOpenSaleOrder_updatePeriod(self):
+    script_name = 'OpenSaleOrder_updatePeriod'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by OpenSaleOrder_updatePeriod') """ )
+    transaction.commit()
+
+  def _dropOpenSaleOrder_updatePeriod(self):
+    script_name = 'OpenSaleOrder_updatePeriod'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm(self):
+    open_order = self.createOpenOrder()
+    open_order.newContent(portal_type="Open Sale Order Line")
+    self.tic()
+    self._simulateOpenSaleOrder_updatePeriod()
+    try:
+      self.portal.portal_alarms.slapos_update_open_sale_order_period.activeSense()
+      self.tic()
+    finally:
+      self._dropOpenSaleOrder_updatePeriod()
+    self.assertEqual(
+        'Visited by OpenSaleOrder_updatePeriod',
+        open_order.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_invalidated(self):
+    open_order = self.createOpenOrder()
+    open_order.newContent(portal_type="Open Sale Order Line")
+    open_order.invalidate()
+    self.tic()
+    self._simulateOpenSaleOrder_updatePeriod()
+    try:
+      self.portal.portal_alarms.slapos_update_open_sale_order_period.activeSense()
+      self.tic()
+    finally:
+      self._dropOpenSaleOrder_updatePeriod()
+    self.assertNotEqual(
+        'Visited by OpenSaleOrder_updatePeriod',
+        open_order.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_no_line(self):
+    open_order = self.createOpenOrder()
+    self.tic()
+    self._simulateOpenSaleOrder_updatePeriod()
+    try:
+      self.portal.portal_alarms.slapos_update_open_sale_order_period.activeSense()
+      self.tic()
+    finally:
+      self._dropOpenSaleOrder_updatePeriod()
+    self.assertNotEqual(
+        'Visited by OpenSaleOrder_updatePeriod',
+        open_order.workflow_history['edit_workflow'][-1]['comment'])
