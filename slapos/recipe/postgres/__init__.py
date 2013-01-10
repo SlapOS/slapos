@@ -43,15 +43,35 @@ class Recipe(GenericBaseRecipe):
         - configuration to allow connections from IPv4, IPv6 or unix socket.
         - a superuser with provided name and generated password
         - a database with provided name
-        - a foreground start script in the services directory
+        - a start script in the services directory
 
-    then adds the connection URL to the options.
-    The URL can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
+    Required options:
+        bin
+            path to the 'initdb' and 'postgres' binaries.
+        dbname
+            name of the database to be used by the application.
+        ipv4
+            set of ipv4 to listen on.
+        ipv6
+            set of ipv6 to listen on.
+        pgdata-directory
+            path to postgres configuration and data.
+        services
+            must be ${buildout:directory}/etc/service.
+        superuser
+            name of the superuser to create.
+
+    Exposed options:
+        password
+            generated password for the superuser.
+        url
+            generated DBAPI connection string.
+            it can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
     """
 
     def _options(self, options):
         options['password'] = self.generatePassword()
-        options['url'] = 'postgresql://%(user)s:%(password)s@[%(ipv6_random)s]:%(port)s/%(dbname)s' % options
+        options['url'] = 'postgresql://%(superuser)s:%(password)s@[%(ipv6_random)s]:%(port)s/%(dbname)s' % options
 
 
     def install(self):
@@ -63,7 +83,7 @@ class Recipe(GenericBaseRecipe):
             self.createCluster()
             self.createConfig()
             self.createDatabase()
-            self.createSuperuser()
+            self.updateSuperuser()
             self.createRunScript()
 
         # install() methods usually return the pathnames of managed files.
@@ -96,7 +116,7 @@ class Recipe(GenericBaseRecipe):
                                    '-D', pgdata,
                                    '-A', 'ident',
                                    '-E', 'UTF8',
-                                   '-U', self.options['user'],
+                                   '-U', self.options['superuser'],
                                    ])
         except subprocess.CalledProcessError:
             raise UserError('Could not create cluster directory in %s' % pgdata)
@@ -129,7 +149,7 @@ class Recipe(GenericBaseRecipe):
                         )))
 
         with open(os.path.join(pgdata, 'pg_hba.conf'), 'wb') as cfg:
-            # see http://www.postgresql.org/docs/9.1/static/auth-pg-hba-conf.html
+            # see http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html
 
             cfg_lines = [
                 '# TYPE  DATABASE        USER            ADDRESS                 METHOD',
@@ -153,15 +173,15 @@ class Recipe(GenericBaseRecipe):
         self.runPostgresCommand(cmd='CREATE DATABASE "%s"' % self.options['dbname'])
 
 
-    def createSuperuser(self):
+    def updateSuperuser(self):
         """\
-        Set a password for the Postgres superuser.
-        The application will also use this for its connections.
+        Set a password for the cluster administrator.
+        The application will also use it for its connections.
         """
 
         # http://postgresql.1045698.n5.nabble.com/Algorithm-for-generating-md5-encrypted-password-not-found-in-documentation-td4919082.html
 
-        user = self.options['user']
+        user = self.options['superuser']
         password = self.options['password']
 
         # encrypt the password to avoid storing in the logs
@@ -210,6 +230,21 @@ class Recipe(GenericBaseRecipe):
 
 
 class ExportRecipe(GenericBaseRecipe):
+    """\
+    This recipe creates an exporter script for using with the resilient stack.
+
+    Required options:
+        backup-directory
+            folder that will contain the dump file.
+        bin
+            path to the 'pg_dump' binary.
+        dbname
+            name of the database to dump.
+        pgdata-directory
+            path to postgres configuration and data.
+        wrapper
+            full path of the exporter script to create.
+    """
 
     def install(self):
         wrapper = self.options['wrapper']
@@ -235,6 +270,21 @@ class ExportRecipe(GenericBaseRecipe):
 
 
 class ImportRecipe(GenericBaseRecipe):
+    """\
+    This recipe creates an importer script for using with the resilient stack.
+
+    Required options:
+        backup-directory
+            folder that contains the dump file.
+        bin
+            path to the 'pg_restore' binary.
+        dbname
+            name of the database to restore.
+        pgdata-directory
+            path to postgres configuration and data.
+        wrapper
+            full path of the importer script to create.
+    """
 
     def install(self):
         wrapper = self.options['wrapper']
