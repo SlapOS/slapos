@@ -47,12 +47,6 @@ class Recipe(GenericBaseRecipe):
     if os.path.isfile(filepath):
       os.remove(filepath)
 
-  def install(self):
-    self.instantiate(True)
-
-  def update(self):
-    self.instantiate(False)
-
   def rsync_dir(self, src, target):
     if os.path.isdir(src) and not src.endswith('/'):
       src += '/'
@@ -62,7 +56,10 @@ class Recipe(GenericBaseRecipe):
     cmd.communicate()
     
 
-  def instantiate(self, isNewInstall):
+  # Even if there is a dedicated update(), this is still called sometimes.
+  # So better not trust that and decide for ourselves.
+  def install(self):
+    self.options['admin_password'] = 'test_for_programmatic_setting'
     # Copy the build/ and var/lib/Mioga2 folders into the instance
     mioga_location = self.options['mioga_location']
 
@@ -78,7 +75,7 @@ class Recipe(GenericBaseRecipe):
     vardir = self.options['var_directory']
     mioga_base = os.path.join(vardir, 'lib', 'Mioga2')
     fm = FileModifier('conf/Config.xml')
-    fm.modifyParameter('init_sql', 'yes' if isNewInstall else 'no')
+    fm.modifyParameter('init_sql', 'no') # force_init_sql is set manually everywhere
     fm.modifyParameter('install_dir', mioga_base)
     fm.modifyParameter('tmp_dir', os.path.join(mioga_base, 'tmp'))
     fm.modifyParameter('search_tmp_dir', os.path.join(mioga_base, 'mioga_search'))

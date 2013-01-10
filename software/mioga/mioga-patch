@@ -159,7 +159,7 @@ index efd1ca2..fc5ba67 100755
      fcntl(FIFO, F_SETFL, $flags);
  }
 diff --git a/conf/Config.xml b/conf/Config.xml
-index e614cda..3dcccf5 100644
+index e614cda..3a9b7e3 100644
 --- a/conf/Config.xml
 +++ b/conf/Config.xml
 @@ -3,6 +3,9 @@
@@ -192,6 +192,23 @@ index e614cda..3dcccf5 100644
        <parameter name="db_name" question=" Name of Mioga database ?" 
                   type="text" default="mioga2"
                   xpath="/database/DBname"/>              
+@@ -462,7 +475,6 @@
+ 	<app ident="Portal" package="Mioga2::Portal"/>
+   	<app ident="Search" package="Mioga2::Search"/>
+     <app ident="Magellan" package="Mioga2::Magellan"/>
+-    <app ident="Mermoz" package="Mioga2::Mermoz"/>
+     <app ident="RSS" package="Mioga2::RSS"/>
+     <app ident="Narkissos" package="Mioga2::Narkissos"/>
+     <app ident="Colbert" package="Mioga2::Colbert"/>
+@@ -476,7 +488,7 @@
+   	<mioglet ident="Workspace" package="Mioga2::Portal::WSMioglet"/>
+   	<mioglet ident="Organizer" package="Mioga2::Portal::OrgMioglet"/>
+   	<mioglet ident="News" package="Mioga2::Portal::NewsMioglet"/>
+-  	<mioglet ident="File" package="Mioga2::Portal::FileMioglet"/>
++  	<mioglet ident="File" package="Miorouga2::Portal::FileMioglet"/>
+   	<mioglet ident="Articles" package="Mioga2::Portal::ArticlesMioglet"/>
+     <mioglet ident="Poll" package="Mioga2::Portal::PollMioglet"/>
+ 	<mioglet ident="Search" package="Mioga2::Portal::SearchMioglet"/>
 diff --git a/lib/Mioga2/Bottin.pm b/lib/Mioga2/Bottin.pm
 index ba4cd8d..0db5651 100644
 --- a/lib/Mioga2/Bottin.pm
@@ -537,16 +554,15 @@ index 0870174..bbcc80a 100644
  	foreach my $dep (@{$self->{CONFIG}->{dependencies}->[0]->{clib}}) {
  		my $version;
 diff --git a/sql/Makefile b/sql/Makefile
-index 07b26f5..63b7d0c 100644
+index 07b26f5..3d79b1b 100644
 --- a/sql/Makefile
 +++ b/sql/Makefile
-@@ -15,19 +15,22 @@ install:
+@@ -15,19 +15,21 @@ install:
  	cp upgradeMiogletDesc.pl $(DESTDIR)$(INSTALL_DIR)/conf/Config.hook.d
  	chmod a+x $(DESTDIR)$(INSTALL_DIR)/conf/Config.hook.d/upgradeMiogletDesc.pl
  
 -	if [ $(INIT_SQL) = 'yes' ] ; \
 +	DB_STATE=`perl -w testdb.pl`; \
-+	echo "VHH DEBUG: Makefile got DB_STATE '$$DB_STATE'"; \
 +	if [ "$$DB_STATE" = "nodb" -o "$$DB_STATE" = "empty" ] ; \
  	then \
  		echo "Initialize database"; \
@@ -598,10 +614,10 @@ index b7d8cc2..88d5e2d 100644
  -- Add referencial integrity on default_profile_id in m_group_base
 diff --git a/sql/testdb.pl b/sql/testdb.pl
 new file mode 100755
-index 0000000..cfbff33
+index 0000000..1952891
 --- /dev/null
 +++ b/sql/testdb.pl
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,64 @@
 +#!/usr/bin/perl -w
 +
 +# Tests the availability of the Mioga2 database.
@@ -628,19 +644,13 @@ index 0000000..cfbff33
 +# my $configxml = "../conf/Config.xml";
 +my $miogaconf = "../web/conf/Mioga.conf";
 +
-+print STDERR "VHH DEBUG: Starting testdb.pl\n";
 +my $result = 'undefined';
 +try {
-+    print STDERR "VHH DEBUG: creating MiogaConf object...\n";
 +    my $config = new Mioga2::MiogaConf($miogaconf);
-+    print STDERR "VHH DEBUG: created MiogaConf\n";
 +    my $dbh = $config->GetDBH();
-+    print STDERR "VHH DEBUG: got dbh\n";
 +    my $sql = 'SELECT COUNT(*) FROM m_mioga';
 +    my $sth = $dbh->prepare($sql);
-+    print STDERR "VHH DEBUG: prepared statement\n";
 +    my $exec_result = $sth->execute();
-+    print STDERR "VHH DEBUG: executed statement\n";
 +    if (not defined($exec_result)) {
 +        throw Mioga2::Exception::DB("testdb.pl 0", $sth->err, $sth->errstr, $sql);
 +    }
@@ -649,7 +659,6 @@ index 0000000..cfbff33
 +        throw Mioga2::Exception::DB("testdb.pl 1", $sth->err, $sth->errstr, $sql);
 +    }
 +    my $count = $res->[0];
-+    print STDERR "VHH DEBUG: got count\n";
 +    if (not defined($count)) {
 +        throw Mioga2::Exception::DB("testdb.pl 2", $sth->err, $sth->errstr, $sql);
 +    } elsif ($count == 0) {
@@ -660,8 +669,6 @@ index 0000000..cfbff33
 +} catch Mioga2::Exception::DB with {
 +    my $err = shift;
 +    my $errstr = $err->getDBerrstr();
-+    print STDERR "VHH DEBUG: got exception...\n";
-+    print STDERR "VHH DEBUG: got error string: ".$err->as_string()."\n";
 +    if ($errstr =~ m#database "mioga2" does not exist#) {
 +        $result = 'nodb';
 +    } elsif ($errstr =~ m#relation "m_mioga" does not exist#) {
@@ -671,12 +678,23 @@ index 0000000..cfbff33
 +    }
 +} otherwise {
 +    my $err = shift;
-+    print STDERR "VHH DEBUG: got other exception: $err\n";
 +    $result = 'noserver';
 +};
 +
 +print $result;
-+print STDERR "VHH DEBUG: result = ".$result."\n";
+diff --git a/sql/updatedb.pl b/sql/updatedb.pl
+index 67921e7..bb4db1a 100644
+--- a/sql/updatedb.pl
++++ b/sql/updatedb.pl
+@@ -25,7 +25,7 @@ foreach my $var qw(configxml miogaconf timezonexml dir) {
+ 
+ my $config = new Mioga2::MiogaConf($miogaconf);
+ 
+-my $conf = new MiogaConf( dir => $dir, config => $configxml);
++my $conf = new MiogaConf( dir => $dir, config => $configxml, force_init_sql => 0);
+ $conf->Install($config);
+ 
+ 
 diff --git a/web/Makefile b/web/Makefile
 index 66af45f..9649a02 100644
 --- a/web/Makefile
@@ -734,3 +752,271 @@ index e604e7d..fbaad2d 100644
  
  clean:
  	rm -rf $(SUBDIRS)
+diff --git a/web/skel/src/en_US/group/50-standard.xml b/web/skel/src/en_US/group/50-standard.xml
+index 6cf89e5..e1ef140 100644
+--- a/web/skel/src/en_US/group/50-standard.xml
++++ b/web/skel/src/en_US/group/50-standard.xml
+@@ -12,7 +12,6 @@
+ 	<applications>
+ 		<application ident="AnimGroup" active="1"/>
+ 		<application ident="Magellan" active="1"/>
+-		<application ident="Mermoz" active="1"/>
+ 		<application ident="Organizer"/>
+ 		<application ident="Contact"/>
+ 		<application ident="Tasks"/>
+@@ -38,9 +37,6 @@
+ 			<application ident="Magellan">
+ 				<all_functions/>
+ 			</application>
+-			<application ident="Mermoz">
+-				<all_functions/>
+-			</application>
+ 			<application ident="Portal">
+ 				<all_functions/>
+ 			</application>
+@@ -53,10 +49,6 @@
+ 			<application ident="Magellan">	
+ 				<function>Read</function>
+ 			</application>
+-			<application ident="Mermoz">	
+-				<function>Base</function>
+-				<function>Standard</function>
+-			</application>
+ 			<application ident="Portal">
+ 				<function>Portal</function>
+ 			</application>
+@@ -69,9 +61,6 @@
+ 			<application ident="Magellan">	
+ 				<function>Read</function>
+ 			</application>
+-			<application ident="Mermoz">	
+-				<function>Base</function>
+-			</application>
+ 			<application ident="Portal">
+ 				<function>Portal</function>
+ 			</application>
+diff --git a/web/skel/src/en_US/group/60-admin.xml b/web/skel/src/en_US/group/60-admin.xml
+index c73b700..d3f368b 100644
+--- a/web/skel/src/en_US/group/60-admin.xml
++++ b/web/skel/src/en_US/group/60-admin.xml
+@@ -12,7 +12,6 @@
+ 	<applications>
+ 		<application ident="AnimGroup" active="1"/>
+ 		<application ident="Magellan" active="1"/>
+-		<application ident="Mermoz" active="1"/>
+ 		<application ident="Colbert" active="1"/>
+ 		<application ident="Organizer"/>
+ 		<application ident="Contact"/>
+@@ -39,9 +38,6 @@
+ 			<application ident="Magellan">
+ 				<all_functions/>
+ 			</application>
+-			<application ident="Mermoz">
+-				<all_functions/>
+-			</application>
+ 			<application ident="Colbert">
+ 				<all_functions/>
+ 			</application>
+@@ -57,10 +53,6 @@
+ 			<application ident="Magellan">	
+ 				<function>Read</function>
+ 			</application>
+-			<application ident="Mermoz">	
+-				<function>Base</function>
+-				<function>Standard</function>
+-			</application>
+ 			<application ident="Colbert">
+ 				<function>UsersWrite</function>
+ 				<function>GroupsWrite</function>
+@@ -79,9 +71,6 @@
+ 			<application ident="Magellan">	
+ 				<function>Read</function>
+ 			</application>
+-			<application ident="Mermoz">	
+-				<function>Base</function>
+-			</application>
+ 			<application ident="Colbert">
+ 				<function>UsersRead</function>
+ 				<function>GroupsRead</function>
+diff --git a/web/skel/src/en_US/instance/50-standard.xml b/web/skel/src/en_US/instance/50-standard.xml
+index cdb1e88..82a125b 100644
+--- a/web/skel/src/en_US/instance/50-standard.xml
++++ b/web/skel/src/en_US/instance/50-standard.xml
+@@ -102,10 +102,6 @@
+ 		</application>
+ 		<application ident="MailingList">
+ 		</application>
+-		<application ident="Mermoz">
+-			<all_users/>
+-			<all_groups/>
+-		</application>
+ 		<application ident="Narkissos">
+ 			<all_users/>
+ 		</application>
+diff --git a/web/skel/src/en_US/user/50-standard.xml b/web/skel/src/en_US/user/50-standard.xml
+index c8983bb..256400d 100644
+--- a/web/skel/src/en_US/user/50-standard.xml
++++ b/web/skel/src/en_US/user/50-standard.xml
+@@ -92,7 +92,6 @@
+ 		<application ident="FileBrowser"/>
+ 		<application ident="Portal"/>
+ 		<application ident="Search" active="1"/>
+-		<application ident="Mermoz"/>
+ 		<application ident="RSS" active="1"/>
+ 	</applications>
+ 
+diff --git a/web/skel/src/en_US/user/60-admin.xml b/web/skel/src/en_US/user/60-admin.xml
+index 9083b6f..e246d19 100644
+--- a/web/skel/src/en_US/user/60-admin.xml
++++ b/web/skel/src/en_US/user/60-admin.xml
+@@ -101,7 +101,6 @@
+ 		<application ident="FileBrowser"/>
+ 		<application ident="Portal"/>
+ 		<application ident="Search" active="1"/>
+-		<application ident="Mermoz"/>
+ 		<application ident="RSS" active="1"/>
+ 	</applications>
+ 
+diff --git a/web/skel/src/fr_FR/group/50-standard.xml b/web/skel/src/fr_FR/group/50-standard.xml
+index 954f71d..dfc79b1 100644
+--- a/web/skel/src/fr_FR/group/50-standard.xml
++++ b/web/skel/src/fr_FR/group/50-standard.xml
+@@ -35,9 +35,6 @@
+ 		<!-- Le navigateur de fichiers est accessible et actif. -->
+ 		<application ident="Magellan" active="1"/>
+ 
+-		<!-- L'application de rédaction d'e-mails est accessible et active. -->
+-		<application ident="Mermoz" active="1"/>
+-
+ 		<!-- Le portail est accessible et actif. -->
+ 		<application ident="Portal" active="1"/>
+ 
+@@ -77,11 +74,6 @@
+ 				<all_functions/>
+ 			</application>
+ 
+-			<!-- Le profil "Animation" donne accès à toutes les fonctions de l'application Mermoz d'envoi d'e-mail. -->
+-			<application ident="Mermoz">
+-				<all_functions/>
+-			</application>
+-
+ 			<!-- Le profil "Animation" donne accès à toutes les fonctions du portail de groupe. -->
+ 			<application ident="Portal">
+ 				<all_functions/>
+@@ -102,12 +94,6 @@
+ 				<function>Read</function>
+ 			</application>
+ 
+-			<!-- Le profil "Membre" donne accès uniquement à l'envoi d'e-mail au groupe ou indépendamment aux différentes équipes du groupe via l'application d'envoi d'e-mail Mermoz. -->
+-			<application ident="Mermoz">	
+-				<function>Base</function>
+-				<function>Standard</function>
+-			</application>
+-
+ 			<!-- Le profil "Membre" donne accès uniquement à la consultation du portail de groupe. -->
+ 			<application ident="Portal">
+ 				<function>Portal</function>
+@@ -128,11 +114,6 @@
+ 				<function>Read</function>
+ 			</application>
+ 
+-			<!-- Le profil "Invité" donne accès uniquement à l'envoi d'e-mail au groupe via l'application d'envoi d'e-mail Mermoz. -->
+-			<application ident="Mermoz">	
+-				<function>Base</function>
+-			</application>
+-
+ 			<!-- Le profil "Invité" donne accès uniquement à la consultation du portail de groupe. -->
+ 			<application ident="Portal">
+ 				<function>Portal</function>
+@@ -151,6 +132,7 @@
+ 		<space type="private">
+ 			
+ 			<!-- La balise "acls" contient les définitions de droits d'accès à la racine de l'espace privé du groupe. -->
++
+ 			<acls>
+ 
+ 				<!-- Les profils "Animation" et "Membre" ont accès en lecture et écriture. -->
+diff --git a/web/skel/src/fr_FR/group/60-admin.xml b/web/skel/src/fr_FR/group/60-admin.xml
+index d9bd724..1c97ca5 100644
+--- a/web/skel/src/fr_FR/group/60-admin.xml
++++ b/web/skel/src/fr_FR/group/60-admin.xml
+@@ -12,7 +12,6 @@
+ 	<applications>
+ 		<application ident="AnimGroup" active="1"/>
+ 		<application ident="Magellan" active="1"/>
+-		<application ident="Mermoz" active="1"/>
+ 		<application ident="Colbert" active="1"/>
+ 		<application ident="Organizer"/>
+ 		<application ident="Contact"/>
+@@ -39,9 +38,6 @@
+ 			<application ident="Magellan">
+ 				<all_functions/>
+ 			</application>
+-			<application ident="Mermoz">
+-				<all_functions/>
+-			</application>
+ 			<application ident="Colbert">
+ 				<all_functions/>
+ 			</application>
+@@ -57,10 +53,6 @@
+ 			<application ident="Magellan">	
+ 				<function>Read</function>
+ 			</application>
+-			<application ident="Mermoz">	
+-				<function>Base</function>
+-				<function>Standard</function>
+-			</application>
+ 			<application ident="Colbert">
+ 				<function>UsersWrite</function>
+ 				<function>GroupsWrite</function>
+@@ -79,9 +71,6 @@
+ 			<application ident="Magellan">	
+ 				<function>Read</function>
+ 			</application>
+-			<application ident="Mermoz">	
+-				<function>Base</function>
+-			</application>
+ 			<application ident="Colbert">
+ 				<function>UsersRead</function>
+ 				<function>GroupsRead</function>
+diff --git a/web/skel/src/fr_FR/instance/50-standard.xml b/web/skel/src/fr_FR/instance/50-standard.xml
+index 34a8536..f7d1eb1 100644
+--- a/web/skel/src/fr_FR/instance/50-standard.xml
++++ b/web/skel/src/fr_FR/instance/50-standard.xml
+@@ -215,12 +215,6 @@
+ 		<application ident="MailingList">
+ 		</application>
+ 
+-		<!-- L'application d'envoi d'e-mail est accessible à tous les utilisateurs et à tous les groupes. -->
+-		<application ident="Mermoz">
+-			<all_users/>
+-			<all_groups/>
+-		</application>
+-
+ 		<!-- L'application de gestion des données personnelles est accessible à tous les utilisateurs. -->
+ 		<application ident="Narkissos">
+ 			<all_users/>
+diff --git a/web/skel/src/fr_FR/user/50-standard.xml b/web/skel/src/fr_FR/user/50-standard.xml
+index c7da5e8..d07b180 100644
+--- a/web/skel/src/fr_FR/user/50-standard.xml
++++ b/web/skel/src/fr_FR/user/50-standard.xml
+@@ -138,7 +138,6 @@
+ 		<!-- L'afficheur de fichiers, le portail utilisateur et l'application d'envoi d'e-mails Mermoz sont accessible mais ne sont pas actives. L'utilisateur pourra les activer s'il le souhaite. -->
+ 		<application ident="FileBrowser"/>
+ 		<application ident="Portal"/>
+-		<application ident="Mermoz"/>
+ 
+ 	</applications>
+ 
+diff --git a/web/skel/src/fr_FR/user/60-admin.xml b/web/skel/src/fr_FR/user/60-admin.xml
+index afff18d..4d4df04 100644
+--- a/web/skel/src/fr_FR/user/60-admin.xml
++++ b/web/skel/src/fr_FR/user/60-admin.xml
+@@ -101,7 +101,6 @@
+ 		<application ident="FileBrowser"/>
+ 		<application ident="Portal"/>
+ 		<application ident="Search" active="1"/>
+-		<application ident="Mermoz"/>
+ 		<application ident="RSS" active="1"/>
+ 	</applications>
+ 
