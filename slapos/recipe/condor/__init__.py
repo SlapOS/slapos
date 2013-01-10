@@ -93,8 +93,8 @@ class Recipe(GenericBaseRecipe):
       self.role = "manager,submit"
     elif self.options['machine-role'].strip() == "worker":
       self.role = "execute"
-      install_args += ['--central-manager='+self.condor_host,
-                                                        '--type='+self.role]
+      install_args += ['--central-manager='+self.condor_host]
+    install_args += ['--type='+self.role]
     configure = subprocess.Popen(install_args, env=self.environ,
                   stdout=subprocess.PIPE)
     configure.communicate()[0]
@@ -144,10 +144,11 @@ class Recipe(GenericBaseRecipe):
       export CONDOR_LOCATION=%s
       export CONDOR_IDS=%s
       export HOME=%s
+      export HOSTNAME=%s
       exec %s $*""" % (self.dash,
               self.environ['LD_LIBRARY_PATH'], self.environ['PATH'],
               condor_config, self.prefix, slapuser, self.environ['HOME'],
-              current_exe)
+              self.environ['HOSTNAME'], current_exe)
       wrapper.write(content)
       wrapper.close()
       path_list.append(wrapper_location)
@@ -165,10 +166,11 @@ class Recipe(GenericBaseRecipe):
       export CONDOR_LOCATION=%s
       export CONDOR_IDS=%s
       export HOME=%s
+      export HOSTNAME=%s
       exec %s $*""" % (self.dash,
               self.environ['LD_LIBRARY_PATH'], self.environ['PATH'],
               condor_config, self.prefix, slapuser, self.environ['HOME'],
-              current_exe)
+              self.environ['HOSTNAME'], current_exe)
       wrapper.write(content)
       wrapper.close()
       path_list.append(wrapper_location)
