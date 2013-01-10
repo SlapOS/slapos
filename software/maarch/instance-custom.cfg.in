@@ -9,7 +9,7 @@ db_dbname = $${postgres-urlparse:path}
 db_username = $${postgres-urlparse:username}
 db_password = $${postgres-urlparse:password}
 language = en
-php_ini_dir = $${directory:php-ini-dir}
+php_ini = $${directory:php-ini-dir}/php.ini
 root_docservers = $${buildout:directory}/srv/docservers
 dependency = $${apache-php:recipe}
 
