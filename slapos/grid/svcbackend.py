@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
@@ -56,7 +57,7 @@ def launchSupervisord(socket, configuration_file):
     while trynum < 6:
       try:
         status = supervisor.getState()
-      except xmlrpclib.Fault, e:
+      except xmlrpclib.Fault as e:
         if e.faultCode == 6 and e.faultString == 'SHUTDOWN_STATE':
           logger.info('Supervisor in shutdown procedure, will check again later.')
           trynum += 1
@@ -86,12 +87,13 @@ def launchSupervisord(socket, configuration_file):
       configuration_file +
       "'] ; supervisor.supervisord.main()")
   supervisord_popen = SlapPopen(invocation_list,
-      env={},
-      executable=sys.executable, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                                env={},
+                                executable=sys.executable,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
   result = supervisord_popen.communicate()[0]
   if supervisord_popen.returncode == 0:
-    log_message = 'Supervisord command invoked with: %s' % result
-    logger.info(log_message)
+    logger.info('Supervisord command invoked with: %s' % result)
     try:
       default_timeout = socketlib.getdefaulttimeout()
       current_timeout = 1
@@ -108,7 +110,6 @@ def launchSupervisord(socket, configuration_file):
         except Exception:
           current_timeout = 5 * trynum
           trynum += 1
-          pass
         else:
           logger.info('Supervisord started correctly in try %s.' % trynum)
           return
@@ -129,32 +130,32 @@ Typical usage:
 """.strip()
 
   parser = OptionParser(usage=usage)
+
   # Parses arguments
-  if argument_tuple == ():
+  if argument_tuple:
+    (argument_option_instance, argument_list) = parser.parse_args(list(argument_tuple))
+  else:
     # No arguments given to entry point : we parse sys.argv.
     (argument_option_instance, argument_list) = parser.parse_args()
-  else:
-    (argument_option_instance, argument_list) = \
-      parser.parse_args(list(argument_tuple))
-  if len(argument_list) == 0:
+
+  if not argument_list:
     parser.error("Configuration file is obligatory. Consult documentation by "
         "calling with -h.")
   configuration_file = argument_list[0]
   if not os.path.exists(configuration_file):
-    parser.error("Could not read configuration file : %s" \
-        % configuration_file)
+    parser.error("Could not read configuration file : %s" % configuration_file)
+
   slapgrid_configuration = ConfigParser.SafeConfigParser()
   slapgrid_configuration.read(configuration_file)
+
   # Merges the two dictionnaries
   option_dict = dict(slapgrid_configuration.items("slapos"))
   # Supervisord configuration location
-  if not option_dict.get('supervisord_configuration_path'):
-    option_dict['supervisord_configuration_path'] = \
-      os.path.join(option_dict['instance_root'], 'etc', 'supervisord.conf')
+  option_dict.setdefault('supervisord_configuration_path',
+                         os.path.join(option_dict['instance_root'], 'etc', 'supervisord.conf'))
   # Supervisord socket
-  if not option_dict.get('supervisord_socket'):
-    option_dict['supervisord_socket'] = \
-      os.path.join(option_dict['instance_root'], 'supervisord.socket')
+  option_dict.setdefault('supervisord_socket',
+                         os.path.join(option_dict['instance_root'], 'supervisord.socket'))
   return option_dict, argument_list[1:]
 
 
@@ -170,3 +171,4 @@ def supervisord(*argument_tuple):
   option_dict, _ = getOptionDict(*argument_tuple)
   launchSupervisord(option_dict['supervisord_socket'],
       option_dict['supervisord_configuration_path'])
+
