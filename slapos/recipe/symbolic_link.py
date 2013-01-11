@@ -27,6 +27,9 @@
 import os
 import logging
 
+import zc.buildout
+
+
 class Recipe:
   def __init__(self, buildout, name, options):
     self.buildout = buildout

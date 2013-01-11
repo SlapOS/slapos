@@ -31,6 +31,7 @@ import subprocess
 from slapos.recipe.librecipe import GenericBaseRecipe
 from slapos.recipe.librecipe import filehash
 
+
 class Recipe(GenericBaseRecipe):
 
   def _options(self, options):

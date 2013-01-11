@@ -25,65 +25,42 @@
 #
 #############################################################################
 
-import os
-import sys
 import zc.buildout
-import slapos.slap
-from slapos.recipe.librecipe import BaseSlapRecipe
-from slapos.recipe.librecipe import GenericSlapRecipe
-import json
-import ConfigParser
+from slapos.recipe.librecipe import GenericBaseRecipe
+import sys
 
-# XXX: BaseSlapRecipe and GenericSlapRecipe are deprecated, use
-# GenericBaseRecipe and move partition parameter fetching to software release.
-class Recipe(BaseSlapRecipe, GenericSlapRecipe):
+class Recipe(GenericBaseRecipe):
   def install(self):
-    self.path_list = []
-    crond = self.installCrond()
+    path_list = []
 
-    slap = slapos.slap.slap()
-    slap.initializeConnection(self.server_url, self.key_file, self.cert_file)
-    parameter_dict = slap.registerComputerPartition(
-      self.computer_id,
-      self.computer_partition_id,
-    ).getInstanceParameterDict()
+    configuration_path = self.options["config"]
+    header = """[DEFAULT]
+master_url = %s
+key = %s
 
-    # XXX: should probably expect one more (SR-originating) parameter instead
-    # of using self.work_directory .
-    configuration_path = os.path.join(self.work_directory, "agent.cfg")
+cert = %s
+
+max_install_duration = %s
+max_uninstall_duration = %s
+max_request_duration = %s
+max_destroy_duration = %s
+""" % (self.options["master-url"],
+      "\n  ".join(self.options["key"].split("\n")),
+       "\n  ".join(self.options["cert"].split("\n")),
+       self.options["default_max_install_duration"],
+       self.options["default_max_uninstall_duration"],
+       self.options["default_max_request_duration"],
+       self.options["default_max_destroy_duration"])
+
     with open(configuration_path, "w") as configuration:
-      configuration.write(parameter_dict["configuration"])
-    agent_crond_path = os.path.join(crond, "agent")
-    with open(agent_crond_path, "w") as agent_crond:
-      agent_crond.write("*/5 * * * * %s -S %s --pidfile=%s --log=%s "
-        "%s 2>&1 > /dev/null\n" % (
-          self.options["python_binary"],
-          self.options["agent_binary"],
-          self.options["pidfile"],
-          self.options["log"],
-          configuration_path,
-      ))
+      configuration.write(header + self.options["configuration"])
 
-    return self.path_list + [configuration_path, agent_crond_path]
+    path_list.append(self.createPythonScript(
+                       self.options['wrapper'],
+                       'slapos.recipe.librecipe.execute.execute',
+                         [self.options["agent_binary"], '--pidfile=%s' % self.options["pidfile"],
+                          "--log=%s" % self.options["log"], configuration_path]))
 
-  def installCrond(self):
-    _, ws = self.egg.working_set()
-    timestamps = self.createDataDirectory('cronstamps')
-    cron_output = os.path.join(self.log_directory, 'cron-output')
-    self._createDirectory(cron_output)
-    catcher = zc.buildout.easy_install.scripts([('catchcron',
-      __name__ + '.catdatefile', 'catdatefile')], ws, sys.executable,
-      self.bin_directory, arguments=[cron_output])[0]
-    self.path_list.append(catcher)
-    cron_d = os.path.join(self.etc_directory, 'cron.d')
-    crontabs = os.path.join(self.etc_directory, 'crontabs')
-    self._createDirectory(cron_d)
-    self._createDirectory(crontabs)
-    wrapper = zc.buildout.easy_install.scripts([('crond',
-      'slapos.recipe.librecipe.execute', 'execute')], ws, sys.executable,
-      self.wrapper_directory, arguments=[
-        self.options['dcrond_binary'].strip(), '-s', cron_d, '-c', crontabs,
-        '-t', timestamps, '-f', '-l', '5', '-M', catcher]
-      )[0]
-    self.path_list.append(wrapper)
-    return cron_d
+    path_list.append(configuration_path)
+
+    return path_list

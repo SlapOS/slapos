@@ -1,0 +1,20 @@
+[buildout]
+extends = ${instance-mariadb:output}
+          ${pbsready-import:output}
+
+
+parts +=
+    mariadb
+
+# have to repeat the next one, as it's not inherited from pbsready-import
+    import-on-notification
+
+[importer]
+recipe = slapos.cookbook:mydumper
+wrapper = $${rootdirectory:bin}/myloader
+backup-directory = $${directory:backup}
+socket = $${mariadb:socket}
+user = root
+myloader-binary = ${mydumper:location}/bin/myloader
+database = $${mariadb:database}
+import = true

@@ -1,0 +1,134 @@
+#!%(executable)s
+
+import select
+import socket
+import threading
+import time
+import sys
+
+sys.path[:] = %(syspath)s
+
+import slapos
+from slapos import slap as slapmodule
+
+port = 50000
+size = 1024
+wait = True
+
+
+def loadConnectionInfos():
+  connectionInfos = {}
+  file = open('%(confpath)s', 'r')
+  params = file.read().split('\n')
+  file.close()
+  ip_list = [x.strip("' ") for x in params[0].strip('[],').split(',')]
+  connectionInfos['self_id'] = int(params[1])
+
+  connectionInfos['server_list'] = \
+      [(i, ip_list[i]) for i in range(len(ip_list))]
+
+  connectionInfos['self_ip'] = ip_list[connectionInfos['self_id']]
+
+  return connectionInfos
+
+
+def rename_broken_and_stop():
+  try:
+    slap = slapmodule.slap()
+    slap.initializeConnection('%(server_url)s',
+                              '%(key_file)s',
+                              '%(cert_file)s')
+    computer_partition = slap.registerComputerPartition(computer_guid='%(computer_id)s',
+                                                        partition_id='%(partition_id)s')
+    broken = computer_partition.request(software_release='%(software)s',
+                                        software_type='frozen',
+                                        partition_reference='%(namebase)s0')
+
+    broken.rename('broken-%%s' %% (time.strftime("%%d-%%b_%%H:%%M:%%S", time.gmtime())))
+    broken.stopped()
+    computer_partition.rename('%(namebase)s0')
+    print 'renaming done\n'
+  except slapos.slap.slap.ServerError:
+    print 'Internal server error\n'
+
+def election():
+  global wait
+  connection = loadConnectionInfos()
+  message = "%%s, %%s" %% (connection['self_id'], "Election")
+  victory = True
+
+  for (remote_id, addr) in connection['server_list']:
+    if remote_id > connection['self_id']:
+      try:
+        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        s.connect((addr, port + remote_id))
+        s.send(message)
+        reply = s.recv(size)
+        if reply == "%%s, %%s" %% (remote_id, "Alive"):
+          victory = False
+      except (socket.error, socket.herror, socket.gaierror, socket.timeout):
+        pass
+      finally:
+        s.close()
+
+  if victory:
+    wait = True
+    for (remote_id, addr) in connection['server_list']:
+      if remote_id < connection['self_id']:
+        try:
+          s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+          s.connect((addr, port + remote_id))
+          s.send("%%s, %%s" %% (connection['self_id'], "Victory"))
+        except (socket.error, socket.herror, socket.gaierror, socket.timeout):
+          pass
+        finally:
+          s.close()
+    rename_broken_and_stop()
+
+
+def failure_detect():
+  global wait
+  connection = loadConnectionInfos()
+  while True:
+    time.sleep(30)
+    if wait:
+      print 'waiting 30 minutes\n'
+      time.sleep(30 * 60)
+      wait = False
+    if not connection['server_list'][0]:
+      continue
+    (remote_id, addr) = connection['server_list'][0]
+    try:
+      s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+      s.connect((addr, port + remote_id))
+      s.close()
+    except (socket.error, socket.herror, socket.gaierror, socket.timeout):
+      s.close()
+      election()
+
+failure_detect_thread = threading.Thread(target=failure_detect)
+failure_detect_thread.start()
+
+connection = loadConnectionInfos()
+s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+s.bind((connection['self_ip'], port + connection['self_id']))
+s.listen(5)
+#election()
+while True:
+  force_election = False
+  client, _ = s.accept()
+  client_message = client.recv(1024)
+  if client_message:
+    client_id, message = client_message.split(', ')
+    client_id = eval(client_id)
+    if message == "Victory":
+      wait = True
+      print "%%s wins" %% client_id
+    elif message == "Election":
+      print "%%s starts an election" %% client_id
+      if client_id < connection['self_id']:
+        client.send("%%s, %%s" %% (connection['self_id'], "Alive"))
+        force_election = True
+  client.close()
+  if force_election:
+    election()

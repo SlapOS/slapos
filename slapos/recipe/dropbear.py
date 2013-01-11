@@ -158,6 +158,24 @@ class Client(GenericBaseRecipe):
 
     return [wrapper]
 
+
+def keysplit(s):
+  """
+  Split a string like "ssh-rsa AKLFKJSL..... ssh-rsa AAAASAF...."
+  and return the individual key_type + key strings.
+  """
+  si = iter(s.split(' '))
+  while True:
+    key_type = next(si)
+    try:
+      key_value = next(si)
+    except StopIteration:
+      # odd number of elements, should not happen, yield the last one by itself
+      yield key_type
+      break
+    yield '%s %s' % (key_type, key_value)
+
+
 class AddAuthorizedKey(GenericBaseRecipe):
 
   def install(self):
@@ -167,6 +185,9 @@ class AddAuthorizedKey(GenericBaseRecipe):
     path_list.append(ssh)
 
     authorized_keys = AuthorizedKeysFile(os.path.join(ssh, 'authorized_keys'))
-    authorized_keys.append(self.options['key'])
+    for key in keysplit(self.options['key']):
+      # XXX key might actually be the string 'None' or 'null'
+      authorized_keys.append(key)
 
     return path_list
+
