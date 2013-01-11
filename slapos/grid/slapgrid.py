@@ -131,25 +131,32 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
       help="Periodicity at which buildout should be run in instance.")
   parser.add_argument("--promise-timeout", type=int, default=3,
       help="Promise timeout in seconds.")
-  parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
-      help="SlapOS configuration file.")
-  parser.add_argument("--maximal_delay", help="The maximal delay value in seconds. " \
-                    "A negative value leads start immediately.")
   parser.add_argument("--now", action="store_true", default=False,
-      help="Launch slapgrid without delay.")
-  parser.add_argument("--develop", action="store_true", default=False,
-      help="Deprecated, same as --all.")
+      help="Launch slapgrid without delay. Default behavior.")
   parser.add_argument("--all", action="store_true", default=False,
       help="Launch slapgrid to process all Softare Releases"
            "and/or Computer Partitions.")
-  parser.add_argument("--only_sr",
+  parser.add_argument("--only-sr",
       help="Force the update of a single software release (use url hash),"
            "event if is already installed. This option will make all others "
            "sofware releases be ignored.")
-  parser.add_argument("--only_cp",
+  parser.add_argument("--only-cp",
       help="Update a single or a list of computer partitions "
            "(ie.:slappartX, slappartY),"
            "this option will make all others computer partitions be ignored.")
+
+  parser.add_argument("configuration_file", nargs=1, type=argparse.FileType(),
+      help="SlapOS configuration file.")
+
+  # Deprecated options
+  parser.add_argument("--develop", action="store_true", default=False,
+      help="Deprecated, same as --all.")
+  parser.add_argument("--only_sr",
+      help="Deprecated, same as --only-sr.")
+  parser.add_argument("--only_cp",
+      help="Deprecated, same as --only-cp.")
+  parser.add_argument("--maximal_delay",
+      help="Deprecated. Will only work from configuration file in the future.")
 
 
   # Parses arguments
@@ -322,8 +329,12 @@ def parseArgumentTupleAndReturnSlapgridObject(*argument_tuple):
             shadir_cert_file=option_dict.get('shadir-cert-file', None),
             shadir_key_file=option_dict.get('shadir-key-file', None),
             develop=option_dict.get('develop', False),
-            software_release_filter_list=option_dict.get('only_sr', None),
-            computer_partition_filter_list=option_dict.get('only_cp', None),
+            software_release_filter_list=option_dict.get('only-sr',
+                # Try to fetch from deprecated argument
+                option_dict.get('only_sr', None)),
+            computer_partition_filter_list=option_dict.get('only-cp',
+                # Try to fetch from deprecated argument
+                option_dict.get('only_cp', None)),
             force_periodicity = option_dict.get('force_periodicity', False),
             maximum_periodicity = option_dict.get('maximum_periodicity', 86400),
             ),
