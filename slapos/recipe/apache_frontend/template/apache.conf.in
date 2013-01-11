@@ -100,6 +100,10 @@ Header append Vary User-Agent
   ProxyTimeout 600
   RewriteEngine On
 
+  # Include configuration file not operated by slapos. This file won't be erased
+  # or changed when slapgrid is ran. It can be freely customized by node admin.
+  Include %(custom_apache_virtualhost_conf)s
+
   # Define the two RewriteMaps (key -> value store): one for Zope, one generic
   # containing: rewritten URL -> original URL (a.k.a VirtualHostBase in Zope)
   RewriteMap apachemapzope txt:%(apachemapzope_path)s
@@ -127,6 +131,10 @@ Header append Vary User-Agent
 <VirtualHost *:%(plain_http_port)s>
   RewriteEngine On
   ProxyPreserveHost On
+
+  # Include configuration file not operated by slapos. This file won't be erased
+  # or changed when slapgrid is ran. It can be freely customized by node admin.
+  Include %(custom_apache_virtualhost_conf)s
 
   # We accept generic (i.e not lamp) backends on http
   RewriteMap apachemapgeneric txt:%(apachemap_path)s
