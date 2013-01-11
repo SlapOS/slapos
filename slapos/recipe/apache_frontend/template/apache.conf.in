@@ -23,8 +23,8 @@ ServerTokens Prod
 # Log configuration
 ErrorLog "%(error_log)s"
 LogLevel warn
-LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
-LogFormat "%%h %%{REMOTE_USER}i %%l %%u %%t \"%%r\" %%>s %%b" common
+LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b \"%%{Referer}i\" \"%%{User-Agent}i\"" combined
+LogFormat "%%h %%{REMOTE_USER}i %%{Host}i %%l %%u %%t \"%%r\" %%>s %%b" common
 CustomLog "%(access_log)s" common
 
 %(path_enable)s
