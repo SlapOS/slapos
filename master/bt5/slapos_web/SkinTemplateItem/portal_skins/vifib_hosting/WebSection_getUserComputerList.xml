@@ -52,6 +52,7 @@
             <key> <string>_body</string> </key>
             <value> <string>return context.getPortalObject().portal_catalog(\n
   local_roles=["Assignee"],\n
+  default_strict_allocation_scope_uid="!=%s" % context.getPortalObject().portal_categories.allocation_scope.close.forever.getUid(),\n
   **kw\n
   )\n
 </string> </value>
