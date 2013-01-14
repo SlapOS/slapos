@@ -53,7 +53,7 @@
             <value> <string>from Products.ERP5Type.Document import newTempSimulationMovement\n
 \n
 portal = context.getPortalObject()\n
-select_dict = {\'causality_related_uid\': None}\n
+select_dict = {\'causality_payment_transaction_related_uid\': None}\n
 \n
 select_kw = kwargs.copy()\n
 select_kw.pop(\'portal_type\', None)\n
@@ -64,7 +64,7 @@ select_kw.update(\n
   limit=10, # do only some in one shot\n
   select_dict=select_dict,\n
   left_join_list=select_dict.keys(),\n
-  causality_related_uid=None\n
+  causality_payment_transaction_related_uid=None,\n
 )\n
 \n
 default_source_uid=portal.restrictedTraverse(\'account_module/receivable\').getUid()\n

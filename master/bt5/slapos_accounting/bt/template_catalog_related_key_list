@@ -1,1 +1,2 @@
 children_portal_type | catalog/portal_type/z_related_children
+causality_payment_transaction_related_uid | category,catalog/uid/z_related_causality_payment_transaction

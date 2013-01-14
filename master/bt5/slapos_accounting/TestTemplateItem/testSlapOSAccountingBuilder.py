@@ -1353,6 +1353,27 @@ class TestSlapOSPaymentTransactionOrderBuilder(testSlapOSMixin):
     payment = payment_list[0].getObject()
     self.assertPayment(payment, invoice)
 
+  def test_cancelled_payment(self):
+    person = self.portal.person_module.template_member\
+        .Base_createCloneDocument(batch_mode=1)
+    invoice = self.portal.accounting_module.template_sale_invoice_transaction\
+        .Base_createCloneDocument(batch_mode=1)
+    invoice.edit(destination_section=person.getRelativeUrl())
+    invoice.confirm()
+    invoice.stop()
+    self.tic()
+    payment_list = self.fullBuild(uid=invoice.getUid())
+    payment_list[0].cancel()
+    self.tic()
+    payment_list = self.fullBuild(uid=invoice.getUid())
+    self.tic()
+    self.emptyBuild(uid=invoice.getUid())
+
+    self.assertEqual(1, len(payment_list))
+
+    payment = payment_list[0].getObject()
+    self.assertPayment(payment, invoice)
+
   def test_two_invoices(self):
     person = self.portal.person_module.template_member\
         .Base_createCloneDocument(batch_mode=1)
