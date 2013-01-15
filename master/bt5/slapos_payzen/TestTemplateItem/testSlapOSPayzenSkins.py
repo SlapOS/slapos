@@ -4,6 +4,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
   testSlapOSMixin
 from DateTime import DateTime
 from zExceptions import Unauthorized
+from Products.ERP5Type.tests.utils import createZODBPythonScript
 
 class TestSlapOSPaymentTransaction_sendManualPayzenPaymentUrl(testSlapOSMixin):
 
@@ -375,6 +376,22 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
       event.PayzenEvent_processUpdate,
       'a', True)
 
+  def test_processUpdate_unknownErrorCode(self):
+    date = DateTime()
+    event = self.createPayzenEvent()
+    payment = self.createPaymentTransaction()
+    event.edit(destination_value=payment)
+
+    data_kw = {
+      'errorCode': 'foo',
+    }
+
+    event.PayzenEvent_processUpdate(data_kw, True)
+    self.assertEquals(event.getValidationState(), "confirmed")
+    self.assertEqual(
+        "Unknown errorCode 'foo'",
+        event.workflow_history['system_event_workflow'][-1]['comment'])
+
   def test_processUpdate_unknownTransactionStatus(self):
     date = DateTime()
     event = self.createPayzenEvent()
@@ -382,6 +399,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': 'foo',
     }
 
@@ -398,6 +416,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': '2',
     }
 
@@ -416,6 +435,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': '0',
     }
 
@@ -444,6 +464,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': '0',
     }
     event.PayzenEvent_processUpdate(data_kw, True)
@@ -456,6 +477,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': '6',
     }
 
@@ -472,6 +494,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': '6',
       'authAmount': 1,
     }
@@ -489,6 +512,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': '6',
       'authAmount': 1,
       'authDevise': 1,
@@ -512,6 +536,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': '6',
       'authAmount': 0,
       'authDevise': "dollars",
@@ -536,6 +561,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': '6',
       'authAmount': 0,
       'authDevise': '978',
@@ -559,6 +585,7 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
     event.edit(destination_value=payment)
 
     data_kw = {
+      'errorCode': '0',
       'transactionStatus': '6',
       'authAmount': 0,
       'authDevise': '978',
@@ -572,6 +599,79 @@ class TestSlapOSPayzenEvent_processUpdate(testSlapOSMixin):
         'Automatic acknowledge as result of correct communication',
         event.workflow_history['system_event_workflow'][-1]['comment'])
 
+  def _simulatePaymentTransaction_getRecentPayzenId(self):
+    script_name = 'PaymentTransaction_getPayzenId'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""return DateTime().toZone('UTC'), 'foo'""")
+
+  def _simulatePaymentTransaction_getOldPayzenId(self):
+    script_name = 'PaymentTransaction_getPayzenId'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""from Products.ERP5Type.DateUtils import addToDate
+return addToDate(DateTime(), to_add={'day': -1, 'second': -1}).toZone('UTC'), 'foo'""")
+
+  def _dropPaymentTransaction_getPayzenId(self):
+    script_name = 'PaymentTransaction_getPayzenId'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+
+  def test_processUpdate_recentNotFoundOnPayzenSide(self):
+    event = self.createPayzenEvent()
+    payment = self.createPaymentTransaction()
+    event.edit(destination_value=payment)
+
+    data_kw = {
+      'errorCode': '2',
+    }
+
+    self._simulatePaymentTransaction_getRecentPayzenId()
+    try:
+      event.PayzenEvent_processUpdate(data_kw, True)
+    finally:
+      self._dropPaymentTransaction_getPayzenId()
+
+    self.assertEquals(event.getValidationState(), "acknowledged")
+    self.assertEqual(
+        'Transaction not found on payzen side.',
+        event.workflow_history['system_event_workflow'][-1]['comment'])
+    self.assertNotEquals(payment.getSimulationState(), "cancelled")
+    self.assertEqual(
+        'Error code 2 (Not found) did not changed the document state.',
+        payment.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_processUpdate_oldNotFoundOnPayzenSide(self):
+    event = self.createPayzenEvent()
+    payment = self.createPaymentTransaction()
+    event.edit(destination_value=payment)
+
+    data_kw = {
+      'errorCode': '2',
+    }
+
+    self._simulatePaymentTransaction_getOldPayzenId()
+    try:
+      event.PayzenEvent_processUpdate(data_kw, True)
+    finally:
+      self._dropPaymentTransaction_getPayzenId()
+
+    self.assertEquals(event.getValidationState(), "acknowledged")
+    self.assertEqual(
+        'Transaction not found on payzen side.',
+        event.workflow_history['system_event_workflow'][-1]['comment'])
+    self.assertEquals(payment.getSimulationState(), "cancelled")
+    self.assertEqual(
+        'Aborting unknown payzen payment.',
+        payment.workflow_history['accounting_workflow'][-1]['comment'])
 
 class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(testSlapOSMixin):
 

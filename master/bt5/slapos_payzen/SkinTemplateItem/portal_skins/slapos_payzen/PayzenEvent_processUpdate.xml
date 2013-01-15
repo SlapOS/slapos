@@ -50,7 +50,9 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>from zExceptions import Unauthorized\n
+            <value> <string encoding="cdata"><![CDATA[
+
+from zExceptions import Unauthorized\n
 if REQUEST is not None:\n
   raise Unauthorized\n
 \n
@@ -69,77 +71,99 @@ if signature is False:\n
   payzen_event.confirm(comment=\'Signature does not match\')\n
   return\n
 \n
-transaction_code_mapping = {\n
-  \'0\': \'Initial (being treated)\',\n
-  \'1\': \'To be validated \',\n
-  \'2\': \'To be forced - Contact issuer\',\n
-  \'3\': \'To be validated and authorized\',\n
-  \'4\': \'Waiting for submission\',\n
-  \'5\': \'Waiting for authorization\',\n
-  \'6\': \'Submitted\',\n
-  \'7\': \'Expired\',\n
-  \'8\': \'Refused\',\n
-  \'9\': \'Cancelled\',\n
-  \'10\': \'Waiting\',\n
-  \'11\': \'Being submitted\',\n
-  \'12\': \'Being authorized\',\n
-  \'13\': \'Failed\',\n
-}\n
-mark_transaction_id_list = [\'0\', \'1\', \'3\', \'4\', \'5\', \'10\', \'11\', \'12\']\n
-continue_transaction_id_list = [\'6\']\n
+isTransitionPossible = context.getPortalObject().portal_workflow.isTransitionPossible\n
 \n
-transaction_status = data_kw[\'transactionStatus\']\n
-\n
-transaction_status_description = transaction_code_mapping.get(transaction_status, None)\n
-if transaction_status_description is None:\n
-  payzen_event.confirm(comment=\'Unknown transactionStatus %r\' % transaction_status)\n
+error_code = data_kw[\'errorCode\']\n
+if error_code == \'2\':\n
+  transaction_date, payzen_id = transaction.PaymentTransaction_getPayzenId()\n
+  # Mark on payment transaction history log that transaction was not processed yet\n
+  payzen_event.confirm()\n
+  payzen_event.acknowledge(comment=\'Transaction not found on payzen side.\')\n
+  if int(DateTime()) - int(transaction_date) > 86400:\n
+    if isTransitionPossible(transaction, \'cancel\'):\n
+      transaction.cancel(comment=\'Aborting unknown payzen payment.\')\n
+  else:\n
+    storeWorkflowComment(transaction, \n
+                         \'Error code 2 (Not found) did not changed the document state.\')\n
   return\n
 \n
-isTransitionPossible = context.getPortalObject().portal_workflow.isTransitionPossible\n
-doActionFor = context.getPortalObject().portal_workflow.doActionFor\n
+elif error_code == \'0\':\n
+  transaction_code_mapping = {\n
+    \'0\': \'Initial (being treated)\',\n
+    \'1\': \'To be validated \',\n
+    \'2\': \'To be forced - Contact issuer\',\n
+    \'3\': \'To be validated and authorized\',\n
+    \'4\': \'Waiting for submission\',\n
+    \'5\': \'Waiting for authorization\',\n
+    \'6\': \'Submitted\',\n
+    \'7\': \'Expired\',\n
+    \'8\': \'Refused\',\n
+    \'9\': \'Cancelled\',\n
+    \'10\': \'Waiting\',\n
+    \'11\': \'Being submitted\',\n
+    \'12\': \'Being authorized\',\n
+    \'13\': \'Failed\',\n
+  }\n
+  mark_transaction_id_list = [\'0\', \'1\', \'3\', \'4\', \'5\', \'10\', \'11\', \'12\']\n
+  continue_transaction_id_list = [\'6\']\n
 \n
-if transaction_status in mark_transaction_id_list:\n
-  # Mark on payment transaction history log that transaction was not processed yet\n
-  storeWorkflowComment(transaction, \'Transaction status %s (%s) did not changed the document state\' % (transaction_status, transaction_status_description))\n
-  payzen_event.confirm()\n
-  payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
-  if isTransitionPossible(transaction, \'confirm\'):\n
-    transaction.confirm(comment=\'Confirmed as really saw in PayZen.\')\n
+  transaction_status = data_kw[\'transactionStatus\']\n
 \n
-elif transaction_status in continue_transaction_id_list:\n
-  # Check authAmount and authDevise and if match, stop transaction\n
-  auth_amount = int(data_kw[\'authAmount\'])\n
-  auth_devise = data_kw[\'authDevise\']\n
-  transaction_amount = int(round((transaction.PaymentTransaction_getTotalPayablePrice() * -100), 2))\n
-\n
-  if transaction_amount != auth_amount:\n
-    payzen_event.confirm(comment=\'Received amount (%r) does not match stored on transaction (%r)\'% (auth_amount, transaction_amount))\n
+  transaction_status_description = transaction_code_mapping.get(transaction_status, None)\n
+  if transaction_status_description is None:\n
+    payzen_event.confirm(comment=\'Unknown transactionStatus %r\' % transaction_status)\n
     return\n
 \n
-  transaction_devise = transaction.getResourceValue().Currency_getIntegrationMapping()\n
-  if transaction_devise != auth_devise:\n
-    payzen_event.confirm(comment=\'Received devise (%r) does not match stored on transaction (%r)\'% (auth_devise, transaction_devise))\n
-    return\n
+  doActionFor = context.getPortalObject().portal_workflow.doActionFor\n
 \n
-  comment = \'PayZen considered as paid.\'\n
-  if isTransitionPossible(transaction, \'confirm\'):\n
-    transaction.confirm(comment=comment)\n
-  if isTransitionPossible(transaction, \'start\'):\n
-    transaction.start(comment=comment)\n
-  if isTransitionPossible(transaction, \'stop\'):\n
-    transaction.stop(comment=comment)\n
-\n
-  if transaction.getSimulationState() == \'stopped\':\n
+  if transaction_status in mark_transaction_id_list:\n
+    # Mark on payment transaction history log that transaction was not processed yet\n
+    storeWorkflowComment(transaction, \'Transaction status %s (%s) did not changed the document state\' % (transaction_status, transaction_status_description))\n
     payzen_event.confirm()\n
     payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
+    if isTransitionPossible(transaction, \'confirm\'):\n
+      transaction.confirm(comment=\'Confirmed as really saw in PayZen.\')\n
+\n
+  elif transaction_status in continue_transaction_id_list:\n
+    # Check authAmount and authDevise and if match, stop transaction\n
+    auth_amount = int(data_kw[\'authAmount\'])\n
+    auth_devise = data_kw[\'authDevise\']\n
+    transaction_amount = int(round((transaction.PaymentTransaction_getTotalPayablePrice() * -100), 2))\n
+\n
+    if transaction_amount != auth_amount:\n
+      payzen_event.confirm(comment=\'Received amount (%r) does not match stored on transaction (%r)\'% (auth_amount, transaction_amount))\n
+      return\n
+\n
+    transaction_devise = transaction.getResourceValue().Currency_getIntegrationMapping()\n
+    if transaction_devise != auth_devise:\n
+      payzen_event.confirm(comment=\'Received devise (%r) does not match stored on transaction (%r)\'% (auth_devise, transaction_devise))\n
+      return\n
+\n
+    comment = \'PayZen considered as paid.\'\n
+    if isTransitionPossible(transaction, \'confirm\'):\n
+      transaction.confirm(comment=comment)\n
+    if isTransitionPossible(transaction, \'start\'):\n
+      transaction.start(comment=comment)\n
+    if isTransitionPossible(transaction, \'stop\'):\n
+      transaction.stop(comment=comment)\n
+\n
+    if transaction.getSimulationState() == \'stopped\':\n
+      payzen_event.confirm()\n
+      payzen_event.acknowledge(comment=\'Automatic acknowledge as result of correct communication\')\n
+    else:\n
+      payzen_event.confirm(comment=\'Expected to put transaction in stopped state, but achieved only %s state\' % transaction.getSimulationState())\n
+\n
   else:\n
-    payzen_event.confirm(comment=\'Expected to put transaction in stopped state, but achieved only %s state\' % transaction.getSimulationState())\n
+    payzen_event.confirm(comment=\'Transaction status %r (%r) is not supported\' \\\n
+                           % (transaction_status, transaction_status_description))\n
+    return\n
 \n
 else:\n
-  payzen_event.confirm(comment=\'Transaction status %r (%r) is not supported\' \\\n
-                         % (transaction_status, transaction_status_description))\n
-  return\n
-</string> </value>
+  # Unknown errorCode\n
+  payzen_event.confirm(comment=\'Unknown errorCode %r\' % error_code)\n
+
+
+]]></string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
