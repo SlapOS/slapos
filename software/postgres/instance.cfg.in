@@ -37,7 +37,7 @@ port = 5432
 dbname = db
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${directories:var}/data
-bin = $${postgresql:location}/bin
+bin = ${postgresql:location}/bin
 services = $${directories:services}
 
 
