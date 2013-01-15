@@ -1,6 +1,5 @@
 [buildout]
 parts =
-  symlinks
   publish
   postgres-instance
   postgres-promise
@@ -38,18 +37,8 @@ port = 5432
 dbname = db
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${directories:var}/data
-bin = $${directories:bin}
+bin = $${postgresql:location}/bin
 services = $${directories:services}
-
-
-#----------------
-#--
-#-- Creates symlinks from the instance to the software release.
-
-[symlinks]
-recipe = cns.recipe.symlink
-symlink_target = $${directories:bin}
-symlink_base = ${postgresql:location}/bin
 
 
 #----------------
