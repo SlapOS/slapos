@@ -745,11 +745,11 @@ class Slapgrid(object):
       # Try to process it anyway, it may need to be deleted.
       software_path = None
 
+    periodicity = self.maximum_periodicity
     if software_path:
       # Get periodicity from periodicity file if not forced
-      periodicity = self.maximum_periodicity
       if not self.force_periodicity:
-        periodicity_path = os.path.join(software_path,'periodicity')
+        periodicity_path = os.path.join(software_path, 'periodicity')
         if os.path.exists(periodicity_path):
           try:
             periodicity = int(open(periodicity_path).read())
@@ -768,8 +768,12 @@ class Slapgrid(object):
       if timestamp:
         try:
           if int(timestamp) <= int(old_timestamp):
-            if int(time.time()) <= (
-                last_runtime + periodicity) :
+            # Check periodicity, i.e if periodicity is one day, partition
+            # should be processed at least every day.
+            # Only do it for "started" instances
+            if computer_partition.getState() != COMPUTER_PARTITION_STARTED_STATE:
+              return
+            if int(time.time()) <= (last_runtime + periodicity):
               self.logger.info('Partition already up-to-date, skipping.')
               return
         except ValueError:
