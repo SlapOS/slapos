@@ -181,9 +181,8 @@ dbname = db
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${rootdirectory:var}/data
 backup-directory = $${basedirectory:backup}/postgres
-bin = $${rootdirectory:bin}
+bin = ${postgresql:location}/bin
 services = $${basedirectory:services}
-dependency-symlinks = $${symlinks:recipe}
 
 [ca-stunnel]
 <= certificate-authority
@@ -192,16 +191,6 @@ executable = $${stunnel:wrapper}
 wrapper = $${basedirectory:services}/stunnel
 key-file = $${stunnel:key-file}
 cert-file = $${stunnel:cert-file}
-
-
-#----------------
-#--
-#-- Creates symlinks from the instance to the software release.
-
-[symlinks]
-recipe = cns.recipe.symlink
-symlink_target = $${rootdirectory:bin}
-symlink_base = ${postgresql:location}/bin
 
 
 #----------------
