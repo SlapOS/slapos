@@ -745,7 +745,8 @@ class Slapgrid(object):
       # Try to process it anyway, it may need to be deleted.
       software_path = None
 
-    if software_path:
+    if software_path and \
+       computer_partition.getState() == COMPUTER_PARTITION_STARTED_STATE:
       # Get periodicity from periodicity file if not forced
       periodicity = self.maximum_periodicity
       if not self.force_periodicity:
