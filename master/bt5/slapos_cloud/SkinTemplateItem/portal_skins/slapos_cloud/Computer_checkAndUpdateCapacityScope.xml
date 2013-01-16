@@ -87,6 +87,9 @@ if can_allocate:\n
       can_allocate = False\n
       comment = \'Computer reported an error\'\n
     # XXX TODO: compare creation date of #ok message\n
+    elif int(DateTime()) - int(DateTime(log_dict.get(\'created_at\'))) > 600:\n
+      can_allocate = False\n
+      comment = "Computer didn\'t contact for more than 10 minutes"\n
 \n
 if can_allocate:\n
   # Check the computer capacity.\n

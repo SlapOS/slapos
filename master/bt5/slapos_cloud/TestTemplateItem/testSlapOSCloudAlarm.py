@@ -8,6 +8,7 @@ import json
 from zExceptions import Unauthorized
 from DateTime import DateTime
 from Products.ERP5Type.DateUtils import addToDate
+from App.Common import rfc1123_date
 
 class TestSlapOSCorePromiseSlapOSModuleIdGeneratorAlarm(testSlapOSMixin):
   def test_Module_assertIdGenerator(self):
@@ -1067,13 +1068,28 @@ class TestSlapOSUpdateComputerCapacityScopeAlarm(testSlapOSMixin):
         key_prefix='slap_tool',
         plugin_path='portal_memcached/default_memcached_plugin')
     memcached_dict[self.computer.getReference()] = json.dumps({
-        'text': '#access ok'
+        'text': '#access ok',
+        'created_at': rfc1123_date(DateTime())
     })
     transaction.commit()
 
   def test_Computer_checkAndUpdateCapacityScope(self):
     self.computer.Computer_checkAndUpdateCapacityScope()
     self.assertEqual('open', self.computer.getCapacityScope())
+
+  def test_Computer_checkAndUpdateCapacityScope_with_old_access(self):
+    memcached_dict = self.portal.portal_memcached.getMemcachedDict(
+        key_prefix='slap_tool',
+        plugin_path='portal_memcached/default_memcached_plugin')
+    memcached_dict[self.computer.getReference()] = json.dumps({
+        'text': '#access ok',
+        'created_at': rfc1123_date(addToDate(DateTime(), 
+                                             to_add={'minute': -11}))
+    })
+    self.computer.Computer_checkAndUpdateCapacityScope()
+    self.assertEqual('close', self.computer.getCapacityScope())
+    self.assertEqual("Computer didn't contact for more than 10 minutes",
+        self.computer.workflow_history['edit_workflow'][-1]['comment'])
 
   def test_Computer_checkAndUpdateCapacityScope_no_capacity_quantity(self):
     self._makeTree()
