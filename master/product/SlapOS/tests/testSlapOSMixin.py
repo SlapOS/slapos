@@ -239,6 +239,7 @@ class testSlapOSMixin(ERP5TypeTestCase):
       'slapos_rest_api_tool_portal_type',
       'slapos_rest_api',
       'slapos_pdm',
+      'slapos_crm',
       'slapos_accounting',
       'slapos_payzen',
       'slapos_web',
