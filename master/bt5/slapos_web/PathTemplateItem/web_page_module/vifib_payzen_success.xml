@@ -138,8 +138,7 @@
             <value> <string encoding="cdata"><![CDATA[
 
 <p>Thank you for finalising the payment.</p>\n
-<p>It will be processed by PayZen interface.</p>\n
-<p>Feel free to dismiss the web message.</p>
+<p>It will be processed by PayZen interface.</p>
 
 ]]></string> </value>
         </item>
@@ -599,6 +598,51 @@
                       <tuple>
                         <float>1346751813.89</float>
                         <string>GMT+2</string>
+                      </tuple>
+                    </state>
+                  </object>
+                </value>
+            </item>
+          </dictionary>
+          <dictionary>
+            <item>
+                <key> <string>action</string> </key>
+                <value> <string>edit</string> </value>
+            </item>
+            <item>
+                <key> <string>actor</string> </key>
+                <value> <string>zope</string> </value>
+            </item>
+            <item>
+                <key> <string>comment</string> </key>
+                <value>
+                  <none/>
+                </value>
+            </item>
+            <item>
+                <key> <string>error_message</string> </key>
+                <value> <string></string> </value>
+            </item>
+            <item>
+                <key> <string>serial</string> </key>
+                <value> <string>923.2674.27091.11434</string> </value>
+            </item>
+            <item>
+                <key> <string>state</string> </key>
+                <value> <string>current</string> </value>
+            </item>
+            <item>
+                <key> <string>time</string> </key>
+                <value>
+                  <object>
+                    <klass> <reference id="4.1"/> </klass>
+                    <tuple>
+                      <none/>
+                    </tuple>
+                    <state>
+                      <tuple>
+                        <float>1358414469.71</float>
+                        <string>GMT+1</string>
                       </tuple>
                     </state>
                   </object>
