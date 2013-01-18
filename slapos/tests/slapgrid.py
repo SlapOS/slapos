@@ -1037,6 +1037,7 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     timestamp = str(int(time.time()))
 
     instance.timestamp = timestamp
+    instance.requested_state = 'started'
     unwanted_periodicity = 2
     instance.software.setPeriodicity(unwanted_periodicity)
     self.grid.force_periodicity = True
@@ -1050,7 +1051,7 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     self.assertNotEqual(unwanted_periodicity,self.grid.maximum_periodicity)
     self.assertEqual(computer.sequence,
                      ['getFullComputerInformation', 'availableComputerPartition',
-                      'stoppedComputerPartition', 'getFullComputerInformation'])
+                      'startedComputerPartition', 'getFullComputerInformation'])
 
 
   def test_one_partition_periodicity_from_file_does_not_disturb_others(self):
@@ -1070,26 +1071,28 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
     instance0 = computer.instance_list[0]
     timestamp = str(int(time.time()-5))
     instance0.timestamp = timestamp
+    instance0.requested_state = 'started'
     for instance in computer.instance_list[1:]:
       instance.software = \
           computer.software_list[computer.instance_list.index(instance)]
       instance.timestamp = timestamp
 
-    wanted_periodicity = 3
+    wanted_periodicity = 1
     instance0.software.setPeriodicity(wanted_periodicity)
 
     self.launchSlapgrid()
-    self.assertNotEqual(wanted_periodicity,self.grid.maximum_periodicity)
+    self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
     last_runtime = os.path.getmtime(
       os.path.join(instance0.partition_path, '.timestamp'))
     time.sleep(wanted_periodicity + 1)
     for instance in computer.instance_list[1:]:
       self.assertEqual(instance.sequence,
                        ['availableComputerPartition', 'stoppedComputerPartition'])
+    time.sleep(1)
     self.launchSlapgrid()
     self.assertEqual(instance0.sequence,
-                     ['availableComputerPartition', 'stoppedComputerPartition',
-                      'availableComputerPartition', 'stoppedComputerPartition',
+                     ['availableComputerPartition', 'startedComputerPartition',
+                      'availableComputerPartition', 'startedComputerPartition',
                       ])
     for instance in computer.instance_list[1:]:
       self.assertEqual(instance.sequence,
@@ -1099,6 +1102,84 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
       last_runtime)
     self.assertNotEqual(wanted_periodicity,self.grid.maximum_periodicity)
 
+
+  def test_one_partition_stopped_is_not_processed_after_periodicity(self):
+    """
+    Check that periodicity doesn't force processing a partition if it is not
+    started.
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root,20,20)
+    instance0 = computer.instance_list[0]
+    timestamp = str(int(time.time()-5))
+    instance0.timestamp = timestamp
+    for instance in computer.instance_list[1:]:
+      instance.software = \
+          computer.software_list[computer.instance_list.index(instance)]
+      instance.timestamp = timestamp
+
+    wanted_periodicity = 1
+    instance0.software.setPeriodicity(wanted_periodicity)
+
+    self.launchSlapgrid()
+    self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
+    last_runtime = os.path.getmtime(
+      os.path.join(instance0.partition_path, '.timestamp'))
+    time.sleep(wanted_periodicity + 1)
+    for instance in computer.instance_list[1:]:
+      self.assertEqual(instance.sequence,
+                       ['availableComputerPartition', 'stoppedComputerPartition'])
+    time.sleep(1)
+    self.launchSlapgrid()
+    self.assertEqual(instance0.sequence,
+                     ['availableComputerPartition', 'stoppedComputerPartition',
+                      ])
+    for instance in computer.instance_list[1:]:
+      self.assertEqual(instance.sequence,
+                       ['availableComputerPartition', 'stoppedComputerPartition'])
+    self.assertEqual(
+      os.path.getmtime(os.path.join(instance0.partition_path,'.timestamp')),
+      last_runtime)
+    self.assertNotEqual(wanted_periodicity,self.grid.maximum_periodicity)
+
+  def test_one_partition_destroyed_is_not_processed_after_periodicity(self):
+    """
+    Check that periodicity doesn't force processing a partition if it is not
+    started.
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root,20,20)
+    instance0 = computer.instance_list[0]
+    timestamp = str(int(time.time()-5))
+    instance0.timestamp = timestamp
+    instance0.requested_state = 'stopped'
+    for instance in computer.instance_list[1:]:
+      instance.software = \
+          computer.software_list[computer.instance_list.index(instance)]
+      instance.timestamp = timestamp
+
+    wanted_periodicity = 1
+    instance0.software.setPeriodicity(wanted_periodicity)
+
+    self.launchSlapgrid()
+    self.assertNotEqual(wanted_periodicity, self.grid.maximum_periodicity)
+    last_runtime = os.path.getmtime(
+      os.path.join(instance0.partition_path, '.timestamp'))
+    time.sleep(wanted_periodicity + 1)
+    for instance in computer.instance_list[1:]:
+      self.assertEqual(instance.sequence,
+                       ['availableComputerPartition', 'stoppedComputerPartition'])
+    time.sleep(1)
+    instance0.requested_state = 'destroyed'
+    self.launchSlapgrid()
+    self.assertEqual(instance0.sequence,
+                     ['availableComputerPartition', 'stoppedComputerPartition',
+                     ])
+    for instance in computer.instance_list[1:]:
+      self.assertEqual(instance.sequence,
+                       ['availableComputerPartition', 'stoppedComputerPartition'])
+    self.assertEqual(
+      os.path.getmtime(os.path.join(instance0.partition_path,'.timestamp')),
+      last_runtime)
+    self.assertNotEqual(wanted_periodicity,self.grid.maximum_periodicity)
 
   def test_one_partition_buildout_fail_does_not_disturb_others(self):
     """
