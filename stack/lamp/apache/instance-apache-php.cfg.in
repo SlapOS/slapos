@@ -1,4 +1,5 @@
 [buildout]
+extends = ${custom-application-deployment:path}
 
 parts =
   certificate-authority
@@ -14,6 +15,7 @@ parts =
   content-promise
   publish-connection-informations
   ${custom-application-deployment:part-list}
+
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
@@ -36,6 +38,7 @@ tmp = $${buildout:directory}/tmp
 recipe = slapos.cookbook:mkdirectory
 log = $${rootdirectory:var}/log
 services = $${rootdirectory:etc}/service
+scripts = $${rootdirectory:etc}/run
 run = $${rootdirectory:var}/run
 backup = $${rootdirectory:srv}/backup
 promises = $${rootdirectory:etc}/promise
