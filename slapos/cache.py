@@ -5,9 +5,12 @@ import argparse
 import ConfigParser
 import hashlib
 import json
+import platform
 import re
 import sys
 import urllib2
+
+from slapos.grid import networkcache
 
 
 def maybe_md5(s):
@@ -42,8 +45,11 @@ def cache():
 
     entries = json.loads(response.read())
 
+    linux_distribution = platform.linux_distribution()
+
     header_printed = False
 
+    ostable = []
     for entry in entries:
         meta = json.loads(entry[0])
         os = ast.literal_eval(meta['os'])
@@ -52,9 +58,13 @@ def cache():
             print 'MD5:          %s' % md5
             print '-------------'
             print 'Available for: '
-            print 'distribution     |   version    |      id'
-            print '-----------------+--------------+---------------'
+            print 'distribution     |   version    |       id       | compatible?'
+            print '-----------------+--------------+----------------+-------------'
             header_printed = True
+        ostable.append(os)
+    ostable.sort()
 
-        print '%-16s | %12s | %s' % (os[0], os[1], os[2].center(14))
+    for os in ostable:
+        compatible = 'yes' if networkcache.os_matches(os, linux_distribution) else 'no'
+        print '%-16s | %12s | %s | %s' % (os[0], os[1], os[2].center(14), compatible)
 
