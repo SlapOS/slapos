@@ -49,9 +49,9 @@ def fallback_call(function):
 
 
 def debianize(os):
-    # return only the major release number in case of debian
+    # keep only the major release number in case of debian
     distname, version, id_ = os
-    if distname == 'debian':
+    if distname == 'debian' and '.' in version:
         version = version.split('.')[0]
     return distname, version, id_
 
