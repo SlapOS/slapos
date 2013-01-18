@@ -36,8 +36,7 @@ object_classes = ()
 content_classes = ()
 content_constructors = ()
 from Tool import SlapOSRestAPITool
-from Tool import StatusTool
-portal_tools = (SlapOSRestAPITool.SlapOSRestAPITool, StatusTool.StatusTool)
+portal_tools = (SlapOSRestAPITool.SlapOSRestAPITool, )
 from Products.PluggableAuthService.PluggableAuthService import registerMultiPlugin
 
 import SlapOSMachineAuthenticationPlugin
