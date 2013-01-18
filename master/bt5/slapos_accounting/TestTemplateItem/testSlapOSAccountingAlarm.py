@@ -1678,7 +1678,7 @@ class TestSlapOSUpdateOpenSaleOrderPeriod(testSlapOSMixin):
 
   def createOpenOrder(self):
     open_order = self.portal.open_sale_order_module\
-        .template_open_sale_order.Base_createCloneDocument(batch_mode=1)
+        .slapos_accounting_open_sale_order_template.Base_createCloneDocument(batch_mode=1)
     open_order.edit(
         title=self.generateNewSoftwareTitle(),
         reference="TESTHS-%s" % self.generateNewId(),
