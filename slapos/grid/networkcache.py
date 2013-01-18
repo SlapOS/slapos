@@ -12,10 +12,11 @@
 #
 ##############################################################################
 
-import shutil
-import traceback
+import ast
 import json
 import platform
+import shutil
+import traceback
 
 try:
     try:
@@ -45,6 +46,18 @@ def fallback_call(function):
             return False
     wrapper.__doc__ = function.__doc__
     return wrapper
+
+
+def debianize(os):
+    # return only the major release number in case of debian
+    distname, version, id_ = os
+    if distname == 'debian':
+        version = version.split('.')[0]
+    return distname, version, id_
+
+
+def os_matches(os1, os2):
+    return debianize(os1) == debianize(os2)
 
 
 @fallback_call
@@ -85,7 +98,8 @@ def download_network_cached(cache_url, dir_url, software_url, software_root,
                 tags = json.loads(json_information)
                 if tags.get('machine') != platform.machine():
                     continue
-                if tags.get('os') != str(platform.linux_distribution()):
+                if not os_matches(ast.literal_eval(tags.get('os')),
+                                  platform.linux_distribution()):
                     continue
                 if tags.get('software_url') != software_url:
                     continue
