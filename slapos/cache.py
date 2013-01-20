@@ -16,7 +16,7 @@ from slapos.grid.distribution import patched_linux_distribution
 def maybe_md5(s):
     return re.match('[0-9a-f]{32}', s)
 
-def cache():
+def cache_lookup():
     parser = argparse.ArgumentParser()
     parser.add_argument("configuration_file", help="SlapOS configuration file")
     parser.add_argument("software_url", help="Your software url or MD5 hash")
