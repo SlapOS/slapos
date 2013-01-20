@@ -5,12 +5,12 @@ import argparse
 import ConfigParser
 import hashlib
 import json
-import platform
 import re
 import sys
 import urllib2
 
 from slapos.grid import networkcache
+from slapos.grid.distribution import patched_linux_distribution
 
 
 def maybe_md5(s):
@@ -45,7 +45,7 @@ def cache():
 
     entries = json.loads(response.read())
 
-    linux_distribution = platform.linux_distribution()
+    linux_distribution = patched_linux_distribution()
 
     header_printed = False
 
