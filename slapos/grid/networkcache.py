@@ -18,6 +18,8 @@ import platform
 import shutil
 import traceback
 
+from slapos.grid.distribution import os_matches, patched_linux_distribution
+
 try:
     try:
         from slapos.libnetworkcache import NetworkcacheClient, UploadError, \
@@ -31,6 +33,8 @@ except:
         '\n%s' % traceback.format_exc()
     LIBNETWORKCACHE_ENABLED = False
     print 'Networkcache forced to be disabled.'
+
+
 
 def fallback_call(function):
     """Decorator which disallow to have any problem while calling method"""
@@ -46,18 +50,6 @@ def fallback_call(function):
             return False
     wrapper.__doc__ = function.__doc__
     return wrapper
-
-
-def debianize(os):
-    # keep only the major release number in case of debian
-    distname, version, id_ = os
-    if distname == 'debian' and '.' in version:
-        version = version.split('.')[0]
-    return distname, version, id_
-
-
-def os_matches(os1, os2):
-    return debianize(os1) == debianize(os2)
 
 
 @fallback_call
@@ -99,7 +91,7 @@ def download_network_cached(cache_url, dir_url, software_url, software_root,
                 if tags.get('machine') != platform.machine():
                     continue
                 if not os_matches(ast.literal_eval(tags.get('os')),
-                                  platform.linux_distribution()):
+                                  patched_linux_distribution()):
                     continue
                 if tags.get('software_url') != software_url:
                     continue
@@ -145,7 +137,7 @@ def upload_network_cached(software_root, software_url, cached_key,
       software_url=software_url,
       software_root=software_root,
       machine=platform.machine(),
-      os=str(platform.linux_distribution())
+      os=str(patched_linux_distribution())
     )
 
     f = open(path, 'r')
