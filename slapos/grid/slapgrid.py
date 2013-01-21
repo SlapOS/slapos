@@ -493,9 +493,9 @@ class Slapgrid(object):
   def getWatchdogLine(self):
     invocation_list = [WATCHDOG_PATH]
     invocation_list.append("--master-url '%s' " % self.master_url)
-    if self.key_file is not None and self.cert_file is not None:
-      invocation_list.append("--cert-file %s" % self.cert_file)
-      invocation_list.append("--key-file %s" % self.key_file)
+    if self.certificate_repository_path is not None:
+      invocation_list.append("--certificate-repository-path '%s'" \
+                               % self.certificate_repository_path)
     invocation_list.append("--computer-id '%s'" % self.computer_id)
     return ' '.join(invocation_list)
 
