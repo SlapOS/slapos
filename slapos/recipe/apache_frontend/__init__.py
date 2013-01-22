@@ -132,13 +132,15 @@ class Recipe(BaseSlapRecipe):
       slave_dict[reference] = "%s%s/" % (scheme, domain)
 
       # Check if we want varnish+stunnel cache.
-      if enable_cache:
-        # XXX-Cedric : need to refactor to clean code? (to many variables)
-        rewrite_rule = self.configureVarnishSlave(
-            base_varnish_port, backend_url, reference, service_dict, domain)
-        base_varnish_port += 2
-      else:
-        rewrite_rule = "%s %s" % (domain, backend_url)
+      #if enable_cache:
+      #  # XXX-Cedric : need to refactor to clean code? (to many variables)
+      #  rewrite_rule = self.configureVarnishSlave(
+      #      base_varnish_port, backend_url, reference, service_dict, domain)
+      #  base_varnish_port += 2
+      #else:
+      #  rewrite_rule = "%s %s" % (domain, backend_url)
+      # Temporary forbid activation of cache until it is properly tested
+      rewrite_rule = "%s %s" % (domain, backend_url)
 
       # Finally, if successful, we add the rewrite rule to our list of rules
       if rewrite_rule:
