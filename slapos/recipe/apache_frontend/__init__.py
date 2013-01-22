@@ -134,7 +134,8 @@ class Recipe(BaseSlapRecipe):
         # rule structure.
         # So we will have one RewriteMap for normal websites, and one
         # RewriteMap for Zope Virtual Host Monster websites.
-        if slave_instance.get("type", "").lower() in ['zope']:
+        if slave_instance.get("type") is not None and \
+            slave_instance.get("type", "").lower() in ['zope']:
           rewrite_rule_zope_list.append(rewrite_rule)
           # For Zope, we have another dict containing the path e.g '/erp5/...
           rewrite_rule_path = "%s %s" % (domain, slave_instance.get('path', ''))
