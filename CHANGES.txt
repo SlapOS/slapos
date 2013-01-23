@@ -1,27 +1,28 @@
 Changes
 =======
 
-0.33.2 (unreleased)
--------------------
+0.34 (2013-01-23)
+-----------------
 
  * networkcache: only match major release number in Debian,
-                 fixed platform detection for Ubuntu [Marco Mariani]
- * slapproxy: Filter by instance_guid, allow computer partition renames
-              and change of software_type and requested_state [Marco Mariani]
- * slapproxy: Stop instance even if buildout/reporting is wrong [Cedric de Saint Martin]
- * symlink to software_release in each partition [Marco Mariani]
- * slapproxy: implement softwareInstanceRename method. [Marco Mariani]
- * slapproxy: alllow requests to software_type. [Marco Mariani]
- * slapformat is verbose by default. [Cedric de Saint Martin]
+                 fixed platform detection for Ubuntu. [Marco Mariani]
+ * symlink to software_release in each partition. [Marco Mariani]
  * slapos client: Properly expand "~" when giving configuration file location.
    [Cedric de Saint Martin]
  * slapgrid: stop instances that should be stopped even if buildout and/or
    reporting failed. [Cedric de Saint Martin]
+ * slapgrid: Don't periodically force-process a stopped instance. [Cedric de Saint Martin]
  * slapgrid: Handle pid files of slapgrid launched through different entry points.
    [Cedric de Saint Martin]
- * Bang is called with correct instance certificates. [Cedric Le Ninivin]
+ * Watchdog: Bang is called with correct instance certificates. [Cedric Le Ninivin]
+ * Watchdog: Fix watchdog call. [Cedric le Ninivin]
  * Add a symlink of the used software release in each partitions. [Marco Mariani]
- * slapgrid: Don't force-process a stopped instance. [Cedric de Saint Martin]
+ * slapformat is verbose by default. [Cedric de Saint Martin]
+ * slapproxy: Filter by instance_guid, allow computer partition renames
+              and change of software_type and requested_state. [Marco Mariani]
+ * slapproxy: Stop instance even if buildout/reporting is wrong. [Cedric de Saint Martin]
+ * slapproxy: implement softwareInstanceRename method. [Marco Mariani]
+ * slapproxy: alllow requests to software_type. [Marco Mariani]
  * Many other minor fixes. See git diff for details.
 
 0.33.1 (2012-11-05)
