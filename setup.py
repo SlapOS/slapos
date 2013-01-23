@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import glob
 import os
-version = '0.33.3-dev'
+version = '0.34'
 name = 'slapos.core'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
