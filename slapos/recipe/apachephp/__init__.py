@@ -24,12 +24,16 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
 import shutil
 import os
 import signal
+import subprocess
+
 from binascii import b2a_uu as uuencode
 
 from slapos.recipe.librecipe import GenericBaseRecipe
+
 
 class Recipe(GenericBaseRecipe):
 
@@ -37,9 +41,9 @@ class Recipe(GenericBaseRecipe):
     path_list = []
 
     # Copy application
-    shutil.rmtree(self.options['htdocs'])
-    shutil.copytree(self.options['source'],
-                    self.options['htdocs'])
+    if not os.path.exists(self.options['htdocs']):
+      shutil.copytree(self.options['source'],
+                      self.options['htdocs'])
 
     # Install php.ini
     php_ini = self.createFile(os.path.join(self.options['php-ini-dir'],
@@ -66,11 +70,13 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(httpd_conf)
 
-    wrapper = self.createPythonScript(self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.execute',
-        [self.options['httpd-binary'], '-f', self.options['httpd-conf'],
-         '-DFOREGROUND']
-    )
+    wrapper = self.createWrapper(name=self.options['wrapper'],
+                                 command=self.options['httpd-binary'],
+                                 parameters=[
+                                     '-f',
+                                     self.options['httpd-conf'],
+                                     '-DFOREGROUND'
+                                     ])
     path_list.append(wrapper)
 
     secret_key_filename = os.path.join(self.buildout['buildout']['directory'],
@@ -78,40 +84,48 @@ class Recipe(GenericBaseRecipe):
     if not os.path.exists(secret_key_filename):
       secret_key = uuencode(os.urandom(45)).strip()
       # Remove unsafe characters
-      secret_key = secret_key.translate(None, '"\'')
+      secret_key = secret_key.translate(None, '"\'\\')
       with open(secret_key_filename, 'w') as secret_key_file:
         secret_key_file.write(secret_key)
     else:
       with open(secret_key_filename, 'r') as secret_key_file:
         secret_key = secret_key_file.read()
 
-    application_conf = dict(mysql_database=self.options['mysql-database'],
-                            mysql_user=self.options['mysql-username'],
-                            mysql_password=self.options['mysql-password'],
-                            mysql_host='%s:%s' % (self.options['mysql-host'],
-                                                  self.options['mysql-port']),
-                            secret_key=secret_key,
-                           )
+    # Generate application configuration file
+    if self.options.get('template'):
+      application_conf = dict(mysql_database=self.options['mysql-database'],
+                              mysql_user=self.options['mysql-username'],
+                              mysql_password=self.options['mysql-password'],
+                              mysql_host='%s:%s' % (self.options['mysql-host'],
+                                                    self.options['mysql-port']),
+                              secret_key=secret_key,
+                             )
 
-    directory, file_ = os.path.split(self.options['configuration'])
+      directory, file_ = os.path.split(self.options['configuration'])
 
-    path = self.options['htdocs']
-    if directory:
-      path = os.path.join(path, directory)
-      if not os.path.exists(path):
-        os.makedirs(path)
-      if not os.path.isdir(path):
-        raise OSError("Cannot create %r." % path)
+      path = self.options['htdocs']
+      if directory:
+        path = os.path.join(path, directory)
+        if not os.path.exists(path):
+          os.makedirs(path)
+        if not os.path.isdir(path):
+          raise OSError("Cannot create %r." % path)
 
-    destination = os.path.join(path, file_)
-    config = self.createFile(destination,
-      self.substituteTemplate(self.options['template'], application_conf))
-    path_list.append(config)
+      destination = os.path.join(path, file_)
+      config = self.createFile(destination,
+        self.substituteTemplate(self.options['template'], application_conf))
+      path_list.append(config)
 
-    if os.path.exists(self.options['pid-file']):
-      # Reload apache configuration
-      with open(self.options['pid-file']) as pid_file:
-        pid = int(pid_file.read().strip(), 10)
-      os.kill(pid, signal.SIGUSR1) # Graceful restart
+    # Reload apache configuration.
+    # notez-bien: a graceful restart or a SIGUSR1 can somehow hang the apache threads.
+
+    subprocess.call([
+                        self.options['httpd-binary'],
+                        '-f',
+                        self.options['httpd-conf'],
+                        '-k',
+                        'graceful'
+                    ])
 
     return path_list
+

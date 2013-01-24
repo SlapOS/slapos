@@ -1,0 +1,210 @@
+[buildout]
+parts =
+  switch-softwaretype
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[slap-parameters]
+recipe = slapos.cookbook:slapconfiguration
+computer = ${slap-connection:computer-id}
+partition = ${slap-connection:partition-id}
+url = ${slap-connection:server-url}
+key = ${slap-connection:key-file}
+cert = ${slap-connection:cert-file}
+
+[jinja2-template-base]
+recipe = slapos.recipe.template:jinja2
+rendered = ${buildout:parts-directory}/${:_buildout_section_name_}/${:filename}
+extra-context =
+context =
+    key eggs_directory buildout:eggs-directory
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key slap_software_type slap-parameters:slap-software-type
+    key slapparameter_dict slap-parameters:configuration
+    ${:extra-context}
+
+[dynamic-template-tidstorage-parameters]
+apache = {{ apache_location }}
+haproxy = {{ haproxy_location }}
+dcron = {{ dcron_location }}
+logrotate = {{ logrotate_location }}
+gzip = {{ gzip_location }}
+openssl = {{ openssl_location }}
+coreutils = {{ coreutils_location }}
+git = {{ git_location }}
+graphviz = {{ graphviz_location }}
+grep = {{ grep_location }}
+imagemagick = {{ imagemagick_location }}
+librsvg = {{ librsvg_location }}
+mariadb = {{ mariadb_location }}
+pdftk = {{ pdftk_location }}
+sed = {{ sed_location }}
+tesseract = {{ tesseract_location }}
+w3m = {{ w3m_location }}
+aspell = {{ aspell_location }}
+poppler = {{ poppler_location }}
+dmtx-utils = {{ dmtx_utils_location }}
+buildout-bin-directory = {{ buildout_bin_directory }}
+zope-conf-template = {{ template_zope_conf }}
+
+[dynamic-template-tidstorage]
+< = jinja2-template-base
+template = {{ template_tidstorage }}
+filename = instance-tidstorage.cfg
+extensions = jinja2.ext.do
+extra-context =
+    section parameter_dict dynamic-template-tidstorage-parameters
+    import json_module json
+    raw zope_port_base 12000
+    raw zeo_port_base 15000
+    raw haproxy_port_base 11000
+    raw apache_port_base 10000
+    key ipv4_set slap-parameters:ipv4
+    key ipv6_set slap-parameters:ipv6
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type tidstorage
+
+[dynamic-template-cloudooo-parameters]
+file = {{ file_location }}
+fontconfig = {{ fontconfig_location }}
+freetype = {{ freetype_location }}
+libICE = {{ libICE_location }}
+libpng12 = {{ libpng12_location }}
+libSM = {{ libSM_location }}
+libX11 = {{ libX11_location }}
+libXau = {{ libXau_location }}
+libXdmcp = {{ libXdmcp_location }}
+libXext = {{ libXext_location }}
+libxcb = {{ libxcb_location }}
+libXrender = {{ libXrender_location }}
+zlib = {{ zlib_location }}
+libreoffice-bin = {{ libreoffice_bin_location }}
+fonts = {{ fonts_location }}
+buildout-bin-directory = {{ buildout_bin_directory }}
+
+[dynamic-template-cloudooo]
+< = jinja2-template-base
+template = {{ template_cloudooo }}
+filename = instance-cloudoo.cfg
+extra-context =
+    section parameter_dict dynamic-template-cloudooo-parameters
+    import json_module json
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type cloudooo
+
+[dynamic-template-varnish-parameters]
+dash = {{ dash_location }}
+dcron = {{ dcron_location }}
+gzip =  {{ gzip_location }}
+logrotate = {{ logrotate_location }}
+varnish = {{ varnish_location }}
+wget = {{ wget_location }}
+buildout-bin-directory = {{ buildout_bin_directory }}
+
+[dynamic-template-varnish]
+< = jinja2-template-base
+template = {{ template_varnish }}
+filename = instance-varnish.cfg
+extra-context =
+    section parameter_dict dynamic-template-varnish-parameters
+# Must match the key id in [switch-softwaretype] which uses this section.
+    raw software_type varnish
+
+[dynamic-template-zope-parameters]
+apache = {{ apache_location }}
+aspell = {{ aspell_location }}
+bin-directory = {{ bin_directory }}
+coreutils = {{ coreutils_location }}
+dcron = {{ dcron_location }}
+dmtx-utils = {{ dmtx_utils_location }}
+erp5 = {{ erp5_location }}
+git = {{ git_location }}
+graphviz = {{ graphviz_location }}
+grep = {{ grep_location }}
+gzip = {{ gzip_location }}
+imagemagick = {{ imagemagick_location }}
+librsvg = {{ librsvg_location }}
+logrotate = {{ logrotate_location }}
+mariadb = {{ mariadb_location }}
+openssl = {{ openssl_location }}
+pdftk = {{ pdftk_location }}
+poppler = {{ poppler_location }}
+sed = {{ sed_location }}
+tesseract = {{ tesseract_location }}
+w3m = {{ w3m_location }}
+
+[dynamic-template-zope]
+< = jinja2-template-base
+template = {{ template_zope }}
+filename = instance-zope.cfg
+extensions = jinja2.ext.do
+# XXX: duplicates above section, so less is modified in template in this
+# commit. Should be replaced by a single "section" line.
+extra-context =
+    key apache_location dynamic-template-zope-parameters:apache
+    key aspell_location dynamic-template-zope-parameters:aspell
+    key bin_directory dynamic-template-zope-parameters:bin-directory
+    key coreutils_location dynamic-template-zope-parameters:coreutils
+    key dcron_location dynamic-template-zope-parameters:dcron
+    key dmtx_utils_location dynamic-template-zope-parameters:dmtx-utils
+    key erp5_location dynamic-template-zope-parameters:erp5
+    key git_location dynamic-template-zope-parameters:git
+    key graphviz_location dynamic-template-zope-parameters:graphviz
+    key grep_location dynamic-template-zope-parameters:grep
+    key gzip_location dynamic-template-zope-parameters:gzip
+    key imagemagick_location dynamic-template-zope-parameters:imagemagick
+    key librsvg_location dynamic-template-zope-parameters:librsvg
+    key logrotate_location dynamic-template-zope-parameters:logrotate
+    key mariadb_location dynamic-template-zope-parameters:mariadb
+    key openssl_location dynamic-template-zope-parameters:openssl
+    key pdftk_location dynamic-template-zope-parameters:pdftk
+    key poppler_location dynamic-template-zope-parameters:poppler
+    key sed_location dynamic-template-zope-parameters:sed
+    key tesseract_location dynamic-template-zope-parameters:tesseract
+    key w3m_location dynamic-template-zope-parameters:w3m
+
+[template-erp5-single-parameters]
+bin-directory = {{ bin_directory }}
+openssl = {{ openssl_location }}
+local_bt5_repository = {{ local_bt5_repository  }}
+dash = {{ dash_location }}
+curl = {{ curl_location }}
+
+[template-erp5-single]
+< = jinja2-template-base
+template = {{ template_erp5_single }}
+filename = instance-erp5-single.cfg
+# XXX: duplicates above section, so less is modified in template in this
+# commit. Should be replaced by a "section" line (preserving template_zope
+# definition).
+extra-context =
+    key bin_directory template-erp5-single-parameters:bin-directory
+    key openssl_location template-erp5-single-parameters:openssl
+    key curl_location template-erp5-single-parameters:curl
+    key dash_location template-erp5-single-parameters:dash
+    key template_zope dynamic-template-zope:rendered
+    key local_bt5_repository template-erp5-single-parameters:local_bt5_repository
+
+[switch-softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = ${template-erp5-single:rendered}
+production = {{ template_erp5_cluster }}
+cluster = {{ template_erp5_cluster }}
+kumofs = {{ template_kumofs }}
+memcached = {{ template_memcached }}
+cloudooo = ${dynamic-template-cloudooo:rendered}
+zope = ${dynamic-template-zope:rendered}
+mariadb = {{ template_mariadb }}
+tidstorage = ${dynamic-template-tidstorage:rendered}
+varnish = ${dynamic-template-varnish:rendered}
+
+[slap-connection]
+# part to migrate to new - separated words
+computer-id = ${slap_connection:computer_id}
+partition-id = ${slap_connection:partition_id}
+server-url = ${slap_connection:server_url}
+software-release-url = ${slap_connection:software_release_url}
+key-file = ${slap_connection:key_file}
+cert-file = ${slap_connection:cert_file}

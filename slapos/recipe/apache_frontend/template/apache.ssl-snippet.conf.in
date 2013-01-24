@@ -1,6 +1,17 @@
-SSLEngine on
-SSLProxyEngine on
 SSLCertificateFile %(login_certificate)s
 SSLCertificateKeyFile %(login_key)s
 SSLRandomSeed startup builtin
 SSLRandomSeed connect builtin
+SSLSessionCache shmcb:/%(httpd_mod_ssl_cache_directory)s/ssl_scache(512000)
+SSLSessionCacheTimeout  300
+SSLRandomSeed startup /dev/urandom 256
+SSLRandomSeed connect builtin
+SSLProtocol -ALL +SSLv3 +TLSv1
+SSLHonorCipherOrder On
+SSLCipherSuite RC4-SHA:HIGH:!ADH
+<FilesMatch "\.(cgi|shtml|phtml|php)$">
+      SSLOptions +StdEnvVars
+</FilesMatch>
+# Accept proxy to sites using self-signed SSL certificates
+SSLProxyCheckPeerCN off
+SSLProxyCheckPeerExpire off

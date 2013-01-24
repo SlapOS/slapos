@@ -1,0 +1,137 @@
+#############################
+#
+# Request erp5 development environnment
+#
+#############################
+[buildout]
+
+extends = {{ template_zope }}
+parts +=
+  request-mariadb
+  request-cloudooo
+  request-memcached
+  request-kumofs
+  basedirectory
+  test-runner
+  erp5-bootstrap
+  erp5-promise
+  promise-erp5-site
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+[slap-parameter]
+# default site id
+site-id = erp5
+cloudooo-json =
+promise-path = ${rootdirectory:etc}/erp5promise.cfg
+bt5 = erp5_full_text_myisam_catalog
+  erp5_configurator_standard
+  erp5_configurator_maxma_demo
+  erp5_configurator_ung
+  erp5_configurator_run_my_doc
+bt5-repository-url = {{ local_bt5_repository }}
+smtp-url = smtp://localhost:25/
+
+[test-runner]
+recipe = slapos.cookbook:erp5.test
+certificate-authority-path = ${test-certificate-authority:ca-dir}
+mysql-url = ${request-mariadb:connection-url}
+kumofs-url = ${request-kumofs:connection-url}
+memcached-url = ${request-memcached:connection-url}
+cloudooo-url = ${request-cloudooo:connection-url}
+test-instance-path = ${directory:unit-test-path}
+
+prepend-path = ${buildout:bin-directory}
+run-unit-test = ${buildout:bin-directory}/runUnitTest
+run-test-suite = ${buildout:bin-directory}/runTestSuite
+
+openssl-binary = ${test-certificate-authority:openssl-binary}
+run-unit-test-binary = {{ bin_directory }}/runUnitTest
+run-test-suite-binary = {{ bin_directory }}/runTestSuite
+
+[test-certificate-authority]
+recipe = slapos.cookbook:certificate_authority
+openssl-binary = {{ openssl_location }}/bin/openssl
+ca-dir = ${directory:test-ca-dir}
+requests-directory = ${test-cadirectory:requests}
+wrapper = ${basedirectory:services}/test-ca
+ca-private = ${test-cadirectory:private}
+ca-certs = ${test-cadirectory:certs}
+ca-newcerts = ${test-cadirectory:newcerts}
+ca-crl = ${test-cadirectory:crl}
+
+[test-cadirectory]
+recipe = slapos.cookbook:mkdirectory
+requests = ${directory:test-ca-dir}/requests
+private = ${directory:test-ca-dir}/private
+certs = ${directory:test-ca-dir}/certs
+newcerts = ${directory:test-ca-dir}/newcerts
+crl = ${directory:test-ca-dir}/crl
+
+[erp5-bootstrap]
+recipe = slapos.cookbook:erp5.bootstrap
+runner-path = ${basedirectory:services}/erp5-bootstrap
+mysql-url =  ${request-mariadb:connection-url}
+zope-url = http://${zope-instance:user}:${zope-instance:password}@${zope-instance:ip}:${zope-instance:port}/${slap-parameter:site-id}
+
+[erp5-promise]
+recipe = slapos.cookbook:erp5.promise
+promise-path = ${slap-parameter:promise-path}
+kumofs-url = ${request-kumofs:connection-url}
+memcached-url = ${request-memcached:connection-url}
+cloudooo-url = ${request-cloudooo:connection-url}
+smtp-url = ${slap-parameter:smtp-url}
+bt5 = ${slap-parameter:bt5}
+bt5-repository-url = ${slap-parameter:bt5-repository-url}
+
+[request-common]
+recipe = slapos.cookbook:request
+software-url = ${slap-connection:software-release-url}
+sla = computer_guid
+sla-computer_guid = ${slap-connection:computer-id}
+return = url
+server-url = ${slap-connection:server-url}
+key-file = ${slap-connection:key-file}
+cert-file = ${slap-connection:cert-file}
+computer-id = ${slap-connection:computer-id}
+partition-id = ${slap-connection:partition-id}
+
+[request-mariadb]
+<=request-common
+name = MariaDB DataBase
+software-type = mariadb
+
+[request-cloudooo]
+<=request-common
+name = Cloudooo
+config = cloudooo-json
+config-cloudooo-json = ${slap-parameter:cloudooo-json}
+software-type = cloudooo
+
+[request-memcached]
+<=request-common
+name = Memcached
+software-type = memcached
+
+[request-kumofs]
+<=request-common
+name = KumoFS
+software-type = kumofs
+
+[zope-instance]
+promise-path = ${slap-parameter:promise-path}
+site-id = ${slap-parameter:site-id}
+
+[directory]
+test-ca-dir = ${rootdirectory:srv}/test-ca
+test-instance-path = ${rootdirectory:srv}/test-instance
+unit-test-path = ${:test-instance-path}/unit_test
+
+[promise-erp5-site]
+recipe = slapos.cookbook:check_url_available
+path = ${basedirectory:promises}/erp5site
+url = http://${zope-instance:ip}:${zope-instance:port}/${slap-parameter:site-id}
+dash_path = {{ dash_location }}/bin/dash
+curl_path = {{ curl_location }}/bin/curl

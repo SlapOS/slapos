@@ -29,6 +29,7 @@ from slapos.recipe.librecipe import GenericSlapRecipe
 
 class Recipe(GenericSlapRecipe):
   def _install(self):
+    self.logger.warn('DEPRECATED: Please update your configuration to use erp5.promise and erp5.bootstrap instead.')
     conversion_server = None
     if 'cloudooo-url' in self.options and self.options['cloudooo-url']:
       parsed = urlparse.urlparse(self.options['cloudooo-url'])

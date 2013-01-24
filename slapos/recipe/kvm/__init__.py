@@ -25,7 +25,6 @@
 #
 ##############################################################################
 from slapos.recipe.librecipe import GenericBaseRecipe
-import binascii
 import os
 import sys
 
@@ -33,20 +32,26 @@ class Recipe(GenericBaseRecipe):
   """
   kvm instance configuration.
   """
-
-  def __init__(self, buildout, name, options):
-    options['passwd'] = binascii.hexlify(os.urandom(4))
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
-
   def install(self):
+    # Sanitize drive type parameter
+    self.options.setdefault('disk-type', 'virtio')
+    if not self.options.get('disk-type') in ['ide', 'scsi', 'sd',
+        'mtd', 'floppy', 'pflash', 'virtio']:
+      print 'Warning: "disk-type" parameter is not in allowed values. Using ' \
+          '"virtio" value.'
+      self.options['disk-type'] = 'virtio'
+
     config = dict(
       tap_interface=self.options['tap'],
       vnc_ip=self.options['vnc-ip'],
       vnc_port=self.options['vnc-port'],
-      nbd_ip=self.options['nbd-ip'],
+      nbd_ip=self.options['nbd-host'],
       nbd_port=self.options['nbd-port'],
+      nbd2_ip=self.options.get('nbd2-host', ''),
+      nbd2_port=self.options.get('nbd2-port', 1024),
       disk_path=self.options['disk-path'],
       disk_size=self.options['disk-size'],
+      disk_type=self.options['disk-type'],
       mac_address=self.options['mac-address'],
       smp_count=self.options['smp-count'],
       ram_size=self.options['ram-size'],
@@ -56,7 +61,6 @@ class Recipe(GenericBaseRecipe):
       shell_path=self.options['shell-path'],
       qemu_path=self.options['qemu-path'],
       qemu_img_path=self.options['qemu-img-path'],
-      # XXX Weak password
       vnc_passwd=self.options['passwd']
     )
 
@@ -73,4 +77,3 @@ class Recipe(GenericBaseRecipe):
 
 
     return [runner_path, controller_path]
-

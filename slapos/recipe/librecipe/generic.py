@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2010 Vifib SARL and Contributors. All Rights Reserved.
@@ -24,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+import io
 import logging
 import os
 import sys
@@ -35,7 +38,13 @@ import urlparse
 import pkg_resources
 import zc.buildout
 
+from slapos.recipe.librecipe import shlex
+
 class GenericBaseRecipe(object):
+  """Boilerplate class for all Buildout recipes providing helpful methods like
+     creating configuration file, creating wrappers, generating passwords, etc.
+     Can be extended in SlapOS recipes to ease development.
+  """
 
   TRUE_VALUES = ['y', 'yes', '1', 'true']
   FALSE_VALUES = ['n', 'no', '0', 'false']
@@ -84,6 +93,21 @@ class GenericBaseRecipe(object):
   def createExecutable(self, name, content, mode=0700):
     return self.createFile(name, content, mode)
 
+  def addLineToFile(self, filepath, line, encoding='utf8'):
+    """Append a single line to a text file, if the line does not exist yet.
+
+    line must be unicode."""
+
+    try:
+      lines = io.open(filepath, 'r', encoding=encoding).readlines()
+    except IOError:
+      lines = []
+
+    if not line in lines:
+      lines.append(line)
+      with io.open(filepath, 'w+', encoding=encoding) as f:
+        f.write(u'\n'.join(lines))
+
   def createPythonScript(self, name, absolute_function, arguments=''):
     """Create a python script using zc.buildout.easy_install.scripts
 
@@ -102,6 +126,34 @@ class GenericBaseRecipe(object):
       [(filename, module, function)], self._ws, sys.executable,
       path, arguments=arguments)[0]
     return script
+
+  def createWrapper(self, name, command, parameters, comments=[], parameters_extra=False):
+    """
+    Creates a very simple (one command) shell script for process replacement.
+    Takes care of quoting.
+    """
+
+    lines = [ '#!/bin/sh' ]
+
+    for comment in comments:
+      lines.append('# %s' % comment)
+
+    lines.append('exec %s' % shlex.quote(command))
+
+    for param in parameters:
+      if len(lines[-1]) < 40:
+        lines[-1] += ' ' + shlex.quote(param)
+      else:
+        lines[-1] += ' \\'
+        lines.append('\t' + shlex.quote(param))
+
+    if parameters_extra:
+        # pass-through further parameters
+        lines[-1] += ' \\'
+        lines.append('\t$@')
+
+    content = '\n'.join(lines) + '\n'
+    return self.createFile(name, content, 0700)
 
   def createDirectory(self, parent, name, mode=0700):
     path = os.path.join(parent, name)
@@ -125,6 +177,15 @@ class GenericBaseRecipe(object):
         'template/%s' % template_name)
 
   def generatePassword(self, len_=32):
+    """
+    The purpose of this method is to generate a password which doesn't change
+    from one execution to the next, so the generated password doesn't change
+    on each slapgrid-cp execution.
+
+    Currently, it returns a hardcoded password because no decision has been
+    taken on where a generated password should be kept (so it is generated
+    once only).
+    """
     # TODO: implement a real password generator which remember the last
     # call.
     return "insecure"
@@ -145,9 +206,6 @@ class GenericBaseRecipe(object):
     * if the host is an ipv6 address, brackets will be added to surround it.
 
     """
-    # XXX-Antoine: I didn't find any standard module to join an url with
-    # login, password, ipv6 host and port.
-    # So instead of copy and past in every recipe I factorized it right here.
     netloc = ''
     if auth is not None:
       auth = tuple(auth)

@@ -1,0 +1,97 @@
+# Note: Environment is setup in running wrapper script, as zope.conf is read
+# too late for some components.
+%define INSTANCE {{ instance }}
+instancehome $INSTANCE
+zserver-threads {{ parameter_dict['thread-amount'] }}
+
+lock-filename {{ parameter_dict['lock-file'] }}
+pid-filename {{ parameter_dict['pid-file'] }}
+
+default-zpublisher-encoding utf-8
+rest-input-encoding utf-8
+rest-output-encoding utf-8
+
+# XXX: isn't this entry implicit ?
+products {{ instance_products }}
+
+<http-server>
+  address {{ parameter_dict['ip'] }}:{{ parameter_dict['port'] }}
+</http-server>
+
+{# TODO: enable
+{% if webdav_port -%}
+<webdav-source-server>
+  address {{ parameter_dict['ip'] }}:{{ parameter_dict['webdav_port'] }}
+  force-connection-close off
+</webdav-source-server>
+
+{% endif -%}
+-#}
+<zoperunner>
+    program $INSTANCE/bin/runzope
+</zoperunner>
+
+<product-config DeadlockDebugger>
+  dump_url /manage_debug_threads
+  secret {{ deadlock_debugger_password }}
+</product-config>
+
+{% if tidstorage_ip -%}
+<product-config TIDStorage>
+  backend-ip {{ tidstorage_ip }}
+  backend-port {{ tidstorage_port }}
+</product-config>
+
+{% endif -%}
+{% set timerserver_interval = parameter_dict.get('timerserver-interval', '0') | int -%}
+{% if timerserver_interval -%}
+%import timerserver
+<timer-server>
+  interval {{ timerserver_interval }}
+</timer-server>
+
+{% endif -%}
+{% if promise_path -%}
+<product-config /{{ parameter_dict['site-id'] }}>
+  promise_path {{ promise_path }}
+</product-config>
+
+{% endif -%}
+<eventlog>
+  level info
+  <logfile>
+    dateformat
+    path {{ parameter_dict['event-log'] }}
+  </logfile>
+</eventlog>
+
+<logger access>
+  level WARN
+  <logfile>
+    dateformat
+    path {{ parameter_dict['z2-log'] }}
+  </logfile>
+</logger>
+
+<zodb_db temporary>
+  <temporarystorage>
+    name temporary storage for sessioning
+  </temporarystorage>
+  mount-point /temp_folder
+  container-class Products.TemporaryFolder.TemporaryContainer
+</zodb_db>
+
+{% for db_name, mount_point, cache_size, storage_type, storage_dict in parameter_dict['zodb-list'] -%}
+<zodb_db {{ db_name }}>
+{%-   if cache_size %}
+  cache-size {{ cache_size }}
+{%-   endif %}
+  mount-point {{ mount_point }}
+  <{{ storage_type }}>
+{%-   for key, value in storage_dict.iteritems() %}
+    {{ key }} {{ value }}
+{%-   endfor %}
+  </{{ storage_type }}>
+</zodb_db>
+
+{% endfor -%}

@@ -25,41 +25,90 @@
 #
 ##############################################################################
 import logging
-
 from slapos import slap as slapmodule
+import slapos.recipe.librecipe.generic as librecipe
+import traceback
+
+DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
 class Recipe(object):
+  """
+  Request a partition to a slap master.
+  Can provide parameters to that partition and fetches its connection
+  parameters.
+
+  Input:
+    server-url
+    key-file (optional)
+    cert-file (optional)
+      Used to contact slap master.
+
+    computer-id
+    partition-id
+      Current partition's identifiers.
+      Must match key's credentials if given.
+
+    name (optional, defaults to section name)
+      Name (reference) of requested partition.
+
+    software-url
+      URL of a software definition to request an instance of.
+
+    software-type
+      Software type of requested instance, among those provided by the
+      definition from software-url.
+
+    slave (optional, defaults to false)
+      Set to "true" when requesting a slave instance, ie just setting a set of
+      parameters in an existing instance.
+
+    sla (optional)
+      Whitespace-separated list of Service Level Agreement names.
+      Each name must correspond to a "sla-<name>" option.
+      Used to specify what a suitable partition would be.
+      Possible names depend on master's capabilities.
+
+    config (optional)
+      Whitespace-separated list of partition parameter names.
+      Each name must correspond to a "config-<name>" option.
+      Possible names depend on requested partition's software type.
+
+    return (optional)
+      Whitespace-separated list of expected partition-published value names.
+      Options will be created from them, in the form of "connection-<name>"
+      As long as requested partition doesn't publish all those values,
+      installation of request section will fail.
+      Possible names depend on requested partition's software type.
+
+    Output:
+      See "return" input key.
+  """
+  failed = None
 
   def __init__(self, buildout, name, options):
     self.logger = logging.getLogger(name)
 
     slap = slapmodule.slap()
 
-    self.software_release_url = options['software-url']
+    software_url = options['software-url']
+    name = options['name']
 
     slap.initializeConnection(options['server-url'],
                               options.get('key-file'),
                               options.get('cert-file'),
                              )
-    computer_partition = slap.registerComputerPartition(
-      options['computer-id'], options['partition-id'])
-    self.request = computer_partition.request
+    request = slap.registerComputerPartition(
+      options['computer-id'], options['partition-id']).request
 
-    self.isSlave = False
-    if 'slave' in options:
-      self.isSlave = options['slave'].lower() in ['y', 'yes', 'true', '1']
-
-    self.return_parameters = []
+    return_parameters = []
     if 'return' in options:
-      self.return_parameters = [str(parameter).strip()
-                               for parameter in options['return'].split()]
+      return_parameters = [str(parameter).strip()
+                          for parameter in options['return'].split()]
     else:
       self.logger.debug("No parameter to return to main instance."
-                          "Be careful about that...")
+        "Be careful about that...")
 
-    software_type = 'RootInstanceSoftware'
-    if 'software-type' in options:
-      software_type = options['software-type']
+    software_type = options.get('software-type', DEFAULT_SOFTWARE_TYPE)
 
     filter_kw = {}
     if 'sla' in options:
@@ -72,32 +121,83 @@ class Recipe(object):
         partition_parameter_kw[config_parameter] = \
             options['config-%s' % config_parameter]
 
-    self.instance = self.request(options['software-url'], software_type,
-      options.get('name', name), partition_parameter_kw=partition_parameter_kw,
-      filter_kw=filter_kw, shared=self.isSlave)
+    isSlave = options.get('slave', '').lower() in \
+        librecipe.GenericBaseRecipe.TRUE_VALUES
 
-    self.failed = None
-    for param in self.return_parameters:
+    self._raise_request_exception = None
+    self._raise_request_exception_formatted = None
+    self.instance = None
+    try:
+      self.instance = request(software_url, software_type,
+          name, partition_parameter_kw=partition_parameter_kw,
+          filter_kw=filter_kw, shared=isSlave)
+      # XXX what is the right way to get a global id?
+      options['instance_guid'] = self.instance.getId()
+    except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
+      self._raise_request_exception = exc
+      self._raise_request_exception_formatted = traceback.format_exc()
+
+    for param in return_parameters:
+      options['connection-%s' % param] = ''
+      if not self.instance:
+        continue
       try:
         options['connection-%s' % param] = str(
-            self.instance.getConnectionParameter(param))
-      except slapmodule.NotFoundError:
-        options['connection-%s' % param] = ''
+          self.instance.getConnectionParameter(param))
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         if self.failed is None:
           self.failed = param
 
   def install(self):
+    if self._raise_request_exception:
+      raise self._raise_request_exception
+
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        status = self.instance.getState()
-      except slapmodule.NotFoundError:
-        status = "not ready yet, please try again"
-      # XXX-Cedric : currently raise an error. So swallow it...
+        if self.instance._computer_id is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
+        status = 'not ready yet'
       except AttributeError:
-        status = "unknown"
-      raise KeyError("Connection parameter %s not found. "
-          "Status of requested instance is : %s." % (self.failed, status))
+        status = 'unknown'
+      error_message = 'Connection parameter %s not found. '\
+          'Status of requested instance is: %s. If this error persists, '\
+          'check status of this instance.' % (self.failed, status)
+      self.logger.error(error_message)
+      raise KeyError(error_message)
+    return []
+
+  update = install
+
+class RequestOptional(Recipe):
+  """
+  Request a SlapOS instance. Won't fail if request failed or is not ready.
+  Same as slapos.cookbook:request, but won't raise in case of problem.
+  """
+  def install(self):
+    if self._raise_request_exception_formatted:
+      self.logger.warning('Optional request failed.')
+      if not isinstance(self._raise_request_exception, slapmodule.NotFoundError):
+        # full traceback for optional 'not found' is too verbose and confusing
+        self.logger.warning(self._raise_request_exception_formatted)
+    elif self.failed is not None:
+      # Check instance status to know if instance has been deployed
+      try:
+        if self.instance._computer_id is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
+      except (slapmodule.NotFoundError, slapmodule.ServerError):
+        status = 'not ready yet'
+      except AttributeError:
+        status = 'unknown'
+      error_message = 'Connection parameter %s not found. '\
+          'Requested instance is currently %s. If this error persists, '\
+          'check status of this instance.' % (self.failed, status)
+      self.logger.warning(error_message)
     return []
 
   update = install

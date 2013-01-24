@@ -31,6 +31,7 @@ import subprocess
 from slapos.recipe.librecipe import GenericBaseRecipe
 from slapos.recipe.librecipe import filehash
 
+
 class Recipe(GenericBaseRecipe):
 
   def _options(self, options):
@@ -58,7 +59,7 @@ class Recipe(GenericBaseRecipe):
     post_rotate = self.createPythonScript(
       self.options['logrotate-post'],
       'slapos.recipe.librecipe.execute.execute',
-      [mysql_binary, '--no-defaults', '-B', '--socket=%s' % socket, '-e',
+      [mysql_binary, '--no-defaults', '-B', '-u', 'root', '--socket=%s' % socket, '-e',
        'FLUSH LOGS']
     )
     path_list.append(post_rotate)
@@ -107,6 +108,7 @@ class Recipe(GenericBaseRecipe):
         mysql_binary=mysql_binary,
         socket=socket,
         configuration_file=mysql_conf_file,
+        cwd=self.options['mysql-base-directory'],
        )
     )
     path_list.append(mysqld)

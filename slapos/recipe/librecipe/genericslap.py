@@ -30,7 +30,10 @@ import time
 from generic import GenericBaseRecipe
 
 class GenericSlapRecipe(GenericBaseRecipe):
-  """Base class for all slap.recipe.*"""
+  """Base class for all slap.recipe.* needing SLAP informations like instance
+     parameters.
+     recipes that don't explicitely need to retrieve from server informations
+     should use GenericBaseRecipe."""
 
   def __init__(self, buildout, name, options):
     """Default initialisation"""

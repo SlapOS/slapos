@@ -3,6 +3,7 @@ software_root = %(software_root)s
 instance_root = %(instance_root)s
 master_url = %(master_url)s
 computer_id = %(computer_id)s
+maximal_delay = 0
 
 [slapformat]
 partition_amount = %(partition_amount)s
@@ -18,6 +19,9 @@ runner_host = %(runner_host)s
 runner_port = %(runner_port)s
 ipv4_address = %(ipv4_address)s
 ipv6_address = %(ipv6_address)s
+etc_dir = %(etc_dir)s
+run_dir = %(run_dir)s
+log_dir = %(log_dir)s
 
 [slapproxy]
 host = %(proxy_host)s

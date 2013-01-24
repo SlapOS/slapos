@@ -24,74 +24,145 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from slapos.recipe.librecipe import BaseSlapRecipe
+from slapos.recipe.librecipe import GenericBaseRecipe
 import os
-import pkg_resources
-import sys
-import zc.buildout
-import zc.recipe.egg
 
+class Recipe(GenericBaseRecipe):
 
-class Recipe(BaseSlapRecipe):
-  def _install(self):
-    self.path_list = []
-    self.requirements, self.ws = self.egg.working_set()
-    ipv4 = self.getLocalIPv4Address()
-    ipv6 = self.getGlobalIPv6Address()
-    proxy_port = '50000'
-    runner_port = '50000'
-    cloud9_port = '30000'
-    workdir = self.createDataDirectory('runner')
-    software_root = os.path.join(workdir, 'software')
-    instance_root = os.path.join(workdir, 'instance')
+  def _options(self, options):
+    self.ipv4 = options['ipv4'].strip()
+    self.ipv6 = options['ipv6'].strip()
+    self.proxy_port = options['proxy_port'].strip()
+    self.runner_port = options['runner_port'].strip()
+    self.workdir = options['working-directory'].strip()
+    self.software_directory = options['software-directory'].strip()
+    self.instance_directory = options['instance-directory'].strip()
+    self.partition_amount = options['partition-amount'].strip()
+    self.cloud9_url = options['cloud9-url'].strip()
+    self.log_file = os.path.join(options['log_dir'].strip(), 'slaprunner.log')
+    # Set slaprunner access URL
+    options['access-url'] = 'http://[%s]:%s' % (self.ipv6, self.runner_port)
+
+  def install(self):
+    path_list = []
+
     configuration = dict(
-        software_root=software_root,
-        instance_root=instance_root,
-        master_url='http://%s:%s/' % (ipv4, proxy_port),
+        software_root=self.software_directory,
+        instance_root=self.instance_directory,
+        master_url='http://%s:%s/' % (self.ipv4, self.proxy_port),
         computer_id='slaprunner',
-        partition_amount=7,
+        partition_amount=self.partition_amount,
         slapgrid_sr=self.options['slapgrid_sr'],
         slapgrid_cp=self.options['slapgrid_cp'],
         slapproxy=self.options['slapproxy'],
         supervisor=self.options['supervisor'],
-        supervisord_config=os.path.join(instance_root, 'etc',
+        supervisord_config=os.path.join(self.instance_directory, 'etc',
           'supervisord.conf'),
-        runner_workdir=workdir,
-        runner_host=ipv6,
-        runner_port=runner_port,
-        ipv4_address=ipv4,
-        ipv6_address=ipv6,
-        proxy_host=ipv4,
-        proxy_port=proxy_port,
-        proxy_database=os.path.join(workdir, 'proxy.db'),
-	git=self.options['git'],
-	cloud9_url='http://[%s]:%s' % (ipv6, cloud9_port),
-	ssh_client=self.options['ssh_client'],
-	public_key=self.options['public_key'],
-	private_key=self.options['private_key'],
-
+        runner_workdir=self.workdir,
+        etc_dir=self.options['etc_dir'],
+        run_dir=self.options['run_dir'],
+        log_dir=self.options['log_dir'],
+        runner_host=self.ipv6,
+        runner_port=self.runner_port,
+        ipv4_address=self.ipv4,
+        ipv6_address=self.ipv6,
+        proxy_host=self.ipv4,
+        proxy_port=self.proxy_port,
+        proxy_database=os.path.join(self.workdir, 'proxy.db'),
+        git=self.options['git-binary'],
+        ssh_client=self.options['ssh_client'],
+        public_key=self.options['public_key'],
+        private_key=self.options['private_key'],
+        cloud9_url=self.cloud9_url
     )
-    config_file = self.createConfigurationFile('slapos.cfg',
-        self.substituteTemplate(pkg_resources.resource_filename(__name__,
-          'template/slapos.cfg.in'), configuration))
-    self.path_list.append(config_file)
+
+    config_file = self.createFile(self.options['slapos.cfg'],
+        self.substituteTemplate(self.getTemplateFilename('slapos.cfg.in'),
+        configuration))
+    path_list.append(config_file)
 
     environment = dict(
-        PATH=os.path.dirname(self.options['git']) + ':' + os.environ['PATH'],
+        PATH=os.path.dirname(
+            self.options['git-binary']) + ':' + os.environ['PATH'],
         GIT_SSH=self.options['ssh_client']
     )
-    workdir = os.path.join(workdir, 'project')
-    if not os.path.exists(workdir):
-      os.mkdir(workdir)
-    launch_args = [self.options['slaprunner'].strip(), config_file, '--debug']
-    cloud9_args = [self.options['node-bin'].strip(), self.options['cloud9'].strip(),
-                   '-l', ipv6, '-p', cloud9_port, '-w', workdir]
-    self.path_list.extend(zc.buildout.easy_install.scripts([('slaprunner',
-      'slapos.recipe.librecipe.execute', 'executee')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[launch_args, environment]))
-    self.path_list.extend(zc.buildout.easy_install.scripts([('cloud9IDE',
-      'slapos.recipe.librecipe.execute', 'executee')], self.ws, sys.executable,
-      self.wrapper_directory, arguments=[cloud9_args, environment]))
-    self.setConnectionDict(dict(slaprunner_url='http://[%s]:%s' % (ipv6, runner_port),
-                            cloud9_url='http://[%s]:%s' % (ipv6, cloud9_port)))
-    return self.path_list
+    launch_args = [self.options['slaprunner'].strip(), config_file,
+                   '--log_file', self.log_file]
+    if self.optionIsTrue('debug', default=False):
+      launch_args.append('--debug')
+
+    wrapper = self.createPythonScript(self.options['wrapper'],
+        'slapos.recipe.librecipe.execute.executee',
+        (launch_args, environment)
+    )
+    path_list.append(wrapper)
+
+    return path_list
+
+class Test(GenericBaseRecipe):
+  def _options(self, options):
+    self.ipv4 = options['ipv4'].strip()
+    self.ipv6 = options['ipv6'].strip()
+    self.proxy_port = options['proxy_port'].strip()
+    self.runner_port = options['runner_port'].strip()
+    self.workdir = options['working-directory'].strip()
+    self.software_directory = options['software-directory'].strip()
+    self.instance_directory = options['instance-directory'].strip()
+    self.partition_amount = options['partition-amount'].strip()
+    self.cloud9_url = options['cloud9-url'].strip()
+    # Set slaprunner access URL
+    options['access-url'] = 'http://[%s]:%s' % (self.ipv6, self.runner_port)
+
+  def install(self):
+    path_list = []
+
+    configuration = dict(
+        software_root=self.software_directory,
+        instance_root=self.instance_directory,
+        master_url='http://%s:%s/' % (self.ipv4, self.proxy_port),
+        computer_id='slaprunner',
+        partition_amount=self.partition_amount,
+        slapgrid_sr=self.options['slapgrid_sr'],
+        slapgrid_cp=self.options['slapgrid_cp'],
+        slapproxy=self.options['slapproxy'],
+        supervisor=self.options['supervisor'],
+        supervisord_config=os.path.join(self.instance_directory, 'etc',
+          'supervisord.conf'),
+        runner_workdir=self.workdir,
+        etc_dir=self.options['etc_dir'],
+        run_dir=self.options['etc_dir'],
+        log_dir=self.workdir,
+        runner_host=self.ipv6,
+        runner_port=self.runner_port,
+        ipv4_address=self.ipv4,
+        ipv6_address=self.ipv6,
+        proxy_host=self.ipv4,
+        proxy_port=self.proxy_port,
+        proxy_database=os.path.join(self.workdir, 'proxy.db'),
+        git=self.options['git-binary'],
+        ssh_client=self.options['ssh_client'],
+        public_key=self.options['public_key'],
+        private_key=self.options['private_key'],
+        cloud9_url=self.cloud9_url
+    )
+
+    config_file = self.createFile(self.options['slapos.cfg'],
+        self.substituteTemplate(self.getTemplateFilename('slapos.cfg.in'),
+        configuration))
+    path_list.append(config_file)
+
+    environment = dict(
+        PATH=os.path.dirname(
+            self.options['git-binary']) + ':' + os.environ['PATH'],
+        GIT_SSH=self.options['ssh_client'],
+        CONFIG_FILE_PATH=config_file
+    )
+    launch_args = [self.options['slaprunnertest'].strip()]
+
+    wrapper = self.createPythonScript(self.options['wrapper'],
+        'slapos.recipe.librecipe.execute.executee',
+        (launch_args, environment)
+    )
+    path_list.append(wrapper)
+
+    return path_list

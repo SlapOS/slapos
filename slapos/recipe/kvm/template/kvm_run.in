@@ -30,26 +30,32 @@ def getSocketStatus(host, port):
 disk_path = '%(disk_path)s'
 if not os.path.exists(disk_path):
   subprocess.Popen(['%(qemu_img_path)s', 'create' ,'-f', 'qcow2',
-      '%(disk_path)s', '%(disk_size)sG'])
+      disk_path, '%(disk_size)sG'])
 
-kvm_argument_list = ['kvm', '-net', 'nic,macaddr=%(mac_address)s',
+kvm_argument_list = ['%(qemu_path)s',
+  '-enable-kvm', '-net', 'nic,macaddr=%(mac_address)s',
   '-net', 'tap,ifname=%(tap_interface)s,script=no,downscript=no',
   '-smp', '%(smp_count)s',
   '-m', '%(ram_size)s',
-  '-drive', 'file=%(disk_path)s,if=virtio,boot=on',
+  '-drive', 'file=%(disk_path)s,if=%(disk_type)s',
   '-vnc', '%(vnc_ip)s:1,ipv4,password',
   '-boot', 'menu=on',
   '-qmp', 'unix:%(socket_path)s,server',
   '-pidfile', '%(pid_file_path)s',
 ]
 
-# Try to connect to NBD server
-s = getSocketStatus('%(nbd_ip)s', %(nbd_port)s)
-if s is None:
-  # NBD is not available : launch kvm without it
-  print 'Warning : Nbd is not available.'
-  os.execv('%(qemu_path)s', kvm_argument_list)
-else:
-  # NBD is available
-  kvm_argument_list.extend(['-cdrom', 'nbd:[%(nbd_ip)s]:%(nbd_port)s'])
-  os.execv('%(qemu_path)s', kvm_argument_list)
+# Try to connect to NBD server (and second nbd if defined)
+for nbd_ip, nbd_port in (
+    ('%(nbd_ip)s', %(nbd_port)s), ('%(nbd2_ip)s', %(nbd2_port)s)):
+  if nbd_ip and nbd_port:
+    s = getSocketStatus(nbd_ip, nbd_port)
+    if s is None:
+      # NBD is not available : launch kvm without it
+      print 'Warning : Nbd is not available.'
+    else:
+      # NBD is available
+      kvm_argument_list.extend([
+          '-drive',
+          'file=nbd:[%%s]:%%s,media=cdrom' %% (nbd_ip, nbd_port)])
+
+os.execv('%(qemu_path)s', kvm_argument_list)

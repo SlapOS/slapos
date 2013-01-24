@@ -1,0 +1,13 @@
+diff -ur bison-2.5.orig/lib/stdio.in.h bison-2.5/lib/stdio.in.h
+--- bison-2.5.orig/lib/stdio.in.h	2011-05-15 00:23:46.000000000 +0200
++++ bison-2.5/lib/stdio.in.h	2012-07-23 16:30:56.366722487 +0200
+@@ -181,7 +181,9 @@
+    so any use of gets warrants an unconditional warning.  Assume it is
+    always declared, since it is required by C89.  */
+ #undef gets
++#if defined(__GLIBC__) && !defined(__UCLIBC__) && !__GLIBC_PREREQ(2, 16)
+ _GL_WARN_ON_USE (gets, "gets is a security hole - use fgets instead");
++#endif
+ 
+ #if @GNULIB_FOPEN@
+ # if @REPLACE_FOPEN@

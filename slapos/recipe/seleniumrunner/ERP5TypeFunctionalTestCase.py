@@ -27,7 +27,7 @@
 #
 ##############################################################################
 
-# XXX-Cedric : This is an import of 
+# XXX-Cedric : This is an import of
 # http://git.erp5.org/gitweb/erp5.git/blob/HEAD:/product/ERP5Type/tests/ERP5TypeFunctionalTestCase.py
 # Modification of the present file should be ported back to this original file.
 import os

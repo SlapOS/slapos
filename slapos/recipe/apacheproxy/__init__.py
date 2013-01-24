@@ -24,8 +24,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import os
-import signal
+import subprocess
 
 from slapos.recipe.librecipe import GenericBaseRecipe
 
@@ -50,17 +49,23 @@ class Recipe(GenericBaseRecipe):
     )
     path_list.append(httpd_conf)
 
-    wrapper = self.createPythonScript(self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.execute',
-        [self.options['httpd-binary'], '-f', self.options['httpd-conf'],
-         '-DFOREGROUND']
-    )
+    wrapper = self.createWrapper(name=self.options['wrapper'],
+                                 command=self.options['httpd-binary'],
+                                 parameters=[
+                                     '-f',
+                                     self.options['httpd-conf'],
+                                     '-DFOREGROUND',
+                                     ])
+
     path_list.append(wrapper)
 
-    if os.path.exists(self.options['pid-file']):
-      # Reload apache configuration
-      with open(self.options['pid-file']) as pid_file:
-        pid = int(pid_file.read().strip(), 10)
-      os.kill(pid, signal.SIGUSR1) # Graceful restart
+    subprocess.call([
+                        self.options['httpd-binary'],
+                        '-f',
+                        self.options['httpd-conf'],
+                        '-k',
+                        'graceful',
+                    ])
 
     return path_list
+
