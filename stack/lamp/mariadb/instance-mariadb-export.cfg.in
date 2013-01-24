@@ -2,7 +2,13 @@
 extends = ${instance-mariadb:output}
           ${pbsready-export:output}
 
-parts += mariadb
+
+parts +=
+    mariadb
+
+# have to repeat the next one, as it's not inherited from pbsready-export
+    cron-entry-backup
+
 
 [exporter]
 recipe = slapos.cookbook:mydumper

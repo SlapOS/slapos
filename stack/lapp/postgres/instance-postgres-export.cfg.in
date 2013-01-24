@@ -4,9 +4,12 @@ extends = ${instance-postgres:output}
 
 
 parts +=
-  urls
-  postgres-instance
-  postgres-promise
+    urls
+    postgres-instance
+    postgres-promise
+
+# have to repeat the next one, as it's not inherited from pbsready-export
+    cron-entry-backup
 
 
 [exporter]

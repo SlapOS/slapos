@@ -37,7 +37,7 @@ bin = $${buildout:directory}/bin
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 log = $${rootdirectory:var}/log
-services = $${rootdirectory:etc}/run
+services = $${rootdirectory:etc}/service
 run = $${rootdirectory:var}/run
 script = $${rootdirectory:etc}/script
 backup = $${rootdirectory:srv}/backup

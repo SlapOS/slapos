@@ -38,7 +38,7 @@ tmp = $${buildout:directory}/tmp
 [basedirectory]
 recipe = slapos.cookbook:mkdirectory
 log = $${rootdirectory:var}/log
-services = $${rootdirectory:etc}/run
+services = $${rootdirectory:etc}/service
 run = $${rootdirectory:var}/run
 backup = $${rootdirectory:srv}/backup
 promises = $${rootdirectory:etc}/promise
@@ -194,8 +194,6 @@ url = $${request-postgres:connection-url}
 [apache-php]
 recipe = slapos.cookbook:apachephp
 source = ${application:location}
-template = ${application-template:location}/${application-template:filename}
-configuration = ${application-configuration:location}
 
 htdocs = $${rootdirectory:srv}/www/
 pid-file = $${basedirectory:run}/apache.pid
@@ -212,11 +210,6 @@ wrapper = $${basedirectory:services}/apache
 
 httpd-binary = ${apache:location}/bin/httpd
 
-mysql-username = $${postgres-urlparse:username}
-mysql-password = $${postgres-urlparse:password}
-mysql-database = $${postgres-urlparse:path}
-mysql-host = $${stunnel:local-host}
-mysql-port = $${stunnel:local-port}
 
 [logrotate-entry-apache]
 <= logrotate

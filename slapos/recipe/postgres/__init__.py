@@ -40,47 +40,58 @@ class Recipe(GenericBaseRecipe):
     This recipe creates:
 
         - a Postgres cluster
-        - configuration to allow connections from IPV6 only (or unix socket)
+        - configuration to allow connections from IPv4, IPv6 or unix socket.
         - a superuser with provided name and generated password
         - a database with provided name
-        - a foreground start script in the services directory
+        - a start script in the services directory
 
-    then adds the connection URL to the options.
-    The URL can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
+    Required options:
+        bin
+            path to the 'initdb' and 'postgres' binaries.
+        dbname
+            name of the database to be used by the application.
+        ipv4
+            set of ipv4 to listen on.
+        ipv6
+            set of ipv6 to listen on.
+        pgdata-directory
+            path to postgres configuration and data.
+        services
+            must be ${buildout:directory}/etc/service.
+        superuser
+            name of the superuser to create.
+
+    Exposed options:
+        password
+            generated password for the superuser.
+        url
+            generated DBAPI connection string.
+            it can be used as-is (ie. in sqlalchemy) or by the _urlparse.py recipe.
     """
-
-    def fetch_ipv6_host(self, options):
-        """
-        Returns a string represtation of ipv6_host.
-        May receive a regular string, a set or a string serialized by buildout.
-        """
-        ipv6_host = options['ipv6_host']
-
-        if isinstance(ipv6_host, set):
-            return ipv6_host.pop()
-        else:
-            return ipv6_host
-
 
     def _options(self, options):
         options['password'] = self.generatePassword()
-        options['url'] = 'postgresql://%(user)s:%(password)s@[%(ipv4_host)s]:%(port)s/%(dbname)s' % options
+        options['url'] = 'postgresql://%(superuser)s:%(password)s@[%(ipv6_random)s]:%(port)s/%(dbname)s' % options
 
 
     def install(self):
         pgdata = self.options['pgdata-directory']
 
+        # if the pgdata already exists, skip all steps, we don't need to do anything.
+
         if not os.path.exists(pgdata):
             self.createCluster()
             self.createConfig()
             self.createDatabase()
-            self.createSuperuser()
+            self.updateSuperuser()
             self.createRunScript()
 
-        return [
-                # XXX should we really return something here?
-                # os.path.join(pgdata, 'postgresql.conf')
-                ]
+        # install() methods usually return the pathnames of managed files.
+        # If they are missing, they will be rebuilt.
+        # In this case, we already check for the existence of pgdata,
+        # so we don't need to return anything here.
+
+        return []
 
 
     def check_exists(self, path):
@@ -89,6 +100,12 @@ class Recipe(GenericBaseRecipe):
 
 
     def createCluster(self):
+        """\
+        A Postgres cluster is "a collection of databases that is managed
+        by a single instance of a running database server".
+
+        Here we create an empty cluster.
+        """
         initdb_binary = os.path.join(self.options['bin'], 'initdb')
         self.check_exists(initdb_binary)
 
@@ -99,6 +116,7 @@ class Recipe(GenericBaseRecipe):
                                    '-D', pgdata,
                                    '-A', 'ident',
                                    '-E', 'UTF8',
+                                   '-U', self.options['superuser'],
                                    ])
         except subprocess.CalledProcessError:
             raise UserError('Could not create cluster directory in %s' % pgdata)
@@ -106,10 +124,12 @@ class Recipe(GenericBaseRecipe):
 
     def createConfig(self):
         pgdata = self.options['pgdata-directory']
+        ipv4 = self.options['ipv4']
+        ipv6 = self.options['ipv6']
 
         with open(os.path.join(pgdata, 'postgresql.conf'), 'wb') as cfg:
             cfg.write(textwrap.dedent("""\
-                    listen_addresses = '%s,%s'
+                    listen_addresses = '%s'
                     logging_collector = on
                     log_rotation_size = 50MB
                     max_connections = 100
@@ -124,49 +144,54 @@ class Recipe(GenericBaseRecipe):
                     unix_socket_directory = '%s'
                     unix_socket_permissions = 0700
                     """ % (
-                        self.options['ipv4_host'],
-                        self.fetch_ipv6_host(self.options),
+                        ','.join(ipv4.union(ipv6)),
                         pgdata,
                         )))
 
-
         with open(os.path.join(pgdata, 'pg_hba.conf'), 'wb') as cfg:
-            # see http://www.postgresql.org/docs/9.1/static/auth-pg-hba-conf.html
+            # see http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html
 
-            cfg.write(textwrap.dedent("""\
-                    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+            cfg_lines = [
+                '# TYPE  DATABASE        USER            ADDRESS                 METHOD',
+                '',
+                '# "local" is for Unix domain socket connections only (check unix_socket_permissions!)',
+                'local   all             all                                     ident',
+                'host    all             all             127.0.0.1/32            md5',
+                'host    all             all             ::1/128                 md5',
+            ]
 
-                    # "local" is for Unix domain socket connections only (check unix_socket_permissions!)
-                    local   all             all                                     ident
-                    host    all             all             127.0.0.1/32            md5
-                    host    all             all             %s/32                   md5
-                    host    all             all             ::1/128                 md5
-                    host    all             all             %s/128                  md5
-                    """ % (self.options['ipv4_host'], self.fetch_ipv6_host(self.options))))
+            for ip in ipv4:
+                cfg_lines.append('host    all             all             %s/32                   md5' % ip)
+
+            for ip in ipv6:
+                cfg_lines.append('host    all             all             %s/128                   md5' % ip)
+
+            cfg.write('\n'.join(cfg_lines))
 
 
     def createDatabase(self):
         self.runPostgresCommand(cmd='CREATE DATABASE "%s"' % self.options['dbname'])
 
 
-    def createSuperuser(self):
-        """
-        Creates a Postgres superuser - other than "slapuser#" for use by the application.
+    def updateSuperuser(self):
+        """\
+        Set a password for the cluster administrator.
+        The application will also use it for its connections.
         """
 
         # http://postgresql.1045698.n5.nabble.com/Algorithm-for-generating-md5-encrypted-password-not-found-in-documentation-td4919082.html
 
-        user = self.options['user']
+        user = self.options['superuser']
         password = self.options['password']
 
         # encrypt the password to avoid storing in the logs
         enc_password = 'md5' + md5.md5(password+user).hexdigest()
 
-        self.runPostgresCommand(cmd="""CREATE USER "%s" ENCRYPTED PASSWORD '%s' SUPERUSER""" % (user, enc_password))
+        self.runPostgresCommand(cmd="""ALTER USER "%s" ENCRYPTED PASSWORD '%s'""" % (user, enc_password))
 
 
     def runPostgresCommand(self, cmd):
-        """
+        """\
         Executes a command in single-user mode, with no daemon running.
 
         Multiple commands can be executed by providing newlines,
@@ -190,7 +215,7 @@ class Recipe(GenericBaseRecipe):
 
 
     def createRunScript(self):
-        """
+        """\
         Creates a script that runs postgres in the foreground.
         'exec' is used to allow easy control by supervisor.
         """
@@ -201,60 +226,5 @@ class Recipe(GenericBaseRecipe):
                 """ % self.options)
         name = os.path.join(self.options['services'], 'postgres-start')
         self.createExecutable(name, content=content)
-
-
-
-class ExportRecipe(GenericBaseRecipe):
-
-    def install(self):
-        pgdata = self.options['pgdata-directory']
-        wrapper = self.options['wrapper']
-        self.createBackupScript(wrapper)
-        return [wrapper]
-
-
-    def createBackupScript(self, wrapper):
-        """
-        Create a script to backup the database in 'custom' format.
-        """
-        content = textwrap.dedent("""\
-                #!/bin/sh
-                umask 077
-                %(bin)s/pg_dump \\
-                        --host=%(pgdata-directory)s \\
-                        --format=custom \\
-                        --file=%(backup-directory)s/database.dump \\
-                        %(dbname)s
-                """ % self.options)
-        self.createExecutable(wrapper, content=content)
-
-
-
-class ImportRecipe(GenericBaseRecipe):
-
-    def install(self):
-        pgdata = self.options['pgdata-directory']
-        wrapper = self.options['wrapper']
-        self.createRestoreScript(wrapper)
-        return [wrapper]
-
-
-    def createRestoreScript(self, wrapper):
-        """
-        Create a script to restore the database from 'custom' format.
-        """
-        content = textwrap.dedent("""\
-                #!/bin/sh
-                %(bin)s/pg_restore \\
-                        --host=%(pgdata-directory)s \\
-                        --dbname=%(dbname)s \\
-                        --clean \\
-                        --no-owner \\
-                        --no-acl \\
-                        %(backup-directory)s/database.dump
-                """ % self.options)
-        self.createExecutable(wrapper, content=content)
-
-
 
 
