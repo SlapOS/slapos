@@ -1,5 +1,9 @@
 <workflow_chain>
  <chain>
+  <type>Acknowledgement</type>
+  <workflow>local_permission_slapos_interaction_workflow</workflow>
+ </chain>
+ <chain>
   <type>Computer</type>
   <workflow>local_permission_slapos_interaction_workflow</workflow>
  </chain>

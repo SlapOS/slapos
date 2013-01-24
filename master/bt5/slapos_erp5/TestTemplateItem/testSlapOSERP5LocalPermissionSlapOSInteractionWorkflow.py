@@ -336,3 +336,255 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     self.assertSecurityGroup(sale_invoice_transaction, [self.user_id,
         'G-COMPANY', self.person_user.getReference()],
         False)
+
+  def test_SupportRequest_setDestinationDecision(self):
+    self._makePerson()
+    support_request = self.portal.support_request_module.newContent(
+        portal_type='Support Request')
+    self.assertSecurityGroup(support_request, ['G-COMPANY', self.user_id], False)
+
+    support_request.edit(destination_decision=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(support_request, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_Acknowledgement_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Acknowledgement')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_Acknowledgement_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Acknowledgement')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_FaxMessage_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Fax Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_FaxMessage_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Fax Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_Letter_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Letter')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_Letter_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Letter')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_MailMessage_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Mail Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_MailMessage_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Mail Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_Note_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Note')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_Note_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Note')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_PhoneCall_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Phone Call')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_PhoneCall_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Phone Call')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_ShortMessage_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Short Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_ShortMessage_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Short Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_SiteMessage_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Site Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_SiteMessage_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Site Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_Visit_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Visit')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_Visit_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Visit')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_WebMessage_setDestination(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Web Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(destination=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_WebMessage_setSource(self):
+    self._makePerson()
+    event = self.portal.event_module.newContent(
+        portal_type='Web Message')
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id], False)
+
+    event.edit(source=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
+        self.person_reference], False)

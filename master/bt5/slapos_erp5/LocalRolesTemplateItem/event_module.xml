@@ -4,6 +4,10 @@
    <item>Auditor</item>
    <item>Author</item>
   </role>
+  <role id='R-MEMBER'>
+   <item>Auditor</item>
+   <item>Author</item>
+  </role>
   <role id='zope'>
    <item>Owner</item>
   </role>

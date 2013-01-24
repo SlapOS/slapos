@@ -1046,6 +1046,36 @@ class TestAcknowledgement(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Acknowledgement',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Acknowledgement',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
 class TestBankAccount(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
     product = self.portal.organisation_module.newContent(
@@ -1127,8 +1157,9 @@ class TestEventModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.event_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'zope'], True)
+        ['G-COMPANY', 'R-MEMBER', 'zope'], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestFaxMessage(TestSlapOSGroupRoleSecurityMixin):
@@ -1139,6 +1170,36 @@ class TestFaxMessage(TestSlapOSGroupRoleSecurityMixin):
     self.assertSecurityGroup(product,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Fax Message',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Fax Message',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestGadget(TestSlapOSGroupRoleSecurityMixin):
@@ -1216,6 +1277,36 @@ class TestLetter(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Letter',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Letter',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
 class TestMailMessage(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
     product = self.portal.event_module.newContent(
@@ -1224,6 +1315,36 @@ class TestMailMessage(TestSlapOSGroupRoleSecurityMixin):
     self.assertSecurityGroup(product,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Mail Message',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Mail Message',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestMeeting(TestSlapOSGroupRoleSecurityMixin):
@@ -1254,6 +1375,36 @@ class TestNote(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Note',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Note',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
 class TestPhoneCall(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
     product = self.portal.event_module.newContent(
@@ -1264,6 +1415,36 @@ class TestPhoneCall(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Phone Call',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Phone Call',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
 class TestVisit(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
     product = self.portal.event_module.newContent(
@@ -1272,6 +1453,36 @@ class TestVisit(TestSlapOSGroupRoleSecurityMixin):
     self.assertSecurityGroup(product,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Visit',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Visit',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestNotificationMessageModule(TestSlapOSGroupRoleSecurityMixin):
@@ -1392,6 +1603,36 @@ class TestShortMessage(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Short Message',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Short Message',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
 class TestSiteMessage(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
     product = self.portal.event_module.newContent(
@@ -1400,6 +1641,36 @@ class TestSiteMessage(TestSlapOSGroupRoleSecurityMixin):
     self.assertSecurityGroup(product,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Site Message',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Site Message',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestWebMessage(TestSlapOSGroupRoleSecurityMixin):
@@ -1412,12 +1683,43 @@ class TestWebMessage(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+  def test_SourceCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Web Message',
+        source_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_DestinationCustomer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.event_module.newContent(
+        portal_type='Web Message',
+        destination_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
 class TestSupportRequestModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.support_request_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'zope'], True)
+        ['G-COMPANY', 'R-MEMBER', 'zope'], True)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Auditor', 'Author'])
     self.assertRoles(module, 'zope', ['Owner'])
 
 class TestSupportRequest(TestSlapOSGroupRoleSecurityMixin):
@@ -1428,6 +1730,21 @@ class TestSupportRequest(TestSlapOSGroupRoleSecurityMixin):
     self.assertSecurityGroup(product,
         ['G-COMPANY', self.user_id], False)
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_Customer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.support_request_module.newContent(
+        portal_type='Support Request',
+        destination_decision_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
 class TestTransformationModule(TestSlapOSGroupRoleSecurityMixin):

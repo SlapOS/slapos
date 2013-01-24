@@ -1,4 +1,18 @@
 <type_roles>
+  <role id='Auditor'>
+   <property id='title'>Customer</property>
+   <property id='description'>Monovalued role</property>
+   <property id='condition'>python: here.getDestinationValue(portal_type='Person') is not None</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
+   <multi_property id='base_category'>destination</multi_property>
+  </role>
+  <role id='Auditor'>
+   <property id='title'>Customer</property>
+   <property id='description'>Monovalued role</property>
+   <property id='condition'>python: here.getSourceValue(portal_type='Person') is not None</property>
+   <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
+   <multi_property id='base_category'>source</multi_property>
+  </role>
   <role id='Assignor'>
    <property id='title'>Group company</property>
    <multi_property id='category'>group/company</multi_property>
