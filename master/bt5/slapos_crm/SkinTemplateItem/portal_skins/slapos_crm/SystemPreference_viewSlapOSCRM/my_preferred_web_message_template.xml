@@ -16,7 +16,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>my_preferred_support_request_template</string> </value>
+            <value> <string>my_preferred_web_message_template</string> </value>
         </item>
         <item>
             <key> <string>message_values</string> </key>
@@ -85,7 +85,7 @@
                 </item>
                 <item>
                     <key> <string>title</string> </key>
-                    <value> <string>Preferred Support Request Template</string> </value>
+                    <value> <string>Preferred Web Message Template</string> </value>
                 </item>
               </dictionary>
             </value>

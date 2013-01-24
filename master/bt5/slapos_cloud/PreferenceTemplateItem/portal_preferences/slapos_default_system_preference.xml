@@ -100,6 +100,14 @@
             <value> <int>1</int> </value>
         </item>
         <item>
+            <key> <string>preferred_event_resource</string> </key>
+            <value>
+              <tuple>
+                <string>service_module/slapos_crm_information</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>preferred_event_sender_email</string> </key>
             <value>
               <tuple>
@@ -218,6 +226,10 @@
         <item>
             <key> <string>preferred_time_zone</string> </key>
             <value> <string>Europe/Paris</string> </value>
+        </item>
+        <item>
+            <key> <string>preferred_web_message_template</string> </key>
+            <value> <string>event_module/slapos_crm_web_message_template</string> </value>
         </item>
         <item>
             <key> <string>priority</string> </key>

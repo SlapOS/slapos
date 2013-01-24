@@ -1,3 +1,4 @@
+event_module/slapos_crm_web_message_template
 service_module/slapos_crm_acknowledgement
 service_module/slapos_crm_complaint
 service_module/slapos_crm_information

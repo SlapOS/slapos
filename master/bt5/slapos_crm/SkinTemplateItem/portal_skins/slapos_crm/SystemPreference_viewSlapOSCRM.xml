@@ -94,6 +94,7 @@
                     <value>
                       <list>
                         <string>my_preferred_support_request_template</string>
+                        <string>my_preferred_web_message_template</string>
                       </list>
                     </value>
                 </item>
