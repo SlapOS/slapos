@@ -141,6 +141,7 @@ class Recipe(GenericBaseRecipe):
        )]
     )
     path_list.append(mysqld)
+    mysqldump_binary = self.options.get('mysqldump-binary')
     # TODO: move to a separate recipe (ack'ed by Cedric)
     if 'backup-script' in self.options:
       # backup configuration
@@ -151,7 +152,6 @@ class Recipe(GenericBaseRecipe):
           '--defaults-file=%s' % mysql_conf_file,
           '--socket=%s' % socket.strip(), '--user=root',
           '--ibbackup=%s'% self.options['xtrabackup-binary']]
-      environment = dict(PATH='%s' % self.options['bin-directory'])
       innobackupex_incremental = self.createPythonScript(self.options['innobackupex-incremental'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list + ['--incremental'], environment])
       path_list.append(innobackupex_incremental)
       innobackupex_full = self.createPythonScript(self.options['innobackupex-full'], 'slapos.recipe.librecipe.execute.executee', [innobackupex_argument_list, environment])
