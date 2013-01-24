@@ -70,12 +70,9 @@ def download_network_cached(cache_url, dir_url, software_url, software_root,
       if software_url.startswith(url):
         return False
 
-    # In order to call nc nicely.
-    if len(signature_certificate_list) == 0:
-        signature_certificate_list = None
     try:
         nc = NetworkcacheClient(cache_url, dir_url,
-            signature_certificate_list=signature_certificate_list)
+            signature_certificate_list=signature_certificate_list or None)
     except TypeError:
       logger.warning('Incompatible version of networkcache, not using it.')
       return False
