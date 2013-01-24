@@ -86,12 +86,34 @@
             <value> <string>sale_trade_condition_module/slapos_aggregated_trade_condition</string> </value>
         </item>
         <item>
+            <key> <string>preferred_campaign_use</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
             <key> <string>preferred_credential_recovery_automatic_approval</string> </key>
             <value> <int>1</int> </value>
         </item>
         <item>
             <key> <string>preferred_credential_request_automatic_approval</string> </key>
             <value> <int>1</int> </value>
+        </item>
+        <item>
+            <key> <string>preferred_event_sender_email</string> </key>
+            <value>
+              <tuple>
+                <string>[]</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>preferred_event_use</string> </key>
+            <value>
+              <tuple>
+                <string>crm/event</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>preferred_hide_rows_on_no_search_criterion</string> </key>
@@ -120,6 +142,12 @@
         <item>
             <key> <string>preferred_maximum_due_day</string> </key>
             <value> <int>15</int> </value>
+        </item>
+        <item>
+            <key> <string>preferred_meeting_use</string> </key>
+            <value>
+              <tuple/>
+            </value>
         </item>
         <item>
             <key> <string>preferred_ooodoc_server_address</string> </key>
@@ -154,10 +182,36 @@
             <value> <string>service_module/vifib_registration</string> </value>
         </item>
         <item>
+            <key> <string>preferred_sale_opportunity_use</string> </key>
+            <value>
+              <tuple/>
+            </value>
+        </item>
+        <item>
             <key> <string>preferred_subscription_assignment_category</string> </key>
             <value>
               <tuple>
                 <string>role/member</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>preferred_support_request_resource</string> </key>
+            <value>
+              <tuple>
+                <string>service_module/slapos_crm_information</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
+            <key> <string>preferred_support_request_template</string> </key>
+            <value> <string>support_request_module/slapos_crm_support_request_template</string> </value>
+        </item>
+        <item>
+            <key> <string>preferred_support_request_use</string> </key>
+            <value>
+              <tuple>
+                <string>crm/support_request</string>
               </tuple>
             </value>
         </item>

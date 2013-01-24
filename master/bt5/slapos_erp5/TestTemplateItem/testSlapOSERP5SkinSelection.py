@@ -118,6 +118,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -219,6 +220,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -316,6 +318,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -414,6 +417,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -509,6 +513,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -605,6 +610,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -700,6 +706,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -795,6 +802,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -890,6 +898,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api
@@ -987,6 +996,7 @@ slapos_cache
 slapos_cloud
 slapos_cloud_promise
 slapos_core
+slapos_crm
 slapos_payzen
 slapos_pdm
 slapos_rest_api

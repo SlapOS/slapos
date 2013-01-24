@@ -1,0 +1,5 @@
+service_module/slapos_crm_acknowledgement
+service_module/slapos_crm_complaint
+service_module/slapos_crm_information
+service_module/slapos_crm_spam
+support_request_module/slapos_crm_support_request_template
