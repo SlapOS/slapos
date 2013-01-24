@@ -10,7 +10,7 @@ Minimal parameters::
 <?xml version='1.0' encoding='utf-8'?>
 <instance>
   <parameter id="_">{
-    'cluster': 'dummy',
+    "cluster": "dummy",
   }</parameter>
 </instance>
 ```
