@@ -41,6 +41,14 @@ def updateMysql(args):
   conf = args[0]
   sleep = 30
   is_succeed = False
+  try:
+    script_filename = conf.pop('mysql_script_file')
+  except KeyError:
+    pass
+  else:
+    assert 'mysql_script' not in conf
+    with open(script_filename) as script_file:
+      conf['mysql_script'] = script_file.read()
   while True:
     mysql_upgrade_list = [conf['mysql_upgrade_binary'], '--no-defaults', '--user=root']
     if 'socket' in conf:
