@@ -118,7 +118,7 @@ state-file = ${rootdirectory:srv}/logrotate.status
 recipe = slapos.cookbook:logrotate.d
 name = mariadb
 log = ${mariadb-instance:error-log} ${mariadb-instance:slow-query-log}
-post = ${mariadb-instance:mysql-binary} --no-defaults -B --socket=${mariadb-instance:socket} -e "FLUSH LOGS"
+post = "${mariadb-instance:mysql-binary}" --no-defaults -B --socket="${mariadb-instance:socket}" -u root -e "FLUSH LOGS"
 
 [cron]
 recipe = slapos.cookbook:cron
