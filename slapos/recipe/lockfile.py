@@ -57,7 +57,9 @@ class LockFile(object):
     except IOError: # add_watch failed
       pass
     finally:
-      os.close(inotify_fd)
+      if isinstance(inotify_fd, int): 
+        os.close(inotify_fd)
+
 
     self.__enter__()
 
