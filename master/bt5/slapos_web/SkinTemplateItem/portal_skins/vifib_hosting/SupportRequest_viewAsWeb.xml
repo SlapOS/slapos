@@ -38,6 +38,16 @@
             <value> <string></string> </value>
         </item>
         <item>
+            <key> <string>description</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>edit_order</string> </key>
+            <value>
+              <list/>
+            </value>
+        </item>
+        <item>
             <key> <string>encoding</string> </key>
             <value> <string>UTF-8</string> </value>
         </item>
@@ -76,17 +86,16 @@
                 <item>
                     <key> <string>hidden</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>your_reportbox</string>
+                      </list>
                     </value>
                 </item>
                 <item>
                     <key> <string>normal</string> </key>
                     <value>
                       <list>
-                        <string>my_translated_description</string>
-                        <string>my_section_title</string>
-                        <string>listbox</string>
-                        <string>new_ticket_button</string>
+                        <string>my_title</string>
                       </list>
                     </value>
                 </item>
@@ -101,7 +110,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_viewHelpRender</string> </value>
+            <value> <string>SupportRequest_viewAsWeb</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
@@ -109,7 +118,11 @@
         </item>
         <item>
             <key> <string>name</string> </key>
-            <value> <string>WebSection_viewHelpRender</string> </value>
+            <value> <string>HostingSubscription_viewAsWeb</string> </value>
+        </item>
+        <item>
+            <key> <string>pt</string> </key>
+            <value> <string>report_view</string> </value>
         </item>
         <item>
             <key> <string>row_length</string> </key>
@@ -126,6 +139,14 @@
         <item>
             <key> <string>unicode_mode</string> </key>
             <value> <int>0</int> </value>
+        </item>
+        <item>
+            <key> <string>update_action</string> </key>
+            <value> <string></string> </value>
+        </item>
+        <item>
+            <key> <string>update_action_title</string> </key>
+            <value> <string></string> </value>
         </item>
       </dictionary>
     </pickle>

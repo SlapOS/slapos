@@ -72,22 +72,22 @@
             </value>
         </item>
         <item>
-            <key> <string>custom_render_method_id</string> </key>
-            <value> <string>WebSection_viewHelpRender</string> </value>
-        </item>
-        <item>
-            <key> <string>description</string> </key>
+            <key> <string>container_layout</string> </key>
             <value>
               <none/>
             </value>
         </item>
         <item>
-            <key> <string>id</string> </key>
-            <value> <string>help</string> </value>
+            <key> <string>custom_render_method_id</string> </key>
+            <value> <string>WebSection_viewNewTicketDialog</string> </value>
         </item>
         <item>
-            <key> <string>int_index</string> </key>
-            <value> <int>10</int> </value>
+            <key> <string>description</string> </key>
+            <value> <string>Please fill your ticket.</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>add-a-ticket</string> </value>
         </item>
         <item>
             <key> <string>portal_type</string> </key>
@@ -101,11 +101,11 @@
         </item>
         <item>
             <key> <string>title</string> </key>
-            <value> <string>Help</string> </value>
+            <value> <string>Add a ticket</string> </value>
         </item>
         <item>
             <key> <string>visible</string> </key>
-            <value> <int>1</int> </value>
+            <value> <int>0</int> </value>
         </item>
       </dictionary>
     </pickle>

@@ -224,6 +224,8 @@ a.monitoring_failed {\n
   height: 2em;\n
   width: 2em;\n
 }\n
+\n
+.document > .actions {display:none;}\n
 </tal:block>
 
 ]]></unicode> </value>

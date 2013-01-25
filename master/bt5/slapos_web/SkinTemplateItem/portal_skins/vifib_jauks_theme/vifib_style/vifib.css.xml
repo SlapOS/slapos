@@ -75,6 +75,7 @@ a img{border : 0 none;cursor : pointer;}\n
 .clear, .bottom{clear:both;}\n
 .center, .bottom{text-align:center}\n
 .alignr {text-align:right;}\n
+.alignl {text-align:left;}\n
 .nolabel label, .hidden_fieldset{display: none;}\n
 .width30{width:30%}\n
 .width60{width:60%}\n
