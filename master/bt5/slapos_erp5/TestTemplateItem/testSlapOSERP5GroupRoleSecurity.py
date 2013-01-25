@@ -1713,6 +1713,19 @@ class TestWebMessage(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, reference, ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
 
+  def test_Template(self):
+    product = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredWebMessageTemplate())
+    assert product.getPortalType() == 'Web Message'
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', product.Base_getOwnerId(), 'R-MEMBER'], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, product.Base_getOwnerId(), ['Owner'])
+    self.assertRoles(product, 'R-MEMBER', ['Auditor'])
+    self.assertPermissionsOfRole(product, 'Auditor',
+        ['Access contents information', 'View'])
+
 class TestSupportRequestModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.support_request_module
@@ -1746,6 +1759,19 @@ class TestSupportRequest(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Assignor'])
     self.assertRoles(product, reference, ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_Template(self):
+    product = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredSupportRequestTemplate())
+    assert product.getPortalType() == 'Support Request'
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', product.Base_getOwnerId(), 'R-MEMBER'], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, product.Base_getOwnerId(), ['Owner'])
+    self.assertRoles(product, 'R-MEMBER', ['Auditor'])
+    self.assertPermissionsOfRole(product, 'Auditor',
+        ['Access contents information', 'View'])
 
 class TestTransformationModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):

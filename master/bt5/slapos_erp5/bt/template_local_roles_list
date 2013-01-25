@@ -62,3 +62,5 @@ support_request_module
 system_event_module
 transformation_module
 web_page_module
+support_request_module/slapos_crm_support_request_template
+event_module/slapos_crm_web_message_template
