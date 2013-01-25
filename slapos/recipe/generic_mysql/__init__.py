@@ -210,3 +210,34 @@ class Recipe(GenericBaseRecipe):
       path_list.append(pt_exe)
 
     return path_list
+
+class WrapUpdateMySQL(GenericBaseRecipe):
+  def install(self):
+    return [
+      self.createPythonScript(
+        self.options['output'],
+        __name__ + '.mysql.updateMysql',
+        [{
+          'mysql_upgrade_binary': self.options['binary'],
+          'mysql_binary': self.options['mysql'],
+          'socket': self.options['socket'],
+          'mysql_script_file': self.options['init-script'],
+        }]
+      ),
+    ]
+
+class WrapMySQLd(GenericBaseRecipe):
+  def install(self):
+    return [
+      self.createPythonScript(
+        self.options['output'],
+        __name__ + '.mysql.runMysql',
+        [{
+          'mysqld_binary': self.options['binary'],
+          'configuration_file': self.options['configuration-file'],
+          'data_directory': self.options['data-directory'],
+          'mysql_install_binary': self.options['mysql-install-binary'],
+          'mysql_base_directory': self.options['mysql-base-directory'],
+        }]
+      ),
+    ]
