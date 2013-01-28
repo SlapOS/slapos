@@ -343,7 +343,7 @@ def register(config):
   certificate_key = parse_certificates(certificate_key)
   certificate = certificate_key[0]
   key = certificate_key[1]
-  COMP = get_computer_name(certificate)  
+  COMP = get_computer_name(certificate)
   # Getting configuration parameters
   slapos_configuration = '/etc/opt/slapos/'
   config.COMPConfig(slapos_configuration=slapos_configuration,
@@ -356,6 +356,8 @@ def register(config):
     save_former_config(config)
   # Prepare Slapos Configuration
   slapconfig(config)
+
+  print "Node has successfully been configured as %s." % COMP
   return 0
 
 def main():
