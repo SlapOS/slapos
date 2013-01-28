@@ -51,6 +51,7 @@
         <item>
             <key> <string>_body</string> </key>
             <value> <string>portal = context.getPortalObject()\n
+web_site = context.getWebSiteValue()\n
 person = portal.ERP5Site_getAuthenticatedMemberPersonValue()\n
 \n
 support_request_template = portal.restrictedTraverse(\n
@@ -81,7 +82,8 @@ web_message.edit(\n
 )\n
 web_message.stop(comment="Submitted from the web site contact form")\n
 \n
-support_request.Base_redirect(\'view\', keep_items={\'portal_status_message\':context.Base_translateString(\'Ticket created.\')})\n
+# Redirect to web site to hide the indexation process\n
+web_site.Base_redirect(\'view\', keep_items={\'editable_mode\': 0, \'portal_status_message\':context.Base_translateString(\'Ticket created.\')})\n
 </string> </value>
         </item>
         <item>
