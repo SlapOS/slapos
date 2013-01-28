@@ -76,7 +76,7 @@ class TestSlapOSPaymentTransaction_addPayzenTicket(testSlapOSMixin):
     self.assertEquals(ticket.getPortalType(), 'Support Request')
     self.assertEquals(ticket.getSimulationState(), 'validated')
     self.assertEquals(ticket.getSourceProject(), transaction.getRelativeUrl())
-    self.assertEquals(ticket.getTitle(), 'Payzen Transaction to check')
+    self.assertEquals(ticket.getTitle(), 'Payzen Transaction to check for "None"')
 
   def test_addPayzenTicket_do_not_duplicate_ticket(self):
     transaction = self.createPaymentTransaction()
