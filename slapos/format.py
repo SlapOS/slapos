@@ -43,6 +43,8 @@ import subprocess
 import sys
 import time
 
+from slapos.util import mkdir_p
+
 class OS(object):
   _os = os
 
@@ -1013,6 +1015,9 @@ def run(config):
     config.logger.info('Stored computer definition in %r' % filepath)
   computer.construct(alter_user=config.alter_user,
       alter_network=config.alter_network, create_tap=config.create_tap)
+
+  if getattr(config, 'certificate_repository_path'):
+    mkdir_p(config.certificate_repository_path, mode=0o700)
 
   # Dumping and sending to the erp5 the current configuration
   if not config.dry_run:
