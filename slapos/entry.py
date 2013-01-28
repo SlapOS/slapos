@@ -187,6 +187,7 @@ Node subcommands usage:
   slapos node software
   slapos node instance
   slapos node report
+  slapos node format
   slapos node start <process>
   slapos node stop <process>
   slapos node restart <process>
