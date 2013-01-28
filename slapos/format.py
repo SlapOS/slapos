@@ -1068,7 +1068,9 @@ class Config(object):
 
     # Load configuration file
     configuration_parser = ConfigParser.SafeConfigParser()
-    configuration_parser.read(configuration_file_path)
+    if configuration_parser.read(configuration_file_path) != [configuration_file_path]:
+      raise UsageError('Cannot find or parse configuration file: %s' % configuration_file_path)
+
     # Merges the arguments and configuration
     for section in ("slapformat", "slapos"):
       configuration_dict = dict(configuration_parser.items(section))
