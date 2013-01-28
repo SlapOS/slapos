@@ -26,6 +26,10 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+"""
+Simple, easy to (un)marshall classes for slap client/server communication
+"""
+
 __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
            "Supply", "OpenOrder", "NotFoundError", "Unauthorized",
            "ResourceNotReady", "ServerError"]
@@ -33,15 +37,15 @@ __all__ = ["slap", "ComputerPartition", "Computer", "SoftwareRelease",
 from interface import slap as interface
 from xml_marshaller import xml_marshaller
 import httplib
+import logging
 import socket
 import ssl
+import traceback
 import urllib
 import urlparse
 import zope.interface
 
-"""
-Simple, easy to (un)marshall classes for slap client/server communication
-"""
+log = logging.getLogger(__name__)
 
 DEFAULT_SOFTWARE_TYPE = 'default'
 
@@ -109,11 +113,15 @@ class SoftwareRelease(SlapDocument):
       return self._software_release
 
   def error(self, error_log):
-    # Does not follow interface
-    self._connection_helper.POST('/softwareReleaseError', {
-      'url': self.getURI(),
-      'computer_id' : self.getComputerId(),
-      'error_log': error_log})
+    try:
+      # Does not follow interface
+      self._connection_helper.POST('/softwareReleaseError', {
+        'url': self.getURI(),
+        'computer_id' : self.getComputerId(),
+        'error_log': error_log})
+    except Exception:
+      exception = traceback.format_exc()
+      log.error(exception)
 
   def available(self):
     self._connection_helper.POST('/availableSoftwareRelease', {
@@ -469,10 +477,14 @@ class ComputerPartition(SlapDocument):
       })
 
   def error(self, error_log):
-    self._connection_helper.POST('/softwareInstanceError', {
-      'computer_id': self._computer_id,
-      'computer_partition_id': self.getId(),
-      'error_log': error_log})
+    try:
+      self._connection_helper.POST('/softwareInstanceError', {
+        'computer_id': self._computer_id,
+        'computer_partition_id': self.getId(),
+        'error_log': error_log})
+    except Exception:
+      exception = traceback.format_exc()
+      log.error(exception)
 
   def bang(self, message):
     self._connection_helper.POST('/softwareInstanceBang', {
