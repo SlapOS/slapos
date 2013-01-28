@@ -64,6 +64,8 @@ site_message = portal.event_module.newContent(\n
   destination_value=context.getDestinationSectionValue(),\n
   follow_up=ticket.getRelativeUrl(),\n
   source_value=context.getSourceSectionValue(),\n
+  resource=ticket.getResource(),\n
+  title="Payment requested",\n
   # XXX Hardcoded script provided by another bt5\n
   text_content=\'Please pay your payment by clicking <a \'\\\n
     \'href="%s/PaymentTransaction_redirectToManualPayzenPayment">here</a>.\' % \\\n

@@ -64,10 +64,15 @@ ticket_relative_url = integration_site.getCategoryFromMapping(\'SourceProject/%s
 if ticket_relative_url != \'source_project/%s\' % context.getId().replace(\'-\', \'_\'):\n
   ticket = portal.restrictedTraverse(ticket_relative_url)\n
 else:\n
-  ticket = portal.support_request_module.newContent(\n
-    portal_type=\'Support Request\',\n
+  support_request_template = portal.restrictedTraverse(\n
+    portal.portal_preferences.getPreferredSupportRequestTemplate())\n
+  ticket = support_request_template.Base_createCloneDocument(batch_mode=1)\n
+  ticket.edit(\n
     source_project_value=context,\n
-    title=\'Payzen Transaction to check\',\n
+    title=\'Payzen Transaction to check for "%s"\' % context.getDestinationSectionTitle(),\n
+    destination_decision_value=context.getDestinationSectionValue(),\n
+    start_date=DateTime(),\n
+    resource=portal.portal_preferences.getPreferredSupportRequestResource(),\n
   )\n
   ticket.validate(comment=\'New automatic ticket for %s\' % context.getTitle())\n
 \n
