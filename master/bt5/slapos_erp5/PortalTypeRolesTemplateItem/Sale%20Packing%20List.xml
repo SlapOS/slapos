@@ -6,7 +6,7 @@
   </role>
   <role id='Auditor'>
    <property id='title'>Subscription Customer</property>
-   <property id='condition'>python: here.getSpecialise() == 'sale_trade_condition_module/slapos_subscription_trade_condition'</property>
+   <property id='condition'>python: here.getSpecialise() in ('sale_trade_condition_module/slapos_subscription_trade_condition', 'sale_trade_condition_module/slapos_aggregated_trade_condition')</property>
    <property id='base_category_script'>ERP5Type_getSecurityCategoryFromContent</property>
    <multi_property id='base_category'>destination_decision</multi_property>
   </role>

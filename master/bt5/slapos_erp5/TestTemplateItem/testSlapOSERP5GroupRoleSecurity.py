@@ -847,6 +847,23 @@ class TestSalePackingList(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, self.user_id, ['Owner'])
     self.assertRoles(product, reference, ['Auditor'])
 
+  def test_GroupCustomerAggregation(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.sale_packing_list_module.newContent(
+        portal_type='Sale Packing List',
+        destination_decision_value=person,
+        specialise_value=self.portal.sale_trade_condition_module.\
+                           slapos_aggregated_trade_condition,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id, reference], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+    self.assertRoles(product, reference, ['Auditor'])
+
 class TestAccountingTransactionModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.accounting_module
