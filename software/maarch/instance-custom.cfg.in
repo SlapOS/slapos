@@ -1,0 +1,15 @@
+[buildout]
+
+[maarch-configuration]
+recipe = slapos.recipe.maarch:default
+htdocs = $${apache-php:htdocs}
+db_host = $${postgres-urlparse:host}
+db_port = $${postgres-urlparse:port}
+db_dbname = $${postgres-urlparse:path}
+db_username = $${postgres-urlparse:username}
+db_password = $${postgres-urlparse:password}
+language = en
+php_ini = $${directory:php-ini-dir}/php.ini
+root_docservers = $${buildout:directory}/srv/docservers
+dependency = $${apache-php:recipe}
+

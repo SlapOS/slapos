@@ -15,4 +15,4 @@ date.timezone = Europe/Paris
 file_uploads = On
 upload_max_filesize = 8M
 post_max_size = 8M
-magic_quotes_gpc=0ff
+magic_quotes_gpc=Off

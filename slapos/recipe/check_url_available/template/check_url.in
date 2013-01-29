@@ -9,7 +9,17 @@ if [ -z $URL ]; then
   exit 3
 fi
 
-CODE=$(%(curl_path)s -k -sL $URL -w %%{http_code} -o /dev/null)
+CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} -o /dev/null)
+
+if [ $? -eq 3 ]; then
+  echo "URL malformed: $URL." >&2
+  exit 1
+fi
+
+if [ $? -eq 7 ]; then
+  echo "Failed to connect to host: $URL." >&2
+  exit 1
+fi
 
 if [ ! $CODE ]; then
   echo "$URL is not available (server not reachable)." >&2

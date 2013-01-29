@@ -24,36 +24,23 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+
 from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
-  """
-  Slapmonitor instance configuration.
-  """
-
-  def __init__(self, buildout, name, options):
-    return GenericBaseRecipe.__init__(self, buildout, name, options)
 
   def install(self):
-    config = dict(
-      pid_file_path=self.options['pid-file'],
-      consumption_log_path=self.options['consumption-log-path'],
-      database_path=self.options['database-path'],
-      slapreport_path = self.options['slapreport-path'],
-      logbox_ip = self.options['logbox-ip'],
-      logbox_port = self.options['logbox-port'],
-      logbox_user = self.options['logbox-user'],
-      logbox_passwd = self.options['logbox-passwd'],
-      shell_path=self.options['shell-path'],
-    )
+    options = self.options
+    script = self.createWrapper(name=options['path'],
+                                command=options['slapreport-path'],
+                                parameters=[
+                                    options['pid-file'],
+                                    options['consumption-log-path'],
+                                    options['database-path'],
+                                    options['logbox-ip'],
+                                    options['logbox-port'],
+                                    options['logbox-user'],
+                                    options['logbox-passwd'],
+                                    ])
+    return [script]
 
-    # Runners
-    runner_path = self.createExecutable(
-      self.options['path'],
-      self.substituteTemplate(self.getTemplateFilename('slapreport_run.in'),
-                              config))
-
-    return [runner_path]
-
-  def update(self):
-    pass
