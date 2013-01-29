@@ -21,6 +21,7 @@ alias =
   memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.43:/software/memcached/software.cfg
   mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.65:/software/mysql-5.1/software.cfg
   nosqltester http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/nosqltestbed:/software/nosqltestbed/software.cfg
+  postgresql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.145:/software/postgres/software.cfg
   slaposwebrunner http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.66:/software/slaprunner/software.cfg
   wordpress http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.141:/software/wordpress/software.cfg
   xwiki http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.46:/software/xwiki/software.cfg
