@@ -588,3 +588,31 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
 
     self.assertSecurityGroup(event, ['G-COMPANY', self.user_id,
         self.person_reference], False)
+
+  def test_SalePackingList_setSpecialise(self):
+    self._makePerson()
+    sale_packing_list = self.portal.sale_packing_list_module.newContent(
+      destination_decision_value=self.person_user,  
+      portal_type='Sale Packing List')
+    self.assertSecurityGroup(sale_packing_list, ['G-COMPANY', self.user_id], False)
+
+    sale_packing_list.edit(
+      specialise="sale_trade_condition_module/slapos_subscription_trade_condition")
+    transaction.commit()
+
+    self.assertSecurityGroup(sale_packing_list, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
+  def test_SalePackingList_setDestinationDecision(self):
+    self._makePerson()
+    sale_packing_list = self.portal.sale_packing_list_module.newContent(
+      specialise="sale_trade_condition_module/slapos_subscription_trade_condition",
+      portal_type='Sale Packing List')
+    self.assertSecurityGroup(sale_packing_list, ['G-COMPANY', self.user_id], False)
+
+    sale_packing_list.edit(
+      destination_decision_value=self.person_user)
+    transaction.commit()
+
+    self.assertSecurityGroup(sale_packing_list, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
