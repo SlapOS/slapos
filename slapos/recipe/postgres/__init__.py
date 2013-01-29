@@ -160,11 +160,13 @@ class Recipe(GenericBaseRecipe):
                 'host    all             all             ::1/128                 md5',
             ]
 
+            ipv4_netmask_bits = self.options.get('ipv4_netmask_bits', '32')
             for ip in ipv4:
-                cfg_lines.append('host    all             all             %s/32                   md5' % ip)
+                cfg_lines.append('host    all             all             %s/%s                   md5' % (ip, ipv4_netmask_bits))
 
+            ipv6_netmask_bits = self.options.get('ipv6_netmask_bits', '128')
             for ip in ipv6:
-                cfg_lines.append('host    all             all             %s/128                   md5' % ip)
+                cfg_lines.append('host    all             all             %s/%s                   md5' % (ip, ipv6_netmask_bits))
 
             cfg.write('\n'.join(cfg_lines))
 

@@ -30,7 +30,9 @@ recipe = slapos.cookbook:postgres
 
 # Options
 ipv6 = $${instance-parameters:ipv6}
+ipv6_netmask_bits = 128
 ipv4 = $${instance-parameters:ipv4}
+ipv4_netmask_bits = 32
 ipv6_random = $${instance-parameters:ipv6_random}
 superuser = postgres
 port = 5432
