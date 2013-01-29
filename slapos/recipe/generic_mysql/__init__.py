@@ -140,7 +140,7 @@ class Recipe(GenericBaseRecipe):
        )]
     )
     path_list.append(mysqld)
-    mysqldump_binary = self.options.get('mysqldump-binary')
+    environment = dict(PATH='%s' % self.options['bin-directory'])
     # TODO: move to a separate recipe (ack'ed by Cedric)
     if 'backup-script' in self.options:
       # backup configuration
