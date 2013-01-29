@@ -315,7 +315,7 @@ class Config:
     self.logger.debug("Computer Name: %s" % self.node_name)
     self.logger.debug("Master URL: %s" % self.master_url)
     self.logger.debug("Number of partition: %s" % self.partition_number)
-    self.logger.debug("Interface Name: %s" % self.interface_name)
+    self.logger.info("Using Interface %s" % self.interface_name)
     self.logger.debug("Ipv4 sub network: %s" % self.ipv4_local_network)
     self.logger.debug("Ipv6 Interface: %s" %self.ipv6_interface)
 
