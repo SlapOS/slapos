@@ -22,9 +22,8 @@ tap_base_name = slaptap
 # You can choose any other local network which does not conflict with your
 # current machine configuration
 ipv4_local_network = 10.0.0.0/16
-# Uncomment and change this if you are using an IPv6 tunnel (like VPN, gogoc,
-# tunnelbroker.net)
-# ipv6_interface = tapVPN
+# Comment this if you are using native IPv6 and don't want to use SlapOS tunnel
+ipv6_interface = tapVPN
 
 [networkcache]
 # Define options for binary cache, used to download already compiled software.
