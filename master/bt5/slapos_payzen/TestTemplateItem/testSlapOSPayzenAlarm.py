@@ -117,6 +117,34 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
         'Visited by PaymentTransaction_startPayzenPayment',
         transaction.workflow_history['edit_workflow'][-1]['comment'])
 
+  def _simulatePaymentTransaction_getTotalPayablePrice(self):
+    script_name = 'PaymentTransaction_getTotalPayablePrice'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""return 1""")
+    transaction.commit()
+
+  def _simulatePaymentTransaction_getZeroTotalPayablePrice(self):
+    script_name = 'PaymentTransaction_getTotalPayablePrice'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""return 0""")
+    transaction.commit()
+
+  def _dropPaymentTransaction_getTotalPayablePrice(self):
+    script_name = 'PaymentTransaction_getTotalPayablePrice'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
   def test_not_confirmed_payment(self):
     new_id = self.generateNewId()
     transaction = self.portal.accounting_module.newContent(
@@ -127,7 +155,11 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
       )
     simulation_state = transaction.getSimulationState()
     modification_date = transaction.getModificationDate()
-    transaction.PaymentTransaction_startPayzenPayment()
+    self._simulatePaymentTransaction_getTotalPayablePrice()
+    try:
+      transaction.PaymentTransaction_startPayzenPayment()
+    finally:
+      self._dropPaymentTransaction_getTotalPayablePrice()
     self.assertEquals(transaction.getSimulationState(), simulation_state)
     self.assertEquals(transaction.getModificationDate(), modification_date)
 
@@ -141,7 +173,31 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
     self.portal.portal_workflow._jumpToStateFor(transaction, 'confirmed')
     simulation_state = transaction.getSimulationState()
     modification_date = transaction.getModificationDate()
-    transaction.PaymentTransaction_startPayzenPayment()
+    self._simulatePaymentTransaction_getTotalPayablePrice()
+    try:
+      transaction.PaymentTransaction_startPayzenPayment()
+    finally:
+      self._dropPaymentTransaction_getTotalPayablePrice()
+    self.assertEquals(transaction.getSimulationState(), simulation_state)
+    self.assertEquals(transaction.getModificationDate(), modification_date)
+
+  def test_zero_amount_payment(self):
+    new_id = self.generateNewId()
+    transaction = self.portal.accounting_module.newContent(
+      portal_type='Payment Transaction',
+      title="Transaction %s" % new_id,
+      reference="TESTTRANS-%s" % new_id,
+      payment_mode="payzen",
+      )
+    self.portal.portal_workflow._jumpToStateFor(transaction, 'confirmed')
+    simulation_state = transaction.getSimulationState()
+    modification_date = transaction.getModificationDate()
+
+    self._simulatePaymentTransaction_getZeroTotalPayablePrice()
+    try:
+      transaction.PaymentTransaction_startPayzenPayment()
+    finally:
+      self._dropPaymentTransaction_getTotalPayablePrice()
     self.assertEquals(transaction.getSimulationState(), simulation_state)
     self.assertEquals(transaction.getModificationDate(), modification_date)
 
@@ -174,10 +230,12 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by P
     self.portal.portal_workflow._jumpToStateFor(transaction, 'confirmed')
 
     self._simulatePaymentTransaction_sendManualPayzenPaymentUrl()
+    self._simulatePaymentTransaction_getTotalPayablePrice()
     try:
       transaction.PaymentTransaction_startPayzenPayment()
     finally:
       self._dropPaymentTransaction_sendManualPayzenPaymentUrl()
+      self._dropPaymentTransaction_getTotalPayablePrice()
     self.assertEquals(transaction.getSimulationState(), 'started')
     self.assertEqual(
         'Visited by PaymentTransaction_sendManualPayzenPaymentUrl',

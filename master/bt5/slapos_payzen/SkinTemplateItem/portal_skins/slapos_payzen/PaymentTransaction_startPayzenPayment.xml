@@ -54,7 +54,8 @@
 portal = context.getPortalObject()\n
 \n
 state = context.getSimulationState()\n
-if (state != \'confirmed\') or (context.getPaymentMode() != \'payzen\'):\n
+transaction_amount = int(round((context.PaymentTransaction_getTotalPayablePrice() * -100), 2))\n
+if (state != \'confirmed\') or (context.getPaymentMode() != \'payzen\') or (transaction_amount == 0):\n
   return\n
 else:\n
   # Request manual payment\n
