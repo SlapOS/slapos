@@ -815,9 +815,10 @@ class TestSalePackingListModule(TestSlapOSGroupRoleSecurityMixin):
   def test(self):
     module = self.portal.sale_packing_list_module
     self.assertSecurityGroup(module,
-        ['G-COMPANY', 'zope'], False)
+        ['G-COMPANY', 'zope', 'R-MEMBER'], False)
     self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
     self.assertRoles(module, 'zope', ['Owner'])
+    self.assertRoles(module, 'R-MEMBER', ['Auditor'])
 
 class TestSalePackingList(TestSlapOSGroupRoleSecurityMixin):
   def test_GroupCompany(self):
