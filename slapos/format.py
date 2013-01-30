@@ -30,6 +30,8 @@
 from optparse import OptionParser, Option
 from xml_marshaller import xml_marshaller
 import ConfigParser
+import errno
+import fcntl
 import grp
 import logging
 import netaddr
@@ -39,8 +41,10 @@ import pwd
 import random
 import slapos.slap as slap
 import socket
+import struct
 import subprocess
 import sys
+import threading
 import time
 
 class OS(object):
@@ -107,7 +111,7 @@ def callAndRead(argument_list, raise_on_error=True):
       stderr=subprocess.STDOUT)
   result = popen.communicate()[0]
   if raise_on_error and popen.returncode != 0:
-    raise ValueError('Issue during invoking %r, result was:\n%s' % (
+    raise ValueError('Issue while invoking %r, result was:\n%s' % (
       argument_list, result))
   return popen.returncode, result
 
@@ -494,10 +498,6 @@ class User(object):
     except KeyError:
       return False
 
-import struct
-import fcntl
-import errno
-import threading
 
 class Tap(object):
   "Tap represent a tap interface on the system"
