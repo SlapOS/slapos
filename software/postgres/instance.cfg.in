@@ -16,6 +16,7 @@ offline = true
 recipe = slapos.cookbook:mkdirectory
 bin = $${buildout:directory}/bin
 etc = $${buildout:directory}/etc
+srv = $${buildout:directory}/srv
 services = $${directories:etc}/service
 promises = $${directories:etc}/promise
 var = $${buildout:directory}/var
@@ -30,17 +31,30 @@ recipe = slapos.cookbook:postgres
 
 # Options
 ipv6 = $${instance-parameters:ipv6}
-ipv6_netmask_bits = 128
+# listen to connections from anywhere
+ipv6_netmask_bits = 0
 ipv4 = $${instance-parameters:ipv4}
-ipv4_netmask_bits = 32
+# listen to connections from anywhere
+ipv4_netmask_bits = 0
 ipv6_random = $${instance-parameters:ipv6_random}
 superuser = postgres
+password = $${gen-passwd:passwd}
 port = 5432
 dbname = db
 # pgdata_directory is created by initdb, and should not exist beforehand.
 pgdata-directory = $${directories:var}/data
 bin = ${postgresql:location}/bin
 services = $${directories:services}
+
+
+#----------------
+#--
+#-- Generates a random password and stores it in the filesystem
+
+[gen-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directories:srv}/postgres_passwd
+bytes = 16
 
 
 #----------------

@@ -70,7 +70,6 @@ class Recipe(GenericBaseRecipe):
     """
 
     def _options(self, options):
-        options['password'] = self.generatePassword()
         options['url'] = 'postgresql://%(superuser)s:%(password)s@[%(ipv6_random)s]:%(port)s/%(dbname)s' % options
 
 

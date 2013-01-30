@@ -173,9 +173,14 @@ crl = $${directory:ca-dir}/crl/
 [postgres-instance]
 recipe = slapos.cookbook:postgres
 ipv6 = $${instance-parameters:ipv6}
+# listen to connections from anywhere
+ipv6_netmask_bits = 0
 ipv4 = $${instance-parameters:ipv4}
+# listen to connections from anywhere
+ipv4_netmask_bits = 0
 ipv6_random = $${instance-parameters:ipv6_random}
 superuser = postgres
+password = $${postgres-passwd:passwd}
 port = 5432
 dbname = db
 # pgdata_directory is created by initdb, and should not exist beforehand.
@@ -191,6 +196,16 @@ executable = $${stunnel:wrapper}
 wrapper = $${basedirectory:services}/stunnel
 key-file = $${stunnel:key-file}
 cert-file = $${stunnel:cert-file}
+
+
+#----------------
+#--
+#-- Generates a random password and stores it in the filesystem
+
+[postgres-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${rootdirectory:srv}/postgres_passwd
+bytes = 16
 
 
 #----------------
