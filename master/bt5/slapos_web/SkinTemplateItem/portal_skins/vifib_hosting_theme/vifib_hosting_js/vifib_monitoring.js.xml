@@ -110,12 +110,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n
         var created_at = new Date(Date.parse(data.created_at)),\n
           now = new Date(),\n
           context = $(this);\n
-        // 5 minute for computer and instance.\n
+        // 5 minute for computer. 1 day for instance.\n
         if (/#access/.test(data.text) & /computer_module/.test(data[\'@document\']) & (now - created_at < 300000)) {\n
           $(this).attr("class", "monitoring_ok")\n
                  .attr("title", data.text + " (" + created_at + ")" )\n
                  .attr("href", data[\'@document\']);\n
-        } else if (/#access/.test(data.text) & /software_instance_module/.test(data[\'@document\']) & (now - created_at < 300000)) {\n
+        } else if (/#access/.test(data.text) & /software_instance_module/.test(data[\'@document\']) & (now - created_at < 86400000)) {\n
           $(this).attr("class", "monitoring_ok")\n
                  .attr("title", data.text + " (" + created_at + ")" )\n
                  .attr("href", data[\'@document\']);\n
