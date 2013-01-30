@@ -75,6 +75,7 @@ else:\n
     resource=portal.portal_preferences.getPreferredSupportRequestResource(),\n
   )\n
   ticket.validate(comment=\'New automatic ticket for %s\' % context.getTitle())\n
+  ticket.suspend(comment=\'New automatic ticket for %s\' % context.getTitle())\n
 \n
   try:\n
     mapping = integration_site.getCategoryFromMapping(\n

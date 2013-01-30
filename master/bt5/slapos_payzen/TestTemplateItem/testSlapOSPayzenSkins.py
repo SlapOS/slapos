@@ -74,7 +74,7 @@ class TestSlapOSPaymentTransaction_addPayzenTicket(testSlapOSMixin):
     transaction.edit(payment_mode="payzen")
     ticket = transaction.PaymentTransaction_addPayzenTicket()
     self.assertEquals(ticket.getPortalType(), 'Support Request')
-    self.assertEquals(ticket.getSimulationState(), 'validated')
+    self.assertEquals(ticket.getSimulationState(), 'suspended')
     self.assertEquals(ticket.getSourceProject(), transaction.getRelativeUrl())
     self.assertEquals(ticket.getTitle(), 'Payzen Transaction to check for "None"')
 
