@@ -58,15 +58,15 @@ return """\n
 <div id="ad_content" class="hidden_fieldset">\n
 \n
 <section>\n
-You will be able to use it for free for 1 day.<br/>\n
+Your instance will be available in some minutes, thank you for your patience. <br/>\n
 </section>\n
 \n
 <section>\n
-Your instance will be available in some minutes after its creation.<br/>\n
+We will not charge you when you configure your instance. Your first day of use is offered for free.<br/>\n
 </section>\n
 \n
 <section>\n
-In you need commercial support for ERP5, go to <a href="http://www.erp5.com">erp5.com</a>.\n
+If you need commercial support for ERP5, go to <a href="http://www.erp5.com">erp5.com</a>.\n
 </section>\n
 \n
 </div>\n
