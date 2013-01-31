@@ -14,3 +14,4 @@ portal_orders/slapos_payment_transaction_builder/**
 portal_secure_payments/slapos_payzen_test
 portal_secure_payments/slapos_payzen_test/**
 sale_trade_condition_module/payzen_sale_trade_condition
+sale_trade_condition_module/slapos_manual_accounting_trade_condition
