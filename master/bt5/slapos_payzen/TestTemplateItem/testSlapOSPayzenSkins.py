@@ -684,6 +684,6 @@ class TestSlapOSPayzenBase_getPayzenServiceRelativeUrl(testSlapOSMixin):
       self.portal.Base_getPayzenServiceRelativeUrl,
       REQUEST={})
 
-  def test_getPayzenServiceRelativeUrl_REQUEST_disallowed(self):
+  def test_getPayzenServiceRelativeUrl_default_result(self):
     result = self.portal.Base_getPayzenServiceRelativeUrl()
     self.assertEquals(result, 'portal_secure_payments/slapos_payzen_test')
