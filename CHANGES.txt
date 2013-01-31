@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.34.1 (unreleased)
+-------------------
+
+ * slapos: display version number with help [Marco Mariani]
+ * slapformat: backup slapos.xml to a zip archive at every change [Marco Mariani]
+
 0.34 (2013-01-23)
 -----------------
 

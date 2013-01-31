@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2010, 2011, 2012 Vifib SARL and Contributors.
@@ -46,6 +47,15 @@ import subprocess
 import sys
 import threading
 import time
+import zipfile
+
+import lxml.etree
+
+
+def prettify_xml(xml):
+  root = lxml.etree.fromstring(xml)
+  return lxml.etree.tostring(root, pretty_print=True)
+
 
 class OS(object):
   _os = os
@@ -253,9 +263,31 @@ class Computer(object):
     """
 
     computer_dict = _getDict(self)
-    output_file = open(path_to_xml,'w')
-    output_file.write(xml_marshaller.dumps(computer_dict))
-    output_file.close()
+    new_xml = xml_marshaller.dumps(computer_dict)
+    new_pretty_xml = prettify_xml(new_xml)
+
+    path_to_archive = path_to_xml + '.zip'
+
+    if os.path.exists(path_to_archive):
+      # the archive file exists, we only backup if something has changed
+      with open(path_to_xml, 'rb') as fin:
+        if fin.read() == new_pretty_xml:
+          # computer configuration did not change, nothing to write
+          return
+
+    self.backup_xml(path_to_archive, path_to_xml)
+
+    with open(path_to_xml,'wb') as fout:
+        fout.write(new_pretty_xml)
+
+
+  def backup_xml(self, path_to_archive, path_to_xml):
+    xml_content = open(path_to_xml).read()
+    saved_filename = path_to_xml + time.strftime('.%Y%M%d-%H:%M')
+
+    with zipfile.ZipFile(path_to_archive, 'a') as archive:
+      archive.writestr(saved_filename, xml_content, zipfile.ZIP_DEFLATED)
+
 
   @classmethod
   def load(cls, path_to_xml, reference, ipv6_interface):
