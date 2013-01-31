@@ -9,8 +9,6 @@ account_module/purchase
 account_module/receivable
 account_module/refundable_vat
 account_module/sales
-accounting_module/template_sale_invoice_transaction
-accounting_module/template_sale_invoice_transaction/**
 business_process_module/slapos_aggregated_business_process
 business_process_module/slapos_aggregated_business_process/**
 business_process_module/slapos_consumption_business_process
