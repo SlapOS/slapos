@@ -32,11 +32,11 @@ recipe = slapos.cookbook:postgres
 # Options
 ipv6 = $${instance-parameters:ipv6}
 # listen to connections from anywhere
-ipv6_netmask_bits = 0
+ipv6-netmask-bits = 0
 ipv4 = $${instance-parameters:ipv4}
 # listen to connections from anywhere
-ipv4_netmask_bits = 0
-ipv6_random = $${instance-parameters:ipv6_random}
+ipv4-netmask-bits = 0
+ipv6-random = $${instance-parameters:ipv6-random}
 superuser = postgres
 password = $${gen-passwd:passwd}
 port = 5432
@@ -64,7 +64,7 @@ bytes = 16
 [postgres-promise]
 recipe = slapos.cookbook:check_port_listening
 path = $${directories:promises}/postgres
-hostname = $${instance-parameters:ipv6_random}
+hostname = $${instance-parameters:ipv6-random}
 port = $${postgres-instance:port}
 
 

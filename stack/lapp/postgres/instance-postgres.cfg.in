@@ -134,9 +134,9 @@ config-file = $${directory:stunnel-conf}/stunnel.conf
 key-file = $${directory:stunnel-conf}/stunnel.key
 cert-file = $${directory:stunnel-conf}/stunnel.crt
 pid-file = $${basedirectory:run}/stunnel.pid
-local-host = $${instance-parameters:ipv4_random}
+local-host = $${instance-parameters:ipv4-random}
 local-port = $${postgres-instance:port}
-remote-host = $${instance-parameters:ipv6_random}
+remote-host = $${instance-parameters:ipv6-random}
 remote-port = 6446
 client = false
 post-rotate-script = $${rootdirectory:bin}/stunnel_post_rotate
@@ -174,11 +174,11 @@ crl = $${directory:ca-dir}/crl/
 recipe = slapos.cookbook:postgres
 ipv6 = $${instance-parameters:ipv6}
 # listen to connections from anywhere
-ipv6_netmask_bits = 0
+ipv6-netmask-bits = 0
 ipv4 = $${instance-parameters:ipv4}
 # listen to connections from anywhere
-ipv4_netmask_bits = 0
-ipv6_random = $${instance-parameters:ipv6_random}
+ipv4-netmask-bits = 0
+ipv6-random = $${instance-parameters:ipv6-random}
 superuser = postgres
 password = $${postgres-passwd:passwd}
 port = 5432
@@ -233,7 +233,7 @@ path = $${directory:report}/slapmonitor-xml
 [postgres-promise]
 recipe = slapos.cookbook:check_port_listening
 path = $${basedirectory:promises}/postgres
-hostname = $${instance-parameters:ipv6_random}
+hostname = $${instance-parameters:ipv6-random}
 port = $${postgres-instance:port}
 
 
@@ -244,7 +244,7 @@ port = $${postgres-instance:port}
 [urls]
 recipe = slapos.cookbook:publish
 url = $${postgres-instance:url}
-ip = $${instance-parameters:ipv6_random}
+ip = $${instance-parameters:ipv6-random}
 
 
 #----------------
