@@ -7,6 +7,8 @@ Changes
 
  * Add mysql_ip and mysql_port parameters in apachephp recipe [Cedric de Saint
    Martin]
+ * Random password for postgres in standalone SR and lapp stack; accept
+   connections from the world. [Marco Mariani]
 
 0.71.2 (2013-01-29)
 -------------------
