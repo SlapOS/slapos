@@ -89,19 +89,8 @@ class Recipe(object):
 
   def __init__(self, buildout, name, options):
     self.logger = logging.getLogger(name)
-
-    slap = slapmodule.slap()
-
     software_url = options['software-url']
     name = options['name']
-
-    slap.initializeConnection(options['server-url'],
-                              options.get('key-file'),
-                              options.get('cert-file'),
-                             )
-    request = slap.registerComputerPartition(
-      options['computer-id'], options['partition-id']).request
-
     return_parameters = options.get('return', '').split()
     if not return_parameters:
       self.logger.debug("No parameter to return to main instance."
@@ -116,6 +105,16 @@ class Recipe(object):
     ))
     slave = options.get('slave', 'false').lower() in \
       librecipe.GenericBaseRecipe.TRUE_VALUES
+    slap = slapmodule.slap()
+    slap.initializeConnection(
+      options['server-url'],
+      options.get('key-file'),
+      options.get('cert-file'),
+    )
+    request = slap.registerComputerPartition(
+      options['computer-id'],
+      options['partition-id'],
+    ).request
     self._raise_request_exception = None
     self._raise_request_exception_formatted = None
     self.instance = None
