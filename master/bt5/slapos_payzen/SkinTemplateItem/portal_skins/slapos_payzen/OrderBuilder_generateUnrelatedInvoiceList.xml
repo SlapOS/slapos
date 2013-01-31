@@ -61,6 +61,7 @@ select_kw.pop(\'delivery_relative_url_list\', None)\n
 select_kw.update(\n
   portal_type=\'Sale Invoice Transaction\',\n
   simulation_state=\'stopped\',\n
+  default_payment_mode_uid=portal.portal_categories.payment_mode.payzen.getUid(),\n
   limit=10, # do only some in one shot\n
   select_dict=select_dict,\n
   left_join_list=select_dict.keys(),\n
@@ -85,7 +86,7 @@ for invoice in portal.portal_catalog(**select_kw):\n
     start_date=invoice.getStartDate(),\n
     stop_date=invoice.getStopDate(),\n
     specialise=invoice.getSpecialise(),\n
-    payment_mode=\'payzen\',\n
+    payment_mode=invoice.getPaymentMode(),\n
     source_payment=\'organisation_module/slapos/bank_account\', # the other place defnied: business process\n
   )\n
   temp_movement_rec = newTempSimulationMovement(\n
