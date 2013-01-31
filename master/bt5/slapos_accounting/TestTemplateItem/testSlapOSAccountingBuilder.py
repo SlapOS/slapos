@@ -341,7 +341,7 @@ class TestSlapOSSaleInvoiceBuilder(TestSlapOSSalePackingListBuilder):
 
     invoice_kw = dict(delivery_portal_type='Sale Invoice Transaction',
         simulation_state='confirmed')
-    category_list = ['resource/currency_module/EUR']
+    category_list = ['resource/currency_module/EUR', 'payment_mode/payzen']
     self.checkDelivery(invoice_movement_1, invoice_1,
         category_list=category_list + convertCategoryList('causality',
           [delivery_1.getRelativeUrl()]), **invoice_kw)

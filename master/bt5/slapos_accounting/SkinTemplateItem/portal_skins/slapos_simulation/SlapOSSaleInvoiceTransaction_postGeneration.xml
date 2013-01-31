@@ -62,6 +62,8 @@ invoice = context\n
 price_currency = invoice.getPriceCurrency()\n
 if invoice.getResource() != price_currency:\n
   invoice.setResource(price_currency)\n
+if invoice.getPaymentMode("") == "":\n
+  invoice.setPaymentModeValue(invoice.getPortalObject().portal_categories.payment_mode.payzen)\n
 comment = translateString(\'Initialised by Delivery Builder.\')\n
 if invoice.portal_workflow.isTransitionPossible(invoice, \'plan\'):\n
   invoice.plan(comment=comment)\n
