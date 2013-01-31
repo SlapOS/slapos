@@ -1,10 +1,17 @@
 Changes
 =======
 
+
+0.71.3 (2013-01-31)
+-------------------
+
+ * Add mysql_ip and mysql_port parameters in apachephp recipe [Cedric de Saint
+   Martin]
+
 0.71.2 (2013-01-29)
 -------------------
 
- * revised postgres/lapp recipe [Marco Mariani]
+ * revised postgres/lapp recipe. [Marco Mariani]
 
 
 0.71.1 (2013-01-04)
