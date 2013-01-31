@@ -220,7 +220,6 @@ class WrapUpdateMySQL(GenericBaseRecipe):
         [{
           'mysql_upgrade_binary': self.options['binary'],
           'mysql_binary': self.options['mysql'],
-          'socket': self.options['socket'],
           'mysql_script_file': self.options['init-script'],
         }]
       ),
