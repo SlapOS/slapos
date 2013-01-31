@@ -1,7 +1,9 @@
 from setuptools import setup, find_packages
 import glob
 import os
-version = '0.34.1-dev'
+
+from slapos.version import version
+
 name = 'slapos.core'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"

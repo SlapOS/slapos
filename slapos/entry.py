@@ -43,6 +43,7 @@ from slapos.grid.slapgrid import runUsageReport as report
 from slapos.grid.svcbackend import supervisord
 from slapos.grid.svcbackend import supervisorctl
 from slapos.register.register import main as register
+from slapos.version import version
 
 # Note: this whole file is a hack. We should better try dedicated library
 # like https://github.com/dhellmann/cliff or https://github.com/docopt/docopt.
@@ -173,7 +174,7 @@ def main():
   else:
     is_node = False
 
-  usage = """SlapOS command line interface.
+  usage = """SlapOS %s command line interface.
 For more informations, refer to SlapOS documentation.
 
 Client subcommands usage:
@@ -195,7 +196,7 @@ Node subcommands usage:
   slapos node status <process>
   slapos node supervisorctl
   slapos node supervisord
-"""
+""" % version
 
   # Parse arguments
   # XXX remove the "positional arguments" from help message
