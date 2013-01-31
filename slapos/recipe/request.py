@@ -102,38 +102,27 @@ class Recipe(object):
     request = slap.registerComputerPartition(
       options['computer-id'], options['partition-id']).request
 
-    return_parameters = []
-    if 'return' in options:
-      return_parameters = [str(parameter).strip()
-                          for parameter in options['return'].split()]
-    else:
+    return_parameters = options.get('return', '').split()
+    if not return_parameters:
       self.logger.debug("No parameter to return to main instance."
         "Be careful about that...")
-
     software_type = options.get('software-type', DEFAULT_SOFTWARE_TYPE)
-
-    filter_kw = {}
-    if 'sla' in options:
-      for sla_parameter in options['sla'].split():
-        filter_kw[sla_parameter] = options['sla-%s' % sla_parameter]
-
-    partition_parameter_kw = {}
-    if 'config' in options:
-      for config_parameter in options['config'].split():
-        partition_parameter_kw[config_parameter] = \
-            options['config-%s' % config_parameter]
-    partition_parameter_kw = self._filterForStorage(partition_parameter_kw)
-
-    isSlave = options.get('slave', '').lower() in \
-        librecipe.GenericBaseRecipe.TRUE_VALUES
-
+    filter_kw = dict(
+      (x, options['sla-' + x]) for x in options.get('sla', '').split()
+    )
+    partition_parameter_kw = self._filterForStorage(dict(
+      (x, options['config-' + x])
+      for x in options.get('config', '').split()
+    ))
+    slave = options.get('slave', 'false').lower() in \
+      librecipe.GenericBaseRecipe.TRUE_VALUES
     self._raise_request_exception = None
     self._raise_request_exception_formatted = None
     self.instance = None
     try:
       self.instance = request(software_url, software_type,
           name, partition_parameter_kw=partition_parameter_kw,
-          filter_kw=filter_kw, shared=isSlave)
+          filter_kw=filter_kw, shared=slave)
       return_parameter_dict = self._getReturnParameterDict(self.instance,
           return_parameters)
       # XXX what is the right way to get a global id?
