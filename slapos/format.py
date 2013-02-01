@@ -935,100 +935,111 @@ class Parser(OptionParser):
     return options, args[0]
 
 
-def run(config):
-  # Define the computer
-  if config.input_definition_file:
-    filepath = os.path.abspath(config.input_definition_file)
-    config.logger.info('Using definition file %r' % filepath)
-    computer_definition = ConfigParser.RawConfigParser({
-      'software_user': 'slapsoft',
-    })
-    computer_definition.read(filepath)
-    interface = None
-    address = None
-    netmask = None
-    if computer_definition.has_option('computer', 'address'):
-      address, netmask = computer_definition.get('computer',
-        'address').split('/')
-    if config.alter_network and config.interface_name is not None \
-        and config.ipv4_local_network is not None:
-      interface = Interface(config.interface_name, config.ipv4_local_network,
+
+def parse_computer_definition(config, definition_path):
+  config.logger.info('Using definition file %r' % definition_path)
+  computer_definition = ConfigParser.RawConfigParser({
+    'software_user': 'slapsoft',
+  })
+  computer_definition.read(definition_path)
+  interface = None
+  address = None
+  netmask = None
+  if computer_definition.has_option('computer', 'address'):
+    address, netmask = computer_definition.get('computer',
+      'address').split('/')
+  if config.alter_network and config.interface_name is not None \
+      and config.ipv4_local_network is not None:
+    interface = Interface(config.interface_name, config.ipv4_local_network,
+      config.ipv6_interface)
+  computer = Computer(
+      reference=config.computer_id,
+      interface=interface,
+      addr=address,
+      netmask=netmask,
+      ipv6_interface=config.ipv6_interface,
+      software_user=computer_definition.get('computer', 'software_user'),
+    )
+  partition_list = []
+  for partition_number in range(int(config.partition_amount)):
+    section = 'partition_%s' % partition_number
+    user = User(computer_definition.get(section, 'user'))
+    address_list = []
+    for a in computer_definition.get(section, 'address').split():
+      address, netmask = a.split('/')
+      address_list.append(dict(addr=address, netmask=netmask))
+    tap = Tap(computer_definition.get(section, 'network_interface'))
+    partition_list.append(Partition(reference=computer_definition.get(
+      section, 'pathname'),
+        path=os.path.join(config.instance_root, computer_definition.get(
+          section, 'pathname')),
+        user=user,
+        address_list=address_list,
+        tap=tap,
+        ))
+  computer.partition_list = partition_list
+  return computer
+
+
+
+def parse_computer_xml(config, xml_path):
+  if os.path.exists(xml_path):
+    config.logger.info('Loading previous computer data from %r' % xml_path)
+    computer = Computer.load(xml_path,
+                             reference=config.computer_id,
+                             ipv6_interface=config.ipv6_interface)
+    # Connect to the interface defined by the configuration
+    computer.interface = Interface(config.interface_name, config.ipv4_local_network,
         config.ipv6_interface)
+  else:
+    # If no pre-existent configuration found, create a new computer object
+    config.logger.warning('Creating new data computer with id %r' % (
+      config.computer_id, ))
     computer = Computer(
-        reference=config.computer_id,
-        interface=interface,
-        addr=address,
-        netmask=netmask,
-        ipv6_interface=config.ipv6_interface,
-        software_user=computer_definition.get('computer', 'software_user'),
-      )
-    partition_list = []
-    for partition_number in range(int(config.partition_amount)):
-      section = 'partition_%s' % partition_number
-      user = User(computer_definition.get(section, 'user'))
-      address_list = []
-      for a in computer_definition.get(section, 'address').split():
-        address, netmask = a.split('/')
-        address_list.append(dict(addr=address, netmask=netmask))
-      tap = Tap(computer_definition.get(section, 'network_interface'))
-      partition_list.append(Partition(reference=computer_definition.get(
-        section, 'pathname'),
-          path=os.path.join(config.instance_root, computer_definition.get(
-            section, 'pathname')),
-          user=user,
-          address_list=address_list,
-          tap=tap,
-          ))
-    computer.partition_list = partition_list
+      reference=config.computer_id,
+      interface=Interface(config.interface_name, config.ipv4_local_network,
+        config.ipv6_interface),
+      addr=None,
+      netmask=None,
+      ipv6_interface=config.ipv6_interface,
+      software_user=config.software_user,
+    )
+
+  partition_amount = int(config.partition_amount)
+  existing_partition_amount = len(computer.partition_list)
+  if existing_partition_amount > partition_amount:
+    raise ValueError('Requested amount of computer partitions (%s) is lower '
+        'then already configured (%s), cannot continue' % (partition_amount,
+          len(computer.partition_list)))
+
+  config.logger.info('Adding %s new partitions' %
+      (partition_amount-existing_partition_amount))
+  for nb_iter in range(existing_partition_amount, partition_amount):
+    # add new ones
+    user = User("%s%s" % (config.user_base_name, nb_iter))
+
+    tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
+
+    path = os.path.join(config.instance_root, "%s%s" % (
+                         config.partition_base_name, nb_iter))
+    computer.partition_list.append(
+      Partition(
+        reference="%s%s" % (config.partition_base_name, nb_iter),
+        path=path,
+        user=user,
+        address_list=None,
+        tap=tap,
+        ))
+
+  return computer
+
+
+def run(config):
+  if config.input_definition_file:
+    computer = parse_computer_definition(config, config.input_definition_file)
   else:
     # no definition file, figure out computer
-    if os.path.exists(config.computer_xml):
-      config.logger.info('Loading previous computer data from %r' % (
-        config.computer_xml, ))
-      computer = Computer.load(config.computer_xml,
-        reference=config.computer_id, ipv6_interface=config.ipv6_interface)
-      # Connect to the interface defined by the configuration
-      computer.interface = Interface(config.interface_name, config.ipv4_local_network,
-          config.ipv6_interface)
-    else:
-      # If no pre-existent configuration found, creating a new computer object
-      config.logger.warning('Creating new data computer with id %r' % (
-        config.computer_id, ))
-      computer = Computer(
-        reference=config.computer_id,
-        interface=Interface(config.interface_name, config.ipv4_local_network,
-          config.ipv6_interface),
-        addr=None,
-        netmask=None,
-        ipv6_interface=config.ipv6_interface,
-        software_user=config.software_user,
-      )
-
-    partition_amount = int(config.partition_amount)
-    existing_partition_amount = len(computer.partition_list)
-    if existing_partition_amount > partition_amount:
-      raise ValueError('Requested amount of computer partitions (%s) is lower '
-          'then already configured (%s), cannot continue' % (partition_amount,
-            len(computer.partition_list)))
-
-    config.logger.info('Adding %s new partitions' %
-        (partition_amount-existing_partition_amount))
-    for nb_iter in range(existing_partition_amount, partition_amount):
-      # add new ones
-      user = User("%s%s" % (config.user_base_name, nb_iter))
-
-      tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
-
-      path = os.path.join(config.instance_root, "%s%s" % (
-                           config.partition_base_name, nb_iter))
-      computer.partition_list.append(
-        Partition(
-          reference="%s%s" % (config.partition_base_name, nb_iter),
-          path=path,
-          user=user,
-          address_list=None,
-          tap=tap,
-          ))
+    computer = parse_computer_xml(config, config.computer_xml)
 
   computer.instance_root = config.instance_root
   computer.software_root = config.software_root
@@ -1056,9 +1067,9 @@ def run(config):
       computer_definition.set(section, 'network_interface', partition.tap.name)
       computer_definition.set(section, 'pathname', partition.reference)
       partition_number += 1
-    filepath = os.path.abspath(config.output_definition_file)
-    computer_definition.write(open(filepath, 'w'))
-    config.logger.info('Stored computer definition in %r' % filepath)
+    computer_definition.write(open(config.output_definition_file, 'w'))
+    config.logger.info('Stored computer definition in %r' % config.output_definition_file)
+
   computer.construct(alter_user=config.alter_user,
       alter_network=config.alter_network, create_tap=config.create_tap)
 
@@ -1181,6 +1192,7 @@ class Config(object):
         self.checkRequiredBinary([['tunctl', '-d']])
       if self.alter_network:
         self.checkRequiredBinary(['ip'])
+
     # Required, even for dry run
     if self.alter_network and self.create_tap:
       self.checkRequiredBinary(['brctl'])
@@ -1236,6 +1248,12 @@ class Config(object):
 
     # Calculate path once
     self.computer_xml = os.path.abspath(self.computer_xml)
+
+    if self.input_definition_file:
+      self.input_definition_file = os.path.abspath(self.input_definition_file)
+
+    if self.output_definition_file:
+      self.output_definition_file = os.path.abspath(self.output_definition_file)
 
 
 
