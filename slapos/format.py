@@ -1039,6 +1039,27 @@ def parse_computer_xml(config, xml_path):
   return computer
 
 
+def write_computer_definition(config, computer):
+  computer_definition = ConfigParser.RawConfigParser()
+  computer_definition.add_section('computer')
+  if computer.address is not None and computer.netmask is not None:
+    computer_definition.set('computer', 'address', '/'.join(
+      [computer.address, computer.netmask]))
+  for partition_number, partition in enumerate(computer.partition_list):
+    section = 'partition_%s' % partition_number
+    computer_definition.add_section(section)
+    address_list = []
+    for address in partition.address_list:
+      address_list.append('/'.join([address['addr'], address['netmask']]))
+    computer_definition.set(section, 'address', ' '.join(address_list))
+    computer_definition.set(section, 'user', partition.user.name)
+    computer_definition.set(section, 'user', partition.user.name)
+    computer_definition.set(section, 'network_interface', partition.tap.name)
+    computer_definition.set(section, 'pathname', partition.reference)
+  computer_definition.write(open(config.output_definition_file, 'w'))
+  config.logger.info('Stored computer definition in %r' % config.output_definition_file)
+
+
 def run(config):
   if config.input_definition_file:
     computer = parse_computer_definition(config, config.input_definition_file)
@@ -1054,26 +1075,7 @@ def run(config):
   computer.netmask = address['netmask']
 
   if config.output_definition_file:
-    computer_definition = ConfigParser.RawConfigParser()
-    computer_definition.add_section('computer')
-    if computer.address is not None and computer.netmask is not None:
-      computer_definition.set('computer', 'address', '/'.join(
-        [computer.address, computer.netmask]))
-    partition_number = 0
-    for partition in computer.partition_list:
-      section = 'partition_%s' % partition_number
-      computer_definition.add_section(section)
-      address_list = []
-      for address in partition.address_list:
-        address_list.append('/'.join([address['addr'], address['netmask']]))
-      computer_definition.set(section, 'address', ' '.join(address_list))
-      computer_definition.set(section, 'user', partition.user.name)
-      computer_definition.set(section, 'user', partition.user.name)
-      computer_definition.set(section, 'network_interface', partition.tap.name)
-      computer_definition.set(section, 'pathname', partition.reference)
-      partition_number += 1
-    computer_definition.write(open(config.output_definition_file, 'w'))
-    config.logger.info('Stored computer definition in %r' % config.output_definition_file)
+    write_computer_definition(config, computer)
 
   computer.construct(alter_user=config.alter_user,
       alter_network=config.alter_network, create_tap=config.create_tap)
