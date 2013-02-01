@@ -50,6 +50,7 @@ import time
 import zipfile
 
 import lxml.etree
+from slapos.version import version
 
 
 def prettify_xml(xml):
@@ -58,6 +59,8 @@ def prettify_xml(xml):
 
 
 class OS(object):
+  """Wrap parts of the 'os' module to provide logging of performed actions."""
+
   _os = os
 
   def __init__(self, config):
@@ -86,8 +89,10 @@ class OS(object):
   def __getattr__(self, name):
     return getattr(self._os, name)
 
+
 class UsageError(Exception):
   pass
+
 
 class NoAddressOnInterface(Exception):
   """
@@ -103,6 +108,7 @@ class NoAddressOnInterface(Exception):
       'No IPv6 found on interface %s to construct IPv6 with.' % (interface, )
     )
 
+
 class AddressGenerationError(Exception):
   """
   Exception raised if the generation of an IPv6 based on the prefix obtained
@@ -116,6 +122,7 @@ class AddressGenerationError(Exception):
       'Generated IPv6 %s seems not to be a valid IP.' % addr
     )
 
+
 def callAndRead(argument_list, raise_on_error=True):
   popen = subprocess.Popen(argument_list,
                            stdout=subprocess.PIPE,
@@ -126,21 +133,25 @@ def callAndRead(argument_list, raise_on_error=True):
       argument_list, result))
   return popen.returncode, result
 
+
 def isGlobalScopeAddress(a):
   """Returns True if a is global scope IP v4/6 address"""
   ip = netaddr.IPAddress(a)
   return not ip.is_link_local() and not ip.is_loopback() and \
       not ip.is_reserved() and ip.is_unicast()
 
+
 def netmaskToPrefixIPv4(netmask):
   """Convert string represented netmask to its integer prefix"""
   return netaddr.strategy.ipv4.netmask_to_prefix[
           netaddr.strategy.ipv4.str_to_int(netmask)]
 
+
 def netmaskToPrefixIPv6(netmask):
   """Convert string represented netmask to its integer prefix"""
   return netaddr.strategy.ipv6.netmask_to_prefix[
           netaddr.strategy.ipv6.str_to_int(netmask)]
+
 
 def _getDict(instance):
   """
@@ -172,6 +183,7 @@ def _getDict(instance):
     for key, value in dikt.iteritems():
       result[key] = _getDict(value)
     return result
+
 
 class Computer(object):
   "Object representing the computer"
@@ -427,6 +439,7 @@ class Computer(object):
         except IndexError:
           pass
 
+
 class Partition(object):
   "Represent a computer partition"
 
@@ -463,6 +476,7 @@ class Partition(object):
       owner_pw = pwd.getpwnam(owner.name)
       os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
     os.chmod(self.path, 0750)
+
 
 class User(object):
   "User: represent and manipulate a user on the system."
@@ -578,7 +592,7 @@ class Tap(object):
       fcntl.ioctl(tap_fd, self.TUNSETIFF,
                   struct.pack("16sI", self.name, self.IFF_TAP))
 
-    except IOError, error:
+    except IOError as error:
       # If  EBUSY, it  means another  program is  already attached,  thus just
       # ignore it...
       if error.errno != errno.EBUSY:
@@ -620,6 +634,7 @@ class Tap(object):
 
     if attach_to_tap:
       threading.Thread(target=self.attach).start()
+
 
 class Interface(object):
   "Interface represent a interface on the system"
@@ -856,11 +871,12 @@ class Interface(object):
 
     raise AddressGenerationError(addr)
 
+
 class Parser(OptionParser):
   """
   Parse all arguments.
   """
-  def __init__(self, usage=None, version=None):
+  def __init__(self, usage=None, version=version):
     """
     Initialize all options possibles.
     """
@@ -917,6 +933,7 @@ class Parser(OptionParser):
     if len(args) != 1:
       self.error("Incorrect number of arguments")
     return options, args[0]
+
 
 def run(config):
   # Define the computer
@@ -1051,6 +1068,7 @@ def run(config):
   config.logger.info('Posting information to %r' % config.master_url)
   computer.send(config)
   config.logger.info('slapformat successfully prepared computer.')
+
 
 class Config(object):
   key_file = None
@@ -1220,22 +1238,14 @@ class Config(object):
     self.computer_xml = os.path.abspath(self.computer_xml)
 
 
-def main(*args):
-  "Run default configuration."
+
+def tracing_monkeypatch(config):
+  """Substitute os module and callAndRead function with tracing wrappers."""
   global os
   global callAndRead
-  real_callAndRead = callAndRead
-  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
 
-  # Parse arguments
-  options, configuration_file_path = Parser(usage=usage).check_args(args)
-  config = Config()
-  try:
-    config.setConfig(options, configuration_file_path)
-  except UsageError, err:
-    print >> sys.stderr, err.message
-    print >> sys.stderr, "For help use --help"
-    sys.exit(1)
+  real_callAndRead = callAndRead
+
   os = OS(config)
   if config.dry_run:
     def dry_callAndRead(argument_list, raise_on_error=True):
@@ -1252,11 +1262,30 @@ def main(*args):
     pwd.getpwnam = fake_getpwnam
   else:
     dry_callAndRead = real_callAndRead
+
   if config.verbose:
     def logging_callAndRead(argument_list, raise_on_error=True):
       config.logger.debug(' '.join(argument_list))
       return dry_callAndRead(argument_list, raise_on_error)
     callAndRead = logging_callAndRead
+
+
+def main(*args):
+  "Run default configuration."
+
+  # Parse arguments
+  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
+  options, configuration_file_path = Parser(usage=usage).check_args(args)
+  config = Config()
+  try:
+    config.setConfig(options, configuration_file_path)
+  except UsageError as err:
+    sys.stderr.write(err.message + '\n')
+    sys.stderr.write("For help use --help\n")
+    sys.exit(1)
+
+  tracing_monkeypatch(config)
+
   # Add delay between 0 and 1 hour
   # XXX should be the contrary: now by default, and cron should have
   # --maximal-delay=3600
@@ -1270,3 +1299,4 @@ def main(*args):
   except:
     config.logger.exception('Uncaught exception:')
     raise
+
