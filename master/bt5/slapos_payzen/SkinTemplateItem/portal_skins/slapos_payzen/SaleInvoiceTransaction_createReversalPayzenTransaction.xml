@@ -98,7 +98,7 @@ reversal_transaction.edit(\n
   specialise_value=portal.sale_trade_condition_module.slapos_manual_accounting_trade_condition,\n
 )\n
 \n
-for line in context.getMovementList():\n
+for line in reversal_transaction.getMovementList():\n
   line.edit(quantity=(-line.getQuantity()))\n
 \n
 reversal_transaction.confirm(comment="Automatic because of reversal creation")\n

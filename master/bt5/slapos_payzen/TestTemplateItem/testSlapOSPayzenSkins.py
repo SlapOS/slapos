@@ -843,8 +843,11 @@ class TestSlapOSPayzenSaleInvoiceTransaction_createReversalPayzenTransaction(
 
     self.assertEqual(invoice[invoice_line_id].getQuantity(),
                      -reversale_invoice[invoice_line_id].getQuantity())
+    self.assertEqual(reversale_invoice[invoice_line_id].getQuantity(), 2)
+    
     self.assertEqual(invoice[transaction_line_id].getQuantity(),
                      -reversale_invoice[transaction_line_id].getQuantity())
+    self.assertEqual(reversale_invoice[transaction_line_id].getQuantity(), 3)
     self.assertEqual(len(invoice.getMovementList()), 2)
 
     # Both invoice should have a grouping reference
