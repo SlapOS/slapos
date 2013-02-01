@@ -215,6 +215,8 @@ Node subcommands usage:
       parser.print_help()
       sys.exit(1)
   except EntryPointNotImplementedError, exception:
-    print 'Not yet implemented: %s. Please use old-style commands or SlapOS ' \
-        'Master web UI.' % exception
+    print ('The command %s does not exist or is not yet implemented. Please '
+        'have a look at http://community.slapos.org to read documentation or '
+        'forum. Please also make sure that SlapOS Node is up to '
+        'date.' % exception)
     sys.exit(1)
