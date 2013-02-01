@@ -98,9 +98,9 @@ class GenericBaseRecipe(object):
 
     line must be unicode."""
 
-    try:
-      lines = io.open(filepath, 'r', encoding=encoding).readlines()
-    except IOError:
+    if os.path.exists(filepath):
+      lines = [l.rstrip('\n') for l in io.open(filepath, 'r', encoding=encoding)]
+    else:
       lines = []
 
     if not line in lines:
