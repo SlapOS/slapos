@@ -117,8 +117,9 @@ class AddressGenerationError(Exception):
     )
 
 def callAndRead(argument_list, raise_on_error=True):
-  popen = subprocess.Popen(argument_list, stdout=subprocess.PIPE,
-      stderr=subprocess.STDOUT)
+  popen = subprocess.Popen(argument_list,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT)
   result = popen.communicate()[0]
   if raise_on_error and popen.returncode != 0:
     raise ValueError('Issue while invoking %r, result was:\n%s' % (
@@ -178,7 +179,7 @@ class Computer(object):
   software_root = None
 
   def __init__(self, reference, interface=None, addr=None, netmask=None,
-    ipv6_interface=None, software_user='slapsoft'):
+               ipv6_interface=None, software_user='slapsoft'):
     """
     Attributes:
       reference: String, the reference of the computer.
@@ -204,7 +205,7 @@ class Computer(object):
       False if the interface isn't available, else the list of the free addresses.
     """
     if self.interface is None:
-      return dict(addr=self.address, netmask=self.netmask)
+      return {'addr': self.address, 'netmask': self.netmask}
 
     computer_partition_address_list = []
     for partition in self.partition_list:
@@ -236,11 +237,10 @@ class Computer(object):
     slap_instance = slap.slap()
     connection_dict = {}
     if config.key_file and config.cert_file:
-      connection_dict.update(
-        key_file=config.key_file,
-        cert_file=config.cert_file)
+      connection_dict['key_file'] = config.key_file
+      connection_dict['cert_file'] = config.cert_file
     slap_instance.initializeConnection(config.master_url,
-      **connection_dict)
+                                       **connection_dict)
     slap_computer = slap_instance.registerComputer(self.reference)
     if config.dry_run:
       return
@@ -250,7 +250,6 @@ class Computer(object):
       raise slap.NotFoundError("%s\nERROR : This SlapOS node is not recognised by "
           "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
           "like 'COMP-123' and is correct.\nError is : 404 Not Found." % error)
-    return
 
   def dump(self, path_to_xml):
     """
@@ -277,8 +276,8 @@ class Computer(object):
 
     self.backup_xml(path_to_archive, path_to_xml)
 
-    with open(path_to_xml,'wb') as fout:
-        fout.write(new_pretty_xml)
+    with open(path_to_xml, 'wb') as fout:
+      fout.write(new_pretty_xml)
 
 
   def backup_xml(self, path_to_archive, path_to_xml):
@@ -309,8 +308,8 @@ class Computer(object):
         reference = reference,
         addr = dumped_dict['address'],
         netmask = dumped_dict['netmask'],
-        ipv6_interface=ipv6_interface,
-        software_user=dumped_dict.get('software_user', 'slapsoft'),
+        ipv6_interface = ipv6_interface,
+        software_user = dumped_dict.get('software_user', 'slapsoft'),
     )
 
     for partition_dict in dumped_dict['partition_list']:
