@@ -77,11 +77,9 @@ class OS(object):
     def wrapper(*args, **kw):
       if self._verbose:
         arg_list = [repr(x) for x in args] + [
-          '%s=%r' % (x, y) for x, y in kw.iteritems()]
-        self._logger.debug('%s(%s)' % (
-          name,
-          ', '.join(arg_list)
-        ))
+                '%s=%r' % (x, y) for x, y in kw.iteritems()
+                ]
+        self._logger.debug('%s(%s)' % (name, ', '.join(arg_list)))
       if not self._dry_run:
         getattr(self._os, name)(*args, **kw)
     setattr(self, name, wrapper)
@@ -105,7 +103,7 @@ class NoAddressOnInterface(Exception):
 
   def __init__(self, interface):
     super(NoAddressOnInterface, self).__init__(
-      'No IPv6 found on interface %s to construct IPv6 with.' % (interface, )
+      'No IPv6 found on interface %s to construct IPv6 with.' % interface
     )
 
 
@@ -130,7 +128,7 @@ def callAndRead(argument_list, raise_on_error=True):
   result = popen.communicate()[0]
   if raise_on_error and popen.returncode != 0:
     raise ValueError('Issue while invoking %r, result was:\n%s' % (
-      argument_list, result))
+                     argument_list, result))
   return popen.returncode, result
 
 
@@ -238,8 +236,7 @@ class Computer(object):
       return self.interface.addAddr()
 
     # Can't find address
-    raise NoAddressOnInterface('No valid IPv6 found on %s.' %
-        self.interface.name)
+    raise NoAddressOnInterface('No valid IPv6 found on %s.' % self.interface.name)
 
   def send(self, config):
     """
@@ -754,7 +751,8 @@ class Interface(object):
 
     if not af in netifaces.ifaddresses(interface_name) \
         or not address in [q['addr'].split('%')[0]
-          for q in netifaces.ifaddresses(interface_name)[af]]:
+                           for q in netifaces.ifaddresses(interface_name)[af]
+                           ]:
       # add an address
       callAndRead(['ip', 'addr', 'add', address_string, 'dev', interface_name])
 
@@ -770,8 +768,7 @@ class Interface(object):
       if address in l:
         if 'tentative' in l:
           # duplicate, remove
-          callAndRead(['ip', 'addr', 'del', address_string, 'dev',
-            interface_name])
+          callAndRead(['ip', 'addr', 'del', address_string, 'dev', interface_name])
           return False
         # found and clean
         return True
@@ -951,8 +948,7 @@ def parse_computer_definition(config, definition_path):
   address = None
   netmask = None
   if computer_definition.has_option('computer', 'address'):
-    address, netmask = computer_definition.get('computer',
-      'address').split('/')
+    address, netmask = computer_definition.get('computer', 'address').split('/')
   if config.alter_network and config.interface_name is not None \
       and config.ipv4_local_network is not None:
     interface = Interface(config.interface_name, config.ipv4_local_network,
@@ -974,17 +970,15 @@ def parse_computer_definition(config, definition_path):
       address, netmask = a.split('/')
       address_list.append(dict(addr=address, netmask=netmask))
     tap = Tap(computer_definition.get(section, 'network_interface'))
-    partition_list.append(Partition(reference=computer_definition.get(
-      section, 'pathname'),
-        path=os.path.join(config.instance_root, computer_definition.get(
-          section, 'pathname')),
-        user=user,
-        address_list=address_list,
-        tap=tap,
-        ))
+    partition = Partition(reference=computer_definition.get(section, 'pathname'),
+                          path=os.path.join(config.instance_root,
+                                            computer_definition.get(section, 'pathname')),
+                          user=user,
+                          address_list=address_list,
+                          tap=tap)
+    partition_list.append(partition)
   computer.partition_list = partition_list
   return computer
-
 
 
 def parse_computer_xml(config, xml_path):
@@ -998,8 +992,7 @@ def parse_computer_xml(config, xml_path):
         config.ipv6_interface)
   else:
     # If no pre-existent configuration found, create a new computer object
-    config.logger.warning('Creating new data computer with id %r' % (
-      config.computer_id, ))
+    config.logger.warning('Creating new data computer with id %r' % config.computer_id)
     computer = Computer(
       reference=config.computer_id,
       interface=Interface(config.interface_name, config.ipv4_local_network,
@@ -1078,7 +1071,8 @@ def run(config):
     write_computer_definition(config, computer)
 
   computer.construct(alter_user=config.alter_user,
-      alter_network=config.alter_network, create_tap=config.create_tap)
+                     alter_network=config.alter_network,
+                     create_tap=config.create_tap)
 
   # Dumping and sending to the erp5 the current configuration
   if not config.dry_run:
