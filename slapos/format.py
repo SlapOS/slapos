@@ -283,7 +283,7 @@ class Computer(object):
 
   def backup_xml(self, path_to_archive, path_to_xml):
     xml_content = open(path_to_xml).read()
-    saved_filename = os.path.basename(path_to_xml) + time.strftime('.%Y%M%d-%H:%M')
+    saved_filename = os.path.basename(path_to_xml) + time.strftime('.%Y%m%d-%H:%M')
 
     with zipfile.ZipFile(path_to_archive, 'a') as archive:
       archive.writestr(saved_filename, xml_content, zipfile.ZIP_DEFLATED)
