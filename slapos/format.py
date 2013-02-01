@@ -96,7 +96,7 @@ class UsageError(Exception):
 
 class NoAddressOnInterface(Exception):
   """
-  Exception raised if there's not address on the interface to construct IPv6
+  Exception raised if there is no address on the interface to construct IPv6
   address with.
 
   Attributes:
@@ -210,7 +210,7 @@ class Computer(object):
 
   def getAddress(self, allow_tap=False):
     """
-    Return a list of the interface address not attributed to any partition, (which
+    Return a list of the interface address not attributed to any partition (which
     are therefore free for the computer itself).
 
     Returns:
@@ -231,7 +231,7 @@ class Computer(object):
         return address_dict
 
     if allow_tap:
-      # all addresses on interface are for partition, so lets add new one
+      # all addresses on interface are for partition, so let's add new one
       computer_tap = Tap('compdummy')
       computer_tap.createWithOwner(User('root'), attach_to_tap=True)
       self.interface.addTap(computer_tap)
@@ -254,6 +254,7 @@ class Computer(object):
     slap_instance.initializeConnection(config.master_url,
                                        **connection_dict)
     slap_computer = slap_instance.registerComputer(self.reference)
+
     if config.dry_run:
       return
     try:
@@ -293,6 +294,9 @@ class Computer(object):
 
 
   def backup_xml(self, path_to_archive, path_to_xml):
+    """
+    Stores a copy of the current xml file to an historical archive.
+    """
     xml_content = open(path_to_xml).read()
     saved_filename = os.path.basename(path_to_xml) + time.strftime('.%Y%m%d-%H:%M')
 
@@ -422,6 +426,7 @@ class Computer(object):
           if not any([netaddr.valid_ipv4(q['addr'])
               for q in old_partition_address_list]):
             raise ValueError('Not valid ipv6 addresses loaded')
+
           for address in old_partition_address_list:
             if netaddr.valid_ipv6(address['addr']):
               partition.address_list.append(self.interface.addAddr(
@@ -479,7 +484,8 @@ class Partition(object):
 
 
 class User(object):
-  "User: represent and manipulate a user on the system."
+  """User: represent and manipulate a user on the system."""
+
   path = None
 
   def __init__(self, user_name, additional_group_list=None):
@@ -539,7 +545,6 @@ class User(object):
     try:
       pwd.getpwnam(self.name)
       return True
-
     except KeyError:
       return False
 
@@ -564,7 +569,7 @@ class Tap(object):
   def attach(self):
     """
     Attach to the TAP interface, meaning  that it just opens the TAP interface
-    and wait for the caller to notify that it can be safely detached.
+    and waits for the caller to notify that it can be safely detached.
 
     Linux  distinguishes administrative  and operational  state of  an network
     interface.  The  former can be set  manually by running ``ip  link set dev
@@ -637,7 +642,7 @@ class Tap(object):
 
 
 class Interface(object):
-  "Interface represent a interface on the system"
+  """Represent a network interface on the system"""
 
   def __init__(self, name, ipv4_local_network, ipv6_interface=None):
     """
@@ -1233,7 +1238,7 @@ class Config(object):
       file_location = getattr(self, attribute, None)
       if file_location is not None:
         if not os.path.exists(file_location):
-          self.logger.fatal('File %r does not exist or is no readable.' %
+          self.logger.fatal('File %r does not exist or is not readable.' %
               file_location)
           sys.exit(1)
 
