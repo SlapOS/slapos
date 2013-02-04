@@ -767,7 +767,12 @@ class Interface(object):
 
       # wait few moments
       time.sleep(2)
-    # check existence on interface
+
+    # Fake success for local ipv4
+    if not ipv6:
+      return True
+
+    # check existence on interface for ipv6
     _, result = callAndRead(['ip', 'addr', 'list', interface_name])
     for l in result.split('\n'):
       if address in l:
