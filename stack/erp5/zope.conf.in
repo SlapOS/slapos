@@ -43,7 +43,7 @@ products {{ instance_products }}
 </product-config>
 
 {% endif -%}
-{% set timerserver_interval = parameter_dict.get('timerserver-interval', 0) -%}
+{% set timerserver_interval = parameter_dict.get('timerserver-interval', '0') | int -%}
 {% if timerserver_interval -%}
 %import timerserver
 <timer-server>
@@ -83,7 +83,7 @@ products {{ instance_products }}
 
 {% for db_name, mount_point, cache_size, storage_type, storage_dict in parameter_dict['zodb-list'] -%}
 <zodb_db {{ db_name }}>
-{%-   if cache_size >= 0 %}
+{%-   if cache_size %}
   cache-size {{ cache_size }}
 {%-   endif %}
   mount-point {{ mount_point }}

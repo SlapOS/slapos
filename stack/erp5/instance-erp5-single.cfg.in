@@ -87,7 +87,7 @@ bt5 = ${slap-parameter:bt5}
 bt5-repository-url = ${slap-parameter:bt5-repository-url}
 
 [request-common]
-recipe = slapos.cookbook:request.serialised
+recipe = slapos.cookbook:request
 software-url = ${slap-connection:software-release-url}
 sla = computer_guid
 sla-computer_guid = ${slap-connection:computer-id}

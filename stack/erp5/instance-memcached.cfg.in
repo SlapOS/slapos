@@ -1,32 +1,19 @@
-{% if software_type == slap_software_type -%}
-{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
+#############################
+#
+# Instanciate memcached
+#
+# No slapos parameter needed
+#
+#############################
 [buildout]
+parts =
+  memcached-instance
+  publish-memcached-connection-information
+  promise
+
 eggs-directory = {{ eggs_directory }}
 develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
-parts =
-  publish-memcached-connection-information
-  memcache-promise
-{% if use_ipv6 -%}
-  tunnel-promise
-
-[ipv6toipv4]
-recipe = slapos.cookbook:ipv6toipv4
-runner-path = ${directory:service}/${:base-name}
-6tunnel-path = {{ parameter_dict['6tunnel-location'] }}/bin/6tunnel
-shell-path = {{ parameter_dict['dash-location'] }}/bin/dash
-ipv4 = ${memcached-instance:ip}
-ipv6 = ${slap-network-information:global-ipv6}
-ipv6-port = ${memcached-instance:port}
-ipv4-port = ${memcached-instance:port}
-base-name = memcached-tunnel
-
-[tunnel-promise]
-recipe = slapos.cookbook:check_port_listening
-path = ${directory:promise}/tunnel
-hostname = ${ipv6toipv4:ipv6}
-port = ${ipv6toipv4:ipv6-port}
-{% endif -%}
 
 [directory]
 recipe = slapos.cookbook:mkdirectory
@@ -38,22 +25,18 @@ promise = ${:etc}/promise
 [memcached-instance]
 recipe = slapos.cookbook:generic.memcached
 wrapper_path = ${directory:service}/memcached
-binary_path = {{ parameter_dict['memcached-location'] }}/bin/memcached
-shell-path = {{ parameter_dict['dash-location'] }}/bin/dash
+binary_path = {{ memcached_location }}/bin/memcached
+shell-path = {{ dash_location }}/bin/dash
 ip = ${slap-network-information:local-ipv4}
 port = 11000
 
 [publish-memcached-connection-information]
-recipe = slapos.cookbook:publish.serialised
-{% if use_ipv6 -%}
-url = memcached://[${ipv6toipv4:ipv6}]:${ipv6toipv4:ipv6-port}/
-{% else -%}
+recipe = slapos.cookbook:publishurl
 url = memcached://${memcached-instance:ip}:${memcached-instance:port}/
-{% endif -%}
 
-[memcache-promise]
+# Deploy zope promises scripts
+[promise]
 recipe = slapos.cookbook:check_port_listening
 path = ${directory:promise}/memcache
 hostname = ${memcached-instance:ip}
 port = ${memcached-instance:port}
-{% endif %}

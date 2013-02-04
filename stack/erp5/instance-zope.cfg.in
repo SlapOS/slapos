@@ -21,7 +21,7 @@ offline = true
 
 {% if 'frontend-software-url' in slapparameter_dict -%}
 [request-slave-frontend]
-recipe = slapos.cookbook:request.serialised
+recipe = slapos.cookbook:request
 software-url = {{ slapparameter_dict['frontend-software-url'] }}
 software-type = {{ slapparameter_dict.get('frontend-software-type', 'RootSoftwareInstance') }}
 sla = instance_guid
@@ -47,14 +47,14 @@ config-{{ name }} = {{ value }}
 return = site_url
 
 [publish-apache-zope-backend-connection-string]
-recipe = slapos.cookbook:publish.serialised
+recipe = slapos.cookbook:publish
 url = ${request-slave-frontend:connection-site_url}
 login = ${zope-instance:user}
 password = ${zope-instance:password}
 url-deadlock = ${:url}/${zope-instance:deadlock-path}?${zope-instance:deadlock-password}
 {% else %}
 [publish-apache-zope-backend-connection-string]
-recipe = slapos.cookbook:publish.serialised
+recipe = slapos.cookbook:publish
 url = https://${zope-instance:user}:${zope-instance:password}@[${apache-zope-backend-instance:ip}]:${apache-zope-backend-instance:port}
 url-deadlock = ${:url}/${zope-instance:deadlock-path}?${zope-instance:deadlock-password}
 {% endif %}

@@ -1,5 +1,3 @@
-{% if software_type == slap_software_type -%}
-{% set use_ipv6 = slapparameter_dict.get('use-ipv6', False) -%}
 [buildout]
 parts =
   publish-kumofs-connection-information
@@ -18,24 +16,14 @@ develop-eggs-directory = {{ develop_eggs_directory }}
 offline = true
 
 [publish-kumofs-connection-information]
-recipe = slapos.cookbook:publish.serialised
-{% if use_ipv6 -%}
-url = memcached://[${kumofs-instance:ip}]:${kumofs-instance:gateway-port}/
-{% else -%}
+recipe = slapos.cookbook:publishurl
 url = memcached://${kumofs-instance:ip}:${kumofs-instance:gateway-port}/
-{% endif -%}
 
 [kumofs-instance]
 recipe = slapos.cookbook:generic.kumofs
 
 # Network options
-{% if use_ipv6 -%}
-ip = ${slap-network-information:global-ipv6}
-address-family = inet6
-{% else -%}
 ip = ${slap-network-information:local-ipv4}
-address-family = inet4
-{% endif -%}
 manager-port = 13101
 server-port = 13201
 server-listen-port = 13202
@@ -55,10 +43,10 @@ kumo-manager-log = ${basedirectory:log}/kumo-manager.log
 kumo-server-log = ${basedirectory:log}/kumo-server.log
 
 # Binary information
-kumo-gateway-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-gateway
-kumo-manager-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-manager
-kumo-server-binary = {{ parameter_dict['kumo-location'] }}/bin/kumo-server
-shell-path = {{ parameter_dict['dash-location'] }}/bin/dash
+kumo-gateway-binary = {{ kumo_location }}/bin/kumo-gateway
+kumo-manager-binary = {{ kumo_location }}/bin/kumo-manager
+kumo-server-binary = {{ kumo_location }}/bin/kumo-server
+shell-path = {{ dash_location }}/bin/dash
 
 [logrotate-entry-kumofs]
 <= logrotate
@@ -72,9 +60,9 @@ log = ${kumofs-instance:kumo-gateway-log} ${kumofs-instance:kumo-manager-log}
 [logrotate]
 recipe = slapos.cookbook:logrotate
 # Binaries
-logrotate-binary = {{ parameter_dict['logrotate-location'] }}/usr/sbin/logrotate
-gzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gzip
-gunzip-binary = {{ parameter_dict['gzip-location'] }}/bin/gunzip
+logrotate-binary = {{ logrotate_location }}/usr/sbin/logrotate
+gzip-binary = {{ gzip_location }}/bin/gzip
+gunzip-binary = {{ gzip_location }}/bin/gunzip
 # Directories
 wrapper = ${rootdirectory:bin}/logrotate
 conf = ${rootdirectory:etc}/logrotate.conf
@@ -108,7 +96,7 @@ bin = ${buildout:directory}/bin
 
 [cron]
 recipe = slapos.cookbook:cron
-dcrond-binary = {{ parameter_dict['dcron-location'] }}/sbin/crond
+dcrond-binary = {{ dcron_location }}/sbin/crond
 cron-entries = ${directory:cron-entries}
 crontabs = ${directory:crontabs}
 cronstamps = ${directory:cronstamps}
@@ -149,4 +137,3 @@ port = ${kumofs-instance:gateway-port}
 [promise-kumofs-manager]
 <= promise-template
 port = ${kumofs-instance:manager-port}
-{% endif %}
