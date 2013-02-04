@@ -268,8 +268,7 @@ class Computer(object):
 
     Args:
       path_to_xml: String, path to the file to load.
-      users: List of User, list of user needed to be add to the dump
-          (even if they are not related to any tap interface).
+      path_to_json: String, path to the JSON version to save.
     """
 
     computer_dict = _getDict(self)
