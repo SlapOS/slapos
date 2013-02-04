@@ -1105,8 +1105,10 @@ class Config(object):
   create_tap = None
   computer_xml = None
   computer_json = None
+  input_definition_file = None
   logger = None
   log_file = None
+  output_definition_file = None
   verbose = None
   dry_run = None
   console = None
