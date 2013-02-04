@@ -289,7 +289,8 @@ class Computer(object):
           # computer configuration did not change, nothing to write
           return
 
-    self.backup_xml(path_to_archive, path_to_xml)
+    if os.path.exists(path_to_xml):
+      self.backup_xml(path_to_archive, path_to_xml)
 
     with open(path_to_xml, 'wb') as fout:
       fout.write(new_pretty_xml)
