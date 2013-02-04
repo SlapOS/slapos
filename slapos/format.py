@@ -1061,7 +1061,6 @@ def write_computer_definition(config, computer):
       address_list.append('/'.join([address['addr'], address['netmask']]))
     computer_definition.set(section, 'address', ' '.join(address_list))
     computer_definition.set(section, 'user', partition.user.name)
-    computer_definition.set(section, 'user', partition.user.name)
     computer_definition.set(section, 'network_interface', partition.tap.name)
     computer_definition.set(section, 'pathname', partition.reference)
   computer_definition.write(open(config.output_definition_file, 'w'))
