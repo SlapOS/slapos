@@ -34,6 +34,7 @@ import ConfigParser
 import errno
 import fcntl
 import grp
+import json
 import logging
 import netaddr
 import netifaces
@@ -261,7 +262,7 @@ class Computer(object):
           "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
           "like 'COMP-123' and is correct.\nError is : 404 Not Found." % error)
 
-  def dump(self, path_to_xml):
+  def dump(self, path_to_xml, path_to_json):
     """
     Dump the computer object to an xml file via xml_marshaller.
 
@@ -272,6 +273,11 @@ class Computer(object):
     """
 
     computer_dict = _getDict(self)
+
+    if path_to_json:
+      with open(path_to_json, 'wb') as fout:
+        fout.write(json.dumps(computer_dict, sort_keys=True, indent=2))
+
     new_xml = xml_marshaller.dumps(computer_dict)
     new_pretty_xml = prettify_xml(new_xml)
 
@@ -889,6 +895,10 @@ class Parser(OptionParser):
                   "will be created",
              default=None,
              type=str),
+      Option("--computer_json",
+             help="Path to a JSON version of the computer's XML (for development only).",
+             default=None,
+             type=str),
       Option("-l", "--log_file",
              help="The path to the log file used by the script.",
              type=str),
@@ -1076,7 +1086,8 @@ def run(config):
 
   # Dumping and sending to the erp5 the current configuration
   if not config.dry_run:
-    computer.dump(config.computer_xml)
+    computer.dump(path_to_xml=config.computer_xml,
+                  path_to_json=config.computer_json)
   config.logger.info('Posting information to %r' % config.master_url)
   computer.send(config)
   config.logger.info('slapformat successfully prepared computer.')
@@ -1089,6 +1100,7 @@ class Config(object):
   alter_user = None
   create_tap = None
   computer_xml = None
+  computer_json = None
   logger = None
   log_file = None
   verbose = None
