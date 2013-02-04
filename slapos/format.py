@@ -662,6 +662,9 @@ class Interface(object):
     _, result = callAndRead(['ip', 'addr', 'list', self.name])
     self.attach_to_tap = 'DOWN' in result.split('\n', 1)[0]
 
+    # XXX-Cedric should be global logger
+    self.logger = logging.getLogger("slapformat")
+
   def __getinitargs__(self):
     return (self.name,)
 
@@ -812,6 +815,8 @@ class Interface(object):
       if self._addSystemAddress(addr, netmask, False):
         return dict(addr=addr, netmask=netmask)
       else:
+        self.logger.warning('Impossible to add old local IPv4 %s. Generating '
+            'new IPv4 address.' % addr)
         return self._generateRandomIPv4Address(netmask)
     else:
       # confirmed to be configured
@@ -867,6 +872,9 @@ class Interface(object):
           if self._addSystemAddress(addr, netmask):
             # succeed, return it
             return dict(addr=addr, netmask=netmask)
+          else:
+            self.logger.warning('Impossible to add old public IPv6 %s. '
+                'Generating new IPv6 address.' % addr)
 
     # Try 10 times to add address, raise in case if not possible
     try_num = 10
