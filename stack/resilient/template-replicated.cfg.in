@@ -2,7 +2,9 @@
 
 ## Tells the Backupable recipe that we want a backup
 [resilient]
+recipe = slapos.cookbook:request
 config-namebase = {{namebase}}
+software-url = ${slap-connection:software-release-url}
 
 ## Every request is double to provide the 3 IPs.
 [request-{{namebase}}]
