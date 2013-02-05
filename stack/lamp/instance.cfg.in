@@ -16,10 +16,6 @@ mariadb-import = ${instance-mariadb-import:output}
 mariadb-export = ${instance-mariadb-export:output}
 apache-backup = ${instance-apache-backup:output}
 
-# To prepend an empty root instance:
-#default = ${instance-default-root:output}
-#apache = ${instance-apache-php:output}
-
 #frozen creates a syntax error, meaning it can keep its data.
 #It's dirty as hell, it needs to be replaced.
 frozen = ${instance-frozen:output}
