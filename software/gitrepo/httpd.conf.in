@@ -1,0 +1,67 @@
+PidFile "${:pid-file}"
+Listen ${slap-network-information:global-ipv6}:${:port}
+ServerAdmin someone@email
+
+ErrorLog "${:error-log}"
+LogLevel warn
+
+ScriptSock "${:cgid-sock}"
+
+<Directory />
+    AllowOverride None
+    Order deny,allow
+    Deny from all
+</Directory>
+
+Alias "/static/" "${:gitweb-static-dir}"
+<Directory "${:gitweb-static-dir}">
+    Options FollowSymLinks
+    Order deny,allow
+    Allow from all
+</Directory>
+
+# This is Static Accelerated git pull
+AliasMatch "^/(.*/objects/[0-9a-f]{2}/[0-9a-f]{38})$"          "${:project-dir}/$1"
+AliasMatch "^/(.*/objects/pack/pack-[0-9a-f]{40}.(pack|idx))$" "${:project-dir}/$1"
+
+# When it can't be statically delivered, we rely on git-http-backend
+ScriptAliasMatch \
+        "(?x)^/(.*/(HEAD | \
+                        info/refs | \
+                        objects/info/[^/]+ | \
+                        git-(upload|receive)-pack))(/push)?$" \
+        "${:git-http-backend}/$1"
+
+# Everything else is gitweb interface
+ScriptAlias "/"                                                "${:gitweb-script}/"
+
+<Location />
+    Order deny,allow
+    Allow from all
+    RewriteEngine On
+    RewriteCond %{QUERY_STRING} service=git-receive-pack
+    RewriteRule ^(.*)$ $1/push [END]
+</Location>
+
+<LocationMatch "(^/.*/git-receive-pack|/push)$">
+    AuthType Basic
+    AuthName "Git Push Access"
+    AuthBasicProvider file
+    AuthUserFile "${:passwd-file}"
+    Require valid-user
+    SetEnv REMOTE_USER $REDIRECT_REMOTE_USER
+</LocationMatch>
+
+
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule auth_basic_module modules/mod_auth_basic.so
+LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authn_file_module modules/mod_authn_file.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_user_module modules/mod_authz_user.so
+LoadModule autoindex_module modules/mod_autoindex.so
+LoadModule cgid_module modules/mod_cgid.so
+LoadModule env_module modules/mod_env.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule unixd_module modules/mod_unixd.so

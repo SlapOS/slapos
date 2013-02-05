@@ -27,6 +27,9 @@
 import os
 import logging
 
+import zc.buildout
+
+
 class Recipe:
   def __init__(self, buildout, name, options):
     self.buildout = buildout
@@ -40,6 +43,7 @@ class Recipe:
     """
     path_list = []
     target_directory = self.options['target-directory']
+    # XXX: breaks if any path contains spaces.
     for linkline in self.options['link-binary'].split():
       path, linkname = os.path.split(linkline)
 

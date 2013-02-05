@@ -3,7 +3,6 @@
 
 # Basic server configuration
 PidFile "%(pid_file)s"
-LockFile "%(lock_file)s"
 Listen %(ip)s:%(port)s
 ServerAdmin someone@email
 DefaultType text/plain
@@ -22,13 +21,15 @@ CustomLog "%(access_log)s" common
 <Directory />
     Options FollowSymLinks
     AllowOverride None
-    Order deny,allow
-    Deny from all
+    Require all denied
 </Directory>
 
 ProxyPass / %(backend_url)s
 
 # List of modules
+LoadModule unixd_module modules/mod_unixd.so
+LoadModule access_compat_module modules/mod_access_compat.so
+LoadModule authz_core_module modules/mod_authz_core.so
 LoadModule authz_host_module modules/mod_authz_host.so
 LoadModule log_config_module modules/mod_log_config.so
 LoadModule setenvif_module modules/mod_setenvif.so

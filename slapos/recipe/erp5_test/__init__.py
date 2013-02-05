@@ -27,6 +27,9 @@
 from slapos.recipe.librecipe import GenericBaseRecipe
 import urlparse
 
+# The follow recipes should be unified somehow in order to improve
+# code mantainence.
+
 class Recipe(GenericBaseRecipe):
   def install(self):
     testinstance = self.options['test-instance-path']
@@ -70,5 +73,64 @@ class Recipe(GenericBaseRecipe):
         call_list=[self.options['run-test-suite-binary'],
           '--db_list', ','.join(mysql_connection_string_list),
           ] + common_list, **common_dict)]))
+
+    return path_list
+
+class CloudoooRecipe(GenericBaseRecipe):
+  def install(self):
+    path_list = []
+    common_dict = dict(
+        prepend_path=self.options['prepend-path'],
+    )
+    common_list = [
+           "--paster_path", self.options['ooo-paster'],
+           self.options['configuration-file']
+          ]
+    run_unit_test_path = self.createPythonScript(self.options['run-unit-test'],
+        __name__ + '.test.runUnitTest', [dict(
+        call_list=[self.options['run-unit-test-binary'],
+          ] + common_list, **common_dict)])
+
+    path_list.append(run_unit_test_path)
+    path_list.append(self.createPythonScript(self.options['run-test-suite'],
+        __name__ + '.test.runTestSuite', [dict(
+        call_list=[self.options['run-test-suite-binary'],
+          ], **common_dict)]))
+
+    return path_list
+
+class EggTestRecipe(GenericBaseRecipe):
+  """
+  Recipe used to create wrapper used to run test suite (python setup.py test)
+  off a list of Python eggs.
+  """
+  def install(self):
+    path_list = []
+    test_list = self.options['test-list'].strip().replace('\n', ',')
+    common_dict = {}
+
+    environment_dict = {}
+    if self.options.get('environment'):
+      environment_part = self.buildout.get(self.options['environment'])
+      if environment_part:
+        for key, value in environment_part.iteritems():
+          environment_dict[key] = value
+
+    common_list = [ "--source_code_path_list", test_list]
+
+    argument_dict = dict(
+        call_list=[self.options['run-test-suite-binary'],] + common_list,
+        environment=environment_dict,
+        **common_dict
+    )
+    if 'prepend-path' in self.options:
+      argument_dict['prepend_path'] = self.options['prepend-path']
+
+    run_test_suite_script = self.createPythonScript(
+        self.options['run-test-suite'], __name__ + '.test.runTestSuite',
+        [argument_dict]
+    )
+
+    path_list.append(run_test_suite_script)
 
     return path_list

@@ -17,7 +17,7 @@ def runMysql(conf):
       popen = subprocess.Popen([conf['mysql_install_binary'],
         '--skip-name-resolve', '--skip-host-cache', '--no-defaults',
         '--datadir=%s' % conf['data_directory']],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=conf['cwd'])
       result = popen.communicate()[0]
       if popen.returncode is None or popen.returncode != 0:
         print "Failed to initialise server.\nThe error was: %s" % result

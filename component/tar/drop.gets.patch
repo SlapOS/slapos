@@ -1,0 +1,14 @@
+diff -ur tar-1.26.orig/gnu/stdio.in.h tar-1.26/gnu/stdio.in.h
+--- tar-1.26.orig/gnu/stdio.in.h	2011-03-12 10:14:33.000000000 +0100
++++ tar-1.26/gnu/stdio.in.h	2012-08-24 15:35:22.299190847 +0200
+@@ -164,7 +164,10 @@
+    so any use of gets warrants an unconditional warning.  Assume it is
+    always declared, since it is required by C89.  */
+ #undef gets
++#if defined(__GLIBC__) && !defined(__UCLIBC__) && !__GLIBC_PREREQ(2, 16)
+ _GL_WARN_ON_USE (gets, "gets is a security hole - use fgets instead");
++#endif
++
+ 
+ #if @GNULIB_FOPEN@
+ # if @REPLACE_FOPEN@

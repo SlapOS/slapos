@@ -1,0 +1,8 @@
+#!${:bash} -e
+
+if [ -f ${:file} ]
+then
+    ${:test-binary} $(${:cat} ${:file}) = ${:value}
+else
+    exit 1
+fi

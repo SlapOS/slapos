@@ -35,11 +35,27 @@ import netaddr
 import time
 import re
 import urlparse
+import json
 
 # Use to do from slapos.recipe.librecipe import GenericBaseRecipe
 from generic import GenericBaseRecipe
 from genericslap import GenericSlapRecipe
 from filehash import filehash
+
+# Utility functions to (de)serialise live python objects in order to send them
+# to master.
+JSON_SERIALISED_MAGIC_KEY = '_'
+def wrap(value):
+  return {JSON_SERIALISED_MAGIC_KEY: json.dumps(value)}
+
+def unwrap(value):
+  try:
+    value = value[JSON_SERIALISED_MAGIC_KEY]
+  except (KeyError, TypeError):
+    pass
+  else:
+    value = json.loads(value)
+  return value
 
 class BaseSlapRecipe:
   """Base class for all slap.recipe.*"""
@@ -90,13 +106,22 @@ class BaseSlapRecipe:
     ]
 
     # SLAP related information
-    slap_connection = buildout['slap_connection']
-    self.computer_id = slap_connection['computer_id']
-    self.computer_partition_id = slap_connection['partition_id']
-    self.server_url = slap_connection['server_url']
-    self.software_release_url = slap_connection['software_release_url']
-    self.key_file = slap_connection.get('key_file')
-    self.cert_file = slap_connection.get('cert_file')
+    try:
+      slap_connection = buildout['slap_connection']
+      self.computer_id = slap_connection['computer_id']
+      self.computer_partition_id = slap_connection['partition_id']
+      self.server_url = slap_connection['server_url']
+      self.software_release_url = slap_connection['software_release_url']
+      self.key_file = slap_connection.get('key_file')
+      self.cert_file = slap_connection.get('cert_file')
+    except zc.buildout.buildout.MissingSection:
+      slap_connection = buildout['slap-connection']
+      self.computer_id = slap_connection['computer-id']
+      self.computer_partition_id = slap_connection['partition-id']
+      self.server_url = slap_connection['server-url']
+      self.software_release_url = slap_connection['software-release-url']
+      self.key_file = slap_connection.get('key-file')
+      self.cert_file = slap_connection.get('cert-file')
 
     # setup egg to give possibility to generate scripts
     self.egg = zc.recipe.egg.Egg(buildout, options['recipe'], options)
@@ -144,13 +169,6 @@ class BaseSlapRecipe:
     wrapper_path = os.path.join(self.wrapper_directory, wrapper_name)
     self._writeExecutable(wrapper_path, file_content)
     return wrapper_path
-
-  def createReportRunningWrapper(self, file_content):
-    """Creates report runnig wrapper and returns its path"""
-    report_wrapper_path = os.path.join(self.wrapper_report_directory,
-        'slapreport')
-    self._writeExecutable(report_wrapper_path, file_content)
-    return report_wrapper_path
 
   def substituteTemplate(self, template_location, mapping_dict):
     """Returns template content after substitution"""
