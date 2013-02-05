@@ -28,15 +28,15 @@
 #
 ##############################################################################
 
-from flask import g, Flask, request, abort
-import xml_marshaller
 from lxml import etree
+import sqlite3
 from slapos.slap.slap import Computer, ComputerPartition, \
     SoftwareRelease, SoftwareInstance, NotFoundError
-import sqlite3
+from slapos.proxy.db_version import DB_VERSION
 
+from flask import g, Flask, request, abort
+import xml_marshaller
 app = Flask(__name__)
-DB_VERSION = app.open_resource('schema.sql').readline().strip().split(':')[1]
 
 
 class UnauthorizedError(Exception):
