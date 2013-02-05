@@ -28,6 +28,8 @@ THE SOFTWARE.
 
 #ifdef __linux
 #include "kernel_netlink.c"
+#elif defined(__CYGWIN__)
+#include "kernel_cygwin.c"
 #else
 #include "kernel_socket.c"
 #endif

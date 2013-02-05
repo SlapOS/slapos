@@ -6,13 +6,13 @@ DEFINES = $(PLATFORM_DEFINES)
 
 CFLAGS = $(CDEBUGFLAGS) $(DEFINES) $(EXTRA_DEFINES)
 
-LDLIBS = -lrt
+LDLIBS = -lrt -liphlpapi -lws2_32 -lwlanapi -lole32 -lsetupapi
 
 SRCS = babeld.c net.c kernel.c util.c interface.c source.c neighbour.c \
-       route.c xroute.c message.c resend.c configuration.c local.c
+       route.c xroute.c message.c resend.c configuration.c local.c cyginet.c
 
 OBJS = babeld.o net.o kernel.o util.o interface.o source.o neighbour.o \
-       route.o xroute.o message.o resend.o configuration.o local.o
+       route.o xroute.o message.o resend.o configuration.o local.o cyginet.o
 
 babeld: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o babeld $(OBJS) $(LDLIBS)
@@ -48,4 +48,4 @@ uninstall:
 clean:
 	-rm -f babeld babeld.html *.o *~ core TAGS gmon.out
 
-kernel.o: kernel_netlink.c kernel_socket.c
+kernel.o: kernel_netlink.c kernel_socket.c kernel_cygwin.c
