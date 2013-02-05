@@ -14,7 +14,8 @@ resilient = ${instance-resilient:rendered}
 mariadb = ${instance-mariadb:output}
 mariadb-import = ${instance-mariadb-import:output}
 mariadb-export = ${instance-mariadb-export:output}
-apache-backup = ${instance-apache-backup:output}
+apache-import = ${instance-apache-import:output}
+apache-export = ${instance-apache-export:rendered}
 
 #frozen creates a syntax error, meaning it can keep its data.
 #It's dirty as hell, it needs to be replaced.
