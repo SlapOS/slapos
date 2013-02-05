@@ -34,18 +34,18 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
-      'Flask', # used by proxy
-      'lxml', # needed to play with XML trees
-      'netaddr>=0.7.5', # to play safely with IPv6 prefixes
-      'netifaces', # to fetch information about network devices
-      'pyflakes', # For testing purposes
-      'setuptools', # namespaces
-      'supervisor', # slapgrid uses supervisor to manage processes
-      'unittest2',
-      'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
-                               # XML
-      'zope.interface', # slap library implementes interfaces
-      'zc.buildout',
+          'Flask', # used by proxy
+          'lxml', # needed to play with XML trees
+          'netaddr>=0.7.5', # to play safely with IPv6 prefixes
+          'netifaces', # to fetch information about network devices
+          'pyflakes', # For testing purposes
+          'setuptools', # namespaces
+          'supervisor', # slapgrid uses supervisor to manage processes
+          'unittest2',
+          'xml_marshaller>=0.9.3', # to unmarshall/marshall python objects to/from
+                                   # XML
+          'zope.interface', # slap library implementes interfaces
+          'zc.buildout',
         ] + additional_install_requires,
       zip_safe=False, # proxy depends on Flask, which has issues with
                       # accessing templates
@@ -54,6 +54,8 @@ setup(name=name,
           # One entry point to control them all
           'slapos = slapos.entry:main',
           'slapos-watchdog = slapos.grid.watchdog:main',
+          'slapproxy = slapos.proxy:main',
+          'slapproxy-query = slapos.proxy.query:main',
           # Deprecated entry points
           'slapconsole = slapos.client:slapconsole',
           'slapformat = slapos.format:main',
@@ -63,7 +65,6 @@ setup(name=name,
           'slapgrid-ur = slapos.grid.slapgrid:runUsageReport',
           'slapgrid-supervisorctl = slapos.grid.svcbackend:supervisorctl',
           'slapgrid-supervisord = slapos.grid.svcbackend:supervisord',
-          'slapproxy = slapos.proxy:main',
           'bang = slapos.bang:main',
         ]
       },
