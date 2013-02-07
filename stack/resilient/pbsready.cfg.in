@@ -23,7 +23,21 @@ parts +=
 #--
 #-- Creation of all needed directories.
 
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+
 [basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/service
+run = $${rootdirectory:var}/run
+script = $${rootdirectory:etc}/script
+backup = $${rootdirectory:srv}/backup
+promises = $${rootdirectory:etc}/promise
 services = $${rootdirectory:etc}/service
 cache = $${rootdirectory:var}/cache
 notifier = $${rootdirectory:etc}/notifier
