@@ -13,7 +13,7 @@ software-url = ${slap-connection:software-release-url}
    {{heriteLeader}}
 software-type = {{typeexport}}
 name = {{namebase}}0
-return = url ssh-public-key ssh-url notification-id ip
+return = ssh-public-key ssh-url notification-id ip
 
 config = number authorized-key notify ip-list namebase
 config-number = 0
@@ -32,7 +32,7 @@ name = {{namebase}}{{id}}
 
 software-url = ${slap-connection:software-release-url}
 software-type = {{typeimport}}
-return = url ssh-public-key ssh-url notification-url ip
+return = ssh-public-key ssh-url notification-url ip
 
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-push
 
@@ -58,7 +58,7 @@ name = {{namebase}}0
 
 software-url = ${slap-connection:software-release-url}
 software-type = {{typeexport}}
-return = url ssh-public-key ssh-url notification-id ip
+return = ssh-public-key ssh-url notification-id ip
 
 config = number authorized-key notify ip-list namebase
 config-number = 0
@@ -77,7 +77,7 @@ name = {{namebase}}{{id}}
 
 software-url = ${slap-connection:software-release-url}
 software-type = {{typeimport}}
-return = url ssh-public-key ssh-url notification-url
+return = ssh-public-key ssh-url notification-url
 
 pbs-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-{{namebase}}-push
 
