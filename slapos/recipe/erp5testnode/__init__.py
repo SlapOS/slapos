@@ -33,7 +33,7 @@ from slapos.recipe.librecipe import GenericBaseRecipe
 
 class Recipe(GenericBaseRecipe):
   def install(self):
-    path_list = []
+    self.path_list = []
     options = self.options.copy()
     del options['recipe']
     CONFIG = {k.replace('-', '_'): v for k, v in options.iteritems()}
@@ -63,8 +63,8 @@ class Recipe(GenericBaseRecipe):
         CONFIG
       ),
     )
-    path_list.append(configuration_file)
-    path_list.append(
+    self.path_list.append(configuration_file)
+    self.path_list.append(
       self.createPythonScript(
         self.options['wrapper'],
         'slapos.recipe.librecipe.execute.executee',
@@ -78,4 +78,26 @@ class Recipe(GenericBaseRecipe):
         ],
       )
     )
-    return path_list
+    self.installApache()
+    return self.path_list
+
+  def installApache(self):
+    apache_config = dict(
+        pid_file=self.options['httpd-pid-file'],
+        lock_file=self.options['httpd-lock-file'],
+        ip=self.options['ipv6-address'],
+        port='9080',
+        error_log=os.path.join(self.options['httpd-log-directory'],
+                               'httpd-error.log'),
+        access_log=os.path.join(self.options['httpd-log-directory'],
+                                'httpd-access.log'),
+    )
+    config_file = self.createFile(self.options['httpd-conf-file'],
+       self.substituteTemplate(self.getTemplateFilename('httpd.conf.in'),
+                               apache_config)
+    )
+    self.path_list.append(config_file)
+    wrapper = self.createPythonScript(self.options['httpd-wrapper'],
+      'slapos.recipe.librecipe.execute.execute',
+      [self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'])
+    self.path_list.append(wrapper)
