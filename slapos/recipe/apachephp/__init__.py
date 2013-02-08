@@ -24,16 +24,12 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-
 import shutil
 import os
 import signal
-import subprocess
-
 from binascii import b2a_uu as uuencode
 
 from slapos.recipe.librecipe import GenericBaseRecipe
-
 
 class Recipe(GenericBaseRecipe):
 
@@ -122,16 +118,12 @@ class Recipe(GenericBaseRecipe):
         self.substituteTemplate(self.options['template'], application_conf))
       path_list.append(config)
 
-    # Reload apache configuration.
-    # notez-bien: a graceful restart or a SIGUSR1 can somehow hang the apache threads.
-
-    subprocess.call([
-                        self.options['httpd-binary'],
-                        '-f',
-                        self.options['httpd-conf'],
-                        '-k',
-                        'reload'
-                    ])
-
+    if os.path.exists(self.options['pid-file']):
+      # Reload apache configuration
+      with open(self.options['pid-file']) as pid_file:
+        pid = int(pid_file.read().strip(), 10)
+      try:
+        os.kill(pid, signal.SIGUSR1) # Graceful restart
+      except OSError:
+        pass
     return path_list
-
