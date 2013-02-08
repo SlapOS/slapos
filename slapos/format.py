@@ -34,6 +34,7 @@ import ConfigParser
 import errno
 import fcntl
 import grp
+import json
 import logging
 import netaddr
 import netifaces
@@ -50,6 +51,7 @@ import time
 import zipfile
 
 import lxml.etree
+from slapos.version import version
 
 
 def prettify_xml(xml):
@@ -58,6 +60,8 @@ def prettify_xml(xml):
 
 
 class OS(object):
+  """Wrap parts of the 'os' module to provide logging of performed actions."""
+
   _os = os
 
   def __init__(self, config):
@@ -74,11 +78,9 @@ class OS(object):
     def wrapper(*args, **kw):
       if self._verbose:
         arg_list = [repr(x) for x in args] + [
-          '%s=%r' % (x, y) for x, y in kw.iteritems()]
-        self._logger.debug('%s(%s)' % (
-          name,
-          ', '.join(arg_list)
-        ))
+                '%s=%r' % (x, y) for x, y in kw.iteritems()
+                ]
+        self._logger.debug('%s(%s)' % (name, ', '.join(arg_list)))
       if not self._dry_run:
         getattr(self._os, name)(*args, **kw)
     setattr(self, name, wrapper)
@@ -86,12 +88,14 @@ class OS(object):
   def __getattr__(self, name):
     return getattr(self._os, name)
 
+
 class UsageError(Exception):
   pass
 
+
 class NoAddressOnInterface(Exception):
   """
-  Exception raised if there's not address on the interface to construct IPv6
+  Exception raised if there is no address on the interface to construct IPv6
   address with.
 
   Attributes:
@@ -100,8 +104,9 @@ class NoAddressOnInterface(Exception):
 
   def __init__(self, interface):
     super(NoAddressOnInterface, self).__init__(
-      'No IPv6 found on interface %s to construct IPv6 with.' % (interface, )
+      'No IPv6 found on interface %s to construct IPv6 with.' % interface
     )
+
 
 class AddressGenerationError(Exception):
   """
@@ -116,14 +121,17 @@ class AddressGenerationError(Exception):
       'Generated IPv6 %s seems not to be a valid IP.' % addr
     )
 
+
 def callAndRead(argument_list, raise_on_error=True):
-  popen = subprocess.Popen(argument_list, stdout=subprocess.PIPE,
-      stderr=subprocess.STDOUT)
+  popen = subprocess.Popen(argument_list,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT)
   result = popen.communicate()[0]
   if raise_on_error and popen.returncode != 0:
     raise ValueError('Issue while invoking %r, result was:\n%s' % (
-      argument_list, result))
+                     argument_list, result))
   return popen.returncode, result
+
 
 def isGlobalScopeAddress(a):
   """Returns True if a is global scope IP v4/6 address"""
@@ -131,15 +139,18 @@ def isGlobalScopeAddress(a):
   return not ip.is_link_local() and not ip.is_loopback() and \
       not ip.is_reserved() and ip.is_unicast()
 
+
 def netmaskToPrefixIPv4(netmask):
   """Convert string represented netmask to its integer prefix"""
   return netaddr.strategy.ipv4.netmask_to_prefix[
           netaddr.strategy.ipv4.str_to_int(netmask)]
 
+
 def netmaskToPrefixIPv6(netmask):
   """Convert string represented netmask to its integer prefix"""
   return netaddr.strategy.ipv6.netmask_to_prefix[
           netaddr.strategy.ipv6.str_to_int(netmask)]
+
 
 def _getDict(instance):
   """
@@ -172,13 +183,14 @@ def _getDict(instance):
       result[key] = _getDict(value)
     return result
 
+
 class Computer(object):
   "Object representing the computer"
   instance_root = None
   software_root = None
 
   def __init__(self, reference, interface=None, addr=None, netmask=None,
-    ipv6_interface=None, software_user='slapsoft'):
+               ipv6_interface=None, software_user='slapsoft'):
     """
     Attributes:
       reference: String, the reference of the computer.
@@ -197,14 +209,14 @@ class Computer(object):
 
   def getAddress(self, allow_tap=False):
     """
-    Return a list of the interface address not attributed to any partition, (which
+    Return a list of the interface address not attributed to any partition (which
     are therefore free for the computer itself).
 
     Returns:
       False if the interface isn't available, else the list of the free addresses.
     """
     if self.interface is None:
-      return dict(addr=self.address, netmask=self.netmask)
+      return {'addr': self.address, 'netmask': self.netmask}
 
     computer_partition_address_list = []
     for partition in self.partition_list:
@@ -218,15 +230,14 @@ class Computer(object):
         return address_dict
 
     if allow_tap:
-      # all addresses on interface are for partition, so lets add new one
+      # all addresses on interface are for partition, so let's add new one
       computer_tap = Tap('compdummy')
       computer_tap.createWithOwner(User('root'), attach_to_tap=True)
       self.interface.addTap(computer_tap)
       return self.interface.addAddr()
 
     # Can't find address
-    raise NoAddressOnInterface('No valid IPv6 found on %s.' %
-        self.interface.name)
+    raise NoAddressOnInterface('No valid IPv6 found on %s.' % self.interface.name)
 
   def send(self, config):
     """
@@ -236,12 +247,12 @@ class Computer(object):
     slap_instance = slap.slap()
     connection_dict = {}
     if config.key_file and config.cert_file:
-      connection_dict.update(
-        key_file=config.key_file,
-        cert_file=config.cert_file)
+      connection_dict['key_file'] = config.key_file
+      connection_dict['cert_file'] = config.cert_file
     slap_instance.initializeConnection(config.master_url,
-      **connection_dict)
+                                       **connection_dict)
     slap_computer = slap_instance.registerComputer(self.reference)
+
     if config.dry_run:
       return
     try:
@@ -250,19 +261,22 @@ class Computer(object):
       raise slap.NotFoundError("%s\nERROR : This SlapOS node is not recognised by "
           "SlapOS Master. Please make sure computer_id of slapos.cfg looks "
           "like 'COMP-123' and is correct.\nError is : 404 Not Found." % error)
-    return
 
-  def dump(self, path_to_xml):
+  def dump(self, path_to_xml, path_to_json):
     """
     Dump the computer object to an xml file via xml_marshaller.
 
     Args:
       path_to_xml: String, path to the file to load.
-      users: List of User, list of user needed to be add to the dump
-          (even if they are not related to any tap interface).
+      path_to_json: String, path to the JSON version to save.
     """
 
     computer_dict = _getDict(self)
+
+    if path_to_json:
+      with open(path_to_json, 'wb') as fout:
+        fout.write(json.dumps(computer_dict, sort_keys=True, indent=2))
+
     new_xml = xml_marshaller.dumps(computer_dict)
     new_pretty_xml = prettify_xml(new_xml)
 
@@ -275,13 +289,17 @@ class Computer(object):
           # computer configuration did not change, nothing to write
           return
 
-    self.backup_xml(path_to_archive, path_to_xml)
+    if os.path.exists(path_to_xml):
+      self.backup_xml(path_to_archive, path_to_xml)
 
-    with open(path_to_xml,'wb') as fout:
-        fout.write(new_pretty_xml)
+    with open(path_to_xml, 'wb') as fout:
+      fout.write(new_pretty_xml)
 
 
   def backup_xml(self, path_to_archive, path_to_xml):
+    """
+    Stores a copy of the current xml file to an historical archive.
+    """
     xml_content = open(path_to_xml).read()
     saved_filename = os.path.basename(path_to_xml) + time.strftime('.%Y%m%d-%H:%M')
 
@@ -309,8 +327,8 @@ class Computer(object):
         reference = reference,
         addr = dumped_dict['address'],
         netmask = dumped_dict['netmask'],
-        ipv6_interface=ipv6_interface,
-        software_user=dumped_dict.get('software_user', 'slapsoft'),
+        ipv6_interface = ipv6_interface,
+        software_user = dumped_dict.get('software_user', 'slapsoft'),
     )
 
     for partition_dict in dumped_dict['partition_list']:
@@ -411,6 +429,7 @@ class Computer(object):
           if not any([netaddr.valid_ipv4(q['addr'])
               for q in old_partition_address_list]):
             raise ValueError('Not valid ipv6 addresses loaded')
+
           for address in old_partition_address_list:
             if netaddr.valid_ipv6(address['addr']):
               partition.address_list.append(self.interface.addAddr(
@@ -427,6 +446,7 @@ class Computer(object):
           self.partition_list[0].tap.detach()
         except IndexError:
           pass
+
 
 class Partition(object):
   "Represent a computer partition"
@@ -465,8 +485,10 @@ class Partition(object):
       os.chown(self.path, owner_pw.pw_uid, owner_pw.pw_gid)
     os.chmod(self.path, 0750)
 
+
 class User(object):
-  "User: represent and manipulate a user on the system."
+  """User: represent and manipulate a user on the system."""
+
   path = None
 
   def __init__(self, user_name, additional_group_list=None):
@@ -526,7 +548,6 @@ class User(object):
     try:
       pwd.getpwnam(self.name)
       return True
-
     except KeyError:
       return False
 
@@ -551,7 +572,7 @@ class Tap(object):
   def attach(self):
     """
     Attach to the TAP interface, meaning  that it just opens the TAP interface
-    and wait for the caller to notify that it can be safely detached.
+    and waits for the caller to notify that it can be safely detached.
 
     Linux  distinguishes administrative  and operational  state of  an network
     interface.  The  former can be set  manually by running ``ip  link set dev
@@ -579,7 +600,7 @@ class Tap(object):
       fcntl.ioctl(tap_fd, self.TUNSETIFF,
                   struct.pack("16sI", self.name, self.IFF_TAP))
 
-    except IOError, error:
+    except IOError as error:
       # If  EBUSY, it  means another  program is  already attached,  thus just
       # ignore it...
       if error.errno != errno.EBUSY:
@@ -622,8 +643,9 @@ class Tap(object):
     if attach_to_tap:
       threading.Thread(target=self.attach).start()
 
+
 class Interface(object):
-  "Interface represent a interface on the system"
+  """Represent a network interface on the system"""
 
   def __init__(self, name, ipv4_local_network, ipv6_interface=None):
     """
@@ -639,6 +661,9 @@ class Interface(object):
     # report carrier
     _, result = callAndRead(['ip', 'addr', 'list', self.name])
     self.attach_to_tap = 'DOWN' in result.split('\n', 1)[0]
+
+    # XXX-Cedric should be global logger
+    self.logger = logging.getLogger("slapformat")
 
   def __getinitargs__(self):
     return (self.name,)
@@ -735,7 +760,8 @@ class Interface(object):
 
     if not af in netifaces.ifaddresses(interface_name) \
         or not address in [q['addr'].split('%')[0]
-          for q in netifaces.ifaddresses(interface_name)[af]]:
+                           for q in netifaces.ifaddresses(interface_name)[af]
+                           ]:
       # add an address
       callAndRead(['ip', 'addr', 'add', address_string, 'dev', interface_name])
 
@@ -745,14 +771,18 @@ class Interface(object):
 
       # wait few moments
       time.sleep(2)
-    # check existence on interface
+
+    # Fake success for local ipv4
+    if not ipv6:
+      return True
+
+    # check existence on interface for ipv6
     _, result = callAndRead(['ip', 'addr', 'list', interface_name])
     for l in result.split('\n'):
       if address in l:
         if 'tentative' in l:
           # duplicate, remove
-          callAndRead(['ip', 'addr', 'del', address_string, 'dev',
-            interface_name])
+          callAndRead(['ip', 'addr', 'del', address_string, 'dev', interface_name])
           return False
         # found and clean
         return True
@@ -785,6 +815,8 @@ class Interface(object):
       if self._addSystemAddress(addr, netmask, False):
         return dict(addr=addr, netmask=netmask)
       else:
+        self.logger.warning('Impossible to add old local IPv4 %s. Generating '
+            'new IPv4 address.' % addr)
         return self._generateRandomIPv4Address(netmask)
     else:
       # confirmed to be configured
@@ -840,6 +872,9 @@ class Interface(object):
           if self._addSystemAddress(addr, netmask):
             # succeed, return it
             return dict(addr=addr, netmask=netmask)
+          else:
+            self.logger.warning('Impossible to add old public IPv6 %s. '
+                'Generating new IPv6 address.' % addr)
 
     # Try 10 times to add address, raise in case if not possible
     try_num = 10
@@ -857,11 +892,12 @@ class Interface(object):
 
     raise AddressGenerationError(addr)
 
+
 class Parser(OptionParser):
   """
   Parse all arguments.
   """
-  def __init__(self, usage=None, version=None):
+  def __init__(self, usage=None, version=version):
     """
     Initialize all options possibles.
     """
@@ -870,6 +906,10 @@ class Parser(OptionParser):
       Option("-x", "--computer_xml",
              help="Path to file with computer's XML. If does not exists, "
                   "will be created",
+             default=None,
+             type=str),
+      Option("--computer_json",
+             help="Path to a JSON version of the computer's XML (for development only).",
              default=None,
              type=str),
       Option("-l", "--log_file",
@@ -919,100 +959,128 @@ class Parser(OptionParser):
       self.error("Incorrect number of arguments")
     return options, args[0]
 
-def run(config):
-  # Define the computer
-  if config.input_definition_file:
-    filepath = os.path.abspath(config.input_definition_file)
-    config.logger.info('Using definition file %r' % filepath)
-    computer_definition = ConfigParser.RawConfigParser({
-      'software_user': 'slapsoft',
-    })
-    computer_definition.read(filepath)
-    interface = None
-    address = None
-    netmask = None
-    if computer_definition.has_option('computer', 'address'):
-      address, netmask = computer_definition.get('computer',
-        'address').split('/')
-    if config.alter_network and config.interface_name is not None \
-        and config.ipv4_local_network is not None:
-      interface = Interface(config.interface_name, config.ipv4_local_network,
+
+
+def parse_computer_definition(config, definition_path):
+  config.logger.info('Using definition file %r' % definition_path)
+  computer_definition = ConfigParser.RawConfigParser({
+    'software_user': 'slapsoft',
+  })
+  computer_definition.read(definition_path)
+  interface = None
+  address = None
+  netmask = None
+  if computer_definition.has_option('computer', 'address'):
+    address, netmask = computer_definition.get('computer', 'address').split('/')
+  if config.alter_network and config.interface_name is not None \
+      and config.ipv4_local_network is not None:
+    interface = Interface(config.interface_name, config.ipv4_local_network,
+      config.ipv6_interface)
+  computer = Computer(
+      reference=config.computer_id,
+      interface=interface,
+      addr=address,
+      netmask=netmask,
+      ipv6_interface=config.ipv6_interface,
+      software_user=computer_definition.get('computer', 'software_user'),
+    )
+  partition_list = []
+  for partition_number in range(int(config.partition_amount)):
+    section = 'partition_%s' % partition_number
+    user = User(computer_definition.get(section, 'user'))
+    address_list = []
+    for a in computer_definition.get(section, 'address').split():
+      address, netmask = a.split('/')
+      address_list.append(dict(addr=address, netmask=netmask))
+    tap = Tap(computer_definition.get(section, 'network_interface'))
+    partition = Partition(reference=computer_definition.get(section, 'pathname'),
+                          path=os.path.join(config.instance_root,
+                                            computer_definition.get(section, 'pathname')),
+                          user=user,
+                          address_list=address_list,
+                          tap=tap)
+    partition_list.append(partition)
+  computer.partition_list = partition_list
+  return computer
+
+
+def parse_computer_xml(config, xml_path):
+  if os.path.exists(xml_path):
+    config.logger.info('Loading previous computer data from %r' % xml_path)
+    computer = Computer.load(xml_path,
+                             reference=config.computer_id,
+                             ipv6_interface=config.ipv6_interface)
+    # Connect to the interface defined by the configuration
+    computer.interface = Interface(config.interface_name, config.ipv4_local_network,
         config.ipv6_interface)
+  else:
+    # If no pre-existent configuration found, create a new computer object
+    config.logger.warning('Creating new data computer with id %r' % config.computer_id)
     computer = Computer(
-        reference=config.computer_id,
-        interface=interface,
-        addr=address,
-        netmask=netmask,
-        ipv6_interface=config.ipv6_interface,
-        software_user=computer_definition.get('computer', 'software_user'),
-      )
-    partition_list = []
-    for partition_number in range(int(config.partition_amount)):
-      section = 'partition_%s' % partition_number
-      user = User(computer_definition.get(section, 'user'))
-      address_list = []
-      for a in computer_definition.get(section, 'address').split():
-        address, netmask = a.split('/')
-        address_list.append(dict(addr=address, netmask=netmask))
-      tap = Tap(computer_definition.get(section, 'network_interface'))
-      partition_list.append(Partition(reference=computer_definition.get(
-        section, 'pathname'),
-          path=os.path.join(config.instance_root, computer_definition.get(
-            section, 'pathname')),
-          user=user,
-          address_list=address_list,
-          tap=tap,
-          ))
-    computer.partition_list = partition_list
+      reference=config.computer_id,
+      interface=Interface(config.interface_name, config.ipv4_local_network,
+        config.ipv6_interface),
+      addr=None,
+      netmask=None,
+      ipv6_interface=config.ipv6_interface,
+      software_user=config.software_user,
+    )
+
+  partition_amount = int(config.partition_amount)
+  existing_partition_amount = len(computer.partition_list)
+  if existing_partition_amount > partition_amount:
+    raise ValueError('Requested amount of computer partitions (%s) is lower '
+        'then already configured (%s), cannot continue' % (partition_amount,
+          len(computer.partition_list)))
+
+  config.logger.info('Adding %s new partitions' %
+      (partition_amount-existing_partition_amount))
+  for nb_iter in range(existing_partition_amount, partition_amount):
+    # add new ones
+    user = User("%s%s" % (config.user_base_name, nb_iter))
+
+    tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
+
+    path = os.path.join(config.instance_root, "%s%s" % (
+                         config.partition_base_name, nb_iter))
+    computer.partition_list.append(
+      Partition(
+        reference="%s%s" % (config.partition_base_name, nb_iter),
+        path=path,
+        user=user,
+        address_list=None,
+        tap=tap,
+        ))
+
+  return computer
+
+
+def write_computer_definition(config, computer):
+  computer_definition = ConfigParser.RawConfigParser()
+  computer_definition.add_section('computer')
+  if computer.address is not None and computer.netmask is not None:
+    computer_definition.set('computer', 'address', '/'.join(
+      [computer.address, computer.netmask]))
+  for partition_number, partition in enumerate(computer.partition_list):
+    section = 'partition_%s' % partition_number
+    computer_definition.add_section(section)
+    address_list = []
+    for address in partition.address_list:
+      address_list.append('/'.join([address['addr'], address['netmask']]))
+    computer_definition.set(section, 'address', ' '.join(address_list))
+    computer_definition.set(section, 'user', partition.user.name)
+    computer_definition.set(section, 'network_interface', partition.tap.name)
+    computer_definition.set(section, 'pathname', partition.reference)
+  computer_definition.write(open(config.output_definition_file, 'w'))
+  config.logger.info('Stored computer definition in %r' % config.output_definition_file)
+
+
+def run(config):
+  if config.input_definition_file:
+    computer = parse_computer_definition(config, config.input_definition_file)
   else:
     # no definition file, figure out computer
-    if os.path.exists(config.computer_xml):
-      config.logger.info('Loading previous computer data from %r' % (
-        config.computer_xml, ))
-      computer = Computer.load(config.computer_xml,
-        reference=config.computer_id, ipv6_interface=config.ipv6_interface)
-      # Connect to the interface defined by the configuration
-      computer.interface = Interface(config.interface_name, config.ipv4_local_network,
-          config.ipv6_interface)
-    else:
-      # If no pre-existent configuration found, creating a new computer object
-      config.logger.warning('Creating new data computer with id %r' % (
-        config.computer_id, ))
-      computer = Computer(
-        reference=config.computer_id,
-        interface=Interface(config.interface_name, config.ipv4_local_network,
-          config.ipv6_interface),
-        addr=None,
-        netmask=None,
-        ipv6_interface=config.ipv6_interface,
-        software_user=config.software_user,
-      )
-
-    partition_amount = int(config.partition_amount)
-    existing_partition_amount = len(computer.partition_list)
-    if existing_partition_amount > partition_amount:
-      raise ValueError('Requested amount of computer partitions (%s) is lower '
-          'then already configured (%s), cannot continue' % (partition_amount,
-            len(computer.partition_list)))
-
-    config.logger.info('Adding %s new partitions' %
-        (partition_amount-existing_partition_amount))
-    for nb_iter in range(existing_partition_amount, partition_amount):
-      # add new ones
-      user = User("%s%s" % (config.user_base_name, nb_iter))
-
-      tap = Tap("%s%s" % (config.tap_base_name, nb_iter))
-
-      path = os.path.join(config.instance_root, "%s%s" % (
-                           config.partition_base_name, nb_iter))
-      computer.partition_list.append(
-        Partition(
-          reference="%s%s" % (config.partition_base_name, nb_iter),
-          path=path,
-          user=user,
-          address_list=None,
-          tap=tap,
-          ))
+    computer = parse_computer_xml(config, config.computer_xml)
 
   computer.instance_root = config.instance_root
   computer.software_root = config.software_root
@@ -1022,36 +1090,20 @@ def run(config):
   computer.netmask = address['netmask']
 
   if config.output_definition_file:
-    computer_definition = ConfigParser.RawConfigParser()
-    computer_definition.add_section('computer')
-    if computer.address is not None and computer.netmask is not None:
-      computer_definition.set('computer', 'address', '/'.join(
-        [computer.address, computer.netmask]))
-    partition_number = 0
-    for partition in computer.partition_list:
-      section = 'partition_%s' % partition_number
-      computer_definition.add_section(section)
-      address_list = []
-      for address in partition.address_list:
-        address_list.append('/'.join([address['addr'], address['netmask']]))
-      computer_definition.set(section, 'address', ' '.join(address_list))
-      computer_definition.set(section, 'user', partition.user.name)
-      computer_definition.set(section, 'user', partition.user.name)
-      computer_definition.set(section, 'network_interface', partition.tap.name)
-      computer_definition.set(section, 'pathname', partition.reference)
-      partition_number += 1
-    filepath = os.path.abspath(config.output_definition_file)
-    computer_definition.write(open(filepath, 'w'))
-    config.logger.info('Stored computer definition in %r' % filepath)
+    write_computer_definition(config, computer)
+
   computer.construct(alter_user=config.alter_user,
-      alter_network=config.alter_network, create_tap=config.create_tap)
+                     alter_network=config.alter_network,
+                     create_tap=config.create_tap)
 
   # Dumping and sending to the erp5 the current configuration
   if not config.dry_run:
-    computer.dump(config.computer_xml)
+    computer.dump(path_to_xml=config.computer_xml,
+                  path_to_json=config.computer_json)
   config.logger.info('Posting information to %r' % config.master_url)
   computer.send(config)
   config.logger.info('slapformat successfully prepared computer.')
+
 
 class Config(object):
   key_file = None
@@ -1060,8 +1112,11 @@ class Config(object):
   alter_user = None
   create_tap = None
   computer_xml = None
+  computer_json = None
+  input_definition_file = None
   logger = None
   log_file = None
+  output_definition_file = None
   verbose = None
   dry_run = None
   console = None
@@ -1164,6 +1219,7 @@ class Config(object):
         self.checkRequiredBinary([['tunctl', '-d']])
       if self.alter_network:
         self.checkRequiredBinary(['ip'])
+
     # Required, even for dry run
     if self.alter_network and self.create_tap:
       self.checkRequiredBinary(['brctl'])
@@ -1204,7 +1260,7 @@ class Config(object):
       file_location = getattr(self, attribute, None)
       if file_location is not None:
         if not os.path.exists(file_location):
-          self.logger.fatal('File %r does not exist or is no readable.' %
+          self.logger.fatal('File %r does not exist or is not readable.' %
               file_location)
           sys.exit(1)
 
@@ -1220,23 +1276,21 @@ class Config(object):
     # Calculate path once
     self.computer_xml = os.path.abspath(self.computer_xml)
 
+    if self.input_definition_file:
+      self.input_definition_file = os.path.abspath(self.input_definition_file)
 
-def main(*args):
-  "Run default configuration."
+    if self.output_definition_file:
+      self.output_definition_file = os.path.abspath(self.output_definition_file)
+
+
+
+def tracing_monkeypatch(config):
+  """Substitute os module and callAndRead function with tracing wrappers."""
   global os
   global callAndRead
-  real_callAndRead = callAndRead
-  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
 
-  # Parse arguments
-  options, configuration_file_path = Parser(usage=usage).check_args(args)
-  config = Config()
-  try:
-    config.setConfig(options, configuration_file_path)
-  except UsageError, err:
-    print >> sys.stderr, err.message
-    print >> sys.stderr, "For help use --help"
-    sys.exit(1)
+  real_callAndRead = callAndRead
+
   os = OS(config)
   if config.dry_run:
     def dry_callAndRead(argument_list, raise_on_error=True):
@@ -1253,11 +1307,30 @@ def main(*args):
     pwd.getpwnam = fake_getpwnam
   else:
     dry_callAndRead = real_callAndRead
+
   if config.verbose:
     def logging_callAndRead(argument_list, raise_on_error=True):
       config.logger.debug(' '.join(argument_list))
       return dry_callAndRead(argument_list, raise_on_error)
     callAndRead = logging_callAndRead
+
+
+def main(*args):
+  "Run default configuration."
+
+  # Parse arguments
+  usage = "usage: %s [options] CONFIGURATION_FILE" % sys.argv[0]
+  options, configuration_file_path = Parser(usage=usage).check_args(args)
+  config = Config()
+  try:
+    config.setConfig(options, configuration_file_path)
+  except UsageError as err:
+    sys.stderr.write(err.message + '\n')
+    sys.stderr.write("For help use --help\n")
+    sys.exit(1)
+
+  tracing_monkeypatch(config)
+
   # Add delay between 0 and 1 hour
   # XXX should be the contrary: now by default, and cron should have
   # --maximal-delay=3600
@@ -1271,3 +1344,4 @@ def main(*args):
   except:
     config.logger.exception('Uncaught exception:')
     raise
+

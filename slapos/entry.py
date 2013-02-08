@@ -115,6 +115,7 @@ def dispatch(command, is_node_command):
   If configuration file is not given: define it arbitrarily, and so on.
   """
   if is_node_command:
+    # XXX-Cedric: should we check if we are root?
     if command == 'register':
       call(register)
     elif command == 'software':
