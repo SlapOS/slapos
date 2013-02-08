@@ -130,7 +130,7 @@ class Recipe(GenericBaseRecipe):
                         '-f',
                         self.options['httpd-conf'],
                         '-k',
-                        'graceful'
+                        'reload'
                     ])
 
     return path_list
