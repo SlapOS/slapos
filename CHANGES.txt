@@ -1,11 +1,17 @@
 Changes
 =======
 
-0.34.1 (unreleased)
--------------------
+0.35 (2012-02-08)
+-----------------
 
- * slapos: display version number with help [Marco Mariani]
- * slapformat: backup slapos.xml to a zip archive at every change [Marco Mariani]
+ * slapos: display version number with help. [Marco Mariani]
+ * slapformat: backup slapos.xml to a zip archive at every change. [Marco Mariani]
+ * slapformat: Don't check validity of ipv4 when trying to add address that already exists. [Cedric de Saint Martin]
+ * slapgrid: create and run $MD5/buildout.cfg for eaiser debugging. [Marco Mariani]
+ * slapgrid: keep running if cp.error() or sr.error() have issues (fixes 20130119-744D94). [Marco Mariani]
+ * slapgrid does not crash when there are no certificates (fixes #20130121-136C24). [Marco Mariani]
+ * Add slapproxy-query command. [Marco Mariani]
+ * Other minor typo / output fixes.
 
 0.34 (2013-01-23)
 -----------------
