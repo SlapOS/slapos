@@ -91,6 +91,9 @@ class Recipe(GenericBaseRecipe):
                                'httpd-error.log'),
         access_log=os.path.join(self.options['httpd-log-directory'],
                                 'httpd-access.log'),
+        certificate=self.options['httpd-cert-file'],
+        key=self.options['httpd-key-file'],
+        testnode_log_directory=self.options['log-directory'],
     )
     config_file = self.createFile(self.options['httpd-conf-file'],
        self.substituteTemplate(self.getTemplateFilename('httpd.conf.in'),
@@ -101,3 +104,7 @@ class Recipe(GenericBaseRecipe):
       'slapos.recipe.librecipe.execute.execute',
       [self.options['apache-binary'], '-f', config_file, '-DFOREGROUND'])
     self.path_list.append(wrapper)
+    # create empty html page to not allow listing of /
+    page = open(os.path.join(self.options['log-directory'], "index.html"), "w")
+    page.write("<html/>")
+    page.close()
