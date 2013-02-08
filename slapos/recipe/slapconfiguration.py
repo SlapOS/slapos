@@ -64,9 +64,9 @@ class Recipe(object):
       Set of IPv4 addresses.
     ipv6
       Set of IPv6 addresses.
-    ipv4_random
+    ipv4-random
       One of the IPv4 addresses.
-    ipv6_random
+    ipv6-random
       One of the IPv6 addresses.
     tap
       Set of TAP interfaces.
@@ -116,9 +116,9 @@ class Recipe(object):
 
       # also export single ip values for those recipes that don't support sets.
       if ipv4_set:
-          options['ipv4_random'] = list(ipv4_set)[0]
+          options['ipv4-random'] = list(ipv4_set)[0]
       if ipv6_set:
-          options['ipv6_random'] = list(ipv6_set)[0]
+          options['ipv6-random'] = list(ipv6_set)[0]
 
       options['tap'] = tap_set
       options['configuration'] = parameter_dict

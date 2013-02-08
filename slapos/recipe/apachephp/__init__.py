@@ -98,6 +98,8 @@ class Recipe(GenericBaseRecipe):
                               mysql_password=self.options['mysql-password'],
                               mysql_host='%s:%s' % (self.options['mysql-host'],
                                                     self.options['mysql-port']),
+                              mysql_ip=self.options['mysql-host'],
+                              mysql_port=self.options['mysql-port'],
                               secret_key=secret_key,
                              )
 
