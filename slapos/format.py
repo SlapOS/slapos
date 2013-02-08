@@ -54,6 +54,11 @@ import lxml.etree
 from slapos.version import version
 
 
+# set up logging
+logger = logging.getLogger("slapformat")
+logger.setLevel(logging.INFO)
+
+
 def prettify_xml(xml):
   root = lxml.etree.fromstring(xml)
   return lxml.etree.tostring(root, pretty_print=True)
@@ -664,9 +669,6 @@ class Interface(object):
     _, result = callAndRead(['ip', 'addr', 'list', self.name])
     self.attach_to_tap = 'DOWN' in result.split('\n', 1)[0]
 
-    # XXX-Cedric should be global logger
-    self.logger = logging.getLogger("slapformat")
-
   def __getinitargs__(self):
     return (self.name,)
 
@@ -817,7 +819,7 @@ class Interface(object):
       if self._addSystemAddress(addr, netmask, False):
         return dict(addr=addr, netmask=netmask)
       else:
-        self.logger.warning('Impossible to add old local IPv4 %s. Generating '
+        logger.warning('Impossible to add old local IPv4 %s. Generating '
             'new IPv4 address.' % addr)
         return self._generateRandomIPv4Address(netmask)
     else:
@@ -875,7 +877,7 @@ class Interface(object):
             # succeed, return it
             return dict(addr=addr, netmask=netmask)
           else:
-            self.logger.warning('Impossible to add old public IPv6 %s. '
+            logger.warning('Impossible to add old public IPv6 %s. '
                 'Generating new IPv6 address.' % addr)
 
     # Try 10 times to add address, raise in case if not possible
@@ -1151,8 +1153,8 @@ class Config(object):
     self.cert_file = None
 
     # set up logging
-    self.logger = logging.getLogger("slapformat")
-    self.logger.setLevel(logging.INFO)
+    # XXX-Cedric: change code to use global logger
+    self.logger = logger
 
     # Set options parameters
     for option, value in option_dict.__dict__.items():
