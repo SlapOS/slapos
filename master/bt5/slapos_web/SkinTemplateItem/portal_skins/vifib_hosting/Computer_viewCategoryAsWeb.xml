@@ -102,6 +102,7 @@
                         <string>my_local_area_network_type</string>
                         <string>my_memory_size</string>
                         <string>my_memory_type</string>
+                        <string>my_region</string>
                         <string>my_storage_capacity</string>
                         <string>my_storage_interface</string>
                         <string>my_storage_redundancy</string>

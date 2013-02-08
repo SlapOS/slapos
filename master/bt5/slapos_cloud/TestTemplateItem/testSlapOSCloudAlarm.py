@@ -657,6 +657,10 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by S
   def test_allocation_memory_type_sla(self):
     return self.check_allocation_category_sla('memory_type', 'ddr2', 'ddr3')
 
+  def test_allocation_region_sla(self):
+    return self.check_allocation_category_sla('region', 'africa', 
+                                              'america')
+
   def test_allocation_storage_capacity_sla(self):
     return self.check_allocation_category_sla('storage_capacity', 'finite', 
                                               'infinite')

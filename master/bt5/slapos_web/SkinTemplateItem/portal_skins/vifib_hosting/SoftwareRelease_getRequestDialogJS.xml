@@ -70,6 +70,7 @@ $(document).ready(function () {\n
     \'local_area_network_type\',\n
     \'memory_size\',\n
     \'memory_type\',\n
+    \'region\',\n
     \'storage_capacity\',\n
     \'storage_interface\',\n
     \'storage_redundancy\',\n

@@ -93,6 +93,7 @@ computer_base_category_list = [\n
   \'cpu_frequency\',\n
   \'cpu_type\',\n
   \'local_area_network_type\',\n
+  \'region\',\n
   \'memory_size\',\n
   \'memory_type\',\n
   \'storage_capacity\',\n
