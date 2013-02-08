@@ -59,6 +59,8 @@ def prettify_xml(xml):
   return lxml.etree.tostring(root, pretty_print=True)
 
 
+from slapos.util import mkdir_p
+
 class OS(object):
   """Wrap parts of the 'os' module to provide logging of performed actions."""
 
@@ -1095,6 +1097,9 @@ def run(config):
   computer.construct(alter_user=config.alter_user,
                      alter_network=config.alter_network,
                      create_tap=config.create_tap)
+
+  if getattr(config, 'certificate_repository_path'):
+    mkdir_p(config.certificate_repository_path, mode=0o700)
 
   # Dumping and sending to the erp5 the current configuration
   if not config.dry_run:
