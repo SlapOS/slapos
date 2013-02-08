@@ -85,8 +85,8 @@ class Recipe(GenericBaseRecipe):
     apache_config = dict(
         pid_file=self.options['httpd-pid-file'],
         lock_file=self.options['httpd-lock-file'],
-        ip=self.options['ipv6-address'],
-        port='9080',
+        ip=self.options['httpd-ip'],
+        port=self.options['httpd-port'],
         error_log=os.path.join(self.options['httpd-log-directory'],
                                'httpd-error.log'),
         access_log=os.path.join(self.options['httpd-log-directory'],
