@@ -532,6 +532,7 @@ int cyginet_stop_monitor_route_changes()
   /* Notify thread to quit */
   WSASetEvent(event_notify_monitor_thread);
   CLOSESOCKEVENT(event_notify_monitor_thread);
+  /* Waiting for thread exit in 5 seconds */
   event_notify_monitor_thread = WSA_INVALID_EVENT;
 
   return rc;
@@ -619,8 +620,7 @@ libwinet_edit_route_entry(const struct sockaddr *dest,
   }
 
   /* Add ipv4 route before Windows Vista */
-  else if (1) {
-
+  else if (0) {
     MIB_IPFORWARDROW Row;
     unsigned long Res;
     memset(&Row, 0, sizeof(MIB_IPFORWARDROW));
@@ -1931,74 +1931,6 @@ DWORD GetConnectedNetworks()
 /* ------------------------------------------------------------- */
 #ifdef TEST_CYGINET
 
-static int
-libwinet_set_forward_entry(char* pszDest,
-                           char* pszNetMask,
-                           char* pszGateway,
-                           DWORD dwIfIndex,
-                           DWORD dwMetric)
-{
-    DWORD dwStatus;
-
-    MIB_IPFORWARDROW routeEntry;            // Ip routing table row entry
-    
-    memset(&routeEntry, 0, sizeof(MIB_IPFORWARDROW));
-
-    // converting and checking input arguments...
-    if (pszDest == NULL || pszNetMask == NULL || pszGateway == NULL)
-    {
-        printf("IpRoute: Bad Argument\n");
-        return -1;
-    }
-
-    routeEntry.dwForwardDest = inet_addr(pszDest); // convert dotted ip addr. to ip addr.
-    if (routeEntry.dwForwardDest == INADDR_NONE)
-    {
-        printf("IpRoute: Bad Destination %s\n", pszDest);
-        return -1;
-    }
-
-    routeEntry.dwForwardMask = inet_addr(pszNetMask);
-    if ( (routeEntry.dwForwardMask == INADDR_NONE) && 
-         (strcmp("255.255.255.255", pszNetMask) != 0) )
-    {
-        printf("IpRoute: Bad Mask %s\n", pszNetMask);
-        return -1;
-    }
-
-    routeEntry.dwForwardNextHop = inet_addr(pszGateway);
-    if (routeEntry.dwForwardNextHop == INADDR_NONE)
-    {
-        printf("IpRoute: Bad Gateway %s\n", pszGateway);
-        return -1;
-    }
-
-    if ( (routeEntry.dwForwardDest & routeEntry.dwForwardMask) != routeEntry.dwForwardDest)
-    {
-        printf("IpRoute: Invalid Mask %s\n", pszNetMask);
-        return -1;
-        
-    }
-
-    routeEntry.dwForwardIfIndex = dwIfIndex;
-    routeEntry.dwForwardMetric1 = dwMetric;
-
-    // some default values
-    routeEntry.dwForwardProto = MIB_IPPROTO_NETMGMT;
-    routeEntry.dwForwardMetric2 = (DWORD)-1;
-    routeEntry.dwForwardMetric3 = (DWORD)-1;
-    routeEntry.dwForwardMetric4 = (DWORD)-1;
-    
-    dwStatus = SetIpForwardEntry(&routeEntry); 
-    if (dwStatus != NO_ERROR)
-    {
-        printf("IpRoute: couldn't add (%s), dwStatus = %lu.\n",
-                    pszDest, dwStatus);
-        return -1;
-    }
-    return 0;
-}
-
 static void
 runTestCases()
 {
@@ -2278,14 +2210,7 @@ runTestCases()
     unsigned int metric;
     int ifindex;
     int n;
-    printf("libwinet_set_forward_entry return %d\n",
-           libwinet_set_forward_entry("192.168.128.250",
-                                      "255.255.255.255",
-                                      "192.168.128.200",
-                                      2,
-                                      20
-                                      )
-           );
+
     if (inet_pton(AF_INET, "192.168.128.119", &dest4.sin_addr) != 1)
       break;
     if (inet_pton(AF_INET, "192.168.128.200", &gate4.sin_addr) != 1)
