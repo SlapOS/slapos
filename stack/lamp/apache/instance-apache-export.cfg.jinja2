@@ -1,0 +1,35 @@
+# This file is responsible of two things:
+# 1/ Act as "Apache exporter"
+# 2/ Act as "Mariadb backup infrastructure requester"
+
+{% import 'parts' as parts %}
+{% import 'replicated' as replicated %}
+
+[buildout]
+extends = {{templateapache}}
+          {{templatepbsreadyexport}}
+
+
+parts +=
+    {{ parts.replicate("mariadb", "3") }}
+# have to repeat the next one, as it's not inherited from pbsready-export
+    cron-entry-backup
+
+{{ replicated.replicate("mariadb", "3", "mariadb-export", "mariadb-import") }}
+
+# Nothing to do for the exporter. Just dummy part that does nothing.
+# For httpd instance, PBS will directly pull data from srv/www.
+[exporter]
+wrapper = /usr/bin/true
+
+# State that we want to backup srv/www directory, not srv/backup.
+[rdiff-backup-server]
+path = ${directory:www}
+
+# XXX-Cedric: resilient uses "urls" part to publish, but apache doesn't.
+[urls]
+<= publish-connection-informations
+
+# XXX-Cedric: resilient overwrites what's returned from request-mariadb
+[request-mariadb]
+return = ssh-public-key ssh-url notification-id ip url

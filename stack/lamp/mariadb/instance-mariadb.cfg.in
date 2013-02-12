@@ -14,8 +14,6 @@ parts =
   slapmonitor
   slapmonitor-xml
 
-gzip-binary = ${gzip:location}/bin/gzip
-
 # Define egg directories to be the one from Software Release
 # (/opt/slapgrid/...)
 eggs-directory = ${buildout:eggs-directory}
@@ -91,7 +89,7 @@ command = $${logrotate:wrapper}
 recipe = slapos.cookbook:logrotate
 # Binaries
 logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
-gzip-binary = $${buildout:gzip-binary}
+gzip-binary = ${gzip:location}/bin/gzip
 gunzip-binary = ${gzip:location}/bin/gunzip
 # Directories
 wrapper = $${rootdirectory:bin}/logrotate

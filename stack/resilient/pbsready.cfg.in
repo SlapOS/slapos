@@ -3,11 +3,7 @@
 parts +=
   resiliency
   urls
-  stunnel
-  certificate-authority
-  ca-stunnel
   logrotate
-  logrotate-entry-stunnel
   logrotate-entry-cron
   logrotate-entry-equeue
   cron
@@ -23,17 +19,110 @@ parts +=
 #--
 #-- Creation of all needed directories.
 
+[rootdirectory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+
 [basedirectory]
+recipe = slapos.cookbook:mkdirectory
+log = $${rootdirectory:var}/log
+services = $${rootdirectory:etc}/service
+run = $${rootdirectory:var}/run
+script = $${rootdirectory:etc}/script
+backup = $${rootdirectory:srv}/backup
+promises = $${rootdirectory:etc}/promise
 services = $${rootdirectory:etc}/service
 cache = $${rootdirectory:var}/cache
 notifier = $${rootdirectory:etc}/notifier
 
 [directory]
+recipe = slapos.cookbook:mkdirectory
 backup = $${basedirectory:backup}/$${slap-parameter:namebase}
 ssh = $${rootdirectory:etc}/ssh/
 sshkeys = $${rootdirectory:srv}/sshkeys
 notifier-feeds = $${basedirectory:notifier}/feeds
 notifier-callbacks = $${basedirectory:notifier}/callbacks
+cron-entries = $${rootdirectory:etc}/cron.d
+crontabs = $${rootdirectory:etc}/crontabs
+cronstamps = $${rootdirectory:etc}/cronstamps
+logrotate-entries = $${rootdirectory:etc}/logrotate.d
+logrotate-backup = $${basedirectory:backup}/logrotate
+
+#----------------
+#--
+#-- Deploy cron.
+
+[cron]
+recipe = slapos.cookbook:cron
+dcrond-binary = ${dcron:location}/sbin/crond
+cron-entries = $${directory:cron-entries}
+crontabs = $${directory:crontabs}
+cronstamps = $${directory:cronstamps}
+catcher = $${cron-simplelogger:wrapper}
+binary = $${basedirectory:services}/crond
+
+[cron-simplelogger]
+recipe = slapos.cookbook:simplelogger
+wrapper = $${rootdirectory:bin}/cron_simplelogger
+log = $${basedirectory:log}/crond.log
+
+
+#----------------
+#--
+#-- Deploy logrotate.
+
+[cron-entry-logrotate]
+<= cron
+recipe = slapos.cookbook:cron.d
+name = logrotate
+frequency = 0 0 * * *
+command = $${logrotate:wrapper}
+
+[logrotate]
+recipe = slapos.cookbook:logrotate
+# Binaries
+logrotate-binary = ${logrotate:location}/usr/sbin/logrotate
+gzip-binary = ${gzip:location}/bin/gzip
+gunzip-binary = ${gzip:location}/bin/gunzip
+# Directories
+wrapper = $${rootdirectory:bin}/logrotate
+conf = $${rootdirectory:etc}/logrotate.conf
+logrotate-entries = $${directory:logrotate-entries}
+backup = $${directory:logrotate-backup}
+state-file = $${rootdirectory:srv}/logrotate.status
+
+[logrotate-entry-mariadb]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = mariadb
+log = $${mariadb:error-log}
+frequency = daily
+rotate-num = 30
+post = $${mariadb:logrotate-post}
+sharedscripts = true
+notifempty = true
+create = true
+
+[logrotate-entry-cron]
+<= logrotate
+recipe =slapos.cookbook:logrotate.d
+name = crond
+log = $${cron-simplelogger:log}
+frequency = daily
+rotate-num = 30
+notifempty = true
+create = true
+
+[logrotate-entry-equeue]
+<= logrotate
+recipe = slapos.cookbook:logrotate.d
+name = equeue
+log = $${equeue:log}
+frequency = daily
+rotate-num = 30
 
 
 #----------------
@@ -59,6 +148,7 @@ etc = $${rootdirectory:etc}
 [urls]
 ssh-public-key = $${sshkeys-dropbear:public-key-value}
 ssh-url = ssh://nobody@[$${dropbear-server:host}]:$${dropbear-server:port}/$${rdiff-backup-server:path}
+ip = $${slap-network-information:global-ipv6}
 
 [rdiff-backup-server]
 recipe = slapos.cookbook:pbs
@@ -93,14 +183,6 @@ port = 8080
 wrapper = $${basedirectory:services}/notifier
 server-binary = ${buildout:bin-directory}/pubsubserver
 notifier-binary = ${buildout:bin-directory}/pubsubnotifier
-
-[logrotate-entry-equeue]
-<= logrotate
-recipe = slapos.cookbook:logrotate.d
-name = equeue
-log = $${equeue:log}
-frequency = daily
-rotate-num = 30
 
 
 #----------------
