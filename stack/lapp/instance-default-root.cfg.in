@@ -1,6 +1,10 @@
 [buildout]
 parts = request-apache
 
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
 [request-apache]
 <= slap-connection
 recipe = slapos.cookbook:request
