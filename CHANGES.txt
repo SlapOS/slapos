@@ -1,8 +1,16 @@
 Changes
 =======
 
+0.72.0 (2013-02-11)
+-------------------
+
+ * librecipe: correctly handle newline and missing file in addLineToFile(). [Marco Mariani]
+ * LAMP: Copy php application even if directory exists but is empty. This handle new resilient LAMP stack. [Cedric de Saint Martin]
+ * LAMP: Don't even try to restart/reload/graceful Apache. This fix "Apache hangs" problem. [Cedric de Saint Martin]
+
 0.71.4 (2013-02-01)
 -------------------
+
  * Enable IPv6 support in KumoFS. [Vincent Pelletier]
  * Use new connection and get result when try to create new erp5 site. [Rafael Monnerat]
  * Set up timezone database in mariab's mysql table so that we can use timezone conversion function. [Kazuhiko Shiozaki]
