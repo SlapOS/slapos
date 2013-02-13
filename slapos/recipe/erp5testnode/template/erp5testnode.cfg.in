@@ -1,6 +1,6 @@
 [testnode]
 slapos_directory = %(slapos_directory)s
-working_directory = %(slapos_directory)s
+working_directory = %(working_directory)s
 test_suite_directory = %(test_suite_directory)s
 log_directory = %(log_directory)s
 run_directory = %(run_directory)s
