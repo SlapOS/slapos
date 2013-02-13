@@ -326,7 +326,7 @@ class Partition(object):
       )
 
   def updateSymlink(self, sr_symlink, software_path):
-    if os.path.exists(sr_symlink):
+    if os.path.lexists(sr_symlink):
       if not os.path.islink(sr_symlink):
         self.logger.debug('Not a symlink: %s, has been ignored' % (sr_symlink))
         return
