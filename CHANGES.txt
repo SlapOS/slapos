@@ -1,9 +1,126 @@
 Changes
 =======
 
-0.59 (Unreleased)
+0.71.1 (2013-01-04)
+-------------------
+
+ * Frontend: Sort instances by reference to avoid attacks. [Cedric de Saint
+   Martin]
+ * Frontend: Add public_ipv4 parameter support to ease deployment of slave
+   frontend. [Cedric de Saint Martin]
+ * Frontend: Move apache_frontend wrappers to watched directory (etc/service).
+   [Cedric de Saint Martin]
+ * Frontend: Add native path to varnish environment. [Cedric de Saint Martin]
+
+0.71 (2012-12-20)
 -----------------
 
+ * frontend: Add "path" parameter for Zope instances. [Cedric de Saint Martin]
+
+0.70 (2012-11-05)
+-----------------
+
+ * KVM: Add support for disk-type, second nbd and cpu-count. [Cedric de Saint
+   Martin]
+
+0.69 (2012-10-30)
+-----------------
+
+ * handle multiple notification_url values in notifier recipe [Marco Mariani]
+ * createWrapper() sh alternative to execute.execute() for simple cases
+   [Marco Mariani]
+ * fixed secret key generation in apachephp config [Marco Mariani]
+
+0.68.1 (2012-10-03)
+-------------------
+
+  * slaprunner: fix "logfile" parameter to "log_file"
+
+0.68 (2012-10-02)
+-----------------
+
+  * request.py: Remove useless calls to master, fix "update" method. [Cedric
+    de Saint Martin]
+  * Add webrunner test recipe. [Alain Takoudjou]
+  * Add logfile for slaprunner. [Cedric de Saint Martin]
+  * Fix check_url_available promise (syntax + checks + IPv6 support). [Cedric
+    de Saint Martin]
+
+0.67 (2012-09-26)
+-----------------
+
+  * Add check_page_content promise generator. [Cedric Le Ninivin]
+  * Fix check_url_available recipe. [Cedric de Saint Martin]
+  * Set up timezone database in mariab's mysql table so that we can use
+    timezone conversion function. [Kazuhiko Shiozaki]
+  * Add many resiliency-based recipes [Timothée Lacroix]
+  * Fix and unify request and requestoptional recipes [Cedric de Saint Martin]
+  * Fix Dropbear. [Antoine Catton]
+
+0.66 (2012-09-10)
+-----------------
+
+  * Add check_page_content promise generator. [Cedric Le Ninivin]
+
+0.65 (2012-09-07)
+-----------------
+
+  * Add egg_test, recipe allowing to do "python setup.py test" on a list of
+    eggs. [Rafael Monnerat, Cedric de Saint Martin]
+
+0.64.2 (2012-08.28)
+-------------------
+
+  * Specify description on gitinit recipe. [Antoine Catton]
+
+0.64.1 (2012-08-28)
+-------------------
+
+  * Fix: minor fix on downloader recipe in order to allow cross-device renaming.
+    [Antoine Catton]
+
+0.64 (2012-08-27)
+----------------
+
+  * Fix: remove "template" recipe which was collinding with slapos.recipe.template.
+    [Antoine Catton]
+
+0.63 (2012-08-22)
+----------------
+
+  * Add the ability to run command line in shellinabox. [Antoine Catton]
+  * Add the ability to run shellinabox as root. (for LXC purpose) [Antoine Catton]
+  * Add "uuid" recipe. [Antoine Catton]
+  * Add "downloader" recipe. [Antoine Catton]
+
+0.62 (2012-08-21)
+-----------------
+
+  * Add "wrapper" recipe. [Antoine Catton]
+  * Add "gitinit" recipe. [Antoine Catton]
+  * librecipe.execute code clean up and factorization. [Antoine Catton]
+  * Add "template" recipe. [Antoine Catton]
+
+0.61 (2012-08-17)
+-----------------
+
+  * Add "debug" option for slaprunner. [Alain Takoudjou]
+
+0.60 (2012-08-13)
+-----------------
+
+  * New recipe: requestoptional, like "request", but won't fail if instance is
+    not ready. [Cedric de Saint Martin]
+  * Update zabbix to return strings as parameters. [Cedric de Saint Martin]
+  * Add check in check_url_promise in case of empty URL. [Cedric de Saint
+    Martin]
+  * Upgrade slaprunner recipe to be compatible with newest version. [Alain
+    Takoudjou]
+
+0.59 (2012-07-12)
+-----------------
+
+  * Zabbix: add temperature monitoring using custom commands.
 
 0.58 (2012-07-06)
 -----------------
@@ -86,7 +203,7 @@ Changes
     [Cedric de Saint Martin]
   * Apache Frontend: listens to plain http port as well to redirect to https.
     [Cedric de Saint Martin]
-  
+
 0.49 (2012-05-10)
 -----------------
 
@@ -152,7 +269,7 @@ Changes
 -----------------
 
  * apache_frontend initial release. [Cedric de Saint Martin]
- 
+
 0.39 (2012-02-20)
 -----------------
 
@@ -205,7 +322,7 @@ Changes
 0.32 (2011-10-28)
 -----------------
 
-  * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will 
+  * LAMP : Recipe can now call lampconfigure from slapos.toolbox which will
    configure PHP application instance when needed. [Alain Takoudjou Kamdem]
 
 0.31 (2011-10-16)

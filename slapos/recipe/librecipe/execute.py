@@ -47,15 +47,13 @@ def _wait_files_creation(file_list):
 
 def execute(args):
   """Portable execution with process replacement"""
-  # Note: Candidate for slapos.lib.recipe
-  os.execv(args[0], args + sys.argv[1:])
+  # XXX: Kept for backward compatibility
+  generic_exec([args, None, None])
 
 def execute_wait(args):
   """Execution but after all files in args[1] exists"""
-  exec_list = list(args[0])
-  file_list = list(args[1])
-  _wait_files_creation(file_list)
-  os.execv(exec_list[0], exec_list + sys.argv[1:])
+  # XXX: Kept for backward compatibility
+  generic_exec([args[0], args[1], None])
 
 
 child_pg = None
@@ -63,23 +61,27 @@ child_pg = None
 
 def executee(args):
   """Portable execution with process replacement and environment manipulation"""
-  exec_list = list(args[0])
-  environment = args[1]
-  env = os.environ.copy()
-  for k,v in environment.iteritems():
-    env[k] = v
-  os.execve(exec_list[0], exec_list + sys.argv[1:], env)
+  # XXX: Kept for backward compatibility
+  generic_exec([args[0], None, args[1]])
 
 def executee_wait(args):
   """Portable execution with process replacement and environment manipulation"""
+  # XXX: Kept for backward compatibility
+  generic_exec(args)
+
+def generic_exec(args):
   exec_list = list(args[0])
-  file_list = list(args[1])
-  environment = args[2]
-  env = os.environ.copy()
-  for k,v in environment.iteritems():
-    env[k] = v
-  _wait_files_creation(file_list)
-  os.execve(exec_list[0], exec_list + sys.argv[1:], env)
+  file_list = args[1]
+  environment_overriding = args[2]
+
+  exec_env = os.environ.copy()
+  if environment_overriding is not None:
+      exec_env.update(environment_overriding)
+
+  if file_list is not None:
+      _wait_files_creation(file_list)
+
+  os.execve(exec_list[0], exec_list + sys.argv[1:], exec_env)
 
 def sig_handler(signal, frame):
   print 'Received signal %r, killing children and exiting' % signal

@@ -41,7 +41,9 @@ class Recipe(GenericBaseRecipe):
         password = password_file.read()
     options['password'] = password
 
-  update = install = lambda self: []
+  def install(self):
+    os.chmod(self.options['file'], 0600)
+    return []
 
 class StablePasswordGeneratorRecipe(GenericBaseRecipe):
   """

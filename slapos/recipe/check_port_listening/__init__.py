@@ -1,3 +1,4 @@
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2011 Vifib SARL and Contributors. All Rights Reserved.

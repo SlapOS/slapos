@@ -1,0 +1,124 @@
+<?php
+
+#----------------------------------------------------------------------
+# config begin
+
+	$SITE_TITLE = "XellPlan";
+
+	# default language, ("de","en" are valid choices for now)
+	$LANGUAGE	= "en";					
+
+	$DB_NAME	= "%(mysql_database)s";
+	$DB_HOST	= "%(mysql_host)s";
+	$DB_USER	= "%(mysql_user)s";
+	$DB_PASS	= "%(mysql_password)s";
+	$DB_PREFIX	= "xp_";
+
+	$CREATE_PASSWORD = "genesis";		# you need this one to create new plans
+	$MASTER_PASSWORD = "god";			# universal user and admin password
+
+# config end - don't modify anything below this line
+#----------------------------------------------------------------------
+
+
+	include("lang/".$LANGUAGE.".php");
+
+function db_connect() {
+
+	global $DB_LINK, $DB_HOST, $DB_USER, $DB_PASS, $DB_NAME, $CLUBS, $PLAN;
+
+    $DB_LINK = mysql_pconnect( $DB_HOST, $DB_USER, $DB_PASS );
+    mysql_select_db( $DB_NAME );
+
+}
+
+function SfxRedirectPage($url,$Message,$time=2) {
+?>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="std.css">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="author" content="Christoph Luehr">
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="content-language" content="de">
+<meta http-equiv="refresh" content="<?php echo $time; ?>;URL=<?php echo $url; ?>">
+<title>XCell-Plan: <?php echo $Message; ?></title>
+</head>
+<body>
+<br/>
+<h1><?php echo $Message; ?></h1>
+<br></br>
+</body>
+</html>
+<?php
+		exit; // finish after a redirect
+}
+
+function SfxDateSel($varname, $default="today") {
+
+	if ( $default == "today" ) $default= date('Y-m-d');
+
+	echo '<input type="text" name="'.$varname.
+			'" id="'.$varname.'" value="'.$default.
+			'" size="10" maxlength="10" readonly="true" />';
+	echo '<input type="button" '.
+			'onClick="showCalendar(this,document.getElementById(\''.
+			$varname.'\'),\'yyyy-mm-dd\',\''.$GLOBALS['LANGUAGE'].'\',1)" value="..." />&nbsp;';
+}
+
+function SfxTimeSel($varname,$default="12:00:00") {
+
+	echo '<select name="'.$varname.'">';
+	for ($h=0; $h<24;$h++) {
+
+		if (strlen($h)<2 ) $h="0".$h; # evil
+		foreach( array('00','30') as $m ) {
+			$sel="";
+			if ( $default == $h.":".$m.":00") $sel=" selected";
+			echo '<option value="'.$h.':'.$m.':00"'.$sel.'>'.$h.':'.$m.'</option>';
+		}
+	}
+	echo '</select>'."\n";
+
+}
+
+function SfxBegin() {
+
+	db_connect();
+
+}
+
+function filterVar($value) {
+	// recursive treatment for arrays
+	if (is_array($value)) {
+		$ret = array();
+		foreach ($value as $k => $v) {
+			$ret[filterVar($k)] = filterVar($v);
+		}
+		return $ret;
+	}
+	// filter ascii control chars
+	$value = preg_replace('/[\x00-\x1f]+/', '', $value);
+	$value = str_replace('\\', '\\\\', $value);
+	$value = str_replace('\'', '\\\'', $value);
+	return $value;
+}
+
+function getInputVar($name) {
+	if (isset($GLOBALS[$name])) {
+		return $GLOBALS[$name];
+	}
+	if (isset($_GET[$name])) {
+		return filterVar($_GET[$name]);
+	}
+	if (isset($_POST[$name])) {
+		return filterVar($_POST[$name]);
+	}
+	return '';
+}
+
+SfxBegin(); // start DB connection
+
+// get often used vars
+
+$ID = getInputVar('ID');

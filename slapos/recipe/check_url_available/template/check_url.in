@@ -3,14 +3,35 @@
 # BEWARE: It will be overwritten automatically
 
 URL="%(url)s"
-CODE=$(%(curl_path)s -k -sL $URL -w %%{http_code} -o /dev/null)
+
+if [ -z $URL ]; then
+  echo "No URL specified." >&2
+  exit 3
+fi
+
+CODE=$(%(curl_path)s -g -k -sL $URL -w %%{http_code} -o /dev/null)
+
+if [ $? -eq 3 ]; then
+  echo "URL malformed: $URL." >&2
+  exit 1
+fi
+
+if [ $? -eq 7 ]; then
+  echo "Failed to connect to host: $URL." >&2
+  exit 1
+fi
+
+if [ ! $CODE ]; then
+  echo "$URL is not available (server not reachable)." >&2
+  exit 1
+fi
 
 if [ $CODE -eq 000 ]; then
-  echo "$URL is not available (server not reachable)" >&2
+  echo "$URL is not available (server not reachable)." >&2
   exit 1
 fi
 
 if ! [ $CODE -eq 200 ]; then
-  echo "$URL is not available (returned $CODE)" >&2
+  echo "$URL is not available (returned $CODE)." >&2
   exit 2
 fi

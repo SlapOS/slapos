@@ -1,0 +1,21 @@
+[buildout]
+extends = ${instance-mariadb:output}
+          ${pbsready-export:output}
+
+
+parts +=
+    mariadb
+
+# have to repeat the next one, as it's not inherited from pbsready-export
+    cron-entry-backup
+
+
+[exporter]
+recipe = slapos.cookbook:mydumper
+wrapper = $${rootdirectory:bin}/$${slap-parameter:namebase}-exporter
+backup-directory = $${directory:backup}
+socket = $${mariadb:socket}
+user = root
+mydumper-binary = ${mydumper:location}/bin/mydumper
+database = $${mariadb:database}
+import = false

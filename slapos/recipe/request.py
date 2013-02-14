@@ -25,8 +25,13 @@
 #
 ##############################################################################
 import logging
-
+from slapos.recipe.librecipe import wrap, JSON_SERIALISED_MAGIC_KEY
+import json
 from slapos import slap as slapmodule
+import slapos.recipe.librecipe.generic as librecipe
+import traceback
+
+DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
 class Recipe(object):
   """
@@ -84,62 +89,85 @@ class Recipe(object):
 
   def __init__(self, buildout, name, options):
     self.logger = logging.getLogger(name)
-
-    slap = slapmodule.slap()
-
     software_url = options['software-url']
     name = options['name']
-
-    slap.initializeConnection(options['server-url'],
-                              options.get('key-file'),
-                              options.get('cert-file'),
-                             )
-    request = slap.registerComputerPartition(
-      options['computer-id'], options['partition-id']).request
-
-    isSlave = options.get('slave', '').lower() in ['y', 'yes', 'true', '1']
-
-    return_parameters = []
-    if 'return' in options:
-      return_parameters = [str(parameter).strip()
-        for parameter in options['return'].split()]
-    else:
+    return_parameters = options.get('return', '').split()
+    if not return_parameters:
       self.logger.debug("No parameter to return to main instance."
         "Be careful about that...")
-
-    software_type = options.get('software-type', 'RootInstanceSoftware')
-
-    filter_kw = {}
-    if 'sla' in options:
-      for sla_parameter in options['sla'].split():
-        filter_kw[sla_parameter] = options['sla-%s' % sla_parameter]
-
-    partition_parameter_kw = {}
-    if 'config' in options:
-      for config_parameter in options['config'].split():
-        partition_parameter_kw[config_parameter] = \
-            options['config-%s' % config_parameter]
-
-    self.instance = instance = request(software_url, software_type,
-      name, partition_parameter_kw=partition_parameter_kw,
-      filter_kw=filter_kw, shared=isSlave)
+    software_type = options.get('software-type', DEFAULT_SOFTWARE_TYPE)
+    filter_kw = dict(
+      (x, options['sla-' + x]) for x in options.get('sla', '').split()
+    )
+    partition_parameter_kw = self._filterForStorage(dict(
+      (x, options['config-' + x])
+      for x in options.get('config', '').split()
+    ))
+    slave = options.get('slave', 'false').lower() in \
+      librecipe.GenericBaseRecipe.TRUE_VALUES
+    slap = slapmodule.slap()
+    slap.initializeConnection(
+      options['server-url'],
+      options.get('key-file'),
+      options.get('cert-file'),
+    )
+    request = slap.registerComputerPartition(
+      options['computer-id'],
+      options['partition-id'],
+    ).request
+    self._raise_request_exception = None
+    self._raise_request_exception_formatted = None
+    self.instance = None
+    try:
+      self.instance = request(software_url, software_type,
+          name, partition_parameter_kw=partition_parameter_kw,
+          filter_kw=filter_kw, shared=slave)
+      return_parameter_dict = self._getReturnParameterDict(self.instance,
+          return_parameters)
+      # XXX what is the right way to get a global id?
+      options['instance_guid'] = self.instance.getId()
+    except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
+      self._raise_request_exception = exc
+      self._raise_request_exception_formatted = traceback.format_exc()
 
     for param in return_parameters:
+      options['connection-%s' % param] = ''
+      if not self.instance:
+        continue
       try:
-        options['connection-%s' % param] = str(
-          instance.getConnectionParameter(param))
-      except slapmodule.NotFoundError:
-        options['connection-%s' % param] = ''
+        value = return_parameter_dict[param]
+      except KeyError:
+        value = ''
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         if self.failed is None:
           self.failed = param
+      options['connection-%s' % param] = value
+
+  def _filterForStorage(self, partition_parameter_kw):
+    return partition_parameter_kw
+
+  def _getReturnParameterDict(self, instance, return_parameter_list):
+    result = {}
+    for param in return_parameter_list:
+      try:
+        result[param] = str(instance.getConnectionParameter(param))
+      except slapmodule.NotFoundError:
+        pass
+    return result
 
   def install(self):
+    if self._raise_request_exception:
+      raise self._raise_request_exception
+
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        status = self.instance.getState()
-      except slapmodule.NotFoundError:
-        status = 'not ready yet, please try again'
+        if self.instance._computer_id is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
+        status = 'not ready yet'
       except AttributeError:
         status = 'unknown'
       error_message = 'Connection parameter %s not found. '\
@@ -150,3 +178,45 @@ class Recipe(object):
     return []
 
   update = install
+
+
+class RequestOptional(Recipe):
+  """
+  Request a SlapOS instance. Won't fail if request failed or is not ready.
+  Same as slapos.cookbook:request, but won't raise in case of problem.
+  """
+  def install(self):
+    if self._raise_request_exception_formatted:
+      self.logger.warning('Optional request failed.')
+      if not isinstance(self._raise_request_exception, slapmodule.NotFoundError):
+        # full traceback for optional 'not found' is too verbose and confusing
+        self.logger.warning(self._raise_request_exception_formatted)
+    elif self.failed is not None:
+      # Check instance status to know if instance has been deployed
+      try:
+        if self.instance._computer_id is not None:
+          status = self.instance.getState()
+        else:
+          status = 'not ready yet'
+      except (slapmodule.NotFoundError, slapmodule.ServerError):
+        status = 'not ready yet'
+      except AttributeError:
+        status = 'unknown'
+      error_message = 'Connection parameter %s not found. '\
+          'Requested instance is currently %s. If this error persists, '\
+          'check status of this instance.' % (self.failed, status)
+      self.logger.warning(error_message)
+    return []
+
+  update = install
+
+
+class Serialised(Recipe):
+  def _filterForStorage(self, partition_parameter_kw):
+    return wrap(partition_parameter_kw)
+
+  def _getReturnParameterDict(self, instance, return_parameter_list):
+    try:
+      return json.loads(instance.getConnectionParameter(JSON_SERIALISED_MAGIC_KEY))
+    except slapmodule.NotFoundError:
+      return {}

@@ -1,0 +1,59 @@
+This file explain how to easily generate a rootfs for slapcontainer,
+explaining how to generate a debian rootfs.
+
+This can be used in order to generate any rootfs.
+
+NB: A ready to use rootfs is available at :
+  http://[2001:380:e0c:155:5054:ff:fe5d:a604]/debian-wheezy.tar.xz
+
+Requirements:
+=============
+
+  Any Linux distro with the following programs installed :
+
+    * LXC userland tools (for generating the rootfs)
+    * debootstrap (in order to use lxc-debian script)
+    * dpkg (a dependency of debootstrap)
+    * Qemu tools (providing qemu-img)
+
+Step by step instructions explained:
+====================================
+
+  First we need to generate a raw image.
+
+  1. Run ::
+    $ qemu-img create -f raw image-name.raw SIZE
+
+  2. Now format it (in this example we will format in in ext4) ::
+    $ mkfs.ext4 image-name.raw
+
+  We will used lxc-debian script provided in lxc tools in order to
+  generate the rootfs.
+
+  lxc-debian is run this way ::
+    lxc-debian -p /path/
+  
+  lxc-debian will create a subdirectory in /path/ named “rootfs”,
+  and a configuration file in /path/.
+
+  So in order to generate the rootfs on the raw image, create rootfs
+  directory and mount the raw img in it.
+
+  3. ::
+    $ mkdir -p /path/rootfs/
+    $ mount image-name.raw /path/rootfs
+
+  4. Next, run the lxc-debian script ::
+    $ lxc-debian -p /path/
+
+  Dont forget to change the default password, before unmount it.
+
+  5. ::
+    $ sudo chroot /path/rootfs/ /bin/passwd
+
+  6. ::
+    $ umount /path/rootfs
+
+  Next, you can archive it using sparse tar, and compress it.
+  7. ::
+    $ tar -Sc image-name.raw | pxz -T8 > image-name.tar.gz

@@ -1,0 +1,7 @@
+<?php [
+mysql_server	= "%(mysql_host)s"
+mysql_database	= "%(mysql_database)s"
+mysql_user	= "%(mysql_user)s"
+mysql_userpass	= "%(mysql_password)s"
+mysql_pconnect	= "true"
+ end]  ?>

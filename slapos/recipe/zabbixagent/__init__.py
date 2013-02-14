@@ -124,5 +124,6 @@ class Recipe(BaseSlapRecipe):
                                                   self.parameter_dict['hostname'],
                                                   self.parameter_dict['server'])
     self.setConnectionDict(dict(ip=zabbix_agentd_conf['ip'],
-      name=zabbix_agentd_conf['hostname'], port=zabbix_agentd_conf['port']))
+      name=zabbix_agentd_conf['hostname'],
+      port=str(zabbix_agentd_conf['port'])))
     return self.path_list

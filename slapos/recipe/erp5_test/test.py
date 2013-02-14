@@ -29,11 +29,20 @@ import sys
 def runTestSuite(args):
   env = os.environ.copy()
   d = args[0]
-  env['OPENSSL_BINARY'] = d['openssl_binary']
-  env['TEST_CA_PATH'] = d['test_ca_path']
-  env['PATH'] = ':'.join([d['prepend_path']] + os.environ['PATH'].split(':'))
-  env['INSTANCE_HOME'] = d['instance_home']
-  env['REAL_INSTANCE_HOME'] = d['instance_home']
+  if 'openssl_binary' in d:
+    env['OPENSSL_BINARY'] = d['openssl_binary']
+  if 'test_ca_path' in d:
+    env['TEST_CA_PATH'] = d['test_ca_path']
+  if 'prepend_path' in d:
+    env['PATH'] = ':'.join([d['prepend_path']] + os.environ.get('PATH', '').split(':'))
+  if 'instance_home' in d:
+    env['INSTANCE_HOME'] = d['instance_home']
+    env['REAL_INSTANCE_HOME'] = d['instance_home']
+
+  # If defined, will add (and replace if existing) envvars to environment.
+  if 'environment' in d:
+    env.update(d['environment'])
+
   # Deal with Shebang size limitation
   executable_filepath = d['call_list'][0]
   file_object = open(executable_filepath, 'r')
@@ -51,11 +60,15 @@ def runTestSuite(args):
 def runUnitTest(args):
   env = os.environ.copy()
   d = args[0]
-  env['OPENSSL_BINARY'] = d['openssl_binary']
-  env['TEST_CA_PATH'] = d['test_ca_path']
-  env['PATH'] = ':'.join([d['prepend_path']] + os.environ.get('PATH', '').split(':'))
-  env['INSTANCE_HOME'] = d['instance_home']
-  env['REAL_INSTANCE_HOME'] = d['instance_home']
+  if 'openssl_binary' in d:
+    env['OPENSSL_BINARY'] = d['openssl_binary']
+  if 'test_ca_path' in d:
+    env['TEST_CA_PATH'] = d['test_ca_path']
+  if 'prepend_path' in d:
+    env['PATH'] = ':'.join([d['prepend_path']] + os.environ.get('PATH', '').split(':'))
+  if 'instance_home' in d:
+    env['INSTANCE_HOME'] = d['instance_home']
+    env['REAL_INSTANCE_HOME'] = d['instance_home']
   # Deal with Shebang size limitation
   executable_filepath = d['call_list'][0]
   file_object = open(executable_filepath, 'r')
