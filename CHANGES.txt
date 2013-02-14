@@ -1,6 +1,65 @@
 Changes
 =======
 
+0.72.0 (2013-02-11)
+-------------------
+
+ * librecipe: correctly handle newline and missing file in addLineToFile(). [Marco Mariani]
+ * LAMP: Copy php application even if directory exists but is empty. This handle new resilient LAMP stack. [Cedric de Saint Martin]
+ * LAMP: Don't even try to restart/reload/graceful Apache. This fix "Apache hangs" problem. [Cedric de Saint Martin]
+
+0.71.4 (2013-02-01)
+-------------------
+
+ * Enable IPv6 support in KumoFS. [Vincent Pelletier]
+ * Use new connection and get result when try to create new erp5 site. [Rafael Monnerat]
+ * Set up timezone database in mariab's mysql table so that we can use timezone conversion function. [Kazuhiko Shiozaki]
+ * Make erp5_bootstrap wait for manage_addERP5Site response [Rafael Monnerat]
+
+0.71.3 (2013-01-31)
+-------------------
+
+ * Add mysql_ip and mysql_port parameters in apachephp recipe [Cedric de Saint
+   Martin]
+ * Random password for postgres in standalone SR and lapp stack; accept
+   connections from the world. [Marco Mariani]
+
+0.71.2 (2013-01-29)
+-------------------
+
+ * revised postgres/lapp recipe. [Marco Mariani]
+
+
+0.71.1 (2013-01-04)
+-------------------
+
+ * Frontend: Sort instances by reference to avoid attacks. [Cedric de Saint
+   Martin]
+ * Frontend: Add public_ipv4 parameter support to ease deployment of slave
+   frontend. [Cedric de Saint Martin]
+ * Frontend: Move apache_frontend wrappers to watched directory (etc/service).
+   [Cedric de Saint Martin]
+ * Frontend: Add native path to varnish environment. [Cedric de Saint Martin]
+
+0.71 (2012-12-20)
+-----------------
+
+ * frontend: Add "path" parameter for Zope instances. [Cedric de Saint Martin]
+
+0.70 (2012-11-05)
+-----------------
+
+ * KVM: Add support for disk-type, second nbd and cpu-count. [Cedric de Saint
+   Martin]
+
+0.69 (2012-10-30)
+-----------------
+
+ * handle multiple notification_url values in notifier recipe [Marco Mariani]
+ * createWrapper() sh alternative to execute.execute() for simple cases
+   [Marco Mariani]
+ * fixed secret key generation in apachephp config [Marco Mariani]
+
 0.68.1 (2012-10-03)
 -------------------
 

@@ -1,0 +1,91 @@
+[buildout]
+parts =
+  publish
+  postgres-instance
+  postgres-promise
+
+
+# Define egg directories to be the one from Software Release
+# (/opt/slapgrid/...)
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+
+[directories]
+recipe = slapos.cookbook:mkdirectory
+bin = $${buildout:directory}/bin
+etc = $${buildout:directory}/etc
+srv = $${buildout:directory}/srv
+services = $${directories:etc}/service
+promises = $${directories:etc}/promise
+var = $${buildout:directory}/var
+
+
+#----------------
+#--
+#-- Creates a Postgres cluster, configuration files, and a database.
+
+[postgres-instance]
+recipe = slapos.cookbook:postgres
+
+# Options
+ipv6 = $${instance-parameters:ipv6}
+# listen to connections from anywhere
+ipv6-netmask-bits = 0
+ipv4 = $${instance-parameters:ipv4}
+# listen to connections from anywhere
+ipv4-netmask-bits = 0
+ipv6-random = $${instance-parameters:ipv6-random}
+superuser = postgres
+password = $${gen-passwd:passwd}
+port = 5432
+dbname = db
+# pgdata_directory is created by initdb, and should not exist beforehand.
+pgdata-directory = $${directories:var}/data
+bin = ${postgresql:location}/bin
+services = $${directories:services}
+
+
+#----------------
+#--
+#-- Generates a random password and stores it in the filesystem
+
+[gen-passwd]
+recipe = slapos.cookbook:generate.password
+storage-path = $${directories:srv}/postgres_passwd
+bytes = 16
+
+
+#----------------
+#--
+#-- Deploy promise scripts.
+
+[postgres-promise]
+recipe = slapos.cookbook:check_port_listening
+path = $${directories:promises}/postgres
+hostname = $${instance-parameters:ipv6-random}
+port = $${postgres-instance:port}
+
+
+#----------------
+#--
+#-- Publish instance parameters.
+
+[publish]
+recipe = slapos.cookbook:publish
+url = $${postgres-instance:url}
+
+
+#----------------
+#--
+#-- Fetches parameters defined in SlapOS Master for this instance
+
+[instance-parameters]
+recipe = slapos.cookbook:slapconfiguration
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+

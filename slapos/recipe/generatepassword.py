@@ -1,3 +1,4 @@
+# vim: set et sts=2:
 ##############################################################################
 #
 # Copyright (c) 2012 Vifib SARL and Contributors. All Rights Reserved.
@@ -24,11 +25,12 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-import random
-import os
+
 import binascii
+import os
 
 from slapos.recipe.librecipe import GenericBaseRecipe
+
 
 class Recipe(GenericBaseRecipe):
 
@@ -44,7 +46,7 @@ class Recipe(GenericBaseRecipe):
     return GenericBaseRecipe.__init__(self, buildout, name, options)
 
   def install(self):
-    open_file = open(self.options['storage-path'], 'w')
-    open_file.write(self.options['passwd'])
-    open_file.close()
+    with open(self.options['storage-path'], 'w') as fout:
+      fout.write(self.options['passwd'])
     return [self.options['storage-path']]
+

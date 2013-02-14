@@ -57,10 +57,14 @@ class Recipe(GenericBaseRecipe):
   def install(self):
     path_list = []
 
-    # Copy application
-    if not os.path.exists(self.options['htdocs']):
-      shutil.copytree(self.options['source'],
-                      self.options['htdocs'])
+    # Copy application if not already existing
+    htdocs_location = self.options['htdocs']
+    if not (os.path.exists(htdocs_location) and os.listdir(htdocs_location)):
+      try:
+        os.rmdir(htdocs_location)
+      except:
+        pass
+      shutil.copytree(self.options['source'], htdocs_location)
 
     # Install php.ini
     php_ini = self.createFile(os.path.join(self.options['php-ini-dir'],
@@ -88,12 +92,14 @@ class Recipe(GenericBaseRecipe):
       )
       path_list.append(httpd_conf)
 
-    apache_args = [self.options['httpd-binary'], '-f', self.options['httpd-conf'],
-         '-DFOREGROUND']
-    wrapper = self.createPythonScript(self.options['wrapper'],
-        'slapos.recipe.librecipe.execute.executee',
-        (apache_args, self.environ)
-    )
+    wrapper = self.createWrapper(name=self.options['wrapper'],
+                                 command=self.options['httpd-binary'],
+                                 parameters=[
+                                     '-f',
+                                     self.options['httpd-conf'],
+                                     '-DFOREGROUND'
+                                     ],
+                                 env=self.environ)
     path_list.append(wrapper)
 
     secret_key_filename = os.path.join(self.buildout['buildout']['directory'],
@@ -101,7 +107,7 @@ class Recipe(GenericBaseRecipe):
     if not os.path.exists(secret_key_filename):
       secret_key = uuencode(os.urandom(45)).strip()
       # Remove unsafe characters
-      secret_key = secret_key.translate(None, '"\'')
+      secret_key = secret_key.translate(None, '"\'\\')
       with open(secret_key_filename, 'w') as secret_key_file:
         secret_key_file.write(secret_key)
     else:
@@ -115,6 +121,8 @@ class Recipe(GenericBaseRecipe):
                               mysql_password=self.options['mysql-password'],
                               mysql_host='%s:%s' % (self.options['mysql-host'],
                                                     self.options['mysql-port']),
+                              mysql_ip=self.options['mysql-host'],
+                              mysql_port=self.options['mysql-port'],
                               secret_key=secret_key,
                              )
 
@@ -133,12 +141,12 @@ class Recipe(GenericBaseRecipe):
         self.substituteTemplate(self.options['template'], application_conf))
       path_list.append(config)
 
-    if os.path.exists(self.options['pid-file']):
-      # Reload apache configuration
-      with open(self.options['pid-file']) as pid_file:
-        pid = int(pid_file.read().strip(), 10)
-      try:
-        os.kill(pid, signal.SIGHUP) #restart now
-      except OSError:
-        pass
+    #if os.path.exists(self.options['pid-file']):
+    #  # Reload apache configuration
+    #  with open(self.options['pid-file']) as pid_file:
+    #    pid = int(pid_file.read().strip(), 10)
+    #  try:
+    #    os.kill(pid, signal.SIGUSR1) # Graceful restart
+    #  except OSError:
+    #    pass
     return path_list

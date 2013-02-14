@@ -90,12 +90,14 @@ class Recipe:
     self.logger.info('Deploying instance with software type %s' % \
         software_type)
 
+    # Raise if request software_type does not exist ...
     if software_type not in self.options:
-      if 'default' in self.options:
+      # ... Except for backward compatibility. Then use "default".
+      if software_type in ['RootSoftwareInstance']:
         software_type = 'default'
       else:
-        raise zc.buildout.UserError("This software type isn't mapped. And "
-                                    "there's no default software type.")
+        raise zc.buildout.UserError("This software type (%s) isn't mapped." % \
+            software_type)
 
     instance_file_path = self.options[software_type]
 

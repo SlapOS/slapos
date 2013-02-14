@@ -1,0 +1,175 @@
+# vim: set ft=cfg:
+
+{% import 'parts' as parts %}
+{% import 'replicated' as replicated %}
+
+[buildout]
+
+extends =
+   {{templateapache}}
+
+# += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
+parts +=
+  {{ parts.replicate("postgres","3") }}
+  request-apache-backup-1
+  request-apache-backup-2
+
+  request-pull-backup-server-apache-1
+  request-pull-backup-server-apache-backup-1
+
+  request-pull-backup-server-apache-2
+  request-pull-backup-server-apache-backup-2
+
+  publish-connection-informations
+  apache-php
+  stunnel
+  certificate-authority
+  ca-stunnel
+  logrotate
+  logrotate-entry-apache
+  logrotate-entry-stunnel
+  cron
+  cron-entry-logrotate
+  dropbear-server
+  sshkeys-authority
+  dropbear-server-pbs-authorized-key
+
+  request-pull-backup-server
+
+{{ replicated.replicate("postgres", "3", "postgres-export", "postgres-import") }}
+
+
+[request-pull-backup-server]
+<= request-pbs-common
+name = PBS (Pull Backup Server)
+return = ssh-key notification-url feeds-url
+slave = false
+
+[sshkeys-directory]
+recipe = slapos.cookbook:mkdirectory
+requests = ${directory:sshkeys}/requests
+keys = ${directory:sshkeys}/keys
+
+[sshkeys-authority]
+recipe = slapos.cookbook:sshkeys_authority
+request-directory = ${sshkeys-directory:requests}
+keys-directory = ${sshkeys-directory:keys}
+wrapper = ${basedirectory:services}/sshkeys_authority
+keygen-binary = {{dropbear}}/bin/dropbearkey
+
+[sshkeys-dropbear]
+<= sshkeys-authority
+recipe = slapos.cookbook:sshkeys_authority.request
+name = dropbear
+type = rsa
+executable = ${dropbear-server:wrapper}
+public-key = ${dropbear-server:rsa-keyfile}.pub
+private-key = ${dropbear-server:rsa-keyfile}
+wrapper = ${basedirectory:services}/sshd
+
+[dropbear-server]
+recipe = slapos.cookbook:dropbear
+host = ${slap-network-information:global-ipv6}
+port = 2222
+home = ${directory:ssh}
+wrapper = ${rootdirectory:bin}/raw_sshd
+shell = ${rdiff-backup-server:wrapper}
+rsa-keyfile = ${directory:ssh}/server_key.rsa
+dropbear-binary = {{dropbear}}/sbin/dropbear
+
+[dropbear-server-pbs-authorized-key]
+<= dropbear-server
+recipe = slapos.cookbook:dropbear.add_authorized_key
+key = ${request-pull-backup-server:connection-ssh-key}
+
+[rdiff-backup-server]
+<= apache-php
+recipe = slapos.cookbook:pbs
+client = false
+path = ${apache-php:htdocs}
+wrapper = ${rootdirectory:bin}/rdiffbackup-server
+rdiffbackup-binary = {{buildout}}/rdiff-backup
+
+[request-apache-backup-1]
+<= slap-connection
+recipe = slapos.cookbook:request
+name = Apache Backup 1
+software-url = ${slap-connection:software-release-url}
+software-type = apache-backup
+return = url ssh-url ssh-public-key
+config = authorized-key proxy-url
+config-authorized-key = ${request-pull-backup-server:connection-ssh-key}
+config-proxy-url = ${publish-connection-informations:url}
+
+[request-apache-backup-2]
+<= slap-connection
+recipe = slapos.cookbook:request
+name = Apache Backup 2
+software-url = ${slap-connection:software-release-url}
+software-type = apache-backup
+return = url ssh-url ssh-public-key
+config = authorized-key proxy-url
+config-authorized-key = ${request-pull-backup-server:connection-ssh-key}
+config-proxy-url = ${publish-connection-informations:url}
+
+[request-pull-backup-server-apache-1]
+<= request-pbs-common
+name = PBS pulling from Apache 1
+config = url name type server-key notify notification-id frequency
+config-url = ssh://nobody@[${dropbear-server:host}]:${dropbear-server:port}/${rdiff-backup-server:path}
+config-name = ${slap-connection:computer-id}-${slap-connection:partition-id}-apache
+config-type = pull
+config-server-key = ${sshkeys-dropbear:public-key-value}
+config-notify = ${request-pull-backup-server:connection-notification-url}
+config-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-apache-pull
+config-frequency = 30 * * * *
+slave = true
+sla = instance_guid
+sla-instance_guid = ${request-pull-backup-server:instance_guid}
+
+[request-pull-backup-server-apache-2]
+<= request-pbs-common
+name = PBS pulling from Apache 2
+config = url name type server-key notify notification-id frequency
+config-url = ssh://nobody@[${dropbear-server:host}]:${dropbear-server:port}/${rdiff-backup-server:path}
+config-name = ${slap-connection:computer-id}-${slap-connection:partition-id}-apache
+config-type = pull
+config-server-key = ${sshkeys-dropbear:public-key-value}
+config-notify = ${request-pull-backup-server:connection-notification-url}
+config-notification-id = ${slap-connection:computer-id}-${slap-connection:partition-id}-apache-pull
+config-frequency = 30 * * * *
+slave = true
+sla = instance_guid
+sla-instance_guid = ${request-pull-backup-server:instance_guid}
+
+
+[request-pull-backup-server-apache-backup-1]
+<= request-pbs-common
+name = PBS pushing to ${request-apache-backup-1:name}
+config = url name type server-key on-notification
+config-url = ${request-apache-backup-1:connection-ssh-url}
+config-name = ${request-pull-backup-server-apache-1:config-name}
+config-type = push
+config-server-key = ${request-apache-backup-1:connection-ssh-public-key}
+config-on-notification = ${request-pull-backup-server:connection-feeds-url}${request-pull-backup-server-apache-1:config-notification-id}
+slave = true
+sla = instance_guid
+sla-instance_guid = ${request-pull-backup-server:instance_guid}
+
+[request-pull-backup-server-apache-backup-2]
+<= request-pbs-common
+name = PBS pushing to ${request-apache-backup-2:name}
+config = url name type server-key on-notification
+config-url = ${request-apache-backup-2:connection-ssh-url}
+config-name = ${request-pull-backup-server-apache-2:config-name}
+config-type = push
+config-server-key = ${request-apache-backup-2:connection-ssh-public-key}
+config-on-notification = ${request-pull-backup-server:connection-feeds-url}${request-pull-backup-server-apache-2:config-notification-id}
+slave = true
+sla = instance_guid
+sla-instance_guid = ${request-pull-backup-server:instance_guid}
+
+
+[directory]
+ssh = ${rootdirectory:etc}/ssh
+sshkeys = ${rootdirectory:srv}/sshkeys

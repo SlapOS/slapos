@@ -1,0 +1,23 @@
+[buildout]
+
+parts =
+  switch_softwaretype
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+[switch_softwaretype]
+recipe = slapos.cookbook:softwaretype
+default = ${instance-apache-php:output}
+resilient = ${instance-resilient:rendered}
+postgres = ${instance-postgres:output}
+postgres-import = ${instance-postgres-import:output}
+postgres-export = ${instance-postgres-export:output}
+apache-backup = ${instance-apache-backup:output}
+
+#frozen creates a syntax error, meaning it can keep its data.
+#It's dirty as hell, it needs to be replaced.
+frozen = ${instance-frozen:output}
+pull-backup = ${template-pull-backup:output}
+

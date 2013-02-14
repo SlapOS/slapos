@@ -1,0 +1,21 @@
+[buildout]
+extends = ${instance-postgres:output}
+          ${pbsready-export:output}
+
+
+parts +=
+    urls
+    postgres-instance
+    postgres-promise
+
+# have to repeat the next one, as it's not inherited from pbsready-export
+    cron-entry-backup
+
+
+[exporter]
+recipe = slapos.cookbook:postgres.export
+wrapper = $${rootdirectory:bin}/$${slap-parameter:namebase}-exporter
+bin = $${postgres-instance:bin}
+pgdata-directory = $${postgres-instance:pgdata-directory}
+backup-directory = $${postgres-instance:backup-directory}
+dbname = $${postgres-instance:dbname}

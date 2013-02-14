@@ -1,0 +1,26 @@
+# vim: set ft=cfg:
+
+{% import 'parts' as parts %}
+{% import 'replicated' as replicated %}
+
+[buildout]
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+# += because we need to take up parts (like instance-custom, slapmonitor etc) from the profile we extended
+parts +=
+  {{ parts.replicate("apache", "3") }}
+  publish-connection-informations
+
+{{ replicated.replicate("apache", "3", "apache-export", "apache-import") }}
+
+# Bubble up the parameters
+[request-apache]
+return = url ssh-public-key ssh-url notification-id ip url backend_url
+
+[publish-connection-informations]
+recipe = slapos.cookbook:publish
+backend_url = ${request-apache:connection-backend_url}
+url = ${request-apache:connection-url}
+

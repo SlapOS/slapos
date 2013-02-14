@@ -25,9 +25,9 @@
 #
 ##############################################################################
 import logging
-
 from slapos import slap as slapmodule
 import slapos.recipe.librecipe.generic as librecipe
+import traceback
 
 DEFAULT_SOFTWARE_TYPE = 'RootSoftwareInstance'
 
@@ -123,28 +123,43 @@ class Recipe(object):
 
     isSlave = options.get('slave', '').lower() in \
         librecipe.GenericBaseRecipe.TRUE_VALUES
-    self.instance = instance = request(software_url, software_type,
-      name, partition_parameter_kw=partition_parameter_kw,
-      filter_kw=filter_kw, shared=isSlave)
+
+    self._raise_request_exception = None
+    self._raise_request_exception_formatted = None
+    self.instance = None
+    try:
+      self.instance = request(software_url, software_type,
+          name, partition_parameter_kw=partition_parameter_kw,
+          filter_kw=filter_kw, shared=isSlave)
+      # XXX what is the right way to get a global id?
+      options['instance_guid'] = self.instance.getId()
+    except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
+      self._raise_request_exception = exc
+      self._raise_request_exception_formatted = traceback.format_exc()
 
     for param in return_parameters:
+      options['connection-%s' % param] = ''
+      if not self.instance:
+        continue
       try:
         options['connection-%s' % param] = str(
-          instance.getConnectionParameter(param))
-      except (slapmodule.NotFoundError, slapmodule.ServerError):
-        options['connection-%s' % param] = ''
+          self.instance.getConnectionParameter(param))
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         if self.failed is None:
           self.failed = param
 
   def install(self):
+    if self._raise_request_exception:
+      raise self._raise_request_exception
+
     if self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        if self.instance.getComputerId() is not None:
+        if self.instance._computer_id is not None:
           status = self.instance.getState()
         else:
           status = 'not ready yet'
-      except (slapmodule.NotFoundError, slapmodule.ServerError):
+      except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady):
         status = 'not ready yet'
       except AttributeError:
         status = 'unknown'
@@ -159,14 +174,19 @@ class Recipe(object):
 
 class RequestOptional(Recipe):
   """
-  Request a SlapOS instance. Won't fail if instance is not ready.
+  Request a SlapOS instance. Won't fail if request failed or is not ready.
   Same as slapos.cookbook:request, but won't raise in case of problem.
   """
   def install(self):
-    if self.failed is not None:
+    if self._raise_request_exception_formatted:
+      self.logger.warning('Optional request failed.')
+      if not isinstance(self._raise_request_exception, slapmodule.NotFoundError):
+        # full traceback for optional 'not found' is too verbose and confusing
+        self.logger.warning(self._raise_request_exception_formatted)
+    elif self.failed is not None:
       # Check instance status to know if instance has been deployed
       try:
-        if self.instance.getComputerId() is not None:
+        if self.instance._computer_id is not None:
           status = self.instance.getState()
         else:
           status = 'not ready yet'
