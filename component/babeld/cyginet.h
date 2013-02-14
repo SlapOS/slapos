@@ -75,20 +75,16 @@ struct sockaddr_dl {
 				   contains both if name and ll address */
 };
 
-#if defined(INSIDE_CYGINET)
-
-/* Copy from babeld/kernel.h */
-#define RTPROT_BABEL_LOCAL -2
-#define KERNEL_INFINITY 0xFFFF
-struct kernel_route {
-    unsigned char prefix[16];
+struct cyginet_route {
+    struct sockaddr prefix;
     int plen;
     int metric;
     unsigned int ifindex;
     int proto;
-    unsigned char gw[16];
+    struct sockaddr gateway;
 };
-/* End of Copy */
+
+#if defined(INSIDE_CYGINET)
 
 struct ifaddrs {
         struct ifaddrs  *ifa_next;
@@ -156,7 +152,7 @@ int cyginet_interface_mtu(const char *, int);
 int cyginet_interface_operational(const char *, int);
 int cyginet_interface_ipv4(const char *, int, unsigned char *);
 
-int cyginet_dump_route_table(struct kernel_route *, int);
+int cyginet_dump_route_table(struct cyginet_route *, int);
 int cyginet_loopback_index(int);
 
 int cyginet_add_route_entry(const struct sockaddr *, unsigned short,

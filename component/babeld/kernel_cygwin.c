@@ -59,7 +59,7 @@ THE SOFTWARE.
  * 3. kernel_interface_ipv4
  *
  *    ? interface name, ipv4, ifindex, Oh, they're mass.
- *    
+ *
  */
 
 static int get_sdl(struct sockaddr_dl *sdl, char *ifname);
@@ -125,10 +125,10 @@ kernel_setup(int setup)
     int accept_redirects = 0;
     int reboot = 0;
 
-    /* It enables ip6.forwarding and disable ip6.redirect. 
+    /* It enables ip6.forwarding and disable ip6.redirect.
      *
      * Option 1:
-     * 
+     *
      * IPV6CTL_FORWARDING (ip6.forwarding) Boolean: enable/disable
      * forward- ing of IPv6 packets.  Also, identify if the node is
      * acting as a router.  Defaults to off.
@@ -136,7 +136,7 @@ kernel_setup(int setup)
      * ==> command line:
      *
      *     C:/> ipv6 ifc $If6Index forwards
-     * 
+     *
      *     repeat this operation for all ipv6 interfaces
      *
      *     List all ipv6 interface by the command:
@@ -155,13 +155,13 @@ kernel_setup(int setup)
      *
      * A value of 1 enables TCP/IP forwarding for all network
      * connections that are installed and used by this computer.
-     * 
+     *
      * Refer to: http://support.microsoft.com/kb/315236/en-us
      *
      * Option 2:
      *
      * ICMPV6CTL_REDIRACCEPT
-     * 
+     *
      * IPV6CTL_SENDREDIRECTS (ip6.redirect) Boolean: enable/disable
      * sending of ICMPv6 redirects in response to unforwardable IPv6
      * packets.  This option is ignored unless the node is routing
@@ -171,26 +171,26 @@ kernel_setup(int setup)
      * ==> MSDN says in the registry
      *
      * HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters
-     * 
+     *
      * EnableICMPRedirect = 0
      *
      * Refer to:
-     * 
+     *
      *     http://technet.microsoft.com/en-us/library/cc766102(v=ws.10).aspx
      *
      * After change them, need to reboot machine.
-     *     
+     *
      * Notice:
-     * 
+     *
      * MSDN says nothing about ipv6, it should use the following key
-     * 
+     *
      * HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters
      *
      * Maybe later Window VISTA its corresponding APIs are
      * WSAEnumProtocols, WSCUpdateProvider.
-     * 
+     *
      */
-    
+
     if (setup) {
         int flags;
         if (0 != cyginet_startup())
@@ -207,7 +207,7 @@ kernel_setup(int setup)
             if (reboot)
                 cyginet_set_ipv6_forwards(old_forwarding);
             return -1;
-        }    
+        }
         old_accept_redirects = rc;
         reboot = (rc == accept_redirects) ? reboot : 1;
         if (pipe(kernel_pipe_handles) == -1)
@@ -226,12 +226,12 @@ kernel_setup(int setup)
             return -1;
         reboot = (rc == accept_redirects) ? reboot : 1;
         close(kernel_pipe_handles[0]);
-        close(kernel_pipe_handles[1]);     
+        close(kernel_pipe_handles[1]);
         cyginet_cleanup();
     }
 
     if (reboot)
-        fprintf(stderr,           
+        fprintf(stderr,
                 "%s IPv6 forwarding and %s ICMPv6 redirect successfully.\n"
                 "REBOOT NOW, so that these changes take effect.\n\n",
                 forwarding ? "Enable" : "Disable",
@@ -280,7 +280,7 @@ kernel_interface_operational(const char *ifname, int ifindex)
 {
     int rc;
     int flags = link_detect ? (IFF_UP | IFF_RUNNING) : IFF_UP;
-    
+
     rc = cyginet_interface_operational(ifname, ifindex);
     if (rc < 0)
         return -1;
@@ -312,22 +312,22 @@ kernel_interface_channel(const char *ifname, int ifindex)
     return -1;
 }
 
-/* 
- * RTF_REJECT 
- * 
+/*
+ * RTF_REJECT
+ *
  *   Instead of forwarding a packet like a normal route, routes with
  *   RTF_REJECT cause packets to be dropped and unreachable messages
  *   to be sent to the packet originators. This flag is only valid on
  *   routes pointing at the loopback interface.
- * 
- * RTF_BLACKHOLE 
- * 
+ *
+ * RTF_BLACKHOLE
+ *
  *   Like the RTF_REJECT flag, routes with RTF_BLACKHOLE cause packets
  *   to be dropped, but unreachable messages are not sent. This flag
  *   is only valid on routes pointing at the loopback interface.
- * 
+ *
  * Nullrouting on Windows
- * 
+ *
  *   Windows XP/Vista/7 does not support reject or blackhole arguments
  *   via route, thus an unused IP address (e.g. 192.168.0.205) must be
  *   used as the target gateway.
@@ -336,12 +336,12 @@ kernel_interface_channel(const char *ifname, int ifindex)
  *
  * RTF_HOST: host entry (net otherwise)
  *
- *   It means all the netmask bits are 1. 
+ *   It means all the netmask bits are 1.
  *
  * RTF_CLONING: generate new routes on use
  *
  *   No corresponding function in the Windows.
- *   
+ *
  */
 int
 kernel_route(int operation, const unsigned char *dest, unsigned short plen,
@@ -374,7 +374,7 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
         ipv4 = 0;
     }
 
-    if(operation == ROUTE_MODIFY && newmetric == metric && 
+    if(operation == ROUTE_MODIFY && newmetric == metric &&
        memcmp(newgate, gate, 16) == 0 && newifindex == ifindex)
       return 0;
 
@@ -443,20 +443,20 @@ kernel_route(int operation, const unsigned char *dest, unsigned short plen,
         if(IN6_IS_ADDR_LINKLOCAL (&sin6->sin6_addr))                    \
             SET_IN6_LINKLOCAL_IFINDEX (sin6->sin6_addr, ifindex);       \
     } while (0)
-    
+
     if(ipv4) {
 
         PUSHADDR(destination, dest);
         if (metric == KERNEL_INFINITY)
             PUSHADDR(gateway, **local4);
-        else 
+        else
             PUSHADDR(gateway, gate);
 
     } else {
         PUSHADDR6(destination, dest);
         if (metric == KERNEL_INFINITY)
             PUSHADDR6(gateway, &local6);
-        else 
+        else
             PUSHADDR6(gateway, gate);
     }
 #undef PUSHADDR
@@ -519,7 +519,7 @@ print_kernel_route(int add, struct kernel_route *route)
 }
 
 static int
-parse_kernel_route(struct kernel_route *route)
+parse_kernel_route(struct cyginet_route *src, struct kernel_route *route)
 {
     struct sockaddr *sa;
 
@@ -535,9 +535,16 @@ parse_kernel_route(struct kernel_route *route)
             return -1;
     }
 
-    sa = (struct sockaddr *)route -> prefix;
+    memset(route, 0, sizeof(struct kernel_route));
+    route -> plen = src -> plen;
+    route -> metric = src -> metric;
+    route -> proto = src -> proto;
+    route -> ifindex = src -> ifindex;
+
+    sa = &(src -> prefix);
     if(sa->sa_family == AF_INET6) {
         struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
+        memcpy(route->prefix, &sin6->sin6_addr, 16);
         if(IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)
              || IN6_IS_ADDR_MC_LINKLOCAL(&sin6->sin6_addr))
            return -1;
@@ -555,9 +562,10 @@ parse_kernel_route(struct kernel_route *route)
     }
 
     /* Gateway */
-    sa = (struct sockaddr *)route -> gw;
+    sa = &(src -> gateway);
     if(sa->sa_family == AF_INET6) {
         struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
+        memcpy(route->gw, &sin6->sin6_addr, 16);
         if(IN6_IS_ADDR_LINKLOCAL (&sin6->sin6_addr)) {
             route->ifindex = IN6_LINKLOCAL_IFINDEX(sin6->sin6_addr);
             SET_IN6_LINKLOCAL_IFINDEX(sin6->sin6_addr, 0);
@@ -567,7 +575,7 @@ parse_kernel_route(struct kernel_route *route)
         v4tov6(route->gw, (unsigned char *)&sin->sin_addr);
     }
 
-    if((sa->sa_family == AF_INET6) && (route->ifindex == if6index_lo))    
+    if((sa->sa_family == AF_INET6) && (route->ifindex == if6index_lo))
         return -1;
     if((sa->sa_family == AF_INET) && (route->ifindex == ifindex_lo))
         return -1;
@@ -583,30 +591,40 @@ kernel_routes(struct kernel_route *routes, int maxroutes)
 {
     int rc, i;
     int count;
-    struct kernel_route * proute = routes;
-    struct kernel_route * pdest = proute;
-    
-    memset(routes, 0, sizeof(struct kernel_route) * maxroutes);
 
-    rc = cyginet_dump_route_table(routes, maxroutes);
+    struct kernel_route * proute = routes;
+    struct cyginet_route * ptable;
+
+    rc = cyginet_dump_route_table(NULL, 0);
     if (rc < 0)
         return -1;
+    if (rc == 0)
+        return 0;
 
-    count = 0;
-    for (i = 0; i < rc; i++, proute++) {
+    rc += 10;
+    if (NULL == (ptable = calloc(rc, sizeof(struct cyginet_route))))
+        return -1;
 
-        if (parse_kernel_route(proute) != 0)
+    rc = cyginet_dump_route_table(ptable, rc);
+    if (rc < 0) {
+        free(ptable);
+        return -1;
+    }
+
+    for (i = 0, count = 0; i < rc; i++) {
+
+        if (parse_kernel_route(ptable + i, proute) != 0)
             continue;
-        
-        if (proute != pdest)
-            memcpy(pdest, proute, sizeof(struct kernel_route));
 
         if(debug > 2)
-            print_kernel_route(RTM_ADD, pdest);
+            print_kernel_route(RTM_ADD, proute);
 
-        pdest++;
+        if (maxroutes > rc)
+            proute++;
+        count ++;
     }
-    return (pdest - routes);
+    free(ptable);
+    return count;
 }
 
 int

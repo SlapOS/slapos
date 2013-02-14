@@ -19,7 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-
 #include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -50,9 +49,11 @@ babel_socket(int port)
     if(s < 0)
         return -1;
 
+#if !defined(_WIN32_WINNT) || _WIN32_WINNT >= 0x0600
     rc = setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, &one, sizeof(one));
     if(rc < 0)
         goto fail;
+#endif
 
     rc = setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
     if(rc < 0)

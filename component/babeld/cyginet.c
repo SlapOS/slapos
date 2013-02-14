@@ -202,9 +202,8 @@ libwinet_run_command(const char *command)
  *   Gateway could be an address or interface name.
  *
  */
-
 static int
-libwinet_dump_ipv6_route_table(struct kernel_route *routes,
+libwinet_dump_ipv6_route_table(struct cyginet_route *routes,
                                int maxroutes)
 {
   #define MAX_LINE_SIZE 80
@@ -216,12 +215,18 @@ libwinet_dump_ipv6_route_table(struct kernel_route *routes,
   int count = 0;
   int ignored = 0;
 
-  IN6_ADDR *sin6;
-  struct kernel_route * proute = routes;
+  struct sockaddr_in6 *dest;
+  struct sockaddr_in6 *gate;
+
+  struct cyginet_route route;
+  struct cyginet_route * proute = routes;
 
   output = popen (command, "r");
   if (!output)
     return -1;
+
+  dest = (struct sockaddr_in6*)&(route.prefix);
+  gate = (struct sockaddr_in6*)&(route.gateway);
 
   /* Ignore the first line */
   fgets(buffer, MAX_LINE_SIZE, output);
@@ -240,41 +245,43 @@ libwinet_dump_ipv6_route_table(struct kernel_route *routes,
 
     /* The first field of route entry */
     if (strncmp(buffer, "Prefix", 6) == 0) {
-      sin6 = (IN6_ADDR*)&(proute -> prefix);
-
+      
+      memset(&route, 0, sizeof(struct cyginet_route));
       if (NULL == (p = strchr(s, '/')))
         break;
       *p ++ = 0;
       /*
        * Maybe it will be "fe80::5efe:10.85.0.127", ignore it
        */
-      if (inet_pton(AF_INET6, s, sin6) != 1)
+      if (inet_pton(AF_INET6, s, &(dest -> sin6_addr)) != 1)
         ignored = 1;
-      proute -> plen = strtol(p, NULL, 10);
+      dest -> sin6_family = AF_INET6;
+      route.plen = strtol(p, NULL, 10);
     }
 
     else if (strncmp(buffer, "Interface", 9) == 0)
-      proute -> ifindex = strtol(buffer + 9, NULL, 10);
+      route.ifindex = strtol(buffer + 9, NULL, 10);
 
     else if (strncmp(buffer, "Gateway", 7) == 0) {
-      sin6 = (IN6_ADDR*)&(proute -> gw);
-      if (inet_pton(AF_INET6, s, sin6) != 1)
-        memset(sin6, 0, sizeof(IN6_ADDR));
+      if (inet_pton(AF_INET6, s, &(gate -> sin6_addr)) == 1)
+        gate -> sin6_family = AF_INET6;
     }
 
     else if (strncmp(buffer, "Metric", 6) == 0)
-      proute -> metric = strtol(s, NULL, 10);
+      route.metric = strtol(s, NULL, 10);
 
     /* Last field of the route entry */
     else if (strncmp(buffer, "Site Prefix Length", 18) == 0) {
       if (ignored)
         ignored = 0;
       else if (!ignored) {
-        proute -> proto = MIB_IPPROTO_OTHER; /* ?? */
+        route.proto = MIB_IPPROTO_OTHER; /* ?? */
+        if ((maxroutes > count) && (proute != NULL)) {
+          memcpy(proute, &route, sizeof(struct cyginet_route));
+          proute ++;
+        }
         count ++;
-        proute ++;
-        if (count > maxroutes)
-          break;
+        
       }
     }
 
@@ -1015,31 +1022,6 @@ cyginet_loopback_index(int family)
   return libwinet_get_loopback_index(family);
 }
 
-static PMIB_IPFORWARDTABLE
-libwinet_get_ipforward_table(int forder)
-{
-  DWORD dwSize = 0;
-  PMIB_IPFORWARDTABLE pIpForwardTable;
-  pIpForwardTable = (PMIB_IPFORWARDTABLE)MALLOC(sizeof(MIB_IPFORWARDTABLE));
-  if (NULL == pIpForwardTable)
-    return NULL;
-
-  if (ERROR_INSUFFICIENT_BUFFER == GetIpForwardTable(pIpForwardTable,
-                                                     &dwSize,
-                                                     forder
-                                                     )) {
-    FREE(pIpForwardTable);
-    pIpForwardTable = (PMIB_IPFORWARDTABLE) MALLOC(dwSize);
-    if (pIpForwardTable == NULL)
-      return NULL;
-  }
-  if (NO_ERROR == GetIpForwardTable(pIpForwardTable,
-                                    &dwSize,
-                                    forder))
-    return pIpForwardTable;
-  return NULL;  
-}
-
 /*
  * There are 3 ways to dump route table in the Windows:
  *
@@ -1057,18 +1039,18 @@ libwinet_get_ipforward_table(int forder)
  *
  */
 int
-cyginet_dump_route_table(struct kernel_route *routes, int maxroutes)
+cyginet_dump_route_table(struct cyginet_route *routes, int maxroutes)
 {
   
   ULONG NumEntries = -1;
-  struct kernel_route *proute;
+  struct cyginet_route *proute;
   int i;
 
 #if _WIN32_WINNT < _WIN32_WINNT_VISTA
 
   /* First dump ipv6 route */
   NumEntries = libwinet_dump_ipv6_route_table(routes, maxroutes);
-
+  
   if (NumEntries < 0)
     return -1;
 
@@ -1076,40 +1058,56 @@ cyginet_dump_route_table(struct kernel_route *routes, int maxroutes)
   SOCKADDR_IN * paddr;
   PMIB_IPFORWARDTABLE pIpForwardTable;
   PMIB_IPFORWARDROW pRow;
-  if (NULL == (pIpForwardTable = libwinet_get_ipforward_table(0)))
+  DWORD dwSize = sizeof(MIB_IPFORWARDTABLE);
+
+  pIpForwardTable = (PMIB_IPFORWARDTABLE)MALLOC(dwSize);
+  if (NULL == pIpForwardTable)
     return -1;
-  
-  {
-    proute = routes + NumEntries;
-    NumEntries += pIpForwardTable->dwNumEntries;
-    if (NumEntries > maxroutes) {
-      FREE(pIpForwardTable);
-      return -1;
-    }
-    pRow = pIpForwardTable->table;    
-    for (i = 0;
-         i < (int) pIpForwardTable->dwNumEntries;
-         i++, proute ++, pRow ++) {
 
-      /* libwinet_map_ifindex_to_ipv6ifindex */
-      proute -> ifindex = pRow -> dwForwardIfIndex;
-      proute -> metric = pRow -> dwForwardMetric1;
-      proute -> proto = pRow -> dwForwardProto;
-      proute -> plen = mask2len((unsigned char*)&(pRow -> dwForwardMask), 4);
-
-      /* Note that the IPv4 addresses returned in GetIpForwardTable
-       * entries are in network byte order
-       */
-      paddr = (SOCKADDR_IN*)proute -> prefix;
-      paddr -> sin_family = AF_INET;
-      (paddr -> sin_addr).S_un.S_addr = pRow -> dwForwardDest;
-
-      paddr = (SOCKADDR_IN*)proute -> gw;
-      paddr -> sin_family = AF_INET;
-      (paddr -> sin_addr).S_un.S_addr = pRow -> dwForwardNextHop;
-    }
+  if (ERROR_INSUFFICIENT_BUFFER == GetIpForwardTable(pIpForwardTable,
+                                                     &dwSize,
+                                                     0
+                                                     )) {
     FREE(pIpForwardTable);
+    pIpForwardTable = (PMIB_IPFORWARDTABLE) MALLOC(dwSize);
+    if (pIpForwardTable == NULL)
+      return -1;
   }
+  if (NO_ERROR != GetIpForwardTable(pIpForwardTable,
+                                    &dwSize,
+                                    0))
+    return -1;
+
+  proute = routes + NumEntries;
+
+  NumEntries += pIpForwardTable->dwNumEntries;
+  if ((routes == NULL) || (NumEntries > maxroutes)) {
+    FREE(pIpForwardTable);
+    return NumEntries;
+  }
+
+  pRow = pIpForwardTable->table;    
+  for (i = 0;
+       i < (int) pIpForwardTable->dwNumEntries;
+       i++, proute ++, pRow ++) {
+    /* libwinet_map_ifindex_to_ipv6ifindex */
+    proute -> ifindex = pRow -> dwForwardIfIndex;
+    proute -> metric = pRow -> dwForwardMetric1;
+    proute -> proto = pRow -> dwForwardProto;
+    proute -> plen = mask2len((unsigned char*)&(pRow -> dwForwardMask), 4);
+
+    /* Note that the IPv4 addresses returned in GetIpForwardTable
+     * entries are in network byte order
+     */
+    paddr = (struct sockaddr_in*)&(proute -> prefix);
+    paddr -> sin_family = AF_INET;
+    (paddr -> sin_addr).S_un.S_addr = pRow -> dwForwardDest;
+
+    paddr = (struct sockaddr_in*)&(proute -> gateway);
+    paddr -> sin_family = AF_INET;
+    (paddr -> sin_addr).S_un.S_addr = pRow -> dwForwardNextHop;
+  }
+  FREE(pIpForwardTable);
 
 #else
   PMIB_IPFORWARD_TABLE2 pIpForwardTable2;
@@ -1120,27 +1118,29 @@ cyginet_dump_route_table(struct kernel_route *routes, int maxroutes)
                                      pIpForwardTable2
                                      0)) {
 
-    if (pIpForwardTable2 -> NumEntries < maxroutes) {
+    NumEntries = pIpForwardTable2->dwNumEntries;
+    if ((routes == NULL) || (NumEntries > maxroutes)) {
+      FreeMibTable(pIpForwardTable2);
+      return NumEntries;
+    }
 
-      proute = routes + NumEntries;
-      NumEntries = pIpForwardTable2->dwNumEntries;
-      pRow2 = pIpForwardTable2 -> Table;
+    proute = routes;
+    NumEntries = pIpForwardTable2->dwNumEntries;
+    pRow2 = pIpForwardTable2 -> Table;
 
-      for (i = 0; i < NumEntries; i++, proute ++, pRow2 ++) {
-        proute -> ifindex = pRow2 -> InterfaceIndex;
-        proute -> metric = pRow2 -> Metric;
-        proute -> proto = pRow2 -> Protocol;
-        proute -> plen = (pRow2 -> DestinationPrefix).PrefixLength;
-        memcpy(proute -> prefix,
-               (pRow2 -> DestinationPrefix).DestinationPrefix,
-               sizeof(SOCKADDR_INET)
-               );
-        memcpy(proute -> gw,
-               pRow2 -> NextHop,
-               sizeof(SOCKADDR_INET)
-               );
-      }
-
+    for (i = 0; i < NumEntries; i++, proute ++, pRow2 ++) {
+      proute -> ifindex = pRow2 -> InterfaceIndex;
+      proute -> metric = pRow2 -> Metric;
+      proute -> proto = pRow2 -> Protocol;
+      proute -> plen = (pRow2 -> DestinationPrefix).PrefixLength;
+      memcpy(proute -> prefix,
+             (pRow2 -> DestinationPrefix).DestinationPrefix,
+             sizeof(SOCKADDR_INET)
+             );
+      memcpy(proute -> gateway,
+             pRow2 -> NextHop,
+             sizeof(SOCKADDR_INET)
+             );
     }
     FreeMibTable(pIpForwardTable2);
   }
@@ -1208,6 +1208,31 @@ void cyginet_cleanup()
 
 /* The following functions are reserved. */
 #if 0
+
+static PMIB_IPFORWARDTABLE
+libwinet_get_ipforward_table(int forder)
+{
+  DWORD dwSize = sizeof(MIB_IPFORWARDTABLE);
+  PMIB_IPFORWARDTABLE pIpForwardTable;
+  pIpForwardTable = (PMIB_IPFORWARDTABLE)MALLOC(dwSize);
+  if (NULL == pIpForwardTable)
+    return NULL;
+
+  if (ERROR_INSUFFICIENT_BUFFER == GetIpForwardTable(pIpForwardTable,
+                                                     &dwSize,
+                                                     forder
+                                                     )) {
+    FREE(pIpForwardTable);
+    pIpForwardTable = (PMIB_IPFORWARDTABLE) MALLOC(dwSize);
+    if (pIpForwardTable == NULL)
+      return NULL;
+  }
+  if (NO_ERROR == GetIpForwardTable(pIpForwardTable,
+                                    &dwSize,
+                                    forder))
+    return pIpForwardTable;
+  return NULL;  
+}
 
 static int
 convert_ipv6_route_table2()
@@ -1969,8 +1994,8 @@ runTestCases()
 
   printf("\n\nTest libwinet_dump_ipv6_route_table:\n\n");
   {
-    struct kernel_route routes[100];
-    memset(routes, 0, sizeof(struct kernel_route) * 100);
+    struct cyginet_route routes[100];
+    memset(routes, 0, sizeof(struct cyginet_route) * 100);
     int n = libwinet_dump_ipv6_route_table(routes, 100);
     printf("Get route numbers: %d\n", n);
   }
@@ -2182,8 +2207,8 @@ runTestCases()
   printf("\n\nTest cyginet_dump_route_table:\n\n");
   do {
     #define MAX_ROUTES 120
-    struct kernel_route routes[MAX_ROUTES];
-    memset(routes, 0, sizeof(struct kernel_route) * MAX_ROUTES);
+    struct cyginet_route routes[MAX_ROUTES];
+    memset(routes, 0, sizeof(struct cyginet_route) * MAX_ROUTES);
     int n = cyginet_dump_route_table(routes, MAX_ROUTES);
     printf("Get route numbers: %d\n", n);
   } while (0);

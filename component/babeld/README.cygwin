@@ -1,0 +1,52 @@
+Introduction
+============
+
+Babeld for windows can work in the Cygwin 1.7 and later.
+
+Changed files
+-------------
+        Makefile
+        net.c
+        kernel.c
+
+New files
+---------
+        kernel_cygwin.c
+        cyginet.h
+        cyginet.c
+        README.cygwin
+
+Building in the cygwin
+======================
+
+Required packages:
+         Cygwin 1.7
+         gcc 4.5.3 for cygwin 
+
+In the Windows XP, 
+
+$ PLATFORM_DEFINES="-D_WIN32_WINNT=0x0503" make
+
+Later Windows Vista,
+
+$ PLATFORM_DEFINES="-D_WIN32_WINNT=0x0600" make
+
+Interface Names
+===============
+
+In the Windows, GUID is used as unique interface names. You can list
+all the interfaces by the following command:
+
+$ ipv6 if | grep "^Interface" -A 1
+
+--
+Interface 2: Automatic Tunneling Pseudo-Interface
+  Guid {48FCE3FC-EC30-E50E-F1A7-71172AEEE3AE}
+--
+Interface 1: Loopback Pseudo-Interface
+  Guid {6BD113CC-5EC2-7638-B953-0B889DA72014}
+...
+
+When call babled, use GUID as interface name:
+
+$ ./babeld.exe {6BD113CC-5EC2-7638-B953-0B889DA72014}
