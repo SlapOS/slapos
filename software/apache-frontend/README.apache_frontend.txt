@@ -43,6 +43,25 @@ all slave instances.
 Finally, the slave instance will be accessible from:
 https://someidentifier.moulefrite.org.
 
+
+How to have custom configuration in frontend server
+===================================================
+
+In your instance directory, you, as sysadmin, can directly edit two
+configuration files that won't be overwritten by SlapOS to customize your
+instance:
+
+ * $PARTITION_PATH/srv/srv/apache-conf.d/apache_frontend.custom.conf
+ * $PARTITION_PATH/srv/srv/apache-conf.d/apache_frontend.virtualhost.custom.conf
+
+The first one is included in the end of the main apache configuration file.
+The second one is included in the virtualhost of the main apache configuration file.
+
+SlapOS will jsut create those two files for you, then completely forget them.
+
+Note: make sure that the UNIX user of the instance has read access to those
+files if you edit them.
+
 Instance Parameters
 ===================
 
