@@ -543,7 +543,7 @@ class Recipe(BaseSlapRecipe):
     self._createDirectory(mod_ssl_cache_location)
 
     # Create "custom" apache configuration files if it does not exist.
-    # Note : Those files won't be erased or changed when slapgrid is ran.
+    # Note : Those files won't be erased or changed by slapgrid.
     # It can be freely customized by node admin.
     custom_apache_configuration_directory = os.path.join(
         self.data_root_directory, 'apache-conf.d')
@@ -551,12 +551,14 @@ class Recipe(BaseSlapRecipe):
     # First one is included in the end of the apache configuration file
     custom_apache_configuration_file_location = os.path.join(
         custom_apache_configuration_directory, 'apache_frontend.custom.conf')
-    open(custom_apache_configuration_file_location, 'a')
+    if not os.path.exists(custom_apache_configuration_file_location):
+      open(custom_apache_configuration_file_location, 'w')
     # Second one is included in the virtualhost of apache configuration file
     custom_apache_virtual_configuration_file_location = os.path.join(
         custom_apache_configuration_directory,
         'apache_frontend.virtualhost.custom.conf')
-    open(custom_apache_virtual_configuration_file_location, 'a')
+    if not os.path.exists(custom_apache_virtual_configuration_file_location):
+      open(custom_apache_virtual_configuration_file_location, 'w')
 
     # Create backup of custom apache configuration
     backup_path = self.createBackupDirectory('custom_apache_conf_backup')
