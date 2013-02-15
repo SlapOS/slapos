@@ -214,7 +214,7 @@ def request():
     print "You can rerun command to get up-to-date informations."
   except ResourceNotReady:
     print("Instance requested. Master is provisionning it. Please rerun in a "
-        "couple of minutes to get connection informations")
+        "couple of minutes to get connection informations.")
     exit(2)
 
 def _supply(software_url, computer_id, local, remove=False):
