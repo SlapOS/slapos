@@ -128,7 +128,7 @@ class GenericBaseRecipe(object):
     return script
 
   def createWrapper(self, name, command, parameters, comments=[],
-        parameters_extra=False, env=None):
+        parameters_extra=False, environment=None):
     """
     Creates a very simple (one command) shell script for process replacement.
     Takes care of quoting.
@@ -139,9 +139,9 @@ class GenericBaseRecipe(object):
     for comment in comments:
       lines.append('# %s' % comment)
 
-    if env:
-      for key in env:
-        lines.append('export %s=%s' % (key, env[key]))
+    if environment:
+      for key in environment:
+        lines.append('export %s=%s' % (key, environment[key]))
 
     lines.append('exec %s' % shlex.quote(command))
 

@@ -99,7 +99,7 @@ class Recipe(GenericBaseRecipe):
                                      self.options['httpd-conf'],
                                      '-DFOREGROUND'
                                      ],
-                                 env=self.environ)
+                                 environment=self.environ)
     path_list.append(wrapper)
 
     secret_key_filename = os.path.join(self.buildout['buildout']['directory'],

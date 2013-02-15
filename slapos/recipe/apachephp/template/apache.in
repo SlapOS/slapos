@@ -54,7 +54,3 @@ LoadModule headers_module modules/mod_headers.so
 LoadModule dir_module modules/mod_dir.so
 LoadModule php5_module modules/libphp5.so
 LoadModule alias_module modules/mod_alias.so
-LoadModule auth_basic_module modules/mod_auth_basic.so
-LoadModule authz_user_module modules/mod_authz_user.so
-LoadModule authn_file_module modules/mod_authn_file.so
-LoadModule authn_core_module modules/mod_authn_core.so
