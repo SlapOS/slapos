@@ -113,7 +113,11 @@ class Recipe(object):
     filter_kw = {}
     if 'sla' in options:
       for sla_parameter in options['sla'].split():
-        filter_kw[sla_parameter] = options['sla-%s' % sla_parameter]
+        sla_key = options['sla-%s' % sla_parameter]
+        if sla_key:
+          # Only append to the list if the key actually exists and is not
+          # empty string
+          filter_kw[sla_parameter] = sla_key
 
     partition_parameter_kw = {}
     if 'config' in options:
