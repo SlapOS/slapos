@@ -101,6 +101,8 @@ class Recipe(GenericBaseRecipe):
             middleware=type)))
     os.chmod(config_info_file, 0744)
     path_list.append(config_info)
+    
+  update = install
 
 class Client(GenericBaseRecipe):
 

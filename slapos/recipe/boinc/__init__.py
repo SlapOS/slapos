@@ -101,6 +101,10 @@ class Recipe(GenericBaseRecipe):
     niceprojectname = self.project + "@Home"
     slapuser = self.options['user']
 
+    #Check if given URL is not empty (case of URL request with frontend)
+    if not self.url_base:
+      raise Exception("URL_BASE is still empty. Can not use it")
+
     #Define environment variable here
     python = os.path.join(self.home, 'bin/python')
     python_path = self.boinc_egg
@@ -306,7 +310,7 @@ class App(GenericBaseRecipe):
     wrapperdir = self.options['wrapper-dir'].strip()
     project = self.options['project'].strip()
     lockfile = os.path.join(self.options['home'].strip(), 'app_install.lock')
-    
+
     fd = os.open(lockfile, os.O_RDWR|os.O_CREAT)
     os.close( fd )
 
