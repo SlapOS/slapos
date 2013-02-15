@@ -12,4 +12,3 @@ Ip=${:ip_address}
 c="{'"MHZ"':\"$Mhz\",'"Ram"':\"$Ram\",'"Cpu"':\"$Cpu\",'"HOST"':\"$H\",'"IP"':\"$Ip\"}"
 filename=`hostname`
 echo $c > $filename
-
