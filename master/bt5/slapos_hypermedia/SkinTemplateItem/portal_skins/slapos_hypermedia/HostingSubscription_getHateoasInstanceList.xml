@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<ZopeData>
+  <record id="1" aka="AAAAAAAAAAE=">
+    <pickle>
+      <global name="PythonScript" module="Products.PythonScripts.PythonScript"/>
+    </pickle>
+    <pickle>
+      <dictionary>
+        <item>
+            <key> <string>Script_magic</string> </key>
+            <value> <int>3</int> </value>
+        </item>
+        <item>
+            <key> <string>_bind_names</string> </key>
+            <value>
+              <object>
+                <klass>
+                  <global name="NameAssignments" module="Shared.DC.Scripts.Bindings"/>
+                </klass>
+                <tuple/>
+                <state>
+                  <dictionary>
+                    <item>
+                        <key> <string>_asgns</string> </key>
+                        <value>
+                          <dictionary>
+                            <item>
+                                <key> <string>name_container</string> </key>
+                                <value> <string>container</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_context</string> </key>
+                                <value> <string>context</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_m_self</string> </key>
+                                <value> <string>script</string> </value>
+                            </item>
+                            <item>
+                                <key> <string>name_subpath</string> </key>
+                                <value> <string>traverse_subpath</string> </value>
+                            </item>
+                          </dictionary>
+                        </value>
+                    </item>
+                  </dictionary>
+                </state>
+              </object>
+            </value>
+        </item>
+        <item>
+            <key> <string>_body</string> </key>
+            <value> <string>from zExceptions import Unauthorized\n
+from AccessControl import getSecurityManager\n
+if REQUEST is None:\n
+  raise Unauthorized\n
+\n
+response = REQUEST.RESPONSE\n
+type = \'application/vnd.slapos.org.hal+json; class=slapos.org.collection\'\n
+\n
+if REQUEST.other[\'method\'] != "GET":\n
+  response.setStatus(405)\n
+  return ""\n
+elif type != context.Base_handleAcceptHeader([type]):\n
+  response.setStatus(406)\n
+  return ""\n
+elif context.getPortalType() != "Hosting Subscription":\n
+  response.setStatus(403)\n
+  return ""\n
+else:\n
+  import json\n
+  result_dict = {\n
+      \'_class\': \'slapos.org.collection\',\n
+      \'_links\': {\n
+        "self": { "href": context.Base_getRequestUrl(),\n
+                  "type": type },\n
+        "item": [],\n
+      },\n
+    }\n
+\n
+  for sql_obj in context.getPortalObject().portal_catalog(\n
+                                                 portal_type=[\'Software Instance\', \'Slave Instance\'],\n
+                                                 default_specialise_uid=context.getUid(),\n
+                                                 ):\n
+    obj = sql_obj.getObject()\n
+    result_dict[\'_links\'][\'item\'].append({\n
+      \'href\': \'%s/Instance_getHateoas\' % obj.absolute_url(),\n
+      \'type\': \'application/vnd.slapos.org.hal+json; class=slapos.org.instance\',\n
+    })\n
+\n
+  response.setHeader(\'Content-Type\', type)\n
+  return json.dumps(result_dict)\n
+</string> </value>
+        </item>
+        <item>
+            <key> <string>_params</string> </key>
+            <value> <string>REQUEST=None</string> </value>
+        </item>
+        <item>
+            <key> <string>id</string> </key>
+            <value> <string>HostingSubscription_getHateoasInstanceList</string> </value>
+        </item>
+      </dictionary>
+    </pickle>
+  </record>
+</ZopeData>
