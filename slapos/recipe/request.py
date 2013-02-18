@@ -135,8 +135,9 @@ class Recipe(object):
       self.instance = request(software_url, software_type,
           name, partition_parameter_kw=partition_parameter_kw,
           filter_kw=filter_kw, shared=isSlave)
-      # XXX what is the right way to get a global id?
-      options['instance_guid'] = self.instance.getId()
+      if not isSlave:
+        # XXX: convention: should be instance-guid
+        options['instance_guid'] = self.instance.getInstanceGuid()
     except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
       self._raise_request_exception = exc
       self._raise_request_exception_formatted = traceback.format_exc()
