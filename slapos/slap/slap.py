@@ -248,7 +248,6 @@ def _syncComputerInformation(func):
     if getattr(self, '_synced', 0):
       return func(self, *args, **kw)
     computer = self._connection_helper.getFullComputerInformation(self._computer_id)
-    import pdb; pdb.set_trace()
     for key, value in computer.__dict__.items():
       if isinstance(value, unicode):
         # convert unicode to utf-8
