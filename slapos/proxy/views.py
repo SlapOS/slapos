@@ -76,6 +76,7 @@ def partitiondict2partition(partition):
   slap_partition._software_release_document = None
   slap_partition._requested_state = 'destroyed'
   slap_partition._need_modification = 0
+  slap_partition._instance_guid = partition['reference']
 
   if partition['software_release']:
     slap_partition._need_modification = 1
