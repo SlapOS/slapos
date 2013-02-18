@@ -1,6 +1,20 @@
 Changes
 =======
 
+0.35.1 (2012-02-18)
+-------------------
+
+New features:
+
+ * Add ComputerPartition._instance_guid getter in SLAP library. [Cedric de Saint Martin]
+ * Add ComputerPartition._instance_guid support in slapproxy. [Cedric de Saint Martin]
+
+Fixes:
+
+ * Fix link existence check when deploying instance if SR is not correctly installed. This fixes a misleading error. [Cedric de Saint Martin]
+ * Improve message shown to user when requesting. [Cedric de Saint Martin]
+ * Raise NotReady when _requested_state doesn't exist when trying to fetch it from getter. [Cedric de Saint Martin]
+
 0.35 (2012-02-08)
 -----------------
 
