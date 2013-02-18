@@ -25,7 +25,6 @@ defaults
   option forceclose
 
 listen %(name)s %(ip)s:%(port)s
-  cookie  SERVERID insert
   balance roundrobin
 
 %(server_text)s
