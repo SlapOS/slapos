@@ -248,6 +248,7 @@ def _syncComputerInformation(func):
     if getattr(self, '_synced', 0):
       return func(self, *args, **kw)
     computer = self._connection_helper.getFullComputerInformation(self._computer_id)
+    import pdb; pdb.set_trace()
     for key, value in computer.__dict__.items():
       if isinstance(value, unicode):
         # convert unicode to utf-8
@@ -506,6 +507,13 @@ class ComputerPartition(SlapDocument):
     if not self._partition_id:
       raise ResourceNotReady()
     return self._partition_id
+
+  @_syncComputerPartitionInformation
+  def getInstanceGuid(self):
+    """Sync if not synced, then returns instance_guid"""
+    if not getattr(self, '_instance_guid', None):
+      raise ResourceNotReady()
+    return self._instance_guid
 
   @_syncComputerPartitionInformation
   def getState(self):
