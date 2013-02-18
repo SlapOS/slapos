@@ -1,6 +1,13 @@
 Changes
 =======
 
+0.73.0 (2013-02-18)
+-------------------
+
+ * Add mioga and apacheperl recipes. [Viktor Horvath]
+ * request.py: Properly fetch instance_guid of instance. [Cedric de Saint Martin]
+ * request.py: Only append SLA parameter to the list if the key actually exists and is not empty string. [Cedric de Saint Martin]
+
 0.72.0 (2013-02-11)
 -------------------
 
