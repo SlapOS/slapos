@@ -187,6 +187,12 @@ class IComputerPartition(IBuildoutController, IRequester):
     inside the slapgrid server.
     """
 
+  def getInstanceGuid():
+    """
+    Returns a string representing the unique identifier of the instance
+    inside the slapgrid server.
+    """
+
   def getState():
     """
     Returns a string representing the expected state of the computer partition.
