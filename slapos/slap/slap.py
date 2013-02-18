@@ -517,6 +517,9 @@ class ComputerPartition(SlapDocument):
 
   @_syncComputerPartitionInformation
   def getState(self):
+    """Sync if not synced, then returns _requested_state."""
+    if not getattr(self, '_requested_state', None):
+      raise ResourceNotReady()
     return self._requested_state
 
   @_syncComputerPartitionInformation
