@@ -19,7 +19,7 @@ parts +=
 [request-apache]
 return = url ssh-public-key ssh-url notification-id ip url backend_url
 # XXX: hardcoded values
-config = mariadb1-computer-guid pbs-mariadb1-computer-guid mariadb2-computer-guid pbs-mariadb2-computer-guid mariadb3-computer-guid pbs-mariadb3-computer-guid
+config = number authorized-key notify ip-list namebase mariadb1-computer-guid pbs-mariadb1-computer-guid mariadb2-computer-guid pbs-mariadb2-computer-guid mariadb3-computer-guid pbs-mariadb3-computer-guid
 config-mariadb1-computer-guid = ${slap-parameter:mariadb1-computer-guid}
 config-pbs-mariadb1-computer-guid = ${slap-parameter:pbs-mariadb1-computer-guid}
 config-mariadb2-computer-guid = ${slap-parameter:mariadb2-computer-guid}
