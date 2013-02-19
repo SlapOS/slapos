@@ -1,6 +1,11 @@
 Changes
 =======
 
+0.73.1 (2012-02-19)
+-------------------
+
+ * softwaretype recipe: all falsy parameter values are now ignored. [Cedric de Saint Martin]
+
 0.73.0 (2013-02-18)
 -------------------
 
