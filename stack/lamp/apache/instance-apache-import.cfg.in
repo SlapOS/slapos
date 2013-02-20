@@ -19,8 +19,8 @@ www = $${:srv}/www/
 # Nothing to do for the import. Just dummy part that does nothing.
 # For httpd instance, PBS will directly push data to srv/www.
 # XXX-Cedric: is it safe?
-[exporter]
-wrapper = /usr/bin/true
+[importer]
+wrapper = /bin/true
 
 # XXX-Cedric: resilient uses "urls" part to publish, but apache doesn't.
 [urls]

@@ -20,7 +20,7 @@ parts +=
 # Nothing to do for the exporter. Just dummy part that does nothing.
 # For httpd instance, PBS will directly pull data from srv/www.
 [exporter]
-wrapper = /usr/bin/true
+wrapper = /bin/true
 
 # State that we want to backup srv/www directory, not srv/backup.
 [rdiff-backup-server]
