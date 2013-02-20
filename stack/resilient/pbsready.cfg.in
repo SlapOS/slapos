@@ -1,6 +1,6 @@
 [buildout]
 
-parts +=
+parts =
   resiliency
   urls
   logrotate
