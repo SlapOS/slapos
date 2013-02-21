@@ -61,6 +61,10 @@ class GenericBaseRecipe(object):
 
     self._ws = self.getWorkingSet()
 
+    if not options.get('location'):
+      options['location'] = os.path.join(
+          buildout['buildout']['parts-directory'], self.name)
+
   def update(self):
     """By default update method does the same thing than install"""
     return self.install()
@@ -226,3 +230,8 @@ class GenericBaseRecipe(object):
     url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
 
     return url
+
+  def setLocationOption(self):
+    if not self.options.get('location'):
+      self.options['location'] = os.path.join(
+          self.buildout['buildout']['parts-directory'], self.name)
