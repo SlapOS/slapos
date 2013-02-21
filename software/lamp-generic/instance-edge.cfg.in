@@ -1,0 +1,23 @@
+# This instance will request other instances of lamp-generic depending on a
+# list of countries.
+
+[buildout]
+
+parts =
+  directory
+
+eggs-directory = ${buildout:eggs-directory}
+develop-eggs-directory = ${buildout:develop-eggs-directory}
+offline = true
+
+#----------------
+#--
+#-- Creation of all needed directories.
+
+[directory]
+recipe = slapos.cookbook:mkdirectory
+etc = $${buildout:directory}/etc
+var = $${buildout:directory}/var
+srv = $${buildout:directory}/srv
+bin = $${buildout:directory}/bin
+tmp = $${buildout:directory}/tmp
