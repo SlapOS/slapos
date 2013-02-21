@@ -52,6 +52,7 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       install_requires=[
+        'hexagonit.recipe.download',
         'lxml', # for full blown python interpreter
         'netaddr', # to manipulate on IP addresses
         'setuptools', # namespaces
@@ -122,6 +123,7 @@ setup(name=name,
           'kvm = slapos.recipe.kvm:Recipe',
           'kvm.frontend = slapos.recipe.kvm_frontend:Recipe',
           'lamp = slapos.recipe.lamp:Request',
+          'lamp.generic = slapos.recipe.lampgeneric:Recipe',
           'lamp.request = slapos.recipe.lamp:Request',
           'lamp.simple = slapos.recipe.lamp:Simple',
           'lamp.static = slapos.recipe.lamp:Static',
