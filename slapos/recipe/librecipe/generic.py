@@ -32,6 +32,7 @@ import os
 import sys
 import inspect
 import re
+import shutil
 import urllib
 import urlparse
 
@@ -55,15 +56,15 @@ class GenericBaseRecipe(object):
     self.buildout = buildout
     self.logger = logging.getLogger(name)
 
+    if not options.get('location'):
+      options['location'] = os.path.join(
+          buildout['buildout']['parts-directory'], self.name)
+
     self.options = options.copy() # If _options use self.optionIsTrue
     self._options(options) # Options Hook
     self.options = options.copy() # Updated options dict
 
     self._ws = self.getWorkingSet()
-
-    if not options.get('location'):
-      options['location'] = os.path.join(
-          buildout['buildout']['parts-directory'], self.name)
 
   def update(self):
     """By default update method does the same thing than install"""
@@ -230,3 +231,32 @@ class GenericBaseRecipe(object):
     url = urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
 
     return url
+
+  def download(self, destination=None):
+    """ A simple wrapper around h.r.download, downloading to self.location"""
+    # F.ck that buildout1 dependency system.
+    # XXX-Cedric: FIX THAT UGLY THING.
+    import sys
+    sys.path[0:0] = [os.path.join(self.buildout['buildout']['eggs-directory'], 'hexagonit.recipe.download-1.6-py2.7.egg')]
+
+    import hexagonit.recipe.download
+    if not destination:
+      destination = self.location
+    try:
+      os.mkdir(destination)
+    except OSError, e:
+      # XXX-Cedric: improve error handling
+      # leftovers from a previous failed attempt,
+      # download recipe will raise a clean error message
+      if e.errno != errno.EEXIST:
+        raise
+
+    try:
+      options = self.options.copy()
+      options['destination'] = destination
+      hexagonit.recipe.download.Recipe(
+          self.buildout, self.name, options).install()
+    except:
+      shutil.rmtree(destination)
+      raise
+  
