@@ -32,6 +32,7 @@ import os
 import sys
 import inspect
 import re
+import shutil
 import urllib
 import urlparse
 
@@ -55,15 +56,15 @@ class GenericBaseRecipe(object):
     self.buildout = buildout
     self.logger = logging.getLogger(name)
 
+    if not options.get('location'):
+      options['location'] = os.path.join(
+          buildout['buildout']['parts-directory'], self.name)
+
     self.options = options.copy() # If _options use self.optionIsTrue
     self._options(options) # Options Hook
     self.options = options.copy() # Updated options dict
 
     self._ws = self.getWorkingSet()
-
-    if not options.get('location'):
-      options['location'] = os.path.join(
-          buildout['buildout']['parts-directory'], self.name)
 
   def update(self):
     """By default update method does the same thing than install"""
@@ -235,3 +236,25 @@ class GenericBaseRecipe(object):
     if not self.options.get('location'):
       self.options['location'] = os.path.join(
           self.buildout['buildout']['parts-directory'], self.name)
+
+  def download(self, destination=None):
+    """ A simple wrapper around h.r.download, downloading to self.location"""
+    self.setLocationOption()
+
+    import hexagonit.recipe.download
+    if not destination:
+      destination = self.location
+    if os.path.exists(destination):
+        # leftovers from a previous failed attempt, removing it.
+        log.warning('Removing already existing directory %s' % destination)
+        shutil.rmtree(destination)
+    os.mkdir(destination)
+
+    try:
+      options = self.options.copy()
+      options['destination'] = destination
+      hexagonit.recipe.download.Recipe(
+          self.buildout, self.name, options).install()
+    except:
+      shutil.rmtree(destination)
+      raise
