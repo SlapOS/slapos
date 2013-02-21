@@ -12,8 +12,23 @@ extends = {{templateapache}}
 
 parts +=
     {{ parts.replicate("mariadb", "3") }}
-# have to repeat the next one, as it's not inherited from pbsready-export
-    cron-entry-backup
+
+# Repeating parts from instance-apache-php.
+# XXX-Cedric: how to simplify this?
+    certificate-authority
+    ca-stunnel
+    logrotate
+    logrotate-entry-apache
+    logrotate-entry-stunnel
+    cron
+    cron-entry-logrotate
+    promise
+    slapmonitor
+    slapmonitor-xml
+    
+    frontend-promise
+    content-promise
+    publish-connection-informations
 
 {{ replicated.replicate("mariadb", "3", "mariadb-export", "mariadb-import") }}
 
