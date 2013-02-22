@@ -4,20 +4,26 @@
 [buildout]
 
 parts =
-  directory
+  request-edge
+  publish-connection-parameter
 
 eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-#----------------
-#--
-#-- Creation of all needed directories.
+[request-edge]
+<= slap-connection
+recipe = slapos.cookbook:request.edge
+# This magic parameter triggers several requests, one request per country.
+name = lamp
+return = url backend-url
+country-list = $${slap-parameter:country-list}
+software-url = $${slap-connection:software-release-url}
+software-type = default
+config = application-location
+config-application-location = $${slap-parameter:application-location}
+return = url backend-url
 
-[directory]
-recipe = slapos.cookbook:mkdirectory
-etc = $${buildout:directory}/etc
-var = $${buildout:directory}/var
-srv = $${buildout:directory}/srv
-bin = $${buildout:directory}/bin
-tmp = $${buildout:directory}/tmp
+[publish-connection-parameter]
+recipe = slapos.cookbook:publishsection
+section-list = request-edge
