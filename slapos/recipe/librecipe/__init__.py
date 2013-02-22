@@ -35,11 +35,27 @@ import netaddr
 import time
 import re
 import urlparse
+import json
 
 # Use to do from slapos.recipe.librecipe import GenericBaseRecipe
 from generic import GenericBaseRecipe
 from genericslap import GenericSlapRecipe
 from filehash import filehash
+
+# Utility functions to (de)serialise live python objects in order to send them
+# to master.
+JSON_SERIALISED_MAGIC_KEY = '_'
+def wrap(value):
+  return {JSON_SERIALISED_MAGIC_KEY: json.dumps(value)}
+
+def unwrap(value):
+  try:
+    value = value[JSON_SERIALISED_MAGIC_KEY]
+  except (KeyError, TypeError):
+    pass
+  else:
+    value = json.loads(value)
+  return value
 
 class BaseSlapRecipe:
   """Base class for all slap.recipe.*"""

@@ -43,6 +43,7 @@ class Recipe:
     """
     path_list = []
     target_directory = self.options['target-directory']
+    # XXX: breaks if any path contains spaces.
     for linkline in self.options['link-binary'].split():
       path, linkname = os.path.split(linkline)
 

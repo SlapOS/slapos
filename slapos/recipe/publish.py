@@ -25,7 +25,7 @@
 #
 ##############################################################################
 import zc.buildout
-
+from slapos.recipe.librecipe import wrap
 from slapos.recipe.librecipe import GenericSlapRecipe
 
 class Recipe(GenericSlapRecipe):
@@ -36,5 +36,14 @@ class Recipe(GenericSlapRecipe):
 
     for k, v in options.iteritems():
       publish_dict[k] = v
-    self.setConnectionDict(publish_dict)
+    self._setConnectionDict(publish_dict)
     return []
+
+  def _setConnectionDict(self, publish_dict):
+    return self.setConnectionDict(publish_dict)
+
+SERIALISED_MAGIC_KEY = '_'
+
+class Serialised(Recipe):
+  def _setConnectionDict(self, publish_dict):
+    return super(Serialised, self)._setConnectionDict(wrap(publish_dict))

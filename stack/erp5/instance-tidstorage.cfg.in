@@ -138,6 +138,7 @@ link-binary =
   {{ parameter_dict['sed'] }}/bin/sed
   {{ parameter_dict['tesseract'] }}/bin/tesseract
   {{ parameter_dict['w3m'] }}/bin/w3m
+  {{ parameter_dict['openssl'] }}/bin/openssl
   {{ parameter_dict['poppler'] }}/bin/pdfinfo
   {{ parameter_dict['poppler'] }}/bin/pdfseparate
   {{ parameter_dict['poppler'] }}/bin/pdftotext

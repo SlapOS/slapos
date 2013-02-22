@@ -22,7 +22,6 @@ LoadModule headers_module modules/mod_headers.so
 
 # Basic server configuration
 PidFile "%(pid_file)s"
-Listen %(ip)s:%(port)s
 ServerAdmin %(server_admin)s
 TypesConfig conf/mime.types
 AddType application/x-compress .Z
@@ -63,4 +62,4 @@ CustomLog "%(access_log)s" combined
 
 # Magic of Zope related rewrite
 RewriteEngine On
-%(rewrite_rule)s
+%(vhosts)s
