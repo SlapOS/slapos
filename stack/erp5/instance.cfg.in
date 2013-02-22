@@ -39,7 +39,6 @@ grep = {{ grep_location }}
 imagemagick = {{ imagemagick_location }}
 librsvg = {{ librsvg_location }}
 mariadb = {{ mariadb_location }}
-pdftk = {{ pdftk_location }}
 sed = {{ sed_location }}
 tesseract = {{ tesseract_location }}
 w3m = {{ w3m_location }}
