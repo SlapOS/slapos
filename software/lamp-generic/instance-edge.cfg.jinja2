@@ -1,0 +1,33 @@
+# This instance will request other instances of lamp-generic depending on a
+# list of countries.
+[buildout]
+
+parts =
+  request-edge
+  publish-connection-information
+
+eggs-directory = {{ eggs_directory }}
+develop-eggs-directory = {{ develop_eggs_directory }}
+offline = true
+
+
+{% for country in country_list %}
+
+[request-{{country}}]
+recipe = request
+software-url = ${slap-connection:software-release-url}
+software-type = default
+name = {{country}}
+config = application-location
+config-application-location = ${slap-parameter:application-location}
+return = url backend-url
+
+{% endfor %}
+
+# XXX-Cedric: aggregate and send parameters
+[publish-connection-information]
+recipe = slapos.cookbook:publish
+{% for country in country_list %}
+{{ country }}-url = ${request-{{ country }}:connection_url}
+{{ country }}-backend-url = ${request-{{ country }}:connection-backend_url}
+{% endfor %}

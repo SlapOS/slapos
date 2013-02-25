@@ -7,6 +7,35 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
+[slap-configuration]
+recipe = slapos.cookbook:slapconfiguration.serialised
+computer = $${slap-connection:computer-id}
+partition = $${slap-connection:partition-id}
+url = $${slap-connection:server-url}
+key = $${slap-connection:key-file}
+cert = $${slap-connection:cert-file}
+
+[dynamic-template-cloudooo]
+template = ${template-edge:target}
+filename = instance-edge.cfg
+extra-context =
+    key country_list slap-configuration:country-list
+#    section parameter_dict dynamic-template-cloudooo-parameters
+#    import json_module json
+# Must match the key id in [switch-softwaretype] which uses this section.
+#    raw software_type edge
+
+context =
+    key ipv4_set slap-configuration:ipv4
+    key ipv6_set slap-configuration:ipv6
+    key eggs_directory buildout:eggs-directory
+    key develop_eggs_directory buildout:develop-eggs-directory
+    key slap_software_type slap-configuration:slap-software-type
+    key slapparameter_dict slap-configuration:configuration
+    key computer_id slap-configuration:computer
+    ${:extra-context}
+
+
 [switch_softwaretype]
 recipe = slapos.cookbook:softwaretype
 default = ${instance-apache-php:output}
