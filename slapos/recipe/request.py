@@ -215,7 +215,6 @@ class RequestOptional(Recipe):
 
   update = install
 
-
 class Serialised(Recipe):
   def _filterForStorage(self, partition_parameter_kw):
     return wrap(partition_parameter_kw)
@@ -225,3 +224,36 @@ class Serialised(Recipe):
       return json.loads(instance.getConnectionParameter(JSON_SERIALISED_MAGIC_KEY))
     except slapmodule.NotFoundError:
       return {}
+
+
+
+
+CONNECTION_PARAMETER_STRING = 'connection-'
+
+class RequestEdge(Recipe):
+  """
+  For each country in country-list, do a request.
+  """
+  def __init__(self, buildout, name, options):
+    self.logger = logging.getLogger(name)
+    self.options = options
+    self.request_dict = {}
+    # Keep a copy of original options dict
+    original_options = options.copy()
+    for country in options['country-list'].split(','):
+      # Request will have its own copy of options dict
+      local_options = original_options.copy()
+      local_options['name'] = '%s-%s' % (country, name)
+      self.request_dict[country] = Recipe(buildout, name, local_options)
+      # "Bubble" all connection parameters
+      for option, value in local_options.iteritems():
+        if option.startswith(CONNECTION_PARAMETER_STRING):
+          self.options['%s-%s' % (option, country)] = value
+
+  def install(self):
+    for country, request in self.request_dict.iteritems():
+      request.install()
+    return []
+
+  update = install
+
