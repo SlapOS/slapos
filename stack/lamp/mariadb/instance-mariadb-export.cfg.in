@@ -18,6 +18,7 @@ parts +=
   slapmonitor
   slapmonitor-xml
 
+# Define exporter strategy
 [exporter]
 recipe = slapos.cookbook:mydumper
 wrapper = $${rootdirectory:bin}/$${slap-parameter:namebase}-exporter
@@ -27,3 +28,7 @@ user = root
 mydumper-binary = ${mydumper:location}/bin/mydumper
 database = $${mariadb:database}
 import = false
+
+# Extends publish section with resilient parameters
+[urls]
+<= resilient-publish-connection-parameter

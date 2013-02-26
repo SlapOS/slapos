@@ -3,14 +3,7 @@ eggs-directory = ${buildout:eggs-directory}
 develop-eggs-directory = ${buildout:develop-eggs-directory}
 offline = true
 
-# XXX-Cedric: is instance-apache-php needed?
-#extends = ${instance-apache-php:output}
-#          ${pbsready-import:output}
 extends = ${pbsready-import:output}
-
-parts +=
-# have to repeat the next one, as it's not inherited from pbsready-import
-    import-on-notification
 
 [directory]
 srv = $${buildout:directory}/srv
@@ -18,14 +11,9 @@ www = $${:srv}/www/
 
 # Nothing to do for the import. Just dummy part that does nothing.
 # For httpd instance, PBS will directly push data to srv/www.
-# XXX-Cedric: is it safe?
+# XXX-Cedric: write a real backup system.
 [importer]
 wrapper = /bin/true
-
-# XXX-Cedric: resilient uses "urls" part to publish, but apache doesn't.
-[urls]
-recipe = slapos.cookbook:publish
-
 
 # State that we want to push to srv/www directory, not srv/backup.
 [rdiff-backup-server]
