@@ -2,7 +2,6 @@
 
 parts =
   resiliency
-  urls
   logrotate
   logrotate-entry-cron
   logrotate-entry-equeue
@@ -145,11 +144,6 @@ etc = $${rootdirectory:etc}
 #--
 #-- Sets up an rdiff-backup server (with a dropbear server for ssh)
 
-[urls]
-ssh-public-key = $${sshkeys-dropbear:public-key-value}
-ssh-url = ssh://nobody@[$${dropbear-server:host}]:$${dropbear-server:port}/$${rdiff-backup-server:path}
-ip = $${slap-network-information:global-ipv6}
-
 [rdiff-backup-server]
 recipe = slapos.cookbook:pbs
 client = false
@@ -232,4 +226,12 @@ recipe = slapos.cookbook:dropbear.add_authorized_key
 key = $${slap-parameter:authorized-key}
 
 
-
+#----------------
+#--
+#-- Conncetion informations to re-use.
+# XXX-Cedric: when "aggregation" system is done in libslap, directly publish.
+[resilient-publish-connection-parameter]
+recipe = slapos.cookbook:publish
+ssh-public-key = $${sshkeys-dropbear:public-key-value}
+ssh-url = ssh://nobody@[$${dropbear-server:host}]:$${dropbear-server:port}/$${rdiff-backup-server:path}
+ip = $${slap-network-information:global-ipv6}
