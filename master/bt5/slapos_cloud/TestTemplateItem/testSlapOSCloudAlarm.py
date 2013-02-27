@@ -1528,3 +1528,146 @@ portal_workflow.doActionFor(context, action='edit_action', comment='Visited by I
     self.assertNotEqual(
         'Visited by Instance_tryToGarbageCollectNonAllocatedRootTree',
         instance.workflow_history['edit_workflow'][-1]['comment'])
+
+class TestSlapOSInvalidateDestroyedInstance(testSlapOSMixin):
+
+  def createSoftwareInstance(self):
+    new_id = self.generateNewId()
+    return self.portal.software_instance_module.newContent(
+      portal_type='Software Instance',
+      title="Test instance %s" % new_id,
+      reference="TESTINST-%s" % new_id,
+      )
+
+  def createComputerPartition(self):
+    new_id = self.generateNewId()
+    computer = self.portal.computer_module.newContent(
+      portal_type='Computer',
+      title="Test computer %s" % new_id,
+      reference="TESTCOMP-%s" % new_id,
+      )
+    computer_partition = computer.newContent(
+      portal_type='Computer Partition',
+      )
+    return computer_partition
+
+  def test_tryToInvalidateIfDestroyed_REQUEST_disallowed(self):
+    instance = self.createSoftwareInstance()
+    self.assertRaises(
+      Unauthorized,
+      instance.SoftwareInstance_tryToInvalidateIfDestroyed,
+      REQUEST={})
+
+  def test_tryToInvalidateIfDestroyed_unexpected_context(self):
+    self.assertRaises(
+      TypeError,
+      self.portal.SoftwareInstance_tryToInvalidateIfDestroyed,
+      )
+
+  def test_tryToInvalidateIfDestroyed_expected_instance(self):
+    instance = self.createSoftwareInstance()
+    self.portal.portal_workflow._jumpToStateFor(instance, 'validated')
+    self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
+    instance.SoftwareInstance_tryToInvalidateIfDestroyed()
+    self.assertEqual(instance.getValidationState(), "invalidated")
+    self.assertEqual(instance.getSlapState(), "destroy_requested")
+
+  def test_tryToInvalidateIfDestroyed_invalidated_instance(self):
+    instance = self.createSoftwareInstance()
+    self.portal.portal_workflow._jumpToStateFor(instance, 'invalidated')
+    self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
+    instance.SoftwareInstance_tryToInvalidateIfDestroyed()
+    self.assertEqual(instance.getValidationState(), "invalidated")
+    self.assertEqual(instance.getSlapState(), "destroy_requested")
+
+  def test_tryToInvalidateIfDestroyed_not_destroyed_instance(self):
+    instance = self.createSoftwareInstance()
+    self.portal.portal_workflow._jumpToStateFor(instance, 'validated')
+    self.portal.portal_workflow._jumpToStateFor(instance, 'stop_requested')
+    instance.SoftwareInstance_tryToInvalidateIfDestroyed()
+    self.assertEqual(instance.getValidationState(), "validated")
+    self.assertEqual(instance.getSlapState(), "stop_requested")
+
+  def test_tryToInvalidateIfDestroyed_allocated_instance(self):
+    instance = self.createSoftwareInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.portal.portal_workflow._jumpToStateFor(instance, 'validated')
+    self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
+    instance.SoftwareInstance_tryToInvalidateIfDestroyed()
+    self.assertEqual(instance.getValidationState(), "validated")
+    self.assertEqual(instance.getSlapState(), "destroy_requested")
+
+  def _simulateSoftwareInstance_tryToInvalidateIfDestroyed(self):
+    script_name = 'SoftwareInstance_tryToInvalidateIfDestroyed'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      raise ValueError('Precondition failed: %s exists in custom' % script_name)
+    createZODBPythonScript(self.portal.portal_skins.custom,
+                        script_name,
+                        '*args, **kwargs',
+                        '# Script body\n'
+"""portal_workflow = context.portal_workflow
+portal_workflow.doActionFor(context, action='edit_action', comment='Visited by SoftwareInstance_tryToInvalidateIfDestroyed') """ )
+    transaction.commit()
+
+  def _dropSoftwareInstance_tryToInvalidateIfDestroyed(self):
+    script_name = 'SoftwareInstance_tryToInvalidateIfDestroyed'
+    if script_name in self.portal.portal_skins.custom.objectIds():
+      self.portal.portal_skins.custom.manage_delObjects(script_name)
+    transaction.commit()
+
+  def test_alarm_software_instance_allocated(self):
+    instance = self.createSoftwareInstance()
+    partition = self.createComputerPartition()
+    instance.edit(aggregate_value=partition)
+    self.portal.portal_workflow._jumpToStateFor(instance, 'validated')
+    self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
+    self.tic()
+
+    self._simulateSoftwareInstance_tryToInvalidateIfDestroyed()
+    try:
+      self.portal.portal_alarms.slapos_cloud_invalidate_destroyed_instance.\
+          activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToInvalidateIfDestroyed()
+    self.assertNotEqual(
+        'Visited by SoftwareInstance_tryToInvalidateIfDestroyed',
+        instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_software_instance_invalidated(self):
+    instance = self.createSoftwareInstance()
+    partition = self.createComputerPartition()
+    self.portal.portal_workflow._jumpToStateFor(instance, 'invalidated')
+    self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
+    self.tic()
+
+    self._simulateSoftwareInstance_tryToInvalidateIfDestroyed()
+    try:
+      self.portal.portal_alarms.slapos_cloud_invalidate_destroyed_instance.\
+          activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToInvalidateIfDestroyed()
+    self.assertNotEqual(
+        'Visited by SoftwareInstance_tryToInvalidateIfDestroyed',
+        instance.workflow_history['edit_workflow'][-1]['comment'])
+
+  def test_alarm_software_instance_matching(self):
+    instance = self.createSoftwareInstance()
+    partition = self.createComputerPartition()
+    self.portal.portal_workflow._jumpToStateFor(instance, 'validated')
+    self.portal.portal_workflow._jumpToStateFor(instance, 'destroy_requested')
+    self.tic()
+
+    self._simulateSoftwareInstance_tryToInvalidateIfDestroyed()
+    try:
+      self.portal.portal_alarms.slapos_cloud_invalidate_destroyed_instance.\
+          activeSense()
+      self.tic()
+    finally:
+      self._dropSoftwareInstance_tryToInvalidateIfDestroyed()
+    self.assertEqual(
+        'Visited by SoftwareInstance_tryToInvalidateIfDestroyed',
+        instance.workflow_history['edit_workflow'][-1]['comment'])
+
