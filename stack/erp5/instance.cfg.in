@@ -39,7 +39,6 @@ grep = {{ grep_location }}
 imagemagick = {{ imagemagick_location }}
 librsvg = {{ librsvg_location }}
 mariadb = {{ mariadb_location }}
-pdftk = {{ pdftk_location }}
 sed = {{ sed_location }}
 tesseract = {{ tesseract_location }}
 w3m = {{ w3m_location }}
@@ -129,7 +128,6 @@ librsvg = {{ librsvg_location }}
 logrotate = {{ logrotate_location }}
 mariadb = {{ mariadb_location }}
 openssl = {{ openssl_location }}
-pdftk = {{ pdftk_location }}
 poppler = {{ poppler_location }}
 sed = {{ sed_location }}
 tesseract = {{ tesseract_location }}
@@ -159,7 +157,6 @@ extra-context =
     key logrotate_location dynamic-template-zope-parameters:logrotate
     key mariadb_location dynamic-template-zope-parameters:mariadb
     key openssl_location dynamic-template-zope-parameters:openssl
-    key pdftk_location dynamic-template-zope-parameters:pdftk
     key poppler_location dynamic-template-zope-parameters:poppler
     key sed_location dynamic-template-zope-parameters:sed
     key tesseract_location dynamic-template-zope-parameters:tesseract
