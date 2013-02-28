@@ -1265,6 +1265,7 @@ echo %s; echo %s; exit 42""" % (line1, line2))
     self.assertTrue(line2 in instance.error_log)
     self.assertTrue("Failed to run buildout" in instance.error_log)
 
+
 class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
   """
   Test suite about slapgrid-ur
@@ -1327,15 +1328,18 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                       'destroyedComputerPartition'])
     self.assertEqual(instance.state,'destroyed')
 
-  def test_slapgrid_destroys_instance_to_be_destroyed_without_sr_uri(self):
-    """
-    Test than an instance in "destroyed" state but without SR informations
-    is correctly destroyed
-    """
-    computer = ComputerForTest(self.software_root,self.instance_root)
-    instance = computer.instance_list[0]
 
-    instance.software.name = None
+  def test_partition_list_is_complete_if_empty_destroyed_partition(self):
+    """
+    Test that an empty partition with destroyed state but with SR informations
+    Is correctly destroyed
+    Axiom: each valid partition has a state and a software_release.
+    Scenario:
+    1. Simulate computer containing one "destroyed" partition but with valid SR
+    2. See if it destroyed
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    instance = computer.instance_list[0]
 
     computer.sequence = []
     instance.requested_state = 'destroyed'
@@ -1358,40 +1362,9 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
       time.sleep(0.1)
     self.assertFalse(exists)
 
-    self.assertEqual(computer.sequence,
-                     ['getFullComputerInformation'])
-
-  def test_slapgrid_ignore_destroyed_instance_without_sr(self):
-    """
-    Test than an instance in "destroyed" state but without SR at all
-    is correctly ignored
-    """
-    computer = ComputerForTest(self.software_root,self.instance_root)
-    instance = computer.instance_list[0]
-
-    instance.software = None
-
-    computer.sequence = []
-    instance.requested_state = 'destroyed'
-    self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
-    # Assert partition directory is empty
-    self.assertSortedListEqual(os.listdir(self.instance_root),
-                               ['0', 'etc', 'var'])
-    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
-    # Assert supervisor stopped process
-    tries = 50
-    wrapper_log = os.path.join(instance.partition_path, '.0_wrapper.log')
-    exists = False
-    while tries > 0:
-      tries -= 1
-      if os.path.exists(wrapper_log):
-        exists = True
-        break
-      time.sleep(0.1)
-    self.assertFalse(exists)
-
-    self.assertEqual(computer.sequence,
-                     ['getFullComputerInformation'])
+    self.assertEqual(
+        computer.sequence,
+        ['getFullComputerInformation', 'stoppedComputerPartition', 'destroyedComputerPartition'])
 
   def test_slapgrid_not_destroy_bad_instance(self):
     """
@@ -1452,12 +1425,15 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                      ['getFullComputerInformation'])
     self.assertEqual('started',instance.state)
 
-  def test_slapgrid_ignore_free_instance(self):
+
+  def test_slapgrid_instance_ignore_free_instance(self):
     """
-    Test than a free instance (so in "destroyed" state, but empty) is ignored.
+    Test than a free instance (so in "destroyed" state, but empty, without
+    software_release URI) is ignored by slapgrid-cp.
     """
     computer = ComputerForTest(self.software_root, self.instance_root)
     instance = computer.instance_list[0]
+    instance.software.name = None
 
     computer.sequence = []
     instance.requested_state = 'destroyed'
@@ -1470,6 +1446,25 @@ class TestSlapgridUsageReport(MasterMixin, unittest.TestCase):
                                [instance.software.software_hash])
     self.assertEqual(computer.sequence, ['getFullComputerInformation'])
 
+  def test_slapgrid_report_ignore_free_instance(self):
+    """
+    Test than a free instance (so in "destroyed" state, but empty, without
+    software_release URI) is ignored by slapgrid-ur.
+    """
+    computer = ComputerForTest(self.software_root, self.instance_root)
+    instance = computer.instance_list[0]
+    instance.software.name = None
+
+    computer.sequence = []
+    instance.requested_state = 'destroyed'
+    self.assertEqual(self.grid.agregateAndSendUsage(), slapgrid.SLAPGRID_SUCCESS)
+    # Assert partition directory is empty
+    self.assertSortedListEqual(os.listdir(self.instance_root),
+                               ['0', 'etc', 'var'])
+    self.assertSortedListEqual(os.listdir(instance.partition_path), [])
+    self.assertSortedListEqual(os.listdir(self.software_root),
+                               [instance.software.software_hash])
+    self.assertEqual(computer.sequence, ['getFullComputerInformation'])
 
 
 

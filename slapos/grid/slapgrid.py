@@ -849,22 +849,18 @@ class Slapgrid(object):
               computer_partition_path)
         # Check state of partition. If it is in "destroyed" state, check if it
         # partition is actually installed in the Computer or if it is "free"
-        # partition
+        # partition, and check if it has some Software information.
         # XXX-Cedric: Temporary AND ugly solution to check if an instance
         # is in the partition. Dangerous because not 100% sure it is empty
         computer_partition_state = computer_partition.getState()
-        if computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE and \
-           os.listdir(computer_partition_path) == []:
-          continue
-
-        # If partition has no SR: skip it.
         try:
-          os.path.join(self.software_root, getSoftwareUrlHash(
-              computer_partition.getSoftwareRelease().getURI()))
-        except (NotFoundError, TypeError):
-          # This is surely free partition. Check it...
-          if os.listdir(computer_partition_path) == []:
-            continue
+          software_url = computer_partition.getSoftwareRelease().getURI()
+        except (NotFoundError, TypeError, NameError):
+          software_url = None
+        if computer_partition_state == COMPUTER_PARTITION_DESTROYED_STATE and \
+           os.listdir(computer_partition_path) == [] and \
+           not software_url:
+          continue
 
         # Everything seems fine
         filtered_computer_partition_list.append(computer_partition)
