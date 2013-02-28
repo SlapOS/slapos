@@ -768,14 +768,18 @@ class Slapgrid(object):
       if timestamp:
         try:
           if int(timestamp) <= int(old_timestamp):
+            if computer_partition.getState() != COMPUTER_PARTITION_STARTED_STATE:
+              return
             # Check periodicity, i.e if periodicity is one day, partition
             # should be processed at least every day.
             # Only do it for "started" instances
-            if computer_partition.getState() != COMPUTER_PARTITION_STARTED_STATE:
-              return
             if int(time.time()) <= (last_runtime + periodicity):
               self.logger.info('Partition already up-to-date, skipping.')
               return
+            else:
+              # Periodicity forced processing this partition. Removing
+              # the timestamp file in case it fails.
+              os.remove(timestamp_path)
         except ValueError:
           os.remove(timestamp_path)
           exception = traceback.format_exc()

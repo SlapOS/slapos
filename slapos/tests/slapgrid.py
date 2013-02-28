@@ -1022,6 +1022,37 @@ class TestSlapgridCPPartitionProcessing (MasterMixin, unittest.TestCase):
                       'availableComputerPartition','stoppedComputerPartition',])
 
 
+  def test_partition_periodicity_remove_timestamp(self):
+    """
+    Check that if periodicity forces run of buildout for a partition, it
+    removes the .timestamp file.
+    """
+    computer = ComputerForTest(self.software_root,self.instance_root)
+    instance = computer.instance_list[0]
+    timestamp = str(int(time.time()))
+
+    instance.timestamp = timestamp
+    instance.requested_state = 'started'
+    instance.software.setPeriodicity(1)
+    self.grid.force_periodicity = True
+
+    self.launchSlapgrid()
+    partition = os.path.join(self.instance_root, '0')
+    self.assertSortedListEqual(
+        os.listdir(partition),
+        ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+
+    time.sleep(2)
+    # dummify install() so that it doesn't actually do anything so that it
+    # doesn't recreate .timestamp.
+    instance.install = lambda: None
+
+    self.launchSlapgrid()
+    self.assertSortedListEqual(
+        os.listdir(partition),
+        ['.timestamp', 'buildout.cfg', 'software_release', 'worked'])
+
+
   def test_partition_periodicity_is_not_overloaded_if_forced(self):
     """
     If periodicity file in software directory but periodicity is forced
