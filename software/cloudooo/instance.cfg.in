@@ -34,7 +34,6 @@ fonts = {{ fonts_location }}
 coreutils = {{ coreutils_location }}
 imagemagick = {{ imagemagick_location }}
 poppler = {{ poppler_location }}
-pdftk = {{ pdftk_location }}
 buildout-bin-directory = {{ buildout_bin_directory }}
 
 [dynamic-template-cloudooo]
