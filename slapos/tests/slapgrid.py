@@ -780,6 +780,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       if os.path.getsize(daemon_log) > 0:
         break
       time.sleep(0.1)
+    time.sleep(0.1)
     self.assertTrue('Failing' in open(daemon_log, 'r').read())
     tries = 200
     while tries > 0:
@@ -831,7 +832,7 @@ class TestSlapgridCPWithMasterWatchdog(MasterMixin, unittest.TestCase):
       if os.path.getsize(daemon_log) > 0:
         break
       time.sleep(0.1)
-    time.sleep(1)
+    time.sleep(0.1)
     self.assertTrue('Failing' in open(daemon_log, 'r').read())
     tries = 200
     while tries > 0:
