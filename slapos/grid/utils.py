@@ -146,8 +146,8 @@ def setRunning(pid_file):
     # XXX This could use psutil library.
     if pid is not None and os.path.exists("/proc/%s" % pid):
       # In case process is present, ignore.
-      logger.warning('New slapos process started, but another slapos '
-                     'process is aleady running with pid %s, exiting.' % pid)
+      logger.info('New slapos process started, but another slapos '
+                  'process is aleady running with pid %s, exiting.' % pid)
       sys.exit(10)
     logger.info('Existing pid file %r was stale one, overwritten' % pid_file)
   # Start new process
