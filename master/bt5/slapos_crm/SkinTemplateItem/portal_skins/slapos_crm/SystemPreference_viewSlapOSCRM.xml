@@ -95,6 +95,7 @@
                       <list>
                         <string>my_preferred_support_request_template</string>
                         <string>my_preferred_web_message_template</string>
+                        <string>my_preferred_slapos_web_site_url_property</string>
                       </list>
                     </value>
                 </item>
