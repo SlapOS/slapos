@@ -5,6 +5,7 @@ from Products.SlapOS.tests.testSlapOSMixin import \
 from DateTime import DateTime
 from zExceptions import Unauthorized
 from Products.ERP5Type.tests.utils import createZODBPythonScript
+import difflib
 
 class TestSlapOSPaymentTransaction_sendManualPayzenPaymentUrl(testSlapOSMixin):
 
@@ -25,6 +26,11 @@ class TestSlapOSPaymentTransaction_sendManualPayzenPaymentUrl(testSlapOSMixin):
                       None)
 
   def test_sendManualPayzenPaymentUrl_payzen_payment(self):
+    for preference in \
+      self.portal.portal_catalog(portal_type="System Preference"):
+      preference = preference.getObject()
+      if preference.getPreferenceState() == 'global':
+        preference.setPreferredSlaposWebSiteUrl('http://foobar.org/')
     person1 = self.portal.person_module.newContent(portal_type="Person")
     person2 = self.portal.person_module.newContent(portal_type="Person")
     transaction = self.createPaymentTransaction()
@@ -36,18 +42,30 @@ class TestSlapOSPaymentTransaction_sendManualPayzenPaymentUrl(testSlapOSMixin):
     event = transaction.PaymentTransaction_sendManualPayzenPaymentUrl()
     after_date = DateTime()
     ticket = transaction.PaymentTransaction_addPayzenTicket()
-    self.assertEquals(event.getPortalType(), 'Site Message')
+    self.assertEquals(event.getPortalType(), 'Mail Message')
     self.assertTrue(event.getStartDate() >= before_date)
     self.assertTrue(event.getStopDate() <= after_date)
+    self.assertEquals(event.getTitle(), "Invoice payment requested")
     self.assertEquals(event.getDestination(),
                       transaction.getDestinationSection())
     self.assertEquals(event.getSourceSection(),
                       transaction.getSource())
-    self.assertEquals(event.getTextContent(),
-      'Please pay your payment by clicking <a href="' + \
-        transaction.getRelativeUrl() + \
-      '/PaymentTransaction_redirectToManualPayzenPayment">here</a>.')
-    self.assertEquals(event.getSimulationState(), 'started')
+    expected_text_content = """
+Dear user,
+
+A new invoice has been generated. 
+You can access it in your invoice section at http://foobar.org/.
+
+Do not hesitate to visit the web forum (http://community.slapos.org/forum) in case of question.
+
+Regards,
+The slapos team
+"""
+    self.assertEquals(event.getTextContent(), expected_text_content,
+                      '\n'.join([x for x in difflib.unified_diff(
+                                           event.getTextContent().splitlines(),
+                                           expected_text_content.splitlines())]))
+    self.assertEquals(event.getSimulationState(), 'delivered')
     self.assertEquals(event.getFollowUp(),
                       ticket.getRelativeUrl())
 
