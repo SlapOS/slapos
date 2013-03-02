@@ -22,7 +22,7 @@ slow_query_log
 slow_query_log_file = %(slow_query_log)s
 long_query_time = 1
 max_allowed_packet = 128M
-query_cache_size = 32M
+query_cache_size = 0
 
 plugin-load = ha_mroonga.so;handlersocket.so
 
