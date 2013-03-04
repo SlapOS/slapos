@@ -15,7 +15,7 @@ alias =
   erp5 http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.143:/software/erp5/software.cfg
   erp5_branch http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/heads/erp5:/software/erp5/software.cfg
   kumofs http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.141:/software/kumofs/software.cfg
-  kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.137:/software/kvm/software.cfg
+  kvm http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.156:/software/kvm/software.cfg
   mariadb http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.152:/software/mariadb/software.cfg
   memcached http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.82:/software/memcached/software.cfg
   mysql http://git.erp5.org/gitweb/slapos.git/blob_plain/refs/tags/slapos-0.65:/software/mysql-5.1/software.cfg
