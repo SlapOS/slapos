@@ -1667,6 +1667,32 @@ class TestSlapOSDeliverConfirmedAggregatedSalePackingListAlarm(
         False, delivery_date=DateTime("2012/04/22"),
         accounting_date=DateTime('2012/04/23'))
 
+  def test_start_date_is_resetted(self):
+    delivery = self.portal.sale_packing_list_module.newContent(
+      portal_type="Sale Packing List",
+      start_date=DateTime("2012/04/22"),
+      specialise='sale_trade_condition_module/slapos_aggregated_trade_condition',
+      source='organisation_module/slapos',
+      source_section='organisation_module/slapos',
+      destination='organisation_module/slapos',
+      destination_section='organisation_module/slapos',
+      destination_decision='organisation_module/slapos',
+      price_currency='currency_module/EUR',
+      )
+    movement = delivery.newContent(
+      portal_type="Sale Packing List Line",
+      resource='service_module/slapos_instance_setup',
+      quantity=0,
+      price=0,
+      )
+    self.portal.portal_workflow._jumpToStateFor(delivery, 'solved')
+    self.portal.portal_workflow._jumpToStateFor(delivery, 'confirmed')
+    delivery.Delivery_deliverConfirmedAggregatedSalePackingList()
+    self.assertEquals(delivery.getStartDate(),
+                      DateTime().earliestTime())
+    self.assertEquals(delivery.getSimulationState(), 'delivered')
+
+
 class TestSlapOSStopConfirmedAggregatedSaleInvoiceTransactionAlarm(
       testSlapOSMixin, TestSlapOSConfirmedDeliveryMixin):
   destination_state = 'stopped'
