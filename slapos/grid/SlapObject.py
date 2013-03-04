@@ -120,7 +120,7 @@ class Software(object):
         for url in self.upload_to_binary_cache_url_blacklist:
           if self.url.startswith(url):
             blacklisted = True
-            self.logger.debug("Can't upload from binary cache: "
+            self.logger.debug("Can't upload to binary cache: "
                 "Software Release URL is blacklisted.")
         if (self.software_root and self.url and self.software_url_hash \
                                and self.upload_binary_cache_url \
