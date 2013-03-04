@@ -1,0 +1,87 @@
+--- Makefile.PL.orig	2012-10-02 14:58:25.537661734 +0200
++++ Makefile.PL	2012-10-02 15:23:32.250928745 +0200
+@@ -156,11 +156,26 @@
+ }
+ 
+ # defaults for LIBS & INC & CCFLAGS params that we later pass to Writemakefile
+-my $INC_magick = '-I../ -I.. -pthread -I/usr/include/cairo -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng12 -pthread -I/usr/include/pango-1.0 -I/usr/include/freetype2 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/graphviz -I/usr/include/freetype2 -I/usr/include/libxml2 -I"' . $Config{'usrinc'} . '/ImageMagick"';
+-my $LIBS_magick = '-L../magick/.libs -lMagickCore -lperl -lm';
+-my $CCFLAGS_magick = "$Config{'ccflags'} -fopenmp -g -O2 -Wall -pthread";
+-my $LDFLAGS_magick   = "-L../magick/.libs -lMagickCore $Config{'ldflags'} -L/usr/lib";
+-my $LDDLFLAGS_magick = "-L../magick/.libs -lMagickCore $Config{'lddlflags'} -L/usr/lib";
++my %paths_magick = ();
++foreach my $section ('INC', 'LIBS', 'CCFLAGS', 'LDFLAGS', 'LDDLFLAGS') {
++    $paths_magick{$section} = '';
++}
++{
++    my $i = 0;
++    while ($i <= $#ARGV) {
++        my ($key, $val) = split(/=/, $ARGV[$i], 2);
++        if (exists $paths_magick{$key}) {
++            $paths_magick{$key} = $val;       
++            delete $ARGV[$i];
++        }
++        $i++;
++    }
++}
++# Enforce standard components
++$paths_magick{LIBS}      .= ' -lMagickCore -lperl -lm';
++$paths_magick{CCFLAGS}   .= " $Config{'ccflags'} -fopenmp -g -O2 -Wall -pthread";
++$paths_magick{LDFLAGS}   .= " -lMagickCore $Config{'ldflags'}";
++$paths_magick{LDDLFLAGS} .= " -lMagickCore $Config{'lddlflags'}";
+ 
+ if (($^O eq 'MSWin32') && ($Config{cc} =~ /gcc/)) {
+   my($Ipaths, $Lpaths) = AutodetectWin32gcc();
+@@ -168,11 +183,11 @@
+   #
+   # Setup for strawberry perl.
+   #
+-  $INC_magick       = "$Ipaths";
+-  $LIBS_magick      = "-lMagickCore";
+-  $CCFLAGS_magick   = "$Config{'ccflags'}";
+-  $LDFLAGS_magick   = "$Config{'ldflags'} $Lpaths ";
+-  $LDDLFLAGS_magick = "$Config{'lddlflags'} $Lpaths ";
++  $paths_magick{INC}       = "$Ipaths";
++  $paths_magick{LIBS}      = "-lMagickCore";
++  $paths_magick{CCFLAGS}   = "$Config{'ccflags'}";
++  $paths_magick{LDFLAGS}   = "$Config{'ldflags'} $Lpaths ";
++  $paths_magick{LDDLFLAGS} = "$Config{'lddlflags'} $Lpaths ";
+ }
+ 
+ # See lib/ExtUtils/MakeMaker.pm for details of how to influence
+@@ -195,7 +210,7 @@
+    'DEFINE'	=> ' -D_LARGE_FILES=1 -DHAVE_CONFIG_H',     # e.g., '-DHAVE_SOMETHING'
+ 
+    # Header search specfication and preprocessor flags
+-   'INC'	=> $INC_magick,
++   'INC'	=> $paths_magick{INC},
+ 
+    # C compiler
+    #'CC' => 'gcc -std=gnu99 -std=gnu99',
+@@ -204,22 +219,22 @@
+    # 'CPPFLAGS' => "$Config{'cppflags'} -pthread -I/usr/include/cairo -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/pixman-1 -I/usr/include/freetype2 -I/usr/include/libpng12 -pthread -I/usr/include/pango-1.0 -I/usr/include/freetype2 -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include -I/usr/include/graphviz -I/usr/include/freetype2 -I/usr/include/libxml2",
+ 
+    # C compiler flags (e.g. -O -g)
+-   'CCFLAGS' => $CCFLAGS_magick,
++   'CCFLAGS' => $paths_magick{CCFLAGS},
+ 
+    # Linker
+    #'LD' => $Config{'ld'} == $Config{'cc'} ? 'gcc -std=gnu99 -std=gnu99' : $Config{'ld'},
+ 
+    # Linker flags for building an executable
+-   'LDFLAGS' =>  $LDFLAGS_magick,
++   'LDFLAGS' =>  $paths_magick{LDFLAGS},
+ 
+    # Linker flags for building a dynamically loadable module
+-   'LDDLFLAGS' => $LDDLFLAGS_magick,
++   'LDDLFLAGS' => $paths_magick{$LDDLFLAGS},
+ 
+    # Install PerlMagick binary into ImageMagick bin directory
+    'INSTALLBIN'	=> '/usr/local/bin',
+ 
+    # Library specification
+-   'LIBS' => [ $LIBS_magick ],
++   'LIBS' => [ $paths_magick{LIBS} ],
+ 
+    # Perl binary name (if a Perl binary is built)
+    'MAP_TARGET'	=> 'PerlMagick',
