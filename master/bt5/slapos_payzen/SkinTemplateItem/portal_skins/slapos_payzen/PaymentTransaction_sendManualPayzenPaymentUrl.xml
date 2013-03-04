@@ -96,7 +96,7 @@ Do not hesitate to visit the web forum (http://community.slapos.org/forum) in ca
 Regards,\n
 The slapos team\n
 """ % portal.portal_preferences.getPreferredSlaposWebSiteUrl())\n
-mail_message.start(comment=\'Requested manual payment.\')\n
+portal.portal_workflow.doActionFor(mail_message, \'start_action\', send_mail=True, comment=\'Requested manual payment.\')\n
 mail_message.stop(comment=\'Requested manual payment.\')\n
 mail_message.deliver(comment=\'Requested manual payment.\')\n
 \n

@@ -500,44 +500,32 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
     self.assertEqual(len(line_list), 0)
 
   @changeSkin('Hosting')
-  def usePayzenManually(self, web_site):
+  def usePayzenManually(self, web_site, user_reference):
+		# No more acknowledgment
     acknowledgement_json = \
       web_site.AcknowledgementTool_getUserUnreadAcknowledgementJSON()
     acknowledgement_dict = json.loads(acknowledgement_json)
     self.assertTrue('result' in acknowledgement_dict, "%s" % acknowledgement_dict)
-
     message_list = acknowledgement_dict['result']
-    self.assertEquals(len(message_list), 1, "%s" % message_list)
-    message = message_list[0]
+    self.assertEquals(len(message_list), 0, "%s" % message_list)
 
-    self.assertTrue('acknowledge_url' in message, "%s" % message)
-    self.assertTrue('text_content' in message, "%s" % message)
-
-    acknowledge_url = message['acknowledge_url']
-    text_content = message['text_content']
-
-    self.assertTrue(acknowledge_url.startswith(
-      'AcknowledgementTool_acknowledge?acknowledgement_url=event_module/'),
-      "%s" % acknowledge_url)
-
-    self.assertTrue(text_content.startswith(
-      'Please pay your payment by clicking <a href="accounting_module/'),
-      "%s" % text_content)
-    self.assertTrue(text_content.endswith(
-      '/PaymentTransaction_redirectToManualPayzenPayment">here</a>.'),
-      "%s" % text_content)
+    # User received an email for payment
+    email = '%s@example.com' % user_reference
+    def findMessage(email, body):
+      for candidate in reversed(self.portal.MailHost.getMessageList()):
+        if [q for q in candidate[1] if email in q] and body in candidate[2]:
+          return candidate[2]
+    to_click_message = findMessage(email, 'A new invoice has been generated.')
+    self.assertNotEqual(None, to_click_message)
 
     # Pay to payzen
-    to_click_url = re.search('href="(.+?)"', text_content).group(1)
-    module, document_id, skin = to_click_url.split('/')
+    document_id = self.portal.portal_catalog.getResultValue(
+				portal_type="Payment Transaction",
+				simulation_state="started",
+				).getId()
     click_result = \
       web_site.accounting_module[document_id].\
       PaymentTransaction_redirectToManualPayzenPayment()
-
-    # Acknowledge
-    event_url = str(acknowledge_url.split('=')[-1])
-    web_site.AcknowledgementTool_acknowledge(acknowledgement_url=event_url)
-
 
   def test(self):
     # some preparation
@@ -763,8 +751,7 @@ class TestSlapOSDefaultScenario(TestSlapOSSecurityMixin):
       self.assertPersonDocumentCoverage(person)
 
     self.login(public_reference)
-    self.usePayzenManually(self.web_site)
+    self.usePayzenManually(self.web_site, public_reference)
 
     self.login(friend_reference)
-    self.usePayzenManually(self.web_site)
-
+    self.usePayzenManually(self.web_site, friend_reference)
