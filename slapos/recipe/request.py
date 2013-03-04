@@ -98,6 +98,7 @@ class Recipe(object):
     software_type = options.get('software-type', DEFAULT_SOFTWARE_TYPE)
     filter_kw = dict(
       (x, options['sla-' + x]) for x in options.get('sla', '').split()
+      if options['sla-' + x]
     )
     partition_parameter_kw = self._filterForStorage(dict(
       (x, options['config-' + x])
@@ -124,8 +125,9 @@ class Recipe(object):
           filter_kw=filter_kw, shared=slave)
       return_parameter_dict = self._getReturnParameterDict(self.instance,
           return_parameters)
-      # XXX what is the right way to get a global id?
-      options['instance_guid'] = self.instance.getId()
+      if not slave:
+        # XXX: convention: should be instance-guid
+        options['instance_guid'] = self.instance.getId()
     except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
       self._raise_request_exception = exc
       self._raise_request_exception_formatted = traceback.format_exc()

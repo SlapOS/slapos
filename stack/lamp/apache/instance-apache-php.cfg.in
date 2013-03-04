@@ -55,6 +55,7 @@ logrotate-backup = $${basedirectory:backup}/logrotate
 report = $${rootdirectory:etc}/report
 stunnel-conf = $${rootdirectory:etc}/stunnel
 xml-report = $${rootdirectory:var}/xml_report
+www = $${rootdirectory:srv}/www/
 
 [cadirectory]
 recipe = slapos.cookbook:mkdirectory
@@ -194,7 +195,7 @@ source = ${application:location}
 template = ${application-template:location}/${application-template:filename}
 configuration = ${application-configuration:location}
 
-htdocs = $${rootdirectory:srv}/www/
+htdocs = $${directory:www}
 pid-file = $${basedirectory:run}/apache.pid
 lock-file = $${basedirectory:run}/apache.lock
 ip = $${slap-network-information:global-ipv6}
