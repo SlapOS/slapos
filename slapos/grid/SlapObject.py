@@ -115,18 +115,19 @@ class Software(object):
           tar.close()
       else:
         self._install_from_buildout()
-        # Upload to binary cache if possible
-        blacklisted = False
-        for url in self.upload_to_binary_cache_url_blacklist:
-          if self.url.startswith(url):
-            blacklisted = True
-            self.logger.debug("Can't upload to binary cache: "
-                "Software Release URL is blacklisted.")
+        # Upload to binary cache if possible and allowed
         if (self.software_root and self.url and self.software_url_hash \
                                and self.upload_binary_cache_url \
-                               and self.upload_binary_dir_url \
-                               and not blacklisted):
-          self.uploadSoftwareRelease(tarpath)
+                               and self.upload_binary_dir_url):
+          blacklisted = False
+          for url in self.upload_to_binary_cache_url_blacklist:
+            if self.url.startswith(url):
+              blacklisted = True
+              self.logger.info("Can't upload to binary cache: "
+                  "Software Release URL is blacklisted.")
+              break
+          if not blacklisted:
+            self.uploadSoftwareRelease(tarpath)
     finally:
       shutil.rmtree(cache_dir)
 
