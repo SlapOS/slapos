@@ -1,0 +1,57 @@
+# This file is responsible of three things:
+# 1/ Act as "Apache exporter"
+# 2/ Act as "Mariadb backup infrastructure requester"
+# 3/ Act as "Apache" instance
+
+{% import 'parts' as parts %}
+{% import 'replicated' as replicated %}
+
+[buildout]
+extends = {{templateapache}}
+          {{templatepbsreadyexport}}
+
+parts +=
+    {{ parts.replicate("mariadb", "3") }}
+
+# Repeating parts from instance-apache-php.
+# XXX-Cedric: how to simplify this?
+    certificate-authority
+    ca-stunnel
+    logrotate
+    logrotate-entry-apache
+    logrotate-entry-stunnel
+    cron
+    cron-entry-logrotate
+    promise
+    slapmonitor
+    slapmonitor-xml
+    
+    frontend-promise
+    content-promise
+    publish-connection-informations
+
+{{ replicated.replicate("mariadb", "3", "mariadb-export", "mariadb-import") }}
+
+# Nothing to do for the exporter. Just dummy part that does nothing.
+# For httpd instance, PBS will directly pull data from srv/www.
+# XXX-Cedric: write a real backup system.
+[exporter]
+wrapper = /bin/true
+
+# State that we want to backup srv/www directory, not srv/backup.
+# XXX-Cedric: works well, but doesn't work with big data.
+[rdiff-backup-server]
+path = ${directory:www}
+
+# Add "exporter" parameters to list of published connection parameters
+[publish-connection-informations]
+# XXX-Cedric: Long term goal: could be a recipe that requests an instance and
+# bubbles ALL
+# parameters of the requested instance. Requirement: aggregated publish.
+<= resilient-publish-connection-parameter
+
+# XXX-Cedric: resilient overwrites what's returned from request-mariadb
+# XXX-Cedric: change the request method to return everything from
+#             getConnectionParameterDict()
+[request-mariadb]
+return = ssh-public-key ssh-url notification-id ip url

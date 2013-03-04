@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 import glob
 import os
 
-version = '0.71.2-dev'
+version = '0.73.2-dev'
 name = 'slapos.cookbook'
 long_description = open("README.txt").read() + "\n" + \
     open("CHANGES.txt").read() + "\n"
@@ -70,6 +70,7 @@ setup(name=name,
           'agent = slapos.recipe.agent:Recipe',
           'apache.frontend = slapos.recipe.apache_frontend:Recipe',
           'apache.zope.backend = slapos.recipe.apache_zope_backend:Recipe',
+          'apacheperl = slapos.recipe.apacheperl:Recipe', 
           'apachephp = slapos.recipe.apachephp:Recipe',
           'apacheproxy = slapos.recipe.apacheproxy:Recipe',
           'certificate_authority = slapos.recipe.certificate_authority:Recipe',
@@ -130,6 +131,7 @@ setup(name=name,
           'logrotate.d = slapos.recipe.logrotate:Part',
           'memcached = slapos.recipe.memcached:Recipe',
           'mkdirectory = slapos.recipe.mkdirectory:Recipe',
+          'mioga.instantiate = slapos.recipe.mioga.instantiate:Recipe',
           'mydumper = slapos.recipe.mydumper:Recipe',
           'mysql = slapos.recipe.mysql:Recipe',
           'nbdserver = slapos.recipe.nbdserver:Recipe',

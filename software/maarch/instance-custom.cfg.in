@@ -13,3 +13,7 @@ php_ini = $${directory:php-ini-dir}/php.ini
 root_docservers = $${buildout:directory}/srv/docservers
 dependency = $${apache-php:recipe}
 
+[publish-connection-informations]
+# XXX login should not be hardcoded
+login = superadmin
+password = $${maarch-configuration:db_password}

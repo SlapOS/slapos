@@ -2,9 +2,11 @@
 
 extends = ${pbsready:output}
 
-parts += import-on-notification
+parts +=
+  import-on-notification
+  resilient-publish-connection-parameter
 
-[urls]
+[resilient-publish-connection-parameter]
 notification-url = http://[$${notifier:host}]:$${notifier:port}/notify
 
 [import-on-notification]

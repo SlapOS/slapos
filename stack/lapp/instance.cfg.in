@@ -9,9 +9,8 @@ offline = true
 
 [switch_softwaretype]
 recipe = slapos.cookbook:softwaretype
-default = ${instance-default-root:output}
-apache = ${instance-apache-php:output}
-resilient = ${template-resilient-lapp:rendered}
+default = ${instance-apache-php:output}
+resilient = ${instance-resilient:rendered}
 postgres = ${instance-postgres:output}
 postgres-import = ${instance-postgres-import:output}
 postgres-export = ${instance-postgres-export:output}

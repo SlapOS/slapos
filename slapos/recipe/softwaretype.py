@@ -114,10 +114,14 @@ class Recipe:
     if not buildout.has_section('slap-parameter'):
       buildout.add_section('slap-parameter')
     for parameter, value in self.parameter_dict.items():
-      if isinstance(value, str):
-        buildout.set('slap-parameter', parameter, value)
-      else:
-        buildout.set('slap-parameter', parameter, json.dumps(value))
+      # All parameters evaluating to False are... False, and shouldn't
+      # convey any information.
+      # Here, all those parameters are set to empty string.
+      if value:
+        if isinstance(value, str):
+          buildout.set('slap-parameter', parameter, value)
+        else:
+          buildout.set('slap-parameter', parameter, json.dumps(value))
 
     buildout.add_section('slap-network-information')
     buildout.set('slap-network-information', 'local-ipv4',
