@@ -55,7 +55,7 @@
       "title": "Second NBD hostname",
       "description": "hostname (or IP) of the second NBD server (containing drivers for example).",
       "type": "string",
-      "format": ["host-name", "ip-address", "ipv6"],
+      "format": ["host-name", "ip-address", "ipv6"]
     },
     "nbd2-port": {
       "title": "Second NBD port",
