@@ -349,6 +349,18 @@ class TestSlapOSLocalPermissionSlapOSInteractionWorkflow(
     self.assertSecurityGroup(support_request, ['G-COMPANY', self.user_id,
         self.person_reference], False)
 
+  def test_RegularisationRequest_setDestinationDecision(self):
+    self._makePerson()
+    regularisation_request = self.portal.regularisation_request_module.newContent(
+        portal_type='Regularisation Request')
+    self.assertSecurityGroup(regularisation_request, ['G-COMPANY', self.user_id], False)
+
+    regularisation_request.edit(destination_decision=self.person_user.getRelativeUrl())
+    transaction.commit()
+
+    self.assertSecurityGroup(regularisation_request, ['G-COMPANY', self.user_id,
+        self.person_reference], False)
+
   def test_Acknowledgement_setDestination(self):
     self._makePerson()
     event = self.portal.event_module.newContent(

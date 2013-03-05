@@ -1935,3 +1935,50 @@ class TestBusinessProcess(TestSlapOSGroupRoleSecurityMixin):
     self.assertRoles(product, 'G-COMPANY', ['Auditor'])
     self.assertRoles(product, 'R-MEMBER', ['Auditor'])
     self.assertRoles(product, self.user_id, ['Owner'])
+
+class TestRegularisationRequestModule(TestSlapOSGroupRoleSecurityMixin):
+  def test(self):
+    module = self.portal.regularisation_request_module
+    self.assertSecurityGroup(module,
+        ['G-COMPANY', 'R-MEMBER', 'zope'], False)
+    self.assertRoles(module, 'G-COMPANY', ['Auditor', 'Author'])
+    self.assertRoles(module, 'R-MEMBER', ['Auditor'])
+    self.assertRoles(module, 'zope', ['Owner'])
+
+class TestRegularisationRequest(TestSlapOSGroupRoleSecurityMixin):
+  def test_GroupCompany(self):
+    product = self.portal.regularisation_request_module.newContent(
+        portal_type='Regularisation Request')
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_Customer(self):
+    reference = 'TESTPERSON-%s' % self.generateNewId()
+    person = self.portal.person_module.newContent(portal_type='Person',
+        reference=reference)
+    product = self.portal.regularisation_request_module.newContent(
+        portal_type='Regularisation Request',
+        destination_decision_value=person,
+        )
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', reference, self.user_id], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, reference, ['Auditor'])
+    self.assertRoles(product, self.user_id, ['Owner'])
+
+  def test_Template(self):
+    product = self.portal.restrictedTraverse(
+        self.portal.portal_preferences.getPreferredRegularisationRequestTemplate())
+    assert product.getPortalType() == 'Regularisation Request'
+    product.updateLocalRolesOnSecurityGroups()
+    self.assertSecurityGroup(product,
+        ['G-COMPANY', product.Base_getOwnerId(), 'R-MEMBER'], False)
+    self.assertRoles(product, 'G-COMPANY', ['Assignor'])
+    self.assertRoles(product, product.Base_getOwnerId(), ['Owner'])
+    self.assertRoles(product, 'R-MEMBER', ['Auditor'])
+    self.assertPermissionsOfRole(product, 'Auditor',
+        ['Access contents information', 'View'])

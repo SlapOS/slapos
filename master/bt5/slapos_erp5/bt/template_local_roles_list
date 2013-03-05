@@ -27,6 +27,7 @@ data_set_module
 document_ingestion_module
 document_module
 event_module
+event_module/slapos_crm_web_message_template
 hosting_subscription_module
 image_module
 inventory_module
@@ -46,6 +47,8 @@ product_module
 purchase_order_module
 purchase_trade_condition_module
 query_module
+regularisation_request_module
+regularisation_request_module/slapos_crm_regularisation_request_template
 sale_opportunity_module
 sale_order_module
 sale_packing_list_module
@@ -59,8 +62,7 @@ software_instance_module
 software_product_module
 software_release_module
 support_request_module
+support_request_module/slapos_crm_support_request_template
 system_event_module
 transformation_module
 web_page_module
-support_request_module/slapos_crm_support_request_template
-event_module/slapos_crm_web_message_template
