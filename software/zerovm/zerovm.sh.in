@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cd ${:zerovm_exe_dir}
+
+exec ${:zerovm_location}/zerovm $*

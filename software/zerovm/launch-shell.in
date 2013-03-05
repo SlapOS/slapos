@@ -1,0 +1,8 @@
+#!/bin/sh
+
+export NACL_SDK_ROOT=${:nacl_location}
+export ZEROVM_ROOT=${:zerovm_location}
+export ZRT_ROOT=${:zrt}
+export ZRT_SAMPLES=${:sample_dir}
+
+exec ${:shell} $*
