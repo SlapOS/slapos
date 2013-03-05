@@ -190,8 +190,24 @@
             <value> <string>service_module/vifib_registration</string> </value>
         </item>
         <item>
+            <key> <string>preferred_regularisation_request_resource</string> </key>
+            <value>
+              <tuple>
+                <string>service_module/slapos_crm_acknowledgement</string>
+              </tuple>
+            </value>
+        </item>
+        <item>
             <key> <string>preferred_regularisation_request_template</string> </key>
             <value> <string>regularisation_request_module/slapos_crm_regularisation_request_template</string> </value>
+        </item>
+        <item>
+            <key> <string>preferred_regularisation_request_use</string> </key>
+            <value>
+              <tuple>
+                <string>crm/regularisation_request</string>
+              </tuple>
+            </value>
         </item>
         <item>
             <key> <string>preferred_sale_opportunity_use</string> </key>
