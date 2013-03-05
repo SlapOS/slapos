@@ -1,5 +1,6 @@
 from AccessControl import ClassSecurityInfo, Unauthorized, getSecurityManager
 from Products.ERP5.Document.Person import Person as ERP5Person
+from Products.ERP5Type import Permissions
 
 class Person(ERP5Person):
   security = ClassSecurityInfo()
@@ -36,3 +37,17 @@ class Person(ERP5Person):
     """Revokes existing certificate"""
     self._checkCertificateRequest()
     self._revokeCertificate()
+
+  security.declareProtected(Permissions.AccessContentsInformation,
+                            'getTitle')
+  def getTitle(self, **kw):
+    """
+      Returns the title if it exists or a combination of
+      first name and last name
+    """
+    title = ERP5Person.getTitle(self, **kw)
+    test_title = title.replace(' ', '')
+    if test_title == '':
+      return self.getDefaultEmailCoordinateText()
+    else:
+      return title

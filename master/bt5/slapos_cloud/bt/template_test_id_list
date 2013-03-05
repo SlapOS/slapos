@@ -3,3 +3,4 @@ testSlapOSCloudConstraint
 testSlapOSCloudSecurityGroup
 testSlapOSCloudShadow
 testSlapOSCloudWorkflow
+testSlapOSCloudDocument
