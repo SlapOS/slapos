@@ -138,12 +138,7 @@
                 <item>
                     <key> <string>portal_types</string> </key>
                     <value>
-                      <list>
-                        <tuple>
-                          <string>Support Request</string>
-                          <string>Support Request</string>
-                        </tuple>
-                      </list>
+                      <list/>
                     </value>
                 </item>
                 <item>
@@ -156,7 +151,7 @@
                 </item>
                 <item>
                     <key> <string>selection_name</string> </key>
-                    <value> <string>my_support_request_selection</string> </value>
+                    <value> <string>my_ticket_selection</string> </value>
                 </item>
                 <item>
                     <key> <string>target</string> </key>
@@ -199,7 +194,7 @@
       <dictionary>
         <item>
             <key> <string>method_name</string> </key>
-            <value> <string>WebSection_getUserSupportRequestList</string> </value>
+            <value> <string>WebSection_getUserTicketList</string> </value>
         </item>
       </dictionary>
     </pickle>

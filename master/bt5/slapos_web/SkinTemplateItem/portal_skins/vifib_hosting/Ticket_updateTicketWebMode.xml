@@ -88,7 +88,7 @@ web_site.Base_redirect(\'view\', keep_items={\'editable_mode\': 0, \'portal_stat
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SupportRequest_updateTicketWebMode</string> </value>
+            <value> <string>Ticket_updateTicketWebMode</string> </value>
         </item>
       </dictionary>
     </pickle>

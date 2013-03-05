@@ -50,25 +50,35 @@
         </item>
         <item>
             <key> <string>_body</string> </key>
-            <value> <string>kw[\'portal_type\'] = \'Support Request\'\n
+            <value> <string>from Products.ERP5Form.Report import ReportSection\n
+result = []\n
 \n
-person = context.getPortalObject().ERP5Site_getAuthenticatedMemberPersonValue()\n
-if person:\n
-  kw[\'default_destination_decision_uid\'] = person.getUid()\n
-  kw[\'sort_on\'] = [(\'modification_date\', \'DESC\'),]\n
-  return context.getPortalObject().portal_catalog(**kw)\n
+event_list = context.Ticket_getFollowUpRelatedEventList(sort_on=[(\'delivery.start_date\', \'ASC\'),])\n
+for event in event_list:\n
+  result.append(\n
+    ReportSection(\n
+      path=event.getPhysicalPath(),\n
+      form_id=\'Event_viewDescription\',\n
+      )\n
+  )\n
 \n
-else:\n
-  return []\n
+result.append(\n
+  ReportSection(\n
+    path=context.getPhysicalPath(),\n
+    form_id=\'Ticket_viewUpdateTicketDialog\',\n
+    )\n
+)\n
+\n
+return result\n
 </string> </value>
         </item>
         <item>
             <key> <string>_params</string> </key>
-            <value> <string>**kw</string> </value>
+            <value> <string></string> </value>
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>WebSection_getUserSupportRequestList</string> </value>
+            <value> <string>Ticket_getEventThreadList</string> </value>
         </item>
       </dictionary>
     </pickle>

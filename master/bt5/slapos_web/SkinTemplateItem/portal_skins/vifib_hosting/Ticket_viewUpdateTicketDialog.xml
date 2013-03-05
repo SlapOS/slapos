@@ -88,7 +88,7 @@
         </item>
         <item>
             <key> <string>id</string> </key>
-            <value> <string>SupportRequest_viewUpdateTicketDialog</string> </value>
+            <value> <string>Ticket_viewUpdateTicketDialog</string> </value>
         </item>
         <item>
             <key> <string>method</string> </key>
