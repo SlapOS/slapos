@@ -132,6 +132,7 @@ active_process.postResult(active_result)
       'purchase_trade_condition_module',
       'quantity_unit_conversion_module',
       'query_module',
+      'regularisation_request_module',
       'requirement_module',
       'returned_purchase_packing_list_module',
       'returned_sale_packing_list_module',
