@@ -131,6 +131,7 @@ class Recipe(object):
     except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
       self._raise_request_exception = exc
       self._raise_request_exception_formatted = traceback.format_exc()
+      return_parameter_dict = {}
 
     for param in return_parameters:
       options['connection-%s' % param] = ''
