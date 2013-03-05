@@ -127,10 +127,11 @@ class Recipe(object):
           return_parameters)
       if not slave:
         # XXX: convention: should be instance-guid
-        options['instance_guid'] = self.instance.getId()
+        options['instance_guid'] = self.instance.getInstanceGuid()
     except (slapmodule.NotFoundError, slapmodule.ServerError, slapmodule.ResourceNotReady) as exc:
       self._raise_request_exception = exc
       self._raise_request_exception_formatted = traceback.format_exc()
+      return_parameter_dict = {}
 
     for param in return_parameters:
       options['connection-%s' % param] = ''
