@@ -103,7 +103,10 @@
                 <item>
                     <key> <string>right</string> </key>
                     <value>
-                      <list/>
+                      <list>
+                        <string>my_preferred_regularisation_request_use_list</string>
+                        <string>my_preferred_regularisation_request_resource</string>
+                      </list>
                     </value>
                 </item>
               </dictionary>
